@@ -170,6 +170,13 @@ async function copyEmbedLinkCallback() {
   await webShare.share("Embed: Agora Conversation", embedUrl);
 }
 
+async function exportConversationCallback() {
+  await router.push({
+    name: "/conversation/[conversationSlugId]/export",
+    params: { conversationSlugId: props.postSlugId },
+  });
+}
+
 function clickedMoreIcon() {
   // Show post actions using the new system
   postActions.showPostActions(props.postSlugId, props.posterUserName, {
@@ -179,6 +186,7 @@ function clickedMoreIcon() {
     moderatePostCallback,
     moderationHistoryCallback,
     copyEmbedLinkCallback,
+    exportConversationCallback,
   });
 }
 

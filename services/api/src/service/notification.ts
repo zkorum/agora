@@ -1,7 +1,10 @@
 import {
     conversationTable,
+    conversationContentTable,
+    conversationExportTable,
     notificationNewOpinionTable,
     notificationOpinionVoteTable,
+    notificationExportTable,
     opinionContentTable,
     opinionTable,
     notificationTable,
@@ -154,6 +157,7 @@ export async function getNotifications({
                     ),
                     username: notificationItem.username,
                     routeTarget: {
+                        type: "opinion",
                         conversationSlugId: notificationItem.conversationSlugId,
                         opinionSlugId: notificationItem.opinionSlugId,
                     },
@@ -223,6 +227,7 @@ export async function getNotifications({
                         notificationItem.opinionContent,
                     ),
                     routeTarget: {
+                        type: "opinion",
                         conversationSlugId: notificationItem.conversationSlugId,
                         opinionSlugId: notificationItem.opinionSlugId,
                     },
@@ -230,6 +235,130 @@ export async function getNotifications({
                 };
 
                 notificationItemList.push(parsedItem);
+
+                if (!notificationItem.isRead) {
+                    numNewNotifications += 1;
+                }
+            }
+        });
+    }
+
+    // Fetch export notifications
+    {
+        const notificationTableResponse = await db
+            .select({
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
+                notificationType: notificationTable.notificationType,
+                conversationSlugId: conversationTable.slugId,
+                conversationTitle: conversationContentTable.title,
+                exportSlugId: conversationExportTable.slugId,
+                errorMessage: conversationExportTable.errorMessage,
+                cancellationReason: conversationExportTable.cancellationReason,
+                slugId: notificationTable.slugId,
+            })
+            .from(notificationTable)
+            .leftJoin(
+                notificationExportTable,
+                eq(
+                    notificationExportTable.notificationId,
+                    notificationTable.id,
+                ),
+            )
+            .leftJoin(
+                conversationExportTable,
+                eq(
+                    conversationExportTable.id,
+                    notificationExportTable.exportId,
+                ),
+            )
+            .leftJoin(
+                conversationTable,
+                eq(
+                    conversationTable.id,
+                    notificationExportTable.conversationId,
+                ),
+            )
+            .leftJoin(
+                conversationContentTable,
+                eq(
+                    conversationContentTable.id,
+                    conversationTable.currentContentId,
+                ),
+            )
+            .where(whereClause)
+            .orderBy(orderByClause)
+            .limit(fetchLimit);
+
+        notificationTableResponse.forEach((notificationItem) => {
+            if (
+                notificationItem.conversationSlugId &&
+                notificationItem.conversationTitle &&
+                notificationItem.exportSlugId &&
+                (notificationItem.notificationType === "export_completed" ||
+                    notificationItem.notificationType === "export_failed" ||
+                    notificationItem.notificationType === "export_cancelled")
+            ) {
+                // Construct notification based on type
+                if (notificationItem.notificationType === "export_completed") {
+                    const parsedItem: NotificationItem = {
+                        type: "export_completed",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message: notificationItem.conversationTitle,
+                        routeTarget: {
+                            type: "export",
+                            conversationSlugId:
+                                notificationItem.conversationSlugId,
+                            exportSlugId: notificationItem.exportSlugId,
+                        },
+                    };
+                    notificationItemList.push(parsedItem);
+                } else if (
+                    notificationItem.notificationType === "export_failed"
+                ) {
+                    const parsedItem: NotificationItem = {
+                        type: "export_failed",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message:
+                            notificationItem.errorMessage || "Export failed",
+                        routeTarget: {
+                            type: "export",
+                            conversationSlugId:
+                                notificationItem.conversationSlugId,
+                            exportSlugId: notificationItem.exportSlugId,
+                        },
+                        ...(notificationItem.errorMessage && {
+                            errorMessage: notificationItem.errorMessage,
+                        }),
+                    };
+                    notificationItemList.push(parsedItem);
+                } else if (
+                    notificationItem.notificationType === "export_cancelled"
+                ) {
+                    const parsedItem: NotificationItem = {
+                        type: "export_cancelled",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message:
+                            notificationItem.cancellationReason ||
+                            "Export was cancelled",
+                        routeTarget: {
+                            type: "export",
+                            conversationSlugId:
+                                notificationItem.conversationSlugId,
+                            exportSlugId: notificationItem.exportSlugId,
+                        },
+                        cancellationReason:
+                            notificationItem.cancellationReason ||
+                            "Export was cancelled",
+                    };
+                    notificationItemList.push(parsedItem);
+                }
 
                 if (!notificationItem.isRead) {
                     numNewNotifications += 1;

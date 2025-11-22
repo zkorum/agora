@@ -23,6 +23,7 @@ import * as authService from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
+import * as conversationExportService from "@/service/conversationExport/index.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
 // import * as polisService from "@/service/polis.js";
@@ -87,8 +88,9 @@ import {
     markAllNotificationsAsRead,
 } from "./service/notification.js";
 import twilio from "twilio";
-import { initializeRedis } from "./shared-backend/redis.js";
+import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
+import { createExportBuffer } from "./service/exportBuffer.js";
 import {
     addUserOrganizationMapping,
     createOrganization,
@@ -325,18 +327,30 @@ if (
     );
 }
 
-// Initialize Redis (optional - for vote buffer persistence)
-const redis = initializeRedis({ redisUrl: config.REDIS_URL, log });
+// Initialize Valkey (optional - for vote buffer persistence)
+const valkey = initializeValkey({ valkeyUrl: config.VALKEY_URL, log });
 
 // Initialize VoteBuffer (batches votes to reduce DB contention)
 const voteBuffer = createVoteBuffer({
     db,
-    redis,
-    redisVoteBufferKey: config.REDIS_VOTE_BUFFER_KEY,
+    valkey,
     flushIntervalMs: 1000,
 });
 log.info(
-    `[API] Vote buffer initialized (flush interval: 1s, persistence: ${redis !== undefined ? "Redis" : "in-memory only"})`,
+    `[API] Vote buffer initialized (flush interval: 1s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
+);
+
+// Initialize ExportBuffer (batches export requests to reduce system load)
+const exportBuffer = createExportBuffer({
+    db,
+    valkey,
+    flushIntervalMs: 1000,
+    maxBatchSize: 100,
+    cooldownSeconds: config.CONVERSATION_EXPORT_COOLDOWN_SECONDS,
+    exportExpiryDays: config.CONVERSATION_EXPORT_EXPIRY_DAYS,
+});
+log.info(
+    `[API] Export buffer initialized (flush interval: 1s, cooldown: ${String(config.CONVERSATION_EXPORT_COOLDOWN_SECONDS)}s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
 interface ExpectedDeviceStatus {
@@ -571,6 +585,14 @@ async function verifyUcanAndKnownDeviceStatus(
 }
 
 const apiVersion = "v1";
+
+function checkConversationExportEnabled(): void {
+    if (!config.CONVERSATION_EXPORT_ENABLED) {
+        throw server.httpErrors.serviceUnavailable(
+            "Conversation export feature is currently disabled",
+        );
+    }
+}
 
 // const awsMailConf = {
 //     accessKeyId: config.AWS_ACCESS_KEY_ID,
@@ -2368,6 +2390,112 @@ server.after(() => {
             });
         },
     });
+
+    // Conversation Export Routes
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/export/request`,
+        schema: {
+            body: Dto.requestConversationExportRequest,
+            response: {
+                200: Dto.requestConversationExportResponse,
+            },
+        },
+        handler: async (request) => {
+            checkConversationExportEnabled();
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            return await conversationExportService.requestConversationExport({
+                db: db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
+                exportBuffer: exportBuffer,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/conversation/export/status/:exportSlugId`,
+        schema: {
+            params: Dto.getConversationExportStatusRequest,
+            response: {
+                200: Dto.getConversationExportStatusResponse,
+            },
+        },
+        handler: async (request) => {
+            checkConversationExportEnabled();
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+            });
+            return await conversationExportService.getConversationExportStatus({
+                db: db,
+                exportSlugId: request.params.exportSlugId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/conversation/export/history/:conversationSlugId`,
+        schema: {
+            params: Dto.getConversationExportHistoryRequest,
+            response: {
+                200: Dto.getConversationExportHistoryResponse,
+            },
+        },
+        handler: async (request) => {
+            checkConversationExportEnabled();
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+            });
+            return await conversationExportService.getConversationExportHistory(
+                {
+                    db: db,
+                    conversationSlugId: request.params.conversationSlugId,
+                },
+            );
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "DELETE",
+        url: `/api/${apiVersion}/conversation/export/:exportSlugId`,
+        schema: {
+            params: Dto.deleteConversationExportRequest,
+        },
+        handler: async (request) => {
+            checkConversationExportEnabled();
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
+            });
+
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
+            }
+
+            await conversationExportService.deleteConversationExport({
+                db: db,
+                exportSlugId: request.params.exportSlugId,
+            });
+        },
+    });
 });
 
 if (
@@ -2423,10 +2551,13 @@ if (
             // Flush pending votes before shutdown
             await voteBuffer.shutdown();
 
-            // Close Redis connection
-            if (redis !== undefined) {
-                await redis.quit();
-                log.info("[Redis] Connection closed");
+            // Flush pending exports before shutdown
+            await exportBuffer.shutdown();
+
+            // Close Valkey connection
+            if (valkey !== undefined) {
+                await valkey.quit();
+                log.info("[Valkey] Connection closed");
             }
 
             // Close server

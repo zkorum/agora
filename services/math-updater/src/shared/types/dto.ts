@@ -40,6 +40,8 @@ import {
     zodLanguagePreferences,
     zodPolisClusters,
     zodEventSlug,
+    zodExportStatus,
+    zodExportFileInfo,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
@@ -585,6 +587,64 @@ export class Dto {
             displayLanguage: ZodSupportedDisplayLanguageCodes.optional(),
         })
         .strict();
+
+    // Conversation export
+    static requestConversationExportRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static requestConversationExportResponse = z.discriminatedUnion("status", [
+        z
+            .object({
+                status: z.literal("queued"),
+                exportSlugId: zodSlugId,
+            })
+            .strict(),
+        z
+            .object({
+                status: z.literal("cooldown_active"),
+                cooldownEndsAt: z.string().datetime(),
+            })
+            .strict(),
+    ]);
+    static getConversationExportStatusRequest = z
+        .object({
+            exportSlugId: zodSlugId,
+        })
+        .strict();
+    static getConversationExportStatusResponse = z
+        .object({
+            exportSlugId: zodSlugId,
+            status: zodExportStatus,
+            conversationSlugId: zodSlugId,
+            files: z.array(zodExportFileInfo).optional(),
+            errorMessage: z.string().optional(),
+            cancellationReason: z.string().optional(),
+            createdAt: z.date(),
+        })
+        .strict();
+    static getConversationExportHistoryRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    // Export history item schema (dates as ISO strings from API)
+    static conversationExportHistoryItem = z
+        .object({
+            exportSlugId: zodSlugId,
+            status: zodExportStatus,
+            createdAt: z.string().datetime(),
+        })
+        .strict();
+    static getConversationExportHistoryResponse = z.array(
+        Dto.conversationExportHistoryItem,
+    );
+    static deleteConversationExportRequest = z
+        .object({
+            exportSlugId: zodSlugId,
+        })
+        .strict();
 }
 
 export type AuthenticateRequestBody = z.infer<
@@ -680,3 +740,27 @@ export type UpdateLanguagePreferencesRequest = z.infer<
 >;
 export type ConversationAnalysis = z.infer<typeof Dto.fetchAnalysisResponse>;
 export type CastVoteResponse = z.infer<typeof Dto.castVoteResponse>;
+export type RequestConversationExportRequest = z.infer<
+    typeof Dto.requestConversationExportRequest
+>;
+export type RequestConversationExportResponse = z.infer<
+    typeof Dto.requestConversationExportResponse
+>;
+export type GetConversationExportStatusRequest = z.infer<
+    typeof Dto.getConversationExportStatusRequest
+>;
+export type GetConversationExportStatusResponse = z.infer<
+    typeof Dto.getConversationExportStatusResponse
+>;
+export type GetConversationExportHistoryRequest = z.infer<
+    typeof Dto.getConversationExportHistoryRequest
+>;
+export type GetConversationExportHistoryResponse = z.infer<
+    typeof Dto.getConversationExportHistoryResponse
+>;
+export type DeleteConversationExportRequest = z.infer<
+    typeof Dto.deleteConversationExportRequest
+>;
+export type ConversationExportHistoryItem = z.infer<
+    typeof Dto.conversationExportHistoryItem
+>;

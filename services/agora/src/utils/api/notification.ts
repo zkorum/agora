@@ -4,7 +4,10 @@ import type { ApiV1NotificationFetchPostRequest } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import { useCommonApi } from "./common";
 import { useNotify } from "../ui/notify";
-import type { NotificationItem } from "src/shared/types/zod";
+import {
+  zodNotificationItem,
+  type NotificationItem,
+} from "src/shared/types/zod";
 import type { FetchNotificationsResponse } from "src/shared/types/dto";
 
 export function useBackendNotificationApi() {
@@ -32,11 +35,22 @@ export function useBackendNotificationApi() {
         },
       });
 
-      const notificationItemList: NotificationItem[] =
-        response.data.notificationList.map((item) => ({
+      // Parse and validate each notification item with zod
+      const notificationItemList: NotificationItem[] = [];
+
+      for (const item of response.data.notificationList) {
+        const parsedItem = zodNotificationItem.safeParse({
           ...item,
           createdAt: new Date(item.createdAt),
-        }));
+        });
+
+        if (parsedItem.success) {
+          notificationItemList.push(parsedItem.data);
+        } else {
+          console.error("Failed to parse notification item:", parsedItem.error);
+          // Skip invalid notifications instead of failing the entire request
+        }
+      }
 
       return {
         notificationList: notificationItemList,

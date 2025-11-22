@@ -6022,12 +6022,6 @@
                                                     {
                                                         "type": "object",
                                                         "properties": {
-                                                            "type": {
-                                                                "type": "string",
-                                                                "enum": [
-                                                                    "opinion_vote"
-                                                                ]
-                                                            },
                                                             "slugId": {
                                                                 "type": "string",
                                                                 "maxLength": 10
@@ -6042,9 +6036,21 @@
                                                                 "type": "string",
                                                                 "format": "date-time"
                                                             },
+                                                            "type": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "opinion_vote"
+                                                                ]
+                                                            },
                                                             "routeTarget": {
                                                                 "type": "object",
                                                                 "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "opinion"
+                                                                        ]
+                                                                    },
                                                                     "conversationSlugId": {
                                                                         "type": "string",
                                                                         "maxLength": 10
@@ -6055,6 +6061,7 @@
                                                                     }
                                                                 },
                                                                 "required": [
+                                                                    "type",
                                                                     "conversationSlugId",
                                                                     "opinionSlugId"
                                                                 ],
@@ -6066,11 +6073,11 @@
                                                             }
                                                         },
                                                         "required": [
-                                                            "type",
                                                             "slugId",
                                                             "isRead",
                                                             "message",
                                                             "createdAt",
+                                                            "type",
                                                             "routeTarget",
                                                             "numVotes"
                                                         ],
@@ -6079,12 +6086,6 @@
                                                     {
                                                         "type": "object",
                                                         "properties": {
-                                                            "type": {
-                                                                "type": "string",
-                                                                "enum": [
-                                                                    "new_opinion"
-                                                                ]
-                                                            },
                                                             "slugId": {
                                                                 "type": "string",
                                                                 "maxLength": 10
@@ -6099,9 +6100,21 @@
                                                                 "type": "string",
                                                                 "format": "date-time"
                                                             },
+                                                            "type": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "new_opinion"
+                                                                ]
+                                                            },
                                                             "routeTarget": {
                                                                 "type": "object",
                                                                 "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "opinion"
+                                                                        ]
+                                                                    },
                                                                     "conversationSlugId": {
                                                                         "type": "string",
                                                                         "maxLength": 10
@@ -6112,6 +6125,7 @@
                                                                     }
                                                                 },
                                                                 "required": [
+                                                                    "type",
                                                                     "conversationSlugId",
                                                                     "opinionSlugId"
                                                                 ],
@@ -6122,13 +6136,197 @@
                                                             }
                                                         },
                                                         "required": [
-                                                            "type",
                                                             "slugId",
                                                             "isRead",
                                                             "message",
                                                             "createdAt",
+                                                            "type",
                                                             "routeTarget",
                                                             "username"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "slugId": {
+                                                                "type": "string",
+                                                                "maxLength": 10
+                                                            },
+                                                            "isRead": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "message": {
+                                                                "type": "string"
+                                                            },
+                                                            "createdAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "type": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "export_completed"
+                                                                ]
+                                                            },
+                                                            "routeTarget": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "export"
+                                                                        ]
+                                                                    },
+                                                                    "conversationSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    },
+                                                                    "exportSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "conversationSlugId",
+                                                                    "exportSlugId"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "slugId",
+                                                            "isRead",
+                                                            "message",
+                                                            "createdAt",
+                                                            "type",
+                                                            "routeTarget"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "slugId": {
+                                                                "type": "string",
+                                                                "maxLength": 10
+                                                            },
+                                                            "isRead": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "message": {
+                                                                "type": "string"
+                                                            },
+                                                            "createdAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "type": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "export_failed"
+                                                                ]
+                                                            },
+                                                            "routeTarget": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "export"
+                                                                        ]
+                                                                    },
+                                                                    "conversationSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    },
+                                                                    "exportSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "conversationSlugId",
+                                                                    "exportSlugId"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            "errorMessage": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "slugId",
+                                                            "isRead",
+                                                            "message",
+                                                            "createdAt",
+                                                            "type",
+                                                            "routeTarget"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "slugId": {
+                                                                "type": "string",
+                                                                "maxLength": 10
+                                                            },
+                                                            "isRead": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "message": {
+                                                                "type": "string"
+                                                            },
+                                                            "createdAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "type": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "export_cancelled"
+                                                                ]
+                                                            },
+                                                            "routeTarget": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "export"
+                                                                        ]
+                                                                    },
+                                                                    "conversationSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    },
+                                                                    "exportSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "conversationSlugId",
+                                                                    "exportSlugId"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            "cancellationReason": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "slugId",
+                                                            "isRead",
+                                                            "message",
+                                                            "createdAt",
+                                                            "type",
+                                                            "routeTarget",
+                                                            "cancellationReason"
                                                         ],
                                                         "additionalProperties": false
                                                     }
@@ -6401,6 +6599,278 @@
                         }
                     }
                 },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/export/request": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "queued"
+                                                    ]
+                                                },
+                                                "exportSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "exportSlugId"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "cooldown_active"
+                                                    ]
+                                                },
+                                                "cooldownEndsAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "cooldownEndsAt"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/export/status/{exportSlugId}": {
+            "get": {
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 10
+                        },
+                        "in": "path",
+                        "name": "exportSlugId",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "exportSlugId": {
+                                            "type": "string",
+                                            "maxLength": 10
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "processing",
+                                                "completed",
+                                                "failed",
+                                                "cancelled"
+                                            ]
+                                        },
+                                        "conversationSlugId": {
+                                            "type": "string",
+                                            "maxLength": 10
+                                        },
+                                        "totalFileSize": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": true,
+                                            "minimum": 0
+                                        },
+                                        "totalFileCount": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": true,
+                                            "minimum": 0
+                                        },
+                                        "files": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "fileType": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "comments",
+                                                            "votes",
+                                                            "participants",
+                                                            "summary",
+                                                            "stats"
+                                                        ]
+                                                    },
+                                                    "fileName": {
+                                                        "type": "string"
+                                                    },
+                                                    "fileSize": {
+                                                        "type": "integer",
+                                                        "exclusiveMinimum": true,
+                                                        "minimum": 0
+                                                    },
+                                                    "recordCount": {
+                                                        "type": "integer",
+                                                        "minimum": 0
+                                                    },
+                                                    "downloadUrl": {
+                                                        "type": "string",
+                                                        "format": "uri"
+                                                    },
+                                                    "urlExpiresAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "fileType",
+                                                    "fileName",
+                                                    "fileSize",
+                                                    "recordCount",
+                                                    "downloadUrl",
+                                                    "urlExpiresAt"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "errorMessage": {
+                                            "type": "string"
+                                        },
+                                        "cancellationReason": {
+                                            "type": "string"
+                                        },
+                                        "createdAt": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "required": [
+                                        "exportSlugId",
+                                        "status",
+                                        "conversationSlugId",
+                                        "createdAt"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/export/history/{conversationSlugId}": {
+            "get": {
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 10
+                        },
+                        "in": "path",
+                        "name": "conversationSlugId",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "exportSlugId": {
+                                                "type": "string",
+                                                "maxLength": 10
+                                            },
+                                            "status": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "processing",
+                                                    "completed",
+                                                    "failed",
+                                                    "cancelled"
+                                                ]
+                                            },
+                                            "createdAt": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            }
+                                        },
+                                        "required": [
+                                            "exportSlugId",
+                                            "status",
+                                            "createdAt"
+                                        ],
+                                        "additionalProperties": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/export/{exportSlugId}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 10
+                        },
+                        "in": "path",
+                        "name": "exportSlugId",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Default Response"

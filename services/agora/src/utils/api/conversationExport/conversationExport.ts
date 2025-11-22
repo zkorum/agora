@@ -1,0 +1,141 @@
+import { api } from "../client";
+import {
+  DefaultApiAxiosParamCreator,
+  DefaultApiFactory,
+  type ApiV1ModerationConversationWithdrawPostRequest,
+} from "src/api";
+import { useCommonApi } from "../common";
+import type {
+  RequestConversationExportResponse,
+  GetConversationExportStatusResponse,
+  GetConversationExportHistoryResponse,
+} from "src/shared/types/dto";
+import { Dto } from "src/shared/types/dto";
+
+export function useBackendConversationExportApi() {
+  const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
+
+  async function fetchExportHistory(
+    conversationSlugId: string
+  ): Promise<GetConversationExportHistoryResponse> {
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1ConversationExportHistoryConversationSlugIdGet(
+        conversationSlugId
+      );
+    const encodedUcan = await buildEncodedUcan(url, options);
+
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1ConversationExportHistoryConversationSlugIdGet(
+      conversationSlugId,
+      createRawAxiosRequestConfig({
+        encodedUcan: encodedUcan,
+        timeoutProfile: "standard",
+      })
+    );
+
+    // Parse and validate response with Zod
+    const parsed = Dto.getConversationExportHistoryResponse.parse(
+      response.data
+    );
+    return parsed;
+  }
+
+  async function requestNewExport(
+    conversationSlugId: string
+  ): Promise<RequestConversationExportResponse> {
+    const params: ApiV1ModerationConversationWithdrawPostRequest = {
+      conversationSlugId,
+    };
+
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1ConversationExportRequestPost(
+        params
+      );
+    const encodedUcan = await buildEncodedUcan(url, options);
+
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1ConversationExportRequestPost(
+      params,
+      createRawAxiosRequestConfig({
+        encodedUcan: encodedUcan,
+        timeoutProfile: "extended",
+      })
+    );
+
+    // Parse and validate response with Zod (handles discriminated union)
+    const parsed = Dto.requestConversationExportResponse.parse(response.data);
+    return parsed;
+  }
+
+  async function fetchExportStatus(
+    exportSlugId: string
+  ): Promise<GetConversationExportStatusResponse> {
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1ConversationExportStatusExportSlugIdGet(
+        exportSlugId
+      );
+    const encodedUcan = await buildEncodedUcan(url, options);
+
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1ConversationExportStatusExportSlugIdGet(
+      exportSlugId,
+      createRawAxiosRequestConfig({
+        encodedUcan: encodedUcan,
+        timeoutProfile: "standard",
+      })
+    );
+
+    return {
+      exportSlugId: response.data.exportSlugId,
+      status: response.data.status,
+      conversationSlugId: response.data.conversationSlugId,
+      files: response.data.files?.map((file) => ({
+        fileType: file.fileType,
+        fileName: file.fileName,
+        fileSize: file.fileSize,
+        recordCount: file.recordCount,
+        downloadUrl: file.downloadUrl,
+        urlExpiresAt: new Date(file.urlExpiresAt),
+      })),
+      errorMessage: response.data.errorMessage,
+      cancellationReason: response.data.cancellationReason,
+      createdAt: new Date(response.data.createdAt),
+    };
+  }
+
+  async function deleteExport(exportSlugId: string): Promise<void> {
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1ConversationExportExportSlugIdDelete(
+        exportSlugId
+      );
+    const encodedUcan = await buildEncodedUcan(url, options);
+
+    await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1ConversationExportExportSlugIdDelete(
+      exportSlugId,
+      createRawAxiosRequestConfig({
+        encodedUcan: encodedUcan,
+        timeoutProfile: "standard",
+      })
+    );
+  }
+
+  return {
+    fetchExportHistory,
+    requestNewExport,
+    fetchExportStatus,
+    deleteExport,
+  };
+}

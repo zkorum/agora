@@ -10,6 +10,16 @@
 # create an appread user with readonly role - use this one to inspect the DB locally
 
 services:
+    valkey:
+        container_name: valkey_container
+        image: docker.io/valkey/valkey:latest
+        ports:
+            - "6379:6379"
+        volumes:
+            - valkey-data:/data
+        command: valkey-server --appendonly yes
+        restart: always
+
     postgres:
         container_name: postgres_container
         image: docker.io/library/postgres:16
@@ -44,7 +54,8 @@ services:
         depends_on:
             - postgres
         restart: always
-        entrypoint: ["/bin/bash", "/docker-entrypoint-initdb.d/replica-entrypoint.sh"]
+        entrypoint:
+            ["/bin/bash", "/docker-entrypoint-initdb.d/replica-entrypoint.sh"]
     pgadmin:
         container_name: pgadmin_container
         image: docker.io/dpage/pgadmin4:latest
@@ -113,6 +124,7 @@ services:
         restart: always
 
 volumes:
+    valkey-data:
     postgres:
     postgres-replica:
     pgadmin:

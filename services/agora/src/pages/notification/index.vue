@@ -133,7 +133,7 @@ async function loadInitialData() {
     await markAllNotificationsAsRead();
     await loadNotificationData(false);
   } catch (error) {
-    console.error('Failed to load notifications:', error);
+    console.error("Failed to load notifications:", error);
   } finally {
     isLoading.value = false;
   }
@@ -154,6 +154,15 @@ function getIconFromNotificationType(
       break;
     case "opinion_vote":
       icon = "icon-park-outline:message-sent";
+      break;
+    case "export_completed":
+      icon = "mdi:check-circle";
+      break;
+    case "export_failed":
+      icon = "mdi:alert-circle";
+      break;
+    case "export_cancelled":
+      icon = "mdi:cancel";
       break;
   }
   return icon;
@@ -177,6 +186,15 @@ function getTitleFromNotification(notificationItem: NotificationItem): string {
               notificationItem.numVotes.toString()
             );
       break;
+    case "export_completed":
+      title = t("exportCompleted");
+      break;
+    case "export_failed":
+      title = t("exportFailed");
+      break;
+    case "export_cancelled":
+      title = t("exportCancelled");
+      break;
   }
   return title;
 }
@@ -191,12 +209,26 @@ function pullDownTriggered(done: () => void) {
   }, 500);
 }
 
-async function redirectPage(routeTarget: RouteTarget) {
-  await router.push({
-    name: "/conversation/[postSlugId]",
-    params: { postSlugId: routeTarget.conversationSlugId },
-    query: { opinion: routeTarget.opinionSlugId },
-  });
+async function redirectPage(routeTarget: RouteTarget): Promise<void> {
+  switch (routeTarget.type) {
+    case "opinion":
+      await router.push({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: routeTarget.conversationSlugId },
+        query: { opinion: routeTarget.opinionSlugId },
+      });
+      break;
+
+    case "export":
+      await router.push({
+        name: "/conversation/[conversationSlugId]/export.[exportId]",
+        params: {
+          conversationSlugId: routeTarget.conversationSlugId,
+          exportId: routeTarget.exportSlugId,
+        },
+      });
+      break;
+  }
 }
 </script>
 

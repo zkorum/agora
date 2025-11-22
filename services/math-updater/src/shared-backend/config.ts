@@ -28,8 +28,7 @@ export const sharedConfigSchema = z.object({
     GOOGLE_CLOUD_SERVICE_ACCOUNT_AWS_SECRET_KEY: z.string().optional(),
     // Path to Google Cloud service account JSON file (local development)
     GOOGLE_APPLICATION_CREDENTIALS: z.string().optional(),
-    // Redis (optional - for vote buffer persistence across instances)
-    REDIS_URL: z.string().optional(),
-    REDIS_VOTE_BUFFER_KEY: z.string().default("vote_buffer"),
+    // Valkey (optional - for vote buffer persistence across instances)
+    VALKEY_URL: z.string().optional(),
 });
 export type SharedConfigSchema = z.infer<typeof sharedConfigSchema>;
