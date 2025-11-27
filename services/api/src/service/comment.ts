@@ -14,6 +14,8 @@ import {
     polisClusterUserTable,
     polisContentTable,
 } from "@/shared-backend/schema.js";
+import type { NotificationSSEManager } from "./notificationSSE.js";
+import { insertNewOpinionNotification } from "./notification.js";
 import {
     updateOpinionCount,
     reconcileConversationCounters,
@@ -1012,6 +1014,7 @@ interface PostNewOpinionProps {
     userAgent: string;
     now: Date;
     isSeed: boolean;
+    notificationSSEManager?: NotificationSSEManager;
     conversationMetadata?: {
         conversationId: number;
         conversationContentId: number;
@@ -1032,6 +1035,7 @@ export async function postNewOpinion({
     userAgent,
     now,
     isSeed,
+    notificationSSEManager,
     conversationMetadata,
 }: PostNewOpinionProps): Promise<CreateCommentResponse> {
     // Use provided metadata if available (for seed opinions), otherwise fetch from DB
@@ -1114,7 +1118,7 @@ export async function postNewOpinion({
 
     const opinionSlugId = generateRandomSlugId();
 
-    await db.transaction(async (tx) => {
+    const { opinionId } = await db.transaction(async (tx) => {
         const insertCommentResponse = await tx
             .insert(opinionTable)
             .values({
@@ -1167,32 +1171,6 @@ export async function postNewOpinion({
             })
             .where(eq(userTable.id, userId));
 
-        {
-            // Create notification for the conversation owner
-            if (userId !== conversationAuthorId) {
-                const notificationTableResponse = await tx
-                    .insert(notificationTable)
-                    .values({
-                        slugId: generateRandomSlugId(),
-                        userId: conversationAuthorId, // owner of the notification
-                        notificationType: "new_opinion",
-                    })
-                    .returning({
-                        notificationId: notificationTable.id,
-                    });
-
-                const notificationId =
-                    notificationTableResponse[0].notificationId;
-
-                await tx.insert(notificationNewOpinionTable).values({
-                    notificationId: notificationId,
-                    authorId: userId, // the author of the opinion is the current user!
-                    opinionId: opinionId,
-                    conversationId: conversationId,
-                });
-            }
-        }
-
         // Update conversation opinionCount (+1 for new opinion)
         // Note: voteCount and participantCount will be updated by vote buffer
         // when the automatic vote is processed
@@ -1202,7 +1180,22 @@ export async function postNewOpinion({
             delta: 1,
             doUpdateLastReactedAt: true,
         });
+
+        return { opinionId };
     });
+
+    // Create notification for conversation owner (outside transaction)
+    // Skip for seed opinions
+    if (!isSeed) {
+        await insertNewOpinionNotification({
+            db,
+            conversationAuthorId,
+            opinionAuthorId: userId,
+            opinionId,
+            conversationId,
+            notificationSSEManager,
+        });
+    }
 
     // Auto-vote outside transaction to reduce lock duration
     if (!isSeed) {

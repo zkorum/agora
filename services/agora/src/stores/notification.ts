@@ -48,6 +48,16 @@ export const useNotificationStore = defineStore("notification", () => {
     numNewNotifications.value = newNotificationCount;
   }
 
+  function addNewNotification(notification: NotificationItem) {
+    // Add notification to the beginning of the list (most recent first)
+    notificationList.value.unshift(notification);
+
+    // Update new notification count if it's unread
+    if (!notification.isRead) {
+      numNewNotifications.value += 1;
+    }
+  }
+
   function clearNotificationData() {
     notificationList.value = [];
     numNewNotifications.value = 0;
@@ -56,6 +66,7 @@ export const useNotificationStore = defineStore("notification", () => {
   return {
     loadNotificationData,
     clearNotificationData,
+    addNewNotification,
     numNewNotifications,
     notificationList,
   };

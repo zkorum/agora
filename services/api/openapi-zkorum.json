@@ -6444,6 +6444,15 @@
                 }
             }
         },
+        "/api/v1/notification/stream": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
         "/api/v1/topic/get-all-topics": {
             "post": {
                 "responses": {
@@ -6809,16 +6818,6 @@
                                         "conversationSlugId": {
                                             "type": "string",
                                             "maxLength": 10
-                                        },
-                                        "totalFileSize": {
-                                            "type": "integer",
-                                            "exclusiveMinimum": true,
-                                            "minimum": 0
-                                        },
-                                        "totalFileCount": {
-                                            "type": "integer",
-                                            "exclusiveMinimum": true,
-                                            "minimum": 0
                                         },
                                         "files": {
                                             "type": "array",

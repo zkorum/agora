@@ -1,5 +1,5 @@
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { and, desc, eq, lt, or, inArray } from "drizzle-orm";
+import { and, desc, eq, lt, or } from "drizzle-orm";
 import { config, log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
 import {
@@ -91,6 +91,7 @@ export async function processConversationExport({
     conversationId,
     conversationSlugId,
     userId,
+    notificationSSEManager,
 }: ProcessConversationExportParams): Promise<void> {
     try {
         // Find the processing export record for this user+conversation
@@ -245,6 +246,7 @@ export async function processConversationExport({
             exportId,
             conversationId,
             type: "export_completed",
+            notificationSSEManager,
         });
     } catch (error: unknown) {
         if (error instanceof Error) {
@@ -307,6 +309,7 @@ export async function processConversationExport({
                     conversationId,
                     type: "export_failed",
                     message: error instanceof Error ? error.message : undefined,
+                    notificationSSEManager,
                 });
             }
         } catch (notificationError: unknown) {

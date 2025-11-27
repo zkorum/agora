@@ -12,12 +12,13 @@ import {
 } from "@/shared-backend/schema.js";
 import type { FetchNotificationsResponse } from "@/shared/types/dto.js";
 import type { NotificationItem } from "@/shared/types/zod.js";
-import { and, desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq, lte } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
 import { generateRandomSlugId } from "@/crypto.js";
+import type { NotificationSSEManager } from "./notificationSSE.js";
 
 interface MarkAllNotificationsAsReadProps {
     db: PostgresJsDatabase;
@@ -93,7 +94,7 @@ export async function getNotifications({
 
     const whereClause = and(
         eq(notificationTable.userId, userId),
-        lt(notificationTable.createdAt, lastCreatedAt),
+        lte(notificationTable.createdAt, lastCreatedAt),
     );
 
     const orderByClause = desc(notificationTable.createdAt);
@@ -385,17 +386,65 @@ interface InsertNewVoteNotificationProps {
     numVotes: number;
 }
 
+/**
+ * Broadcast a notification to a user via SSE
+ * Fetches the notification data and sends it to connected clients
+ */
+async function broadcastNotificationToUser(
+    notificationSSEManager: NotificationSSEManager | undefined,
+    db: PostgresJsDatabase,
+    userId: string,
+    notificationSlugId: string,
+): Promise<void> {
+    // Skip broadcast if SSE manager is not available
+    if (!notificationSSEManager) {
+        return;
+    }
+
+    try {
+        // Fetch the complete notification data to broadcast
+        const notifications = await getNotifications({
+            db,
+            userId,
+            lastSlugId: undefined,
+        });
+
+        // Find the specific notification we just created
+        const notification = notifications.notificationList.find(
+            (n) => n.slugId === notificationSlugId,
+        );
+
+        if (notification) {
+            // Broadcast to the user
+            notificationSSEManager.broadcastToUser(userId, notification);
+        }
+    } catch (error) {
+        // Don't fail the operation if broadcast fails
+        log.error(
+            error,
+            `Failed to broadcast notification ${notificationSlugId} to user ${userId}`,
+        );
+    }
+}
+
+interface InsertNewVoteNotificationPropsExtended
+    extends InsertNewVoteNotificationProps {
+    notificationSSEManager?: NotificationSSEManager;
+}
+
 export async function insertNewVoteNotification({
     db,
     userId,
     opinionId,
     conversationId,
     numVotes,
-}: InsertNewVoteNotificationProps) {
+    notificationSSEManager,
+}: InsertNewVoteNotificationPropsExtended) {
+    const notificationSlugId = generateRandomSlugId();
     const notificationTableResponse = await db
         .insert(notificationTable)
         .values({
-            slugId: generateRandomSlugId(),
+            slugId: notificationSlugId,
             userId: userId,
             notificationType: "opinion_vote",
         })
@@ -411,4 +460,71 @@ export async function insertNewVoteNotification({
         conversationId: conversationId,
         numVotes: numVotes,
     });
+
+    // Broadcast notification via SSE (don't await to avoid blocking)
+    void broadcastNotificationToUser(
+        notificationSSEManager,
+        db,
+        userId,
+        notificationSlugId,
+    );
+}
+
+interface InsertNewOpinionNotificationProps {
+    db: PostgresJsDatabase;
+    conversationAuthorId: string;
+    opinionAuthorId: string;
+    opinionId: number;
+    conversationId: number;
+    notificationSSEManager?: NotificationSSEManager;
+}
+
+/**
+ * Create a notification for a new opinion on a conversation.
+ * Returns the notification slug ID if a notification was created, undefined otherwise.
+ * No notification is created if the opinion author is the same as the conversation author.
+ */
+export async function insertNewOpinionNotification({
+    db,
+    conversationAuthorId,
+    opinionAuthorId,
+    opinionId,
+    conversationId,
+    notificationSSEManager,
+}: InsertNewOpinionNotificationProps): Promise<string | undefined> {
+    // Don't create notification if user is commenting on their own conversation
+    if (opinionAuthorId === conversationAuthorId) {
+        return undefined;
+    }
+
+    const notificationSlugId = generateRandomSlugId();
+    const notificationTableResponse = await db
+        .insert(notificationTable)
+        .values({
+            slugId: notificationSlugId,
+            userId: conversationAuthorId,
+            notificationType: "new_opinion",
+        })
+        .returning({
+            notificationId: notificationTable.id,
+        });
+
+    const notificationId = notificationTableResponse[0].notificationId;
+
+    await db.insert(notificationNewOpinionTable).values({
+        notificationId: notificationId,
+        authorId: opinionAuthorId,
+        opinionId: opinionId,
+        conversationId: conversationId,
+    });
+
+    // Broadcast notification via SSE (don't await to avoid blocking)
+    void broadcastNotificationToUser(
+        notificationSSEManager,
+        db,
+        conversationAuthorId,
+        notificationSlugId,
+    );
+
+    return notificationSlugId;
 }

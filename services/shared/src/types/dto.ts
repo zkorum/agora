@@ -483,6 +483,11 @@ export class Dto {
             notificationList: z.array(zodNotificationItem),
         })
         .strict();
+    static notificationStreamQuerystring = z
+        .object({
+            auth: z.string(),
+        })
+        .strict();
     static createOrganizationRequest = z
         .object({
             organizationName: z.string(),
