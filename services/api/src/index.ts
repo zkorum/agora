@@ -91,6 +91,7 @@ import twilio from "twilio";
 import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
 import { createExportBuffer } from "./service/exportBuffer.js";
+import { NotificationSSEManager } from "./service/notificationSSE.js";
 import {
     addUserOrganizationMapping,
     createOrganization,
@@ -147,6 +148,12 @@ server.register(fastifyCors, {
         }
     },
 });
+
+// Register SSE plugin for real-time notification streaming
+import fastifySSE from "@fastify/sse";
+// @fastify/sse has type compatibility issues with Fastify v5
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+await server.register(fastifySSE as any);
 
 // Add schema validator and serializer
 server.setValidatorCompiler(validatorCompiler);
@@ -340,10 +347,15 @@ log.info(
     `[API] Vote buffer initialized (flush interval: 1s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
+// Initialize Notification SSE Manager for real-time notifications
+const notificationSSEManager = new NotificationSSEManager();
+notificationSSEManager.initialize();
+
 // Initialize ExportBuffer (batches export requests to reduce system load)
 const exportBuffer = createExportBuffer({
     db,
     valkey,
+    notificationSSEManager,
     flushIntervalMs: 1000,
     maxBatchSize: 100,
     cooldownSeconds: config.CONVERSATION_EXPORT_COOLDOWN_SECONDS,
@@ -1351,6 +1363,7 @@ server.after(() => {
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: now,
                 isSeed: false,
+                notificationSSEManager: notificationSSEManager,
             });
             reply.send(newOpinionResponse);
             const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
@@ -2329,6 +2342,52 @@ server.after(() => {
         },
     });
 
+    // SSE endpoint for real-time notifications
+    // Accepts authentication via query parameter since EventSource doesn't support custom headers
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/notification/stream`,
+        sse: true, // Enable SSE mode - provides reply.sse.* methods
+        schema: {
+            querystring: Dto.notificationStreamQuerystring,
+        },
+        handler: async (request, reply) => {
+            try {
+                // Get auth token from query parameter (type-safe)
+                const { auth } = request.query;
+
+                // Manually inject the auth header for UCAN verification
+                request.headers.authorization = `Bearer ${auth}`;
+
+                const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                    db,
+                    request,
+                    {
+                        expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                    },
+                );
+
+                // Keep connection alive (prevents automatic close after handler returns)
+                reply.sse.keepAlive();
+
+                // Register this connection with the SSE manager
+                // The manager will use reply.sse.send() to broadcast notifications
+                notificationSSEManager.connect(deviceStatus.userId, reply);
+
+                // Keep the handler alive by waiting for socket close event
+                // This is necessary to prevent Fastify from closing the connection
+                await new Promise<void>((resolve) => {
+                    request.raw.on("close", () => {
+                        resolve();
+                    });
+                });
+            } catch (error) {
+                log.error(error, "[SSE] Authentication failed");
+                reply.code(401).send({ error: "Authentication failed" });
+            }
+        },
+    });
+
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/topic/get-all-topics`,
@@ -2553,6 +2612,9 @@ if (
 
             // Flush pending exports before shutdown
             await exportBuffer.shutdown();
+
+            // Close SSE connections before shutdown
+            await notificationSSEManager.shutdown();
 
             // Close Valkey connection
             if (valkey !== undefined) {

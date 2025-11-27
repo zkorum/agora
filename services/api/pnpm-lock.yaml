@@ -35,6 +35,9 @@ importers:
       '@fastify/sensible':
         specifier: ^6.0.3
         version: 6.0.3
+      '@fastify/sse':
+        specifier: ^0.4.0
+        version: 0.4.0(fastify@5.3.3)
       '@fastify/swagger':
         specifier: ^9.5.1
         version: 9.5.1
@@ -1059,6 +1062,12 @@ packages:
 
   '@fastify/sensible@6.0.3':
     resolution: {integrity: sha512-Iyn8698hp/e5+v8SNBBruTa7UfrMEP52R16dc9jMpqSyEcPsvWFQo+R6WwHCUnJiLIsuci2ZoEZ7ilrSSCPIVg==}
+
+  '@fastify/sse@0.4.0':
+    resolution: {integrity: sha512-bBV96iT2kHEw6h3i8IMkZGaqA7Gk81ugUzTNctXuE6N2BEC/qBnUuzlD/O17V43OkJP73h0/kf3Bp/asXlSuFA==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      fastify: ^5.x
 
   '@fastify/swagger@9.5.1':
     resolution: {integrity: sha512-EGjYLA7vDmCPK7XViAYMF6y4+K3XUy5soVTVxsyXolNe/Svb4nFQxvtuQvvoQb2Gzc9pxiF3+ZQN/iZDHhKtTg==}
@@ -5964,6 +5973,11 @@ snapshots:
       http-errors: 2.0.0
       type-is: 1.6.18
       vary: 1.1.2
+
+  '@fastify/sse@0.4.0(fastify@5.3.3)':
+    dependencies:
+      fastify: 5.3.3
+      fastify-plugin: 5.0.1
 
   '@fastify/swagger@9.5.1':
     dependencies:

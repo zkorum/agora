@@ -51,6 +51,7 @@
         "@fastify/auth": "^5.0.2",
         "@fastify/cors": "^10.1.0",
         "@fastify/sensible": "^6.0.3",
+        "@fastify/sse": "^0.4.0",
         "@fastify/swagger": "^9.5.1",
         "@google-cloud/translate": "^9.2.1",
         "@pcd/gpc": "^0.4.1",

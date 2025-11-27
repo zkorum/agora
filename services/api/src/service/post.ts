@@ -125,7 +125,13 @@ export async function importConversation({
         }
     }
 
-    if (!isValidPublicConversationAccess({ isIndexed, isLoginRequired, requiresEventTicket })) {
+    if (
+        !isValidPublicConversationAccess({
+            isIndexed,
+            isLoginRequired,
+            requiresEventTicket,
+        })
+    ) {
         throw httpErrors.forbidden(
             "Public conversations must either require login or event ticket verification",
         );
@@ -206,7 +212,13 @@ export async function createNewPost({
         }
     }
 
-    if (!isValidPublicConversationAccess({ isIndexed, isLoginRequired, requiresEventTicket })) {
+    if (
+        !isValidPublicConversationAccess({
+            isIndexed,
+            isLoginRequired,
+            requiresEventTicket,
+        })
+    ) {
         throw httpErrors.forbidden(
             "Public conversations must either require login or event ticket verification",
         );

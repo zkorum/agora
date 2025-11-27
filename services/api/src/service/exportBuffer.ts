@@ -14,6 +14,7 @@ import { nanoid } from "nanoid";
 import { count, or, isNull, ne } from "drizzle-orm";
 import { processConversationExport } from "./conversationExport/core.js";
 import { createExportNotification } from "./conversationExport/notifications.js";
+import type { NotificationSSEManager } from "./notificationSSE.js";
 
 export interface BufferedExport {
     userId: string;
@@ -41,6 +42,7 @@ export interface ExportBuffer {
 interface CreateExportBufferParams {
     db: PostgresJsDatabase;
     valkey?: Valkey;
+    notificationSSEManager?: NotificationSSEManager;
     flushIntervalMs?: number;
     maxBatchSize?: number;
     cooldownSeconds?: number;
@@ -64,6 +66,7 @@ interface CreateExportBufferParams {
 export function createExportBuffer({
     db,
     valkey = undefined,
+    notificationSSEManager = undefined,
     flushIntervalMs = 1000,
     maxBatchSize = 100,
     cooldownSeconds = 300,
@@ -415,6 +418,7 @@ export function createExportBuffer({
                                 conversationId: exportRequest.conversationId,
                                 type: "export_cancelled",
                                 cancellationReason: `Export cancelled: cooldown period has not elapsed (${String(cooldownSeconds)}s)`,
+                                notificationSSEManager,
                             });
 
                             log.info(
@@ -438,6 +442,7 @@ export function createExportBuffer({
                             conversationSlugId:
                                 exportRequest.conversationSlugId,
                             userId: exportRequest.userId,
+                            notificationSSEManager,
                         }),
                     ),
                 );
