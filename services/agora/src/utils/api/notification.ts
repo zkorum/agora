@@ -10,7 +10,7 @@ import {
 } from "src/shared/types/zod";
 import type { FetchNotificationsResponse } from "src/shared/types/dto";
 
-export function useBackendNotificationApi() {
+export function useNotificationApi() {
   const { buildEncodedUcan } = useCommonApi();
 
   const { showNotifyMessage } = useNotify();

@@ -15,9 +15,6 @@ interface CreateExportNotificationParams {
     exportId: number;
     conversationId: number;
     type: NotificationType;
-    message?: string;
-    errorMessage?: string;
-    cancellationReason?: string;
     notificationSSEManager?: NotificationSSEManager;
 }
 
@@ -30,7 +27,6 @@ export async function createExportNotification({
     exportId,
     conversationId,
     type,
-    message,
     notificationSSEManager,
 }: CreateExportNotificationParams): Promise<void> {
     try {
@@ -58,7 +54,7 @@ export async function createExportNotification({
         });
 
         log.info(
-            `Created ${type} notification for user ${userId}, export ${String(exportId)}${message ? `: ${message}` : ""}`,
+            `Created ${type} notification for user ${userId}, export ${exportId}`,
         );
 
         // Broadcast notification via SSE (don't await to avoid blocking)

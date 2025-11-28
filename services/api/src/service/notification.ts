@@ -12,6 +12,7 @@ import {
 } from "@/shared-backend/schema.js";
 import type { FetchNotificationsResponse } from "@/shared/types/dto.js";
 import type { NotificationItem } from "@/shared/types/zod.js";
+import { zodNotificationItem } from "@/shared/types/zod.js";
 import { and, desc, eq, lte } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
@@ -630,7 +631,7 @@ interface InsertNewVoteNotificationProps {
 
 /**
  * Broadcast a vote notification to a user via SSE
- * Builds notification directly from data instead of refetching
+ * Builds notification directly from data and validates before broadcasting
  */
 async function broadcastVoteNotification(
     notificationSSEManager: NotificationSSEManager | undefined,
@@ -655,7 +656,20 @@ async function broadcastVoteNotification(
         );
 
         if (notification) {
-            notificationSSEManager.broadcastToUser(userId, notification);
+            // Validate notification before broadcasting
+            const validationResult =
+                zodNotificationItem.safeParse(notification);
+            if (validationResult.success) {
+                notificationSSEManager.broadcastToUser(
+                    userId,
+                    validationResult.data,
+                );
+            } else {
+                log.error(
+                    validationResult.error,
+                    `Failed to validate vote notification ${notificationSlugId} before broadcast`,
+                );
+            }
         }
     } catch (error) {
         log.error(
@@ -667,7 +681,7 @@ async function broadcastVoteNotification(
 
 /**
  * Broadcast an opinion notification to a user via SSE
- * Builds notification directly from data instead of refetching
+ * Builds notification directly from data and validates before broadcasting
  */
 async function broadcastOpinionNotification(
     notificationSSEManager: NotificationSSEManager | undefined,
@@ -692,7 +706,20 @@ async function broadcastOpinionNotification(
         );
 
         if (notification) {
-            notificationSSEManager.broadcastToUser(userId, notification);
+            // Validate notification before broadcasting
+            const validationResult =
+                zodNotificationItem.safeParse(notification);
+            if (validationResult.success) {
+                notificationSSEManager.broadcastToUser(
+                    userId,
+                    validationResult.data,
+                );
+            } else {
+                log.error(
+                    validationResult.error,
+                    `Failed to validate opinion notification ${notificationSlugId} before broadcast`,
+                );
+            }
         }
     } catch (error) {
         log.error(
@@ -704,7 +731,7 @@ async function broadcastOpinionNotification(
 
 /**
  * Broadcast an export notification to a user via SSE
- * Builds notification directly from data instead of refetching
+ * Builds notification directly from data and validates before broadcasting
  */
 export async function broadcastExportNotification(
     notificationSSEManager: NotificationSSEManager | undefined,
@@ -727,7 +754,20 @@ export async function broadcastExportNotification(
         );
 
         if (notification) {
-            notificationSSEManager.broadcastToUser(userId, notification);
+            // Validate notification before broadcasting
+            const validationResult =
+                zodNotificationItem.safeParse(notification);
+            if (validationResult.success) {
+                notificationSSEManager.broadcastToUser(
+                    userId,
+                    validationResult.data,
+                );
+            } else {
+                log.error(
+                    validationResult.error,
+                    `Failed to validate export notification ${notificationSlugId} before broadcast`,
+                );
+            }
         }
     } catch (error) {
         log.error(
@@ -739,7 +779,7 @@ export async function broadcastExportNotification(
 
 /**
  * Create a vote notification and broadcast it via SSE
- * Renamed from insertNewVoteNotification for better clarity
+ * Returns the notification slug ID
  */
 export async function createVoteNotification({
     db,
@@ -748,7 +788,7 @@ export async function createVoteNotification({
     conversationId,
     numVotes,
     notificationSSEManager,
-}: InsertNewVoteNotificationProps) {
+}: InsertNewVoteNotificationProps): Promise<string> {
     const notificationSlugId = generateRandomSlugId();
     const notificationTableResponse = await db
         .insert(notificationTable)
@@ -780,6 +820,8 @@ export async function createVoteNotification({
         conversationId,
         numVotes,
     );
+
+    return notificationSlugId;
 }
 
 interface CreateOpinionNotificationProps {

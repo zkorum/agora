@@ -1,10 +1,10 @@
 import { defineStore } from "pinia";
 import type { NotificationItem } from "src/shared/types/zod";
-import { useBackendNotificationApi } from "src/utils/api/notification";
+import { useNotificationApi } from "src/utils/api/notification";
 import { ref } from "vue";
 
 export const useNotificationStore = defineStore("notification", () => {
-  const { fetchNotifications } = useBackendNotificationApi();
+  const { fetchNotifications } = useNotificationApi();
 
   const notificationList = ref<NotificationItem[]>([]);
   const numNewNotifications = ref(0);
@@ -85,9 +85,10 @@ export const useNotificationStore = defineStore("notification", () => {
 
   function markAllAsReadLocally() {
     // Update all notifications in the list to mark them as read
-    notificationList.value.forEach((notification) => {
-      notification.isRead = true;
-    });
+    notificationList.value = notificationList.value.map((notification) => ({
+      ...notification,
+      isRead: true,
+    }));
     // Reset the new notification counter
     numNewNotifications.value = 0;
   }
