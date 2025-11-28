@@ -1,7 +1,7 @@
 <template>
   <div class="history-section">
     <AsyncStateHandler
-      :query="exportHistoryQuery"
+      :query="props.exportHistoryQuery"
       :is-empty="() => isHistoryEmpty"
       :config="{
         loading: { text: t('loadingExports') },
@@ -26,21 +26,24 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRouter } from "vue-router";
-import { storeToRefs } from "pinia";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import SettingsSection from "src/components/settings/SettingsSection.vue";
-import { useExportHistoryQuery } from "src/utils/api/conversationExport/useConversationExportQueries";
+import type { UseQueryReturnType } from "@tanstack/vue-query";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   exportHistoryListTranslations,
   type ExportHistoryListTranslations,
 } from "./ExportHistoryList.i18n";
-import { useAuthenticationStore } from "src/stores/authentication";
 import { formatDateTime } from "src/utils/format";
 import type { SettingsInterface } from "src/utils/component/settings/settings";
+import type { GetConversationExportHistoryResponse } from "src/shared/types/dto";
 
 interface Props {
   conversationSlugId: string;
+  exportHistoryQuery: UseQueryReturnType<
+    GetConversationExportHistoryResponse,
+    Error
+  >;
 }
 
 const props = defineProps<Props>();
@@ -50,17 +53,9 @@ const { t } = useComponentI18n<ExportHistoryListTranslations>(
 );
 const router = useRouter();
 
-const authStore = useAuthenticationStore();
-const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(authStore);
-
-const exportHistoryQuery = useExportHistoryQuery({
-  conversationSlugId: props.conversationSlugId,
-  enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
-});
-
 // Get export data directly (now a simple array)
 const exports = computed(() => {
-  return exportHistoryQuery.data.value ?? [];
+  return props.exportHistoryQuery.data.value ?? [];
 });
 
 const isHistoryEmpty = computed(() => {
