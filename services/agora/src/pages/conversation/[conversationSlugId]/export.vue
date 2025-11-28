@@ -12,53 +12,58 @@
       <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
     </template>
 
-    <WidthWrapper :enable="true">
-      <div class="export-page">
-        <AsyncStateHandler
-          :query="conversationQuery"
-          :config="{
-            error: { title: t('conversationLoadError') },
-          }"
-        >
-          <div
-            v-if="conversationQuery.data.value"
-            tabindex="0"
-            role="button"
-            :aria-label="t('viewConversation')"
-            @click="navigateToConversation"
-            @keydown.enter="navigateToConversation"
-            @keydown.space="navigateToConversation"
+    <q-pull-to-refresh @refresh="handleRefresh">
+      <WidthWrapper :enable="true">
+        <div class="export-page">
+          <AsyncStateHandler
+            :query="conversationQuery"
+            :config="{
+              error: { title: t('conversationLoadError') },
+            }"
           >
-            <PostDetails
-              :conversation-data="conversationQuery.data.value"
-              :compact-mode="true"
+            <div
+              v-if="conversationQuery.data.value"
+              tabindex="0"
+              role="button"
+              :aria-label="t('viewConversation')"
+              @click="navigateToConversation"
+              @keydown.enter="navigateToConversation"
+              @keydown.space="navigateToConversation"
+            >
+              <PostDetails
+                :conversation-data="conversationQuery.data.value"
+                :compact-mode="true"
+              />
+            </div>
+          </AsyncStateHandler>
+
+          <section class="export-actions">
+            <p class="page-description">
+              {{ t("pageDescription") }}
+            </p>
+
+            <RequestExportButton
+              :loading="requestExportMutation.isPending.value"
+              :aria-label="t('requestExportAriaLabel')"
+              @request="handleRequestExport"
             />
-          </div>
-        </AsyncStateHandler>
+          </section>
 
-        <section class="export-actions">
-          <p class="page-description">
-            {{ t("pageDescription") }}
-          </p>
-
-          <RequestExportButton
-            :loading="requestExportMutation.isPending.value"
-            :aria-label="t('requestExportAriaLabel')"
-            @request="handleRequestExport"
-          />
-        </section>
-
-        <section
-          class="export-history-section"
-          aria-labelledby="previous-exports-heading"
-        >
-          <h2 id="previous-exports-heading" class="section-title">
-            {{ t("previousExports") }}
-          </h2>
-          <ExportHistoryList :conversation-slug-id="conversationSlugId" />
-        </section>
-      </div>
-    </WidthWrapper>
+          <section
+            class="export-history-section"
+            aria-labelledby="previous-exports-heading"
+          >
+            <h2 id="previous-exports-heading" class="section-title">
+              {{ t("previousExports") }}
+            </h2>
+            <ExportHistoryList
+              :conversation-slug-id="conversationSlugId"
+              :export-history-query="exportHistoryQuery"
+            />
+          </section>
+        </div>
+      </WidthWrapper>
+    </q-pull-to-refresh>
   </DrawerLayout>
 </template>
 
@@ -75,7 +80,10 @@ import ExportHistoryList from "src/components/conversation/export/ExportHistoryL
 import RequestExportButton from "src/components/conversation/export/RequestExportButton.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
-import { useRequestExportMutation } from "src/utils/api/conversationExport/useConversationExportQueries";
+import {
+  useRequestExportMutation,
+  useExportHistoryQuery,
+} from "src/utils/api/conversationExport/useConversationExportQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { axiosInstance } from "src/utils/api/client";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -108,12 +116,29 @@ const conversationQuery = useConversationQuery({
   enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
 });
 
+const exportHistoryQuery = useExportHistoryQuery({
+  conversationSlugId: conversationSlugId.value,
+  enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
+});
+
 const requestExportMutation = useRequestExportMutation();
 
 async function navigateToConversation(): Promise<void> {
   await router.push({
     name: "/conversation/[postSlugId]",
     params: { postSlugId: conversationSlugId.value },
+  });
+}
+
+function handleRefresh(done: () => void): void {
+  const minDelay = new Promise((resolve) => setTimeout(resolve, 500));
+
+  void Promise.all([
+    conversationQuery.refetch(),
+    exportHistoryQuery.refetch(),
+    minDelay,
+  ]).finally(() => {
+    done();
   });
 }
 
