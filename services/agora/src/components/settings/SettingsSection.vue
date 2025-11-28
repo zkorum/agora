@@ -3,7 +3,7 @@
     <ul class="settings-background" role="list">
       <li
         v-for="(item, index) in settingsItemList"
-        :key="item.label"
+        :key="item.key ?? item.label ?? index"
         role="listitem"
       >
         <SettingsItem
