@@ -97,7 +97,7 @@ import type {
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useNotificationStore } from "src/stores/notification";
 import { useBackendNotificationApi } from "src/utils/api/notification";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { HomeMenuBar } from "src/components/navigation/header/variants";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
@@ -108,9 +108,11 @@ import {
   type NotificationTranslations,
 } from "./index.i18n";
 
-const { notificationList } = storeToRefs(useNotificationStore());
+const notificationStore = useNotificationStore();
+const { notificationList, numNewNotifications } =
+  storeToRefs(notificationStore);
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
-const { loadNotificationData } = useNotificationStore();
+const { loadNotificationData, markAllAsReadLocally } = notificationStore;
 
 const { markAllNotificationsAsRead } = useBackendNotificationApi();
 
@@ -125,6 +127,17 @@ const { t } = useComponentI18n<NotificationTranslations>(
 
 onMounted(() => {
   void loadInitialData();
+});
+
+// Watch for new notifications arriving via SSE while on this page
+watch(numNewNotifications, async (newCount, oldCount) => {
+  // Only react if count increases (new notifications arrived)
+  // and we're not in the initial loading phase
+  if (newCount > oldCount && !isLoading.value) {
+    await markAllNotificationsAsRead();
+    // Update local state to immediately clear the badge
+    markAllAsReadLocally();
+  }
 });
 
 async function loadInitialData() {
