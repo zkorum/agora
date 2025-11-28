@@ -94,22 +94,10 @@ export function useBackendConversationExportApi() {
       })
     );
 
-    return {
-      exportSlugId: response.data.exportSlugId,
-      status: response.data.status,
-      conversationSlugId: response.data.conversationSlugId,
-      files: response.data.files?.map((file) => ({
-        fileType: file.fileType,
-        fileName: file.fileName,
-        fileSize: file.fileSize,
-        recordCount: file.recordCount,
-        downloadUrl: file.downloadUrl,
-        urlExpiresAt: new Date(file.urlExpiresAt),
-      })),
-      errorMessage: response.data.errorMessage,
-      cancellationReason: response.data.cancellationReason,
-      createdAt: new Date(response.data.createdAt),
-    };
+    // Parse and validate response with Zod (handles discriminated union)
+    // Return as-is with ISO string dates - components will convert when needed
+    const parsed = Dto.getConversationExportStatusResponse.parse(response.data);
+    return parsed;
   }
 
   async function deleteExport(exportSlugId: string): Promise<void> {

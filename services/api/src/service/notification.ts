@@ -152,7 +152,7 @@ export async function getNotifications({
                 const parsedItem: NotificationItem = {
                     type: "new_opinion",
                     slugId: notificationItem.slugId,
-                    createdAt: notificationItem.createdAt,
+                    createdAt: notificationItem.createdAt.toISOString(),
                     isRead: notificationItem.isRead,
                     message: useCommonPost().createCompactHtmlBody(
                         notificationItem.opinionContent,
@@ -223,7 +223,7 @@ export async function getNotifications({
                 const parsedItem: NotificationItem = {
                     type: "opinion_vote",
                     slugId: notificationItem.slugId,
-                    createdAt: notificationItem.createdAt,
+                    createdAt: notificationItem.createdAt.toISOString(),
                     isRead: notificationItem.isRead,
                     message: useCommonPost().createCompactHtmlBody(
                         notificationItem.opinionContent,
@@ -306,7 +306,7 @@ export async function getNotifications({
                     const parsedItem: NotificationItem = {
                         type: "export_completed",
                         slugId: notificationItem.slugId,
-                        createdAt: notificationItem.createdAt,
+                        createdAt: notificationItem.createdAt.toISOString(),
                         isRead: notificationItem.isRead,
                         message: `"${notificationItem.conversationTitle}"`,
                         routeTarget: {
@@ -323,7 +323,7 @@ export async function getNotifications({
                     const parsedItem: NotificationItem = {
                         type: "export_failed",
                         slugId: notificationItem.slugId,
-                        createdAt: notificationItem.createdAt,
+                        createdAt: notificationItem.createdAt.toISOString(),
                         isRead: notificationItem.isRead,
                         message: notificationItem.errorMessage
                             ? `${notificationItem.errorMessage}`
@@ -345,7 +345,7 @@ export async function getNotifications({
                     const parsedItem: NotificationItem = {
                         type: "export_cancelled",
                         slugId: notificationItem.slugId,
-                        createdAt: notificationItem.createdAt,
+                        createdAt: notificationItem.createdAt.toISOString(),
                         isRead: notificationItem.isRead,
                         message: notificationItem.cancellationReason
                             ? `${notificationItem.cancellationReason}`
@@ -371,7 +371,9 @@ export async function getNotifications({
     }
 
     notificationItemList.sort(function (a, b) {
-        return b.createdAt.getTime() - a.createdAt.getTime();
+        return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
     });
 
     return {
@@ -435,7 +437,7 @@ async function buildExportNotification(
                 return {
                     type: "export_completed",
                     slugId: notificationSlugId,
-                    createdAt: result[0].createdAt,
+                    createdAt: result[0].createdAt.toISOString(),
                     isRead: result[0].isRead,
                     message: `"${result[0].conversationTitle}"`,
                     routeTarget: {
@@ -448,7 +450,7 @@ async function buildExportNotification(
                 return {
                     type: "export_failed",
                     slugId: notificationSlugId,
-                    createdAt: result[0].createdAt,
+                    createdAt: result[0].createdAt.toISOString(),
                     isRead: result[0].isRead,
                     message: result[0].errorMessage
                         ? `${result[0].errorMessage}`
@@ -466,7 +468,7 @@ async function buildExportNotification(
                 return {
                     type: "export_cancelled",
                     slugId: notificationSlugId,
-                    createdAt: result[0].createdAt,
+                    createdAt: result[0].createdAt.toISOString(),
                     isRead: result[0].isRead,
                     message: result[0].cancellationReason
                         ? `${result[0].cancellationReason}`
@@ -533,7 +535,7 @@ async function buildVoteNotification(
             return {
                 type: "opinion_vote",
                 slugId: notificationSlugId,
-                createdAt: result[0].createdAt,
+                createdAt: result[0].createdAt.toISOString(),
                 isRead: result[0].isRead,
                 message: useCommonPost().createCompactHtmlBody(
                     result[0].opinionContent,
@@ -601,7 +603,7 @@ async function buildOpinionNotification(
             return {
                 type: "new_opinion",
                 slugId: notificationSlugId,
-                createdAt: result[0].createdAt,
+                createdAt: result[0].createdAt.toISOString(),
                 isRead: result[0].isRead,
                 message: useCommonPost().createCompactHtmlBody(
                     result[0].opinionContent,

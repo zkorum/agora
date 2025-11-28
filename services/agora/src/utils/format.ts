@@ -3,10 +3,10 @@ import { useDateFormat } from "@vueuse/core";
 /**
  * Formats a date using a standard format across the application
  * Uses @vueuse/core's useDateFormat for consistent formatting
- * @param date - The date to format
+ * @param date - The date to format (Date object or ISO string)
  * @returns Formatted date string in "MMM D, YYYY hh:mm A z" format (12-hour with timezone)
  */
-export function formatDateTime(date: Date): string {
+export function formatDateTime(date: Date | string): string {
   return useDateFormat(date, "MMM D, YYYY hh:mm A").value;
 }
 
@@ -26,9 +26,13 @@ export function formatFileSize(bytes: number): string {
 
 /**
  * Checks if a URL has expired based on the expiration date
- * @param expiresAt - The expiration date
+ * @param expiresAt - The expiration date (Date object or ISO string)
  * @returns True if the URL has expired, false otherwise
  */
-export function isUrlExpired(expiresAt: Date): boolean {
-  return expiresAt.getTime() < Date.now();
+export function isUrlExpired(expiresAt: Date | string): boolean {
+  const expirationTime =
+    typeof expiresAt === "string"
+      ? new Date(expiresAt).getTime()
+      : expiresAt.getTime();
+  return expirationTime < Date.now();
 }

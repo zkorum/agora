@@ -341,18 +341,16 @@ export async function getConversationExportStatus({
             errorMessage: conversationExportTable.errorMessage,
             cancellationReason: conversationExportTable.cancellationReason,
             createdAt: conversationExportTable.createdAt,
+            isDeleted: conversationExportTable.isDeleted,
+            deletedAt: conversationExportTable.deletedAt,
+            expiresAt: conversationExportTable.expiresAt,
         })
         .from(conversationExportTable)
         .innerJoin(
             conversationTable,
             eq(conversationExportTable.conversationId, conversationTable.id),
         )
-        .where(
-            and(
-                eq(conversationExportTable.slugId, exportSlugId),
-                eq(conversationExportTable.isDeleted, false),
-            ),
-        )
+        .where(eq(conversationExportTable.slugId, exportSlugId))
         .limit(1);
 
     if (exportRecordList.length !== 1) {
@@ -360,6 +358,25 @@ export async function getConversationExportStatus({
     }
 
     const exportRecord = exportRecordList[0];
+
+    // If export is deleted, return expired status with no files
+    if (exportRecord.isDeleted) {
+        if (!exportRecord.deletedAt) {
+            throw new Error(
+                `Export ${exportSlugId} is marked as deleted but has no deletedAt timestamp`,
+            );
+        }
+        return {
+            status: "expired" as const,
+            exportSlugId: exportRecord.exportSlugId,
+            conversationSlugId: exportRecord.conversationSlugId,
+            errorMessage: exportRecord.errorMessage ?? undefined,
+            cancellationReason: exportRecord.cancellationReason ?? undefined,
+            createdAt: exportRecord.createdAt.toISOString(),
+            expiresAt: exportRecord.expiresAt.toISOString(),
+            deletedAt: exportRecord.deletedAt.toISOString(),
+        };
+    }
 
     // Fetch all file records for this export
     const fileRecords = await db
@@ -405,21 +422,49 @@ export async function getConversationExportStatus({
                     fileSize: file.fileSize,
                     recordCount: file.recordCount,
                     downloadUrl: url,
-                    urlExpiresAt: expiresAt,
+                    urlExpiresAt: expiresAt.toISOString(),
                 };
             }),
         );
     }
 
-    return {
+    // Return response based on status
+    const baseResponse = {
         exportSlugId: exportRecord.exportSlugId,
-        status: exportRecord.status,
         conversationSlugId: exportRecord.conversationSlugId,
-        files: filesWithUrls,
-        errorMessage: exportRecord.errorMessage ?? undefined,
-        cancellationReason: exportRecord.cancellationReason ?? undefined,
-        createdAt: exportRecord.createdAt,
+        createdAt: exportRecord.createdAt.toISOString(),
+        expiresAt: exportRecord.expiresAt.toISOString(),
     };
+
+    switch (exportRecord.status) {
+        case "processing":
+            return {
+                ...baseResponse,
+                status: "processing" as const,
+            };
+        case "completed":
+            return {
+                ...baseResponse,
+                status: "completed" as const,
+                files: filesWithUrls ?? [],
+            };
+        case "failed":
+            return {
+                ...baseResponse,
+                status: "failed" as const,
+                errorMessage: exportRecord.errorMessage ?? undefined,
+            };
+        case "cancelled":
+            return {
+                ...baseResponse,
+                status: "cancelled" as const,
+                cancellationReason: exportRecord.cancellationReason ?? "",
+            };
+        default:
+            throw new Error(
+                `Unexpected export status: ${String(exportRecord.status)}`,
+            );
+    }
 }
 
 interface GetConversationExportHistoryParams {
