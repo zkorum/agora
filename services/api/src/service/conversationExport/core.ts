@@ -6,6 +6,7 @@ import {
     conversationExportTable,
     conversationExportFileTable,
     conversationTable,
+    conversationContentTable,
 } from "@/shared-backend/schema.js";
 import { uploadToS3, generatePresignedUrl, deleteFromS3 } from "../s3.js";
 import type {
@@ -122,6 +123,30 @@ export async function processConversationExport({
         const exportSlugId = exportRecordList[0].slugId;
         const exportCreatedAt = exportRecordList[0].createdAt;
 
+        // Fetch conversation title for filename generation
+        const conversationRecordList = await db
+            .select({
+                title: conversationContentTable.title,
+            })
+            .from(conversationTable)
+            .innerJoin(
+                conversationContentTable,
+                eq(
+                    conversationTable.currentContentId,
+                    conversationContentTable.id,
+                ),
+            )
+            .where(eq(conversationTable.id, conversationId))
+            .limit(1);
+
+        if (conversationRecordList.length === 0) {
+            throw new Error(
+                `Conversation ${String(conversationId)} not found or has no content`,
+            );
+        }
+
+        const conversationTitle = conversationRecordList[0].title;
+
         // Initialize generator factory
         const factory = new ExportGeneratorFactory();
         const generators = factory.getAllGenerators();
@@ -150,8 +175,9 @@ export async function processConversationExport({
                 // Generate filename for database/S3 storage (without timestamp)
                 const fileName = generateFileName(fileType);
 
-                // Generate download filename with conversation slug ID and timestamp for Content-Disposition
+                // Generate download filename with conversation title, slug ID and timestamp for Content-Disposition
                 const downloadFileName = generateDownloadFileName({
+                    conversationTitle,
                     conversationSlugId,
                     fileType,
                     createdAt: exportCreatedAt,

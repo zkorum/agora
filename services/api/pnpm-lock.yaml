@@ -53,6 +53,9 @@ importers:
       '@pcd/proto-pod-gpc-artifacts':
         specifier: ^0.13.0
         version: 0.13.0
+      '@sindresorhus/slugify':
+        specifier: ^3.0.0
+        version: 3.0.0
       '@ucans/ucans':
         specifier: ^0.12.0
         version: 0.12.0
@@ -1445,6 +1448,14 @@ packages:
 
   '@semaphore-protocol/utils@4.14.0':
     resolution: {integrity: sha512-hYF2njhzQrMLbVLnx/9ZH8Lnedga1jhB2pbIVZTP5EZ6Re4aha1ELElVXGCVKADlexzNgOBSvRKY7zPOgEHk6w==}
+
+  '@sindresorhus/slugify@3.0.0':
+    resolution: {integrity: sha512-SCrKh1zS96q+CuH5GumHcyQEVPsM4Ve8oE0E6tw7AAhGq50K8ojbTUOQnX/j9Mhcv/AXiIsbCfquovyGOo5fGw==}
+    engines: {node: '>=20'}
+
+  '@sindresorhus/transliterate@2.2.0':
+    resolution: {integrity: sha512-aLtANYAx3qvFilasPhZke27+Cm7WawGGuGiOd2EAp0lg1NdWKfulslcql/Qi7lNQ9odkPjwRbwk9c4CYsTh+Rg==}
+    engines: {node: '>=20'}
 
   '@smithy/abort-controller@4.0.2':
     resolution: {integrity: sha512-Sl/78VDtgqKxN2+1qduaVE140XF+Xg+TafkncspwM4jFP/LHr76ZHmIY/y3V1M0mMLNk+Je6IGbzxy23RSToMw==}
@@ -6432,6 +6443,13 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+
+  '@sindresorhus/slugify@3.0.0':
+    dependencies:
+      '@sindresorhus/transliterate': 2.2.0
+      escape-string-regexp: 5.0.0
+
+  '@sindresorhus/transliterate@2.2.0': {}
 
   '@smithy/abort-controller@4.0.2':
     dependencies:
