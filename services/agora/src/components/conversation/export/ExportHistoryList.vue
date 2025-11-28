@@ -74,6 +74,7 @@ const exportSettingsItems = computed<SettingsInterface[]>(() => {
 
     return {
       type: "action",
+      key: item.exportSlugId,
       label: formatDateTime(new Date(item.createdAt)),
       value: statusLabel,
       action: () => navigateToExport(item.exportSlugId),
