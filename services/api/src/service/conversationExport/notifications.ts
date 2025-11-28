@@ -7,7 +7,7 @@ import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import type { NotificationType } from "@/shared/types/zod.js";
 import type { NotificationSSEManager } from "../notificationSSE.js";
-import { getNotifications } from "../notification.js";
+import { broadcastExportNotification } from "../notification.js";
 
 interface CreateExportNotificationParams {
     db: PostgresJsDatabase;
@@ -61,47 +61,15 @@ export async function createExportNotification({
             `Created ${type} notification for user ${userId}, export ${String(exportId)}${message ? `: ${message}` : ""}`,
         );
 
-        // Broadcast notification via SSE
-        if (notificationSSEManager) {
-            try {
-                log.info(
-                    `[SSE] Attempting to broadcast ${type} notification to user ${userId}`,
-                );
-                const notifications = await getNotifications({
-                    db,
-                    userId,
-                    lastSlugId: undefined,
-                });
-                const notification = notifications.notificationList.find(
-                    (n) => n.slugId === notificationSlugId,
-                );
-                if (notification) {
-                    log.info(
-                        `[SSE] Found notification ${notificationSlugId}, broadcasting to user ${userId}`,
-                    );
-                    notificationSSEManager.broadcastToUser(
-                        userId,
-                        notification,
-                    );
-                    log.info(
-                        `[SSE] Successfully broadcasted ${type} notification to user ${userId}`,
-                    );
-                } else {
-                    log.warn(
-                        `[SSE] Notification ${notificationSlugId} not found in getNotifications result for user ${userId}`,
-                    );
-                }
-            } catch (broadcastError: unknown) {
-                log.error(
-                    broadcastError,
-                    `[SSE] Failed to broadcast ${type} notification to user ${userId}`,
-                );
-            }
-        } else {
-            log.warn(
-                `[SSE] notificationSSEManager not provided, skipping broadcast for ${type} notification to user ${userId}`,
-            );
-        }
+        // Broadcast notification via SSE (don't await to avoid blocking)
+        void broadcastExportNotification(
+            notificationSSEManager,
+            db,
+            userId,
+            notificationSlugId,
+            exportId,
+            conversationId,
+        );
     } catch (error: unknown) {
         // Don't fail the export if notification creation fails
         log.error(

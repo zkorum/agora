@@ -27,7 +27,6 @@ export function useNotificationSSE() {
 
   async function connect() {
     if (isConnecting.value || isConnected.value) {
-      console.log("[SSE] Already connected or connecting");
       return;
     }
 
@@ -63,7 +62,6 @@ export function useNotificationSSE() {
       eventSource.addEventListener("connected", (event) => {
         try {
           const data: SSEConnectedData = JSON.parse(event.data);
-          console.log("[SSE] Connection confirmed:", data);
           lastHeartbeat.value = data.timestamp;
         } catch (error) {
           console.error("[SSE] Error processing connected event:", error);
@@ -101,7 +99,6 @@ export function useNotificationSSE() {
         try {
           const data: SSEHeartbeatData = JSON.parse(event.data);
           lastHeartbeat.value = data.timestamp;
-          console.debug("[SSE] Heartbeat received:", data.timestamp);
         } catch (error) {
           console.error("[SSE] Error processing heartbeat event:", error);
         }
@@ -112,9 +109,17 @@ export function useNotificationSSE() {
         try {
           const data: SSEShutdownData = JSON.parse(event.data);
           console.warn("[SSE] Server shutdown:", data.message);
-          // Don't auto-reconnect on graceful shutdown
-          shouldReconnect = false;
-          disconnect();
+          // Close connection but allow auto-reconnect (backend should always be available)
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+          isConnected.value = false;
+          isConnecting.value = false;
+          // Trigger reconnection
+          if (shouldReconnect) {
+            scheduleReconnect();
+          }
         } catch (error) {
           console.error("[SSE] Error processing shutdown event:", error);
         }
@@ -152,8 +157,8 @@ export function useNotificationSSE() {
       clearTimeout(reconnectTimeout);
     }
 
-    // Try reconnecting after 5 seconds
-    const delay = 5000;
+    // Try reconnecting after 10 seconds
+    const delay = 10000;
     console.log(`[SSE] Scheduling reconnect in ${delay}ms`);
 
     reconnectTimeout = setTimeout(() => {

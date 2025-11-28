@@ -379,6 +379,114 @@ export async function getNotifications({
 }
 
 /**
+ * Helper function to build an export notification from database data
+ * Fetches only the necessary data for a single notification
+ */
+async function buildExportNotification(
+    db: PostgresJsDatabase,
+    notificationSlugId: string,
+    exportId: number,
+    conversationId: number,
+): Promise<NotificationItem | null> {
+    try {
+        const result = await db
+            .select({
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
+                notificationType: notificationTable.notificationType,
+                conversationSlugId: conversationTable.slugId,
+                conversationTitle: conversationContentTable.title,
+                exportSlugId: conversationExportTable.slugId,
+                errorMessage: conversationExportTable.errorMessage,
+                cancellationReason: conversationExportTable.cancellationReason,
+            })
+            .from(notificationTable)
+            .leftJoin(
+                conversationExportTable,
+                eq(conversationExportTable.id, exportId),
+            )
+            .leftJoin(
+                conversationTable,
+                eq(conversationTable.id, conversationId),
+            )
+            .leftJoin(
+                conversationContentTable,
+                eq(
+                    conversationContentTable.id,
+                    conversationTable.currentContentId,
+                ),
+            )
+            .where(eq(notificationTable.slugId, notificationSlugId))
+            .limit(1);
+
+        if (
+            result.length === 1 &&
+            result[0].conversationSlugId &&
+            result[0].conversationTitle &&
+            result[0].exportSlugId &&
+            (result[0].notificationType === "export_completed" ||
+                result[0].notificationType === "export_failed" ||
+                result[0].notificationType === "export_cancelled")
+        ) {
+            // Construct notification based on type
+            if (result[0].notificationType === "export_completed") {
+                return {
+                    type: "export_completed",
+                    slugId: notificationSlugId,
+                    createdAt: result[0].createdAt,
+                    isRead: result[0].isRead,
+                    message: result[0].conversationTitle,
+                    routeTarget: {
+                        type: "export",
+                        conversationSlugId: result[0].conversationSlugId,
+                        exportSlugId: result[0].exportSlugId,
+                    },
+                };
+            } else if (result[0].notificationType === "export_failed") {
+                return {
+                    type: "export_failed",
+                    slugId: notificationSlugId,
+                    createdAt: result[0].createdAt,
+                    isRead: result[0].isRead,
+                    message: result[0].errorMessage || "Export failed",
+                    routeTarget: {
+                        type: "export",
+                        conversationSlugId: result[0].conversationSlugId,
+                        exportSlugId: result[0].exportSlugId,
+                    },
+                    ...(result[0].errorMessage && {
+                        errorMessage: result[0].errorMessage,
+                    }),
+                };
+            } else if (result[0].notificationType === "export_cancelled") {
+                return {
+                    type: "export_cancelled",
+                    slugId: notificationSlugId,
+                    createdAt: result[0].createdAt,
+                    isRead: result[0].isRead,
+                    message:
+                        result[0].cancellationReason || "Export was cancelled",
+                    routeTarget: {
+                        type: "export",
+                        conversationSlugId: result[0].conversationSlugId,
+                        exportSlugId: result[0].exportSlugId,
+                    },
+                    cancellationReason:
+                        result[0].cancellationReason || "Export was cancelled",
+                };
+            }
+        }
+        return null;
+    } catch (error) {
+        log.error(
+            error,
+            `Failed to build export notification ${notificationSlugId}`,
+        );
+        return null;
+    }
+}
+
+/**
  * Helper function to build an opinion vote notification from database data
  * Fetches only the necessary data for a single notification
  */
@@ -590,6 +698,41 @@ async function broadcastOpinionNotification(
         log.error(
             error,
             `Failed to broadcast opinion notification ${notificationSlugId} to user ${userId}`,
+        );
+    }
+}
+
+/**
+ * Broadcast an export notification to a user via SSE
+ * Builds notification directly from data instead of refetching
+ */
+export async function broadcastExportNotification(
+    notificationSSEManager: NotificationSSEManager | undefined,
+    db: PostgresJsDatabase,
+    userId: string,
+    notificationSlugId: string,
+    exportId: number,
+    conversationId: number,
+): Promise<void> {
+    if (!notificationSSEManager) {
+        return;
+    }
+
+    try {
+        const notification = await buildExportNotification(
+            db,
+            notificationSlugId,
+            exportId,
+            conversationId,
+        );
+
+        if (notification) {
+            notificationSSEManager.broadcastToUser(userId, notification);
+        }
+    } catch (error) {
+        log.error(
+            error,
+            `Failed to broadcast export notification ${notificationSlugId} to user ${userId}`,
         );
     }
 }
