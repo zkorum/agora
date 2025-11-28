@@ -308,7 +308,6 @@ export async function processConversationExport({
                     exportId: failedExportId,
                     conversationId,
                     type: "export_failed",
-                    message: error instanceof Error ? error.message : undefined,
                     notificationSSEManager,
                 });
             }

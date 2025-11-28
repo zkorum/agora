@@ -96,7 +96,7 @@ import type {
 } from "src/shared/types/zod";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useNotificationStore } from "src/stores/notification";
-import { useBackendNotificationApi } from "src/utils/api/notification";
+import { useNotificationApi } from "src/utils/api/notification";
 import { onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { HomeMenuBar } from "src/components/navigation/header/variants";
@@ -114,7 +114,7 @@ const { notificationList, numNewNotifications } =
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 const { loadNotificationData, markAllAsReadLocally } = notificationStore;
 
-const { markAllNotificationsAsRead } = useBackendNotificationApi();
+const { markAllNotificationsAsRead } = useNotificationApi();
 
 const hasMore = ref(true);
 const isLoading = ref(true);

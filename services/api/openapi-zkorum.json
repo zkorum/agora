@@ -6357,6 +6357,16 @@
         },
         "/api/v1/notification/stream": {
             "get": {
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "string"
+                        },
+                        "in": "query",
+                        "name": "auth",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Default Response"

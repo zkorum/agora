@@ -308,7 +308,7 @@ export async function getNotifications({
                         slugId: notificationItem.slugId,
                         createdAt: notificationItem.createdAt,
                         isRead: notificationItem.isRead,
-                        message: notificationItem.conversationTitle,
+                        message: `"${notificationItem.conversationTitle}"`,
                         routeTarget: {
                             type: "export",
                             conversationSlugId:
@@ -325,8 +325,9 @@ export async function getNotifications({
                         slugId: notificationItem.slugId,
                         createdAt: notificationItem.createdAt,
                         isRead: notificationItem.isRead,
-                        message:
-                            notificationItem.errorMessage || "Export failed",
+                        message: notificationItem.errorMessage
+                            ? `${notificationItem.errorMessage}`
+                            : `"${notificationItem.conversationTitle}"`,
                         routeTarget: {
                             type: "export",
                             conversationSlugId:
@@ -346,9 +347,9 @@ export async function getNotifications({
                         slugId: notificationItem.slugId,
                         createdAt: notificationItem.createdAt,
                         isRead: notificationItem.isRead,
-                        message:
-                            notificationItem.cancellationReason ||
-                            "Export was cancelled",
+                        message: notificationItem.cancellationReason
+                            ? `${notificationItem.cancellationReason}`
+                            : `"${notificationItem.conversationTitle}"`,
                         routeTarget: {
                             type: "export",
                             conversationSlugId:
@@ -436,7 +437,7 @@ async function buildExportNotification(
                     slugId: notificationSlugId,
                     createdAt: result[0].createdAt,
                     isRead: result[0].isRead,
-                    message: result[0].conversationTitle,
+                    message: `"${result[0].conversationTitle}"`,
                     routeTarget: {
                         type: "export",
                         conversationSlugId: result[0].conversationSlugId,
@@ -449,7 +450,9 @@ async function buildExportNotification(
                     slugId: notificationSlugId,
                     createdAt: result[0].createdAt,
                     isRead: result[0].isRead,
-                    message: result[0].errorMessage || "Export failed",
+                    message: result[0].errorMessage
+                        ? `${result[0].errorMessage}`
+                        : `"${result[0].conversationTitle}"`,
                     routeTarget: {
                         type: "export",
                         conversationSlugId: result[0].conversationSlugId,
@@ -465,8 +468,9 @@ async function buildExportNotification(
                     slugId: notificationSlugId,
                     createdAt: result[0].createdAt,
                     isRead: result[0].isRead,
-                    message:
-                        result[0].cancellationReason || "Export was cancelled",
+                    message: result[0].cancellationReason
+                        ? `${result[0].cancellationReason}`
+                        : `"${result[0].conversationTitle}"`,
                     routeTarget: {
                         type: "export",
                         conversationSlugId: result[0].conversationSlugId,

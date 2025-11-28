@@ -417,7 +417,6 @@ export function createExportBuffer({
                                 exportId: exportRecord.id,
                                 conversationId: exportRequest.conversationId,
                                 type: "export_cancelled",
-                                cancellationReason: `Export cancelled: cooldown period has not elapsed (${String(cooldownSeconds)}s)`,
                                 notificationSSEManager,
                             });
 
