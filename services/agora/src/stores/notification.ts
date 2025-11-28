@@ -8,8 +8,6 @@ export const useNotificationStore = defineStore("notification", () => {
 
   const notificationList = ref<NotificationItem[]>([]);
   const numNewNotifications = ref(0);
-  const isSSEConnected = ref(false);
-  const lastSSEHeartbeat = ref<number | null>(null);
 
   async function loadNotificationData(loadMore: boolean): Promise<boolean> {
     let lastSlugId: string | undefined = undefined;
@@ -76,13 +74,6 @@ export const useNotificationStore = defineStore("notification", () => {
     );
   }
 
-  function updateSSEConnectionStatus(connected: boolean, heartbeat?: number) {
-    isSSEConnected.value = connected;
-    if (heartbeat !== undefined) {
-      lastSSEHeartbeat.value = heartbeat;
-    }
-  }
-
   function markAllAsReadLocally() {
     // Update all notifications in the list to mark them as read
     notificationList.value = notificationList.value.map((notification) => ({
@@ -103,11 +94,8 @@ export const useNotificationStore = defineStore("notification", () => {
     clearNotificationData,
     addNewNotification,
     hasNotification,
-    updateSSEConnectionStatus,
     markAllAsReadLocally,
     numNewNotifications,
     notificationList,
-    isSSEConnected,
-    lastSSEHeartbeat,
   };
 });
