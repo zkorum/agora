@@ -378,68 +378,234 @@ export async function getNotifications({
     };
 }
 
+/**
+ * Helper function to build an opinion vote notification from database data
+ * Fetches only the necessary data for a single notification
+ */
+async function buildVoteNotification(
+    db: PostgresJsDatabase,
+    notificationSlugId: string,
+    opinionId: number,
+    conversationId: number,
+    numVotes: number,
+): Promise<NotificationItem | null> {
+    try {
+        const result = await db
+            .select({
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
+                conversationSlugId: conversationTable.slugId,
+                opinionSlugId: opinionTable.slugId,
+                opinionContent: opinionContentTable.content,
+            })
+            .from(notificationTable)
+            .leftJoin(opinionTable, eq(opinionTable.id, opinionId))
+            .leftJoin(
+                opinionContentTable,
+                eq(opinionContentTable.opinionId, opinionId),
+            )
+            .leftJoin(
+                conversationTable,
+                eq(conversationTable.id, conversationId),
+            )
+            .where(eq(notificationTable.slugId, notificationSlugId))
+            .limit(1);
+
+        if (
+            result.length === 1 &&
+            result[0].conversationSlugId &&
+            result[0].opinionSlugId &&
+            result[0].opinionContent
+        ) {
+            return {
+                type: "opinion_vote",
+                slugId: notificationSlugId,
+                createdAt: result[0].createdAt,
+                isRead: result[0].isRead,
+                message: useCommonPost().createCompactHtmlBody(
+                    result[0].opinionContent,
+                ),
+                routeTarget: {
+                    type: "opinion",
+                    conversationSlugId: result[0].conversationSlugId,
+                    opinionSlugId: result[0].opinionSlugId,
+                },
+                numVotes: numVotes,
+            };
+        }
+        return null;
+    } catch (error) {
+        log.error(
+            error,
+            `Failed to build vote notification ${notificationSlugId}`,
+        );
+        return null;
+    }
+}
+
+/**
+ * Helper function to build a new opinion notification from database data
+ * Fetches only the necessary data for a single notification
+ */
+async function buildOpinionNotification(
+    db: PostgresJsDatabase,
+    notificationSlugId: string,
+    opinionId: number,
+    conversationId: number,
+    opinionAuthorId: string,
+): Promise<NotificationItem | null> {
+    try {
+        const result = await db
+            .select({
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
+                conversationSlugId: conversationTable.slugId,
+                opinionSlugId: opinionTable.slugId,
+                opinionContent: opinionContentTable.content,
+                username: userTable.username,
+            })
+            .from(notificationTable)
+            .leftJoin(opinionTable, eq(opinionTable.id, opinionId))
+            .leftJoin(
+                opinionContentTable,
+                eq(opinionContentTable.opinionId, opinionId),
+            )
+            .leftJoin(
+                conversationTable,
+                eq(conversationTable.id, conversationId),
+            )
+            .leftJoin(userTable, eq(userTable.id, opinionAuthorId))
+            .where(eq(notificationTable.slugId, notificationSlugId))
+            .limit(1);
+
+        if (
+            result.length === 1 &&
+            result[0].conversationSlugId &&
+            result[0].opinionSlugId &&
+            result[0].opinionContent &&
+            result[0].username
+        ) {
+            return {
+                type: "new_opinion",
+                slugId: notificationSlugId,
+                createdAt: result[0].createdAt,
+                isRead: result[0].isRead,
+                message: useCommonPost().createCompactHtmlBody(
+                    result[0].opinionContent,
+                ),
+                username: result[0].username,
+                routeTarget: {
+                    type: "opinion",
+                    conversationSlugId: result[0].conversationSlugId,
+                    opinionSlugId: result[0].opinionSlugId,
+                },
+            };
+        }
+        return null;
+    } catch (error) {
+        log.error(
+            error,
+            `Failed to build opinion notification ${notificationSlugId}`,
+        );
+        return null;
+    }
+}
+
 interface InsertNewVoteNotificationProps {
     db: PostgresJsDatabase;
     userId: string;
     opinionId: number;
     conversationId: number;
     numVotes: number;
+    notificationSSEManager?: NotificationSSEManager;
 }
 
 /**
- * Broadcast a notification to a user via SSE
- * Fetches the notification data and sends it to connected clients
+ * Broadcast a vote notification to a user via SSE
+ * Builds notification directly from data instead of refetching
  */
-async function broadcastNotificationToUser(
+async function broadcastVoteNotification(
     notificationSSEManager: NotificationSSEManager | undefined,
     db: PostgresJsDatabase,
     userId: string,
     notificationSlugId: string,
+    opinionId: number,
+    conversationId: number,
+    numVotes: number,
 ): Promise<void> {
-    // Skip broadcast if SSE manager is not available
     if (!notificationSSEManager) {
         return;
     }
 
     try {
-        // Fetch the complete notification data to broadcast
-        const notifications = await getNotifications({
+        const notification = await buildVoteNotification(
             db,
-            userId,
-            lastSlugId: undefined,
-        });
-
-        // Find the specific notification we just created
-        const notification = notifications.notificationList.find(
-            (n) => n.slugId === notificationSlugId,
+            notificationSlugId,
+            opinionId,
+            conversationId,
+            numVotes,
         );
 
         if (notification) {
-            // Broadcast to the user
             notificationSSEManager.broadcastToUser(userId, notification);
         }
     } catch (error) {
-        // Don't fail the operation if broadcast fails
         log.error(
             error,
-            `Failed to broadcast notification ${notificationSlugId} to user ${userId}`,
+            `Failed to broadcast vote notification ${notificationSlugId} to user ${userId}`,
         );
     }
 }
 
-interface InsertNewVoteNotificationPropsExtended
-    extends InsertNewVoteNotificationProps {
-    notificationSSEManager?: NotificationSSEManager;
+/**
+ * Broadcast an opinion notification to a user via SSE
+ * Builds notification directly from data instead of refetching
+ */
+async function broadcastOpinionNotification(
+    notificationSSEManager: NotificationSSEManager | undefined,
+    db: PostgresJsDatabase,
+    userId: string,
+    notificationSlugId: string,
+    opinionId: number,
+    conversationId: number,
+    opinionAuthorId: string,
+): Promise<void> {
+    if (!notificationSSEManager) {
+        return;
+    }
+
+    try {
+        const notification = await buildOpinionNotification(
+            db,
+            notificationSlugId,
+            opinionId,
+            conversationId,
+            opinionAuthorId,
+        );
+
+        if (notification) {
+            notificationSSEManager.broadcastToUser(userId, notification);
+        }
+    } catch (error) {
+        log.error(
+            error,
+            `Failed to broadcast opinion notification ${notificationSlugId} to user ${userId}`,
+        );
+    }
 }
 
-export async function insertNewVoteNotification({
+/**
+ * Create a vote notification and broadcast it via SSE
+ * Renamed from insertNewVoteNotification for better clarity
+ */
+export async function createVoteNotification({
     db,
     userId,
     opinionId,
     conversationId,
     numVotes,
     notificationSSEManager,
-}: InsertNewVoteNotificationPropsExtended) {
+}: InsertNewVoteNotificationProps) {
     const notificationSlugId = generateRandomSlugId();
     const notificationTableResponse = await db
         .insert(notificationTable)
@@ -462,15 +628,18 @@ export async function insertNewVoteNotification({
     });
 
     // Broadcast notification via SSE (don't await to avoid blocking)
-    void broadcastNotificationToUser(
+    void broadcastVoteNotification(
         notificationSSEManager,
         db,
         userId,
         notificationSlugId,
+        opinionId,
+        conversationId,
+        numVotes,
     );
 }
 
-interface InsertNewOpinionNotificationProps {
+interface CreateOpinionNotificationProps {
     db: PostgresJsDatabase;
     conversationAuthorId: string;
     opinionAuthorId: string;
@@ -480,18 +649,18 @@ interface InsertNewOpinionNotificationProps {
 }
 
 /**
- * Create a notification for a new opinion on a conversation.
- * Returns the notification slug ID if a notification was created, undefined otherwise.
- * No notification is created if the opinion author is the same as the conversation author.
+ * Create a notification for a new opinion on a conversation and broadcast it via SSE
+ * Returns the notification slug ID if a notification was created, undefined otherwise
+ * No notification is created if the opinion author is the same as the conversation author
  */
-export async function insertNewOpinionNotification({
+export async function createOpinionNotification({
     db,
     conversationAuthorId,
     opinionAuthorId,
     opinionId,
     conversationId,
     notificationSSEManager,
-}: InsertNewOpinionNotificationProps): Promise<string | undefined> {
+}: CreateOpinionNotificationProps): Promise<string | undefined> {
     // Don't create notification if user is commenting on their own conversation
     if (opinionAuthorId === conversationAuthorId) {
         return undefined;
@@ -519,11 +688,14 @@ export async function insertNewOpinionNotification({
     });
 
     // Broadcast notification via SSE (don't await to avoid blocking)
-    void broadcastNotificationToUser(
+    void broadcastOpinionNotification(
         notificationSSEManager,
         db,
         conversationAuthorId,
         notificationSlugId,
+        opinionId,
+        conversationId,
+        opinionAuthorId,
     );
 
     return notificationSlugId;
