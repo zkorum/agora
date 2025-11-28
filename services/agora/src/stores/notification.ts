@@ -83,6 +83,15 @@ export const useNotificationStore = defineStore("notification", () => {
     }
   }
 
+  function markAllAsReadLocally() {
+    // Update all notifications in the list to mark them as read
+    notificationList.value.forEach((notification) => {
+      notification.isRead = true;
+    });
+    // Reset the new notification counter
+    numNewNotifications.value = 0;
+  }
+
   function clearNotificationData() {
     notificationList.value = [];
     numNewNotifications.value = 0;
@@ -94,6 +103,7 @@ export const useNotificationStore = defineStore("notification", () => {
     addNewNotification,
     hasNotification,
     updateSSEConnectionStatus,
+    markAllAsReadLocally,
     numNewNotifications,
     notificationList,
     isSSEConnected,
