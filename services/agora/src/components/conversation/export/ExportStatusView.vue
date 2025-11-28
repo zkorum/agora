@@ -38,7 +38,8 @@
           v-if="
             exportStatusQuery.data.value.status === 'processing' ||
             exportStatusQuery.data.value.status === 'failed' ||
-            exportStatusQuery.data.value.status === 'cancelled'
+            exportStatusQuery.data.value.status === 'cancelled' ||
+            exportStatusQuery.data.value.status === 'expired'
           "
           class="status-message"
         >
@@ -97,6 +98,41 @@
               >
                 {{ exportStatusQuery.data.value.cancellationReason }}
               </p>
+            </div>
+          </div>
+          <div
+            v-else-if="exportStatusQuery.data.value.status === 'expired'"
+            class="expired-message"
+            role="alert"
+            aria-live="assertive"
+          >
+            <q-icon name="schedule" color="grey" size="md" aria-hidden="true" />
+            <div>
+              <p>{{ t("expiredMessage") }}</p>
+              <p class="expired-details">
+                {{ t("expiredDeletedOn") }}:
+                {{ formatDateTime(exportStatusQuery.data.value.deletedAt) }}
+              </p>
+              <p
+                v-if="exportStatusQuery.data.value.errorMessage"
+                class="error-details"
+              >
+                {{ t("originalError") }}:
+                {{ exportStatusQuery.data.value.errorMessage }}
+              </p>
+              <p
+                v-if="exportStatusQuery.data.value.cancellationReason"
+                class="cancellation-details"
+              >
+                {{ t("originalCancellation") }}:
+                {{ exportStatusQuery.data.value.cancellationReason }}
+              </p>
+              <PrimeButton
+                :label="t('requestNewExport')"
+                icon="pi pi-refresh"
+                class="mt-4"
+                @click="handleRequestNewExport"
+              />
             </div>
           </div>
         </div>
@@ -260,6 +296,18 @@ function handleDeleteExport(): void {
 function handleDownload(downloadUrl: string): void {
   window.open(downloadUrl, "_blank", "noopener,noreferrer");
 }
+
+function handleRequestNewExport(): void {
+  const exportData = exportStatusQuery.data.value;
+  if (!exportData) return;
+
+  void router.push({
+    name: "/conversation/[conversationSlugId]/export",
+    params: {
+      conversationSlugId: exportData.conversationSlugId,
+    },
+  });
+}
 </script>
 
 <style scoped lang="scss">
@@ -334,7 +382,8 @@ function handleDownload(downloadUrl: string): void {
   .processing-message,
   .completed-message,
   .failed-message,
-  .cancelled-message {
+  .cancelled-message,
+  .expired-message {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -357,6 +406,12 @@ function handleDownload(downloadUrl: string): void {
       margin-top: 0.5rem;
       font-size: 0.95rem;
       color: $warning;
+    }
+
+    .expired-details {
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
+      color: $color-text-weak;
     }
   }
 }

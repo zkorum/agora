@@ -39,10 +39,7 @@ export function useNotificationApi() {
       const notificationItemList: NotificationItem[] = [];
 
       for (const item of response.data.notificationList) {
-        const parsedItem = zodNotificationItem.safeParse({
-          ...item,
-          createdAt: new Date(item.createdAt),
-        });
+        const parsedItem = zodNotificationItem.safeParse(item);
 
         if (parsedItem.success) {
           notificationItemList.push(parsedItem.data);

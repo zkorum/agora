@@ -6,6 +6,11 @@ export interface ExportStatusViewTranslations {
   processingMessage: string;
   failedMessage: string;
   cancelledMessage: string;
+  expiredMessage: string;
+  expiredDeletedOn: string;
+  originalError: string;
+  originalCancellation: string;
+  requestNewExport: string;
   download: string;
   downloadExpired: string;
   exportInfo: string;
@@ -15,6 +20,7 @@ export interface ExportStatusViewTranslations {
   status_completed: string;
   status_failed: string;
   status_cancelled: string;
+  status_expired: string;
   conversationId: string;
   createdAt: string;
   totalFiles: string;
@@ -46,6 +52,11 @@ export const exportStatusViewTranslations: Record<
       "The export failed. Please return to the export history page and request a new export.",
     cancelledMessage:
       "This export was cancelled. Please return to the export history page to request a new export.",
+    expiredMessage: "This export has expired and been automatically deleted.",
+    expiredDeletedOn: "Deleted on",
+    originalError: "Original error",
+    originalCancellation: "Cancellation reason",
+    requestNewExport: "Request New Export",
     download: "Download",
     downloadExpired: "Download Expired",
     exportInfo: "Export Information",
@@ -55,6 +66,7 @@ export const exportStatusViewTranslations: Record<
     status_completed: "Completed",
     status_failed: "Failed",
     status_cancelled: "Cancelled",
+    status_expired: "Expired",
     conversationId: "Conversation ID",
     createdAt: "Created At",
     totalFiles: "Total Files",
@@ -82,6 +94,11 @@ export const exportStatusViewTranslations: Record<
       "فشل التصدير. يرجى العودة إلى صفحة سجل التصدير وطلب تصدير جديد.",
     cancelledMessage:
       "تم إلغاء هذا التصدير. يرجى العودة إلى صفحة سجل التصدير لطلب تصدير جديد.",
+    expiredMessage: "انتهت صلاحية هذا التصدير وتم حذفه تلقائيًا.",
+    expiredDeletedOn: "تم الحذف في",
+    originalError: "الخطأ الأصلي",
+    originalCancellation: "سبب الإلغاء",
+    requestNewExport: "طلب تصدير جديد",
     download: "تنزيل",
     downloadExpired: "انتهت صلاحية التنزيل",
     exportInfo: "معلومات التصدير",
@@ -91,6 +108,7 @@ export const exportStatusViewTranslations: Record<
     status_completed: "مكتمل",
     status_failed: "فشل",
     status_cancelled: "ملغى",
+    status_expired: "منتهي الصلاحية",
     conversationId: "معرف المحادثة",
     createdAt: "تم الإنشاء في",
     totalFiles: "إجمالي الملفات",
@@ -118,6 +136,12 @@ export const exportStatusViewTranslations: Record<
       "La exportación falló. Por favor, vuelva a la página de historial de exportaciones y solicite una nueva exportación.",
     cancelledMessage:
       "Esta exportación fue cancelada. Por favor, vuelva a la página de historial de exportaciones para solicitar una nueva exportación.",
+    expiredMessage:
+      "Esta exportación ha expirado y se eliminó automáticamente.",
+    expiredDeletedOn: "Eliminada el",
+    originalError: "Error original",
+    originalCancellation: "Motivo de cancelación",
+    requestNewExport: "Solicitar Nueva Exportación",
     download: "Descargar",
     downloadExpired: "Descarga Expirada",
     exportInfo: "Información de Exportación",
@@ -127,6 +151,7 @@ export const exportStatusViewTranslations: Record<
     status_completed: "Completado",
     status_failed: "Fallido",
     status_cancelled: "Cancelado",
+    status_expired: "Expirado",
     conversationId: "ID de Conversación",
     createdAt: "Creado el",
     totalFiles: "Archivos Totales",
@@ -154,6 +179,12 @@ export const exportStatusViewTranslations: Record<
       "L'exportation a échoué. Veuillez retourner à la page d'historique des exportations et demander une nouvelle exportation.",
     cancelledMessage:
       "Cette exportation a été annulée. Veuillez retourner à la page d'historique des exportations pour demander une nouvelle exportation.",
+    expiredMessage:
+      "Cette exportation a expiré et a été automatiquement supprimée.",
+    expiredDeletedOn: "Supprimée le",
+    originalError: "Erreur d'origine",
+    originalCancellation: "Raison de l'annulation",
+    requestNewExport: "Demander une Nouvelle Exportation",
     download: "Télécharger",
     downloadExpired: "Téléchargement Expiré",
     exportInfo: "Informations sur l'Exportation",
@@ -163,6 +194,7 @@ export const exportStatusViewTranslations: Record<
     status_completed: "Terminé",
     status_failed: "Échoué",
     status_cancelled: "Annulé",
+    status_expired: "Expiré",
     conversationId: "ID de la Conversation",
     createdAt: "Créé le",
     totalFiles: "Fichiers Totaux",
@@ -187,6 +219,11 @@ export const exportStatusViewTranslations: Record<
     processingMessage: "您的导出正在处理中。此页面将自动更新。",
     failedMessage: "导出失败。请返回导出历史页面并请求新的导出。",
     cancelledMessage: "此导出已被取消。请返回导出历史页面以请求新的导出。",
+    expiredMessage: "此导出已过期并被自动删除。",
+    expiredDeletedOn: "删除于",
+    originalError: "原始错误",
+    originalCancellation: "取消原因",
+    requestNewExport: "请求新导出",
     download: "下载",
     downloadExpired: "下载已过期",
     exportInfo: "导出信息",
@@ -196,6 +233,7 @@ export const exportStatusViewTranslations: Record<
     status_completed: "已完成",
     status_failed: "失败",
     status_cancelled: "已取消",
+    status_expired: "已过期",
     conversationId: "对话ID",
     createdAt: "创建于",
     totalFiles: "文件总数",
@@ -219,6 +257,11 @@ export const exportStatusViewTranslations: Record<
     processingMessage: "您的匯出正在處理中。此頁面將自動更新。",
     failedMessage: "匯出失敗。請返回匯出歷史頁面並請求新的匯出。",
     cancelledMessage: "此匯出已被取消。請返回匯出歷史頁面以請求新的匯出。",
+    expiredMessage: "此匯出已過期並被自動刪除。",
+    expiredDeletedOn: "刪除於",
+    originalError: "原始錯誤",
+    originalCancellation: "取消原因",
+    requestNewExport: "請求新匯出",
     download: "下載",
     downloadExpired: "下載已過期",
     exportInfo: "匯出資訊",
@@ -228,6 +271,7 @@ export const exportStatusViewTranslations: Record<
     status_completed: "已完成",
     status_failed: "失敗",
     status_cancelled: "已取消",
+    status_expired: "已過期",
     conversationId: "對話ID",
     createdAt: "建立於",
     totalFiles: "檔案總數",
@@ -254,6 +298,12 @@ export const exportStatusViewTranslations: Record<
       "エクスポートが失敗しました。エクスポート履歴ページに戻り、新しいエクスポートをリクエストしてください。",
     cancelledMessage:
       "このエクスポートはキャンセルされました。エクスポート履歴ページに戻り、新しいエクスポートをリクエストしてください。",
+    expiredMessage:
+      "このエクスポートは期限切れとなり、自動的に削除されました。",
+    expiredDeletedOn: "削除日",
+    originalError: "元のエラー",
+    originalCancellation: "キャンセル理由",
+    requestNewExport: "新しいエクスポートをリクエスト",
     download: "ダウンロード",
     downloadExpired: "ダウンロード期限切れ",
     exportInfo: "エクスポート情報",
@@ -263,6 +313,7 @@ export const exportStatusViewTranslations: Record<
     status_completed: "完了",
     status_failed: "失敗",
     status_cancelled: "キャンセル",
+    status_expired: "期限切れ",
     conversationId: "会話ID",
     createdAt: "作成日",
     totalFiles: "ファイル総数",

@@ -17,6 +17,11 @@ import {
     ZodSupportedDisplayLanguageCodes,
 } from "../languages.js";
 
+export const zodDateTimeFlexible = z.union([
+    z.string().datetime(),
+    z.date().transform((date) => date.toISOString()),
+]);
+
 export const zodEventSlug = z.enum(["devconnect-2025"]);
 
 export const zodUserReportReason = z.enum([
@@ -43,6 +48,7 @@ export const zodExportStatus = z.enum([
     "completed",
     "failed",
     "cancelled",
+    "expired",
 ]);
 export const zodExportFileType = z.enum([
     "comments",
@@ -58,7 +64,7 @@ export const zodExportFileInfo = z
         fileSize: z.number().int().positive(),
         recordCount: z.number().int().nonnegative(),
         downloadUrl: z.string().url(),
-        urlExpiresAt: z.date(),
+        urlExpiresAt: zodDateTimeFlexible,
     })
     .strict();
 export const zodPhoneNumber = z
@@ -259,7 +265,7 @@ const zodNotificationBase = z.object({
     slugId: zodSlugId,
     isRead: z.boolean(),
     message: z.string(),
-    createdAt: z.date(),
+    createdAt: zodDateTimeFlexible,
 });
 
 // Opinion notification schemas

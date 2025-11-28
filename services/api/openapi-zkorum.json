@@ -6122,8 +6122,16 @@
                                                                 "type": "string"
                                                             },
                                                             "createdAt": {
-                                                                "type": "string",
-                                                                "format": "date-time"
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    }
+                                                                ]
                                                             },
                                                             "type": {
                                                                 "type": "string",
@@ -6186,8 +6194,16 @@
                                                                 "type": "string"
                                                             },
                                                             "createdAt": {
-                                                                "type": "string",
-                                                                "format": "date-time"
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    }
+                                                                ]
                                                             },
                                                             "type": {
                                                                 "type": "string",
@@ -6249,8 +6265,16 @@
                                                                 "type": "string"
                                                             },
                                                             "createdAt": {
-                                                                "type": "string",
-                                                                "format": "date-time"
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    }
+                                                                ]
                                                             },
                                                             "type": {
                                                                 "type": "string",
@@ -6308,8 +6332,16 @@
                                                                 "type": "string"
                                                             },
                                                             "createdAt": {
-                                                                "type": "string",
-                                                                "format": "date-time"
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    }
+                                                                ]
                                                             },
                                                             "type": {
                                                                 "type": "string",
@@ -6370,8 +6402,16 @@
                                                                 "type": "string"
                                                             },
                                                             "createdAt": {
-                                                                "type": "string",
-                                                                "format": "date-time"
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    }
+                                                                ]
                                                             },
                                                             "type": {
                                                                 "type": "string",
@@ -6773,8 +6813,16 @@
                                                     ]
                                                 },
                                                 "cooldownEndsAt": {
-                                                    "type": "string",
-                                                    "format": "date-time"
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    ]
                                                 }
                                             },
                                             "required": [
@@ -6810,90 +6858,345 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "exportSlugId": {
-                                            "type": "string",
-                                            "maxLength": 10
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "processing"
+                                                    ]
+                                                },
+                                                "exportSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "conversationSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "createdAt": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    ]
+                                                },
+                                                "expiresAt": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "exportSlugId",
+                                                "conversationSlugId",
+                                                "createdAt",
+                                                "expiresAt"
+                                            ],
+                                            "additionalProperties": false
                                         },
-                                        "status": {
-                                            "type": "string",
-                                            "enum": [
-                                                "processing",
-                                                "completed",
-                                                "failed",
-                                                "cancelled"
-                                            ]
-                                        },
-                                        "conversationSlugId": {
-                                            "type": "string",
-                                            "maxLength": 10
-                                        },
-                                        "files": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "fileType": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "comments",
-                                                            "votes",
-                                                            "participants",
-                                                            "summary",
-                                                            "stats"
-                                                        ]
-                                                    },
-                                                    "fileName": {
-                                                        "type": "string"
-                                                    },
-                                                    "fileSize": {
-                                                        "type": "integer",
-                                                        "exclusiveMinimum": true,
-                                                        "minimum": 0
-                                                    },
-                                                    "recordCount": {
-                                                        "type": "integer",
-                                                        "minimum": 0
-                                                    },
-                                                    "downloadUrl": {
-                                                        "type": "string",
-                                                        "format": "uri"
-                                                    },
-                                                    "urlExpiresAt": {
-                                                        "type": "string",
-                                                        "format": "date-time"
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "completed"
+                                                    ]
+                                                },
+                                                "exportSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "conversationSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "files": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "fileType": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "comments",
+                                                                    "votes",
+                                                                    "participants",
+                                                                    "summary",
+                                                                    "stats"
+                                                                ]
+                                                            },
+                                                            "fileName": {
+                                                                "type": "string"
+                                                            },
+                                                            "fileSize": {
+                                                                "type": "integer",
+                                                                "exclusiveMinimum": true,
+                                                                "minimum": 0
+                                                            },
+                                                            "recordCount": {
+                                                                "type": "integer",
+                                                                "minimum": 0
+                                                            },
+                                                            "downloadUrl": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            },
+                                                            "urlExpiresAt": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "fileType",
+                                                            "fileName",
+                                                            "fileSize",
+                                                            "recordCount",
+                                                            "downloadUrl",
+                                                            "urlExpiresAt"
+                                                        ],
+                                                        "additionalProperties": false
                                                     }
                                                 },
-                                                "required": [
-                                                    "fileType",
-                                                    "fileName",
-                                                    "fileSize",
-                                                    "recordCount",
-                                                    "downloadUrl",
-                                                    "urlExpiresAt"
-                                                ],
-                                                "additionalProperties": false
-                                            }
+                                                "createdAt": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    ]
+                                                },
+                                                "expiresAt": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "exportSlugId",
+                                                "conversationSlugId",
+                                                "files",
+                                                "createdAt",
+                                                "expiresAt"
+                                            ],
+                                            "additionalProperties": false
                                         },
-                                        "errorMessage": {
-                                            "type": "string"
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "failed"
+                                                    ]
+                                                },
+                                                "exportSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "conversationSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "errorMessage": {
+                                                    "type": "string"
+                                                },
+                                                "createdAt": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    ]
+                                                },
+                                                "expiresAt": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "exportSlugId",
+                                                "conversationSlugId",
+                                                "createdAt",
+                                                "expiresAt"
+                                            ],
+                                            "additionalProperties": false
                                         },
-                                        "cancellationReason": {
-                                            "type": "string"
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "cancelled"
+                                                    ]
+                                                },
+                                                "exportSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "conversationSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "cancellationReason": {
+                                                    "type": "string"
+                                                },
+                                                "createdAt": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    ]
+                                                },
+                                                "expiresAt": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "exportSlugId",
+                                                "conversationSlugId",
+                                                "cancellationReason",
+                                                "createdAt",
+                                                "expiresAt"
+                                            ],
+                                            "additionalProperties": false
                                         },
-                                        "createdAt": {
-                                            "type": "string",
-                                            "format": "date-time"
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "expired"
+                                                    ]
+                                                },
+                                                "exportSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "conversationSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "errorMessage": {
+                                                    "type": "string"
+                                                },
+                                                "cancellationReason": {
+                                                    "type": "string"
+                                                },
+                                                "createdAt": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    ]
+                                                },
+                                                "expiresAt": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    ]
+                                                },
+                                                "deletedAt": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "exportSlugId",
+                                                "conversationSlugId",
+                                                "createdAt",
+                                                "expiresAt",
+                                                "deletedAt"
+                                            ],
+                                            "additionalProperties": false
                                         }
-                                    },
-                                    "required": [
-                                        "exportSlugId",
-                                        "status",
-                                        "conversationSlugId",
-                                        "createdAt"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                 }
                             }
                         }
@@ -6934,12 +7237,21 @@
                                                     "processing",
                                                     "completed",
                                                     "failed",
-                                                    "cancelled"
+                                                    "cancelled",
+                                                    "expired"
                                                 ]
                                             },
                                             "createdAt": {
-                                                "type": "string",
-                                                "format": "date-time"
+                                                "anyOf": [
+                                                    {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                ]
                                             }
                                         },
                                         "required": [

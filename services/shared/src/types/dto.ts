@@ -41,6 +41,7 @@ import {
     zodEventSlug,
     zodExportStatus,
     zodExportFileInfo,
+    zodDateTimeFlexible,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
@@ -668,7 +669,7 @@ export class Dto {
         z
             .object({
                 status: z.literal("cooldown_active"),
-                cooldownEndsAt: z.string().datetime(),
+                cooldownEndsAt: zodDateTimeFlexible,
             })
             .strict(),
     ]);
@@ -677,28 +678,77 @@ export class Dto {
             exportSlugId: zodSlugId,
         })
         .strict();
-    static getConversationExportStatusResponse = z
-        .object({
-            exportSlugId: zodSlugId,
-            status: zodExportStatus,
-            conversationSlugId: zodSlugId,
-            files: z.array(zodExportFileInfo).optional(),
-            errorMessage: z.string().optional(),
-            cancellationReason: z.string().optional(),
-            createdAt: z.date(),
-        })
-        .strict();
+    static getConversationExportStatusResponse = z.discriminatedUnion(
+        "status",
+        [
+            // Processing - no files yet
+            z
+                .object({
+                    status: z.literal("processing"),
+                    exportSlugId: zodSlugId,
+                    conversationSlugId: zodSlugId,
+                    createdAt: zodDateTimeFlexible,
+                    expiresAt: zodDateTimeFlexible,
+                })
+                .strict(),
+            // Completed - always has files
+            z
+                .object({
+                    status: z.literal("completed"),
+                    exportSlugId: zodSlugId,
+                    conversationSlugId: zodSlugId,
+                    files: z.array(zodExportFileInfo),
+                    createdAt: zodDateTimeFlexible,
+                    expiresAt: zodDateTimeFlexible,
+                })
+                .strict(),
+            // Failed - has error message, no files
+            z
+                .object({
+                    status: z.literal("failed"),
+                    exportSlugId: zodSlugId,
+                    conversationSlugId: zodSlugId,
+                    errorMessage: z.string().optional(),
+                    createdAt: zodDateTimeFlexible,
+                    expiresAt: zodDateTimeFlexible,
+                })
+                .strict(),
+            // Cancelled - has cancellation reason, no files
+            z
+                .object({
+                    status: z.literal("cancelled"),
+                    exportSlugId: zodSlugId,
+                    conversationSlugId: zodSlugId,
+                    cancellationReason: z.string(),
+                    createdAt: zodDateTimeFlexible,
+                    expiresAt: zodDateTimeFlexible,
+                })
+                .strict(),
+            // Expired - has deletedAt, no files, may have error/cancellation from original status
+            z
+                .object({
+                    status: z.literal("expired"),
+                    exportSlugId: zodSlugId,
+                    conversationSlugId: zodSlugId,
+                    errorMessage: z.string().optional(),
+                    cancellationReason: z.string().optional(),
+                    createdAt: zodDateTimeFlexible,
+                    expiresAt: zodDateTimeFlexible,
+                    deletedAt: zodDateTimeFlexible,
+                })
+                .strict(),
+        ],
+    );
     static getConversationExportHistoryRequest = z
         .object({
             conversationSlugId: zodSlugId,
         })
         .strict();
-    // Export history item schema (dates as ISO strings from API)
     static conversationExportHistoryItem = z
         .object({
             exportSlugId: zodSlugId,
             status: zodExportStatus,
-            createdAt: z.string().datetime(),
+            createdAt: zodDateTimeFlexible,
         })
         .strict();
     static getConversationExportHistoryResponse = z.array(

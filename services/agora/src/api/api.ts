@@ -1184,17 +1184,18 @@ export interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseI
     'status': ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum;
     /**
      * 
-     * @type {string}
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
      * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
      */
-    'createdAt': string;
+    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
 }
 
 export const ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum = {
     Processing: 'processing',
     Completed: 'completed',
     Failed: 'failed',
-    Cancelled: 'cancelled'
+    Cancelled: 'cancelled',
+    Expired: 'expired'
 } as const;
 
 export type ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum = typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum[keyof typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum];
@@ -1219,10 +1220,10 @@ export interface ApiV1ConversationExportRequestPost200Response {
     'exportSlugId': string;
     /**
      * 
-     * @type {string}
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
      * @memberof ApiV1ConversationExportRequestPost200Response
      */
-    'cooldownEndsAt': string;
+    'cooldownEndsAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
 }
 
 export const ApiV1ConversationExportRequestPost200ResponseStatusEnum = {
@@ -1271,10 +1272,10 @@ export interface ApiV1ConversationExportRequestPost200ResponseAnyOf1 {
     'status': ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum;
     /**
      * 
-     * @type {string}
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
      * @memberof ApiV1ConversationExportRequestPost200ResponseAnyOf1
      */
-    'cooldownEndsAt': string;
+    'cooldownEndsAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
 }
 
 export const ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum = {
@@ -1294,13 +1295,13 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200Response {
      * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
-    'exportSlugId': string;
+    'status': ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum;
     /**
      * 
      * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
-    'status': ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum;
+    'exportSlugId': string;
     /**
      * 
      * @type {string}
@@ -1309,10 +1310,22 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200Response {
     'conversationSlugId': string;
     /**
      * 
-     * @type {Array<ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner>}
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
-    'files'?: Array<ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner>;
+    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
+     */
+    'expiresAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    /**
+     * 
+     * @type {Array<ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner>}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
+     */
+    'files': Array<ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner>;
     /**
      * 
      * @type {string}
@@ -1324,20 +1337,17 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200Response {
      * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
-    'cancellationReason'?: string;
+    'cancellationReason': string;
     /**
      * 
-     * @type {string}
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
-    'createdAt': string;
+    'deletedAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
 }
 
 export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum = {
-    Processing: 'processing',
-    Completed: 'completed',
-    Failed: 'failed',
-    Cancelled: 'cancelled'
+    Expired: 'expired'
 } as const;
 
 export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum];
@@ -1345,48 +1355,142 @@ export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum = 
 /**
  * 
  * @export
- * @interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner
+ * @interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf
  */
-export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner {
+export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf
      */
-    'fileType': ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInnerFileTypeEnum;
+    'status': ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOfStatusEnum;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf
+     */
+    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf
+     */
+    'expiresAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+}
+
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOfStatusEnum = {
+    Processing: 'processing'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOfStatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOfStatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOfStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
+ */
+export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
+     */
+    'status': ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1StatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {Array<ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner>}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
+     */
+    'files': Array<ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner>;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
+     */
+    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
+     */
+    'expiresAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+}
+
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1StatusEnum = {
+    Completed: 'completed'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1StatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1StatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1StatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner
+ */
+export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner
+     */
+    'fileType': ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInnerFileTypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner
      */
     'fileName': string;
     /**
      * 
      * @type {number}
-     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner
      */
     'fileSize': number;
     /**
      * 
      * @type {number}
-     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner
      */
     'recordCount': number;
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner
      */
     'downloadUrl': string;
     /**
      * 
-     * @type {string}
-     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInner
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner
      */
-    'urlExpiresAt': string;
+    'urlExpiresAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
 }
 
-export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInnerFileTypeEnum = {
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInnerFileTypeEnum = {
     Comments: 'comments',
     Votes: 'votes',
     Participants: 'participants',
@@ -1394,7 +1498,169 @@ export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInnerFi
     Stats: 'stats'
 } as const;
 
-export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInnerFileTypeEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInnerFileTypeEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFilesInnerFileTypeEnum];
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInnerFileTypeEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInnerFileTypeEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInnerFileTypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
+ */
+export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
+     */
+    'status': ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2StatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
+     */
+    'errorMessage'?: string;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
+     */
+    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
+     */
+    'expiresAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+}
+
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2StatusEnum = {
+    Failed: 'failed'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2StatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2StatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2StatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
+ */
+export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
+     */
+    'status': ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3StatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
+     */
+    'cancellationReason': string;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
+     */
+    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
+     */
+    'expiresAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+}
+
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3StatusEnum = {
+    Cancelled: 'cancelled'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3StatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3StatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3StatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+ */
+export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'status': ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4StatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'errorMessage'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'cancellationReason'?: string;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'expiresAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'deletedAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+}
+
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4StatusEnum = {
+    Expired: 'expired'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4StatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4StatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4StatusEnum];
 
 /**
  * 
@@ -2256,10 +2522,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
     'message': string;
     /**
      * 
-     * @type {string}
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
-    'createdAt': string;
+    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
     /**
      * 
      * @type {string}
@@ -2334,10 +2600,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
     'message': string;
     /**
      * 
-     * @type {string}
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      */
-    'createdAt': string;
+    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
     /**
      * 
      * @type {string}
@@ -2390,10 +2656,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
     'message': string;
     /**
      * 
-     * @type {string}
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
      */
-    'createdAt': string;
+    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
     /**
      * 
      * @type {string}
@@ -2446,10 +2712,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
     'message': string;
     /**
      * 
-     * @type {string}
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
      */
-    'createdAt': string;
+    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
     /**
      * 
      * @type {string}
@@ -2528,10 +2794,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
     'message': string;
     /**
      * 
-     * @type {string}
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
      */
-    'createdAt': string;
+    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
     /**
      * 
      * @type {string}
@@ -2584,10 +2850,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
     'message': string;
     /**
      * 
-     * @type {string}
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
      */
-    'createdAt': string;
+    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
     /**
      * 
      * @type {string}
@@ -2614,6 +2880,13 @@ export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4Typ
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum];
 
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt {
+}
 /**
  * 
  * @export
