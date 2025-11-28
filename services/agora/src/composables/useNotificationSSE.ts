@@ -34,21 +34,23 @@ export function useNotificationSSE() {
       isConnecting.value = true;
       console.log("[SSE] Connecting to notification stream...");
 
-      // Build authenticated URL with UCAN token
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1NotificationStreamGet();
-
-      const encodedUcan = await buildEncodedUcan(url, options);
+      // EventSource doesn't support custom headers, so we use URL-based auth
+      // Build UCAN token using a dummy URL structure first
+      const dummyUrl = "/api/v1/notification/stream";
+      const dummyOptions = { method: "GET" };
+      const encodedUcan = await buildEncodedUcan(dummyUrl, dummyOptions);
       const authHeader = buildAuthorizationHeader(encodedUcan);
 
-      // EventSource doesn't support custom headers, so pass auth token as query parameter
       // Extract the Bearer token value (remove "Bearer " prefix)
       const token = authHeader.Authorization.substring(7);
 
-      // Construct full URL with base URL (url is relative path like /api/v1/notification/stream)
+      // Get the properly formatted URL with the actual token
+      const { url } =
+        await DefaultApiAxiosParamCreator().apiV1NotificationStreamGet(token);
+
+      // Construct full URL with base
       const baseUrl = processEnv.VITE_API_BASE_URL || "";
-      const fullUrl = `${baseUrl}${url}`;
-      const authUrl = `${fullUrl}?auth=${encodeURIComponent(token)}`;
+      const authUrl = `${baseUrl}${url}`;
 
       eventSource = new EventSource(authUrl);
 
