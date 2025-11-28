@@ -1,5 +1,11 @@
 import type { FastifyReply } from "fastify";
 import type { NotificationItem } from "@/shared/types/zod.js";
+import type {
+    SSEConnectedData,
+    SSENotificationData,
+    SSEHeartbeatData,
+    SSEShutdownData,
+} from "@/shared/types/dto.js";
 import { log } from "@/app.js";
 
 /**
@@ -60,10 +66,14 @@ export class NotificationSSEManager {
         });
 
         // Send initial connection confirmation using plugin
+        const connectedData: SSEConnectedData = {
+            userId,
+            timestamp: Date.now(),
+        };
         void reply.sse
             .send({
                 event: "connected",
-                data: { userId, timestamp: Date.now() },
+                data: connectedData,
             })
             .catch((error: unknown) => {
                 log.error(
@@ -110,11 +120,15 @@ export class NotificationSSEManager {
 
         const deadConnections: FastifyReply[] = [];
 
+        const notificationData: SSENotificationData = {
+            notification: notification,
+        };
+
         for (const reply of userConnections) {
             reply.sse
                 .send({
                     event: "notification",
-                    data: notification,
+                    data: notificationData,
                 })
                 .catch((error: unknown) => {
                     log.error(
@@ -152,10 +166,13 @@ export class NotificationSSEManager {
             const deadConnections: FastifyReply[] = [];
 
             for (const reply of userConnections) {
+                const heartbeatData: SSEHeartbeatData = {
+                    timestamp: Date.now(),
+                };
                 reply.sse
                     .send({
                         event: "heartbeat",
-                        data: { timestamp: Date.now() },
+                        data: heartbeatData,
                     })
                     .catch(() => {
                         log.warn(
@@ -221,9 +238,12 @@ export class NotificationSSEManager {
 
         for (const reply of allConnections) {
             try {
+                const shutdownData: SSEShutdownData = {
+                    message: "Server is shutting down",
+                };
                 await reply.sse.send({
                     event: "shutdown",
-                    data: { message: "Server is shutting down" },
+                    data: shutdownData,
                 });
                 // Close the SSE stream using plugin's close method
                 reply.sse.close();

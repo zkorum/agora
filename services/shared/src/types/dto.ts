@@ -768,3 +768,6 @@ export type DeleteConversationExportRequest = z.infer<
 export type ConversationExportHistoryItem = z.infer<
     typeof Dto.conversationExportHistoryItem
 >;
+
+// Export SSE types
+export * from "./sse.js";

@@ -8,6 +8,8 @@ export const useNotificationStore = defineStore("notification", () => {
 
   const notificationList = ref<NotificationItem[]>([]);
   const numNewNotifications = ref(0);
+  const isSSEConnected = ref(false);
+  const lastSSEHeartbeat = ref<number | null>(null);
 
   async function loadNotificationData(loadMore: boolean): Promise<boolean> {
     let lastSlugId: string | undefined = undefined;
@@ -48,13 +50,36 @@ export const useNotificationStore = defineStore("notification", () => {
     numNewNotifications.value = newNotificationCount;
   }
 
+  function hasNotification(slugId: string): boolean {
+    return notificationList.value.some((n) => n.slugId === slugId);
+  }
+
   function addNewNotification(notification: NotificationItem) {
+    // Check for duplicates before adding
+    if (hasNotification(notification.slugId)) {
+      console.log(
+        `[Store] Duplicate notification ignored: ${notification.slugId}`
+      );
+      return;
+    }
+
     // Add notification to the beginning of the list (most recent first)
     notificationList.value.unshift(notification);
 
     // Update new notification count if it's unread
     if (!notification.isRead) {
       numNewNotifications.value += 1;
+    }
+
+    console.log(
+      `[Store] Added notification: ${notification.slugId} (${notification.type})`
+    );
+  }
+
+  function updateSSEConnectionStatus(connected: boolean, heartbeat?: number) {
+    isSSEConnected.value = connected;
+    if (heartbeat !== undefined) {
+      lastSSEHeartbeat.value = heartbeat;
     }
   }
 
@@ -67,7 +92,11 @@ export const useNotificationStore = defineStore("notification", () => {
     loadNotificationData,
     clearNotificationData,
     addNewNotification,
+    hasNotification,
+    updateSSEConnectionStatus,
     numNewNotifications,
     notificationList,
+    isSSEConnected,
+    lastSSEHeartbeat,
   };
 });

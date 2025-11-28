@@ -15,7 +15,7 @@ import {
     polisContentTable,
 } from "@/shared-backend/schema.js";
 import type { NotificationSSEManager } from "./notificationSSE.js";
-import { insertNewOpinionNotification } from "./notification.js";
+import { createOpinionNotification } from "./notification.js";
 import {
     updateOpinionCount,
     reconcileConversationCounters,
@@ -1187,7 +1187,7 @@ export async function postNewOpinion({
     // Create notification for conversation owner (outside transaction)
     // Skip for seed opinions
     if (!isSeed) {
-        await insertNewOpinionNotification({
+        await createOpinionNotification({
             db,
             conversationAuthorId,
             opinionAuthorId: userId,

@@ -2,18 +2,16 @@ import { ref, onUnmounted, watch } from "vue";
 import { useCommonApi } from "src/utils/api/common";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { DefaultApiAxiosParamCreator } from "src/api";
-import {
-  zodNotificationItem,
-  type NotificationItem,
-} from "src/shared/types/zod";
+import { zodNotificationItem } from "src/shared/types/zod";
+import type {
+  SSEConnectedData,
+  SSENotificationData,
+  SSEHeartbeatData,
+  SSEShutdownData,
+} from "src/shared/types/dto";
 import { useNotificationStore } from "src/stores/notification";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { processEnv } from "src/utils/processEnv";
-
-export interface NotificationSSEEvent {
-  type: "new_notification";
-  notification: NotificationItem;
-}
 
 export function useNotificationSSE() {
   const { buildEncodedUcan } = useCommonApi();
@@ -22,6 +20,7 @@ export function useNotificationSSE() {
 
   const isConnected = ref(false);
   const isConnecting = ref(false);
+  const lastHeartbeat = ref<number | null>(null);
   let eventSource: EventSource | null = null;
   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   let shouldReconnect = true;
@@ -60,33 +59,66 @@ export function useNotificationSSE() {
         isConnecting.value = false;
       };
 
-      eventSource.onmessage = (event) => {
+      // Handle 'connected' event
+      eventSource.addEventListener("connected", (event) => {
         try {
-          console.log("[SSE] Received message:", event.data);
-          const data = JSON.parse(event.data) as NotificationSSEEvent;
+          const data: SSEConnectedData = JSON.parse(event.data);
+          console.log("[SSE] Connection confirmed:", data);
+          lastHeartbeat.value = data.timestamp;
+        } catch (error) {
+          console.error("[SSE] Error processing connected event:", error);
+        }
+      });
 
-          if (data.type === "new_notification") {
-            // Parse and validate notification with zod
-            const parsedNotification = zodNotificationItem.safeParse({
-              ...data.notification,
-              createdAt: new Date(data.notification.createdAt),
-            });
+      // Handle 'notification' event - this is the main one for new notifications
+      eventSource.addEventListener("notification", (event) => {
+        try {
+          const data: SSENotificationData = JSON.parse(event.data);
+          console.log("[SSE] Received notification:", data.notification);
 
-            if (parsedNotification.success) {
-              console.log("[SSE] New notification:", parsedNotification.data);
-              // Add notification to store
-              notificationStore.addNewNotification(parsedNotification.data);
-            } else {
-              console.error(
-                "[SSE] Failed to parse notification:",
-                parsedNotification.error
-              );
-            }
+          // Parse and validate notification with zod
+          const parsedNotification = zodNotificationItem.safeParse({
+            ...data.notification,
+            createdAt: new Date(data.notification.createdAt),
+          });
+
+          if (parsedNotification.success) {
+            // Add notification to store
+            notificationStore.addNewNotification(parsedNotification.data);
+          } else {
+            console.error(
+              "[SSE] Failed to parse notification:",
+              parsedNotification.error
+            );
           }
         } catch (error) {
-          console.error("[SSE] Error processing message:", error);
+          console.error("[SSE] Error processing notification event:", error);
         }
-      };
+      });
+
+      // Handle 'heartbeat' event
+      eventSource.addEventListener("heartbeat", (event) => {
+        try {
+          const data: SSEHeartbeatData = JSON.parse(event.data);
+          lastHeartbeat.value = data.timestamp;
+          console.debug("[SSE] Heartbeat received:", data.timestamp);
+        } catch (error) {
+          console.error("[SSE] Error processing heartbeat event:", error);
+        }
+      });
+
+      // Handle 'shutdown' event
+      eventSource.addEventListener("shutdown", (event) => {
+        try {
+          const data: SSEShutdownData = JSON.parse(event.data);
+          console.warn("[SSE] Server shutdown:", data.message);
+          // Don't auto-reconnect on graceful shutdown
+          shouldReconnect = false;
+          disconnect();
+        } catch (error) {
+          console.error("[SSE] Error processing shutdown event:", error);
+        }
+      });
 
       eventSource.onerror = (error) => {
         console.error("[SSE] Connection error:", error);
@@ -181,5 +213,6 @@ export function useNotificationSSE() {
     disconnect,
     isConnected,
     isConnecting,
+    lastHeartbeat,
   };
 }
