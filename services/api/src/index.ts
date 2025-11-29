@@ -2529,6 +2529,8 @@ server.after(() => {
             querystring: Dto.notificationStreamQuerystring,
         },
         handler: async (request, reply) => {
+            // Authenticate BEFORE initializing SSE to allow proper HTTP error responses
+            let deviceStatus;
             try {
                 // Get auth token from query parameter (type-safe)
                 const { auth } = request.query;
@@ -2536,14 +2538,23 @@ server.after(() => {
                 // Manually inject the auth header for UCAN verification
                 request.headers.authorization = `Bearer ${auth}`;
 
-                const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                const result = await verifyUcanAndKnownDeviceStatus(
                     db,
                     request,
                     {
                         expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                     },
                 );
+                deviceStatus = result.deviceStatus;
+            } catch (error) {
+                log.error(error, "[SSE] Authentication failed");
+                // Send HTTP error response before any SSE operations
+                // Use string response instead of object for SSE-enabled routes
+                return reply.code(401).send("Authentication failed");
+            }
 
+            // Only proceed with SSE initialization after successful authentication
+            try {
                 // Keep connection alive (prevents automatic close after handler returns)
                 reply.sse.keepAlive();
 
@@ -2559,8 +2570,8 @@ server.after(() => {
                     });
                 });
             } catch (error) {
-                log.error(error, "[SSE] Authentication failed");
-                reply.code(401).send({ error: "Authentication failed" });
+                log.error(error, "[SSE] Error during SSE connection");
+                // At this point SSE is active, connection will be cleaned up by disconnect handler
             }
         },
     });
