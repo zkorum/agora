@@ -16,12 +16,17 @@ import { log } from "@/app.js";
 export class NotificationSSEManager {
     // Map of userId to Set of active reply streams
     private connections: Map<string, Set<FastifyReply>>;
+    private connectionTimestamps: Map<FastifyReply, number>;
     private heartbeatInterval: NodeJS.Timeout | null;
+    private cleanupInterval: NodeJS.Timeout | null;
     private isShuttingDown: boolean;
+    private readonly CONNECTION_TIMEOUT_MS = 3600000; // 1 hour
 
     constructor() {
         this.connections = new Map();
+        this.connectionTimestamps = new Map();
         this.heartbeatInterval = null;
+        this.cleanupInterval = null;
         this.isShuttingDown = false;
     }
 
@@ -33,6 +38,12 @@ export class NotificationSSEManager {
         this.heartbeatInterval = setInterval(() => {
             this.sendHeartbeat();
         }, 30000);
+
+        // Cleanup stale connections every 5 minutes
+        this.cleanupInterval = setInterval(() => {
+            this.cleanupStaleConnections();
+        }, 300000);
+
         log.info("[SSE] Notification SSE Manager initialized");
     }
 
@@ -55,6 +66,7 @@ export class NotificationSSEManager {
             return;
         }
         userConnections.add(reply);
+        this.connectionTimestamps.set(reply, Date.now());
 
         log.info(
             `[SSE] User ${userId} connected (total connections: ${String(userConnections.size)})`,
@@ -90,6 +102,7 @@ export class NotificationSSEManager {
         const userConnections = this.connections.get(userId);
         if (userConnections) {
             userConnections.delete(reply);
+            this.connectionTimestamps.delete(reply);
             log.info(
                 `[SSE] User ${userId} disconnected (remaining connections: ${String(userConnections.size)})`,
             );
@@ -142,6 +155,43 @@ export class NotificationSSEManager {
         // Clean up dead connections
         for (const deadReply of deadConnections) {
             this.disconnect(userId, deadReply);
+        }
+    }
+
+    /**
+     * Cleanup stale connections that exceed timeout
+     */
+    private cleanupStaleConnections(): void {
+        const now = Date.now();
+        const staleConnections: Array<{ userId: string; reply: FastifyReply }> =
+            [];
+
+        for (const [userId, userConnections] of this.connections.entries()) {
+            for (const reply of userConnections) {
+                const timestamp = this.connectionTimestamps.get(reply);
+                if (timestamp && now - timestamp > this.CONNECTION_TIMEOUT_MS) {
+                    staleConnections.push({ userId, reply });
+                }
+            }
+        }
+
+        for (const { userId, reply } of staleConnections) {
+            log.warn(`[SSE] Closing stale connection for user ${userId}`);
+            this.disconnect(userId, reply);
+            try {
+                reply.sse.close();
+            } catch (error: unknown) {
+                log.error(
+                    error,
+                    `[SSE] Error closing stale connection for user ${userId}`,
+                );
+            }
+        }
+
+        if (staleConnections.length > 0) {
+            log.info(
+                `[SSE] Cleaned up ${String(staleConnections.length)} stale connections`,
+            );
         }
     }
 
@@ -224,6 +274,12 @@ export class NotificationSSEManager {
         if (this.heartbeatInterval) {
             clearInterval(this.heartbeatInterval);
             this.heartbeatInterval = null;
+        }
+
+        // Stop cleanup interval
+        if (this.cleanupInterval) {
+            clearInterval(this.cleanupInterval);
+            this.cleanupInterval = null;
         }
 
         // Close all connections
