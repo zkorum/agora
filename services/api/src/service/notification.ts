@@ -13,7 +13,7 @@ import {
 import type { FetchNotificationsResponse } from "@/shared/types/dto.js";
 import type { NotificationItem } from "@/shared/types/zod.js";
 import { zodNotificationItem } from "@/shared/types/zod.js";
-import { and, desc, eq, lte } from "drizzle-orm";
+import { and, desc, eq, lt, lte } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
@@ -93,10 +93,12 @@ export async function getNotifications({
         lastSlugId: lastSlugId,
     });
 
-    const whereClause = and(
-        eq(notificationTable.userId, userId),
-        lte(notificationTable.createdAt, lastCreatedAt),
-    );
+    const whereClause = lastSlugId
+        ? and(
+              eq(notificationTable.userId, userId),
+              lt(notificationTable.createdAt, lastCreatedAt),
+          )
+        : eq(notificationTable.userId, userId);
 
     const orderByClause = desc(notificationTable.createdAt);
 
