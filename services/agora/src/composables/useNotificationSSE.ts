@@ -32,7 +32,6 @@ export function useNotificationSSE() {
 
     try {
       isConnecting.value = true;
-      console.log("[SSE] Connecting to notification stream...");
 
       // EventSource doesn't support custom headers, so we use URL-based auth
       // Build UCAN token using a dummy URL structure first
@@ -55,7 +54,6 @@ export function useNotificationSSE() {
       eventSource = new EventSource(authUrl);
 
       eventSource.onopen = () => {
-        console.log("[SSE] Connected to notification stream");
         isConnected.value = true;
         isConnecting.value = false;
       };
@@ -74,7 +72,6 @@ export function useNotificationSSE() {
       eventSource.addEventListener("notification", (event) => {
         try {
           const data: SSENotificationData = JSON.parse(event.data);
-          console.log("[SSE] Received notification:", data.notification);
 
           // Parse and validate notification with zod
           const parsedNotification = zodNotificationItem.safeParse({
@@ -161,11 +158,9 @@ export function useNotificationSSE() {
 
     // Try reconnecting after 10 seconds
     const delay = 10000;
-    console.log(`[SSE] Scheduling reconnect in ${delay}ms`);
 
     reconnectTimeout = setTimeout(() => {
       if (shouldReconnect) {
-        console.log("[SSE] Attempting reconnection...");
         void connect().catch((error) => {
           console.error("[SSE] Reconnection failed:", error);
         });
@@ -174,7 +169,6 @@ export function useNotificationSSE() {
   }
 
   function disconnect() {
-    console.log("[SSE] Disconnecting from notification stream");
     shouldReconnect = false;
 
     if (reconnectTimeout) {
@@ -197,13 +191,9 @@ export function useNotificationSSE() {
     async (isLoggedIn, wasLoggedIn) => {
       if (isLoggedIn && !wasLoggedIn) {
         // User just logged in, connect to SSE
-        console.log("[SSE] User logged in, connecting to notification stream");
         await connect();
       } else if (!isLoggedIn && wasLoggedIn) {
         // User just logged out, disconnect from SSE
-        console.log(
-          "[SSE] User logged out, disconnecting from notification stream"
-        );
         disconnect();
       }
     },
