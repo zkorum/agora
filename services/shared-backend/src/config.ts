@@ -28,6 +28,10 @@ export const sharedConfigSchema = z.object({
     // Path to Google Cloud service account JSON file (local development)
     GOOGLE_APPLICATION_CREDENTIALS: z.string().optional(),
     // Valkey (optional - for vote buffer persistence across instances)
-    VALKEY_URL: z.string().optional(),
+    // Empty strings are treated as undefined to prevent connection attempts
+    VALKEY_URL: z
+        .string()
+        .optional()
+        .transform((val) => (val === "" ? undefined : val)),
 });
 export type SharedConfigSchema = z.infer<typeof sharedConfigSchema>;
