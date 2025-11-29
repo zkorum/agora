@@ -68,15 +68,13 @@
               size="md"
               aria-hidden="true"
             />
-            <div>
-              <p>{{ t("failedMessage") }}</p>
-              <p
-                v-if="exportStatusQuery.data.value.errorMessage"
-                class="error-details"
-              >
-                {{ exportStatusQuery.data.value.errorMessage }}
-              </p>
-            </div>
+            <p>{{ t("failedMessage") }}</p>
+            <p
+              v-if="exportStatusQuery.data.value.errorMessage"
+              class="error-details"
+            >
+              {{ exportStatusQuery.data.value.errorMessage }}
+            </p>
           </div>
           <div
             v-else-if="exportStatusQuery.data.value.status === 'cancelled'"
@@ -90,15 +88,13 @@
               size="md"
               aria-hidden="true"
             />
-            <div>
-              <p>{{ t("cancelledMessage") }}</p>
-              <p
-                v-if="exportStatusQuery.data.value.cancellationReason"
-                class="cancellation-details"
-              >
-                {{ exportStatusQuery.data.value.cancellationReason }}
-              </p>
-            </div>
+            <p>{{ t("cancelledMessage") }}</p>
+            <p
+              v-if="exportStatusQuery.data.value.cancellationReason"
+              class="cancellation-details"
+            >
+              {{ exportStatusQuery.data.value.cancellationReason }}
+            </p>
           </div>
           <div
             v-else-if="exportStatusQuery.data.value.status === 'expired'"
@@ -107,38 +103,41 @@
             aria-live="assertive"
           >
             <q-icon name="schedule" color="grey" size="md" aria-hidden="true" />
-            <div>
-              <p>{{ t("expiredMessage") }}</p>
-              <p class="expired-details">
-                {{ t("expiredDeletedOn") }}:
-                {{ formatDateTime(exportStatusQuery.data.value.deletedAt) }}
-              </p>
-              <p
-                v-if="exportStatusQuery.data.value.errorMessage"
-                class="error-details"
-              >
-                {{ t("originalError") }}:
-                {{ exportStatusQuery.data.value.errorMessage }}
-              </p>
-              <p
-                v-if="exportStatusQuery.data.value.cancellationReason"
-                class="cancellation-details"
-              >
-                {{ t("originalCancellation") }}:
-                {{ exportStatusQuery.data.value.cancellationReason }}
-              </p>
-              <PrimeButton
-                :label="t('requestNewExport')"
-                icon="pi pi-refresh"
-                class="mt-4"
-                @click="handleRequestNewExport"
-              />
-            </div>
+            <p>{{ t("expiredMessage") }}</p>
+            <p class="expired-details">
+              {{ t("expiredDeletedOn") }}:
+              {{ formatDateTime(exportStatusQuery.data.value.deletedAt) }}
+            </p>
+            <p
+              v-if="exportStatusQuery.data.value.errorMessage"
+              class="error-details"
+            >
+              {{ t("originalError") }}:
+              {{ exportStatusQuery.data.value.errorMessage }}
+            </p>
+            <p
+              v-if="exportStatusQuery.data.value.cancellationReason"
+              class="cancellation-details"
+            >
+              {{ t("originalCancellation") }}:
+              {{ exportStatusQuery.data.value.cancellationReason }}
+            </p>
+            <PrimeButton
+              :label="t('requestNewExport')"
+              icon="pi pi-refresh"
+              class="request-new-export-button"
+              @click="handleRequestNewExport"
+            />
           </div>
         </div>
 
         <!-- Delete Button (Moderator Only) -->
-        <div v-if="isModerator" class="delete-section">
+        <div
+          v-if="
+            isModerator && exportStatusQuery.data.value.status !== 'expired'
+          "
+          class="delete-section"
+        >
           <PrimeButton
             :label="t('deleteExport')"
             icon="pi pi-trash"
@@ -366,12 +365,6 @@ function handleRequestNewExport(): void {
   word-break: break-word;
 }
 
-.status-header {
-  display: flex;
-  justify-content: center;
-  padding: 1rem 0;
-}
-
 .status-message {
   display: flex;
   justify-content: center;
@@ -379,8 +372,14 @@ function handleRequestNewExport(): void {
   border-radius: 8px;
   background-color: $app-background-color;
 
-  .processing-message,
-  .completed-message,
+  .processing-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+  }
+
   .failed-message,
   .cancelled-message,
   .expired-message {
@@ -388,31 +387,41 @@ function handleRequestNewExport(): void {
     flex-direction: column;
     align-items: center;
     gap: 1rem;
-    text-align: center;
+    text-align: left;
+    max-width: 600px;
 
-    p {
-      margin: 0;
-      font-size: 1.1rem;
-      color: $color-text-strong;
+    .q-icon {
+      flex-shrink: 0;
+      margin-top: 0.25rem;
     }
+  }
 
-    .error-details {
-      margin-top: 0.5rem;
-      font-size: 0.95rem;
-      color: $negative;
-    }
+  p {
+    margin: 0;
+    font-size: 1.1rem;
+    color: $color-text-strong;
+  }
 
-    .cancellation-details {
-      margin-top: 0.5rem;
-      font-size: 0.95rem;
-      color: $warning;
-    }
+  .error-details {
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+    color: $negative;
+  }
 
-    .expired-details {
-      margin-top: 0.5rem;
-      font-size: 0.95rem;
-      color: $color-text-weak;
-    }
+  .cancellation-details {
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+    color: $warning;
+  }
+
+  .expired-details {
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+    color: $color-text-weak;
+  }
+
+  .request-new-export-button {
+    margin-top: 1.5rem;
   }
 }
 
@@ -521,6 +530,11 @@ function handleRequestNewExport(): void {
   :deep(.p-button) {
     width: 100%;
     justify-content: center;
+
+    @media (min-width: 768px) {
+      width: auto;
+      min-width: 200px;
+    }
   }
 }
 </style>
