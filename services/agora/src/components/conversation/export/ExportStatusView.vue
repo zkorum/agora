@@ -124,7 +124,7 @@
             </p>
             <PrimeButton
               :label="t('requestNewExport')"
-              icon="pi pi-refresh"
+              icon="pi pi-download"
               class="request-new-export-button"
               @click="handleRequestNewExport"
             />
