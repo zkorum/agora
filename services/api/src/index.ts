@@ -24,6 +24,7 @@ import * as authUtilService from "@/service/authUtil.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
 import * as conversationExportService from "@/service/conversationExport/index.js";
+import { validateS3Access } from "./service/s3.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
 // import * as polisService from "@/service/polis.js";
@@ -300,6 +301,22 @@ server.setErrorHandler((error, _request, reply) => {
 // await node.waitForPeers([Protocols.LightPush]);
 
 const db = await createDb(config, log);
+
+// Validate S3 configuration if export feature is enabled
+if (config.CONVERSATION_EXPORT_ENABLED) {
+    if (!config.AWS_S3_BUCKET_NAME || !config.AWS_S3_REGION) {
+        log.error(
+            "[API] S3 configuration missing but export feature is enabled",
+        );
+        process.exit(1);
+    }
+    try {
+        await validateS3Access({ bucketName: config.AWS_S3_BUCKET_NAME });
+    } catch (error) {
+        log.error(error, "[API] Failed to validate S3 access");
+        process.exit(1);
+    }
+}
 
 // Initialize Google Cloud Translation credentials (optional)
 let googleCloudCredentials: GoogleCloudCredentials | undefined = undefined;

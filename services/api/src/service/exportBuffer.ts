@@ -45,6 +45,7 @@ interface CreateExportBufferParams {
     notificationSSEManager?: NotificationSSEManager;
     flushIntervalMs?: number;
     maxBatchSize?: number;
+    maxTotalBatchSize?: number;
     cooldownSeconds?: number;
     exportExpiryDays?: number;
 }
@@ -69,6 +70,7 @@ export function createExportBuffer({
     notificationSSEManager = undefined,
     flushIntervalMs = 1000,
     maxBatchSize = 100,
+    maxTotalBatchSize = 1000,
     cooldownSeconds = 300,
     exportExpiryDays = 30,
 }: CreateExportBufferParams): ExportBuffer {
@@ -283,6 +285,14 @@ export function createExportBuffer({
                     "[ExportBuffer] Failed to fetch exports from Valkey",
                 );
             }
+        }
+
+        // Cap total batch size to prevent system overload
+        if (batch.length > maxTotalBatchSize) {
+            log.warn(
+                `[ExportBuffer] Batch size (${String(batch.length)}) exceeds limit (${String(maxTotalBatchSize)}), truncating`,
+            );
+            batch = batch.slice(0, maxTotalBatchSize);
         }
 
         if (batch.length === 0) {
