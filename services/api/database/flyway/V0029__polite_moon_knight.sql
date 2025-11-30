@@ -1,6 +1,7 @@
 CREATE TYPE "public"."export_cancellation_reason_enum" AS ENUM('duplicate_in_batch', 'cooldown_active');--> statement-breakpoint
 CREATE TYPE "public"."export_file_type_enum" AS ENUM('comments', 'votes', 'participants', 'summary', 'stats');--> statement-breakpoint
 CREATE TYPE "public"."export_status_enum" AS ENUM('processing', 'completed', 'failed', 'cancelled');--> statement-breakpoint
+CREATE TYPE "public"."import_method" AS ENUM('url', 'csv');--> statement-breakpoint
 ALTER TYPE "public"."notification_type_enum" ADD VALUE 'export_completed';--> statement-breakpoint
 ALTER TYPE "public"."notification_type_enum" ADD VALUE 'export_failed';--> statement-breakpoint
 ALTER TYPE "public"."notification_type_enum" ADD VALUE 'export_cancelled';--> statement-breakpoint
@@ -41,6 +42,7 @@ CREATE TABLE "notification_export" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "conversation" ADD COLUMN "import_method" "import_method";--> statement-breakpoint
 ALTER TABLE "conversation_export_file" ADD CONSTRAINT "conversation_export_file_export_id_conversation_export_id_fk" FOREIGN KEY ("export_id") REFERENCES "public"."conversation_export"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversation_export" ADD CONSTRAINT "conversation_export_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversation_export" ADD CONSTRAINT "conversation_export_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

@@ -1,5 +1,5 @@
 {
-  "id": "24d3e2d1-b675-4733-a838-81663601ce58",
+  "id": "463e28f5-cbfd-404d-a689-0a991aeed5b5",
   "prevId": "ed596691-a409-4d8b-8ef4-ea7c1cd2cadc",
   "version": "7",
   "dialect": "postgresql",
@@ -1036,6 +1036,13 @@
         "import_author": {
           "name": "import_author",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "import_method": {
+          "name": "import_method",
+          "type": "import_method",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -5526,6 +5533,14 @@
         "completed",
         "failed",
         "cancelled"
+      ]
+    },
+    "public.import_method": {
+      "name": "import_method",
+      "schema": "public",
+      "values": [
+        "url",
+        "csv"
       ]
     },
     "public.moderation_reason_enum": {

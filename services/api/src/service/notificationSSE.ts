@@ -208,7 +208,7 @@ export class NotificationSSEManager {
             return;
         }
 
-        log.debug(
+        log.info(
             `[SSE] Sending heartbeat to ${String(totalConnections)} connections`,
         );
 
