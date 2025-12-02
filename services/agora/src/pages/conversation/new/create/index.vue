@@ -128,8 +128,8 @@ import { useRouter } from "vue-router";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
-import PolisUrlInput from "src/components/newConversation/PolisUrlInput.vue";
-import PolisCsvUpload from "src/components/newConversation/PolisCsvUpload.vue";
+import PolisUrlInput from "src/components/newConversation/import/url/PolisUrlInput.vue";
+import PolisCsvUpload from "src/components/newConversation/import/csv/PolisCsvUpload.vue";
 import {
   useNewPostDraftsStore,
   type ValidationErrorField,
@@ -148,8 +148,8 @@ import NewConversationControlBar from "src/components/newConversation/NewConvers
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
-import PollComponent from "src/components/newConversation/PollComponent.vue";
-import { useBackendPostApi } from "src/utils/api/post";
+import PollComponent from "src/components/newConversation/poll/PollComponent.vue";
+import { useBackendPostApi } from "src/utils/api/post/post";
 import {
   createConversationTranslations,
   type CreateConversationTranslations,

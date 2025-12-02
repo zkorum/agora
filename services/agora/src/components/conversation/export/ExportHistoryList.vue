@@ -10,7 +10,7 @@
       }"
     >
       <!-- Export List -->
-      <SettingsSection
+      <ListSection
         v-if="exports.length > 0"
         :settings-item-list="exportSettingsItems"
       />
@@ -27,7 +27,7 @@
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
-import SettingsSection from "src/components/settings/SettingsSection.vue";
+import ListSection from "src/components/ui-library/ListSection.vue";
 import type { UseQueryReturnType } from "@tanstack/vue-query";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {

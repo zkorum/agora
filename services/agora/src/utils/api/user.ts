@@ -12,7 +12,7 @@ import type {
   ExtendedConversation,
   moderationStatusOptionsType,
 } from "src/shared/types/zod";
-import { useBackendPostApi } from "./post";
+import { useBackendPostApi } from "./post/post";
 import { useNotify } from "../ui/notify";
 import type { GetUserProfileResponse } from "src/shared/types/dto";
 

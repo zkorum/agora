@@ -6,7 +6,7 @@
         :key="item.key ?? item.label ?? index"
         role="listitem"
       >
-        <SettingsItem
+        <ListItem
           :item="item"
           :show-separator="index < settingsItemList.length - 1"
           :border-radius="
@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { type SettingsInterface } from "src/utils/component/settings/settings";
-import SettingsItem from "./SettingsItem.vue";
+import ListItem from "./ListItem.vue";
 
 defineProps<{
   settingsItemList: SettingsInterface[];

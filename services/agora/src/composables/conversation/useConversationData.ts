@@ -3,7 +3,7 @@ import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useHomeFeedStore } from "src/stores/homeFeed";
-import { useBackendPostApi } from "src/utils/api/post";
+import { useBackendPostApi } from "src/utils/api/post/post";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 

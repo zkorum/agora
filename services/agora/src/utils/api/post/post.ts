@@ -1,5 +1,5 @@
-import { axiosInstance, api } from "./client";
-import { buildAuthorizationHeader } from "../crypto/ucan/operation";
+import { axiosInstance, api } from "../client";
+import { buildAuthorizationHeader } from "../../crypto/ucan/operation";
 import type {
   ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner,
   ApiV1ConversationCreatePost200Response,
@@ -14,9 +14,9 @@ import {
   DefaultApiFactory,
   type ApiV1ModerationConversationWithdrawPostRequest,
 } from "src/api";
-import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
-import { useCommonApi } from "./common";
-import { useNotify } from "../ui/notify";
+import type { AxiosErrorResponse, AxiosSuccessResponse } from "../common";
+import { useCommonApi } from "../common";
+import { useNotify } from "../../ui/notify";
 import { useRouter } from "vue-router";
 import type {
   ExtendedConversation,

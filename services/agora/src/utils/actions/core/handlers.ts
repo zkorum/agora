@@ -7,7 +7,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useUserStore } from "src/stores/user";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useNotify } from "src/utils/ui/notify";
-import { useBackendPostApi } from "src/utils/api/post";
+import { useBackendPostApi } from "src/utils/api/post/post";
 import type { ContentActionContext, ContentActionResult } from "./types";
 
 /**

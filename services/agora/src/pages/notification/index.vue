@@ -96,7 +96,7 @@ import type {
 } from "src/shared/types/zod";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useNotificationStore } from "src/stores/notification";
-import { useNotificationApi } from "src/utils/api/notification";
+import { useNotificationApi } from "src/utils/api/notification/notification";
 import { onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { HomeMenuBar } from "src/components/navigation/header/variants";

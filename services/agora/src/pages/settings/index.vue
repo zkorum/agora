@@ -14,25 +14,25 @@
 
     <div class="container">
       <div v-if="isGuestOrLoggedIn">
-        <SettingsSection :settings-item-list="accountSettings" />
+        <ListSection :settings-item-list="accountSettings" />
       </div>
 
-      <SettingsSection :settings-item-list="aboutSettings" />
+      <ListSection :settings-item-list="aboutSettings" />
 
       <div v-if="isGuestOrLoggedIn">
-        <SettingsSection :settings-item-list="deleteAccountSettings" />
+        <ListSection :settings-item-list="deleteAccountSettings" />
       </div>
 
       <div v-if="isLoggedIn">
-        <SettingsSection :settings-item-list="logoutSettings" />
+        <ListSection :settings-item-list="logoutSettings" />
       </div>
 
       <div v-if="isLoggedIn && profileData.isModerator">
-        <SettingsSection :settings-item-list="moderatorSettings" />
+        <ListSection :settings-item-list="moderatorSettings" />
       </div>
 
       <div v-if="isDevelopment">
-        <SettingsSection :settings-item-list="developmentSettings" />
+        <ListSection :settings-item-list="developmentSettings" />
       </div>
     </div>
   </DrawerLayout>
@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
-import SettingsSection from "src/components/settings/SettingsSection.vue";
+import ListSection from "src/components/ui-library/ListSection.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";

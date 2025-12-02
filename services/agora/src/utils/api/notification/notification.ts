@@ -1,9 +1,9 @@
-import { api } from "./client";
-import { buildAuthorizationHeader } from "../crypto/ucan/operation";
+import { api } from "../client";
+import { buildAuthorizationHeader } from "../../crypto/ucan/operation";
 import type { ApiV1NotificationFetchPostRequest } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
-import { useCommonApi } from "./common";
-import { useNotify } from "../ui/notify";
+import { useCommonApi } from "../common";
+import { useNotify } from "../../ui/notify";
 import {
   zodNotificationItem,
   type NotificationItem,

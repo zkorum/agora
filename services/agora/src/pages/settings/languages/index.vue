@@ -20,7 +20,7 @@
           {{ t("displayLanguageDescription") }}
         </p>
       </div>
-      <SettingsSection :settings-item-list="displayLanguageSettings" />
+      <ListSection :settings-item-list="displayLanguageSettings" />
 
       <!-- Additional languages section -->
       <div v-if="authStore.isLoggedIn" class="section-header">
@@ -29,7 +29,7 @@
           {{ t("additionalLanguagesDescription") }}
         </p>
       </div>
-      <SettingsSection
+      <ListSection
         v-if="authStore.isLoggedIn"
         :settings-item-list="additionalLanguageSettings"
       />
@@ -39,7 +39,7 @@
 
 <script setup lang="ts">
 import { StandardMenuBar } from "src/components/navigation/header/variants";
-import SettingsSection from "src/components/settings/SettingsSection.vue";
+import ListSection from "src/components/ui-library/ListSection.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { SettingsInterface } from "src/utils/component/settings/settings";
 import { useAuthenticationStore } from "src/stores/authentication";

@@ -116,11 +116,11 @@ import { useDropZone } from "@vueuse/core";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useBackendPostApi } from "src/utils/api/post";
+import { useBackendPostApi } from "src/utils/api/post/post";
 import type { ValidateCsvResponse } from "src/shared/types/dto";
-import ZKCard from "../ui-library/ZKCard.vue";
+import ZKCard from "src/components/ui-library/ZKCard.vue";
 import CsvFileStatusItem from "./CsvFileStatusItem.vue";
-import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import {
   polisCsvUploadTranslations,
   type PolisCsvUploadTranslations,

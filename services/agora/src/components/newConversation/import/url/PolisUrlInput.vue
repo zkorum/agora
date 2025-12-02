@@ -87,7 +87,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { computed } from "vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { storeToRefs } from "pinia";
-import ZKCard from "../ui-library/ZKCard.vue";
+import ZKCard from "src/components/ui-library/ZKCard.vue";
 import {
   polisUrlInputTranslations,
   type PolisUrlInputTranslations,

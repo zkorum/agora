@@ -4,7 +4,7 @@
     :to="item.to"
     class="settings-item settings-item--link"
   >
-    <SettingsMenuItem
+    <MenuItem
       :label="item.label"
       :value="item.value"
       :style="item.style"
@@ -18,7 +18,7 @@
     class="settings-item settings-item--button"
     @click="handleItemClick"
   >
-    <SettingsMenuItem
+    <MenuItem
       :label="item.label"
       :value="item.value"
       :style="item.style"
@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import type { SettingsInterface } from "src/utils/component/settings/settings";
-import SettingsMenuItem from "./SettingsMenuItem.vue";
+import MenuItem from "./MenuItem.vue";
 
 const props = defineProps<{
   item: SettingsInterface;

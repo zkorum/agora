@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import type { NotificationItem } from "src/shared/types/zod";
-import { useNotificationApi } from "src/utils/api/notification";
+import { useNotificationApi } from "src/utils/api/notification/notification";
 import { ref } from "vue";
 
 export const useNotificationStore = defineStore("notification", () => {
