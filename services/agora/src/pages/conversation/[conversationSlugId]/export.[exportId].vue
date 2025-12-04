@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useRouteParams } from "@vueuse/router";
+import { useRoute } from "vue-router";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
@@ -37,9 +37,9 @@ const { t } = useComponentI18n<ExportStatusPageTranslations>(
   exportStatusPageTranslations
 );
 
-const exportIdParam = useRouteParams("exportId");
+const route = useRoute("/conversation/[conversationSlugId]/export.[exportId]");
 const exportSlugId = computed(() => {
-  const value = exportIdParam.value;
+  const value = route.params.exportId;
   if (Array.isArray(value)) {
     return value[0] || "";
   }

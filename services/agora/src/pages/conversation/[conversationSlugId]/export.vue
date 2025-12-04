@@ -69,8 +69,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useRouteParams } from "@vueuse/router";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useNow } from "@vueuse/core";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
@@ -101,9 +100,9 @@ const { showNotifyMessage } = useNotify();
 const authStore = useAuthenticationStore();
 const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(authStore);
 
-const conversationSlugIdParam = useRouteParams("conversationSlugId");
+const route = useRoute("/conversation/[conversationSlugId]/export");
 const conversationSlugId = computed(() => {
-  const value = conversationSlugIdParam.value;
+  const value = route.params.conversationSlugId;
   if (Array.isArray(value)) {
     return value[0] || "";
   }

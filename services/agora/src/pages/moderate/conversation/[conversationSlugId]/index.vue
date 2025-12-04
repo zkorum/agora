@@ -98,7 +98,7 @@ const {
   cancelModerationPostReport,
 } = useBackendModerateApi();
 
-const route = useRoute();
+const route = useRoute("/moderate/conversation/[conversationSlugId]/");
 const router = useRouter();
 
 const { loadPostData, emptyPost } = useHomeFeedStore();

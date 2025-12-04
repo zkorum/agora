@@ -89,7 +89,9 @@ const {
 
 const { fetchOpinionsBySlugIdList } = useBackendCommentApi();
 
-const route = useRoute();
+const route = useRoute(
+  "/moderate/conversation/[conversationSlugId]/opinion/[opinionSlugId]/"
+);
 const router = useRouter();
 
 const { t } = useComponentI18n<OpinionModerationTranslations>(
