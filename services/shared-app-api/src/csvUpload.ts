@@ -1,5 +1,6 @@
 // File size limit: 10MB
 export const MAX_CSV_FILE_SIZE = 10 * 1024 * 1024;
+export const MAX_CSV_FILE_SIZE_MB = MAX_CSV_FILE_SIZE / (1024 * 1024); // 10
 
 /**
  * Type-safe field names for CSV file uploads

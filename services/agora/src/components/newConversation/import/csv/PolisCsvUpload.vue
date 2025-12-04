@@ -49,7 +49,9 @@
 
           <p class="drop-zone-main-text">{{ t("dropZoneMainText") }}</p>
           <p class="drop-zone-sub-text">{{ t("dropZoneSubText") }}</p>
-          <p class="file-size-hint">{{ t("maxFileSize") }}</p>
+          <p class="file-size-hint">
+            {{ t("maxFileSize", { size: MAX_CSV_FILE_SIZE_MB }) }}
+          </p>
 
           <!-- Browse Files Button -->
           <PrimeButton
@@ -125,7 +127,10 @@ import {
   polisCsvUploadTranslations,
   type PolisCsvUploadTranslations,
 } from "./PolisCsvUpload.i18n";
-import { MAX_CSV_FILE_SIZE } from "src/shared-app-api/csvUpload";
+import {
+  MAX_CSV_FILE_SIZE,
+  MAX_CSV_FILE_SIZE_MB,
+} from "src/shared-app-api/csvUpload";
 
 const { t } = useComponentI18n<PolisCsvUploadTranslations>(
   polisCsvUploadTranslations
@@ -308,7 +313,7 @@ function processFiles(files: File[]): void {
 
   // Display appropriate error messages
   if (fileSizeErrors.length > 0) {
-    generalError.value = t("errorFileTooLarge");
+    generalError.value = t("errorFileTooLarge", { size: MAX_CSV_FILE_SIZE_MB });
   } else if (invalidFiles.length > 0) {
     generalError.value = t("errorInvalidDroppedFiles");
   }
