@@ -16,10 +16,7 @@ import {
     ZodSupportedDisplayLanguageCodes,
 } from "../languages.js";
 
-export const zodDateTimeFlexible = z.union([
-    z.string().datetime(),
-    z.date().transform((date) => date.toISOString()),
-]);
+export const zodDateTimeFlexible = z.coerce.date();
 
 export const zodEventSlug = z.enum(["devconnect-2025"]);
 
@@ -238,9 +235,18 @@ const zodExportRouteTarget = z
     })
     .strict();
 
+const zodImportRouteTarget = z
+    .object({
+        type: z.literal("import"),
+        importSlugId: zodSlugId,
+        conversationSlugId: zodSlugId.optional(), // Optional: present when import completed
+    })
+    .strict();
+
 export const zodRouteTarget = z.discriminatedUnion("type", [
     zodOpinionRouteTarget,
     zodExportRouteTarget,
+    zodImportRouteTarget,
 ]);
 
 export const zodTopicObject = z
@@ -257,6 +263,8 @@ export const zodNotificationType = z.enum([
     "export_completed",
     "export_failed",
     "export_cancelled",
+    "import_completed",
+    "import_failed",
 ]);
 
 // Base notification schema with common fields
@@ -308,12 +316,30 @@ const zodExportCancelledNotification = zodNotificationBase
     })
     .strict();
 
+// Import notification schemas
+const zodImportCompletedNotification = zodNotificationBase
+    .extend({
+        type: z.literal("import_completed"),
+        routeTarget: zodImportRouteTarget,
+    })
+    .strict();
+
+const zodImportFailedNotification = zodNotificationBase
+    .extend({
+        type: z.literal("import_failed"),
+        routeTarget: zodImportRouteTarget,
+        errorMessage: z.string().optional(),
+    })
+    .strict();
+
 export const zodNotificationItem = z.discriminatedUnion("type", [
     zodOpinionVoteNotification,
     zodNewOpinionNotification,
     zodExportCompletedNotification,
     zodExportFailedNotification,
     zodExportCancelledNotification,
+    zodImportCompletedNotification,
+    zodImportFailedNotification,
 ]);
 
 export type moderationStatusOptionsType = "moderated" | "unmoderated";
@@ -1054,6 +1080,7 @@ export type NotificationType = z.infer<typeof zodNotificationType>;
 export type RouteTarget = z.infer<typeof zodRouteTarget>;
 export type OpinionRouteTarget = z.infer<typeof zodOpinionRouteTarget>;
 export type ExportRouteTarget = z.infer<typeof zodExportRouteTarget>;
+export type ImportRouteTarget = z.infer<typeof zodImportRouteTarget>;
 export type ClusterStats = z.infer<typeof zodClusterStats>;
 export type PolisKey = z.infer<typeof zodPolisKey>;
 export type SupportedCountryCallingCode = z.infer<

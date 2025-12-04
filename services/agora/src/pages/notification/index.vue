@@ -177,6 +177,12 @@ function getIconFromNotificationType(
     case "export_cancelled":
       icon = "mdi:cancel";
       break;
+    case "import_completed":
+      icon = "mdi:check-circle";
+      break;
+    case "import_failed":
+      icon = "mdi:alert-circle";
+      break;
   }
   return icon;
 }
@@ -207,6 +213,12 @@ function getTitleFromNotification(notificationItem: NotificationItem): string {
       break;
     case "export_cancelled":
       title = t("exportCancelled");
+      break;
+    case "import_completed":
+      title = t("importCompleted");
+      break;
+    case "import_failed":
+      title = t("importFailed");
       break;
   }
   return title;
@@ -240,6 +252,22 @@ async function redirectPage(routeTarget: RouteTarget): Promise<void> {
           exportId: routeTarget.exportSlugId,
         },
       });
+      break;
+
+    case "import":
+      // If import completed with conversationSlugId, go directly to conversation
+      // Otherwise go to import status page
+      if (routeTarget.conversationSlugId) {
+        await router.push({
+          name: "/conversation/[postSlugId]",
+          params: { postSlugId: routeTarget.conversationSlugId },
+        });
+      } else {
+        await router.push({
+          name: "/conversation/import/[importSlugId]",
+          params: { importSlugId: routeTarget.importSlugId },
+        });
+      }
       break;
   }
 }

@@ -10,6 +10,8 @@ export interface NotificationTranslations {
   exportCompleted: string;
   exportFailed: string;
   exportCancelled: string;
+  importCompleted: string;
+  importFailed: string;
 }
 
 export const notificationTranslations: Record<
@@ -27,6 +29,8 @@ export const notificationTranslations: Record<
     exportCompleted: "Your conversation export is ready",
     exportFailed: "Your conversation export failed",
     exportCancelled: "Your conversation export was cancelled",
+    importCompleted: "Your conversation import is complete",
+    importFailed: "Your conversation import failed",
   },
   ar: {
     notifications: "الإشعارات",
@@ -38,6 +42,8 @@ export const notificationTranslations: Record<
     exportCompleted: "تصدير محادثتك جاهز",
     exportFailed: "فشل تصدير محادثتك",
     exportCancelled: "تم إلغاء تصدير محادثتك",
+    importCompleted: "اكتمل استيراد محادثتك",
+    importFailed: "فشل استيراد محادثتك",
   },
   es: {
     notifications: "Notificaciones",
@@ -50,6 +56,8 @@ export const notificationTranslations: Record<
     exportCompleted: "Su exportación de conversación está lista",
     exportFailed: "Su exportación de conversación falló",
     exportCancelled: "Su exportación de conversación fue cancelada",
+    importCompleted: "Su importación de conversación está completa",
+    importFailed: "Su importación de conversación falló",
   },
   fr: {
     notifications: "Notifications",
@@ -62,6 +70,8 @@ export const notificationTranslations: Record<
     exportCompleted: "Votre exportation de conversation est prête",
     exportFailed: "Votre exportation de conversation a échoué",
     exportCancelled: "Votre exportation de conversation a été annulée",
+    importCompleted: "Votre importation de conversation est terminée",
+    importFailed: "Votre importation de conversation a échoué",
   },
   "zh-Hans": {
     notifications: "通知",
@@ -73,6 +83,8 @@ export const notificationTranslations: Record<
     exportCompleted: "您的对话导出已准备就绪",
     exportFailed: "您的对话导出失败",
     exportCancelled: "您的对话导出已取消",
+    importCompleted: "您的对话导入已完成",
+    importFailed: "您的对话导入失败",
   },
   "zh-Hant": {
     notifications: "通知",
@@ -84,6 +96,8 @@ export const notificationTranslations: Record<
     exportCompleted: "您的對話匯出已準備就緒",
     exportFailed: "您的對話匯出失敗",
     exportCancelled: "您的對話匯出已取消",
+    importCompleted: "您的對話匯入已完成",
+    importFailed: "您的對話匯入失敗",
   },
   ja: {
     notifications: "通知",
@@ -95,5 +109,7 @@ export const notificationTranslations: Record<
     exportCompleted: "会話のエクスポートの準備ができました",
     exportFailed: "会話のエクスポートに失敗しました",
     exportCancelled: "会話のエクスポートがキャンセルされました",
+    importCompleted: "会話のインポートが完了しました",
+    importFailed: "会話のインポートに失敗しました",
   },
 };

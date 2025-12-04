@@ -588,10 +588,10 @@ export const exportStatusEnum = pgEnum("export_status_enum", [
 ]);
 
 // Export cancellation reasons
-export const exportCancellationReasonEnum = pgEnum("export_cancellation_reason_enum", [
-    "duplicate_in_batch",
-    "cooldown_active",
-]);
+export const exportCancellationReasonEnum = pgEnum(
+    "export_cancellation_reason_enum",
+    ["duplicate_in_batch", "cooldown_active"],
+);
 
 // Export file types
 export const exportFileTypeEnum = pgEnum("export_file_type_enum", [
@@ -600,6 +600,13 @@ export const exportFileTypeEnum = pgEnum("export_file_type_enum", [
     "participants",
     "summary",
     "stats",
+]);
+
+// Import status for CSV imports (simplified - no files, no cooldown)
+export const importStatusEnum = pgEnum("import_status_enum", [
+    "processing",
+    "completed",
+    "failed",
 ]);
 
 // One user == one account.
@@ -1203,7 +1210,7 @@ export const conversationTable = pgTable(
             precision: 0,
         }),
         importAuthor: text("import_author"),
-        importMethod: importMethodType("import_method"),
+        importMethod: importMethodType("import_method").default("url"),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1677,6 +1684,8 @@ export const notificationTypeEnum = pgEnum("notification_type_enum", [
     "export_completed",
     "export_failed",
     "export_cancelled",
+    "import_completed",
+    "import_failed",
 ]);
 
 export const notificationOpinionVoteTable = pgTable(
@@ -1735,6 +1744,25 @@ export const notificationExportTable = pgTable("notification_export", {
     conversationId: integer("conversation_id")
         .references(() => conversationTable.id)
         .notNull(),
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
+
+export const notificationImportTable = pgTable("notification_import", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    notificationId: integer("notification_id")
+        .references(() => notificationTable.id)
+        .notNull(),
+    importId: integer("import_id")
+        .references(() => conversationImportTable.id)
+        .notNull(),
+    conversationId: integer("conversation_id").references(
+        () => conversationTable.id,
+    ),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -2029,5 +2057,41 @@ export const conversationExportFileTable = pgTable(
     (t) => [
         index("conversation_export_file_export_idx").on(t.exportId),
         index("conversation_export_file_type_idx").on(t.fileType),
+    ],
+);
+
+// Conversation imports table for CSV import feature (simplified - no files, no cooldown)
+export const conversationImportTable = pgTable(
+    "conversation_import",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
+        conversationId: integer("conversation_id").references(
+            () => conversationTable.id,
+        ), // null until import completes successfully
+        userId: uuid("user_id") // User who requested the import
+            .references(() => userTable.id)
+            .notNull(),
+        status: importStatusEnum("status").notNull().default("processing"),
+        errorMessage: text("error_message"), // populated if status="failed"
+        csvFileMetadata: jsonb("csv_file_metadata"), // Optional metadata (file sizes, row counts for transparency)
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("conversation_import_status_idx").on(t.status),
+        index("conversation_import_created_idx").on(t.createdAt),
+        index("conversation_import_user_idx").on(t.userId),
+        index("conversation_import_conversation_idx").on(t.conversationId),
     ],
 );

@@ -1,6 +1,6 @@
 /** **** WARNING: GENERATED FROM SHARED-APP-API DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
-// File size limit: 50MB
-export const MAX_CSV_FILE_SIZE = 50 * 1024 * 1024;
+// File size limit: 10MB
+export const MAX_CSV_FILE_SIZE = 10 * 1024 * 1024;
 
 /**
  * Type-safe field names for CSV file uploads

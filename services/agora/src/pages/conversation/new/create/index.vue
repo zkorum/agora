@@ -331,9 +331,10 @@ async function handleImportSubmission(): Promise<void> {
       });
 
       conversationDraft.value = createEmptyDraft();
+      // CSV import is async - redirect to import status page to poll for completion
       await router.replace({
-        name: "/conversation/[postSlugId]",
-        params: { postSlugId: response.conversationSlugId },
+        name: "/conversation/import/[importSlugId]",
+        params: { importSlugId: response.importSlugId },
       });
     } catch (error) {
       // Handle backend errors (org restriction, validation failures, etc.)

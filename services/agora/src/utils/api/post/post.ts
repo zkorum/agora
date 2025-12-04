@@ -27,8 +27,10 @@ import type {
 import type {
   FetchFeedResponse,
   ValidateCsvResponse,
+  GetConversationImportStatusResponse,
 } from "src/shared/types/dto";
 import { zodExtendedConversationData } from "src/shared/types/zod";
+import { Dto } from "src/shared/types/dto";
 
 export function useBackendPostApi() {
   const {
@@ -252,7 +254,7 @@ export function useBackendPostApi() {
       },
     });
 
-    return response.data;
+    return Dto.importCsvConversationResponse.parse(response.data);
   }
 
   async function importConversation({
@@ -451,11 +453,33 @@ export function useBackendPostApi() {
         },
       });
 
-      return response.data;
+      return Dto.validateCsvResponse.parse(response.data);
     } catch (error) {
       console.error("CSV validation error:", error);
       throw error;
     }
+  }
+
+  async function getConversationImportStatus(
+    importSlugId: string
+  ): Promise<GetConversationImportStatusResponse> {
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1ConversationImportStatusImportSlugIdGet(
+        importSlugId
+      );
+    const encodedUcan = await buildEncodedUcan(url, options);
+
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1ConversationImportStatusImportSlugIdGet(importSlugId, {
+      headers: {
+        ...buildAuthorizationHeader(encodedUcan),
+      },
+    });
+
+    return Dto.getConversationImportStatusResponse.parse(response.data);
   }
 
   return {
@@ -467,5 +491,6 @@ export function useBackendPostApi() {
     importConversation,
     importConversationFromCsv,
     validateCsvFiles,
+    getConversationImportStatus,
   };
 }

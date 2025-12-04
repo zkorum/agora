@@ -231,9 +231,48 @@ export class Dto {
         .strict();
     static importCsvConversationResponse = z
         .object({
-            conversationSlugId: z.string(),
+            importSlugId: z.string(),
         })
         .strict();
+    static getConversationImportStatusRequest = z
+        .object({
+            importSlugId: zodSlugId,
+        })
+        .strict();
+    static getConversationImportStatusResponse = z.discriminatedUnion(
+        "status",
+        [
+            // Processing - no conversation yet
+            z
+                .object({
+                    status: z.literal("processing"),
+                    importSlugId: zodSlugId,
+                    createdAt: zodDateTimeFlexible,
+                    updatedAt: zodDateTimeFlexible,
+                })
+                .strict(),
+            // Completed - has conversationSlugId
+            z
+                .object({
+                    status: z.literal("completed"),
+                    importSlugId: zodSlugId,
+                    conversationSlugId: zodSlugId,
+                    createdAt: zodDateTimeFlexible,
+                    updatedAt: zodDateTimeFlexible,
+                })
+                .strict(),
+            // Failed - has error message
+            z
+                .object({
+                    status: z.literal("failed"),
+                    importSlugId: zodSlugId,
+                    errorMessage: z.string().optional(),
+                    createdAt: zodDateTimeFlexible,
+                    updatedAt: zodDateTimeFlexible,
+                })
+                .strict(),
+        ],
+    );
     static validateCsvRequest = z.object({}).strict();
     static validateCsvResponse = z
         .object({
@@ -862,6 +901,12 @@ export type UpdateLanguagePreferencesRequest = z.infer<
 export type ConversationAnalysis = z.infer<typeof Dto.fetchAnalysisResponse>;
 export type CastVoteResponse = z.infer<typeof Dto.castVoteResponse>;
 export type ValidateCsvResponse = z.infer<typeof Dto.validateCsvResponse>;
+export type GetConversationImportStatusRequest = z.infer<
+    typeof Dto.getConversationImportStatusRequest
+>;
+export type GetConversationImportStatusResponse = z.infer<
+    typeof Dto.getConversationImportStatusResponse
+>;
 export type RequestConversationExportRequest = z.infer<
     typeof Dto.requestConversationExportRequest
 >;

@@ -1184,10 +1184,10 @@ export interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseI
     'status': ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
      */
-    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'createdAt': string;
 }
 
 export const ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum = {
@@ -1220,10 +1220,10 @@ export interface ApiV1ConversationExportRequestPost200Response {
     'exportSlugId': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportRequestPost200Response
      */
-    'cooldownEndsAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'cooldownEndsAt': string;
 }
 
 export const ApiV1ConversationExportRequestPost200ResponseStatusEnum = {
@@ -1272,10 +1272,10 @@ export interface ApiV1ConversationExportRequestPost200ResponseAnyOf1 {
     'status': ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportRequestPost200ResponseAnyOf1
      */
-    'cooldownEndsAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'cooldownEndsAt': string;
 }
 
 export const ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum = {
@@ -1310,16 +1310,16 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200Response {
     'conversationSlugId': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
-    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'createdAt': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
-    'expiresAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'expiresAt': string;
     /**
      * 
      * @type {Array<ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner>}
@@ -1340,10 +1340,10 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200Response {
     'cancellationReason': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
-    'deletedAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'deletedAt': string;
 }
 
 export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum = {
@@ -1378,16 +1378,16 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf {
     'conversationSlugId': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf
      */
-    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'createdAt': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf
      */
-    'expiresAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'expiresAt': string;
 }
 
 export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOfStatusEnum = {
@@ -1428,16 +1428,16 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1 {
     'files': Array<ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner>;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
      */
-    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'createdAt': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
      */
-    'expiresAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'expiresAt': string;
 }
 
 export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1StatusEnum = {
@@ -1484,10 +1484,10 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1Fi
     'downloadUrl': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner
      */
-    'urlExpiresAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'urlExpiresAt': string;
 }
 
 export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInnerFileTypeEnum = {
@@ -1532,16 +1532,16 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2 {
     'errorMessage'?: string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
      */
-    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'createdAt': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
      */
-    'expiresAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'expiresAt': string;
 }
 
 export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2StatusEnum = {
@@ -1582,16 +1582,16 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3 {
     'cancellationReason': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
      */
-    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'createdAt': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
      */
-    'expiresAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'expiresAt': string;
 }
 
 export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3StatusEnum = {
@@ -1638,22 +1638,22 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4 {
     'cancellationReason'?: string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
      */
-    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'createdAt': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
      */
-    'expiresAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'expiresAt': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
      */
-    'deletedAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'deletedAt': string;
 }
 
 export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4StatusEnum = {
@@ -2085,6 +2085,19 @@ export interface ApiV1ConversationGetPost200Response {
 /**
  * 
  * @export
+ * @interface ApiV1ConversationImportCsvPost200Response
+ */
+export interface ApiV1ConversationImportCsvPost200Response {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportCsvPost200Response
+     */
+    'importSlugId': string;
+}
+/**
+ * 
+ * @export
  * @interface ApiV1ConversationImportPostRequest
  */
 export interface ApiV1ConversationImportPostRequest {
@@ -2131,6 +2144,182 @@ export const ApiV1ConversationImportPostRequestRequiresEventTicketEnum = {
 } as const;
 
 export type ApiV1ConversationImportPostRequestRequiresEventTicketEnum = typeof ApiV1ConversationImportPostRequestRequiresEventTicketEnum[keyof typeof ApiV1ConversationImportPostRequestRequiresEventTicketEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationImportStatusImportSlugIdGet200Response
+ */
+export interface ApiV1ConversationImportStatusImportSlugIdGet200Response {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200Response
+     */
+    'status': ApiV1ConversationImportStatusImportSlugIdGet200ResponseStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200Response
+     */
+    'importSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200Response
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200Response
+     */
+    'updatedAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200Response
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200Response
+     */
+    'errorMessage'?: string;
+}
+
+export const ApiV1ConversationImportStatusImportSlugIdGet200ResponseStatusEnum = {
+    Failed: 'failed'
+} as const;
+
+export type ApiV1ConversationImportStatusImportSlugIdGet200ResponseStatusEnum = typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseStatusEnum[keyof typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf
+ */
+export interface ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf
+     */
+    'status': ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOfStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf
+     */
+    'importSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf
+     */
+    'updatedAt': string;
+}
+
+export const ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOfStatusEnum = {
+    Processing: 'processing'
+} as const;
+
+export type ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOfStatusEnum = typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOfStatusEnum[keyof typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOfStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1
+ */
+export interface ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1
+     */
+    'status': ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1StatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1
+     */
+    'importSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1
+     */
+    'updatedAt': string;
+}
+
+export const ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1StatusEnum = {
+    Completed: 'completed'
+} as const;
+
+export type ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1StatusEnum = typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1StatusEnum[keyof typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1StatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2
+ */
+export interface ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2
+     */
+    'status': ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2StatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2
+     */
+    'importSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2
+     */
+    'errorMessage'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2
+     */
+    'updatedAt': string;
+}
+
+export const ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2StatusEnum = {
+    Failed: 'failed'
+} as const;
+
+export type ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2StatusEnum = typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2StatusEnum[keyof typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2StatusEnum];
 
 /**
  * 
@@ -2522,10 +2711,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
     'message': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
-    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'createdAt': string;
     /**
      * 
      * @type {string}
@@ -2534,10 +2723,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
     'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget}
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
-    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget;
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget;
     /**
      * 
      * @type {number}
@@ -2569,7 +2758,9 @@ export const ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum 
     NewOpinion: 'new_opinion',
     ExportCompleted: 'export_completed',
     ExportFailed: 'export_failed',
-    ExportCancelled: 'export_cancelled'
+    ExportCancelled: 'export_cancelled',
+    ImportCompleted: 'import_completed',
+    ImportFailed: 'import_failed'
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum];
@@ -2600,10 +2791,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
     'message': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      */
-    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'createdAt': string;
     /**
      * 
      * @type {string}
@@ -2656,10 +2847,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
     'message': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
      */
-    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'createdAt': string;
     /**
      * 
      * @type {string}
@@ -2712,10 +2903,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
     'message': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
      */
-    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'createdAt': string;
     /**
      * 
      * @type {string}
@@ -2794,10 +2985,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
     'message': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
      */
-    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'createdAt': string;
     /**
      * 
      * @type {string}
@@ -2850,10 +3041,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
     'message': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt}
+     * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
      */
-    'createdAt': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt;
+    'createdAt': string;
     /**
      * 
      * @type {string}
@@ -2883,10 +3074,141 @@ export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4Type
 /**
  * 
  * @export
- * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
  */
-export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfCreatedAt {
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5TypeEnum;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget;
 }
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5TypeEnum = {
+    ImportCompleted: 'import_completed'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5TypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTargetTypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget
+     */
+    'importSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget
+     */
+    'conversationSlugId'?: string;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTargetTypeEnum = {
+    Import: 'import'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTargetTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTargetTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTargetTypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+     */
+    'errorMessage'?: string;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum = {
+    ImportFailed: 'import_failed'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum];
+
 /**
  * 
  * @export
@@ -5041,6 +5363,43 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {string} importSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationImportStatusImportSlugIdGet: async (importSlugId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'importSlugId' is not null or undefined
+            assertParamExists('apiV1ConversationImportStatusImportSlugIdGet', 'importSlugId', importSlugId)
+            const localVarPath = `/api/v1/conversation/import/status/{importSlugId}`
+                .replace(`{${"importSlugId"}}`, encodeURIComponent(String(importSlugId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -6717,7 +7076,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ConversationImportCsvPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationCreatePost200Response>> {
+        async apiV1ConversationImportCsvPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationImportCsvPost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationImportCsvPost(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationImportCsvPost']?.[localVarOperationServerIndex]?.url;
@@ -6733,6 +7092,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationImportPost(apiV1ConversationImportPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationImportPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {string} importSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationImportStatusImportSlugIdGet(importSlugId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationImportStatusImportSlugIdGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationImportStatusImportSlugIdGet(importSlugId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationImportStatusImportSlugIdGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -7389,7 +7760,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ConversationImportCsvPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationCreatePost200Response> {
+        apiV1ConversationImportCsvPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationImportCsvPost200Response> {
             return localVarFp.apiV1ConversationImportCsvPost(options).then((request) => request(axios, basePath));
         },
         /**
@@ -7400,6 +7771,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1ConversationImportPost(apiV1ConversationImportPostRequest: ApiV1ConversationImportPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationCreatePost200Response> {
             return localVarFp.apiV1ConversationImportPost(apiV1ConversationImportPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {string} importSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationImportStatusImportSlugIdGet(importSlugId: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationImportStatusImportSlugIdGet200Response> {
+            return localVarFp.apiV1ConversationImportStatusImportSlugIdGet(importSlugId, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -8004,6 +8384,17 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1ConversationImportPost(apiV1ConversationImportPostRequest: ApiV1ConversationImportPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ConversationImportPost(apiV1ConversationImportPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {string} importSlugId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationImportStatusImportSlugIdGet(importSlugId: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationImportStatusImportSlugIdGet(importSlugId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -72,7 +72,7 @@ export async function requestConversationExport({
     if (result.status === "cooldown_active") {
         return {
             status: "cooldown_active",
-            cooldownEndsAt: result.cooldownEndsAt.toISOString(),
+            cooldownEndsAt: result.cooldownEndsAt,
         };
     }
 
@@ -398,9 +398,9 @@ export async function getConversationExportStatus({
             conversationSlugId: exportRecord.conversationSlugId,
             errorMessage: exportRecord.errorMessage ?? undefined,
             cancellationReason: exportRecord.cancellationReason ?? undefined,
-            createdAt: exportRecord.createdAt.toISOString(),
-            expiresAt: exportRecord.expiresAt.toISOString(),
-            deletedAt: exportRecord.deletedAt.toISOString(),
+            createdAt: exportRecord.createdAt,
+            expiresAt: exportRecord.expiresAt,
+            deletedAt: exportRecord.deletedAt,
         };
     }
 
@@ -448,7 +448,7 @@ export async function getConversationExportStatus({
                     fileSize: file.fileSize,
                     recordCount: file.recordCount,
                     downloadUrl: url,
-                    urlExpiresAt: expiresAt.toISOString(),
+                    urlExpiresAt: expiresAt,
                 };
             }),
         );
@@ -458,8 +458,8 @@ export async function getConversationExportStatus({
     const baseResponse = {
         exportSlugId: exportRecord.exportSlugId,
         conversationSlugId: exportRecord.conversationSlugId,
-        createdAt: exportRecord.createdAt.toISOString(),
-        expiresAt: exportRecord.expiresAt.toISOString(),
+        createdAt: exportRecord.createdAt,
+        expiresAt: exportRecord.expiresAt,
     };
 
     switch (exportRecord.status) {
@@ -531,11 +531,11 @@ export async function getConversationExportHistory({
         .orderBy(desc(conversationExportTable.createdAt))
         .limit(MAX_EXPORTS_PER_CONVERSATION);
 
-    // Map results to response format (convert Date to ISO string)
+    // Map results to response format
     return exports.map((exp) => ({
         exportSlugId: exp.exportSlugId,
         status: exp.status,
-        createdAt: exp.createdAt.toISOString(),
+        createdAt: exp.createdAt,
     }));
 }
 

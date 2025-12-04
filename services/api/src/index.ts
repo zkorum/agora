@@ -26,8 +26,13 @@ import * as authUtilService from "@/service/authUtil.js";
 import * as csvImportService from "@/service/csvImport.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
-import { validateCsvFieldNames, MAX_CSV_FILE_SIZE } from "@/shared-app-api/csvUpload.js";
+import {
+    validateCsvFieldNames,
+    MAX_CSV_FILE_SIZE,
+} from "@/shared-app-api/csvUpload.js";
 import * as conversationExportService from "@/service/conversationExport/index.js";
+import * as conversationImportService from "@/service/conversationImport/index.js";
+import { startStaleImportCleanup } from "@/service/conversationImport/cleanupScheduler.js";
 import { validateS3Access } from "./service/s3.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
@@ -96,6 +101,7 @@ import twilio from "twilio";
 import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
 import { createExportBuffer } from "./service/exportBuffer.js";
+import { createImportBuffer } from "./service/importBuffer.js";
 import { NotificationSSEManager } from "./service/notificationSSE.js";
 import {
     addUserOrganizationMapping,
@@ -157,7 +163,7 @@ server.register(fastifyCors, {
 // Register multipart plugin for file uploads (for CSV import)
 server.register(fastifyMultipart, {
     limits: {
-        fileSize: 50 * 1024 * 1024, // 50MB max per file
+        fileSize: MAX_CSV_FILE_SIZE,
         files: 3,
     },
 });
@@ -392,6 +398,22 @@ const exportBuffer = createExportBuffer({
 log.info(
     `[API] Export buffer initialized (flush interval: 1s, cooldown: ${String(config.CONVERSATION_EXPORT_COOLDOWN_SECONDS)}s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
+
+// Initialize ImportBuffer (batches import requests to reduce system load)
+const importBuffer = createImportBuffer({
+    db,
+    valkey,
+    notificationSSEManager,
+    voteBuffer,
+    flushIntervalMs: 1000,
+    maxBatchSize: 5,
+});
+log.info(
+    `[API] Import buffer initialized (flush interval: 1s, max batch: 5, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
+);
+
+// Start scheduled cleanup for stale imports
+const stopImportCleanup = startStaleImportCleanup({ db });
 
 interface ExpectedDeviceStatus {
     userId?: string;
@@ -1857,25 +1879,57 @@ server.after(() => {
                 }
             }
 
-            // Call CSV import service
-            const { conversationSlugId } =
-                await csvImportService.processCsvImport({
+            // Request CSV import (creates record and queues for async processing)
+            const { importSlugId } =
+                await conversationImportService.requestConversationImport({
                     db,
-                    voteBuffer,
+                    userId: deviceStatus.userId,
                     files,
+                    formData: {
+                        postAsOrganization: parsedFields.postAsOrganization,
+                        indexConversationAt: parsedFields.indexConversationAt,
+                        isLoginRequired: parsedFields.isLoginRequired,
+                        isIndexed: parsedFields.isIndexed,
+                        requiresEventTicket: parsedFields.requiresEventTicket,
+                    },
                     proof: encodedUcan,
                     didWrite,
-                    authorId: deviceStatus.userId,
-                    postAsOrganization: parsedFields.postAsOrganization,
-                    indexConversationAt: parsedFields.indexConversationAt,
-                    isLoginRequired: parsedFields.isLoginRequired,
-                    isIndexed: parsedFields.isIndexed,
-                    requiresEventTicket: parsedFields.requiresEventTicket,
+                    importBuffer,
                 });
 
-            reply.send({ conversationSlugId });
+            reply.send({ importSlugId });
         },
     });
+
+    // Conversation Import Status Route
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/conversation/import/status/:importSlugId`,
+        schema: {
+            params: Dto.getConversationImportStatusRequest,
+            response: {
+                200: Dto.getConversationImportStatusResponse,
+            },
+        },
+        handler: async (request) => {
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+            });
+
+            const status =
+                await conversationImportService.getConversationImportStatus({
+                    db: db,
+                    importSlugId: request.params.importSlugId,
+                });
+
+            if (status === null) {
+                throw server.httpErrors.notFound("Import not found");
+            }
+
+            return status;
+        },
+    });
+
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/conversation/get`,
@@ -2795,11 +2849,17 @@ if (
         log.info(`[API] ${signal} received, shutting down gracefully...`);
 
         try {
+            // Stop scheduled cleanup
+            stopImportCleanup();
+
             // Flush pending votes before shutdown
             await voteBuffer.shutdown();
 
             // Flush pending exports before shutdown
             await exportBuffer.shutdown();
+
+            // Flush pending imports before shutdown
+            await importBuffer.shutdown();
 
             // Close SSE connections before shutdown
             await notificationSSEManager.shutdown();

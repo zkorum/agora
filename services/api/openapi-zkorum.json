@@ -4870,14 +4870,140 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "conversationSlugId": {
+                                        "importSlugId": {
                                             "type": "string"
                                         }
                                     },
                                     "required": [
-                                        "conversationSlugId"
+                                        "importSlugId"
                                     ],
                                     "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/import/status/{importSlugId}": {
+            "get": {
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 10
+                        },
+                        "in": "path",
+                        "name": "importSlugId",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "processing"
+                                                    ]
+                                                },
+                                                "importSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "createdAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updatedAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "importSlugId",
+                                                "createdAt",
+                                                "updatedAt"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "completed"
+                                                    ]
+                                                },
+                                                "importSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "conversationSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "createdAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updatedAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "importSlugId",
+                                                "conversationSlugId",
+                                                "createdAt",
+                                                "updatedAt"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "failed"
+                                                    ]
+                                                },
+                                                "importSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "errorMessage": {
+                                                    "type": "string"
+                                                },
+                                                "createdAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updatedAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "importSlugId",
+                                                "createdAt",
+                                                "updatedAt"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
                                 }
                             }
                         }
@@ -6122,16 +6248,8 @@
                                                                 "type": "string"
                                                             },
                                                             "createdAt": {
-                                                                "anyOf": [
-                                                                    {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
-                                                                    },
-                                                                    {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
-                                                                    }
-                                                                ]
+                                                                "type": "string",
+                                                                "format": "date-time"
                                                             },
                                                             "type": {
                                                                 "type": "string",
@@ -6194,16 +6312,8 @@
                                                                 "type": "string"
                                                             },
                                                             "createdAt": {
-                                                                "anyOf": [
-                                                                    {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
-                                                                    },
-                                                                    {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
-                                                                    }
-                                                                ]
+                                                                "type": "string",
+                                                                "format": "date-time"
                                                             },
                                                             "type": {
                                                                 "type": "string",
@@ -6265,16 +6375,8 @@
                                                                 "type": "string"
                                                             },
                                                             "createdAt": {
-                                                                "anyOf": [
-                                                                    {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
-                                                                    },
-                                                                    {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
-                                                                    }
-                                                                ]
+                                                                "type": "string",
+                                                                "format": "date-time"
                                                             },
                                                             "type": {
                                                                 "type": "string",
@@ -6332,16 +6434,8 @@
                                                                 "type": "string"
                                                             },
                                                             "createdAt": {
-                                                                "anyOf": [
-                                                                    {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
-                                                                    },
-                                                                    {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
-                                                                    }
-                                                                ]
+                                                                "type": "string",
+                                                                "format": "date-time"
                                                             },
                                                             "type": {
                                                                 "type": "string",
@@ -6402,16 +6496,8 @@
                                                                 "type": "string"
                                                             },
                                                             "createdAt": {
-                                                                "anyOf": [
-                                                                    {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
-                                                                    },
-                                                                    {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
-                                                                    }
-                                                                ]
+                                                                "type": "string",
+                                                                "format": "date-time"
                                                             },
                                                             "type": {
                                                                 "type": "string",
@@ -6456,6 +6542,125 @@
                                                             "type",
                                                             "routeTarget",
                                                             "cancellationReason"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "slugId": {
+                                                                "type": "string",
+                                                                "maxLength": 10
+                                                            },
+                                                            "isRead": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "message": {
+                                                                "type": "string"
+                                                            },
+                                                            "createdAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "type": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "import_completed"
+                                                                ]
+                                                            },
+                                                            "routeTarget": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "import"
+                                                                        ]
+                                                                    },
+                                                                    "importSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    },
+                                                                    "conversationSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "importSlugId"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "slugId",
+                                                            "isRead",
+                                                            "message",
+                                                            "createdAt",
+                                                            "type",
+                                                            "routeTarget"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "slugId": {
+                                                                "type": "string",
+                                                                "maxLength": 10
+                                                            },
+                                                            "isRead": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "message": {
+                                                                "type": "string"
+                                                            },
+                                                            "createdAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "type": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "import_failed"
+                                                                ]
+                                                            },
+                                                            "routeTarget": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "import"
+                                                                        ]
+                                                                    },
+                                                                    "importSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    },
+                                                                    "conversationSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "importSlugId"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            "errorMessage": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "slugId",
+                                                            "isRead",
+                                                            "message",
+                                                            "createdAt",
+                                                            "type",
+                                                            "routeTarget"
                                                         ],
                                                         "additionalProperties": false
                                                     }
@@ -6813,16 +7018,8 @@
                                                     ]
                                                 },
                                                 "cooldownEndsAt": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        }
-                                                    ]
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 }
                                             },
                                             "required": [
@@ -6877,28 +7074,12 @@
                                                     "maxLength": 10
                                                 },
                                                 "createdAt": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        }
-                                                    ]
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 },
                                                 "expiresAt": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        }
-                                                    ]
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 }
                                             },
                                             "required": [
@@ -6959,16 +7140,8 @@
                                                                 "format": "uri"
                                                             },
                                                             "urlExpiresAt": {
-                                                                "anyOf": [
-                                                                    {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
-                                                                    },
-                                                                    {
-                                                                        "type": "string",
-                                                                        "format": "date-time"
-                                                                    }
-                                                                ]
+                                                                "type": "string",
+                                                                "format": "date-time"
                                                             }
                                                         },
                                                         "required": [
@@ -6983,28 +7156,12 @@
                                                     }
                                                 },
                                                 "createdAt": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        }
-                                                    ]
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 },
                                                 "expiresAt": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        }
-                                                    ]
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 }
                                             },
                                             "required": [
@@ -7038,28 +7195,12 @@
                                                     "type": "string"
                                                 },
                                                 "createdAt": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        }
-                                                    ]
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 },
                                                 "expiresAt": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        }
-                                                    ]
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 }
                                             },
                                             "required": [
@@ -7092,28 +7233,12 @@
                                                     "type": "string"
                                                 },
                                                 "createdAt": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        }
-                                                    ]
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 },
                                                 "expiresAt": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        }
-                                                    ]
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 }
                                             },
                                             "required": [
@@ -7150,40 +7275,16 @@
                                                     "type": "string"
                                                 },
                                                 "createdAt": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        }
-                                                    ]
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 },
                                                 "expiresAt": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        }
-                                                    ]
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 },
                                                 "deletedAt": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        }
-                                                    ]
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 }
                                             },
                                             "required": [
@@ -7242,16 +7343,8 @@
                                                 ]
                                             },
                                             "createdAt": {
-                                                "anyOf": [
-                                                    {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    }
-                                                ]
+                                                "type": "string",
+                                                "format": "date-time"
                                             }
                                         },
                                         "required": [

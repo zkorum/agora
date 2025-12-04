@@ -2,9 +2,11 @@ import {
     conversationTable,
     conversationContentTable,
     conversationExportTable,
+    conversationImportTable,
     notificationNewOpinionTable,
     notificationOpinionVoteTable,
     notificationExportTable,
+    notificationImportTable,
     opinionContentTable,
     opinionTable,
     notificationTable,
@@ -154,7 +156,7 @@ export async function getNotifications({
                 const parsedItem: NotificationItem = {
                     type: "new_opinion",
                     slugId: notificationItem.slugId,
-                    createdAt: notificationItem.createdAt.toISOString(),
+                    createdAt: notificationItem.createdAt,
                     isRead: notificationItem.isRead,
                     message: useCommonPost().createCompactHtmlBody(
                         notificationItem.opinionContent,
@@ -225,7 +227,7 @@ export async function getNotifications({
                 const parsedItem: NotificationItem = {
                     type: "opinion_vote",
                     slugId: notificationItem.slugId,
-                    createdAt: notificationItem.createdAt.toISOString(),
+                    createdAt: notificationItem.createdAt,
                     isRead: notificationItem.isRead,
                     message: useCommonPost().createCompactHtmlBody(
                         notificationItem.opinionContent,
@@ -308,7 +310,7 @@ export async function getNotifications({
                     const parsedItem: NotificationItem = {
                         type: "export_completed",
                         slugId: notificationItem.slugId,
-                        createdAt: notificationItem.createdAt.toISOString(),
+                        createdAt: notificationItem.createdAt,
                         isRead: notificationItem.isRead,
                         message: `"${notificationItem.conversationTitle}"`,
                         routeTarget: {
@@ -325,7 +327,7 @@ export async function getNotifications({
                     const parsedItem: NotificationItem = {
                         type: "export_failed",
                         slugId: notificationItem.slugId,
-                        createdAt: notificationItem.createdAt.toISOString(),
+                        createdAt: notificationItem.createdAt,
                         isRead: notificationItem.isRead,
                         message: notificationItem.errorMessage
                             ? `${notificationItem.errorMessage}`
@@ -347,7 +349,7 @@ export async function getNotifications({
                     const parsedItem: NotificationItem = {
                         type: "export_cancelled",
                         slugId: notificationItem.slugId,
-                        createdAt: notificationItem.createdAt.toISOString(),
+                        createdAt: notificationItem.createdAt,
                         isRead: notificationItem.isRead,
                         message: notificationItem.cancellationReason
                             ? `${notificationItem.cancellationReason}`
@@ -361,6 +363,97 @@ export async function getNotifications({
                         cancellationReason:
                             notificationItem.cancellationReason ||
                             "Export was cancelled",
+                    };
+                    notificationItemList.push(parsedItem);
+                }
+
+                if (!notificationItem.isRead) {
+                    numNewNotifications += 1;
+                }
+            }
+        });
+    }
+
+    // Fetch import notifications
+    {
+        const notificationTableResponse = await db
+            .select({
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
+                notificationType: notificationTable.notificationType,
+                importSlugId: conversationImportTable.slugId,
+                conversationSlugId: conversationTable.slugId,
+                errorMessage: conversationImportTable.errorMessage,
+                slugId: notificationTable.slugId,
+            })
+            .from(notificationTable)
+            .leftJoin(
+                notificationImportTable,
+                eq(
+                    notificationImportTable.notificationId,
+                    notificationTable.id,
+                ),
+            )
+            .leftJoin(
+                conversationImportTable,
+                eq(
+                    conversationImportTable.id,
+                    notificationImportTable.importId,
+                ),
+            )
+            .leftJoin(
+                conversationTable,
+                eq(
+                    conversationTable.id,
+                    notificationImportTable.conversationId,
+                ),
+            )
+            .where(whereClause)
+            .orderBy(orderByClause)
+            .limit(fetchLimit);
+
+        notificationTableResponse.forEach((notificationItem) => {
+            if (
+                notificationItem.importSlugId &&
+                (notificationItem.notificationType === "import_completed" ||
+                    notificationItem.notificationType === "import_failed")
+            ) {
+                // Construct notification based on type
+                if (notificationItem.notificationType === "import_completed") {
+                    const parsedItem: NotificationItem = {
+                        type: "import_completed",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message: "CSV import completed successfully",
+                        routeTarget: {
+                            type: "import",
+                            importSlugId: notificationItem.importSlugId,
+                            ...(notificationItem.conversationSlugId && {
+                                conversationSlugId:
+                                    notificationItem.conversationSlugId,
+                            }),
+                        },
+                    };
+                    notificationItemList.push(parsedItem);
+                } else if (
+                    notificationItem.notificationType === "import_failed"
+                ) {
+                    const parsedItem: NotificationItem = {
+                        type: "import_failed",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message: notificationItem.errorMessage
+                            ? `${notificationItem.errorMessage}`
+                            : "CSV import failed",
+                        routeTarget: {
+                            type: "import",
+                            importSlugId: notificationItem.importSlugId,
+                        },
+                        ...(notificationItem.errorMessage && {
+                            errorMessage: notificationItem.errorMessage,
+                        }),
                     };
                     notificationItemList.push(parsedItem);
                 }
@@ -439,7 +532,7 @@ async function buildExportNotification(
                 return {
                     type: "export_completed",
                     slugId: notificationSlugId,
-                    createdAt: result[0].createdAt.toISOString(),
+                    createdAt: result[0].createdAt,
                     isRead: result[0].isRead,
                     message: `"${result[0].conversationTitle}"`,
                     routeTarget: {
@@ -452,7 +545,7 @@ async function buildExportNotification(
                 return {
                     type: "export_failed",
                     slugId: notificationSlugId,
-                    createdAt: result[0].createdAt.toISOString(),
+                    createdAt: result[0].createdAt,
                     isRead: result[0].isRead,
                     message: result[0].errorMessage
                         ? `${result[0].errorMessage}`
@@ -470,7 +563,7 @@ async function buildExportNotification(
                 return {
                     type: "export_cancelled",
                     slugId: notificationSlugId,
-                    createdAt: result[0].createdAt.toISOString(),
+                    createdAt: result[0].createdAt,
                     isRead: result[0].isRead,
                     message: result[0].cancellationReason
                         ? `${result[0].cancellationReason}`
@@ -537,7 +630,7 @@ async function buildVoteNotification(
             return {
                 type: "opinion_vote",
                 slugId: notificationSlugId,
-                createdAt: result[0].createdAt.toISOString(),
+                createdAt: result[0].createdAt,
                 isRead: result[0].isRead,
                 message: useCommonPost().createCompactHtmlBody(
                     result[0].opinionContent,
@@ -605,7 +698,7 @@ async function buildOpinionNotification(
             return {
                 type: "new_opinion",
                 slugId: notificationSlugId,
-                createdAt: result[0].createdAt.toISOString(),
+                createdAt: result[0].createdAt,
                 isRead: result[0].isRead,
                 message: useCommonPost().createCompactHtmlBody(
                     result[0].opinionContent,
@@ -781,6 +874,138 @@ export async function broadcastExportNotification(
         log.error(
             error,
             `Failed to broadcast export notification ${notificationSlugId} to user ${userId}`,
+        );
+    }
+}
+
+/**
+ * Helper function to build an import notification from database data
+ * Fetches only the necessary data for a single notification
+ */
+async function buildImportNotification(
+    db: PostgresJsDatabase,
+    notificationSlugId: string,
+    importId: number,
+    conversationId: number | null,
+): Promise<NotificationItem | null> {
+    try {
+        const result = await db
+            .select({
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
+                notificationType: notificationTable.notificationType,
+                importSlugId: conversationImportTable.slugId,
+                conversationSlugId: conversationTable.slugId,
+                errorMessage: conversationImportTable.errorMessage,
+            })
+            .from(notificationTable)
+            .leftJoin(
+                conversationImportTable,
+                eq(conversationImportTable.id, importId),
+            )
+            .leftJoin(
+                conversationTable,
+                conversationId
+                    ? eq(conversationTable.id, conversationId)
+                    : undefined,
+            )
+            .where(eq(notificationTable.slugId, notificationSlugId))
+            .limit(1);
+
+        if (
+            result.length === 1 &&
+            result[0].importSlugId &&
+            (result[0].notificationType === "import_completed" ||
+                result[0].notificationType === "import_failed")
+        ) {
+            // Construct notification based on type
+            if (result[0].notificationType === "import_completed") {
+                return {
+                    type: "import_completed",
+                    slugId: notificationSlugId,
+                    createdAt: result[0].createdAt,
+                    isRead: result[0].isRead,
+                    message: "CSV import completed successfully",
+                    routeTarget: {
+                        type: "import",
+                        importSlugId: result[0].importSlugId,
+                        conversationSlugId:
+                            result[0].conversationSlugId ?? undefined,
+                    },
+                };
+            } else if (result[0].notificationType === "import_failed") {
+                return {
+                    type: "import_failed",
+                    slugId: notificationSlugId,
+                    createdAt: result[0].createdAt,
+                    isRead: result[0].isRead,
+                    message: result[0].errorMessage
+                        ? `${result[0].errorMessage}`
+                        : "CSV import failed",
+                    routeTarget: {
+                        type: "import",
+                        importSlugId: result[0].importSlugId,
+                    },
+                    ...(result[0].errorMessage && {
+                        errorMessage: result[0].errorMessage,
+                    }),
+                };
+            }
+        }
+        return null;
+    } catch (error) {
+        log.error(
+            error,
+            `Failed to build import notification ${notificationSlugId}`,
+        );
+        return null;
+    }
+}
+
+/**
+ * Broadcast an import notification to a user via SSE
+ * Builds notification directly from data and validates before broadcasting
+ */
+export async function broadcastImportNotification(
+    notificationSSEManager: NotificationSSEManager | undefined,
+    db: PostgresJsDatabase,
+    userId: string,
+    notificationSlugId: string,
+    importId: number,
+    conversationId: number | null,
+): Promise<void> {
+    if (!notificationSSEManager) {
+        return;
+    }
+
+    try {
+        const notification = await buildImportNotification(
+            db,
+            notificationSlugId,
+            importId,
+            conversationId,
+        );
+
+        if (notification) {
+            // Validate notification before broadcasting
+            const validationResult =
+                zodNotificationItem.safeParse(notification);
+            if (validationResult.success) {
+                notificationSSEManager.broadcastToUser(
+                    userId,
+                    validationResult.data,
+                );
+            } else {
+                log.error(
+                    validationResult.error,
+                    `Failed to validate import notification ${notificationSlugId} before broadcast`,
+                );
+            }
+        }
+    } catch (error) {
+        log.error(
+            error,
+            `Failed to broadcast import notification ${notificationSlugId} to user ${userId}`,
         );
     }
 }
