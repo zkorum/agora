@@ -10,7 +10,7 @@ import { log } from "@/app.js";
 import { nowZeroMs } from "@/shared/util.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
-import { nanoid } from "nanoid";
+import { generateRandomSlugId } from "@/crypto.js";
 import { count, or, isNull, ne } from "drizzle-orm";
 import { processConversationExport } from "./conversationExport/core.js";
 import { createExportNotification } from "./conversationExport/notifications.js";
@@ -184,7 +184,7 @@ export function createExportBuffer({
             createdAt.getTime() + exportExpiryDays * 24 * 60 * 60 * 1000,
         );
 
-        const exportSlugId = nanoid(8);
+        const exportSlugId = generateRandomSlugId();
 
         await db.insert(conversationExportTable).values({
             slugId: exportSlugId,
