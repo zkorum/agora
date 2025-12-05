@@ -104,14 +104,11 @@ export async function importConversation({
     requiresEventTicket,
     isOrgImportOnly,
 }: ImportPostProps): Promise<ImportConversationResponse> {
-    if (
-        (postAsOrganization === undefined || postAsOrganization === "") &&
-        isOrgImportOnly
-    ) {
-        throw httpErrors.forbidden(
-            "Import feature restricted to organizations",
-        );
-    }
+    // Validate organization restriction for imports
+    authUtilService.validateOrgImportRestriction(
+        postAsOrganization,
+        isOrgImportOnly,
+    );
     if (postAsOrganization !== undefined && postAsOrganization !== "") {
         let organizationId: number | undefined = undefined;
         organizationId = await authUtilService.isUserPartOfOrganization({

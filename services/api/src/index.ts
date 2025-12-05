@@ -1855,14 +1855,10 @@ server.after(() => {
                 Dto.importCsvConversationFormRequest.parse(formFields);
 
             // Check organization restriction (same as URL import)
-            if (
-                parsedFields.postAsOrganization === undefined &&
-                config.IS_ORG_IMPORT_ONLY
-            ) {
-                throw server.httpErrors.forbidden(
-                    "CSV import feature restricted to organizations",
-                );
-            }
+            authUtilService.validateOrgImportRestriction(
+                parsedFields.postAsOrganization,
+                config.IS_ORG_IMPORT_ONLY,
+            );
 
             // Verify organization membership if specified
             if (parsedFields.postAsOrganization !== undefined) {

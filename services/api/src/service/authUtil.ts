@@ -332,3 +332,21 @@ export async function getUserIdFromDevice(
     }
     return results[0].userId;
 }
+
+/**
+ * Validates that import operations are allowed based on organization restrictions.
+ * If IS_ORG_IMPORT_ONLY is enabled, the request must specify a valid organization.
+ */
+export function validateOrgImportRestriction(
+    postAsOrganization: string | undefined,
+    isOrgImportOnly: boolean,
+): void {
+    if (
+        (!postAsOrganization || postAsOrganization.trim() === "") &&
+        isOrgImportOnly
+    ) {
+        throw httpErrors.forbidden(
+            "Import feature restricted to organizations",
+        );
+    }
+}
