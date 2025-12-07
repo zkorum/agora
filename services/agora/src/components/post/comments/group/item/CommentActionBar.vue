@@ -87,7 +87,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   ticketVerified: [
-    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
   ];
 }>();
 
@@ -157,7 +157,7 @@ watch(
     // 2. If server state differs, check if we have a recent local action (optimistic update)
     // that might not yet be reflected in the read replica.
     const timeSinceLastVote = Date.now() - lastVoteTimestamp.value;
-    const isOptimisticStateValid = timeSinceLastVote < 5000; // 5s grace period for replication
+    const isOptimisticStateValid = timeSinceLastVote < 2000; // 2s grace period for replication
 
     if (isOptimisticStateValid) {
       // Ignore stale server data, keep optimistic local state
@@ -196,12 +196,15 @@ const relativeTotalPercentagePasses = computed(() => {
 
 async function onLoginCallback() {
   // Store the intention with eventSlug
-  setOpinionAgreementIntention(props.commentItem.opinionSlugId, props.requiresEventTicket);
+  setOpinionAgreementIntention(
+    props.commentItem.opinionSlugId,
+    props.requiresEventTicket
+  );
 
   const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
   const hasZupassRequirement = props.requiresEventTicket !== undefined;
 
-  console.log('[CommentActionBar] onLoginCallback', {
+  console.log("[CommentActionBar] onLoginCallback", {
     needsLogin,
     hasZupassRequirement,
     isLoggedIn: isLoggedIn.value,
@@ -209,7 +212,7 @@ async function onLoginCallback() {
 
   // If user just needs Zupass verification (no login required), trigger it inline
   if (!needsLogin && hasZupassRequirement) {
-    console.log('[CommentActionBar] Triggering inline Zupass verification');
+    console.log("[CommentActionBar] Triggering inline Zupass verification");
     await handleZupassVerification();
   }
   // Otherwise, dialog will route user to login via PreLoginIntentionDialog
@@ -231,7 +234,7 @@ async function handleZupassVerification() {
 
   if (result.success) {
     // Emit to parent so banner gets refreshed
-    console.log('[CommentActionBar] Emitting ticketVerified event', {
+    console.log("[CommentActionBar] Emitting ticketVerified event", {
       userIdChanged: result.userIdChanged,
       needsCacheRefresh: result.needsCacheRefresh,
     });
