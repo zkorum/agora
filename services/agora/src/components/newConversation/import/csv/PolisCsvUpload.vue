@@ -167,6 +167,7 @@ async function validateSingleFile(
   } catch (error) {
     console.error(`CSV validation error for ${fileType}:`, error);
     generalError.value = t("serverError");
+    csvFileState.error.value = t("serverError");
   } finally {
     csvFileState.setValidating(false);
   }

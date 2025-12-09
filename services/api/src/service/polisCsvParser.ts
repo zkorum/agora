@@ -3,48 +3,54 @@ import { parse } from "fast-csv";
 import { Readable } from "stream";
 
 // Define Zod schemas for CSV validation
-export const PolisSummaryCsvSchema = z.object({
-    topic: z.string().min(1).max(140),
-    url: z.string().url().optional().or(z.literal("")),
-    views: z.coerce.number().int().min(0),
-    voters: z.coerce.number().int().min(0),
-    "voters-in-conv": z.coerce.number().int().min(0),
-    commenters: z.coerce.number().int().min(0),
-    comments: z.coerce.number().int().min(0),
-    groups: z.coerce.number().int().min(0),
-    "conversation-description": z.string().optional().or(z.literal("")),
-});
+export const PolisSummaryCsvSchema = z
+    .object({
+        topic: z.string().min(1).max(140),
+        url: z.string().url().optional().or(z.literal("")),
+        views: z.coerce.number().int().min(0),
+        voters: z.coerce.number().int().min(0),
+        "voters-in-conv": z.coerce.number().int().min(0),
+        commenters: z.coerce.number().int().min(0),
+        comments: z.coerce.number().int().min(0),
+        groups: z.coerce.number().int().min(0),
+        "conversation-description": z.string().optional().or(z.literal("")),
+    })
+    .strict();
 
-export const PolisCommentCsvSchema = z.object({
-    timestamp: z.coerce.number().int(),
-    datetime: z.string(),
-    "comment-id": z.coerce.number().int(),
-    "author-id": z.coerce.number().int(),
-    agrees: z.coerce.number().int().min(0),
-    disagrees: z.coerce.number().int().min(0),
-    moderated: z.coerce
-        .number()
-        .int()
-        .refine((val) => val === -1 || val === 0 || val === 1, {
-            message: "moderated must be -1, 0, or 1",
-        }),
-    importance: z.coerce.number().int().min(0).optional(),
-    "comment-body": z.string(),
-});
+export const PolisCommentCsvSchema = z
+    .object({
+        timestamp: z.coerce.number().int(),
+        datetime: z.string(),
+        "comment-id": z.coerce.number().int(),
+        "author-id": z.coerce.number().int(),
+        agrees: z.coerce.number().int().min(0),
+        disagrees: z.coerce.number().int().min(0),
+        moderated: z.coerce
+            .number()
+            .int()
+            .refine((val) => val === -1 || val === 0 || val === 1, {
+                message: "moderated must be -1, 0, or 1",
+            }),
+        importance: z.coerce.number().int().min(0).optional(),
+        "comment-body": z.string(),
+    })
+    .strict();
 
-export const PolisVoteCsvSchema = z.object({
-    timestamp: z.coerce.number().int(),
-    datetime: z.string(),
-    "comment-id": z.coerce.number().int(),
-    "voter-id": z.coerce.number().int(),
-    vote: z.coerce
-        .number()
-        .int()
-        .refine((val) => val === -1 || val === 0 || val === 1, {
-            message: "vote must be -1, 0, or 1",
-        }),
-    important: z.coerce.number().int().min(0).max(1).optional(),
-});
+export const PolisVoteCsvSchema = z
+    .object({
+        timestamp: z.coerce.number().int(),
+        datetime: z.string(),
+        "comment-id": z.coerce.number().int(),
+        "voter-id": z.coerce.number().int(),
+        vote: z.coerce
+            .number()
+            .int()
+            .refine((val) => val === -1 || val === 0 || val === 1, {
+                message: "vote must be -1, 0, or 1",
+            }),
+        important: z.coerce.number().int().min(0).max(1).optional(),
+    })
+    .strict();
 
 export type PolisSummaryCsv = z.infer<typeof PolisSummaryCsvSchema>;
 export type PolisCommentCsv = z.infer<typeof PolisCommentCsvSchema>;
