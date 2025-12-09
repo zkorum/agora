@@ -6,32 +6,99 @@
       class="drop-zone"
       :class="{
         'drop-zone-active': isOverDropZone,
-        'drop-zone-has-file': file !== null,
-        'drop-zone-error': error !== '',
+        'drop-zone-empty': file === null,
+        'drop-zone-uploaded': file !== null && status === 'uploaded',
+        'drop-zone-validating': file !== null && status === 'validating',
+        'drop-zone-error': file !== null && status === 'error',
+        'drop-zone-pending': file !== null && status === 'pending',
       }"
       @click="handleClick"
     >
       <!-- Empty state: show upload icon and text -->
-      <div v-if="file === null" class="drop-zone-content">
-        <ZKIcon
-          name="lucide:upload"
-          size="1.5rem"
-          color="var(--primary-color)"
-          class="upload-icon"
-        />
-        <p class="drop-zone-text">{{ dropText }}</p>
-      </div>
+      <template v-if="file === null">
+        <div class="drop-zone-content">
+          <ZKIcon
+            name="lucide:upload"
+            size="1.5rem"
+            color="var(--primary-color)"
+            class="upload-icon"
+          />
+          <p class="drop-zone-text">{{ dropText }}</p>
+        </div>
+      </template>
 
-      <!-- File uploaded state: show status item -->
-      <CsvFileStatusItem
-        v-else
-        :file-name="file.name"
-        :label="fileTypeLabel"
-        :status="status"
-        :file="file"
-        :error-message="error"
-        @remove="$emit('remove')"
-      />
+      <!-- File uploaded state: show status inline -->
+      <template v-else>
+        <div class="file-status-container">
+          <!-- Top Row: Badge and Button -->
+          <div class="top-row">
+            <div class="status-badge-container">
+              <Badge
+                v-if="status === 'pending'"
+                value="PENDING"
+                severity="secondary"
+                size="large"
+              />
+              <Badge
+                v-else-if="status === 'uploaded'"
+                value="UPLOADED"
+                severity="success"
+                size="large"
+              />
+              <Badge
+                v-else-if="status === 'validating'"
+                value="VALIDATING"
+                severity="info"
+                size="large"
+              />
+              <Badge
+                v-else-if="status === 'error'"
+                value="ERROR"
+                severity="danger"
+                size="large"
+              />
+            </div>
+
+            <PrimeButton
+              v-if="status === 'uploaded' || status === 'error'"
+              size="small"
+              :aria-label="`Remove file ${file.name}`"
+              @click.stop="handleRemove"
+            >
+              <span>Remove</span>
+            </PrimeButton>
+          </div>
+
+          <!-- File Info (Below) -->
+          <div class="file-info">
+            <div class="file-name">
+              <code>{{ file.name }}</code>
+            </div>
+            <div v-if="fileTypeLabel" class="file-type">
+              {{ fileTypeLabel }}
+            </div>
+
+            <div class="file-status">
+              <span v-if="status === 'uploaded'" class="file-size">
+                {{ formatFileSize(file.size) }}
+              </span>
+              <span
+                v-else-if="status === 'error' && error"
+                class="error-detail"
+              >
+                {{ truncatedErrorMessage }}
+                <a
+                  href="#"
+                  class="error-link"
+                  @click.prevent="showErrorDialog = true"
+                >
+                  View Details
+                </a>
+              </span>
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- Hidden file input -->
@@ -42,15 +109,25 @@
       class="hidden-file-input"
       @change="handleFileInputChange"
     />
+
+    <!-- Error Details Dialog -->
+    <CsvErrorDetailsDialog
+      v-if="error"
+      v-model="showErrorDialog"
+      :error-message="error"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useDropZone } from "@vueuse/core";
-import CsvFileStatusItem from "./CsvFileStatusItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import Badge from "primevue/badge";
+import CsvErrorDetailsDialog from "./CsvErrorDetailsDialog.vue";
 import type { FileStatus } from "./composables/useCsvFile";
+
+const ERROR_TRUNCATE_LENGTH = 100;
 
 interface Props {
   label: string;
@@ -71,6 +148,7 @@ const emit = defineEmits<Emits>();
 
 const dropZoneRef = ref<HTMLElement>();
 const fileInputRef = ref<HTMLInputElement>();
+const showErrorDialog = ref(false);
 
 // Setup drop zone with VueUse
 const { isOverDropZone } = useDropZone(dropZoneRef, {
@@ -78,6 +156,15 @@ const { isOverDropZone } = useDropZone(dropZoneRef, {
   dataTypes: ["text/csv"],
   multiple: false,
   preventDefaultForUnhandled: false,
+});
+
+// Computed: truncated error message
+const truncatedErrorMessage = computed(() => {
+  if (!props.error) return "";
+  if (props.error.length <= ERROR_TRUNCATE_LENGTH) {
+    return props.error;
+  }
+  return props.error.substring(0, ERROR_TRUNCATE_LENGTH) + "...";
 });
 
 /**
@@ -90,11 +177,11 @@ function handleDrop(files: File[] | null): void {
 
 /**
  * Handle click on drop zone
- * Only opens file picker when no file is present (empty state)
+ * Opens file picker when in empty state OR allows file replacement
  */
 function handleClick(): void {
-  // Don't open file picker if a file is already uploaded
-  // (prevents opening picker when clicking remove button)
+  // Only open file picker in empty state
+  // When file exists, user needs to click remove first
   if (props.file === null) {
     fileInputRef.value?.click();
   }
@@ -111,6 +198,24 @@ function handleFileInputChange(event: Event): void {
   }
   // Reset input so the same file can be selected again if needed
   input.value = "";
+}
+
+/**
+ * Handle remove button click
+ */
+function handleRemove(): void {
+  emit("remove");
+}
+
+/**
+ * Format file size to human-readable format
+ */
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 }
 </script>
 
@@ -134,44 +239,67 @@ function handleFileInputChange(event: Event): void {
   justify-content: center;
   min-height: 120px;
   padding: 1.5rem;
-  background-color: #f8f9fa;
-  border: 2px dashed #d0d0d0;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s ease;
 
-  &:hover {
-    border-color: $primary;
-    background-color: rgba($primary, 0.02);
-  }
-
-  &.drop-zone-active {
-    border-color: $primary;
-    border-style: solid;
-    background-color: rgba($primary, 0.05);
-  }
-
-  &.drop-zone-has-file {
-    background-color: transparent;
-    border: none;
-    padding: 0 1.5rem;
-    cursor: default;
+  /* Empty State */
+  &.drop-zone-empty {
+    background-color: #f8f9fa;
+    border: 2px dashed #d0d0d0;
+    cursor: pointer;
 
     &:hover {
-      background-color: transparent;
-      border: none;
+      border-color: $primary;
+      background-color: rgba($primary, 0.02);
+    }
+
+    &.drop-zone-active {
+      border-color: $primary;
+      border-style: solid;
+      background-color: rgba($primary, 0.05);
     }
   }
 
-  &.drop-zone-error {
-    background-color: transparent;
-    border: none;
-    padding: 0 1.5rem;
+  /* File States - all maintain border and background */
+  &.drop-zone-pending {
+    background-color: #f5f5f5;
+    border: 2px solid #9e9e9e;
+    cursor: default;
+  }
+
+  &.drop-zone-uploaded {
+    background-color: #f0f9f4;
+    border: 2px solid #4caf50;
     cursor: default;
 
     &:hover {
-      background-color: transparent;
-      border: none;
+      background-color: #e8f5e9;
+    }
+
+    &.drop-zone-active {
+      border-color: #2e7d32;
+      background-color: #e8f5e9;
+    }
+  }
+
+  &.drop-zone-validating {
+    background-color: #e3f2fd;
+    border: 2px solid #2196f3;
+    cursor: default;
+  }
+
+  &.drop-zone-error {
+    background-color: #ffebee;
+    border: 2px solid #ef5350;
+    cursor: default;
+
+    &:hover {
+      background-color: #ffcdd2;
+    }
+
+    &.drop-zone-active {
+      border-color: #c62828;
+      background-color: #ffcdd2;
     }
   }
 }
@@ -188,6 +316,89 @@ function handleFileInputChange(event: Event): void {
   color: $color-text-weak;
   margin: 0;
   text-align: center;
+}
+
+/* File Status Container (when file is present) */
+.file-status-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.status-badge-container {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.file-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.file-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+
+  code {
+    font-size: 0.875rem;
+    font-family: monospace;
+    font-weight: var(--font-weight-semibold);
+    color: $color-text-strong;
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+  }
+
+  .file-label {
+    font-size: 0.75rem;
+    color: $color-text-weak;
+  }
+}
+
+.file-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+}
+
+.file-size {
+  color: $color-text-weak;
+}
+
+.error-detail {
+  font-size: 0.75rem;
+  color: $color-text-weak;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.error-link {
+  color: $primary;
+  text-decoration: none;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+  }
 }
 
 .hidden-file-input {
