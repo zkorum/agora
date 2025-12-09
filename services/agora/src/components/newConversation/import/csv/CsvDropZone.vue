@@ -30,7 +30,7 @@
       <!-- File uploaded state: show status inline -->
       <template v-else>
         <div class="file-status-container">
-          <!-- Top Row: Badge and Button -->
+          <!-- Top Row: Badge Only -->
           <div class="top-row">
             <div class="status-badge-container">
               <Badge
@@ -42,7 +42,7 @@
               <Badge
                 v-else-if="status === 'uploaded'"
                 value="UPLOADED"
-                severity="success"
+                severity="info"
                 size="large"
               />
               <Badge
@@ -58,18 +58,9 @@
                 size="large"
               />
             </div>
-
-            <PrimeButton
-              v-if="status === 'uploaded' || status === 'error'"
-              size="small"
-              :aria-label="`Remove file ${file.name}`"
-              @click.stop="handleRemove"
-            >
-              <span>Remove</span>
-            </PrimeButton>
           </div>
 
-          <!-- File Info (Below) -->
+          <!-- File Info -->
           <div class="file-info">
             <div class="file-name">
               <code>{{ file.name }}</code>
@@ -97,6 +88,16 @@
               </span>
             </div>
           </div>
+
+          <!-- Remove Button (Full Width at Bottom) -->
+          <PrimeButton
+            v-if="status === 'uploaded' || status === 'error'"
+            class="remove-button"
+            :aria-label="`Remove file ${file.name}`"
+            @click.stop="handleRemove"
+          >
+            <span>Remove</span>
+          </PrimeButton>
         </div>
       </template>
     </div>
@@ -268,17 +269,17 @@ function formatFileSize(bytes: number): string {
   }
 
   &.drop-zone-uploaded {
-    background-color: #f0f9f4;
-    border: 2px solid #4caf50;
+    background-color: #dbeafe;
+    border: 2px solid #3b82f6;
     cursor: default;
 
     &:hover {
-      background-color: #e8f5e9;
+      background-color: #bfdbfe;
     }
 
     &.drop-zone-active {
-      border-color: #2e7d32;
-      background-color: #e8f5e9;
+      border-color: #2563eb;
+      background-color: #bfdbfe;
     }
   }
 
@@ -347,11 +348,6 @@ function formatFileSize(bytes: number): string {
 }
 
 .file-name {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-
   code {
     font-size: 0.875rem;
     font-family: monospace;
@@ -361,11 +357,11 @@ function formatFileSize(bytes: number): string {
     padding: 0.125rem 0.375rem;
     border-radius: 4px;
   }
+}
 
-  .file-label {
-    font-size: 0.75rem;
-    color: $color-text-weak;
-  }
+.file-type {
+  font-size: 0.75rem;
+  color: $color-text-weak;
 }
 
 .file-status {
@@ -399,6 +395,11 @@ function formatFileSize(bytes: number): string {
     opacity: 0.8;
     text-decoration: underline;
   }
+}
+
+.remove-button {
+  width: 100%;
+  margin-top: 0.5rem;
 }
 
 .hidden-file-input {
