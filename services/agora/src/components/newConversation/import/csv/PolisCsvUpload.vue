@@ -159,13 +159,24 @@ async function validateSingleFile(
       votesFile: fileType === "votes" ? csvFileState.file.value : null,
     });
 
-    // Update only this file's validation result
+    // Extract the result for this specific file
     const result = response[`${fileType}File`];
+
     if (result) {
-      csvFileState.setValidationResult(result);
+      // Check if validation was successful
+      if (result.isValid) {
+        csvFileState.setValidationResult(result);
+      } else {
+        // Validation failed - display the specific error message from backend
+        csvFileState.error.value = result.error || t("unknownError");
+      }
+    } else {
+      // No result returned for this file type
+      csvFileState.error.value = t("noValidationResult");
     }
   } catch (error) {
     console.error(`CSV validation error for ${fileType}:`, error);
+    // Network error or other exception - keep generic message for this case
     generalError.value = t("serverError");
     csvFileState.error.value = t("serverError");
   } finally {

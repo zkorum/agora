@@ -11,6 +11,8 @@ export interface PolisCsvUploadTranslations {
   errorAllFilesRequired: string;
   validationFailed: string;
   serverError: string;
+  unknownError: string;
+  noValidationResult: string;
   dropZoneMainText: string;
   dropZoneSubText: string;
   browseFilesButton: string;
@@ -37,6 +39,8 @@ export const polisCsvUploadTranslations: Record<
     errorAllFilesRequired: "All three CSV files are required",
     validationFailed: "Validation failed",
     serverError: "Unable to validate files. Please try again.",
+    unknownError: "File validation failed. Please check the file format.",
+    noValidationResult: "No validation result received from server.",
     dropZoneMainText: "Drop file here or click to browse",
     dropZoneSubText: "Any .csv file",
     browseFilesButton: "Browse Files",
@@ -58,6 +62,8 @@ export const polisCsvUploadTranslations: Record<
     errorAllFilesRequired: "جميع ملفات CSV الثلاثة مطلوبة",
     validationFailed: "فشل التحقق",
     serverError: "تعذر التحقق من الملفات. يرجى المحاولة مرة أخرى.",
+    unknownError: "فشل التحقق من الملف. يرجى التحقق من تنسيق الملف.",
+    noValidationResult: "لم يتم استلام نتيجة التحقق من الخادم.",
     dropZoneMainText: "أسقط الملف هنا أو انقر للتصفح",
     dropZoneSubText: "أي ملف .csv",
     browseFilesButton: "تصفح الملفات",
@@ -79,6 +85,9 @@ export const polisCsvUploadTranslations: Record<
     errorAllFilesRequired: "Se requieren los tres archivos CSV",
     validationFailed: "Validación fallida",
     serverError: "No se pudieron validar los archivos. Inténtelo de nuevo.",
+    unknownError:
+      "La validación del archivo falló. Verifique el formato del archivo.",
+    noValidationResult: "No se recibió resultado de validación del servidor.",
     dropZoneMainText: "Suelte el archivo aquí o haga clic para explorar",
     dropZoneSubText: "Cualquier archivo .csv",
     browseFilesButton: "Examinar archivos",
@@ -100,6 +109,9 @@ export const polisCsvUploadTranslations: Record<
     errorAllFilesRequired: "Les trois fichiers CSV sont requis",
     validationFailed: "Échec de la validation",
     serverError: "Impossible de valider les fichiers. Veuillez réessayer.",
+    unknownError:
+      "La validation du fichier a échoué. Vérifiez le format du fichier.",
+    noValidationResult: "Aucun résultat de validation reçu du serveur.",
     dropZoneMainText: "Déposez le fichier ici ou cliquez pour parcourir",
     dropZoneSubText: "Tout fichier .csv",
     browseFilesButton: "Parcourir les fichiers",
@@ -121,6 +133,8 @@ export const polisCsvUploadTranslations: Record<
     errorAllFilesRequired: "需要全部三个 CSV 文件",
     validationFailed: "验证失败",
     serverError: "无法验证文件。请重试。",
+    unknownError: "文件验证失败。请检查文件格式。",
+    noValidationResult: "未收到服务器的验证结果。",
     dropZoneMainText: "将文件拖到此处或点击浏览",
     dropZoneSubText: "任何 .csv 文件",
     browseFilesButton: "浏览文件",
@@ -142,6 +156,8 @@ export const polisCsvUploadTranslations: Record<
     errorAllFilesRequired: "需要全部三個 CSV 檔案",
     validationFailed: "驗證失敗",
     serverError: "無法驗證檔案。請重試。",
+    unknownError: "檔案驗證失敗。請檢查檔案格式。",
+    noValidationResult: "未收到伺服器的驗證結果。",
     dropZoneMainText: "將檔案拖到此處或點擊瀏覽",
     dropZoneSubText: "任何 .csv 檔案",
     browseFilesButton: "瀏覽檔案",
@@ -163,6 +179,9 @@ export const polisCsvUploadTranslations: Record<
     errorAllFilesRequired: "3 つの CSV ファイルすべてが必要です",
     validationFailed: "検証に失敗しました",
     serverError: "ファイルを検証できませんでした。もう一度お試しください。",
+    unknownError:
+      "ファイルの検証に失敗しました。ファイル形式を確認してください。",
+    noValidationResult: "サーバーから検証結果を受信できませんでした。",
     dropZoneMainText: "ファイルをここにドロップするかクリックして参照",
     dropZoneSubText: "任意の .csv ファイル",
     browseFilesButton: "ファイルを参照",
