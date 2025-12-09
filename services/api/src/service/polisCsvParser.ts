@@ -2,54 +2,6 @@ import { z } from "zod";
 import { parse } from "fast-csv";
 import { Readable } from "stream";
 
-// CSV file name constants with their corresponding schemas
-export const POLIS_CSV_FILES = {
-    SUMMARY: {
-        fileName: "summary.csv",
-        schema: "PolisSummaryCsvSchema",
-    },
-    COMMENTS: {
-        fileName: "comments.csv",
-        schema: "PolisCommentCsvSchema",
-    },
-    VOTES: {
-        fileName: "votes.csv",
-        schema: "PolisVoteCsvSchema",
-    },
-} as const;
-
-// Array of required file names for validation
-export const REQUIRED_CSV_FILE_NAMES = [
-    POLIS_CSV_FILES.SUMMARY.fileName,
-    POLIS_CSV_FILES.COMMENTS.fileName,
-    POLIS_CSV_FILES.VOTES.fileName,
-] as const;
-
-/**
- * Validate that uploaded files match the required Polis CSV file names
- * @param fileNames Array of uploaded file names
- * @returns Object with isValid boolean, missing files, and unexpected files
- */
-export function validateCsvFileNames(fileNames: string[]): {
-    isValid: boolean;
-    missingFiles: string[];
-    unexpectedFiles: string[];
-} {
-    const requiredSet = new Set<string>(REQUIRED_CSV_FILE_NAMES);
-    const uploadedSet = new Set<string>(fileNames);
-
-    const missingFiles = Array.from(REQUIRED_CSV_FILE_NAMES).filter(
-        (name) => !uploadedSet.has(name),
-    );
-    const unexpectedFiles = fileNames.filter((name) => !requiredSet.has(name));
-
-    return {
-        isValid: missingFiles.length === 0 && unexpectedFiles.length === 0,
-        missingFiles,
-        unexpectedFiles,
-    };
-}
-
 // Define Zod schemas for CSV validation
 export const PolisSummaryCsvSchema = z.object({
     topic: z.string().min(1).max(140),

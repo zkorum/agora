@@ -55,7 +55,7 @@
       rounded
       size="small"
       :aria-label="t('removeFileAriaLabel').replace('{fileName}', fileName)"
-      @click="handleRemove"
+      @click.stop="handleRemove"
     />
   </div>
 </template>
