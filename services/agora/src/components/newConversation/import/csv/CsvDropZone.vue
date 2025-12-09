@@ -13,7 +13,12 @@
     >
       <!-- Empty state: show upload icon and text -->
       <div v-if="file === null" class="drop-zone-content">
-        <i class="pi pi-upload upload-icon" />
+        <ZKIcon
+          name="lucide:upload"
+          size="1.5rem"
+          color="var(--primary-color)"
+          class="upload-icon"
+        />
         <p class="drop-zone-text">{{ dropText }}</p>
       </div>
 
@@ -44,6 +49,7 @@
 import { ref } from "vue";
 import { useDropZone } from "@vueuse/core";
 import CsvFileStatusItem from "./CsvFileStatusItem.vue";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import type { FileStatus } from "./composables/useCsvFile";
 
 interface Props {
@@ -175,11 +181,6 @@ function handleFileInputChange(event: Event): void {
   flex-direction: column;
   align-items: center;
   gap: 1.5rem;
-}
-
-.upload-icon {
-  font-size: 1.5rem;
-  color: $primary;
 }
 
 .drop-zone-text {

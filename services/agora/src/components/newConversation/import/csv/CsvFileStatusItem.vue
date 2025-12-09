@@ -55,37 +55,50 @@
         </span>
         <span v-else-if="status === 'error'" class="status-text error">
           {{ t("statusError") }}
-          <span v-if="errorMessage" class="error-detail"
-            >• {{ errorMessage }}</span
-          >
+          <span v-if="errorMessage" class="error-detail">
+            • {{ truncatedErrorMessage }}
+            <a
+              v-if="errorMessage"
+              href="#"
+              class="error-link"
+              @click.prevent="showErrorDialog = true"
+            >
+              {{ t("viewDetails") }}
+            </a>
+          </span>
         </span>
       </div>
     </div>
 
     <PrimeButton
       v-if="status === 'uploaded' || status === 'error'"
-      severity="danger"
-      text
-      rounded
       size="small"
       :aria-label="t('removeFileAriaLabel').replace('{fileName}', fileName)"
       @click.stop="handleRemove"
     >
-      <template #icon>
-        <ZKIcon name="lucide:x" size="1rem" color="currentColor" />
-      </template>
+      <span>{{ t("removeFile") }}</span>
     </PrimeButton>
+
+    <!-- Error Details Dialog -->
+    <CsvErrorDetailsDialog
+      v-if="errorMessage"
+      v-model="showErrorDialog"
+      :error-message="errorMessage"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   csvFileStatusItemTranslations,
   type CsvFileStatusItemTranslations,
 } from "./CsvFileStatusItem.i18n";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import CsvErrorDetailsDialog from "./CsvErrorDetailsDialog.vue";
+
+const ERROR_TRUNCATE_LENGTH = 100;
 
 const props = defineProps<{
   fileName: string;
@@ -103,7 +116,17 @@ const { t } = useComponentI18n<CsvFileStatusItemTranslations>(
   csvFileStatusItemTranslations
 );
 
+const showErrorDialog = ref(false);
+
 const statusClass = computed(() => `status-${props.status}`);
+
+const truncatedErrorMessage = computed(() => {
+  if (!props.errorMessage) return "";
+  if (props.errorMessage.length <= ERROR_TRUNCATE_LENGTH) {
+    return props.errorMessage;
+  }
+  return props.errorMessage.substring(0, ERROR_TRUNCATE_LENGTH) + "...";
+});
 
 function handleRemove(): void {
   emit("remove");
@@ -234,6 +257,22 @@ function formatFileSize(bytes: number): string {
   .error-detail {
     font-weight: normal;
     font-size: 0.75rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+}
+
+.error-link {
+  color: $primary;
+  text-decoration: none;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.8;
+    text-decoration: underline;
   }
 }
 </style>

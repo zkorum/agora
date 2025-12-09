@@ -7,6 +7,7 @@ export interface CsvFileStatusItemTranslations {
   statusError: string;
   removeFile: string;
   removeFileAriaLabel: string;
+  viewDetails: string;
 }
 
 export const csvFileStatusItemTranslations: Record<
@@ -20,6 +21,7 @@ export const csvFileStatusItemTranslations: Record<
     statusError: "Error",
     removeFile: "Remove",
     removeFileAriaLabel: "Remove {fileName}",
+    viewDetails: "View Details",
   },
   ar: {
     statusPending: "في انتظار الملف",
@@ -28,6 +30,7 @@ export const csvFileStatusItemTranslations: Record<
     statusError: "خطأ",
     removeFile: "إزالة",
     removeFileAriaLabel: "إزالة {fileName}",
+    viewDetails: "عرض التفاصيل",
   },
   es: {
     statusPending: "Esperando archivo",
@@ -36,6 +39,7 @@ export const csvFileStatusItemTranslations: Record<
     statusError: "Error",
     removeFile: "Eliminar",
     removeFileAriaLabel: "Eliminar {fileName}",
+    viewDetails: "Ver Detalles",
   },
   fr: {
     statusPending: "En attente du fichier",
@@ -44,6 +48,7 @@ export const csvFileStatusItemTranslations: Record<
     statusError: "Erreur",
     removeFile: "Supprimer",
     removeFileAriaLabel: "Supprimer {fileName}",
+    viewDetails: "Voir les Détails",
   },
   "zh-Hans": {
     statusPending: "等待文件",
@@ -52,6 +57,7 @@ export const csvFileStatusItemTranslations: Record<
     statusError: "错误",
     removeFile: "移除",
     removeFileAriaLabel: "移除 {fileName}",
+    viewDetails: "查看详情",
   },
   "zh-Hant": {
     statusPending: "等待檔案",
@@ -60,6 +66,7 @@ export const csvFileStatusItemTranslations: Record<
     statusError: "錯誤",
     removeFile: "移除",
     removeFileAriaLabel: "移除 {fileName}",
+    viewDetails: "檢視詳情",
   },
   ja: {
     statusPending: "ファイル待ち",
@@ -68,5 +75,6 @@ export const csvFileStatusItemTranslations: Record<
     statusError: "エラー",
     removeFile: "削除",
     removeFileAriaLabel: "{fileName}を削除",
+    viewDetails: "詳細を見る",
   },
 };
