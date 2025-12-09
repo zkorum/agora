@@ -1,18 +1,33 @@
 <template>
   <div class="csv-file-status-item" :class="statusClass">
     <div class="status-icon-container">
-      <i v-if="status === 'pending'" class="pi pi-clock status-icon pending" />
-      <i
+      <ZKIcon
+        v-if="status === 'pending'"
+        name="lucide:clock"
+        size="1.5rem"
+        color="#9e9e9e"
+        class="status-icon pending"
+      />
+      <ZKIcon
         v-else-if="status === 'uploaded'"
-        class="pi pi-check-circle status-icon uploaded"
+        name="lucide:circle-check-big"
+        size="1.5rem"
+        color="#4caf50"
+        class="status-icon uploaded"
       />
-      <i
+      <ZKIcon
         v-else-if="status === 'validating'"
-        class="pi pi-spinner pi-spin status-icon validating"
+        name="lucide:loader-circle"
+        size="1.5rem"
+        color="#2196f3"
+        class="status-icon validating spinning"
       />
-      <i
+      <ZKIcon
         v-else-if="status === 'error'"
-        class="pi pi-times-circle status-icon error"
+        name="lucide:circle-x"
+        size="1.5rem"
+        color="#ef5350"
+        class="status-icon error"
       />
     </div>
 
@@ -49,14 +64,17 @@
 
     <PrimeButton
       v-if="status === 'uploaded' || status === 'error'"
-      icon="pi pi-times"
       severity="danger"
       text
       rounded
       size="small"
       :aria-label="t('removeFileAriaLabel').replace('{fileName}', fileName)"
       @click.stop="handleRemove"
-    />
+    >
+      <template #icon>
+        <ZKIcon name="lucide:x" size="1rem" color="currentColor" />
+      </template>
+    </PrimeButton>
   </div>
 </template>
 
@@ -67,6 +85,7 @@ import {
   csvFileStatusItemTranslations,
   type CsvFileStatusItemTranslations,
 } from "./CsvFileStatusItem.i18n";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 
 const props = defineProps<{
   fileName: string;
@@ -136,22 +155,17 @@ function formatFileSize(bytes: number): string {
 }
 
 .status-icon {
-  font-size: 1.5rem;
-
-  &.pending {
-    color: #9e9e9e;
+  &.spinning {
+    animation: spin 1s linear infinite;
   }
+}
 
-  &.uploaded {
-    color: #4caf50;
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
   }
-
-  &.validating {
-    color: #2196f3;
-  }
-
-  &.error {
-    color: #ef5350;
+  to {
+    transform: rotate(360deg);
   }
 }
 
