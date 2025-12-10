@@ -18,7 +18,20 @@
             <p>{{ t("helpText") }}</p>
           </div>
           <div class="support-info">
-            <p>{{ t("supportText") }}</p>
+            <p>
+              {{ t("supportTextPrefix") }}
+              <a
+                v-if="discordLink"
+                :href="discordLink"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="discord-link"
+              >
+                {{ t("supportLinkText") }}
+              </a>
+              <span v-else>{{ t("supportLinkText") }}</span>
+              {{ t("supportTextSuffix") }}
+            </p>
           </div>
         </div>
 
@@ -39,6 +52,7 @@
 <script setup lang="ts">
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { processEnv } from "src/utils/processEnv";
 import {
   csvErrorDetailsDialogTranslations,
   type CsvErrorDetailsDialogTranslations,
@@ -55,6 +69,9 @@ const showDialog = defineModel<boolean>();
 const { t } = useComponentI18n<CsvErrorDetailsDialogTranslations>(
   csvErrorDetailsDialogTranslations
 );
+
+// Get Discord link from environment variable
+const discordLink = processEnv.VITE_DISCORD_LINK;
 
 /**
  * Handle close button click
@@ -117,6 +134,22 @@ function handleClose(): void {
       font-size: 0.9rem;
       color: $color-text-strong;
       line-height: 1.5;
+    }
+
+    .discord-link {
+      color: #2196f3;
+      text-decoration: underline;
+      font-weight: var(--font-weight-semibold);
+
+      &:hover {
+        color: #1976d2;
+      }
+
+      &:focus {
+        outline: 2px solid #2196f3;
+        outline-offset: 2px;
+        border-radius: 2px;
+      }
     }
   }
 }
