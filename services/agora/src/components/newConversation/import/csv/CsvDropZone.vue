@@ -65,9 +65,6 @@
             <div class="file-name">
               <code>{{ file.name }}</code>
             </div>
-            <div v-if="fileTypeLabel" class="file-type">
-              {{ fileTypeLabel }}
-            </div>
 
             <div class="file-status">
               <span v-if="status === 'uploaded'" class="file-size">
@@ -78,13 +75,14 @@
                 class="error-detail"
               >
                 {{ truncatedErrorMessage }}
-                <a
-                  href="#"
-                  class="error-link"
-                  @click.prevent="showErrorDialog = true"
+                <PrimeButton
+                  size="small"
+                  severity="danger"
+                  class="error-details-button"
+                  @click.stop="showErrorDialog = true"
                 >
                   View Details
-                </a>
+                </PrimeButton>
               </span>
             </div>
           </div>
@@ -381,20 +379,14 @@ function formatFileSize(bytes: number): string {
   color: $color-text-weak;
   white-space: pre-wrap;
   word-break: break-word;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
-.error-link {
-  color: $primary;
-  text-decoration: none;
-  margin-left: 0.5rem;
-  cursor: pointer;
-  font-weight: var(--font-weight-medium);
-  transition: opacity 0.2s ease;
-
-  &:hover {
-    opacity: 0.8;
-    text-decoration: underline;
-  }
+.error-details-button {
+  flex-shrink: 0;
 }
 
 .remove-button {

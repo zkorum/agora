@@ -35,8 +35,15 @@
           </div>
         </div>
 
-        <!-- Close Button -->
+        <!-- Action Buttons -->
         <div class="dialog-actions">
+          <PrimeButton
+            :label="t('copyError')"
+            severity="secondary"
+            outlined
+            class="copy-button"
+            @click="handleCopyError"
+          />
           <PrimeButton
             :label="t('close')"
             severity="primary"
@@ -53,6 +60,8 @@
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { processEnv } from "src/utils/processEnv";
+import { useClipboard } from "@vueuse/core";
+import { useNotify } from "src/utils/ui/notify";
 import {
   csvErrorDetailsDialogTranslations,
   type CsvErrorDetailsDialogTranslations,
@@ -62,7 +71,7 @@ interface Props {
   errorMessage: string;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const showDialog = defineModel<boolean>();
 
@@ -70,8 +79,21 @@ const { t } = useComponentI18n<CsvErrorDetailsDialogTranslations>(
   csvErrorDetailsDialogTranslations
 );
 
+const clipBoard = useClipboard();
+const notify = useNotify();
+
 // Get Discord link from environment variable
 const discordLink = processEnv.VITE_DISCORD_LINK;
+
+/**
+ * Handle copy error button click
+ */
+async function handleCopyError(): Promise<void> {
+  if (clipBoard.isSupported) {
+    await clipBoard.copy(props.errorMessage);
+    notify.showNotifyMessage(t("errorCopied"));
+  }
+}
 
 /**
  * Handle close button click
@@ -156,8 +178,10 @@ function handleClose(): void {
 
 .dialog-actions {
   display: flex;
+  gap: 0.75rem;
   justify-content: stretch;
 
+  .copy-button,
   .close-button {
     flex: 1;
   }
