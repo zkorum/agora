@@ -42,7 +42,7 @@
               <Badge
                 v-else-if="status === 'uploaded'"
                 value="UPLOADED"
-                severity="info"
+                severity="success"
                 size="large"
               />
               <Badge
@@ -267,17 +267,17 @@ function formatFileSize(bytes: number): string {
   }
 
   &.drop-zone-uploaded {
-    background-color: #dbeafe;
-    border: 2px solid #3b82f6;
+    background-color: #dcfce7;
+    border: 2px solid #22c55e;
     cursor: default;
 
     &:hover {
-      background-color: #bfdbfe;
+      background-color: #bbf7d0;
     }
 
     &.drop-zone-active {
-      border-color: #2563eb;
-      background-color: #bfdbfe;
+      border-color: #16a34a;
+      background-color: #bbf7d0;
     }
   }
 
