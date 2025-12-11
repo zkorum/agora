@@ -35,25 +35,25 @@
             <div class="status-badge-container">
               <Badge
                 v-if="status === 'pending'"
-                value="PENDING"
+                :value="t('statusPending')"
                 severity="secondary"
                 size="large"
               />
               <Badge
                 v-else-if="status === 'uploaded'"
-                value="UPLOADED"
+                :value="t('statusUploaded')"
                 severity="success"
                 size="large"
               />
               <Badge
                 v-else-if="status === 'validating'"
-                value="VALIDATING"
+                :value="t('statusValidating')"
                 severity="info"
                 size="large"
               />
               <Badge
                 v-else-if="status === 'error'"
-                value="ERROR"
+                :value="t('statusError')"
                 severity="danger"
                 size="large"
               />
@@ -84,7 +84,7 @@
             v-if="status === 'error' && error"
             class="view-details-button"
             severity="danger"
-            :aria-label="`View error details for ${file.name}`"
+            :aria-label="t('ariaViewDetails').replace('{fileName}', file.name)"
             @click.stop="showErrorDialog = true"
           >
             <ZKIcon
@@ -93,17 +93,17 @@
               color="currentColor"
               class="button-icon"
             />
-            <span>View Error Details</span>
+            <span>{{ t("viewDetails") }}</span>
           </PrimeButton>
 
           <!-- Remove Button (Full Width at Bottom) -->
           <PrimeButton
             v-if="status === 'uploaded' || status === 'error'"
             class="remove-button"
-            :aria-label="`Remove file ${file.name}`"
+            :aria-label="t('ariaRemove').replace('{fileName}', file.name)"
             @click.stop="handleRemove"
           >
-            <span>Remove</span>
+            <span>{{ t("remove") }}</span>
           </PrimeButton>
         </div>
       </template>
@@ -134,6 +134,11 @@ import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import Badge from "primevue/badge";
 import CsvErrorDetailsDialog from "./CsvErrorDetailsDialog.vue";
 import type { FileStatus } from "./composables/useCsvFile";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  csvDropZoneTranslations,
+  type CsvDropZoneTranslations,
+} from "./CsvDropZone.i18n";
 
 const ERROR_TRUNCATE_LENGTH = 100;
 
@@ -153,6 +158,10 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+const { t } = useComponentI18n<CsvDropZoneTranslations>(
+  csvDropZoneTranslations
+);
 
 const dropZoneRef = ref<HTMLElement>();
 const fileInputRef = ref<HTMLInputElement>();

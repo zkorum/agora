@@ -49,9 +49,9 @@ export const exportStatusViewTranslations: Record<
     processingMessage:
       "Your export is being processed. This page will update automatically.",
     failedMessage:
-      "The export failed. Please return to the export history page and request a new export.",
+      "Export failed. You can request a new export from the history page.",
     cancelledMessage:
-      "This export was cancelled. Please return to the export history page to request a new export.",
+      "This export was cancelled. You can request a new export from the history page.",
     expiredMessage: "This export has expired and been automatically deleted.",
     expiredDeletedOn: "Deleted on",
     originalError: "Original error",

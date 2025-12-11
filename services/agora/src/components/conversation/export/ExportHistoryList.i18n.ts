@@ -16,7 +16,7 @@ export const exportHistoryListTranslations: Record<
 > = {
   en: {
     loadingExports: "Loading exports...",
-    noExportsYet: "No exports yet. Request your first export above.",
+    noExportsYet: "No exports yet. Request your first export above!",
     errorLoadingExports: "Failed to load export history",
     statusProcessing: "Processing",
     statusCompleted: "Completed",

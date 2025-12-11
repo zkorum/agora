@@ -12,10 +12,8 @@ export const cooldownBannerTranslations: Record<
   CooldownBannerTranslations
 > = {
   en: {
-    cooldownSeconds:
-      "Please wait {seconds} seconds before requesting another export.",
-    cooldownMinutes:
-      "Please wait {minutes} minutes before requesting another export.",
+    cooldownSeconds: "Next export in {seconds}s",
+    cooldownMinutes: "Next export in {minutes}m",
     cooldownEnded: "Cooldown ended. You can now request a new export.",
     viewLast: "View Last Export",
   },
