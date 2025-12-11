@@ -28,6 +28,7 @@ import type {
   FetchFeedResponse,
   ValidateCsvResponse,
   GetConversationImportStatusResponse,
+  GetActiveImportResponse,
 } from "src/shared/types/dto";
 import { zodExtendedConversationData } from "src/shared/types/zod";
 import { Dto } from "src/shared/types/dto";
@@ -482,6 +483,24 @@ export function useBackendPostApi() {
     return Dto.getConversationImportStatusResponse.parse(response.data);
   }
 
+  async function getActiveImport(): Promise<GetActiveImportResponse> {
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1ConversationImportActiveGet();
+    const encodedUcan = await buildEncodedUcan(url, options);
+
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1ConversationImportActiveGet({
+      headers: {
+        ...buildAuthorizationHeader(encodedUcan),
+      },
+    });
+
+    return Dto.getActiveImportResponse.parse(response.data);
+  }
+
   return {
     createNewPost,
     fetchRecentPost,
@@ -492,5 +511,6 @@ export function useBackendPostApi() {
     importConversationFromCsv,
     validateCsvFiles,
     getConversationImportStatus,
+    getActiveImport,
   };
 }

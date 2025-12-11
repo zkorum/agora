@@ -1897,6 +1897,31 @@ server.after(() => {
         },
     });
 
+    // Get Active Import for User
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/conversation/import/active`,
+        schema: {
+            response: {
+                200: Dto.getActiveImportResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+
+            return await conversationImportService.getActiveImportForUser({
+                db: db,
+                userId: deviceStatus.userId,
+            });
+        },
+    });
+
     // Conversation Import Status Route
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "GET",

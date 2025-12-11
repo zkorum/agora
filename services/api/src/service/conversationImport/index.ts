@@ -7,7 +7,10 @@
 
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import type { ImportBuffer } from "../importBuffer.js";
-import type { GetConversationImportStatusResponse } from "@/shared/types/dto.js";
+import type {
+    GetConversationImportStatusResponse,
+    GetActiveImportResponse,
+} from "@/shared/types/dto.js";
 import * as database from "./database.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import {
@@ -52,16 +55,16 @@ export async function requestConversationImport(
         const errors: string[] = [];
         if (validation.missingFields.length > 0) {
             errors.push(
-                `Missing required CSV files: ${validation.missingFields.join(", ")}`
+                `Missing required CSV files: ${validation.missingFields.join(", ")}`,
             );
         }
         if (validation.unexpectedFields.length > 0) {
             errors.push(
-                `Unexpected files uploaded: ${validation.unexpectedFields.join(", ")}`
+                `Unexpected files uploaded: ${validation.unexpectedFields.join(", ")}`,
             );
         }
         throw new Error(
-            `Please upload all required CSV files (summary, comments, votes). ${errors.join("; ")}`
+            `Please upload all required CSV files (summary, comments, votes). ${errors.join("; ")}`,
         );
     }
 
@@ -79,7 +82,7 @@ export async function requestConversationImport(
         votesContent.trim().length === 0
     ) {
         throw new Error(
-            "One or more CSV files are empty. Please ensure all files contain valid data."
+            "One or more CSV files are empty. Please ensure all files contain valid data.",
         );
     }
 
@@ -100,7 +103,7 @@ export async function requestConversationImport(
         const errorMessage =
             error instanceof Error ? error.message : "Unknown error";
         throw new Error(
-            `CSV validation failed: ${errorMessage}. Please ensure your CSV files match the required format.`
+            `CSV validation failed: ${errorMessage}. Please ensure your CSV files match the required format.`,
         );
     }
 
@@ -189,4 +192,29 @@ export async function getConversationImportStatus(
             updatedAt,
         };
     }
+}
+
+interface GetActiveImportForUserParams {
+    db: PostgresDatabase;
+    userId: string;
+}
+
+/**
+ * Get the active (processing) import for a user, if any
+ * Returns null if no active import exists
+ */
+export async function getActiveImportForUser(
+    params: GetActiveImportForUserParams,
+): Promise<GetActiveImportResponse> {
+    const result = await database.getActiveImportForUser(params);
+
+    if (result === null) {
+        return { hasActiveImport: false as const };
+    }
+
+    return {
+        hasActiveImport: true as const,
+        importSlugId: result.importSlugId,
+        createdAt: result.createdAt,
+    };
 }

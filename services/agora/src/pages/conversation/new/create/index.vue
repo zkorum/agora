@@ -5,7 +5,7 @@
         <BackButton />
       </div>
 
-      <ZKButton
+      <PrimeButton
         button-type="largeButton"
         color="primary"
         :label="
@@ -15,12 +15,26 @@
         "
         size="0.8rem"
         :loading="isSubmitButtonLoading"
+        :disabled="
+          hasActiveImport &&
+          conversationDraft.importSettings.importType === 'csv-import'
+        "
         @click="onSubmit()"
       />
     </TopMenuWrapper>
 
     <div class="container">
       <NewConversationControlBar />
+
+      <!-- Active Import Banner -->
+      <ActiveImportBanner
+        v-if="
+          hasActiveImport &&
+          conversationDraft.importSettings.importType === 'csv-import' &&
+          activeImportQuery.data.value?.hasActiveImport
+        "
+        :import-slug-id="activeImportQuery.data.value.importSlugId"
+      />
 
       <div class="contentFlexStyle">
         <div
@@ -123,13 +137,13 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { useRouter } from "vue-router";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import PolisUrlInput from "src/components/newConversation/import/url/PolisUrlInput.vue";
 import PolisCsvUpload from "src/components/newConversation/import/csv/PolisCsvUpload.vue";
+import ActiveImportBanner from "src/components/conversation/import/ActiveImportBanner.vue";
 import {
   useNewPostDraftsStore,
   type ValidationErrorField,
@@ -150,6 +164,7 @@ import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import PollComponent from "src/components/newConversation/poll/PollComponent.vue";
 import { useBackendPostApi } from "src/utils/api/post/post";
+import { useActiveImportQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
 import {
   createConversationTranslations,
   type CreateConversationTranslations,
@@ -197,6 +212,19 @@ const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { handleAxiosErrorStatusCodes } = useCommonApi();
 
 const showLoginDialog = ref(false);
+
+// Active import query - only enabled when logged in and on CSV import mode
+const activeImportQuery = useActiveImportQuery({
+  enabled: computed(
+    () =>
+      isLoggedIn.value &&
+      conversationDraft.value.importSettings.importType === "csv-import"
+  ),
+});
+
+const hasActiveImport = computed(() => {
+  return activeImportQuery.data.value?.hasActiveImport ?? false;
+});
 
 function onLoginCallback() {
   // Unlock route to prevent ExitRoutePrompt from showing

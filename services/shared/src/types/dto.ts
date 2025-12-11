@@ -233,6 +233,20 @@ export class Dto {
             importSlugId: z.string(),
         })
         .strict();
+    static getActiveImportResponse = z.discriminatedUnion("hasActiveImport", [
+        z
+            .object({
+                hasActiveImport: z.literal(true),
+                importSlugId: zodSlugId,
+                createdAt: zodDateTimeFlexible,
+            })
+            .strict(),
+        z
+            .object({
+                hasActiveImport: z.literal(false),
+            })
+            .strict(),
+    ]);
     static getConversationImportStatusRequest = z
         .object({
             importSlugId: zodSlugId,
@@ -900,6 +914,9 @@ export type UpdateLanguagePreferencesRequest = z.infer<
 export type ConversationAnalysis = z.infer<typeof Dto.fetchAnalysisResponse>;
 export type CastVoteResponse = z.infer<typeof Dto.castVoteResponse>;
 export type ValidateCsvResponse = z.infer<typeof Dto.validateCsvResponse>;
+export type GetActiveImportResponse = z.infer<
+    typeof Dto.getActiveImportResponse
+>;
 export type GetConversationImportStatusRequest = z.infer<
     typeof Dto.getConversationImportStatusRequest
 >;

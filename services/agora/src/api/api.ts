@@ -2085,6 +2085,69 @@ export interface ApiV1ConversationGetPost200Response {
 /**
  * 
  * @export
+ * @interface ApiV1ConversationImportActiveGet200Response
+ */
+export interface ApiV1ConversationImportActiveGet200Response {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationImportActiveGet200Response
+     */
+    'hasActiveImport': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportActiveGet200Response
+     */
+    'importSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportActiveGet200Response
+     */
+    'createdAt': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationImportActiveGet200ResponseAnyOf
+ */
+export interface ApiV1ConversationImportActiveGet200ResponseAnyOf {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationImportActiveGet200ResponseAnyOf
+     */
+    'hasActiveImport': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportActiveGet200ResponseAnyOf
+     */
+    'importSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportActiveGet200ResponseAnyOf
+     */
+    'createdAt': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationImportActiveGet200ResponseAnyOf1
+ */
+export interface ApiV1ConversationImportActiveGet200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationImportActiveGet200ResponseAnyOf1
+     */
+    'hasActiveImport': boolean;
+}
+/**
+ * 
+ * @export
  * @interface ApiV1ConversationImportCsvPost200Response
  */
 export interface ApiV1ConversationImportCsvPost200Response {
@@ -5294,6 +5357,39 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
+        apiV1ConversationImportActiveGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/conversation/import/active`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
         apiV1ConversationImportCsvPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/v1/conversation/import-csv`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -7076,6 +7172,17 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
+        async apiV1ConversationImportActiveGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationImportActiveGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationImportActiveGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationImportActiveGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
         async apiV1ConversationImportCsvPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationImportCsvPost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationImportCsvPost(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
@@ -7760,6 +7867,14 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
+        apiV1ConversationImportActiveGet(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationImportActiveGet200Response> {
+            return localVarFp.apiV1ConversationImportActiveGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
         apiV1ConversationImportCsvPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationImportCsvPost200Response> {
             return localVarFp.apiV1ConversationImportCsvPost(options).then((request) => request(axios, basePath));
         },
@@ -8363,6 +8478,16 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1ConversationGetPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ConversationGetPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationImportActiveGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationImportActiveGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
