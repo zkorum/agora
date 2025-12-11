@@ -16,7 +16,7 @@ import { onMounted } from "vue";
 import { useBackendAuthApi } from "./utils/api/auth";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
 import { useZupassVerification } from "./composables/zupass/useZupassVerification";
-import "primeicons/primeicons.css";
+import { useNotificationSSE } from "./composables/useNotificationSSE";
 
 swiperElement.register();
 
@@ -26,6 +26,10 @@ useHtmlNodeCssPatch();
 
 // Initialize global Zupass iframe container
 const { zupassIframeContainer } = useZupassVerification();
+
+// Initialize SSE for real-time notifications
+// The composable automatically handles connecting/disconnecting based on auth state
+useNotificationSSE();
 
 onMounted(async () => {
   try {

@@ -6,6 +6,7 @@ export interface SettingsNavigationItem {
   to: keyof RouteNamedMap;
   style?: "none" | "warning" | "negative";
   value?: string;
+  key?: string;
 }
 
 export interface SettingsActionItem {
@@ -14,6 +15,7 @@ export interface SettingsActionItem {
   action: () => void;
   style?: "none" | "warning" | "negative";
   value?: string;
+  key?: string;
 }
 
 export type SettingsInterface = SettingsNavigationItem | SettingsActionItem;

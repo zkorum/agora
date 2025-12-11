@@ -1,7 +1,12 @@
 import {
     conversationTable,
+    conversationContentTable,
+    conversationExportTable,
+    conversationImportTable,
     notificationNewOpinionTable,
     notificationOpinionVoteTable,
+    notificationExportTable,
+    notificationImportTable,
     opinionContentTable,
     opinionTable,
     notificationTable,
@@ -9,12 +14,14 @@ import {
 } from "@/shared-backend/schema.js";
 import type { FetchNotificationsResponse } from "@/shared/types/dto.js";
 import type { NotificationItem } from "@/shared/types/zod.js";
-import { and, desc, eq, lt } from "drizzle-orm";
+import { zodNotificationItem } from "@/shared/types/zod.js";
+import { and, desc, eq, lt, lte } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
 import { generateRandomSlugId } from "@/crypto.js";
+import type { NotificationSSEManager } from "./notificationSSE.js";
 
 interface MarkAllNotificationsAsReadProps {
     db: PostgresJsDatabase;
@@ -88,10 +95,12 @@ export async function getNotifications({
         lastSlugId: lastSlugId,
     });
 
-    const whereClause = and(
-        eq(notificationTable.userId, userId),
-        lt(notificationTable.createdAt, lastCreatedAt),
-    );
+    const whereClause = lastSlugId
+        ? and(
+              eq(notificationTable.userId, userId),
+              lt(notificationTable.createdAt, lastCreatedAt),
+          )
+        : eq(notificationTable.userId, userId);
 
     const orderByClause = desc(notificationTable.createdAt);
 
@@ -154,6 +163,7 @@ export async function getNotifications({
                     ),
                     username: notificationItem.username,
                     routeTarget: {
+                        type: "opinion",
                         conversationSlugId: notificationItem.conversationSlugId,
                         opinionSlugId: notificationItem.opinionSlugId,
                     },
@@ -223,6 +233,7 @@ export async function getNotifications({
                         notificationItem.opinionContent,
                     ),
                     routeTarget: {
+                        type: "opinion",
                         conversationSlugId: notificationItem.conversationSlugId,
                         opinionSlugId: notificationItem.opinionSlugId,
                     },
@@ -238,8 +249,260 @@ export async function getNotifications({
         });
     }
 
+    // Fetch export notifications
+    {
+        const notificationTableResponse = await db
+            .select({
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
+                notificationType: notificationTable.notificationType,
+                conversationSlugId: conversationTable.slugId,
+                conversationTitle: conversationContentTable.title,
+                exportSlugId: conversationExportTable.slugId,
+                errorMessage: conversationExportTable.errorMessage,
+                cancellationReason: conversationExportTable.cancellationReason,
+                slugId: notificationTable.slugId,
+            })
+            .from(notificationTable)
+            .leftJoin(
+                notificationExportTable,
+                eq(
+                    notificationExportTable.notificationId,
+                    notificationTable.id,
+                ),
+            )
+            .leftJoin(
+                conversationExportTable,
+                eq(
+                    conversationExportTable.id,
+                    notificationExportTable.exportId,
+                ),
+            )
+            .leftJoin(
+                conversationTable,
+                eq(
+                    conversationTable.id,
+                    notificationExportTable.conversationId,
+                ),
+            )
+            .leftJoin(
+                conversationContentTable,
+                eq(
+                    conversationContentTable.id,
+                    conversationTable.currentContentId,
+                ),
+            )
+            .where(whereClause)
+            .orderBy(orderByClause)
+            .limit(fetchLimit);
+
+        notificationTableResponse.forEach((notificationItem) => {
+            if (
+                notificationItem.conversationSlugId &&
+                notificationItem.conversationTitle &&
+                notificationItem.exportSlugId &&
+                (notificationItem.notificationType === "export_started" ||
+                    notificationItem.notificationType === "export_completed" ||
+                    notificationItem.notificationType === "export_failed" ||
+                    notificationItem.notificationType === "export_cancelled")
+            ) {
+                // Construct notification based on type
+                if (notificationItem.notificationType === "export_started") {
+                    const parsedItem: NotificationItem = {
+                        type: "export_started",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message: `"${notificationItem.conversationTitle}"`,
+                        routeTarget: {
+                            type: "export",
+                            conversationSlugId:
+                                notificationItem.conversationSlugId,
+                            exportSlugId: notificationItem.exportSlugId,
+                        },
+                    };
+                    notificationItemList.push(parsedItem);
+                } else if (
+                    notificationItem.notificationType === "export_completed"
+                ) {
+                    const parsedItem: NotificationItem = {
+                        type: "export_completed",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message: `"${notificationItem.conversationTitle}"`,
+                        routeTarget: {
+                            type: "export",
+                            conversationSlugId:
+                                notificationItem.conversationSlugId,
+                            exportSlugId: notificationItem.exportSlugId,
+                        },
+                    };
+                    notificationItemList.push(parsedItem);
+                } else if (
+                    notificationItem.notificationType === "export_failed"
+                ) {
+                    const parsedItem: NotificationItem = {
+                        type: "export_failed",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message: notificationItem.errorMessage
+                            ? `${notificationItem.errorMessage}`
+                            : `"${notificationItem.conversationTitle}"`,
+                        routeTarget: {
+                            type: "export",
+                            conversationSlugId:
+                                notificationItem.conversationSlugId,
+                            exportSlugId: notificationItem.exportSlugId,
+                        },
+                        ...(notificationItem.errorMessage && {
+                            errorMessage: notificationItem.errorMessage,
+                        }),
+                    };
+                    notificationItemList.push(parsedItem);
+                } else if (
+                    notificationItem.notificationType === "export_cancelled"
+                ) {
+                    const parsedItem: NotificationItem = {
+                        type: "export_cancelled",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message: notificationItem.cancellationReason
+                            ? `${notificationItem.cancellationReason}`
+                            : `"${notificationItem.conversationTitle}"`,
+                        routeTarget: {
+                            type: "export",
+                            conversationSlugId:
+                                notificationItem.conversationSlugId,
+                            exportSlugId: notificationItem.exportSlugId,
+                        },
+                        cancellationReason:
+                            notificationItem.cancellationReason ||
+                            "Export was cancelled",
+                    };
+                    notificationItemList.push(parsedItem);
+                }
+
+                if (!notificationItem.isRead) {
+                    numNewNotifications += 1;
+                }
+            }
+        });
+    }
+
+    // Fetch import notifications
+    {
+        const notificationTableResponse = await db
+            .select({
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
+                notificationType: notificationTable.notificationType,
+                importSlugId: conversationImportTable.slugId,
+                conversationSlugId: conversationTable.slugId,
+                errorMessage: conversationImportTable.errorMessage,
+                slugId: notificationTable.slugId,
+            })
+            .from(notificationTable)
+            .leftJoin(
+                notificationImportTable,
+                eq(
+                    notificationImportTable.notificationId,
+                    notificationTable.id,
+                ),
+            )
+            .leftJoin(
+                conversationImportTable,
+                eq(
+                    conversationImportTable.id,
+                    notificationImportTable.importId,
+                ),
+            )
+            .leftJoin(
+                conversationTable,
+                eq(
+                    conversationTable.id,
+                    notificationImportTable.conversationId,
+                ),
+            )
+            .where(whereClause)
+            .orderBy(orderByClause)
+            .limit(fetchLimit);
+
+        notificationTableResponse.forEach((notificationItem) => {
+            if (
+                notificationItem.importSlugId &&
+                (notificationItem.notificationType === "import_started" ||
+                    notificationItem.notificationType === "import_completed" ||
+                    notificationItem.notificationType === "import_failed")
+            ) {
+                // Construct notification based on type
+                if (notificationItem.notificationType === "import_started") {
+                    const parsedItem: NotificationItem = {
+                        type: "import_started",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message: "CSV import has started",
+                        routeTarget: {
+                            type: "import",
+                            importSlugId: notificationItem.importSlugId,
+                        },
+                    };
+                    notificationItemList.push(parsedItem);
+                } else if (
+                    notificationItem.notificationType === "import_completed"
+                ) {
+                    const parsedItem: NotificationItem = {
+                        type: "import_completed",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message: "CSV import completed successfully",
+                        routeTarget: {
+                            type: "import",
+                            importSlugId: notificationItem.importSlugId,
+                            ...(notificationItem.conversationSlugId && {
+                                conversationSlugId:
+                                    notificationItem.conversationSlugId,
+                            }),
+                        },
+                    };
+                    notificationItemList.push(parsedItem);
+                } else if (
+                    notificationItem.notificationType === "import_failed"
+                ) {
+                    const parsedItem: NotificationItem = {
+                        type: "import_failed",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message: notificationItem.errorMessage
+                            ? `${notificationItem.errorMessage}`
+                            : "CSV import failed",
+                        routeTarget: {
+                            type: "import",
+                            importSlugId: notificationItem.importSlugId,
+                        },
+                        ...(notificationItem.errorMessage && {
+                            errorMessage: notificationItem.errorMessage,
+                        }),
+                    };
+                    notificationItemList.push(parsedItem);
+                }
+
+                if (!notificationItem.isRead) {
+                    numNewNotifications += 1;
+                }
+            }
+        });
+    }
+
     notificationItemList.sort(function (a, b) {
-        return b.createdAt.getTime() - a.createdAt.getTime();
+        return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
     });
 
     return {
@@ -248,25 +511,583 @@ export async function getNotifications({
     };
 }
 
+/**
+ * Helper function to build an export notification from database data
+ * Fetches only the necessary data for a single notification
+ */
+async function buildExportNotification(
+    db: PostgresJsDatabase,
+    notificationSlugId: string,
+    exportId: number,
+    conversationId: number,
+): Promise<NotificationItem | null> {
+    try {
+        const result = await db
+            .select({
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
+                notificationType: notificationTable.notificationType,
+                conversationSlugId: conversationTable.slugId,
+                conversationTitle: conversationContentTable.title,
+                exportSlugId: conversationExportTable.slugId,
+                errorMessage: conversationExportTable.errorMessage,
+                cancellationReason: conversationExportTable.cancellationReason,
+            })
+            .from(notificationTable)
+            .leftJoin(
+                conversationExportTable,
+                eq(conversationExportTable.id, exportId),
+            )
+            .leftJoin(
+                conversationTable,
+                eq(conversationTable.id, conversationId),
+            )
+            .leftJoin(
+                conversationContentTable,
+                eq(
+                    conversationContentTable.id,
+                    conversationTable.currentContentId,
+                ),
+            )
+            .where(eq(notificationTable.slugId, notificationSlugId))
+            .limit(1);
+
+        if (
+            result.length === 1 &&
+            result[0].conversationSlugId &&
+            result[0].conversationTitle &&
+            result[0].exportSlugId &&
+            (result[0].notificationType === "export_started" ||
+                result[0].notificationType === "export_completed" ||
+                result[0].notificationType === "export_failed" ||
+                result[0].notificationType === "export_cancelled")
+        ) {
+            // Construct notification based on type
+            if (result[0].notificationType === "export_started") {
+                return {
+                    type: "export_started",
+                    slugId: notificationSlugId,
+                    createdAt: result[0].createdAt,
+                    isRead: result[0].isRead,
+                    message: `"${result[0].conversationTitle}"`,
+                    routeTarget: {
+                        type: "export",
+                        conversationSlugId: result[0].conversationSlugId,
+                        exportSlugId: result[0].exportSlugId,
+                    },
+                };
+            } else if (result[0].notificationType === "export_completed") {
+                return {
+                    type: "export_completed",
+                    slugId: notificationSlugId,
+                    createdAt: result[0].createdAt,
+                    isRead: result[0].isRead,
+                    message: `"${result[0].conversationTitle}"`,
+                    routeTarget: {
+                        type: "export",
+                        conversationSlugId: result[0].conversationSlugId,
+                        exportSlugId: result[0].exportSlugId,
+                    },
+                };
+            } else if (result[0].notificationType === "export_failed") {
+                return {
+                    type: "export_failed",
+                    slugId: notificationSlugId,
+                    createdAt: result[0].createdAt,
+                    isRead: result[0].isRead,
+                    message: result[0].errorMessage
+                        ? `${result[0].errorMessage}`
+                        : `"${result[0].conversationTitle}"`,
+                    routeTarget: {
+                        type: "export",
+                        conversationSlugId: result[0].conversationSlugId,
+                        exportSlugId: result[0].exportSlugId,
+                    },
+                    ...(result[0].errorMessage && {
+                        errorMessage: result[0].errorMessage,
+                    }),
+                };
+            } else if (result[0].notificationType === "export_cancelled") {
+                return {
+                    type: "export_cancelled",
+                    slugId: notificationSlugId,
+                    createdAt: result[0].createdAt,
+                    isRead: result[0].isRead,
+                    message: result[0].cancellationReason
+                        ? `${result[0].cancellationReason}`
+                        : `"${result[0].conversationTitle}"`,
+                    routeTarget: {
+                        type: "export",
+                        conversationSlugId: result[0].conversationSlugId,
+                        exportSlugId: result[0].exportSlugId,
+                    },
+                    cancellationReason:
+                        result[0].cancellationReason || "Export was cancelled",
+                };
+            }
+        }
+        return null;
+    } catch (error) {
+        log.error(
+            error,
+            `Failed to build export notification ${notificationSlugId}`,
+        );
+        return null;
+    }
+}
+
+/**
+ * Helper function to build an opinion vote notification from database data
+ * Fetches only the necessary data for a single notification
+ */
+async function buildVoteNotification(
+    db: PostgresJsDatabase,
+    notificationSlugId: string,
+    opinionId: number,
+    conversationId: number,
+    numVotes: number,
+): Promise<NotificationItem | null> {
+    try {
+        const result = await db
+            .select({
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
+                conversationSlugId: conversationTable.slugId,
+                opinionSlugId: opinionTable.slugId,
+                opinionContent: opinionContentTable.content,
+            })
+            .from(notificationTable)
+            .leftJoin(opinionTable, eq(opinionTable.id, opinionId))
+            .leftJoin(
+                opinionContentTable,
+                eq(opinionContentTable.opinionId, opinionId),
+            )
+            .leftJoin(
+                conversationTable,
+                eq(conversationTable.id, conversationId),
+            )
+            .where(eq(notificationTable.slugId, notificationSlugId))
+            .limit(1);
+
+        if (
+            result.length === 1 &&
+            result[0].conversationSlugId &&
+            result[0].opinionSlugId &&
+            result[0].opinionContent
+        ) {
+            return {
+                type: "opinion_vote",
+                slugId: notificationSlugId,
+                createdAt: result[0].createdAt,
+                isRead: result[0].isRead,
+                message: useCommonPost().createCompactHtmlBody(
+                    result[0].opinionContent,
+                ),
+                routeTarget: {
+                    type: "opinion",
+                    conversationSlugId: result[0].conversationSlugId,
+                    opinionSlugId: result[0].opinionSlugId,
+                },
+                numVotes: numVotes,
+            };
+        }
+        return null;
+    } catch (error) {
+        log.error(
+            error,
+            `Failed to build vote notification ${notificationSlugId}`,
+        );
+        return null;
+    }
+}
+
+/**
+ * Helper function to build a new opinion notification from database data
+ * Fetches only the necessary data for a single notification
+ */
+async function buildOpinionNotification(
+    db: PostgresJsDatabase,
+    notificationSlugId: string,
+    opinionId: number,
+    conversationId: number,
+    opinionAuthorId: string,
+): Promise<NotificationItem | null> {
+    try {
+        const result = await db
+            .select({
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
+                conversationSlugId: conversationTable.slugId,
+                opinionSlugId: opinionTable.slugId,
+                opinionContent: opinionContentTable.content,
+                username: userTable.username,
+            })
+            .from(notificationTable)
+            .leftJoin(opinionTable, eq(opinionTable.id, opinionId))
+            .leftJoin(
+                opinionContentTable,
+                eq(opinionContentTable.opinionId, opinionId),
+            )
+            .leftJoin(
+                conversationTable,
+                eq(conversationTable.id, conversationId),
+            )
+            .leftJoin(userTable, eq(userTable.id, opinionAuthorId))
+            .where(eq(notificationTable.slugId, notificationSlugId))
+            .limit(1);
+
+        if (
+            result.length === 1 &&
+            result[0].conversationSlugId &&
+            result[0].opinionSlugId &&
+            result[0].opinionContent &&
+            result[0].username
+        ) {
+            return {
+                type: "new_opinion",
+                slugId: notificationSlugId,
+                createdAt: result[0].createdAt,
+                isRead: result[0].isRead,
+                message: useCommonPost().createCompactHtmlBody(
+                    result[0].opinionContent,
+                ),
+                username: result[0].username,
+                routeTarget: {
+                    type: "opinion",
+                    conversationSlugId: result[0].conversationSlugId,
+                    opinionSlugId: result[0].opinionSlugId,
+                },
+            };
+        }
+        return null;
+    } catch (error) {
+        log.error(
+            error,
+            `Failed to build opinion notification ${notificationSlugId}`,
+        );
+        return null;
+    }
+}
+
 interface InsertNewVoteNotificationProps {
     db: PostgresJsDatabase;
     userId: string;
     opinionId: number;
     conversationId: number;
     numVotes: number;
+    notificationSSEManager?: NotificationSSEManager;
 }
 
-export async function insertNewVoteNotification({
+/**
+ * Broadcast a vote notification to a user via SSE
+ * Builds notification directly from data and validates before broadcasting
+ */
+async function broadcastVoteNotification(
+    notificationSSEManager: NotificationSSEManager | undefined,
+    db: PostgresJsDatabase,
+    userId: string,
+    notificationSlugId: string,
+    opinionId: number,
+    conversationId: number,
+    numVotes: number,
+): Promise<void> {
+    if (!notificationSSEManager) {
+        return;
+    }
+
+    try {
+        const notification = await buildVoteNotification(
+            db,
+            notificationSlugId,
+            opinionId,
+            conversationId,
+            numVotes,
+        );
+
+        if (notification) {
+            // Validate notification before broadcasting
+            const validationResult =
+                zodNotificationItem.safeParse(notification);
+            if (validationResult.success) {
+                notificationSSEManager.broadcastToUser(
+                    userId,
+                    validationResult.data,
+                );
+            } else {
+                log.error(
+                    validationResult.error,
+                    `Failed to validate vote notification ${notificationSlugId} before broadcast`,
+                );
+            }
+        }
+    } catch (error) {
+        log.error(
+            error,
+            `Failed to broadcast vote notification ${notificationSlugId} to user ${userId}`,
+        );
+    }
+}
+
+/**
+ * Broadcast an opinion notification to a user via SSE
+ * Builds notification directly from data and validates before broadcasting
+ */
+async function broadcastOpinionNotification(
+    notificationSSEManager: NotificationSSEManager | undefined,
+    db: PostgresJsDatabase,
+    userId: string,
+    notificationSlugId: string,
+    opinionId: number,
+    conversationId: number,
+    opinionAuthorId: string,
+): Promise<void> {
+    if (!notificationSSEManager) {
+        return;
+    }
+
+    try {
+        const notification = await buildOpinionNotification(
+            db,
+            notificationSlugId,
+            opinionId,
+            conversationId,
+            opinionAuthorId,
+        );
+
+        if (notification) {
+            // Validate notification before broadcasting
+            const validationResult =
+                zodNotificationItem.safeParse(notification);
+            if (validationResult.success) {
+                notificationSSEManager.broadcastToUser(
+                    userId,
+                    validationResult.data,
+                );
+            } else {
+                log.error(
+                    validationResult.error,
+                    `Failed to validate opinion notification ${notificationSlugId} before broadcast`,
+                );
+            }
+        }
+    } catch (error) {
+        log.error(
+            error,
+            `Failed to broadcast opinion notification ${notificationSlugId} to user ${userId}`,
+        );
+    }
+}
+
+/**
+ * Broadcast an export notification to a user via SSE
+ * Builds notification directly from data and validates before broadcasting
+ */
+export async function broadcastExportNotification(
+    notificationSSEManager: NotificationSSEManager | undefined,
+    db: PostgresJsDatabase,
+    userId: string,
+    notificationSlugId: string,
+    exportId: number,
+    conversationId: number,
+): Promise<void> {
+    if (!notificationSSEManager) {
+        return;
+    }
+
+    try {
+        const notification = await buildExportNotification(
+            db,
+            notificationSlugId,
+            exportId,
+            conversationId,
+        );
+
+        if (notification) {
+            // Validate notification before broadcasting
+            const validationResult =
+                zodNotificationItem.safeParse(notification);
+            if (validationResult.success) {
+                notificationSSEManager.broadcastToUser(
+                    userId,
+                    validationResult.data,
+                );
+            } else {
+                log.error(
+                    validationResult.error,
+                    `Failed to validate export notification ${notificationSlugId} before broadcast`,
+                );
+            }
+        }
+    } catch (error) {
+        log.error(
+            error,
+            `Failed to broadcast export notification ${notificationSlugId} to user ${userId}`,
+        );
+    }
+}
+
+/**
+ * Helper function to build an import notification from database data
+ * Fetches only the necessary data for a single notification
+ */
+async function buildImportNotification(
+    db: PostgresJsDatabase,
+    notificationSlugId: string,
+    importId: number,
+    conversationId: number | null,
+): Promise<NotificationItem | null> {
+    try {
+        const result = await db
+            .select({
+                createdAt: notificationTable.createdAt,
+                isRead: notificationTable.isRead,
+                notificationType: notificationTable.notificationType,
+                importSlugId: conversationImportTable.slugId,
+                conversationSlugId: conversationTable.slugId,
+                errorMessage: conversationImportTable.errorMessage,
+            })
+            .from(notificationTable)
+            .leftJoin(
+                conversationImportTable,
+                eq(conversationImportTable.id, importId),
+            )
+            .leftJoin(
+                conversationTable,
+                conversationId
+                    ? eq(conversationTable.id, conversationId)
+                    : undefined,
+            )
+            .where(eq(notificationTable.slugId, notificationSlugId))
+            .limit(1);
+
+        if (
+            result.length === 1 &&
+            result[0].importSlugId &&
+            (result[0].notificationType === "import_started" ||
+                result[0].notificationType === "import_completed" ||
+                result[0].notificationType === "import_failed")
+        ) {
+            // Construct notification based on type
+            if (result[0].notificationType === "import_started") {
+                return {
+                    type: "import_started",
+                    slugId: notificationSlugId,
+                    createdAt: result[0].createdAt,
+                    isRead: result[0].isRead,
+                    message: "CSV import has started",
+                    routeTarget: {
+                        type: "import",
+                        importSlugId: result[0].importSlugId,
+                    },
+                };
+            } else if (result[0].notificationType === "import_completed") {
+                return {
+                    type: "import_completed",
+                    slugId: notificationSlugId,
+                    createdAt: result[0].createdAt,
+                    isRead: result[0].isRead,
+                    message: "CSV import completed successfully",
+                    routeTarget: {
+                        type: "import",
+                        importSlugId: result[0].importSlugId,
+                        conversationSlugId:
+                            result[0].conversationSlugId ?? undefined,
+                    },
+                };
+            } else if (result[0].notificationType === "import_failed") {
+                return {
+                    type: "import_failed",
+                    slugId: notificationSlugId,
+                    createdAt: result[0].createdAt,
+                    isRead: result[0].isRead,
+                    message: result[0].errorMessage
+                        ? `${result[0].errorMessage}`
+                        : "CSV import failed",
+                    routeTarget: {
+                        type: "import",
+                        importSlugId: result[0].importSlugId,
+                    },
+                    ...(result[0].errorMessage && {
+                        errorMessage: result[0].errorMessage,
+                    }),
+                };
+            }
+        }
+        return null;
+    } catch (error) {
+        log.error(
+            error,
+            `Failed to build import notification ${notificationSlugId}`,
+        );
+        return null;
+    }
+}
+
+/**
+ * Broadcast an import notification to a user via SSE
+ * Builds notification directly from data and validates before broadcasting
+ */
+export async function broadcastImportNotification(
+    notificationSSEManager: NotificationSSEManager | undefined,
+    db: PostgresJsDatabase,
+    userId: string,
+    notificationSlugId: string,
+    importId: number,
+    conversationId: number | null,
+): Promise<void> {
+    if (!notificationSSEManager) {
+        return;
+    }
+
+    try {
+        const notification = await buildImportNotification(
+            db,
+            notificationSlugId,
+            importId,
+            conversationId,
+        );
+
+        if (notification) {
+            // Validate notification before broadcasting
+            const validationResult =
+                zodNotificationItem.safeParse(notification);
+            if (validationResult.success) {
+                notificationSSEManager.broadcastToUser(
+                    userId,
+                    validationResult.data,
+                );
+            } else {
+                log.error(
+                    validationResult.error,
+                    `Failed to validate import notification ${notificationSlugId} before broadcast`,
+                );
+            }
+        }
+    } catch (error) {
+        log.error(
+            error,
+            `Failed to broadcast import notification ${notificationSlugId} to user ${userId}`,
+        );
+    }
+}
+
+/**
+ * Create a vote notification and broadcast it via SSE
+ * Returns the notification slug ID
+ */
+export async function createVoteNotification({
     db,
     userId,
     opinionId,
     conversationId,
     numVotes,
-}: InsertNewVoteNotificationProps) {
+    notificationSSEManager,
+}: InsertNewVoteNotificationProps): Promise<string> {
+    const notificationSlugId = generateRandomSlugId();
     const notificationTableResponse = await db
         .insert(notificationTable)
         .values({
-            slugId: generateRandomSlugId(),
+            slugId: notificationSlugId,
             userId: userId,
             notificationType: "opinion_vote",
         })
@@ -282,4 +1103,79 @@ export async function insertNewVoteNotification({
         conversationId: conversationId,
         numVotes: numVotes,
     });
+
+    // Broadcast notification via SSE (don't await to avoid blocking)
+    void broadcastVoteNotification(
+        notificationSSEManager,
+        db,
+        userId,
+        notificationSlugId,
+        opinionId,
+        conversationId,
+        numVotes,
+    );
+
+    return notificationSlugId;
+}
+
+interface CreateOpinionNotificationProps {
+    db: PostgresJsDatabase;
+    conversationAuthorId: string;
+    opinionAuthorId: string;
+    opinionId: number;
+    conversationId: number;
+    notificationSSEManager?: NotificationSSEManager;
+}
+
+/**
+ * Create a notification for a new opinion on a conversation and broadcast it via SSE
+ * Returns the notification slug ID if a notification was created, undefined otherwise
+ * No notification is created if the opinion author is the same as the conversation author
+ */
+export async function createOpinionNotification({
+    db,
+    conversationAuthorId,
+    opinionAuthorId,
+    opinionId,
+    conversationId,
+    notificationSSEManager,
+}: CreateOpinionNotificationProps): Promise<string | undefined> {
+    // Don't create notification if user is commenting on their own conversation
+    if (opinionAuthorId === conversationAuthorId) {
+        return undefined;
+    }
+
+    const notificationSlugId = generateRandomSlugId();
+    const notificationTableResponse = await db
+        .insert(notificationTable)
+        .values({
+            slugId: notificationSlugId,
+            userId: conversationAuthorId,
+            notificationType: "new_opinion",
+        })
+        .returning({
+            notificationId: notificationTable.id,
+        });
+
+    const notificationId = notificationTableResponse[0].notificationId;
+
+    await db.insert(notificationNewOpinionTable).values({
+        notificationId: notificationId,
+        authorId: opinionAuthorId,
+        opinionId: opinionId,
+        conversationId: conversationId,
+    });
+
+    // Broadcast notification via SSE (don't await to avoid blocking)
+    void broadcastOpinionNotification(
+        notificationSSEManager,
+        db,
+        conversationAuthorId,
+        notificationSlugId,
+        opinionId,
+        conversationId,
+        opinionAuthorId,
+    );
+
+    return notificationSlugId;
 }

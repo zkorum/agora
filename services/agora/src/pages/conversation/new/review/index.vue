@@ -114,7 +114,7 @@ import NewConversationRouteGuard from "src/components/newConversation/NewConvers
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
-import { useBackendPostApi } from "src/utils/api/post";
+import { useBackendPostApi } from "src/utils/api/post/post";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";

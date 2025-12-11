@@ -136,11 +136,17 @@ const opinionCountOffset = ref(0);
 const webShare = useWebShare();
 const $q = useQuasar();
 const { getConversationUrl } = useConversationUrl();
-const { invalidateAnalysis, forceRefreshAnalysis } =
-  useInvalidateCommentQueries();
+const {
+  invalidateAnalysis,
+  forceRefreshAnalysis,
+  invalidateComments,
+  invalidateHiddenComments,
+} = useInvalidateCommentQueries();
 const shareActions = useShareActions();
 const notify = useNotify();
-const { t } = useComponentI18n<PostDetailsTranslations>(postDetailsTranslations);
+const { t } = useComponentI18n<PostDetailsTranslations>(
+  postDetailsTranslations
+);
 const { loadAuthenticatedModules } = useBackendAuthApi();
 const userStore = useUserStore();
 
@@ -151,7 +157,14 @@ const participantCountLocal = ref(
 const { profileData } = storeToRefs(userStore);
 
 // Lazy load analysis data only when user clicks Analysis tab
-const isAnalysisEnabled = computed(() => !props.compactMode && currentTab.value === 'analysis');
+const isAnalysisEnabled = computed(
+  () => !props.compactMode && currentTab.value === "analysis"
+);
+
+// Create a computed property to ensure reactivity for the query's enabled parameter
+const isModerator = computed(() => profileData.value.isModerator);
+
+// Preload both analysis and comment data immediately when component mounts (only if not in compact mode)
 const analysisQuery = useAnalysisQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   voteCount: props.conversationData.metadata.voteCount,
@@ -183,7 +196,7 @@ const commentsModeratedQuery = useCommentsQuery({
 const hiddenCommentsQuery = useHiddenCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   voteCount: props.conversationData.metadata.voteCount,
-  enabled: !props.compactMode && profileData.value.isModerator,
+  enabled: !props.compactMode && isModerator.value,
 });
 
 const { verifiedEventTickets } = storeToRefs(userStore);
@@ -271,7 +284,7 @@ async function submittedComment(data: {
       // This ensures the header/sidebar shows the correct username immediately.
       const targetOpinion = opinionSectionRef.value.targetOpinion;
       if (targetOpinion && targetOpinion.username) {
-        userStore.profileData.userName = targetOpinion.username;
+        profileData.value.userName = targetOpinion.username;
       }
     }
   }
@@ -316,12 +329,12 @@ async function handleShareActionSelected(action: ContentAction): Promise<void> {
   await shareActions.executeAction(action);
 }
 
-onMounted(() => {
+onMounted(async () => {
   // Reset local state
   participantCountLocal.value =
     props.conversationData.metadata.participantCount;
 
-  refreshAllData();
+  await refreshAllData();
 });
 
 // Watch for tab changes and refresh data when switching tabs
@@ -333,8 +346,12 @@ watch(currentTab, async (newTab) => {
         commentsDiscoverQuery,
         commentsNewQuery,
         commentsModeratedQuery,
-        hiddenCommentsQuery,
       ];
+
+      // Only include hiddenCommentsQuery if user is a moderator
+      if (isModerator.value) {
+        commentQueries.push(hiddenCommentsQuery);
+      }
 
       const staleQueries = commentQueries.filter(
         (query) => query.isStale.value
@@ -349,18 +366,25 @@ watch(currentTab, async (newTab) => {
   }
 });
 
-function refreshAllData(): void {
+async function refreshAllData(): Promise<void> {
   // Reset local state
   opinionCountOffset.value = 0;
   participantCountLocal.value =
     props.conversationData.metadata.participantCount;
 
-  // Refresh analysis data
-  invalidateAnalysis(props.conversationData.metadata.conversationSlugId);
+  const slugId = props.conversationData.metadata.conversationSlugId;
+
+  // Invalidate all queries to force fresh data
+  invalidateComments(slugId);
+  invalidateAnalysis(slugId);
+
+  if (isModerator.value) {
+    invalidateHiddenComments(slugId);
+  }
 
   // Refresh comment data if the component is rendered
   if (opinionSectionRef.value) {
-    opinionSectionRef.value.refreshData();
+    await opinionSectionRef.value.refreshData();
   }
 }
 

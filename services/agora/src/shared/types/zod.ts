@@ -17,6 +17,8 @@ import {
     ZodSupportedDisplayLanguageCodes,
 } from "../languages.js";
 
+export const zodDateTimeFlexible = z.coerce.date();
+
 export const zodEventSlug = z.enum(["devconnect-2025"]);
 
 export const zodUserReportReason = z.enum([
@@ -38,6 +40,30 @@ export const zodModerationReason = z.enum([
 export const zodFeedSortAlgorithm = z.enum(["following", "new"]);
 export const zodConversationModerationAction = z.enum(["lock"]);
 export const zodOpinionModerationAction = z.enum(["move", "hide"]);
+export const zodExportStatus = z.enum([
+    "processing",
+    "completed",
+    "failed",
+    "cancelled",
+    "expired",
+]);
+export const zodExportFileType = z.enum([
+    "comments",
+    "votes",
+    "participants",
+    "summary",
+    "stats",
+]);
+export const zodExportFileInfo = z
+    .object({
+        fileType: zodExportFileType,
+        fileName: z.string(),
+        fileSize: z.number().int().positive(),
+        recordCount: z.number().int().nonnegative(),
+        downloadUrl: z.string().url(),
+        urlExpiresAt: zodDateTimeFlexible,
+    })
+    .strict();
 export const zodPhoneNumber = z
     .string()
     .describe("Phone number")
@@ -194,12 +220,35 @@ export const zodUserReportItem = z.object({
     id: z.number(),
 });
 
-export const zodRouteTarget = z
+const zodOpinionRouteTarget = z
     .object({
+        type: z.literal("opinion"),
         conversationSlugId: zodSlugId,
         opinionSlugId: zodSlugId,
     })
     .strict();
+
+const zodExportRouteTarget = z
+    .object({
+        type: z.literal("export"),
+        conversationSlugId: zodSlugId,
+        exportSlugId: zodSlugId,
+    })
+    .strict();
+
+const zodImportRouteTarget = z
+    .object({
+        type: z.literal("import"),
+        importSlugId: zodSlugId,
+        conversationSlugId: zodSlugId.optional(), // Optional: present when import completed
+    })
+    .strict();
+
+export const zodRouteTarget = z.discriminatedUnion("type", [
+    zodOpinionRouteTarget,
+    zodExportRouteTarget,
+    zodImportRouteTarget,
+]);
 
 export const zodTopicObject = z
     .object({
@@ -209,30 +258,107 @@ export const zodTopicObject = z
     .strict();
 
 // WARNING: change this together with the below values!
-export const zodNotificationType = z.enum(["opinion_vote", "new_opinion"]);
+export const zodNotificationType = z.enum([
+    "opinion_vote",
+    "new_opinion",
+    "export_started",
+    "export_completed",
+    "export_failed",
+    "export_cancelled",
+    "import_started",
+    "import_completed",
+    "import_failed",
+]);
+
+// Base notification schema with common fields
+const zodNotificationBase = z.object({
+    slugId: zodSlugId,
+    isRead: z.boolean(),
+    message: z.string(),
+    createdAt: zodDateTimeFlexible,
+});
+
+// Opinion notification schemas
+const zodOpinionVoteNotification = zodNotificationBase
+    .extend({
+        type: z.literal("opinion_vote"),
+        routeTarget: zodOpinionRouteTarget,
+        numVotes: z.number().int().min(1),
+    })
+    .strict();
+
+const zodNewOpinionNotification = zodNotificationBase
+    .extend({
+        type: z.literal("new_opinion"),
+        routeTarget: zodOpinionRouteTarget,
+        username: z.string(),
+    })
+    .strict();
+
+// Export notification schemas
+const zodExportStartedNotification = zodNotificationBase
+    .extend({
+        type: z.literal("export_started"),
+        routeTarget: zodExportRouteTarget,
+    })
+    .strict();
+
+const zodExportCompletedNotification = zodNotificationBase
+    .extend({
+        type: z.literal("export_completed"),
+        routeTarget: zodExportRouteTarget,
+    })
+    .strict();
+
+const zodExportFailedNotification = zodNotificationBase
+    .extend({
+        type: z.literal("export_failed"),
+        routeTarget: zodExportRouteTarget,
+        errorMessage: z.string().optional(),
+    })
+    .strict();
+
+const zodExportCancelledNotification = zodNotificationBase
+    .extend({
+        type: z.literal("export_cancelled"),
+        routeTarget: zodExportRouteTarget,
+        cancellationReason: z.string(),
+    })
+    .strict();
+
+// Import notification schemas
+const zodImportStartedNotification = zodNotificationBase
+    .extend({
+        type: z.literal("import_started"),
+        routeTarget: zodImportRouteTarget,
+    })
+    .strict();
+
+const zodImportCompletedNotification = zodNotificationBase
+    .extend({
+        type: z.literal("import_completed"),
+        routeTarget: zodImportRouteTarget,
+    })
+    .strict();
+
+const zodImportFailedNotification = zodNotificationBase
+    .extend({
+        type: z.literal("import_failed"),
+        routeTarget: zodImportRouteTarget,
+        errorMessage: z.string().optional(),
+    })
+    .strict();
+
 export const zodNotificationItem = z.discriminatedUnion("type", [
-    z
-        .object({
-            type: z.literal("opinion_vote"),
-            slugId: zodSlugId,
-            isRead: z.boolean(),
-            message: z.string(),
-            createdAt: z.date(),
-            routeTarget: zodRouteTarget,
-            numVotes: z.number().int().min(1),
-        })
-        .strict(),
-    z
-        .object({
-            type: z.literal("new_opinion"),
-            slugId: zodSlugId,
-            isRead: z.boolean(),
-            message: z.string(),
-            createdAt: z.date(),
-            routeTarget: zodRouteTarget,
-            username: z.string(),
-        })
-        .strict(),
+    zodOpinionVoteNotification,
+    zodNewOpinionNotification,
+    zodExportStartedNotification,
+    zodExportCompletedNotification,
+    zodExportFailedNotification,
+    zodExportCancelledNotification,
+    zodImportStartedNotification,
+    zodImportCompletedNotification,
+    zodImportFailedNotification,
 ]);
 
 export type moderationStatusOptionsType = "moderated" | "unmoderated";
@@ -971,6 +1097,9 @@ export type Username = z.infer<typeof zodUsername>;
 export type NotificationItem = z.infer<typeof zodNotificationItem>;
 export type NotificationType = z.infer<typeof zodNotificationType>;
 export type RouteTarget = z.infer<typeof zodRouteTarget>;
+export type OpinionRouteTarget = z.infer<typeof zodOpinionRouteTarget>;
+export type ExportRouteTarget = z.infer<typeof zodExportRouteTarget>;
+export type ImportRouteTarget = z.infer<typeof zodImportRouteTarget>;
 export type ClusterStats = z.infer<typeof zodClusterStats>;
 export type PolisKey = z.infer<typeof zodPolisKey>;
 export type SupportedCountryCallingCode = z.infer<
@@ -1006,6 +1135,9 @@ export type PolisClusters = z.infer<typeof zodPolisClusters>;
 export type PolisClustersMetadata = z.infer<typeof zodPolisClustersMetadata>;
 export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;
 export type EventSlug = z.infer<typeof zodEventSlug>;
+export type ExportStatus = z.infer<typeof zodExportStatus>;
+export type ExportFileType = z.infer<typeof zodExportFileType>;
+export type ExportFileInfo = z.infer<typeof zodExportFileInfo>;
 
 // Rarimo ZK Proof Validation Schemas
 // Based on Rarimo circuit spec: https://github.com/rarimo/passport-zk-circuits

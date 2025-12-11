@@ -1,8 +1,12 @@
 <template>
   <div class="settings-section">
-    <div class="settings-background">
-      <template v-for="(item, index) in settingsItemList" :key="item.label">
-        <SettingsItem
+    <ul class="settings-background" role="list">
+      <li
+        v-for="(item, index) in settingsItemList"
+        :key="item.key ?? item.label ?? index"
+        role="listitem"
+      >
+        <ListItem
           :item="item"
           :show-separator="index < settingsItemList.length - 1"
           :border-radius="
@@ -15,14 +19,14 @@
                   : 'none'
           "
         />
-      </template>
-    </div>
+      </li>
+    </ul>
   </div>
 </template>
 
 <script setup lang="ts">
 import { type SettingsInterface } from "src/utils/component/settings/settings";
-import SettingsItem from "./SettingsItem.vue";
+import ListItem from "./ListItem.vue";
 
 defineProps<{
   settingsItemList: SettingsInterface[];
@@ -36,8 +40,12 @@ defineProps<{
 
 .settings-background {
   background-color: white;
-  border-radius: 20px;
+  border-radius: 15px;
   display: flex;
   flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  margin-top: 0.5rem;
 }
 </style>

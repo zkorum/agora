@@ -11,7 +11,7 @@
         ({{ selectedLanguages.length }})
       </h3>
       <div class="settings-background">
-        <SettingsMenuItem
+        <MenuItem
           v-for="(language, index) in selectedLanguages"
           :key="language.code"
           :label="language.name"
@@ -36,7 +36,7 @@
               class="action-icon"
             />
           </template>
-        </SettingsMenuItem>
+        </MenuItem>
       </div>
     </div>
 
@@ -63,7 +63,7 @@
         v-if="filteredAvailableLanguages.length > 0"
         class="settings-background"
       >
-        <SettingsMenuItem
+        <MenuItem
           v-for="(language, index) in filteredAvailableLanguages"
           :key="language.code"
           :label="language.name"
@@ -88,7 +88,7 @@
               class="action-icon"
             />
           </template>
-        </SettingsMenuItem>
+        </MenuItem>
       </div>
 
       <!-- No Results -->
@@ -122,7 +122,7 @@ import {
   spokenLanguageSelectorTranslations,
   type SpokenLanguageSelectorTranslations,
 } from "./SpokenLanguageSelector.i18n";
-import SettingsMenuItem from "src/components/settings/SettingsMenuItem.vue";
+import MenuItem from "src/components/ui-library/MenuItem.vue";
 import SettingsSearchInput from "src/components/settings/SettingsSearchInput.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useLanguageStore } from "src/stores/language";

@@ -40,6 +40,9 @@ import {
     zodLanguagePreferences,
     zodPolisClusters,
     zodEventSlug,
+    zodExportStatus,
+    zodExportFileInfo,
+    zodDateTimeFlexible,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
@@ -192,6 +195,143 @@ export class Dto {
     static importConversationResponse = z
         .object({
             conversationSlugId: z.string(),
+        })
+        .strict();
+    static importCsvConversationRequest = z
+        .object({
+            postAsOrganization: z.string().optional(),
+            indexConversationAt: z.string().datetime().optional(),
+            isIndexed: z.boolean(),
+            isLoginRequired: z.boolean(),
+        })
+        .strict();
+    static importCsvConversationFormRequest = z
+        .object({
+            postAsOrganization: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                z.string().optional(),
+            ),
+            indexConversationAt: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                z.string().datetime().optional(),
+            ),
+            isIndexed: z.preprocess(
+                (val) => val === "true" || val === true,
+                z.boolean(),
+            ),
+            isLoginRequired: z.preprocess(
+                (val) => val === "true" || val === true,
+                z.boolean(),
+            ),
+            requiresEventTicket: z.preprocess(
+                (val) => (val === "" || val === undefined ? undefined : val),
+                zodEventSlug.optional(),
+            ),
+        })
+        .strict();
+    static importCsvConversationResponse = z
+        .object({
+            importSlugId: z.string(),
+        })
+        .strict();
+    static getActiveImportResponse = z.discriminatedUnion("hasActiveImport", [
+        z
+            .object({
+                hasActiveImport: z.literal(true),
+                importSlugId: zodSlugId,
+                createdAt: zodDateTimeFlexible,
+            })
+            .strict(),
+        z
+            .object({
+                hasActiveImport: z.literal(false),
+            })
+            .strict(),
+    ]);
+    static getExportReadinessResponse = z.discriminatedUnion("status", [
+        // User has an active export processing
+        z
+            .object({
+                status: z.literal("active"),
+                exportSlugId: zodSlugId,
+                createdAt: zodDateTimeFlexible,
+            })
+            .strict(),
+        // No active export, but cooldown is active - cannot export yet
+        z
+            .object({
+                status: z.literal("cooldown"),
+                cooldownEndsAt: zodDateTimeFlexible,
+                lastExportSlugId: zodSlugId,
+            })
+            .strict(),
+        // No active export, no cooldown - ready to export
+        z
+            .object({
+                status: z.literal("ready"),
+            })
+            .strict(),
+    ]);
+    static getConversationImportStatusRequest = z
+        .object({
+            importSlugId: zodSlugId,
+        })
+        .strict();
+    static getConversationImportStatusResponse = z.discriminatedUnion(
+        "status",
+        [
+            // Processing - no conversation yet
+            z
+                .object({
+                    status: z.literal("processing"),
+                    importSlugId: zodSlugId,
+                    createdAt: zodDateTimeFlexible,
+                    updatedAt: zodDateTimeFlexible,
+                })
+                .strict(),
+            // Completed - has conversationSlugId
+            z
+                .object({
+                    status: z.literal("completed"),
+                    importSlugId: zodSlugId,
+                    conversationSlugId: zodSlugId,
+                    createdAt: zodDateTimeFlexible,
+                    updatedAt: zodDateTimeFlexible,
+                })
+                .strict(),
+            // Failed - has error message
+            z
+                .object({
+                    status: z.literal("failed"),
+                    importSlugId: zodSlugId,
+                    errorMessage: z.string().optional(),
+                    createdAt: zodDateTimeFlexible,
+                    updatedAt: zodDateTimeFlexible,
+                })
+                .strict(),
+        ],
+    );
+    static validateCsvRequest = z.object({}).strict();
+    static validateCsvResponse = z
+        .object({
+            summaryFile: z
+                .object({
+                    isValid: z.boolean(),
+                    error: z.string().optional(),
+                })
+                .optional(),
+            commentsFile: z
+                .object({
+                    isValid: z.boolean(),
+                    error: z.string().optional(),
+                })
+                .optional(),
+            votesFile: z
+                .object({
+                    isValid: z.boolean(),
+                    error: z.string().optional(),
+                })
+                .optional(),
         })
         .strict();
     static getConversationRequest = z
@@ -422,6 +562,11 @@ export class Dto {
             notificationList: z.array(zodNotificationItem),
         })
         .strict();
+    static notificationStreamQuerystring = z
+        .object({
+            auth: z.string(),
+        })
+        .strict();
     static createOrganizationRequest = z
         .object({
             organizationName: z.string(),
@@ -585,6 +730,113 @@ export class Dto {
             displayLanguage: ZodSupportedDisplayLanguageCodes.optional(),
         })
         .strict();
+
+    // Conversation export
+    static requestConversationExportRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static requestConversationExportResponse = z.discriminatedUnion("status", [
+        z
+            .object({
+                status: z.literal("queued"),
+                exportSlugId: zodSlugId,
+            })
+            .strict(),
+        z
+            .object({
+                status: z.literal("cooldown_active"),
+                cooldownEndsAt: zodDateTimeFlexible,
+            })
+            .strict(),
+    ]);
+    static getConversationExportStatusRequest = z
+        .object({
+            exportSlugId: zodSlugId,
+        })
+        .strict();
+    static getConversationExportStatusResponse = z.discriminatedUnion(
+        "status",
+        [
+            // Processing - no files yet
+            z
+                .object({
+                    status: z.literal("processing"),
+                    exportSlugId: zodSlugId,
+                    conversationSlugId: zodSlugId,
+                    createdAt: zodDateTimeFlexible,
+                    expiresAt: zodDateTimeFlexible,
+                })
+                .strict(),
+            // Completed - always has files
+            z
+                .object({
+                    status: z.literal("completed"),
+                    exportSlugId: zodSlugId,
+                    conversationSlugId: zodSlugId,
+                    files: z.array(zodExportFileInfo),
+                    createdAt: zodDateTimeFlexible,
+                    expiresAt: zodDateTimeFlexible,
+                })
+                .strict(),
+            // Failed - has error message, no files
+            z
+                .object({
+                    status: z.literal("failed"),
+                    exportSlugId: zodSlugId,
+                    conversationSlugId: zodSlugId,
+                    errorMessage: z.string().optional(),
+                    createdAt: zodDateTimeFlexible,
+                    expiresAt: zodDateTimeFlexible,
+                })
+                .strict(),
+            // Cancelled - has cancellation reason, no files
+            z
+                .object({
+                    status: z.literal("cancelled"),
+                    exportSlugId: zodSlugId,
+                    conversationSlugId: zodSlugId,
+                    cancellationReason: z.string(),
+                    createdAt: zodDateTimeFlexible,
+                    expiresAt: zodDateTimeFlexible,
+                })
+                .strict(),
+            // Expired - has deletedAt, no files, may have error/cancellation from original status
+            z
+                .object({
+                    status: z.literal("expired"),
+                    exportSlugId: zodSlugId,
+                    conversationSlugId: zodSlugId,
+                    errorMessage: z.string().optional(),
+                    cancellationReason: z.string().optional(),
+                    createdAt: zodDateTimeFlexible,
+                    expiresAt: zodDateTimeFlexible,
+                    deletedAt: zodDateTimeFlexible,
+                })
+                .strict(),
+        ],
+    );
+    static getConversationExportHistoryRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static conversationExportHistoryItem = z
+        .object({
+            exportSlugId: zodSlugId,
+            status: zodExportStatus,
+            createdAt: zodDateTimeFlexible,
+        })
+        .strict();
+    static getConversationExportHistoryResponse = z.array(
+        Dto.conversationExportHistoryItem,
+    );
+    static deleteConversationExportRequest = z
+        .object({
+            exportSlugId: zodSlugId,
+        })
+        .strict();
 }
 
 export type AuthenticateRequestBody = z.infer<
@@ -606,6 +858,12 @@ export type ImportConversationRequest = z.infer<
 >;
 export type ImportConversationResponse = z.infer<
     typeof Dto.importConversationResponse
+>;
+export type ImportCsvConversationRequest = z.infer<
+    typeof Dto.importCsvConversationRequest
+>;
+export type ImportCsvConversationResponse = z.infer<
+    typeof Dto.importCsvConversationResponse
 >;
 export type GetConversationResponse = z.infer<
     typeof Dto.getConversationResponse
@@ -680,3 +938,43 @@ export type UpdateLanguagePreferencesRequest = z.infer<
 >;
 export type ConversationAnalysis = z.infer<typeof Dto.fetchAnalysisResponse>;
 export type CastVoteResponse = z.infer<typeof Dto.castVoteResponse>;
+export type ValidateCsvResponse = z.infer<typeof Dto.validateCsvResponse>;
+export type GetActiveImportResponse = z.infer<
+    typeof Dto.getActiveImportResponse
+>;
+export type GetExportReadinessResponse = z.infer<
+    typeof Dto.getExportReadinessResponse
+>;
+export type GetConversationImportStatusRequest = z.infer<
+    typeof Dto.getConversationImportStatusRequest
+>;
+export type GetConversationImportStatusResponse = z.infer<
+    typeof Dto.getConversationImportStatusResponse
+>;
+export type RequestConversationExportRequest = z.infer<
+    typeof Dto.requestConversationExportRequest
+>;
+export type RequestConversationExportResponse = z.infer<
+    typeof Dto.requestConversationExportResponse
+>;
+export type GetConversationExportStatusRequest = z.infer<
+    typeof Dto.getConversationExportStatusRequest
+>;
+export type GetConversationExportStatusResponse = z.infer<
+    typeof Dto.getConversationExportStatusResponse
+>;
+export type GetConversationExportHistoryRequest = z.infer<
+    typeof Dto.getConversationExportHistoryRequest
+>;
+export type GetConversationExportHistoryResponse = z.infer<
+    typeof Dto.getConversationExportHistoryResponse
+>;
+export type DeleteConversationExportRequest = z.infer<
+    typeof Dto.deleteConversationExportRequest
+>;
+export type ConversationExportHistoryItem = z.infer<
+    typeof Dto.conversationExportHistoryItem
+>;
+
+// Export SSE types
+export * from "./sse.js";

@@ -15,7 +15,7 @@
     <div class="container">
       <div class="settings-section">
         <div class="settings-background">
-          <SettingsMenuItem
+          <MenuItem
             v-for="(language, index) in availableDisplayLanguages"
             :key="language.code"
             :label="language.name"
@@ -43,7 +43,7 @@
               <!-- Explicity render nothing by providing an empty div to overwrite the slot -->
               <span></span>
             </template>
-          </SettingsMenuItem>
+          </MenuItem>
         </div>
       </div>
     </div>
@@ -54,7 +54,7 @@
 import type { ComputedRef } from "vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import SettingsMenuItem from "src/components/settings/SettingsMenuItem.vue";
+import MenuItem from "src/components/ui-library/MenuItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {

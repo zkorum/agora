@@ -1167,6 +1167,632 @@ export type ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = typeof A
 /**
  * 
  * @export
+ * @interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
+ */
+export interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
+     */
+    'status': ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
+     */
+    'createdAt': string;
+}
+
+export const ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum = {
+    Processing: 'processing',
+    Completed: 'completed',
+    Failed: 'failed',
+    Cancelled: 'cancelled',
+    Expired: 'expired'
+} as const;
+
+export type ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum = typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum[keyof typeof ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInnerStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportReadinessConversationSlugIdGet200Response
+ */
+export interface ApiV1ConversationExportReadinessConversationSlugIdGet200Response {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportReadinessConversationSlugIdGet200Response
+     */
+    'status': ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportReadinessConversationSlugIdGet200Response
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportReadinessConversationSlugIdGet200Response
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportReadinessConversationSlugIdGet200Response
+     */
+    'cooldownEndsAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportReadinessConversationSlugIdGet200Response
+     */
+    'lastExportSlugId': string;
+}
+
+export const ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseStatusEnum = {
+    Ready: 'ready'
+} as const;
+
+export type ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseStatusEnum = typeof ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseStatusEnum[keyof typeof ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf
+ */
+export interface ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf
+     */
+    'status': ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOfStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf
+     */
+    'createdAt': string;
+}
+
+export const ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOfStatusEnum = {
+    Active: 'active'
+} as const;
+
+export type ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOfStatusEnum = typeof ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOfStatusEnum[keyof typeof ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOfStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf1
+ */
+export interface ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf1
+     */
+    'status': ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf1StatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf1
+     */
+    'cooldownEndsAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf1
+     */
+    'lastExportSlugId': string;
+}
+
+export const ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf1StatusEnum = {
+    Cooldown: 'cooldown'
+} as const;
+
+export type ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf1StatusEnum = typeof ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf1StatusEnum[keyof typeof ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf1StatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf2
+ */
+export interface ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf2 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf2
+     */
+    'status': ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf2StatusEnum;
+}
+
+export const ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf2StatusEnum = {
+    Ready: 'ready'
+} as const;
+
+export type ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf2StatusEnum = typeof ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf2StatusEnum[keyof typeof ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyOf2StatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportRequestPost200Response
+ */
+export interface ApiV1ConversationExportRequestPost200Response {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200Response
+     */
+    'status': ApiV1ConversationExportRequestPost200ResponseStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200Response
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200Response
+     */
+    'cooldownEndsAt': string;
+}
+
+export const ApiV1ConversationExportRequestPost200ResponseStatusEnum = {
+    CooldownActive: 'cooldown_active'
+} as const;
+
+export type ApiV1ConversationExportRequestPost200ResponseStatusEnum = typeof ApiV1ConversationExportRequestPost200ResponseStatusEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportRequestPost200ResponseAnyOf
+ */
+export interface ApiV1ConversationExportRequestPost200ResponseAnyOf {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200ResponseAnyOf
+     */
+    'status': ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200ResponseAnyOf
+     */
+    'exportSlugId': string;
+}
+
+export const ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum = {
+    Queued: 'queued'
+} as const;
+
+export type ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum = typeof ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportRequestPost200ResponseAnyOf1
+ */
+export interface ApiV1ConversationExportRequestPost200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200ResponseAnyOf1
+     */
+    'status': ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200ResponseAnyOf1
+     */
+    'cooldownEndsAt': string;
+}
+
+export const ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum = {
+    CooldownActive: 'cooldown_active'
+} as const;
+
+export type ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum = typeof ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportStatusExportSlugIdGet200Response
+ */
+export interface ApiV1ConversationExportStatusExportSlugIdGet200Response {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
+     */
+    'status': ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
+     */
+    'expiresAt': string;
+    /**
+     * 
+     * @type {Array<ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner>}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
+     */
+    'files': Array<ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner>;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
+     */
+    'errorMessage'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
+     */
+    'cancellationReason': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
+     */
+    'deletedAt': string;
+}
+
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum = {
+    Expired: 'expired'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf
+ */
+export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf
+     */
+    'status': ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOfStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf
+     */
+    'expiresAt': string;
+}
+
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOfStatusEnum = {
+    Processing: 'processing'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOfStatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOfStatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOfStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
+ */
+export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
+     */
+    'status': ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1StatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {Array<ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner>}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
+     */
+    'files': Array<ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner>;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1
+     */
+    'expiresAt': string;
+}
+
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1StatusEnum = {
+    Completed: 'completed'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1StatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1StatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1StatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner
+ */
+export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner
+     */
+    'fileType': ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInnerFileTypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner
+     */
+    'fileName': string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner
+     */
+    'fileSize': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner
+     */
+    'recordCount': number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner
+     */
+    'downloadUrl': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInner
+     */
+    'urlExpiresAt': string;
+}
+
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInnerFileTypeEnum = {
+    Comments: 'comments',
+    Votes: 'votes',
+    Participants: 'participants',
+    Summary: 'summary',
+    Stats: 'stats'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInnerFileTypeEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInnerFileTypeEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf1FilesInnerFileTypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
+ */
+export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
+     */
+    'status': ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2StatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
+     */
+    'errorMessage'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
+     */
+    'expiresAt': string;
+}
+
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2StatusEnum = {
+    Failed: 'failed'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2StatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2StatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2StatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
+ */
+export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
+     */
+    'status': ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3StatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
+     */
+    'cancellationReason': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3
+     */
+    'expiresAt': string;
+}
+
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3StatusEnum = {
+    Cancelled: 'cancelled'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3StatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3StatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf3StatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+ */
+export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'status': ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4StatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'errorMessage'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'cancellationReason'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'expiresAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
+     */
+    'deletedAt': string;
+}
+
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4StatusEnum = {
+    Expired: 'expired'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4StatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4StatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4StatusEnum];
+
+/**
+ * 
+ * @export
  * @interface ApiV1ConversationFetchRecentPost200Response
  */
 export interface ApiV1ConversationFetchRecentPost200Response {
@@ -1587,6 +2213,82 @@ export interface ApiV1ConversationGetPost200Response {
 /**
  * 
  * @export
+ * @interface ApiV1ConversationImportActiveGet200Response
+ */
+export interface ApiV1ConversationImportActiveGet200Response {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationImportActiveGet200Response
+     */
+    'hasActiveImport': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportActiveGet200Response
+     */
+    'importSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportActiveGet200Response
+     */
+    'createdAt': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationImportActiveGet200ResponseAnyOf
+ */
+export interface ApiV1ConversationImportActiveGet200ResponseAnyOf {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationImportActiveGet200ResponseAnyOf
+     */
+    'hasActiveImport': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportActiveGet200ResponseAnyOf
+     */
+    'importSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportActiveGet200ResponseAnyOf
+     */
+    'createdAt': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationImportActiveGet200ResponseAnyOf1
+ */
+export interface ApiV1ConversationImportActiveGet200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationImportActiveGet200ResponseAnyOf1
+     */
+    'hasActiveImport': boolean;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationImportCsvPost200Response
+ */
+export interface ApiV1ConversationImportCsvPost200Response {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportCsvPost200Response
+     */
+    'importSlugId': string;
+}
+/**
+ * 
+ * @export
  * @interface ApiV1ConversationImportPostRequest
  */
 export interface ApiV1ConversationImportPostRequest {
@@ -1634,6 +2336,226 @@ export const ApiV1ConversationImportPostRequestRequiresEventTicketEnum = {
 
 export type ApiV1ConversationImportPostRequestRequiresEventTicketEnum = typeof ApiV1ConversationImportPostRequestRequiresEventTicketEnum[keyof typeof ApiV1ConversationImportPostRequestRequiresEventTicketEnum];
 
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationImportStatusImportSlugIdGet200Response
+ */
+export interface ApiV1ConversationImportStatusImportSlugIdGet200Response {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200Response
+     */
+    'status': ApiV1ConversationImportStatusImportSlugIdGet200ResponseStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200Response
+     */
+    'importSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200Response
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200Response
+     */
+    'updatedAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200Response
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200Response
+     */
+    'errorMessage'?: string;
+}
+
+export const ApiV1ConversationImportStatusImportSlugIdGet200ResponseStatusEnum = {
+    Failed: 'failed'
+} as const;
+
+export type ApiV1ConversationImportStatusImportSlugIdGet200ResponseStatusEnum = typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseStatusEnum[keyof typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf
+ */
+export interface ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf
+     */
+    'status': ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOfStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf
+     */
+    'importSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf
+     */
+    'updatedAt': string;
+}
+
+export const ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOfStatusEnum = {
+    Processing: 'processing'
+} as const;
+
+export type ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOfStatusEnum = typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOfStatusEnum[keyof typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOfStatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1
+ */
+export interface ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1
+     */
+    'status': ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1StatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1
+     */
+    'importSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1
+     */
+    'updatedAt': string;
+}
+
+export const ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1StatusEnum = {
+    Completed: 'completed'
+} as const;
+
+export type ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1StatusEnum = typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1StatusEnum[keyof typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf1StatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2
+ */
+export interface ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2
+     */
+    'status': ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2StatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2
+     */
+    'importSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2
+     */
+    'errorMessage'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2
+     */
+    'updatedAt': string;
+}
+
+export const ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2StatusEnum = {
+    Failed: 'failed'
+} as const;
+
+export type ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2StatusEnum = typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2StatusEnum[keyof typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2StatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationValidateCsvPost200Response
+ */
+export interface ApiV1ConversationValidateCsvPost200Response {
+    /**
+     * 
+     * @type {ApiV1ConversationValidateCsvPost200ResponseSummaryFile}
+     * @memberof ApiV1ConversationValidateCsvPost200Response
+     */
+    'summaryFile'?: ApiV1ConversationValidateCsvPost200ResponseSummaryFile;
+    /**
+     * 
+     * @type {ApiV1ConversationValidateCsvPost200ResponseSummaryFile}
+     * @memberof ApiV1ConversationValidateCsvPost200Response
+     */
+    'commentsFile'?: ApiV1ConversationValidateCsvPost200ResponseSummaryFile;
+    /**
+     * 
+     * @type {ApiV1ConversationValidateCsvPost200ResponseSummaryFile}
+     * @memberof ApiV1ConversationValidateCsvPost200Response
+     */
+    'votesFile'?: ApiV1ConversationValidateCsvPost200ResponseSummaryFile;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationValidateCsvPost200ResponseSummaryFile
+ */
+export interface ApiV1ConversationValidateCsvPost200ResponseSummaryFile {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationValidateCsvPost200ResponseSummaryFile
+     */
+    'isValid': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationValidateCsvPost200ResponseSummaryFile
+     */
+    'error'?: string;
+}
 /**
  * 
  * @export
@@ -1965,12 +2887,6 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
-    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
-     */
     'slugId': string;
     /**
      * 
@@ -1992,10 +2908,16 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
     'createdAt': string;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget}
+     * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
-    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget;
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget;
     /**
      * 
      * @type {number}
@@ -2008,11 +2930,30 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
     'username': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'errorMessage'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'cancellationReason': string;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum = {
     OpinionVote: 'opinion_vote',
-    NewOpinion: 'new_opinion'
+    NewOpinion: 'new_opinion',
+    ExportStarted: 'export_started',
+    ExportCompleted: 'export_completed',
+    ExportFailed: 'export_failed',
+    ExportCancelled: 'export_cancelled',
+    ImportStarted: 'import_started',
+    ImportCompleted: 'import_completed',
+    ImportFailed: 'import_failed'
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum];
@@ -2028,12 +2969,6 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      */
-    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfTypeEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
-     */
     'slugId': string;
     /**
      * 
@@ -2053,6 +2988,12 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      */
     'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfTypeEnum;
     /**
      * 
      * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget}
@@ -2084,12 +3025,6 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
      */
-    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1TypeEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
-     */
     'slugId': string;
     /**
      * 
@@ -2109,6 +3044,12 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
      */
     'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1TypeEnum;
     /**
      * 
      * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget}
@@ -2132,9 +3073,447 @@ export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1Type
 /**
  * 
  * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2TypeEnum;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2TypeEnum = {
+    ExportStarted: 'export_started'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2TypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTargetTypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget
+     */
+    'conversationSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget
+     */
+    'exportSlugId': string;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTargetTypeEnum = {
+    Export: 'export'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTargetTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTargetTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTargetTypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum = {
+    ExportCompleted: 'export_completed'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+     */
+    'errorMessage'?: string;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum = {
+    ExportFailed: 'export_failed'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5TypeEnum;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+     */
+    'cancellationReason': string;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5TypeEnum = {
+    ExportCancelled: 'export_cancelled'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5TypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum = {
+    ImportStarted: 'import_started'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTargetTypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget
+     */
+    'importSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget
+     */
+    'conversationSlugId'?: string;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTargetTypeEnum = {
+    Import: 'import'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTargetTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTargetTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTargetTypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7TypeEnum;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7TypeEnum = {
+    ImportCompleted: 'import_completed'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7TypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8TypeEnum;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
+     */
+    'errorMessage'?: string;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8TypeEnum = {
+    ImportFailed: 'import_failed'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8TypeEnum];
+
+/**
+ * 
+ * @export
  * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget
  */
 export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTarget
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTargetTypeEnum;
     /**
      * 
      * @type {string}
@@ -2148,6 +3527,13 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      */
     'opinionSlugId': string;
 }
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTargetTypeEnum = {
+    Opinion: 'opinion'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTargetTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTargetTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfRouteTargetTypeEnum];
+
 /**
  * 
  * @export
@@ -3970,6 +5356,193 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {string} exportSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportExportSlugIdDelete: async (exportSlugId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'exportSlugId' is not null or undefined
+            assertParamExists('apiV1ConversationExportExportSlugIdDelete', 'exportSlugId', exportSlugId)
+            const localVarPath = `/api/v1/conversation/export/{exportSlugId}`
+                .replace(`{${"exportSlugId"}}`, encodeURIComponent(String(exportSlugId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {string} conversationSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportHistoryConversationSlugIdGet: async (conversationSlugId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'conversationSlugId' is not null or undefined
+            assertParamExists('apiV1ConversationExportHistoryConversationSlugIdGet', 'conversationSlugId', conversationSlugId)
+            const localVarPath = `/api/v1/conversation/export/history/{conversationSlugId}`
+                .replace(`{${"conversationSlugId"}}`, encodeURIComponent(String(conversationSlugId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {string} conversationSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportReadinessConversationSlugIdGet: async (conversationSlugId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'conversationSlugId' is not null or undefined
+            assertParamExists('apiV1ConversationExportReadinessConversationSlugIdGet', 'conversationSlugId', conversationSlugId)
+            const localVarPath = `/api/v1/conversation/export/readiness/{conversationSlugId}`
+                .replace(`{${"conversationSlugId"}}`, encodeURIComponent(String(conversationSlugId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportRequestPost: async (apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationConversationWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationExportRequestPost', 'apiV1ModerationConversationWithdrawPostRequest', apiV1ModerationConversationWithdrawPostRequest)
+            const localVarPath = `/api/v1/conversation/export/request`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationConversationWithdrawPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {string} exportSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportStatusExportSlugIdGet: async (exportSlugId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'exportSlugId' is not null or undefined
+            assertParamExists('apiV1ConversationExportStatusExportSlugIdGet', 'exportSlugId', exportSlugId)
+            const localVarPath = `/api/v1/conversation/export/status/{exportSlugId}`
+                .replace(`{${"exportSlugId"}}`, encodeURIComponent(String(exportSlugId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -4048,6 +5621,72 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationImportActiveGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/conversation/import/active`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationImportCsvPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/conversation/import-csv`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1ConversationImportPostRequest} apiV1ConversationImportPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -4079,6 +5718,76 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationImportPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {string} importSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationImportStatusImportSlugIdGet: async (importSlugId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'importSlugId' is not null or undefined
+            assertParamExists('apiV1ConversationImportStatusImportSlugIdGet', 'importSlugId', importSlugId)
+            const localVarPath = `/api/v1/conversation/import/status/{importSlugId}`
+                .replace(`{${"importSlugId"}}`, encodeURIComponent(String(importSlugId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationValidateCsvPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/conversation/validate-csv`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -4449,6 +6158,46 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             // authentication BearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {string} auth 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1NotificationStreamGet: async (auth: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'auth' is not null or undefined
+            assertParamExists('apiV1NotificationStreamGet', 'auth', auth)
+            const localVarPath = `/api/v1/notification/stream`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (auth !== undefined) {
+                localVarQueryParameter['auth'] = auth;
+            }
 
 
     
@@ -5615,6 +7364,66 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {string} exportSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationExportExportSlugIdDelete(exportSlugId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationExportExportSlugIdDelete(exportSlugId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationExportExportSlugIdDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {string} conversationSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationExportHistoryConversationSlugIdGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {string} conversationSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationExportReadinessConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationExportReadinessConversationSlugIdGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationExportReadinessConversationSlugIdGet(conversationSlugId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationExportReadinessConversationSlugIdGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationExportRequestPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationExportRequestPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationExportRequestPost(apiV1ModerationConversationWithdrawPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationExportRequestPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {string} exportSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationExportStatusExportSlugIdGet(exportSlugId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationExportStatusExportSlugIdGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationExportStatusExportSlugIdGet(exportSlugId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationExportStatusExportSlugIdGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -5639,6 +7448,28 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationImportActiveGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationImportActiveGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationImportActiveGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationImportActiveGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationImportCsvPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationImportCsvPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationImportCsvPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationImportCsvPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1ConversationImportPostRequest} apiV1ConversationImportPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -5647,6 +7478,29 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationImportPost(apiV1ConversationImportPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationImportPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {string} importSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationImportStatusImportSlugIdGet(importSlugId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationImportStatusImportSlugIdGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationImportStatusImportSlugIdGet(importSlugId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationImportStatusImportSlugIdGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationValidateCsvPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationValidateCsvPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationValidateCsvPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationValidateCsvPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -5765,6 +7619,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1NotificationMarkAllReadPost(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1NotificationMarkAllReadPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {string} auth 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1NotificationStreamGet(auth: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1NotificationStreamGet(auth, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1NotificationStreamGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -6223,6 +8089,51 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {string} exportSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportExportSlugIdDelete(exportSlugId: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1ConversationExportExportSlugIdDelete(exportSlugId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {string} conversationSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner>> {
+            return localVarFp.apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {string} conversationSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportReadinessConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationExportReadinessConversationSlugIdGet200Response> {
+            return localVarFp.apiV1ConversationExportReadinessConversationSlugIdGet(conversationSlugId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportRequestPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationExportRequestPost200Response> {
+            return localVarFp.apiV1ConversationExportRequestPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {string} exportSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportStatusExportSlugIdGet(exportSlugId: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationExportStatusExportSlugIdGet200Response> {
+            return localVarFp.apiV1ConversationExportStatusExportSlugIdGet(exportSlugId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -6241,12 +8152,45 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationImportActiveGet(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationImportActiveGet200Response> {
+            return localVarFp.apiV1ConversationImportActiveGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationImportCsvPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationImportCsvPost200Response> {
+            return localVarFp.apiV1ConversationImportCsvPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1ConversationImportPostRequest} apiV1ConversationImportPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         apiV1ConversationImportPost(apiV1ConversationImportPostRequest: ApiV1ConversationImportPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationCreatePost200Response> {
             return localVarFp.apiV1ConversationImportPost(apiV1ConversationImportPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {string} importSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationImportStatusImportSlugIdGet(importSlugId: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationImportStatusImportSlugIdGet200Response> {
+            return localVarFp.apiV1ConversationImportStatusImportSlugIdGet(importSlugId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationValidateCsvPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationValidateCsvPost200Response> {
+            return localVarFp.apiV1ConversationValidateCsvPost(options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -6335,6 +8279,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1NotificationMarkAllReadPost(options?: RawAxiosRequestConfig): AxiosPromise<void> {
             return localVarFp.apiV1NotificationMarkAllReadPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {string} auth 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1NotificationStreamGet(auth: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1NotificationStreamGet(auth, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -6751,6 +8704,61 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @param {string} exportSlugId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationExportExportSlugIdDelete(exportSlugId: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationExportExportSlugIdDelete(exportSlugId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {string} conversationSlugId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationExportHistoryConversationSlugIdGet(conversationSlugId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {string} conversationSlugId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationExportReadinessConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationExportReadinessConversationSlugIdGet(conversationSlugId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationExportRequestPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationExportRequestPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {string} exportSlugId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationExportStatusExportSlugIdGet(exportSlugId: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationExportStatusExportSlugIdGet(exportSlugId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @param {ApiV1ConversationFetchRecentPostRequest} apiV1ConversationFetchRecentPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -6773,6 +8781,26 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationImportActiveGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationImportActiveGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationImportCsvPost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationImportCsvPost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @param {ApiV1ConversationImportPostRequest} apiV1ConversationImportPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -6780,6 +8808,27 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1ConversationImportPost(apiV1ConversationImportPostRequest: ApiV1ConversationImportPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ConversationImportPost(apiV1ConversationImportPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {string} importSlugId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationImportStatusImportSlugIdGet(importSlugId: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationImportStatusImportSlugIdGet(importSlugId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationValidateCsvPost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationValidateCsvPost(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -6888,6 +8937,17 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1NotificationMarkAllReadPost(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1NotificationMarkAllReadPost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {string} auth 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1NotificationStreamGet(auth: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1NotificationStreamGet(auth, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

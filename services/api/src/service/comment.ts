@@ -14,6 +14,8 @@ import {
     polisClusterUserTable,
     polisContentTable,
 } from "@/shared-backend/schema.js";
+import type { NotificationSSEManager } from "./notificationSSE.js";
+import { createOpinionNotification } from "./notification.js";
 import {
     updateOpinionCount,
     reconcileConversationCounters,
@@ -1012,6 +1014,7 @@ interface PostNewOpinionProps {
     userAgent: string;
     now: Date;
     isSeed: boolean;
+    notificationSSEManager?: NotificationSSEManager;
     conversationMetadata?: {
         conversationId: number;
         conversationContentId: number;
@@ -1032,6 +1035,7 @@ export async function postNewOpinion({
     userAgent,
     now,
     isSeed,
+    notificationSSEManager,
     conversationMetadata,
 }: PostNewOpinionProps): Promise<CreateCommentResponse> {
     // Use provided metadata if available (for seed opinions), otherwise fetch from DB
@@ -1114,7 +1118,7 @@ export async function postNewOpinion({
 
     const opinionSlugId = generateRandomSlugId();
 
-    await db.transaction(async (tx) => {
+    const { opinionId } = await db.transaction(async (tx) => {
         const insertCommentResponse = await tx
             .insert(opinionTable)
             .values({
@@ -1167,32 +1171,6 @@ export async function postNewOpinion({
             })
             .where(eq(userTable.id, userId));
 
-        {
-            // Create notification for the conversation owner
-            if (userId !== conversationAuthorId) {
-                const notificationTableResponse = await tx
-                    .insert(notificationTable)
-                    .values({
-                        slugId: generateRandomSlugId(),
-                        userId: conversationAuthorId, // owner of the notification
-                        notificationType: "new_opinion",
-                    })
-                    .returning({
-                        notificationId: notificationTable.id,
-                    });
-
-                const notificationId =
-                    notificationTableResponse[0].notificationId;
-
-                await tx.insert(notificationNewOpinionTable).values({
-                    notificationId: notificationId,
-                    authorId: userId, // the author of the opinion is the current user!
-                    opinionId: opinionId,
-                    conversationId: conversationId,
-                });
-            }
-        }
-
         // Update conversation opinionCount (+1 for new opinion)
         // Note: voteCount and participantCount will be updated by vote buffer
         // when the automatic vote is processed
@@ -1202,7 +1180,22 @@ export async function postNewOpinion({
             delta: 1,
             doUpdateLastReactedAt: true,
         });
+
+        return { opinionId };
     });
+
+    // Create notification for conversation owner (outside transaction)
+    // Skip for seed opinions
+    if (!isSeed) {
+        await createOpinionNotification({
+            db,
+            conversationAuthorId,
+            opinionAuthorId: userId,
+            opinionId,
+            conversationId,
+            notificationSSEManager,
+        });
+    }
 
     // Auto-vote outside transaction to reduce lock duration
     if (!isSeed) {
@@ -1319,17 +1312,32 @@ export async function bulkInsertOpinionsFromExternalPolisConvo({
     const statementIdPerOpinionSlugId: StatementIdPerOpinionSlugId = {};
     const opinionIdPerStatementId: OpinionIdPerStatementId = {};
     const opinionContentIdPerOpinionId: OpinionContentIdPerOpinionId = {};
+
+    // Pre-compute vote counts
+    const voteCountsByStatementId = new Map<
+        number,
+        { agrees: number; disagrees: number; passes: number }
+    >();
+    for (const vote of importedPolisConversation.votes_data) {
+        const existing = voteCountsByStatementId.get(vote.statement_id) ?? {
+            agrees: 0,
+            disagrees: 0,
+            passes: 0,
+        };
+        if (vote.vote === 1) existing.agrees++;
+        else if (vote.vote === -1) existing.disagrees++;
+        else existing.passes++;
+        voteCountsByStatementId.set(vote.statement_id, existing);
+    }
+
     const opinionsToAdd = importedPolisConversation.comments_data.map(
         (comment) => {
             const opinionSlugId = generateRandomSlugId();
 
-            // !IMPORTANT: this considers there are no duplicates or edit/cancel votes
-            const calculatedNumAgrees =
-                importedPolisConversation.votes_data.filter(
-                    (vote) =>
-                        vote.statement_id == comment.statement_id &&
-                        vote.vote === 1,
-                ).length;
+            const voteCounts = voteCountsByStatementId.get(
+                comment.statement_id,
+            ) ?? { agrees: 0, disagrees: 0, passes: 0 };
+            const calculatedNumAgrees = voteCounts.agrees;
             // just for logging
             const polisNumAgrees = comment.agree_count;
             if (polisNumAgrees === null) {
@@ -1342,12 +1350,7 @@ export async function bulkInsertOpinionsFromExternalPolisConvo({
                 );
             }
 
-            const calculatedNumDisagrees =
-                importedPolisConversation.votes_data.filter(
-                    (vote) =>
-                        vote.statement_id == comment.statement_id &&
-                        vote.vote === -1,
-                ).length;
+            const calculatedNumDisagrees = voteCounts.disagrees;
             // just for logging
             const polisNumDisagrees = comment.disagree_count;
             if (polisNumDisagrees === null) {
@@ -1360,12 +1363,7 @@ export async function bulkInsertOpinionsFromExternalPolisConvo({
                 );
             }
 
-            const calculatedNumPasses =
-                importedPolisConversation.votes_data.filter(
-                    (vote) =>
-                        vote.statement_id == comment.statement_id &&
-                        vote.vote === 0,
-                ).length;
+            const calculatedNumPasses = voteCounts.passes;
             // just for logging
             const polisNumPasses = comment.pass_count;
             if (polisNumPasses === null) {

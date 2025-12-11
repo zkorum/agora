@@ -82,16 +82,19 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { computed } from "vue";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { storeToRefs } from "pinia";
-import ZKCard from "../ui-library/ZKCard.vue";
+import ZKCard from "src/components/ui-library/ZKCard.vue";
 import {
   polisUrlInputTranslations,
   type PolisUrlInputTranslations,
 } from "./PolisUrlInput.i18n";
 
+// Establish global i18n scope for <i18n-t> component
+useI18n();
 
 const { t } = useComponentI18n<PolisUrlInputTranslations>(
   polisUrlInputTranslations
@@ -128,8 +131,8 @@ defineExpose({
 
 <style scoped lang="scss">
 .cardStyle {
-  background-color: #ffffff;
-  border: 1px solid #e0e0e0;
+  background-color: $color-background-default;
+  border: 1px solid $color-border-weak;
 }
 
 .content-container {

@@ -1,6 +1,6 @@
 import { defineStore, storeToRefs } from "pinia";
 import { ref, watch } from "vue";
-import { useBackendPostApi } from "src/utils/api/post";
+import { useBackendPostApi } from "src/utils/api/post/post";
 import { useAuthenticationStore } from "./authentication";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useUserStore } from "./user";
@@ -128,7 +128,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       ) {
         // Check for any new slug IDs
         const newItems = response.data.topConversationSlugIdList.filter(
-          (slugId) => !localTopConversationSlugIdList.includes(slugId)
+          (slugId: string) => !localTopConversationSlugIdList.includes(slugId)
         );
         if (newItems.length > 0) {
           localTopConversationSlugIdList =

@@ -29,6 +29,7 @@ import { nowZeroMs } from "@/shared/util.js";
 import type { ConversationIds } from "@/utils/dataStructure.js";
 import { processHtmlBody } from "@/shared-app-api/html.js";
 import type { VoteBuffer } from "./voteBuffer.js";
+import { deleteAllConversationExports } from "@/service/conversationExport/index.js";
 
 /**
  * Validates that public conversations have either login requirement or event ticket verification.
@@ -62,6 +63,7 @@ interface CreateNewPostProps {
     indexConversationAt?: string;
     isIndexed: boolean;
     isLoginRequired: boolean;
+    isImporting: boolean;
     seedOpinionList: string[];
     requiresEventTicket?: EventSlug;
     importUrl?: string;
@@ -69,6 +71,7 @@ interface CreateNewPostProps {
     importExportUrl?: string;
     importCreatedAt?: Date;
     importAuthor?: string;
+    importMethod?: "url" | "csv";
 }
 
 interface ImportPostProps {
@@ -102,14 +105,11 @@ export async function importConversation({
     requiresEventTicket,
     isOrgImportOnly,
 }: ImportPostProps): Promise<ImportConversationResponse> {
-    if (
-        (postAsOrganization === undefined || postAsOrganization === "") &&
-        isOrgImportOnly
-    ) {
-        throw httpErrors.forbidden(
-            "Import feature restricted to organizations",
-        );
-    }
+    // Validate organization restriction for imports
+    authUtilService.validateOrgImportRestriction(
+        postAsOrganization,
+        isOrgImportOnly,
+    );
     if (postAsOrganization !== undefined && postAsOrganization !== "") {
         let organizationId: number | undefined = undefined;
         organizationId = await authUtilService.isUserPartOfOrganization({
@@ -124,7 +124,13 @@ export async function importConversation({
         }
     }
 
-    if (!isValidPublicConversationAccess({ isIndexed, isLoginRequired, requiresEventTicket })) {
+    if (
+        !isValidPublicConversationAccess({
+            isIndexed,
+            isLoginRequired,
+            requiresEventTicket,
+        })
+    ) {
         throw httpErrors.forbidden(
             "Public conversations must either require login or event ticket verification",
         );
@@ -139,8 +145,11 @@ export async function importConversation({
             db,
             voteBuffer,
             importedPolisConversation,
-            polisUrlType,
-            polisUrl,
+            importConfig: {
+                method: "url",
+                polisUrl,
+                polisUrlType,
+            },
             proof: proof,
             didWrite: didWrite,
             authorId: authorId,
@@ -168,6 +177,7 @@ export async function createNewPost({
     indexConversationAt,
     isLoginRequired,
     isIndexed,
+    isImporting,
     seedOpinionList,
     requiresEventTicket,
     importUrl,
@@ -175,6 +185,7 @@ export async function createNewPost({
     importExportUrl,
     importCreatedAt,
     importAuthor,
+    importMethod,
 }: CreateNewPostProps): Promise<ConversationIds> {
     let organizationId: number | undefined = undefined;
     if (postAsOrganization !== undefined && postAsOrganization !== "") {
@@ -205,7 +216,13 @@ export async function createNewPost({
         }
     }
 
-    if (!isValidPublicConversationAccess({ isIndexed, isLoginRequired, requiresEventTicket })) {
+    if (
+        !isValidPublicConversationAccess({
+            isIndexed,
+            isLoginRequired,
+            requiresEventTicket,
+        })
+    ) {
         throw httpErrors.forbidden(
             "Public conversations must either require login or event ticket verification",
         );
@@ -221,6 +238,7 @@ export async function createNewPost({
                     organizationId: organizationId,
                     isIndexed: isIndexed,
                     isLoginRequired: isLoginRequired,
+                    isImporting: isImporting,
                     requiresEventTicket: requiresEventTicket,
                     indexConversationAt:
                         indexConversationAt !== undefined
@@ -235,6 +253,7 @@ export async function createNewPost({
                     importExportUrl,
                     importCreatedAt,
                     importAuthor,
+                    importMethod,
                 })
                 .returning({ conversationId: conversationTable.id });
 
@@ -406,7 +425,7 @@ export async function deletePostBySlugId({
     proof,
     didWrite,
 }: DeletePostBySlugIdProps): Promise<void> {
-    await db.transaction(async (tx) => {
+    const conversationId = await db.transaction(async (tx) => {
         // Delete the conversation
         const updatedConversationIdResponse = await tx
             .update(conversationTable)
@@ -454,7 +473,29 @@ export async function deletePostBySlugId({
                 currentContentId: null,
             })
             .where(eq(opinionTable.conversationId, conversationId));
+
+        return conversationId;
     });
+
+    // Delete all conversation exports after the transaction completes
+    // This is done outside the transaction to prevent S3 failures from blocking conversation deletion
+    try {
+        const deletedExportCount = await deleteAllConversationExports({
+            db,
+            conversationId,
+        });
+        if (deletedExportCount > 0) {
+            log.info(
+                `Deleted ${deletedExportCount.toString()} exports for conversation ${conversationId.toString()}`,
+            );
+        }
+    } catch (error: unknown) {
+        // Log error but don't throw - conversation deletion should succeed even if export deletion fails
+        log.error(
+            `Error deleting exports for conversation ${conversationId.toString()}:`,
+            error,
+        );
+    }
 }
 
 // interface CreateConversationFromPolisProps {

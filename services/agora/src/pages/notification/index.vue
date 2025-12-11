@@ -96,8 +96,8 @@ import type {
 } from "src/shared/types/zod";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useNotificationStore } from "src/stores/notification";
-import { useBackendNotificationApi } from "src/utils/api/notification";
-import { onMounted, ref } from "vue";
+import { useNotificationApi } from "src/utils/api/notification/notification";
+import { onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { HomeMenuBar } from "src/components/navigation/header/variants";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
@@ -108,11 +108,13 @@ import {
   type NotificationTranslations,
 } from "./index.i18n";
 
-const { notificationList } = storeToRefs(useNotificationStore());
+const notificationStore = useNotificationStore();
+const { notificationList, numNewNotifications } =
+  storeToRefs(notificationStore);
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
-const { loadNotificationData } = useNotificationStore();
+const { loadNotificationData, markAllAsReadLocally } = notificationStore;
 
-const { markAllNotificationsAsRead } = useBackendNotificationApi();
+const { markAllNotificationsAsRead } = useNotificationApi();
 
 const hasMore = ref(true);
 const isLoading = ref(true);
@@ -127,13 +129,24 @@ onMounted(() => {
   void loadInitialData();
 });
 
+// Watch for new notifications arriving via SSE while on this page
+watch(numNewNotifications, async (newCount, oldCount) => {
+  // Only react if count increases (new notifications arrived)
+  // and we're not in the initial loading phase
+  if (newCount > oldCount && !isLoading.value) {
+    await markAllNotificationsAsRead();
+    // Update local state to immediately clear the badge
+    markAllAsReadLocally();
+  }
+});
+
 async function loadInitialData() {
   try {
     isLoading.value = true;
     await markAllNotificationsAsRead();
     await loadNotificationData(false);
   } catch (error) {
-    console.error('Failed to load notifications:', error);
+    console.error("Failed to load notifications:", error);
   } finally {
     isLoading.value = false;
   }
@@ -154,6 +167,27 @@ function getIconFromNotificationType(
       break;
     case "opinion_vote":
       icon = "icon-park-outline:message-sent";
+      break;
+    case "export_started":
+      icon = "mdi:clock-outline";
+      break;
+    case "export_completed":
+      icon = "mdi:check-circle";
+      break;
+    case "export_failed":
+      icon = "mdi:alert-circle";
+      break;
+    case "export_cancelled":
+      icon = "mdi:cancel";
+      break;
+    case "import_started":
+      icon = "mdi:clock-outline";
+      break;
+    case "import_completed":
+      icon = "mdi:check-circle";
+      break;
+    case "import_failed":
+      icon = "mdi:alert-circle";
       break;
   }
   return icon;
@@ -177,6 +211,27 @@ function getTitleFromNotification(notificationItem: NotificationItem): string {
               notificationItem.numVotes.toString()
             );
       break;
+    case "export_started":
+      title = t("exportStarted");
+      break;
+    case "export_completed":
+      title = t("exportCompleted");
+      break;
+    case "export_failed":
+      title = t("exportFailed");
+      break;
+    case "export_cancelled":
+      title = t("exportCancelled");
+      break;
+    case "import_started":
+      title = t("importStarted");
+      break;
+    case "import_completed":
+      title = t("importCompleted");
+      break;
+    case "import_failed":
+      title = t("importFailed");
+      break;
   }
   return title;
 }
@@ -191,12 +246,42 @@ function pullDownTriggered(done: () => void) {
   }, 500);
 }
 
-async function redirectPage(routeTarget: RouteTarget) {
-  await router.push({
-    name: "/conversation/[postSlugId]",
-    params: { postSlugId: routeTarget.conversationSlugId },
-    query: { opinion: routeTarget.opinionSlugId },
-  });
+async function redirectPage(routeTarget: RouteTarget): Promise<void> {
+  switch (routeTarget.type) {
+    case "opinion":
+      await router.push({
+        name: "/conversation/[postSlugId]",
+        params: { postSlugId: routeTarget.conversationSlugId },
+        query: { opinion: routeTarget.opinionSlugId },
+      });
+      break;
+
+    case "export":
+      await router.push({
+        name: "/conversation/[conversationSlugId]/export.[exportId]",
+        params: {
+          conversationSlugId: routeTarget.conversationSlugId,
+          exportId: routeTarget.exportSlugId,
+        },
+      });
+      break;
+
+    case "import":
+      // If import completed with conversationSlugId, go directly to conversation
+      // Otherwise go to import status page
+      if (routeTarget.conversationSlugId) {
+        await router.push({
+          name: "/conversation/[postSlugId]",
+          params: { postSlugId: routeTarget.conversationSlugId },
+        });
+      } else {
+        await router.push({
+          name: "/conversation/import/[importSlugId]",
+          params: { importSlugId: routeTarget.importSlugId },
+        });
+      }
+      break;
+  }
 }
 </script>
 

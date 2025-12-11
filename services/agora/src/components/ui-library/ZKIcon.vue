@@ -1,7 +1,5 @@
 <template>
-  <div>
-    <Icon :icon="name" :style="{ fontSize: size, color: color }" />
-  </div>
+  <Icon :icon="name" :style="{ fontSize: size, color: color }" />
 </template>
 
 <script setup lang="ts">

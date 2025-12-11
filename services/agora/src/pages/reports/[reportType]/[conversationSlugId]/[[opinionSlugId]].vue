@@ -77,7 +77,9 @@ import {
   type UserReportsViewerTranslations,
 } from "./[[opinionSlugId]].i18n";
 
-const route = useRoute();
+const route = useRoute(
+  "/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]"
+);
 const router = useRouter();
 
 const { showNotifyMessage } = useNotify();

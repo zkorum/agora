@@ -6,7 +6,9 @@ import {
 } from "@/shared/types/dto.js";
 import fastifyAuth from "@fastify/auth";
 import fastifyCors from "@fastify/cors";
+import fastifyMultipart from "@fastify/multipart";
 import fastifySensible from "@fastify/sensible";
+import fastifySSE from "@fastify/sse";
 import fastifySwagger from "@fastify/swagger";
 import * as ucans from "@ucans/ucans";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
@@ -21,8 +23,20 @@ import fs from "fs";
 import { config, log, server } from "./app.js";
 import * as authService from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
+import * as csvImportService from "@/service/csvImport.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
+import {
+    validateCsvFieldNames,
+    MAX_CSV_FILE_SIZE,
+} from "@/shared-app-api/csvUpload.js";
+import * as conversationExportService from "@/service/conversationExport/index.js";
+import * as conversationImportService from "@/service/conversationImport/index.js";
+import { cleanupStuckImportsOnStartup } from "@/service/conversationImport/database.js";
+import { cleanupStuckExportsOnStartup } from "@/service/conversationExport/core.js";
+import { createImportNotification } from "@/service/conversationImport/notifications.js";
+import { createExportNotification } from "@/service/conversationExport/notifications.js";
+import { validateS3Access } from "./service/s3.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
 // import * as polisService from "@/service/polis.js";
@@ -87,8 +101,11 @@ import {
     markAllNotificationsAsRead,
 } from "./service/notification.js";
 import twilio from "twilio";
-import { initializeRedis } from "./shared-backend/redis.js";
+import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
+import { createExportBuffer } from "./service/exportBuffer.js";
+import { createImportBuffer } from "./service/importBuffer.js";
+import { NotificationSSEManager } from "./service/notificationSSE.js";
 import {
     addUserOrganizationMapping,
     createOrganization,
@@ -145,6 +162,19 @@ server.register(fastifyCors, {
         }
     },
 });
+
+// Register multipart plugin for file uploads (for CSV import)
+server.register(fastifyMultipart, {
+    limits: {
+        fileSize: MAX_CSV_FILE_SIZE,
+        files: 3,
+    },
+});
+
+// Register SSE plugin for real-time notification streaming
+// @fastify/sse has type compatibility issues with Fastify v5
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+await server.register(fastifySSE as any);
 
 // Add schema validator and serializer
 server.setValidatorCompiler(validatorCompiler);
@@ -292,6 +322,22 @@ server.setErrorHandler((error, _request, reply) => {
 
 const db = await createDb(config, log);
 
+// Validate S3 configuration if export feature is enabled
+if (config.CONVERSATION_EXPORT_ENABLED) {
+    if (!config.AWS_S3_BUCKET_NAME || !config.AWS_S3_REGION) {
+        log.error(
+            "[API] S3 configuration missing but export feature is enabled",
+        );
+        process.exit(1);
+    }
+    try {
+        await validateS3Access({ bucketName: config.AWS_S3_BUCKET_NAME });
+    } catch (error) {
+        log.error(error, "[API] Failed to validate S3 access");
+        process.exit(1);
+    }
+}
+
 // Initialize Google Cloud Translation credentials (optional)
 let googleCloudCredentials: GoogleCloudCredentials | undefined = undefined;
 if (
@@ -325,19 +371,121 @@ if (
     );
 }
 
-// Initialize Redis (optional - for vote buffer persistence)
-const redis = initializeRedis({ redisUrl: config.REDIS_URL, log });
+// Initialize Valkey (optional - for vote buffer persistence)
+const valkey = initializeValkey({ valkeyUrl: config.VALKEY_URL, log });
 
 // Initialize VoteBuffer (batches votes to reduce DB contention)
 const voteBuffer = createVoteBuffer({
     db,
-    redis,
-    redisVoteBufferKey: config.REDIS_VOTE_BUFFER_KEY,
+    valkey,
     flushIntervalMs: 1000,
 });
 log.info(
-    `[API] Vote buffer initialized (flush interval: 1s, persistence: ${redis !== undefined ? "Redis" : "in-memory only"})`,
+    `[API] Vote buffer initialized (flush interval: 1s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
+
+// Initialize Notification SSE Manager for real-time notifications
+const notificationSSEManager = new NotificationSSEManager();
+notificationSSEManager.initialize();
+
+// Initialize ExportBuffer (batches export requests to reduce system load)
+const exportBuffer = createExportBuffer({
+    db,
+    valkey,
+    notificationSSEManager,
+    flushIntervalMs: 1000,
+    maxBatchSize: 100,
+    cooldownSeconds: config.CONVERSATION_EXPORT_COOLDOWN_SECONDS,
+    exportExpiryDays: config.CONVERSATION_EXPORT_EXPIRY_DAYS,
+});
+log.info(
+    `[API] Export buffer initialized (flush interval: 1s, cooldown: ${String(config.CONVERSATION_EXPORT_COOLDOWN_SECONDS)}s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
+);
+
+// Initialize ImportBuffer (batches import requests to reduce system load)
+const importBuffer = createImportBuffer({
+    db,
+    valkey,
+    notificationSSEManager,
+    voteBuffer,
+    flushIntervalMs: 1000,
+    maxBatchSize: 5,
+});
+log.info(
+    `[API] Import buffer initialized (flush interval: 1s, max batch: 5, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
+);
+
+// Cleanup stuck imports/exports from previous server session
+// This runs once on startup to handle jobs that were interrupted by server restart
+const performStartupCleanup = async (): Promise<void> => {
+    const SERVER_RESTART_ERROR_MESSAGE =
+        "Processing was interrupted by a server restart. Please try again.";
+
+    // Cleanup stuck imports and send notifications
+    const importCleanupResult = await cleanupStuckImportsOnStartup({
+        db,
+        errorMessage: SERVER_RESTART_ERROR_MESSAGE,
+    });
+
+    if (importCleanupResult.cleanedCount > 0) {
+        log.info(
+            `[Startup] Cleaned up ${String(importCleanupResult.cleanedCount)} stuck imports`,
+        );
+
+        // Send notifications for failed imports
+        for (const stuckImport of importCleanupResult.stuckImports) {
+            try {
+                await createImportNotification({
+                    db,
+                    userId: stuckImport.userId,
+                    importId: stuckImport.id,
+                    conversationId: null,
+                    type: "import_failed",
+                    notificationSSEManager,
+                });
+            } catch (notificationError: unknown) {
+                log.error(
+                    notificationError,
+                    `[Startup] Failed to create import notification for import ${stuckImport.slugId}`,
+                );
+            }
+        }
+    }
+
+    // Cleanup stuck exports and send notifications
+    const exportCleanupResult = await cleanupStuckExportsOnStartup({
+        db,
+        errorMessage: SERVER_RESTART_ERROR_MESSAGE,
+    });
+
+    if (exportCleanupResult.cleanedCount > 0) {
+        log.info(
+            `[Startup] Cleaned up ${String(exportCleanupResult.cleanedCount)} stuck exports`,
+        );
+
+        // Send notifications for failed exports
+        for (const stuckExport of exportCleanupResult.stuckExports) {
+            try {
+                await createExportNotification({
+                    db,
+                    userId: stuckExport.userId,
+                    exportId: stuckExport.id,
+                    conversationId: stuckExport.conversationId,
+                    type: "export_failed",
+                    notificationSSEManager,
+                });
+            } catch (notificationError: unknown) {
+                log.error(
+                    notificationError,
+                    `[Startup] Failed to create export notification for export ${stuckExport.slugId}`,
+                );
+            }
+        }
+    }
+};
+
+// Run cleanup (non-blocking)
+void performStartupCleanup();
 
 interface ExpectedDeviceStatus {
     userId?: string;
@@ -571,6 +719,14 @@ async function verifyUcanAndKnownDeviceStatus(
 }
 
 const apiVersion = "v1";
+
+function checkConversationExportEnabled(): void {
+    if (!config.CONVERSATION_EXPORT_ENABLED) {
+        throw server.httpErrors.serviceUnavailable(
+            "Conversation export feature is currently disabled",
+        );
+    }
+}
 
 // const awsMailConf = {
 //     accessKeyId: config.AWS_ACCESS_KEY_ID,
@@ -1329,6 +1485,7 @@ server.after(() => {
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: now,
                 isSeed: false,
+                notificationSSEManager: notificationSSEManager,
             });
             reply.send(newOpinionResponse);
             const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
@@ -1591,6 +1748,7 @@ server.after(() => {
                 postAsOrganization: request.body.postAsOrganization,
                 isIndexed: request.body.isIndexed,
                 isLoginRequired: request.body.isLoginRequired,
+                isImporting: false,
                 seedOpinionList: request.body.seedOpinionList,
                 requiresEventTicket: request.body.requiresEventTicket,
             });
@@ -1664,6 +1822,209 @@ server.after(() => {
             });
         },
     });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/validate-csv`,
+        schema: {
+            consumes: ["multipart/form-data"],
+            response: {
+                200: Dto.validateCsvResponse,
+            },
+        },
+        handler: async (request, reply) => {
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: {
+                    isLoggedIn: true,
+                    isRegistered: true,
+                },
+            });
+
+            // Parse multipart request - accept any combination of files
+            const parts = request.parts();
+            const files: Partial<Record<string, string>> = {};
+
+            for await (const part of parts) {
+                if (part.type === "file") {
+                    // Validate file size before buffering to prevent memory exhaustion
+                    const chunks: Buffer[] = [];
+                    let totalSize = 0;
+                    for await (const chunk of part.file) {
+                        totalSize += chunk.length;
+                        if (totalSize > MAX_CSV_FILE_SIZE) {
+                            throw server.httpErrors.payloadTooLarge(
+                                `File '${part.fieldname}' exceeds maximum size of 50MB`,
+                            );
+                        }
+                        chunks.push(chunk);
+                    }
+                    const buffer = Buffer.concat(chunks);
+                    files[part.fieldname] = buffer.toString("utf-8");
+                }
+                // Ignore form fields - validation doesn't need them
+            }
+
+            // Validate the uploaded files (supports 1, 2, or 3 files)
+            const validationResult =
+                await csvImportService.validateIndividualCsvFiles({ files });
+
+            reply.send(validationResult);
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/import-csv`,
+        schema: {
+            consumes: ["multipart/form-data"],
+            response: {
+                200: Dto.importCsvConversationResponse,
+            },
+        },
+        handler: async (request, reply) => {
+            const { didWrite, encodedUcan, deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                });
+
+            // Parse multipart request
+            const parts = request.parts();
+            const files: Partial<Record<string, string>> = {};
+            const formFields: Record<string, string> = {};
+
+            for await (const part of parts) {
+                if (part.type === "file") {
+                    // Validate file size before buffering to prevent memory exhaustion
+                    const chunks: Buffer[] = [];
+                    let totalSize = 0;
+                    for await (const chunk of part.file) {
+                        totalSize += chunk.length;
+                        if (totalSize > MAX_CSV_FILE_SIZE) {
+                            throw server.httpErrors.payloadTooLarge(
+                                `File '${part.fieldname}' exceeds maximum size of 50MB`,
+                            );
+                        }
+                        chunks.push(chunk);
+                    }
+                    const buffer = Buffer.concat(chunks);
+                    files[part.fieldname] = buffer.toString("utf-8");
+                } else {
+                    // Parse form fields
+                    formFields[part.fieldname] = part.value as string;
+                }
+            }
+
+            // Validate that all required files are present
+            const fileValidation = validateCsvFieldNames(Object.keys(files));
+            if (!fileValidation.isValid) {
+                throw server.httpErrors.badRequest(
+                    `Missing required CSV files: ${fileValidation.missingFields.join(", ")}`,
+                );
+            }
+
+            // Validate and parse form fields using DTO with preprocessing
+            const parsedFields =
+                Dto.importCsvConversationFormRequest.parse(formFields);
+
+            // Check organization restriction (same as URL import)
+            authUtilService.validateOrgImportRestriction(
+                parsedFields.postAsOrganization,
+                config.IS_ORG_IMPORT_ONLY,
+            );
+
+            // Verify organization membership if specified
+            if (parsedFields.postAsOrganization !== undefined) {
+                const organizationId =
+                    await authUtilService.isUserPartOfOrganization({
+                        db,
+                        organizationName: parsedFields.postAsOrganization,
+                        userId: deviceStatus.userId,
+                    });
+                if (organizationId === undefined) {
+                    throw server.httpErrors.forbidden(
+                        `User '${deviceStatus.userId}' is not part of the organization: '${parsedFields.postAsOrganization}'`,
+                    );
+                }
+            }
+
+            // Request CSV import (creates record and queues for async processing)
+            const { importSlugId } =
+                await conversationImportService.requestConversationImport({
+                    db,
+                    userId: deviceStatus.userId,
+                    files,
+                    formData: {
+                        postAsOrganization: parsedFields.postAsOrganization,
+                        indexConversationAt: parsedFields.indexConversationAt,
+                        isLoginRequired: parsedFields.isLoginRequired,
+                        isIndexed: parsedFields.isIndexed,
+                        requiresEventTicket: parsedFields.requiresEventTicket,
+                    },
+                    proof: encodedUcan,
+                    didWrite,
+                    importBuffer,
+                    notificationSSEManager,
+                });
+
+            reply.send({ importSlugId });
+        },
+    });
+
+    // Get Active Import for User
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/conversation/import/active`,
+        schema: {
+            response: {
+                200: Dto.getActiveImportResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+
+            return await conversationImportService.getActiveImportForUser({
+                db: db,
+                userId: deviceStatus.userId,
+            });
+        },
+    });
+
+    // Conversation Import Status Route
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/conversation/import/status/:importSlugId`,
+        schema: {
+            params: Dto.getConversationImportStatusRequest,
+            response: {
+                200: Dto.getConversationImportStatusResponse,
+            },
+        },
+        handler: async (request) => {
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+            });
+
+            const status =
+                await conversationImportService.getConversationImportStatus({
+                    db: db,
+                    importSlugId: request.params.importSlugId,
+                });
+
+            if (status === null) {
+                throw server.httpErrors.notFound("Import not found");
+            }
+
+            return status;
+        },
+    });
+
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/conversation/get`,
@@ -2307,6 +2668,63 @@ server.after(() => {
         },
     });
 
+    // SSE endpoint for real-time notifications
+    // Accepts authentication via query parameter since EventSource doesn't support custom headers
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/notification/stream`,
+        sse: true, // Enable SSE mode - provides reply.sse.* methods
+        schema: {
+            querystring: Dto.notificationStreamQuerystring,
+        },
+        handler: async (request, reply) => {
+            // Authenticate BEFORE initializing SSE to allow proper HTTP error responses
+            let deviceStatus;
+            try {
+                // Get auth token from query parameter (type-safe)
+                const { auth } = request.query;
+
+                // Manually inject the auth header for UCAN verification
+                request.headers.authorization = `Bearer ${auth}`;
+
+                const result = await verifyUcanAndKnownDeviceStatus(
+                    db,
+                    request,
+                    {
+                        expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                    },
+                );
+                deviceStatus = result.deviceStatus;
+            } catch (error) {
+                log.error(error, "[SSE] Authentication failed");
+                // Send HTTP error response before any SSE operations
+                // Use string response instead of object for SSE-enabled routes
+                return reply.code(401).send("Authentication failed");
+            }
+
+            // Only proceed with SSE initialization after successful authentication
+            try {
+                // Keep connection alive (prevents automatic close after handler returns)
+                reply.sse.keepAlive();
+
+                // Register this connection with the SSE manager
+                // The manager will use reply.sse.send() to broadcast notifications
+                notificationSSEManager.connect(deviceStatus.userId, reply);
+
+                // Keep the handler alive by waiting for socket close event
+                // This is necessary to prevent Fastify from closing the connection
+                await new Promise<void>((resolve) => {
+                    request.raw.on("close", () => {
+                        resolve();
+                    });
+                });
+            } catch (error) {
+                log.error(error, "[SSE] Error during SSE connection");
+                // At this point SSE is active, connection will be cleaned up by disconnect handler
+            }
+        },
+    });
+
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/topic/get-all-topics`,
@@ -2368,6 +2786,142 @@ server.after(() => {
             });
         },
     });
+
+    // Conversation Export Routes
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/export/request`,
+        schema: {
+            body: Dto.requestConversationExportRequest,
+            response: {
+                200: Dto.requestConversationExportResponse,
+            },
+        },
+        handler: async (request) => {
+            checkConversationExportEnabled();
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            return await conversationExportService.requestConversationExport({
+                db: db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
+                exportBuffer: exportBuffer,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/conversation/export/status/:exportSlugId`,
+        schema: {
+            params: Dto.getConversationExportStatusRequest,
+            response: {
+                200: Dto.getConversationExportStatusResponse,
+            },
+        },
+        handler: async (request) => {
+            checkConversationExportEnabled();
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+            });
+            return await conversationExportService.getConversationExportStatus({
+                db: db,
+                exportSlugId: request.params.exportSlugId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/conversation/export/history/:conversationSlugId`,
+        schema: {
+            params: Dto.getConversationExportHistoryRequest,
+            response: {
+                200: Dto.getConversationExportHistoryResponse,
+            },
+        },
+        handler: async (request) => {
+            checkConversationExportEnabled();
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+            });
+            return await conversationExportService.getConversationExportHistory(
+                {
+                    db: db,
+                    conversationSlugId: request.params.conversationSlugId,
+                },
+            );
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/conversation/export/readiness/:conversationSlugId`,
+        schema: {
+            params: Dto.getConversationExportHistoryRequest,
+            response: {
+                200: Dto.getExportReadinessResponse,
+            },
+        },
+        handler: async (request) => {
+            checkConversationExportEnabled();
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            return await conversationExportService.getExportReadinessForConversation(
+                {
+                    db: db,
+                    conversationSlugId: request.params.conversationSlugId,
+                    userId: deviceStatus.userId,
+                    cooldownSeconds:
+                        config.CONVERSATION_EXPORT_COOLDOWN_SECONDS,
+                },
+            );
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "DELETE",
+        url: `/api/${apiVersion}/conversation/export/:exportSlugId`,
+        schema: {
+            params: Dto.deleteConversationExportRequest,
+        },
+        handler: async (request) => {
+            checkConversationExportEnabled();
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+            const isModerator = await isModeratorAccount({
+                db: db,
+                userId: deviceStatus.userId,
+            });
+
+            if (!isModerator) {
+                throw server.httpErrors.unauthorized("User is not a moderator");
+            }
+
+            await conversationExportService.deleteConversationExport({
+                db: db,
+                exportSlugId: request.params.exportSlugId,
+            });
+        },
+    });
 });
 
 if (
@@ -2423,10 +2977,19 @@ if (
             // Flush pending votes before shutdown
             await voteBuffer.shutdown();
 
-            // Close Redis connection
-            if (redis !== undefined) {
-                await redis.quit();
-                log.info("[Redis] Connection closed");
+            // Flush pending exports before shutdown
+            await exportBuffer.shutdown();
+
+            // Flush pending imports before shutdown
+            await importBuffer.shutdown();
+
+            // Close SSE connections before shutdown
+            await notificationSSEManager.shutdown();
+
+            // Close Valkey connection
+            if (valkey !== undefined) {
+                await valkey.quit();
+                log.info("[Valkey] Connection closed");
             }
 
             // Close server

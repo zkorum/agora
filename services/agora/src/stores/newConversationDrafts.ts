@@ -1,13 +1,151 @@
 import { useStorage, type RemovableRef } from "@vueuse/core";
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
+import { z } from "zod";
 import type { OrganizationProperties, EventSlug } from "src/shared/types/zod";
+import { zodEventSlug } from "src/shared/types/zod";
 import {
   validateHtmlStringCharacterCount,
   MAX_LENGTH_BODY,
+  MAX_LENGTH_TITLE,
 } from "src/shared/shared";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { processEnv } from "src/utils/processEnv";
+
+// ============================================================================
+// Zod Schemas for Draft Validation
+// ============================================================================
+
+/**
+ * Zod schema for validating poll options (when poll is enabled)
+ */
+const zodPollOptions = z
+  .array(z.string().trim().min(1, "All poll options must be filled in"))
+  .min(2, "Poll must have at least 2 options")
+  .max(6, "Maximum 6 poll options allowed")
+  .refine(
+    (options) => {
+      const trimmedLower = options.map((opt) => opt.toLowerCase());
+      return new Set(trimmedLower).size === trimmedLower.length;
+    },
+    { message: "Poll options must be unique" }
+  );
+
+/**
+ * Zod schema for poll settings
+ */
+const zodPollSettings = z.object({
+  enabled: z.boolean(),
+  options: z.array(z.string()),
+});
+
+/**
+ * Zod schema for post-as settings
+ */
+const zodPostAsSettings = z.object({
+  postAsOrganization: z.boolean(),
+  organizationName: z.string(),
+});
+
+/**
+ * Zod schema for private conversation settings (serializable version with ISO string)
+ */
+const zodSerializablePrivateConversationSettings = z.object({
+  requiresLogin: z.boolean(),
+  hasScheduledConversion: z.boolean(),
+  conversionDate: z.iso.datetime(), // Validates ISO 8601 datetime format
+});
+
+/**
+ * Zod schema for CSV file metadata
+ */
+const zodCsvFileMetadata = z
+  .object({
+    name: z.string(),
+    size: z.number().nonnegative(),
+  })
+  .nullable();
+
+/**
+ * Zod schema for CSV file metadata set
+ */
+const zodCsvFileMetadataSet = z.object({
+  summary: zodCsvFileMetadata,
+  comments: zodCsvFileMetadata,
+  votes: zodCsvFileMetadata,
+});
+
+/**
+ * Zod schema for title validation (runtime validation)
+ */
+const zodTitleValidation = z
+  .string()
+  .trim()
+  .min(1, "Title is required to continue")
+  .max(MAX_LENGTH_TITLE);
+
+/**
+ * Zod schema for Polis URL validation (runtime validation)
+ */
+const zodPolisUrlValidation = z
+  .string()
+  .refine((url) => !url || isValidPolisUrl(url), {
+    message: "Please enter a valid Polis URL.",
+  });
+
+/**
+ * Zod schema for conversation import type
+ */
+const zodConversationImportType = z
+  .enum(["polis-url", "csv-import"])
+  .nullable();
+
+/**
+ * Zod schema for conversation import settings
+ */
+const zodConversationImportSettings = z.object({
+  importType: zodConversationImportType,
+  polisUrl: z.string(),
+  csvFileMetadata: zodCsvFileMetadataSet,
+});
+
+/**
+ * Zod schema for serializable conversation draft
+ * This is the main schema used for localStorage validation
+ */
+const zodSerializableConversationDraft = z.object({
+  // Basic content
+  title: z.string().max(MAX_LENGTH_TITLE),
+  content: z.string(), // Body length validation happens in validateHtmlStringCharacterCount
+  seedOpinions: z.array(z.string()),
+
+  // Poll configuration
+  poll: zodPollSettings,
+
+  // Publishing options
+  postAs: zodPostAsSettings,
+
+  // Privacy settings
+  isPrivate: z.boolean(),
+  privateConversationSettings: zodSerializablePrivateConversationSettings,
+
+  // Event ticket verification
+  requiresEventTicket: zodEventSlug.optional(),
+
+  // Import settings
+  importSettings: zodConversationImportSettings,
+});
+
+/**
+ * Type inference from zod schema - replaces the SerializableConversationDraft interface
+ */
+type SerializableConversationDraft = z.infer<
+  typeof zodSerializableConversationDraft
+>;
+
+// ============================================================================
+// TypeScript Interfaces (for runtime types with Date objects)
+// ============================================================================
 
 /**
  * Settings for posting as an organization
@@ -31,13 +169,24 @@ export interface PrivateConversationSettings {
 }
 
 /**
- * Settings for importing conversations from Polis
+ * Type of conversation import method
  */
-export interface ImportConversationSettings {
-  /** Whether this conversation is being imported from Polis */
-  isImportMode: boolean;
-  /** The Polis conversation URL to import from */
+export type ConversationImportType = "polis-url" | "csv-import";
+
+/**
+ * Settings for importing conversations
+ */
+export interface ConversationImportSettings {
+  /** How this conversation is being imported (null for manual creation) */
+  importType: ConversationImportType | null;
+  /** The Polis conversation URL (only relevant for 'polis-url' type) */
   polisUrl: string;
+  /** Metadata for uploaded CSV files (only relevant for 'csv-import' type) */
+  csvFileMetadata: {
+    summary: { name: string; size: number } | null;
+    comments: { name: string; size: number } | null;
+    votes: { name: string; size: number } | null;
+  };
 }
 
 /**
@@ -81,28 +230,7 @@ export interface NewConversationDraft {
   requiresEventTicket?: EventSlug;
 
   // Import Settings
-  importSettings: ImportConversationSettings;
-}
-
-/**
- * Serializable version for localStorage storage (Date objects converted to ISO strings)
- */
-interface SerializablePrivateConversationSettings {
-  hasScheduledConversion: boolean;
-  conversionDate: string; // ISO string instead of Date
-}
-
-interface SerializableConversationDraft {
-  title: string;
-  content: string;
-  seedOpinions: string[];
-  poll: PollSettings;
-  postAs: PostAsSettings;
-  isPrivate: boolean;
-  requiresLogin: boolean;
-  privateConversationSettings: SerializablePrivateConversationSettings;
-  requiresEventTicket?: EventSlug;
-  importSettings: ImportConversationSettings;
+  importSettings: ConversationImportSettings;
 }
 
 /**
@@ -218,94 +346,46 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       // Event Ticket Verification
       requiresEventTicket: undefined,
 
-      // Import Settings
+      // Creation Settings
       importSettings: {
-        isImportMode: false,
+        importType: null,
         polisUrl: "",
+        csvFileMetadata: {
+          summary: null,
+          comments: null,
+          votes: null,
+        },
       },
     };
   }
 
   /**
-   * Validates that stored data matches the expected conversation draft structure
+   * Parses and validates stored draft data using zod schema
+   * Returns parsed draft if valid, null otherwise
    */
-  function isValidDraftData(
-    data: unknown
-  ): data is SerializableConversationDraft {
-    if (!data || typeof data !== "object" || data === null) {
-      return false;
-    }
+  function parseStoredDraft(data: unknown): NewConversationDraft | null {
+    const result = zodSerializableConversationDraft.safeParse(data);
 
-    const draft = data as Record<string, unknown>;
-
-    // Validate basic content fields
-    const hasValidContent =
-      typeof draft.title === "string" &&
-      typeof draft.content === "string" &&
-      Array.isArray(draft.seedOpinions) &&
-      draft.seedOpinions.every(
-        (opinion: unknown) => typeof opinion === "string"
+    if (!result.success) {
+      console.warn(
+        "Invalid conversation draft data found in storage:",
+        result.error.format()
       );
-
-    // Validate poll settings
-    if (!draft.poll || typeof draft.poll !== "object") {
-      return false;
+      return null;
     }
-    const pollData = draft.poll as Record<string, unknown>;
-    const hasValidPoll =
-      typeof pollData.enabled === "boolean" &&
-      Array.isArray(pollData.options) &&
-      (pollData.options as unknown[]).every(
-        (option: unknown) => typeof option === "string"
-      );
 
-    // Validate postAs settings
-    if (!draft.postAs || typeof draft.postAs !== "object") {
-      return false;
-    }
-    const postAsData = draft.postAs as Record<string, unknown>;
-    const hasValidPostAs =
-      typeof postAsData.postAsOrganization === "boolean" &&
-      typeof postAsData.organizationName === "string";
+    // Transform serialized format to runtime format (Date conversion and requiresLogin extraction)
+    const { requiresLogin, ...restPrivateSettings } =
+      result.data.privateConversationSettings;
 
-    // Validate private conversation settings
-    if (
-      typeof draft.isPrivate !== "boolean" ||
-      !draft.privateConversationSettings ||
-      typeof draft.privateConversationSettings !== "object"
-    ) {
-      return false;
-    }
-    const privateSettingsData = draft.privateConversationSettings as Record<
-      string,
-      unknown
-    >;
-    const hasValidPrivateSettings =
-      typeof privateSettingsData.hasScheduledConversion === "boolean" &&
-      typeof privateSettingsData.conversionDate === "string";
-
-    // Validate requiresLogin (supports both old and new format for migration)
-    const hasRequiresLogin =
-      typeof draft.requiresLogin === "boolean" ||
-      typeof privateSettingsData.requiresLogin === "boolean";
-
-    // Validate import settings
-    if (!draft.importSettings || typeof draft.importSettings !== "object") {
-      return false;
-    }
-    const importSettingsData = draft.importSettings as Record<string, unknown>;
-    const hasValidImportSettings =
-      typeof importSettingsData.isImportMode === "boolean" &&
-      typeof importSettingsData.polisUrl === "string";
-
-    return (
-      hasValidContent &&
-      hasValidPoll &&
-      hasValidPostAs &&
-      hasValidPrivateSettings &&
-      hasRequiresLogin &&
-      hasValidImportSettings
-    );
+    return {
+      ...result.data,
+      requiresLogin,
+      privateConversationSettings: {
+        ...restPrivateSettings,
+        conversionDate: new Date(restPrivateSettings.conversionDate),
+      },
+    };
   }
 
   /**
@@ -320,46 +400,16 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
         read: (storedValue: string): NewConversationDraft => {
           try {
             const parsedData = JSON.parse(storedValue);
+            const draft = parseStoredDraft(parsedData);
 
-            // Validate the parsed data structure
-            if (!isValidDraftData(parsedData)) {
+            if (!draft) {
               console.warn(
                 "Invalid conversation draft data found in storage, using default values"
               );
               return createEmptyDraft();
             }
 
-            // Migration: move requiresLogin from privateConversationSettings to top level
-            let requiresLogin = parsedData.requiresLogin;
-            if (requiresLogin === undefined) {
-              // Check old location for backward compatibility
-              const oldSettings = parsedData.privateConversationSettings as {
-                requiresLogin?: boolean;
-                hasScheduledConversion: boolean;
-                conversionDate: string;
-              };
-              if (oldSettings.requiresLogin !== undefined) {
-                requiresLogin = oldSettings.requiresLogin;
-                console.info(
-                  "Migrated requiresLogin from privateConversationSettings to top level"
-                );
-              }
-            }
-
-            // Convert ISO string back to Date object in private conversation settings
-            return {
-              ...parsedData,
-              requiresLogin:
-                requiresLogin !== undefined ? requiresLogin : true,
-              privateConversationSettings: {
-                hasScheduledConversion:
-                  parsedData.privateConversationSettings
-                    .hasScheduledConversion,
-                conversionDate: new Date(
-                  parsedData.privateConversationSettings.conversionDate
-                ),
-              },
-            };
+            return draft;
           } catch (error) {
             console.error(
               "Failed to parse conversation draft from storage:",
@@ -370,11 +420,15 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
         },
         write: (draft: NewConversationDraft): string => {
           try {
-            // Convert Date to ISO string for JSON serialization
+            // Convert runtime format to serialized format
+            // Move requiresLogin into privateConversationSettings and convert Date to ISO string
+            const { requiresLogin, ...restDraft } = draft;
             const serializableDraft: SerializableConversationDraft = {
-              ...draft,
+              ...restDraft,
               privateConversationSettings: {
-                ...draft.privateConversationSettings,
+                requiresLogin,
+                hasScheduledConversion:
+                  draft.privateConversationSettings.hasScheduledConversion,
                 conversionDate:
                   draft.privateConversationSettings.conversionDate.toISOString(),
               },
@@ -384,10 +438,13 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
             console.error("Failed to serialize conversation draft:", error);
             // Fallback to empty draft
             const emptyDraft = createEmptyDraft();
+            const { requiresLogin, ...restEmptyDraft } = emptyDraft;
             const fallbackData: SerializableConversationDraft = {
-              ...emptyDraft,
+              ...restEmptyDraft,
               privateConversationSettings: {
-                ...emptyDraft.privateConversationSettings,
+                requiresLogin,
+                hasScheduledConversion:
+                  emptyDraft.privateConversationSettings.hasScheduledConversion,
                 conversionDate:
                   emptyDraft.privateConversationSettings.conversionDate.toISOString(),
               },
@@ -439,13 +496,15 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     // hasScheduledConversion is sufficient to detect meaningful user changes.
     const hasPrivateSettingsChanges =
       current.privateConversationSettings.hasScheduledConversion !==
-        emptyDraft.privateConversationSettings.hasScheduledConversion;
+      emptyDraft.privateConversationSettings.hasScheduledConversion;
 
-    // Check import settings changes
-    const hasImportSettingsChanges =
-      current.importSettings.isImportMode !==
-        emptyDraft.importSettings.isImportMode ||
-      current.importSettings.polisUrl !== emptyDraft.importSettings.polisUrl;
+    // Check creation settings changes
+    const hasCreationSettingsChanges =
+      current.importSettings.importType !==
+        emptyDraft.importSettings.importType ||
+      current.importSettings.polisUrl !== emptyDraft.importSettings.polisUrl ||
+      JSON.stringify(current.importSettings.csvFileMetadata) !==
+        JSON.stringify(emptyDraft.importSettings.csvFileMetadata);
 
     return (
       hasContentChanges ||
@@ -454,7 +513,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       hasPostAsChanges ||
       hasPrivacyChanges ||
       hasPrivateSettingsChanges ||
-      hasImportSettingsChanges
+      hasCreationSettingsChanges
     );
   }
 
@@ -518,10 +577,15 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     conversationDraft.value.postAs.postAsOrganization = false;
     conversationDraft.value.postAs.organizationName = "";
     if (processEnv.VITE_IS_ORG_IMPORT_ONLY === "true") {
-      // Disable import mode when switching to non-organization account
-      // as import mode should only be available for organization accounts
-      conversationDraft.value.importSettings.isImportMode = false;
+      // Reset to manual creation when switching to non-organization account
+      // as Polis URL and CSV import should only be available for organization accounts
+      conversationDraft.value.importSettings.importType = null;
       conversationDraft.value.importSettings.polisUrl = "";
+      conversationDraft.value.importSettings.csvFileMetadata = {
+        summary: null,
+        comments: null,
+        votes: null,
+      };
     }
   }
 
@@ -553,7 +617,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Checks if user has content that would be lost when switching to import mode
+   * Checks if user has content that would be lost when switching creation type
    */
   function hasContentThatWouldBeCleared(): boolean {
     const draft = conversationDraft.value;
@@ -566,9 +630,9 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Clears content fields when switching to import mode
+   * Clears content fields when switching to non-manual creation type
    */
-  function clearContentFieldsForImport(): void {
+  function clearContentFields(): void {
     conversationDraft.value.title = "";
     conversationDraft.value.content = "";
     conversationDraft.value.poll.enabled = false;
@@ -580,52 +644,57 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Toggles import mode and clears URL when disabling
-   */
-  function toggleImportMode(): void {
-    conversationDraft.value.importSettings.isImportMode =
-      !conversationDraft.value.importSettings.isImportMode;
-
-    // Clear Polis URL when disabling import mode
-    if (!conversationDraft.value.importSettings.isImportMode) {
-      conversationDraft.value.importSettings.polisUrl = "";
-    }
-  }
-
-  /**
-   * Sets import mode with optional content clearing
+   * Sets creation type with optional content clearing
    * Returns whether confirmation is needed before proceeding
    */
-  function setImportMode(isImport: boolean): { needsConfirmation: boolean } {
-    // If switching to import mode and user has content, confirmation is needed
+  function setImportType(newType: ConversationImportType | null): {
+    needsConfirmation: boolean;
+  } {
+    const currentType = conversationDraft.value.importSettings.importType;
+
+    // If switching from manual to import type and user has content, confirmation is needed
     if (
-      isImport &&
-      !conversationDraft.value.importSettings.isImportMode &&
+      currentType === null &&
+      newType !== null &&
       hasContentThatWouldBeCleared()
     ) {
       return { needsConfirmation: true };
     }
 
-    // Proceed with mode change
-    setImportModeWithClearing(isImport);
+    // Proceed with type change
+    setImportTypeWithClearing(newType);
     return { needsConfirmation: false };
   }
 
   /**
-   * Sets import mode and performs necessary clearing without confirmation
+   * Sets creation type and performs necessary clearing without confirmation
    */
-  function setImportModeWithClearing(isImport: boolean): void {
-    const wasImportMode = conversationDraft.value.importSettings.isImportMode;
+  function setImportTypeWithClearing(
+    newType: ConversationImportType | null
+  ): void {
+    const oldType = conversationDraft.value.importSettings.importType;
 
-    conversationDraft.value.importSettings.isImportMode = isImport;
+    conversationDraft.value.importSettings.importType = newType;
 
-    if (isImport && !wasImportMode) {
-      // Switching to import mode - clear content fields
-      clearContentFieldsForImport();
-    } else if (!isImport && wasImportMode) {
-      // Switching to regular mode - clear polis URL
+    // Clear type-specific data when switching
+    if (oldType === null && newType !== null) {
+      // Switching from manual to import type - clear content fields
+      clearContentFields();
+    }
+
+    if (newType !== "polis-url") {
+      // Clear Polis URL when not using Polis URL type
       conversationDraft.value.importSettings.polisUrl = "";
       clearValidationError("polisUrl");
+    }
+
+    if (newType !== "csv-import") {
+      // Clear CSV metadata when not using CSV import type
+      conversationDraft.value.importSettings.csvFileMetadata = {
+        summary: null,
+        comments: null,
+        votes: null,
+      };
     }
   }
 
@@ -637,7 +706,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Validates poll options when polling is enabled
+   * Validates poll options when polling is enabled using Zod
    */
   function validatePoll(): { isValid: boolean; errorMessage?: string } {
     if (!conversationDraft.value.poll.enabled) {
@@ -645,51 +714,34 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     }
 
     const options = conversationDraft.value.poll.options;
+    const result = zodPollOptions.safeParse(options);
 
-    // Check if there are at least 2 options
-    if (options.length < 2) {
-      return {
-        isValid: false,
-        errorMessage: "Poll must have at least 2 options",
-      };
-    }
-
-    // Check for empty options
-    const emptyOptions = options.filter(
-      (option: string) => option.trim().length === 0
-    );
-    if (emptyOptions.length > 0) {
-      return {
-        isValid: false,
-        errorMessage: "All poll options must be filled in",
-      };
-    }
-
-    // Check for duplicate options
-    const trimmedOptions = options.map((option: string) =>
-      option.trim().toLowerCase()
-    );
-    const uniqueOptions = new Set(trimmedOptions);
-    if (uniqueOptions.size !== trimmedOptions.length) {
-      return { isValid: false, errorMessage: "Poll options must be unique" };
+    if (!result.success) {
+      // Extract the first error message from Zod
+      const errorMessage =
+        result.error.issues[0]?.message || "Poll validation failed";
+      return { isValid: false, errorMessage };
     }
 
     return { isValid: true };
   }
 
   /**
-   * Centralized validation function for title field
+   * Centralized validation function for title field using Zod
    */
   function validateTitleField(): MutationResult {
-    const title = conversationDraft.value.title.trim();
+    const title = conversationDraft.value.title;
+    const result = zodTitleValidation.safeParse(title);
 
-    if (!title) {
+    if (!result.success) {
+      const error =
+        result.error.issues[0]?.message || "Title validation failed";
       validationState.value.title = {
         isValid: false,
-        error: "Title is required to continue",
+        error,
         showError: true,
       };
-      return { success: false, error: "Title is required to continue" };
+      return { success: false, error };
     }
 
     validationState.value.title = {
@@ -728,27 +780,44 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Centralized validation function for Polis URL
+   * Centralized validation function for Polis URL using Zod
    */
   function validatePolisUrlField(): MutationResult {
     const url = conversationDraft.value.importSettings.polisUrl;
+    const importType = conversationDraft.value.importSettings.importType;
 
-    if (!url || isValidPolisUrl(url)) {
-      validationState.value.polisUrl = {
-        isValid: true,
-        error: "",
-        showError: false,
-      };
-      return { success: true };
+    // When import type is 'polis-url', URL is required and must be valid
+    if (importType === "polis-url") {
+      if (!url || url.trim() === "") {
+        const error = "Please enter a Polis URL to import";
+        validationState.value.polisUrl = {
+          isValid: false,
+          error,
+          showError: true,
+        };
+        return { success: false, error };
+      }
     }
 
-    const error = "Please enter a valid Polis URL.";
+    const result = zodPolisUrlValidation.safeParse(url);
+
+    if (!result.success) {
+      const error =
+        result.error.issues[0]?.message || "Polis URL validation failed";
+      validationState.value.polisUrl = {
+        isValid: false,
+        error,
+        showError: true,
+      };
+      return { success: false, error };
+    }
+
     validationState.value.polisUrl = {
-      isValid: false,
-      error,
-      showError: true,
+      isValid: true,
+      error: "",
+      showError: false,
     };
-    return { success: false, error };
+    return { success: true };
   }
 
   /**
@@ -939,35 +1008,54 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     };
 
     const draft = conversationDraft.value;
+    const importType = draft.importSettings.importType;
 
-    // Validate title
-    if (!draft.title.trim()) {
-      result.isValid = false;
-      result.errors.title = "Title is required to continue";
-      if (!result.firstErrorField) result.firstErrorField = "title";
-    }
-
-    // Validate body content length
-    const bodyValidation = validateHtmlStringCharacterCount(
-      draft.content,
-      "conversation"
-    );
-    if (!bodyValidation.isValid) {
-      result.isValid = false;
-      result.errors.body = `Body content exceeds ${MAX_LENGTH_BODY} character limit (${bodyValidation.characterCount}/${MAX_LENGTH_BODY})`;
-      if (!result.firstErrorField) result.firstErrorField = "body";
-    }
-
-    // Validate poll if enabled
-    if (draft.poll.enabled) {
-      const pollValidation = validatePoll();
-      if (!pollValidation.isValid) {
+    // For manual creation, validate title and content
+    if (importType === null) {
+      // Validate title
+      if (!draft.title.trim()) {
         result.isValid = false;
-        result.errors.poll =
-          pollValidation.errorMessage || "Poll validation failed";
-        if (!result.firstErrorField) result.firstErrorField = "poll";
+        result.errors.title = "Title is required to continue";
+        if (!result.firstErrorField) result.firstErrorField = "title";
+      }
+
+      // Validate body content length
+      const bodyValidation = validateHtmlStringCharacterCount(
+        draft.content,
+        "conversation"
+      );
+      if (!bodyValidation.isValid) {
+        result.isValid = false;
+        result.errors.body = `Body content exceeds ${MAX_LENGTH_BODY} character limit (${bodyValidation.characterCount}/${MAX_LENGTH_BODY})`;
+        if (!result.firstErrorField) result.firstErrorField = "body";
+      }
+
+      // Validate poll if enabled
+      if (draft.poll.enabled) {
+        const pollValidation = validatePoll();
+        if (!pollValidation.isValid) {
+          result.isValid = false;
+          result.errors.poll =
+            pollValidation.errorMessage || "Poll validation failed";
+          if (!result.firstErrorField) result.firstErrorField = "poll";
+        }
       }
     }
+
+    // For Polis URL import, validate URL
+    if (importType === "polis-url") {
+      if (
+        !draft.importSettings.polisUrl ||
+        !isValidPolisUrl(draft.importSettings.polisUrl)
+      ) {
+        result.isValid = false;
+        result.errors.polisUrl = "Please enter a valid Polis URL.";
+        if (!result.firstErrorField) result.firstErrorField = "polisUrl";
+      }
+    }
+
+    // For CSV import, validation will be handled by the PolisCsvUpload component
+    // The component will expose an isValid method that the create page can check
 
     return result;
   }
@@ -979,19 +1067,24 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     return validateForReview().isValid;
   });
 
-  if (process.env.VITE_IS_ORG_IMPORT_ONLY === "true") {
+  if (processEnv.VITE_IS_ORG_IMPORT_ONLY === "true") {
     /**
-     * Watcher to automatically disable import mode when switching to non-organization account
-     * Import mode should only be available for organization accounts
+     * Watcher to automatically reset to manual creation when switching to non-organization account
+     * Polis URL and CSV import should only be available for organization accounts
      */
     watch(
       () => conversationDraft.value.postAs.postAsOrganization,
       (newValue, oldValue) => {
         // Only act when switching from true to false (organization to personal)
         if (oldValue === true && newValue === false) {
-          // Disable import mode and clear related settings
-          conversationDraft.value.importSettings.isImportMode = false;
+          // Reset to manual creation and clear related settings
+          conversationDraft.value.importSettings.importType = null;
           conversationDraft.value.importSettings.polisUrl = "";
+          conversationDraft.value.importSettings.csvFileMetadata = {
+            summary: null,
+            comments: null,
+            votes: null,
+          };
         }
       }
     );
@@ -1040,10 +1133,9 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     setPostAsOrganization,
     disablePostAsOrganization,
     validateSelectedOrganization,
-    toggleImportMode,
-    setImportMode,
-    setImportModeWithClearing,
-    clearContentFieldsForImport,
+    setImportType,
+    setImportTypeWithClearing,
+    clearContentFields,
     validatePolisUrl,
 
     // Poll management functions

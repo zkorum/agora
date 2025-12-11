@@ -1,10 +1,10 @@
 import { defineStore } from "pinia";
 import type { NotificationItem } from "src/shared/types/zod";
-import { useBackendNotificationApi } from "src/utils/api/notification";
+import { useNotificationApi } from "src/utils/api/notification/notification";
 import { ref } from "vue";
 
 export const useNotificationStore = defineStore("notification", () => {
-  const { fetchNotifications } = useBackendNotificationApi();
+  const { fetchNotifications } = useNotificationApi();
 
   const notificationList = ref<NotificationItem[]>([]);
   const numNewNotifications = ref(0);
@@ -48,6 +48,42 @@ export const useNotificationStore = defineStore("notification", () => {
     numNewNotifications.value = newNotificationCount;
   }
 
+  function hasNotification(slugId: string): boolean {
+    return notificationList.value.some((n) => n.slugId === slugId);
+  }
+
+  function addNewNotification(notification: NotificationItem) {
+    // Check for duplicates before adding
+    if (hasNotification(notification.slugId)) {
+      console.log(
+        `[Store] Duplicate notification ignored: ${notification.slugId}`
+      );
+      return;
+    }
+
+    // Add notification to the beginning of the list (most recent first)
+    notificationList.value.unshift(notification);
+
+    // Update new notification count if it's unread
+    if (!notification.isRead) {
+      numNewNotifications.value += 1;
+    }
+
+    console.log(
+      `[Store] Added notification: ${notification.slugId} (${notification.type})`
+    );
+  }
+
+  function markAllAsReadLocally() {
+    // Update all notifications in the list to mark them as read
+    notificationList.value = notificationList.value.map((notification) => ({
+      ...notification,
+      isRead: true,
+    }));
+    // Reset the new notification counter
+    numNewNotifications.value = 0;
+  }
+
   function clearNotificationData() {
     notificationList.value = [];
     numNewNotifications.value = 0;
@@ -56,6 +92,9 @@ export const useNotificationStore = defineStore("notification", () => {
   return {
     loadNotificationData,
     clearNotificationData,
+    addNewNotification,
+    hasNotification,
+    markAllAsReadLocally,
     numNewNotifications,
     notificationList,
   };

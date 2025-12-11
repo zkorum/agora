@@ -29,6 +29,7 @@ export const envSchema = z.object({
   VITE_STAGING: z.enum(["true", "false"]).optional(),
   VITE_DEV_AUTHORIZED_PHONES: z.string().optional(), // Comma-separated list of phone numbers for dev/staging testing (must match backend). Must not be set in production (safety check enforced)
   VITE_SENTRY_AUTH_TOKEN: z.string().optional(), // Sentry auth token for production builds
+  VITE_DISCORD_LINK: z.string().optional(), // Discord invite link for support
 });
 
 export type ProcessEnv = z.infer<typeof envSchema>;

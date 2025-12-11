@@ -12,6 +12,9 @@ import InputOtp from "primevue/inputotp";
 import InputText from "primevue/inputtext";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
+import FileUpload from "primevue/fileupload";
+import ProgressSpinner from "primevue/progressspinner";
+import Message from "primevue/message";
 
 const customPreset = definePreset(Aura, {
   semantic: {
@@ -38,6 +41,19 @@ const customPreset = definePreset(Aura, {
       xl: "15px",
     },
   },
+  components: {
+    button: {
+      css: () => `
+        .p-button {
+          font-size: 0.9rem;
+          padding-left: 1rem;
+          padding-right: 1rem;
+          padding-top: 0.5rem;
+          padding-bottom: 0.5rem;
+        }
+      `,
+    },
+  },
 });
 
 export default defineBoot(({ app }) => {
@@ -45,7 +61,7 @@ export default defineBoot(({ app }) => {
     theme: {
       preset: customPreset,
       options: {
-        darkModeSelector: "light",
+        darkModeSelector: false,
         cssLayer: false,
       },
     },
@@ -63,4 +79,7 @@ export default defineBoot(({ app }) => {
   app.component("PrimeInputText", InputText);
   app.component("PrimeIconField", IconField);
   app.component("PrimeInputIcon", InputIcon);
+  app.component("PrimeFileUpload", FileUpload);
+  app.component("PrimeProgressSpinner", ProgressSpinner);
+  app.component("PrimeMessage", Message);
 });

@@ -84,7 +84,7 @@ import {
 } from "src/utils/component/moderations";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import { useBackendPostApi } from "src/utils/api/post";
+import { useBackendPostApi } from "src/utils/api/post/post";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
@@ -98,7 +98,7 @@ const {
   cancelModerationPostReport,
 } = useBackendModerateApi();
 
-const route = useRoute();
+const route = useRoute("/moderate/conversation/[conversationSlugId]/");
 const router = useRouter();
 
 const { loadPostData, emptyPost } = useHomeFeedStore();

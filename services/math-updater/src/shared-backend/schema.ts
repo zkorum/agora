@@ -577,6 +577,38 @@ export const ticketProviderEnum = pgEnum("ticket_provider", ["zupass"]);
 
 export const eventSlugEnum = pgEnum("event_slug", ["devconnect-2025"]);
 
+export const importMethodType = pgEnum("import_method", ["url", "csv"]);
+
+// Export status for CSV exports
+export const exportStatusEnum = pgEnum("export_status_enum", [
+    "processing",
+    "completed",
+    "failed",
+    "cancelled",
+]);
+
+// Export cancellation reasons
+export const exportCancellationReasonEnum = pgEnum(
+    "export_cancellation_reason_enum",
+    ["duplicate_in_batch", "cooldown_active"],
+);
+
+// Export file types
+export const exportFileTypeEnum = pgEnum("export_file_type_enum", [
+    "comments",
+    "votes",
+    "participants",
+    "summary",
+    "stats",
+]);
+
+// Import status for CSV imports (simplified - no files, no cooldown)
+export const importStatusEnum = pgEnum("import_status_enum", [
+    "processing",
+    "completed",
+    "failed",
+]);
+
 // One user == one account.
 // Inserting a record in that table means that the user has been successfully registered.
 // To one user can be associated multiple validated emails and devices.
@@ -1165,6 +1197,7 @@ export const conversationTable = pgTable(
         }),
         isIndexed: boolean("is_indexed").notNull().default(true), // if true, the conversation can be fetched in the feed and search engine, else it is hidden, unless users have the link
         isLoginRequired: boolean("is_login_required").notNull().default(true), // if true, the conversation requires users to sign up to participate -- this field is ignored if the conversation is indexed; in this case, sign-up is always required
+        isImporting: boolean("is_importing").notNull().default(false), // if true, the conversation is being imported from CSV and should not be visible in feed until import completes
         requiresEventTicket: eventSlugEnum("requires_event_ticket"), // if set, only users with verified ticket for this event can participate (vote/post opinions)
         opinionCount: integer("opinion_count").notNull().default(0),
         voteCount: integer("vote_count").notNull().default(0),
@@ -1178,6 +1211,7 @@ export const conversationTable = pgTable(
             precision: 0,
         }),
         importAuthor: text("import_author"),
+        importMethod: importMethodType("import_method").default("url"),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1648,6 +1682,13 @@ export const opinionModerationTable = pgTable("opinion_moderation", {
 export const notificationTypeEnum = pgEnum("notification_type_enum", [
     "opinion_vote",
     "new_opinion",
+    "export_started",
+    "export_completed",
+    "export_failed",
+    "export_cancelled",
+    "import_started",
+    "import_completed",
+    "import_failed",
 ]);
 
 export const notificationOpinionVoteTable = pgTable(
@@ -1687,6 +1728,44 @@ export const notificationNewOpinionTable = pgTable("notification_new_opinion", {
     conversationId: integer("conversation_id")
         .references(() => conversationTable.id)
         .notNull(),
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
+
+export const notificationExportTable = pgTable("notification_export", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    notificationId: integer("notification_id")
+        .references(() => notificationTable.id)
+        .notNull(),
+    exportId: integer("export_id")
+        .references(() => conversationExportTable.id)
+        .notNull(),
+    conversationId: integer("conversation_id")
+        .references(() => conversationTable.id)
+        .notNull(),
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
+
+export const notificationImportTable = pgTable("notification_import", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    notificationId: integer("notification_id")
+        .references(() => notificationTable.id)
+        .notNull(),
+    importId: integer("import_id")
+        .references(() => conversationImportTable.id)
+        .notNull(),
+    conversationId: integer("conversation_id").references(
+        () => conversationTable.id,
+    ),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -1910,5 +1989,112 @@ export const conversationUpdateQueueTable = pgTable(
             .where(
                 sql`${table.requestedAt} > ${table.lastMathUpdateAt} OR ${table.lastMathUpdateAt} IS NULL`,
             ),
+    ],
+);
+
+// Conversation exports table for CSV export feature
+export const conversationExportTable = pgTable(
+    "conversation_export",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .notNull(),
+        userId: uuid("user_id") // User who requested the export
+            .references(() => userTable.id)
+            .notNull(),
+        status: exportStatusEnum("status").notNull().default("processing"),
+        totalFileSize: integer("total_file_size"), // null until completed
+        totalFileCount: integer("total_file_count"), // null until completed
+        errorMessage: text("error_message"), // populated if status="failed"
+        cancellationReason: exportCancellationReasonEnum("cancellation_reason"), // populated if status="cancelled"
+        expiresAt: timestamp("expires_at", {
+            mode: "date",
+            precision: 0,
+        }).notNull(), // export record expiry (30 days)
+        isDeleted: boolean("is_deleted").notNull().default(false),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("conversation_export_conversation_idx").on(t.conversationId),
+        index("conversation_export_status_idx").on(t.status),
+        index("conversation_export_deleted_idx").on(t.isDeleted),
+        index("conversation_export_created_idx").on(t.createdAt),
+        index("conversation_export_user_idx").on(t.userId),
+    ],
+);
+
+// Individual files within a conversation export
+export const conversationExportFileTable = pgTable(
+    "conversation_export_file",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        exportId: integer("export_id")
+            .references(() => conversationExportTable.id)
+            .notNull(),
+        fileType: exportFileTypeEnum("file_type").notNull(),
+        fileName: varchar("file_name", { length: 100 }).notNull(),
+        fileSize: integer("file_size").notNull(),
+        recordCount: integer("record_count").notNull(),
+        s3Key: text("s3_key").notNull(), // Presigned URLs are generated on-demand in getConversationExportStatus
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("conversation_export_file_export_idx").on(t.exportId),
+        index("conversation_export_file_type_idx").on(t.fileType),
+    ],
+);
+
+// Conversation imports table for CSV import feature (simplified - no files, no cooldown)
+export const conversationImportTable = pgTable(
+    "conversation_import",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
+        conversationId: integer("conversation_id").references(
+            () => conversationTable.id,
+        ), // null until import completes successfully
+        userId: uuid("user_id") // User who requested the import
+            .references(() => userTable.id)
+            .notNull(),
+        status: importStatusEnum("status").notNull().default("processing"),
+        errorMessage: text("error_message"), // populated if status="failed"
+        csvFileMetadata: jsonb("csv_file_metadata"), // Optional metadata (file sizes, row counts for transparency)
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("conversation_import_status_idx").on(t.status),
+        index("conversation_import_created_idx").on(t.createdAt),
+        index("conversation_import_user_idx").on(t.userId),
+        index("conversation_import_conversation_idx").on(t.conversationId),
     ],
 );

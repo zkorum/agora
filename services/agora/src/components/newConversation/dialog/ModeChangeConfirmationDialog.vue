@@ -36,8 +36,8 @@
       <q-card-actions class="action-section">
         <ZKButton
           button-type="largeButton"
+          flat
           text-color="primary"
-          color="secondary"
           :label="t('cancel')"
           size="0.9rem"
           @click="handleCancel"

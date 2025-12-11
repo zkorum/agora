@@ -30,7 +30,7 @@ import {
 
 const { t } = useComponentI18n<TopicPageTranslations>(topicPageTranslations);
 
-const route = useRoute();
+const route = useRoute("/topic/[topicCode]");
 const topicCode = ref("");
 
 onMounted(() => {

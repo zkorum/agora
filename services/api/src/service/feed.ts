@@ -3,7 +3,7 @@ import type {
     ExtendedConversationPerSlugId,
     FeedSortAlgorithm,
 } from "@/shared/types/zod.js";
-import { eq, SQL } from "drizzle-orm";
+import { and, eq, SQL } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import type { FetchFeedResponse } from "@/shared/types/dto.js";
@@ -49,7 +49,11 @@ export async function fetchFeed({
 }: FetchFeedProps): Promise<FetchFeedResponse> {
     const targetFetchLimit = 1000;
 
-    const whereClause: SQL | undefined = eq(conversationTable.isIndexed, true);
+    // Exclude conversations that are still importing (isImporting=true)
+    const whereClause: SQL | undefined = and(
+        eq(conversationTable.isIndexed, true),
+        eq(conversationTable.isImporting, false),
+    );
 
     const { fetchPostItems } = useCommonPost();
 

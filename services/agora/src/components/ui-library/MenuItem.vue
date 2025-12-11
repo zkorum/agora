@@ -1,7 +1,5 @@
 <template>
   <div>
-    <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
-    <!-- Settings menu item should be keyboard navigable for users with motor disabilities -->
     <div
       class="menu-item"
       :class="{
@@ -74,6 +72,11 @@ defineProps<{
     &:hover {
       background-color: rgba(0, 0, 0, 0.07);
     }
+  }
+
+  // Focus indicator for keyboard navigation
+  :focus-visible > & {
+    background-color: rgba(0, 0, 0, 0.07);
   }
 
   &--rounded-top {

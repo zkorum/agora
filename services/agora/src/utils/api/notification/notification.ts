@@ -1,13 +1,16 @@
-import { api } from "./client";
-import { buildAuthorizationHeader } from "../crypto/ucan/operation";
+import { api } from "../client";
+import { buildAuthorizationHeader } from "../../crypto/ucan/operation";
 import type { ApiV1NotificationFetchPostRequest } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
-import { useCommonApi } from "./common";
-import { useNotify } from "../ui/notify";
-import type { NotificationItem } from "src/shared/types/zod";
+import { useCommonApi } from "../common";
+import { useNotify } from "../../ui/notify";
+import {
+  zodNotificationItem,
+  type NotificationItem,
+} from "src/shared/types/zod";
 import type { FetchNotificationsResponse } from "src/shared/types/dto";
 
-export function useBackendNotificationApi() {
+export function useNotificationApi() {
   const { buildEncodedUcan } = useCommonApi();
 
   const { showNotifyMessage } = useNotify();
@@ -32,11 +35,19 @@ export function useBackendNotificationApi() {
         },
       });
 
-      const notificationItemList: NotificationItem[] =
-        response.data.notificationList.map((item) => ({
-          ...item,
-          createdAt: new Date(item.createdAt),
-        }));
+      // Parse and validate each notification item with zod
+      const notificationItemList: NotificationItem[] = [];
+
+      for (const item of response.data.notificationList) {
+        const parsedItem = zodNotificationItem.safeParse(item);
+
+        if (parsedItem.success) {
+          notificationItemList.push(parsedItem.data);
+        } else {
+          console.error("Failed to parse notification item:", parsedItem.error);
+          // Skip invalid notifications instead of failing the entire request
+        }
+      }
 
       return {
         notificationList: notificationItemList,
