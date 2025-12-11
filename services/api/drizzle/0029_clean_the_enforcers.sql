@@ -68,6 +68,7 @@ CREATE TABLE "notification_import" (
 	"created_at" timestamp (0) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "conversation" ADD COLUMN "is_importing" boolean DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE "conversation" ADD COLUMN "import_method" "import_method" DEFAULT 'url';--> statement-breakpoint
 ALTER TABLE "conversation_export_file" ADD CONSTRAINT "conversation_export_file_export_id_conversation_export_id_fk" FOREIGN KEY ("export_id") REFERENCES "public"."conversation_export"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversation_export" ADD CONSTRAINT "conversation_export_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

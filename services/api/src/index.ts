@@ -1676,6 +1676,7 @@ server.after(() => {
                 postAsOrganization: request.body.postAsOrganization,
                 isIndexed: request.body.isIndexed,
                 isLoginRequired: request.body.isLoginRequired,
+                isImporting: false,
                 seedOpinionList: request.body.seedOpinionList,
                 requiresEventTicket: request.body.requiresEventTicket,
             });

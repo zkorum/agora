@@ -1312,17 +1312,32 @@ export async function bulkInsertOpinionsFromExternalPolisConvo({
     const statementIdPerOpinionSlugId: StatementIdPerOpinionSlugId = {};
     const opinionIdPerStatementId: OpinionIdPerStatementId = {};
     const opinionContentIdPerOpinionId: OpinionContentIdPerOpinionId = {};
+
+    // Pre-compute vote counts
+    const voteCountsByStatementId = new Map<
+        number,
+        { agrees: number; disagrees: number; passes: number }
+    >();
+    for (const vote of importedPolisConversation.votes_data) {
+        const existing = voteCountsByStatementId.get(vote.statement_id) ?? {
+            agrees: 0,
+            disagrees: 0,
+            passes: 0,
+        };
+        if (vote.vote === 1) existing.agrees++;
+        else if (vote.vote === -1) existing.disagrees++;
+        else existing.passes++;
+        voteCountsByStatementId.set(vote.statement_id, existing);
+    }
+
     const opinionsToAdd = importedPolisConversation.comments_data.map(
         (comment) => {
             const opinionSlugId = generateRandomSlugId();
 
-            // !IMPORTANT: this considers there are no duplicates or edit/cancel votes
-            const calculatedNumAgrees =
-                importedPolisConversation.votes_data.filter(
-                    (vote) =>
-                        vote.statement_id == comment.statement_id &&
-                        vote.vote === 1,
-                ).length;
+            const voteCounts = voteCountsByStatementId.get(
+                comment.statement_id,
+            ) ?? { agrees: 0, disagrees: 0, passes: 0 };
+            const calculatedNumAgrees = voteCounts.agrees;
             // just for logging
             const polisNumAgrees = comment.agree_count;
             if (polisNumAgrees === null) {
@@ -1335,12 +1350,7 @@ export async function bulkInsertOpinionsFromExternalPolisConvo({
                 );
             }
 
-            const calculatedNumDisagrees =
-                importedPolisConversation.votes_data.filter(
-                    (vote) =>
-                        vote.statement_id == comment.statement_id &&
-                        vote.vote === -1,
-                ).length;
+            const calculatedNumDisagrees = voteCounts.disagrees;
             // just for logging
             const polisNumDisagrees = comment.disagree_count;
             if (polisNumDisagrees === null) {
@@ -1353,12 +1363,7 @@ export async function bulkInsertOpinionsFromExternalPolisConvo({
                 );
             }
 
-            const calculatedNumPasses =
-                importedPolisConversation.votes_data.filter(
-                    (vote) =>
-                        vote.statement_id == comment.statement_id &&
-                        vote.vote === 0,
-                ).length;
+            const calculatedNumPasses = voteCounts.passes;
             // just for logging
             const polisNumPasses = comment.pass_count;
             if (polisNumPasses === null) {

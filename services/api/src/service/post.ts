@@ -63,6 +63,7 @@ interface CreateNewPostProps {
     indexConversationAt?: string;
     isIndexed: boolean;
     isLoginRequired: boolean;
+    isImporting: boolean;
     seedOpinionList: string[];
     requiresEventTicket?: EventSlug;
     importUrl?: string;
@@ -176,6 +177,7 @@ export async function createNewPost({
     indexConversationAt,
     isLoginRequired,
     isIndexed,
+    isImporting,
     seedOpinionList,
     requiresEventTicket,
     importUrl,
@@ -236,6 +238,7 @@ export async function createNewPost({
                     organizationId: organizationId,
                     isIndexed: isIndexed,
                     isLoginRequired: isLoginRequired,
+                    isImporting: isImporting,
                     requiresEventTicket: requiresEventTicket,
                     indexConversationAt:
                         indexConversationAt !== undefined

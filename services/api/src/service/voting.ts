@@ -294,7 +294,11 @@ export async function bulkInsertVotesFromExternalPolisConvo({
     }
     async function doImportVotes(db: PostgresJsDatabase): Promise<void> {
         // We assume the aren't any duplicate votes
-        const CHUNK_SIZE = 10000;
+        // Reduced chunk size to 1000 to prevent blocking the event loop during large imports
+        const CHUNK_SIZE = 1000;
+        // Small delay between chunks to allow other requests to be processed
+        const yieldToEventLoop = (): Promise<void> =>
+            new Promise((resolve) => setTimeout(resolve, 5));
         let insertVoteResponse: {
             voteId: number;
             polisVoteId: number | null;
@@ -303,6 +307,7 @@ export async function bulkInsertVotesFromExternalPolisConvo({
         if (votesToAdd.length > CHUNK_SIZE) {
             const voteChunks = chunkArray(votesToAdd, CHUNK_SIZE);
             for (const chunk of voteChunks) {
+                await yieldToEventLoop();
                 const result = await db
                     .insert(voteTable)
                     .values(chunk)
@@ -324,9 +329,12 @@ export async function bulkInsertVotesFromExternalPolisConvo({
         }
 
         // NOTE: Thanks to the introduction of polisVoteId, this does NOT assume that PostgreSQL and drizzle/returning preserve order
+        const voteContentMap = new Map(
+            voteContentsToModifyBeforeAdd.map((v) => [v.polisVoteId, v]),
+        );
         for (const insertedVote of insertVoteResponse) {
-            const voteContentToModify = voteContentsToModifyBeforeAdd.find(
-                (vote) => vote.polisVoteId === insertedVote.polisVoteId,
+            const voteContentToModify = voteContentMap.get(
+                insertedVote.polisVoteId ?? -1,
             );
             if (voteContentToModify === undefined) {
                 throw new Error(
@@ -347,6 +355,7 @@ export async function bulkInsertVotesFromExternalPolisConvo({
         if (voteContentsToAdd.length > CHUNK_SIZE) {
             const voteChunks = chunkArray(voteContentsToAdd, CHUNK_SIZE);
             for (const chunk of voteChunks) {
+                await yieldToEventLoop();
                 const result = await db
                     .insert(voteContentTable)
                     .values(chunk)
@@ -362,6 +371,7 @@ export async function bulkInsertVotesFromExternalPolisConvo({
             );
 
             for (const chunk of voteContentChunks) {
+                await yieldToEventLoop();
                 const sqlChunksVoteCurrentId: SQL[] = [];
                 sqlChunksVoteCurrentId.push(sql`(CASE`);
 

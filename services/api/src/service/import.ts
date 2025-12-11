@@ -11,7 +11,11 @@ import {
     MAX_LENGTH_TITLE,
     toUnionUndefined,
 } from "@/shared/shared.js";
-import { conversationUpdateQueueTable } from "@/shared-backend/schema.js";
+import {
+    conversationTable,
+    conversationUpdateQueueTable,
+} from "@/shared-backend/schema.js";
+import { eq } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/util.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import type { EventSlug } from "@/shared/types/zod.js";
@@ -164,6 +168,7 @@ export async function loadImportedPolisConversation({
             importCreatedAt: importCreatedAt,
             importAuthor: toUnionUndefined(ownername),
             importMethod: importConfig.method,
+            isImporting: importConfig.method === "csv", // CSV imports are async, hide until complete
         });
     try {
         const {
@@ -231,6 +236,13 @@ export async function loadImportedPolisConversation({
                     processedAt: null,
                 },
             });
+        // Mark import as complete - conversation is now visible in feed
+        if (importConfig.method === "csv") {
+            await db
+                .update(conversationTable)
+                .set({ isImporting: false })
+                .where(eq(conversationTable.id, conversationId));
+        }
         return { conversationSlugId, conversationId, conversationContentId };
     } catch (e) {
         // TODO: make incremental transactions, implement batch mechanisms to allow for resuming importing that failed midway

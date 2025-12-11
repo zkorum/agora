@@ -1,5 +1,5 @@
 {
-  "id": "ffc2eb9b-4992-4926-8f7e-a9f053406075",
+  "id": "359900d5-6f7c-41c2-acc3-0f63fafd3894",
   "prevId": "ed596691-a409-4d8b-8ef4-ea7c1cd2cadc",
   "version": "7",
   "dialect": "postgresql",
@@ -1158,6 +1158,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "is_importing": {
+          "name": "is_importing",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "requires_event_ticket": {
           "name": "requires_event_ticket",
