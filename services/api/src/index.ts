@@ -2786,6 +2786,34 @@ server.after(() => {
     });
 
     server.withTypeProvider<ZodTypeProvider>().route({
+        method: "GET",
+        url: `/api/${apiVersion}/conversation/export/active/:conversationSlugId`,
+        schema: {
+            params: Dto.getConversationExportHistoryRequest,
+            response: {
+                200: Dto.getActiveExportResponse,
+            },
+        },
+        handler: async (request) => {
+            checkConversationExportEnabled();
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                },
+            );
+            return await conversationExportService.getActiveExportForConversation(
+                {
+                    db: db,
+                    conversationSlugId: request.params.conversationSlugId,
+                    userId: deviceStatus.userId,
+                },
+            );
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
         method: "DELETE",
         url: `/api/${apiVersion}/conversation/export/:exportSlugId`,
         schema: {

@@ -15,6 +15,13 @@
     <q-pull-to-refresh @refresh="handleRefresh">
       <WidthWrapper :enable="true">
         <div class="export-page">
+          <!-- Active Export Banner -->
+          <ActiveExportBanner
+            v-if="activeExportQuery.data.value?.hasActiveExport"
+            :export-slug-id="activeExportQuery.data.value.exportSlugId"
+            :conversation-slug-id="conversationSlugId"
+          />
+
           <AsyncStateHandler
             :query="conversationQuery"
             :config="{
@@ -44,6 +51,7 @@
 
             <RequestExportButton
               :loading="requestExportMutation.isPending.value"
+              :disabled="activeExportQuery.data.value?.hasActiveExport ?? false"
               :aria-label="t('requestExportAriaLabel')"
               @request="handleRequestExport"
             />
@@ -77,11 +85,13 @@ import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ExportHistoryList from "src/components/conversation/export/ExportHistoryList.vue";
 import RequestExportButton from "src/components/conversation/export/RequestExportButton.vue";
+import ActiveExportBanner from "src/components/conversation/export/ActiveExportBanner.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import {
   useRequestExportMutation,
   useExportHistoryQuery,
+  useActiveExportQuery,
 } from "src/utils/api/conversationExport/useConversationExportQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { axiosInstance } from "src/utils/api/client";
@@ -120,6 +130,11 @@ const exportHistoryQuery = useExportHistoryQuery({
   enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
 });
 
+const activeExportQuery = useActiveExportQuery({
+  conversationSlugId: conversationSlugId.value,
+  enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
+});
+
 const requestExportMutation = useRequestExportMutation();
 
 async function navigateToConversation(): Promise<void> {
@@ -135,6 +150,7 @@ function handleRefresh(done: () => void): void {
   void Promise.all([
     conversationQuery.refetch(),
     exportHistoryQuery.refetch(),
+    activeExportQuery.refetch(),
     minDelay,
   ]).finally(() => {
     done();

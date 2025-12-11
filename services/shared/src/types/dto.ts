@@ -247,6 +247,20 @@ export class Dto {
             })
             .strict(),
     ]);
+    static getActiveExportResponse = z.discriminatedUnion("hasActiveExport", [
+        z
+            .object({
+                hasActiveExport: z.literal(true),
+                exportSlugId: zodSlugId,
+                createdAt: zodDateTimeFlexible,
+            })
+            .strict(),
+        z
+            .object({
+                hasActiveExport: z.literal(false),
+            })
+            .strict(),
+    ]);
     static getConversationImportStatusRequest = z
         .object({
             importSlugId: zodSlugId,
@@ -916,6 +930,9 @@ export type CastVoteResponse = z.infer<typeof Dto.castVoteResponse>;
 export type ValidateCsvResponse = z.infer<typeof Dto.validateCsvResponse>;
 export type GetActiveImportResponse = z.infer<
     typeof Dto.getActiveImportResponse
+>;
+export type GetActiveExportResponse = z.infer<
+    typeof Dto.getActiveExportResponse
 >;
 export type GetConversationImportStatusRequest = z.infer<
     typeof Dto.getConversationImportStatusRequest

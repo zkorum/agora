@@ -16,6 +16,7 @@ export {
     requestConversationExport,
     getConversationExportStatus,
     getConversationExportHistory,
+    getActiveExportForConversation,
     deleteConversationExport,
     cleanupExpiredExports,
     deleteAllConversationExports,

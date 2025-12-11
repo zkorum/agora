@@ -1167,6 +1167,69 @@ export type ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = typeof A
 /**
  * 
  * @export
+ * @interface ApiV1ConversationExportActiveConversationSlugIdGet200Response
+ */
+export interface ApiV1ConversationExportActiveConversationSlugIdGet200Response {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationExportActiveConversationSlugIdGet200Response
+     */
+    'hasActiveExport': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportActiveConversationSlugIdGet200Response
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportActiveConversationSlugIdGet200Response
+     */
+    'createdAt': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportActiveConversationSlugIdGet200ResponseAnyOf
+ */
+export interface ApiV1ConversationExportActiveConversationSlugIdGet200ResponseAnyOf {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationExportActiveConversationSlugIdGet200ResponseAnyOf
+     */
+    'hasActiveExport': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportActiveConversationSlugIdGet200ResponseAnyOf
+     */
+    'exportSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportActiveConversationSlugIdGet200ResponseAnyOf
+     */
+    'createdAt': string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportActiveConversationSlugIdGet200ResponseAnyOf1
+ */
+export interface ApiV1ConversationExportActiveConversationSlugIdGet200ResponseAnyOf1 {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationExportActiveConversationSlugIdGet200ResponseAnyOf1
+     */
+    'hasActiveExport': boolean;
+}
+/**
+ * 
+ * @export
  * @interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner
  */
 export interface ApiV1ConversationExportHistoryConversationSlugIdGet200ResponseInner {
@@ -5126,6 +5189,43 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {string} conversationSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportActiveConversationSlugIdGet: async (conversationSlugId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'conversationSlugId' is not null or undefined
+            assertParamExists('apiV1ConversationExportActiveConversationSlugIdGet', 'conversationSlugId', conversationSlugId)
+            const localVarPath = `/api/v1/conversation/export/active/{conversationSlugId}`
+                .replace(`{${"conversationSlugId"}}`, encodeURIComponent(String(conversationSlugId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {string} exportSlugId 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -7097,6 +7197,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {string} conversationSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationExportActiveConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationExportActiveConversationSlugIdGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationExportActiveConversationSlugIdGet(conversationSlugId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationExportActiveConversationSlugIdGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {string} exportSlugId 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -7810,6 +7922,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {string} conversationSlugId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationExportActiveConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationExportActiveConversationSlugIdGet200Response> {
+            return localVarFp.apiV1ConversationExportActiveConversationSlugIdGet(conversationSlugId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {string} exportSlugId 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -8412,6 +8533,17 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1ConversationDeletePost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ConversationDeletePost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {string} conversationSlugId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiV1ConversationExportActiveConversationSlugIdGet(conversationSlugId: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationExportActiveConversationSlugIdGet(conversationSlugId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -84,6 +84,28 @@ export function useExportStatusQuery({
   });
 }
 
+export function useActiveExportQuery({
+  conversationSlugId,
+  enabled = true,
+}: {
+  conversationSlugId: string;
+  enabled?: MaybeRefOrGetter<boolean>;
+}) {
+  const { fetchActiveExport } = useBackendConversationExportApi();
+
+  return useQuery({
+    queryKey: ["activeExport", conversationSlugId],
+    queryFn: () => fetchActiveExport(conversationSlugId),
+    enabled: computed(() => toValue(enabled) && conversationSlugId.length > 0),
+    staleTime: 0, // Always stale
+    refetchInterval: (query) => {
+      // Auto-refetch every 3 seconds if there's an active export
+      return query.state.data?.hasActiveExport ? 3000 : false;
+    },
+    retry: false,
+  });
+}
+
 // Utility function to invalidate export-related queries
 export function useInvalidateExportQueries() {
   const queryClient = useQueryClient();
@@ -99,12 +121,20 @@ export function useInvalidateExportQueries() {
         queryKey: ["exportStatus", exportSlugId],
       });
     },
+    invalidateActiveExport: (conversationSlugId: string) => {
+      void queryClient.invalidateQueries({
+        queryKey: ["activeExport", conversationSlugId],
+      });
+    },
     invalidateAll: (conversationSlugId: string) => {
       void queryClient.invalidateQueries({
         queryKey: ["exportHistory", conversationSlugId],
       });
       void queryClient.invalidateQueries({
         queryKey: ["exportStatus"],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["activeExport", conversationSlugId],
       });
     },
   };

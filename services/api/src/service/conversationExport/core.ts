@@ -13,6 +13,7 @@ import type {
     RequestConversationExportResponse,
     GetConversationExportStatusResponse,
     GetConversationExportHistoryResponse,
+    GetActiveExportResponse,
 } from "@/shared/types/dto.js";
 import type { ExportFileInfo } from "@/shared/types/zod.js";
 import { ExportGeneratorFactory } from "./generators/factory.js";
@@ -491,6 +492,65 @@ export async function getConversationExportStatus({
                 `Unexpected export status: ${String(exportRecord.status)}`,
             );
     }
+}
+
+interface GetActiveExportForConversationParams {
+    db: PostgresDatabase;
+    conversationSlugId: string;
+    userId: string;
+}
+
+/**
+ * Get active (processing) export for a conversation and user.
+ * Returns the export if one is currently processing.
+ */
+export async function getActiveExportForConversation({
+    db,
+    conversationSlugId,
+    userId,
+}: GetActiveExportForConversationParams): Promise<GetActiveExportResponse> {
+    // Find conversation ID from slug
+    const conversation = await db
+        .select({ id: conversationTable.id })
+        .from(conversationTable)
+        .where(eq(conversationTable.slugId, conversationSlugId))
+        .limit(1);
+
+    if (conversation.length === 0) {
+        throw httpErrors.notFound("Conversation not found");
+    }
+
+    const conversationId = conversation[0].id;
+
+    // Find processing export for this user and conversation
+    const activeExportList = await db
+        .select({
+            exportSlugId: conversationExportTable.slugId,
+            createdAt: conversationExportTable.createdAt,
+        })
+        .from(conversationExportTable)
+        .where(
+            and(
+                eq(conversationExportTable.conversationId, conversationId),
+                eq(conversationExportTable.userId, userId),
+                eq(conversationExportTable.status, "processing"),
+                eq(conversationExportTable.isDeleted, false),
+            ),
+        )
+        .orderBy(desc(conversationExportTable.createdAt))
+        .limit(1);
+
+    if (activeExportList.length === 0) {
+        return {
+            hasActiveExport: false,
+        };
+    }
+
+    return {
+        hasActiveExport: true,
+        exportSlugId: activeExportList[0].exportSlugId,
+        createdAt: activeExportList[0].createdAt,
+    };
 }
 
 interface GetConversationExportHistoryParams {
