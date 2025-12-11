@@ -32,7 +32,10 @@ import {
 } from "@/shared-app-api/csvUpload.js";
 import * as conversationExportService from "@/service/conversationExport/index.js";
 import * as conversationImportService from "@/service/conversationImport/index.js";
-import { startStaleImportCleanup } from "@/service/conversationImport/cleanupScheduler.js";
+import { cleanupStuckImportsOnStartup } from "@/service/conversationImport/database.js";
+import { cleanupStuckExportsOnStartup } from "@/service/conversationExport/core.js";
+import { createImportNotification } from "@/service/conversationImport/notifications.js";
+import { createExportNotification } from "@/service/conversationExport/notifications.js";
 import { validateS3Access } from "./service/s3.js";
 // import * as p2pService from "@/service/p2p.js";
 import * as nostrService from "@/service/nostr.js";
@@ -412,8 +415,77 @@ log.info(
     `[API] Import buffer initialized (flush interval: 1s, max batch: 5, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
-// Start scheduled cleanup for stale imports
-const stopImportCleanup = startStaleImportCleanup({ db });
+// Cleanup stuck imports/exports from previous server session
+// This runs once on startup to handle jobs that were interrupted by server restart
+const performStartupCleanup = async (): Promise<void> => {
+    const SERVER_RESTART_ERROR_MESSAGE =
+        "Processing was interrupted by a server restart. Please try again.";
+
+    // Cleanup stuck imports and send notifications
+    const importCleanupResult = await cleanupStuckImportsOnStartup({
+        db,
+        errorMessage: SERVER_RESTART_ERROR_MESSAGE,
+    });
+
+    if (importCleanupResult.cleanedCount > 0) {
+        log.info(
+            `[Startup] Cleaned up ${String(importCleanupResult.cleanedCount)} stuck imports`,
+        );
+
+        // Send notifications for failed imports
+        for (const stuckImport of importCleanupResult.stuckImports) {
+            try {
+                await createImportNotification({
+                    db,
+                    userId: stuckImport.userId,
+                    importId: stuckImport.id,
+                    conversationId: null,
+                    type: "import_failed",
+                    notificationSSEManager,
+                });
+            } catch (notificationError: unknown) {
+                log.error(
+                    notificationError,
+                    `[Startup] Failed to create import notification for import ${stuckImport.slugId}`,
+                );
+            }
+        }
+    }
+
+    // Cleanup stuck exports and send notifications
+    const exportCleanupResult = await cleanupStuckExportsOnStartup({
+        db,
+        errorMessage: SERVER_RESTART_ERROR_MESSAGE,
+    });
+
+    if (exportCleanupResult.cleanedCount > 0) {
+        log.info(
+            `[Startup] Cleaned up ${String(exportCleanupResult.cleanedCount)} stuck exports`,
+        );
+
+        // Send notifications for failed exports
+        for (const stuckExport of exportCleanupResult.stuckExports) {
+            try {
+                await createExportNotification({
+                    db,
+                    userId: stuckExport.userId,
+                    exportId: stuckExport.id,
+                    conversationId: stuckExport.conversationId,
+                    type: "export_failed",
+                    notificationSSEManager,
+                });
+            } catch (notificationError: unknown) {
+                log.error(
+                    notificationError,
+                    `[Startup] Failed to create export notification for export ${stuckExport.slugId}`,
+                );
+            }
+        }
+    }
+};
+
+// Run cleanup (non-blocking)
+void performStartupCleanup();
 
 interface ExpectedDeviceStatus {
     userId?: string;
@@ -2902,9 +2974,6 @@ if (
         log.info(`[API] ${signal} received, shutting down gracefully...`);
 
         try {
-            // Stop scheduled cleanup
-            stopImportCleanup();
-
             // Flush pending votes before shutdown
             await voteBuffer.shutdown();
 

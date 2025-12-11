@@ -707,6 +707,107 @@ export async function deleteConversationExport({
     }
 }
 
+interface CleanupStaleExportsParams {
+    db: PostgresDatabase;
+    staleThresholdMs: number; // e.g., 3600000 for 1 hour
+}
+
+/**
+ * Mark stale exports as failed.
+ * An export is considered stale if it's been in "processing" state
+ * for longer than the threshold.
+ */
+export async function cleanupStaleExports({
+    db,
+    staleThresholdMs,
+}: CleanupStaleExportsParams): Promise<number> {
+    const staleTimestamp = new Date(Date.now() - staleThresholdMs);
+
+    const result = await db
+        .update(conversationExportTable)
+        .set({
+            status: "failed",
+            errorMessage:
+                "Export timed out - processing took longer than expected",
+            updatedAt: new Date(),
+        })
+        .where(
+            and(
+                eq(conversationExportTable.status, "processing"),
+                lt(conversationExportTable.updatedAt, staleTimestamp),
+            ),
+        )
+        .returning({ slugId: conversationExportTable.slugId });
+
+    return result.length;
+}
+
+interface StuckExportRecord {
+    id: number;
+    slugId: string;
+    userId: string;
+    conversationId: number;
+}
+
+interface CleanupStuckExportsOnStartupParams {
+    db: PostgresDatabase;
+    errorMessage: string;
+}
+
+interface CleanupStuckExportsResult {
+    cleanedCount: number;
+    stuckExports: StuckExportRecord[];
+}
+
+/**
+ * Cleanup stuck exports on server startup.
+ * Returns the list of stuck exports so notifications can be sent.
+ * This is separate from the periodic cleanup because:
+ * 1. It runs immediately without threshold check (server restarted)
+ * 2. It returns export details for notification sending
+ */
+export async function cleanupStuckExportsOnStartup({
+    db,
+    errorMessage,
+}: CleanupStuckExportsOnStartupParams): Promise<CleanupStuckExportsResult> {
+    // First, get all stuck exports (to return for notification sending)
+    const stuckExports = await db
+        .select({
+            id: conversationExportTable.id,
+            slugId: conversationExportTable.slugId,
+            userId: conversationExportTable.userId,
+            conversationId: conversationExportTable.conversationId,
+        })
+        .from(conversationExportTable)
+        .where(eq(conversationExportTable.status, "processing"));
+
+    if (stuckExports.length === 0) {
+        return {
+            cleanedCount: 0,
+            stuckExports: [],
+        };
+    }
+
+    // Mark all stuck exports as failed
+    await db
+        .update(conversationExportTable)
+        .set({
+            status: "failed",
+            errorMessage: errorMessage,
+            updatedAt: new Date(),
+        })
+        .where(eq(conversationExportTable.status, "processing"));
+
+    log.info(
+        `[ExportStartup] Marked ${String(stuckExports.length)} stuck exports as failed`,
+    );
+
+    return {
+        cleanedCount: stuckExports.length,
+        stuckExports: stuckExports,
+    };
+}
+
 interface CleanupExpiredExportsParams {
     db: PostgresDatabase;
 }
