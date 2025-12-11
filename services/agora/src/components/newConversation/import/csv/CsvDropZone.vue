@@ -75,17 +75,26 @@
                 class="error-detail"
               >
                 {{ truncatedErrorMessage }}
-                <PrimeButton
-                  size="small"
-                  severity="danger"
-                  class="error-details-button"
-                  @click.stop="showErrorDialog = true"
-                >
-                  View Details
-                </PrimeButton>
               </span>
             </div>
           </div>
+
+          <!-- View Details Button (Full Width, shown in error state) -->
+          <PrimeButton
+            v-if="status === 'error' && error"
+            class="view-details-button"
+            severity="danger"
+            :aria-label="`View error details for ${file.name}`"
+            @click.stop="showErrorDialog = true"
+          >
+            <ZKIcon
+              name="lucide:alert-circle"
+              size="1rem"
+              color="currentColor"
+              class="button-icon"
+            />
+            <span>View Error Details</span>
+          </PrimeButton>
 
           <!-- Remove Button (Full Width at Bottom) -->
           <PrimeButton

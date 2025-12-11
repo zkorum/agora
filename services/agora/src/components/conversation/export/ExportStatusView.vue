@@ -49,9 +49,8 @@
             role="status"
             aria-live="polite"
           >
-            <q-spinner
-              color="primary"
-              size="md"
+            <PrimeProgressSpinner
+              style="width: 50px; height: 50px"
               :aria-label="t('processingMessage')"
             />
             <p>{{ t("processingMessage") }}</p>
@@ -62,10 +61,10 @@
             role="alert"
             aria-live="assertive"
           >
-            <q-icon
-              name="error"
-              color="negative"
-              size="md"
+            <ZKIcon
+              name="lucide:x-circle"
+              size="2rem"
+              color="var(--red-500)"
               aria-hidden="true"
             />
             <p>{{ t("failedMessage") }}</p>
@@ -82,10 +81,10 @@
             role="alert"
             aria-live="assertive"
           >
-            <q-icon
-              name="cancel"
-              color="warning"
-              size="md"
+            <ZKIcon
+              name="lucide:x-octagon"
+              size="2rem"
+              color="var(--yellow-500)"
               aria-hidden="true"
             />
             <p>{{ t("cancelledMessage") }}</p>
@@ -102,7 +101,12 @@
             role="alert"
             aria-live="assertive"
           >
-            <q-icon name="schedule" color="grey" size="md" aria-hidden="true" />
+            <ZKIcon
+              name="lucide:clock"
+              size="2rem"
+              color="var(--gray-500)"
+              aria-hidden="true"
+            />
             <p>{{ t("expiredMessage") }}</p>
             <p class="expired-details">
               {{ t("expiredDeletedOn") }}:
@@ -166,10 +170,10 @@
               class="file-card"
             >
               <div class="file-header">
-                <q-icon
-                  name="description"
-                  size="md"
-                  color="primary"
+                <ZKIcon
+                  name="lucide:file-text"
+                  size="2rem"
+                  color="var(--primary-color)"
                   aria-hidden="true"
                 />
                 <span class="file-name">{{ file.fileName }}</span>
@@ -215,6 +219,7 @@ import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import { useRouter } from "vue-router";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import {
   useExportStatusQuery,
   useDeleteExportMutation,
@@ -389,11 +394,6 @@ function handleRequestNewExport(): void {
     gap: 1rem;
     text-align: left;
     max-width: 600px;
-
-    .q-icon {
-      flex-shrink: 0;
-      margin-top: 0.25rem;
-    }
   }
 
   p {

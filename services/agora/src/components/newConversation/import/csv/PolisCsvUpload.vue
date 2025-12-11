@@ -53,16 +53,6 @@
         <div class="file-size-hint">
           {{ t("maxFileSize", { size: MAX_CSV_FILE_SIZE_MB }) }}
         </div>
-
-        <!-- General Error Message -->
-        <div v-if="generalError" class="general-error">
-          <q-banner class="bg-negative text-white" rounded>
-            <template #avatar>
-              <q-icon name="mdi-alert-circle" />
-            </template>
-            {{ generalError }}
-          </q-banner>
-        </div>
       </div>
     </ZKCard>
 
@@ -103,9 +93,6 @@ const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 // Login dialog state
 const showLoginDialog = ref(false);
 
-// General error state
-const generalError = ref<string>("");
-
 // Create CSV file state using composable for each file type
 const summaryFile = useCsvFile("summary");
 const commentsFile = useCsvFile("comments");
@@ -125,13 +112,13 @@ async function handleUpload(
     return;
   }
 
-  generalError.value = "";
-
   // Try to upload the file (checks size)
   const success = csvFileState.uploadFile(file);
 
   if (!success) {
-    generalError.value = t("errorFileTooLarge", { size: MAX_CSV_FILE_SIZE_MB });
+    csvFileState.error.value = t("errorFileTooLarge", {
+      size: MAX_CSV_FILE_SIZE_MB,
+    });
     return;
   }
 
@@ -150,7 +137,6 @@ async function validateSingleFile(
 
   try {
     csvFileState.setValidating(true);
-    generalError.value = "";
 
     // Send only this file to validation endpoint
     const response = await validateCsvFiles({
@@ -176,8 +162,7 @@ async function validateSingleFile(
     }
   } catch (error) {
     console.error(`CSV validation error for ${fileType}:`, error);
-    // Network error or other exception - keep generic message for this case
-    generalError.value = t("serverError");
+    // Network error or other exception - show in the specific drop zone
     csvFileState.error.value = t("serverError");
   } finally {
     csvFileState.setValidating(false);
@@ -208,14 +193,13 @@ function updateStoreMetadata(): void {
  * Checks if all files are valid and uploaded
  */
 function isValid(): boolean {
-  generalError.value = "";
-
   if (
     !summaryFile.file.value ||
     !commentsFile.file.value ||
     !votesFile.file.value
   ) {
-    generalError.value = t("errorAllFilesRequired");
+    // Parent component should handle "all files required" validation
+    // by disabling submit button or showing error at form level
     return false;
   }
 
@@ -244,7 +228,6 @@ function reset(): void {
   summaryFile.removeFile();
   commentsFile.removeFile();
   votesFile.removeFile();
-  generalError.value = "";
   updateStoreMetadata();
 }
 
@@ -306,9 +289,5 @@ defineExpose({
   font-size: 0.75rem;
   color: $color-text-weak;
   text-align: center;
-}
-
-.general-error {
-  margin-top: 0.5rem;
 }
 </style>

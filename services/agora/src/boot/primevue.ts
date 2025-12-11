@@ -13,6 +13,8 @@ import InputText from "primevue/inputtext";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import FileUpload from "primevue/fileupload";
+import ProgressSpinner from "primevue/progressspinner";
+import Message from "primevue/message";
 
 const customPreset = definePreset(Aura, {
   semantic: {
@@ -78,4 +80,6 @@ export default defineBoot(({ app }) => {
   app.component("PrimeIconField", IconField);
   app.component("PrimeInputIcon", InputIcon);
   app.component("PrimeFileUpload", FileUpload);
+  app.component("PrimeProgressSpinner", ProgressSpinner);
+  app.component("PrimeMessage", Message);
 });
