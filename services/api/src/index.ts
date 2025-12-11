@@ -2787,11 +2787,11 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "GET",
-        url: `/api/${apiVersion}/conversation/export/active/:conversationSlugId`,
+        url: `/api/${apiVersion}/conversation/export/readiness/:conversationSlugId`,
         schema: {
             params: Dto.getConversationExportHistoryRequest,
             response: {
-                200: Dto.getActiveExportResponse,
+                200: Dto.getExportReadinessResponse,
             },
         },
         handler: async (request) => {
@@ -2803,11 +2803,13 @@ server.after(() => {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 },
             );
-            return await conversationExportService.getActiveExportForConversation(
+            return await conversationExportService.getExportReadinessForConversation(
                 {
                     db: db,
                     conversationSlugId: request.params.conversationSlugId,
                     userId: deviceStatus.userId,
+                    cooldownSeconds:
+                        config.CONVERSATION_EXPORT_COOLDOWN_SECONDS,
                 },
             );
         },

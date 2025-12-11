@@ -13,7 +13,6 @@ import type {
     RequestConversationExportResponse,
     GetConversationExportStatusResponse,
     GetConversationExportHistoryResponse,
-    GetActiveExportResponse,
 } from "@/shared/types/dto.js";
 import type { ExportFileInfo } from "@/shared/types/zod.js";
 import { ExportGeneratorFactory } from "./generators/factory.js";
@@ -25,6 +24,7 @@ import {
 import type { ProcessConversationExportParams } from "./types.js";
 import { createExportNotification } from "./notifications.js";
 import type { ExportBuffer } from "../exportBuffer.js";
+import { getExportReadinessForConversation } from "./readiness.js";
 
 // Maximum number of exports to keep per conversation
 const MAX_EXPORTS_PER_CONVERSATION = 7;
@@ -58,6 +58,19 @@ export async function requestConversationExport({
     }
 
     const conversationId = conversation[0].id;
+
+    // Check if user already has an active export for this conversation
+    const activeExport = await getActiveExportForConversation({
+        db,
+        conversationSlugId,
+        userId,
+    });
+
+    if (activeExport.hasActiveExport) {
+        throw httpErrors.badRequest(
+            "You already have an export in progress for this conversation. Please wait for it to complete before requesting a new export.",
+        );
+    }
 
     // Delegate to export buffer - handles cooldown, batching, and processing
     const result = await exportBuffer.add({
@@ -499,6 +512,16 @@ interface GetActiveExportForConversationParams {
     conversationSlugId: string;
     userId: string;
 }
+
+type GetActiveExportResponse =
+    | {
+          hasActiveExport: true;
+          exportSlugId: string;
+          createdAt: Date;
+      }
+    | {
+          hasActiveExport: false;
+      };
 
 /**
  * Get active (processing) export for a conversation and user.

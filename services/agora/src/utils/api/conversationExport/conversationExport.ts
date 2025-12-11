@@ -9,7 +9,7 @@ import type {
   RequestConversationExportResponse,
   GetConversationExportStatusResponse,
   GetConversationExportHistoryResponse,
-  GetActiveExportResponse,
+  GetExportReadinessResponse,
 } from "src/shared/types/dto";
 import { Dto } from "src/shared/types/dto";
 
@@ -121,11 +121,11 @@ export function useBackendConversationExportApi() {
     );
   }
 
-  async function fetchActiveExport(
+  async function fetchExportReadiness(
     conversationSlugId: string
-  ): Promise<GetActiveExportResponse> {
+  ): Promise<GetExportReadinessResponse> {
     const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1ConversationExportActiveConversationSlugIdGet(
+      await DefaultApiAxiosParamCreator().apiV1ConversationExportReadinessConversationSlugIdGet(
         conversationSlugId
       );
     const encodedUcan = await buildEncodedUcan(url, options);
@@ -134,7 +134,7 @@ export function useBackendConversationExportApi() {
       undefined,
       undefined,
       api
-    ).apiV1ConversationExportActiveConversationSlugIdGet(
+    ).apiV1ConversationExportReadinessConversationSlugIdGet(
       conversationSlugId,
       createRawAxiosRequestConfig({
         encodedUcan: encodedUcan,
@@ -142,7 +142,7 @@ export function useBackendConversationExportApi() {
       })
     );
 
-    const parsed = Dto.getActiveExportResponse.parse(response.data);
+    const parsed = Dto.getExportReadinessResponse.parse(response.data);
     return parsed;
   }
 
@@ -151,6 +151,6 @@ export function useBackendConversationExportApi() {
     requestNewExport,
     fetchExportStatus,
     deleteExport,
-    fetchActiveExport,
+    fetchExportReadiness,
   };
 }

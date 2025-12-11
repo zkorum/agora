@@ -7418,7 +7418,7 @@
                 }
             }
         },
-        "/api/v1/conversation/export/active/{conversationSlugId}": {
+        "/api/v1/conversation/export/readiness/{conversationSlugId}": {
             "get": {
                 "parameters": [
                     {
@@ -7441,10 +7441,10 @@
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "hasActiveExport": {
-                                                    "type": "boolean",
+                                                "status": {
+                                                    "type": "string",
                                                     "enum": [
-                                                        true
+                                                        "active"
                                                     ]
                                                 },
                                                 "exportSlugId": {
@@ -7457,7 +7457,7 @@
                                                 }
                                             },
                                             "required": [
-                                                "hasActiveExport",
+                                                "status",
                                                 "exportSlugId",
                                                 "createdAt"
                                             ],
@@ -7466,15 +7466,40 @@
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "hasActiveExport": {
-                                                    "type": "boolean",
+                                                "status": {
+                                                    "type": "string",
                                                     "enum": [
-                                                        false
+                                                        "cooldown"
+                                                    ]
+                                                },
+                                                "cooldownEndsAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "lastExportSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "cooldownEndsAt",
+                                                "lastExportSlugId"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "ready"
                                                     ]
                                                 }
                                             },
                                             "required": [
-                                                "hasActiveExport"
+                                                "status"
                                             ],
                                             "additionalProperties": false
                                         }

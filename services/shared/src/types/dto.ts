@@ -247,17 +247,27 @@ export class Dto {
             })
             .strict(),
     ]);
-    static getActiveExportResponse = z.discriminatedUnion("hasActiveExport", [
+    static getExportReadinessResponse = z.discriminatedUnion("status", [
+        // User has an active export processing
         z
             .object({
-                hasActiveExport: z.literal(true),
+                status: z.literal("active"),
                 exportSlugId: zodSlugId,
                 createdAt: zodDateTimeFlexible,
             })
             .strict(),
+        // No active export, but cooldown is active - cannot export yet
         z
             .object({
-                hasActiveExport: z.literal(false),
+                status: z.literal("cooldown"),
+                cooldownEndsAt: zodDateTimeFlexible,
+                lastExportSlugId: zodSlugId,
+            })
+            .strict(),
+        // No active export, no cooldown - ready to export
+        z
+            .object({
+                status: z.literal("ready"),
             })
             .strict(),
     ]);
@@ -931,8 +941,8 @@ export type ValidateCsvResponse = z.infer<typeof Dto.validateCsvResponse>;
 export type GetActiveImportResponse = z.infer<
     typeof Dto.getActiveImportResponse
 >;
-export type GetActiveExportResponse = z.infer<
-    typeof Dto.getActiveExportResponse
+export type GetExportReadinessResponse = z.infer<
+    typeof Dto.getExportReadinessResponse
 >;
 export type GetConversationImportStatusRequest = z.infer<
     typeof Dto.getConversationImportStatusRequest

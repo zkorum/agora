@@ -84,23 +84,27 @@ export function useExportStatusQuery({
   });
 }
 
-export function useActiveExportQuery({
+export function useExportReadinessQuery({
   conversationSlugId,
   enabled = true,
 }: {
   conversationSlugId: string;
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
-  const { fetchActiveExport } = useBackendConversationExportApi();
+  const { fetchExportReadiness } = useBackendConversationExportApi();
 
   return useQuery({
-    queryKey: ["activeExport", conversationSlugId],
-    queryFn: () => fetchActiveExport(conversationSlugId),
+    queryKey: ["exportReadiness", conversationSlugId],
+    queryFn: () => fetchExportReadiness(conversationSlugId),
     enabled: computed(() => toValue(enabled) && conversationSlugId.length > 0),
     staleTime: 0, // Always stale
     refetchInterval: (query) => {
-      // Auto-refetch every 3 seconds if there's an active export
-      return query.state.data?.hasActiveExport ? 3000 : false;
+      // Poll every 3 seconds when:
+      // - "active": User's export is processing (detect completion)
+      // - "cooldown": Detect cooldown expiration OR other users changing cooldown time
+      // - "ready": No polling needed (saves resources)
+      const status = query.state.data?.status;
+      return status === "active" || status === "cooldown" ? 3000 : false;
     },
     retry: false,
   });
@@ -121,9 +125,9 @@ export function useInvalidateExportQueries() {
         queryKey: ["exportStatus", exportSlugId],
       });
     },
-    invalidateActiveExport: (conversationSlugId: string) => {
+    invalidateExportReadiness: (conversationSlugId: string) => {
       void queryClient.invalidateQueries({
-        queryKey: ["activeExport", conversationSlugId],
+        queryKey: ["exportReadiness", conversationSlugId],
       });
     },
     invalidateAll: (conversationSlugId: string) => {
@@ -134,7 +138,7 @@ export function useInvalidateExportQueries() {
         queryKey: ["exportStatus"],
       });
       void queryClient.invalidateQueries({
-        queryKey: ["activeExport", conversationSlugId],
+        queryKey: ["exportReadiness", conversationSlugId],
       });
     },
   };

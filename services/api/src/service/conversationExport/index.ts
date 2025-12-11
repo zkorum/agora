@@ -21,3 +21,5 @@ export {
     cleanupExpiredExports,
     deleteAllConversationExports,
 } from "./core.js";
+
+export { getExportReadinessForConversation } from "./readiness.js";

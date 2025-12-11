@@ -17,8 +17,18 @@
         <div class="export-page">
           <!-- Active Export Banner -->
           <ActiveExportBanner
-            v-if="activeExportQuery.data.value?.hasActiveExport"
-            :export-slug-id="activeExportQuery.data.value.exportSlugId"
+            v-if="readinessQuery.data.value?.status === 'active'"
+            :export-slug-id="readinessQuery.data.value.exportSlugId"
+            :conversation-slug-id="conversationSlugId"
+          />
+
+          <!-- Cooldown Banner -->
+          <CooldownBanner
+            v-if="readinessQuery.data.value?.status === 'cooldown'"
+            :cooldown-ends-at="
+              readinessQuery.data.value.cooldownEndsAt.toISOString()
+            "
+            :last-export-slug-id="readinessQuery.data.value.lastExportSlugId"
             :conversation-slug-id="conversationSlugId"
           />
 
@@ -51,7 +61,7 @@
 
             <RequestExportButton
               :loading="requestExportMutation.isPending.value"
-              :disabled="activeExportQuery.data.value?.hasActiveExport ?? false"
+              :disabled="readinessQuery.data.value?.status !== 'ready'"
               :aria-label="t('requestExportAriaLabel')"
               @request="handleRequestExport"
             />
@@ -86,12 +96,13 @@ import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import ExportHistoryList from "src/components/conversation/export/ExportHistoryList.vue";
 import RequestExportButton from "src/components/conversation/export/RequestExportButton.vue";
 import ActiveExportBanner from "src/components/conversation/export/ActiveExportBanner.vue";
+import CooldownBanner from "src/components/conversation/export/CooldownBanner.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import {
   useRequestExportMutation,
   useExportHistoryQuery,
-  useActiveExportQuery,
+  useExportReadinessQuery,
 } from "src/utils/api/conversationExport/useConversationExportQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { axiosInstance } from "src/utils/api/client";
@@ -130,7 +141,7 @@ const exportHistoryQuery = useExportHistoryQuery({
   enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
 });
 
-const activeExportQuery = useActiveExportQuery({
+const readinessQuery = useExportReadinessQuery({
   conversationSlugId: conversationSlugId.value,
   enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
 });
@@ -150,7 +161,7 @@ function handleRefresh(done: () => void): void {
   void Promise.all([
     conversationQuery.refetch(),
     exportHistoryQuery.refetch(),
-    activeExportQuery.refetch(),
+    readinessQuery.refetch(),
     minDelay,
   ]).finally(() => {
     done();
