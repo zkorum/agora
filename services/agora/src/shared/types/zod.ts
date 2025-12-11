@@ -261,9 +261,11 @@ export const zodTopicObject = z
 export const zodNotificationType = z.enum([
     "opinion_vote",
     "new_opinion",
+    "export_started",
     "export_completed",
     "export_failed",
     "export_cancelled",
+    "import_started",
     "import_completed",
     "import_failed",
 ]);
@@ -294,6 +296,13 @@ const zodNewOpinionNotification = zodNotificationBase
     .strict();
 
 // Export notification schemas
+const zodExportStartedNotification = zodNotificationBase
+    .extend({
+        type: z.literal("export_started"),
+        routeTarget: zodExportRouteTarget,
+    })
+    .strict();
+
 const zodExportCompletedNotification = zodNotificationBase
     .extend({
         type: z.literal("export_completed"),
@@ -318,6 +327,13 @@ const zodExportCancelledNotification = zodNotificationBase
     .strict();
 
 // Import notification schemas
+const zodImportStartedNotification = zodNotificationBase
+    .extend({
+        type: z.literal("import_started"),
+        routeTarget: zodImportRouteTarget,
+    })
+    .strict();
+
 const zodImportCompletedNotification = zodNotificationBase
     .extend({
         type: z.literal("import_completed"),
@@ -336,9 +352,11 @@ const zodImportFailedNotification = zodNotificationBase
 export const zodNotificationItem = z.discriminatedUnion("type", [
     zodOpinionVoteNotification,
     zodNewOpinionNotification,
+    zodExportStartedNotification,
     zodExportCompletedNotification,
     zodExportFailedNotification,
     zodExportCancelledNotification,
+    zodImportStartedNotification,
     zodImportCompletedNotification,
     zodImportFailedNotification,
 ]);

@@ -3,9 +3,11 @@ CREATE TYPE "public"."export_file_type_enum" AS ENUM('comments', 'votes', 'parti
 CREATE TYPE "public"."export_status_enum" AS ENUM('processing', 'completed', 'failed', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."import_method" AS ENUM('url', 'csv');--> statement-breakpoint
 CREATE TYPE "public"."import_status_enum" AS ENUM('processing', 'completed', 'failed');--> statement-breakpoint
+ALTER TYPE "public"."notification_type_enum" ADD VALUE 'export_started';--> statement-breakpoint
 ALTER TYPE "public"."notification_type_enum" ADD VALUE 'export_completed';--> statement-breakpoint
 ALTER TYPE "public"."notification_type_enum" ADD VALUE 'export_failed';--> statement-breakpoint
 ALTER TYPE "public"."notification_type_enum" ADD VALUE 'export_cancelled';--> statement-breakpoint
+ALTER TYPE "public"."notification_type_enum" ADD VALUE 'import_started';--> statement-breakpoint
 ALTER TYPE "public"."notification_type_enum" ADD VALUE 'import_completed';--> statement-breakpoint
 ALTER TYPE "public"."notification_type_enum" ADD VALUE 'import_failed';--> statement-breakpoint
 CREATE TABLE "conversation_export_file" (

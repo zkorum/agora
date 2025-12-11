@@ -168,6 +168,9 @@ function getIconFromNotificationType(
     case "opinion_vote":
       icon = "icon-park-outline:message-sent";
       break;
+    case "export_started":
+      icon = "mdi:clock-outline";
+      break;
     case "export_completed":
       icon = "mdi:check-circle";
       break;
@@ -176,6 +179,9 @@ function getIconFromNotificationType(
       break;
     case "export_cancelled":
       icon = "mdi:cancel";
+      break;
+    case "import_started":
+      icon = "mdi:clock-outline";
       break;
     case "import_completed":
       icon = "mdi:check-circle";
@@ -205,6 +211,9 @@ function getTitleFromNotification(notificationItem: NotificationItem): string {
               notificationItem.numVotes.toString()
             );
       break;
+    case "export_started":
+      title = t("exportStarted");
+      break;
     case "export_completed":
       title = t("exportCompleted");
       break;
@@ -213,6 +222,9 @@ function getTitleFromNotification(notificationItem: NotificationItem): string {
       break;
     case "export_cancelled":
       title = t("exportCancelled");
+      break;
+    case "import_started":
+      title = t("importStarted");
       break;
     case "import_completed":
       title = t("importCompleted");

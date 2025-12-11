@@ -1681,9 +1681,11 @@ export const opinionModerationTable = pgTable("opinion_moderation", {
 export const notificationTypeEnum = pgEnum("notification_type_enum", [
     "opinion_vote",
     "new_opinion",
+    "export_started",
     "export_completed",
     "export_failed",
     "export_cancelled",
+    "import_started",
     "import_completed",
     "import_failed",
 ]);

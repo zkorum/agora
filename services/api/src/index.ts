@@ -1891,6 +1891,7 @@ server.after(() => {
                     proof: encodedUcan,
                     didWrite,
                     importBuffer,
+                    notificationSSEManager,
                 });
 
             reply.send({ importSlugId });

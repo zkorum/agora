@@ -11,6 +11,7 @@ import type {
     GetConversationImportStatusResponse,
     GetActiveImportResponse,
 } from "@/shared/types/dto.js";
+import type { NotificationSSEManager } from "../notificationSSE.js";
 import * as database from "./database.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import {
@@ -32,6 +33,7 @@ interface RequestConversationImportParams {
     proof: string;
     didWrite: string;
     importBuffer: ImportBuffer;
+    notificationSSEManager: NotificationSSEManager;
 }
 
 interface RequestConversationImportResult {
@@ -44,8 +46,16 @@ interface RequestConversationImportResult {
 export async function requestConversationImport(
     params: RequestConversationImportParams,
 ): Promise<RequestConversationImportResult> {
-    const { db, userId, files, formData, proof, didWrite, importBuffer } =
-        params;
+    const {
+        db,
+        userId,
+        files,
+        formData,
+        proof,
+        didWrite,
+        importBuffer,
+        notificationSSEManager,
+    } = params;
 
     // Early CSV validation - fail fast before creating database records
     const fieldNames = Object.keys(files);
@@ -121,10 +131,21 @@ export async function requestConversationImport(
 
     // Create import record in database
     const importSlugId = generateRandomSlugId();
-    await database.createImportRecord({
+    const importId = await database.createImportRecord({
         db,
         importSlugId,
         userId,
+    });
+
+    // Create notification for import start
+    const { createImportNotification } = await import("./notifications.js");
+    await createImportNotification({
+        db,
+        userId,
+        importId,
+        conversationId: null,
+        type: "import_started",
+        notificationSSEManager,
     });
 
     // Queue CSV import for async processing

@@ -186,12 +186,25 @@ export function createExportBuffer({
 
         const exportSlugId = generateRandomSlugId();
 
-        await db.insert(conversationExportTable).values({
-            slugId: exportSlugId,
-            conversationId: exportRequest.conversationId,
+        const [exportRecord] = await db
+            .insert(conversationExportTable)
+            .values({
+                slugId: exportSlugId,
+                conversationId: exportRequest.conversationId,
+                userId: exportRequest.userId,
+                status: "processing",
+                expiresAt: expiresAt,
+            })
+            .returning({ id: conversationExportTable.id });
+
+        // Create notification for export start
+        await createExportNotification({
+            db,
             userId: exportRequest.userId,
-            status: "processing",
-            expiresAt: expiresAt,
+            exportId: exportRecord.id,
+            conversationId: exportRequest.conversationId,
+            type: "export_started",
+            notificationSSEManager,
         });
 
         const key = getExportKey(exportRequest.conversationId);

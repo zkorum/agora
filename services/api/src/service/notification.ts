@@ -301,12 +301,30 @@ export async function getNotifications({
                 notificationItem.conversationSlugId &&
                 notificationItem.conversationTitle &&
                 notificationItem.exportSlugId &&
-                (notificationItem.notificationType === "export_completed" ||
+                (notificationItem.notificationType === "export_started" ||
+                    notificationItem.notificationType === "export_completed" ||
                     notificationItem.notificationType === "export_failed" ||
                     notificationItem.notificationType === "export_cancelled")
             ) {
                 // Construct notification based on type
-                if (notificationItem.notificationType === "export_completed") {
+                if (notificationItem.notificationType === "export_started") {
+                    const parsedItem: NotificationItem = {
+                        type: "export_started",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message: `"${notificationItem.conversationTitle}"`,
+                        routeTarget: {
+                            type: "export",
+                            conversationSlugId:
+                                notificationItem.conversationSlugId,
+                            exportSlugId: notificationItem.exportSlugId,
+                        },
+                    };
+                    notificationItemList.push(parsedItem);
+                } else if (
+                    notificationItem.notificationType === "export_completed"
+                ) {
                     const parsedItem: NotificationItem = {
                         type: "export_completed",
                         slugId: notificationItem.slugId,
@@ -415,11 +433,27 @@ export async function getNotifications({
         notificationTableResponse.forEach((notificationItem) => {
             if (
                 notificationItem.importSlugId &&
-                (notificationItem.notificationType === "import_completed" ||
+                (notificationItem.notificationType === "import_started" ||
+                    notificationItem.notificationType === "import_completed" ||
                     notificationItem.notificationType === "import_failed")
             ) {
                 // Construct notification based on type
-                if (notificationItem.notificationType === "import_completed") {
+                if (notificationItem.notificationType === "import_started") {
+                    const parsedItem: NotificationItem = {
+                        type: "import_started",
+                        slugId: notificationItem.slugId,
+                        createdAt: notificationItem.createdAt,
+                        isRead: notificationItem.isRead,
+                        message: "CSV import has started",
+                        routeTarget: {
+                            type: "import",
+                            importSlugId: notificationItem.importSlugId,
+                        },
+                    };
+                    notificationItemList.push(parsedItem);
+                } else if (
+                    notificationItem.notificationType === "import_completed"
+                ) {
                     const parsedItem: NotificationItem = {
                         type: "import_completed",
                         slugId: notificationItem.slugId,
@@ -523,12 +557,26 @@ async function buildExportNotification(
             result[0].conversationSlugId &&
             result[0].conversationTitle &&
             result[0].exportSlugId &&
-            (result[0].notificationType === "export_completed" ||
+            (result[0].notificationType === "export_started" ||
+                result[0].notificationType === "export_completed" ||
                 result[0].notificationType === "export_failed" ||
                 result[0].notificationType === "export_cancelled")
         ) {
             // Construct notification based on type
-            if (result[0].notificationType === "export_completed") {
+            if (result[0].notificationType === "export_started") {
+                return {
+                    type: "export_started",
+                    slugId: notificationSlugId,
+                    createdAt: result[0].createdAt,
+                    isRead: result[0].isRead,
+                    message: `"${result[0].conversationTitle}"`,
+                    routeTarget: {
+                        type: "export",
+                        conversationSlugId: result[0].conversationSlugId,
+                        exportSlugId: result[0].exportSlugId,
+                    },
+                };
+            } else if (result[0].notificationType === "export_completed") {
                 return {
                     type: "export_completed",
                     slugId: notificationSlugId,
@@ -915,11 +963,24 @@ async function buildImportNotification(
         if (
             result.length === 1 &&
             result[0].importSlugId &&
-            (result[0].notificationType === "import_completed" ||
+            (result[0].notificationType === "import_started" ||
+                result[0].notificationType === "import_completed" ||
                 result[0].notificationType === "import_failed")
         ) {
             // Construct notification based on type
-            if (result[0].notificationType === "import_completed") {
+            if (result[0].notificationType === "import_started") {
+                return {
+                    type: "import_started",
+                    slugId: notificationSlugId,
+                    createdAt: result[0].createdAt,
+                    isRead: result[0].isRead,
+                    message: "CSV import has started",
+                    routeTarget: {
+                        type: "import",
+                        importSlugId: result[0].importSlugId,
+                    },
+                };
+            } else if (result[0].notificationType === "import_completed") {
                 return {
                     type: "import_completed",
                     slugId: notificationSlugId,

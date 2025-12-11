@@ -2914,10 +2914,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
     'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget}
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
-    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget;
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget;
     /**
      * 
      * @type {number}
@@ -2947,9 +2947,11 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum = {
     OpinionVote: 'opinion_vote',
     NewOpinion: 'new_opinion',
+    ExportStarted: 'export_started',
     ExportCompleted: 'export_completed',
     ExportFailed: 'export_failed',
     ExportCancelled: 'export_cancelled',
+    ImportStarted: 'import_started',
     ImportCompleted: 'import_completed',
     ImportFailed: 'import_failed'
 } as const;
@@ -3113,7 +3115,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2TypeEnum = {
-    ExportCompleted: 'export_completed'
+    ExportStarted: 'export_started'
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2TypeEnum];
@@ -3192,16 +3194,10 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
      */
     'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
-     */
-    'errorMessage'?: string;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum = {
-    ExportFailed: 'export_failed'
+    ExportCompleted: 'export_completed'
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum];
@@ -3253,11 +3249,11 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
      */
-    'cancellationReason': string;
+    'errorMessage'?: string;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum = {
-    ExportCancelled: 'export_cancelled'
+    ExportFailed: 'export_failed'
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum];
@@ -3300,49 +3296,23 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
     'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5TypeEnum;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget}
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
      */
-    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget;
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+     */
+    'cancellationReason': string;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5TypeEnum = {
-    ImportCompleted: 'import_completed'
+    ExportCancelled: 'export_cancelled'
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5TypeEnum];
-
-/**
- * 
- * @export
- * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget
- */
-export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget
-     */
-    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTargetTypeEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget
-     */
-    'importSlugId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget
-     */
-    'conversationSlugId'?: string;
-}
-
-export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTargetTypeEnum = {
-    Import: 'import'
-} as const;
-
-export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTargetTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTargetTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTargetTypeEnum];
 
 /**
  * 
@@ -3382,23 +3352,155 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
     'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum;
     /**
      * 
-     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget}
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
      */
-    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5RouteTarget;
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum = {
+    ImportStarted: 'import_started'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTargetTypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget
+     */
+    'importSlugId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget
+     */
+    'conversationSlugId'?: string;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTargetTypeEnum = {
+    Import: 'import'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTargetTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTargetTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTargetTypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7TypeEnum;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget;
+}
+
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7TypeEnum = {
+    ImportCompleted: 'import_completed'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7TypeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
+ */
+export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8 {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
+     */
+    'slugId': string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
+     */
+    'isRead': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
+     */
+    'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8TypeEnum;
+    /**
+     * 
+     * @type {ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
+     */
+    'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6RouteTarget;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
      */
     'errorMessage'?: string;
 }
 
-export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum = {
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8TypeEnum = {
     ImportFailed: 'import_failed'
 } as const;
 
-export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6TypeEnum];
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8TypeEnum];
 
 /**
  * 

@@ -21,16 +21,21 @@ interface CreateImportRecordParams {
  */
 export async function createImportRecord(
     params: CreateImportRecordParams,
-): Promise<void> {
+): Promise<number> {
     const { db, importSlugId, userId } = params;
 
-    await db.insert(conversationImportTable).values({
-        slugId: importSlugId,
-        userId: userId,
-        status: "processing",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    });
+    const [result] = await db
+        .insert(conversationImportTable)
+        .values({
+            slugId: importSlugId,
+            userId: userId,
+            status: "processing",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        })
+        .returning({ id: conversationImportTable.id });
+
+    return result.id;
 }
 
 interface GetImportStatusParams {

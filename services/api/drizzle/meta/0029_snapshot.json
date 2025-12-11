@@ -1,5 +1,5 @@
 {
-  "id": "545cdaf3-d21b-4533-9795-eb790918a08d",
+  "id": "ffc2eb9b-4992-4926-8f7e-a9f053406075",
   "prevId": "ed596691-a409-4d8b-8ef4-ea7c1cd2cadc",
   "version": "7",
   "dialect": "postgresql",
@@ -5844,9 +5844,11 @@
       "values": [
         "opinion_vote",
         "new_opinion",
+        "export_started",
         "export_completed",
         "export_failed",
         "export_cancelled",
+        "import_started",
         "import_completed",
         "import_failed"
       ]

@@ -15,7 +15,7 @@ interface CreateImportNotificationParams {
     importId: number;
     conversationId: number | null;
     type: NotificationType;
-    notificationSSEManager?: NotificationSSEManager;
+    notificationSSEManager: NotificationSSEManager;
 }
 
 /**

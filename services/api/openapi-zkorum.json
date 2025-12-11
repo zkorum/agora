@@ -6438,6 +6438,65 @@
                                                             "type": {
                                                                 "type": "string",
                                                                 "enum": [
+                                                                    "export_started"
+                                                                ]
+                                                            },
+                                                            "routeTarget": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "export"
+                                                                        ]
+                                                                    },
+                                                                    "conversationSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    },
+                                                                    "exportSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "conversationSlugId",
+                                                                    "exportSlugId"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "slugId",
+                                                            "isRead",
+                                                            "message",
+                                                            "createdAt",
+                                                            "type",
+                                                            "routeTarget"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "slugId": {
+                                                                "type": "string",
+                                                                "maxLength": 10
+                                                            },
+                                                            "isRead": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "message": {
+                                                                "type": "string"
+                                                            },
+                                                            "createdAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "type": {
+                                                                "type": "string",
+                                                                "enum": [
                                                                     "export_completed"
                                                                 ]
                                                             },
@@ -6599,6 +6658,64 @@
                                                             "type",
                                                             "routeTarget",
                                                             "cancellationReason"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "slugId": {
+                                                                "type": "string",
+                                                                "maxLength": 10
+                                                            },
+                                                            "isRead": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "message": {
+                                                                "type": "string"
+                                                            },
+                                                            "createdAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "type": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "import_started"
+                                                                ]
+                                                            },
+                                                            "routeTarget": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "import"
+                                                                        ]
+                                                                    },
+                                                                    "importSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    },
+                                                                    "conversationSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "importSlugId"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "slugId",
+                                                            "isRead",
+                                                            "message",
+                                                            "createdAt",
+                                                            "type",
+                                                            "routeTarget"
                                                         ],
                                                         "additionalProperties": false
                                                     },
