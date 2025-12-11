@@ -1,6 +1,6 @@
 <template>
   <div>
-    <q-layout :key="drawerBehavior" :view="'lHh LpR lFf'">
+    <q-layout :view="'lHh LpR lFf'">
       <q-header
         :reveal="enableHeaderReveal"
         :model-value="props.generalProps.enableHeader"

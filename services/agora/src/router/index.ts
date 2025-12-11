@@ -38,10 +38,10 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   });
 
-  Router.beforeEach(async (to, from) => {
+  Router.beforeEach((to, from) => {
     const target = conversationGuard(to.name, from.name);
     if (target == "home") {
-      await Router.replace({ name: "/" });
+      return { name: "/" };
     }
   });
 

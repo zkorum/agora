@@ -44,7 +44,7 @@ export function getPlatform(platform: Platform): SupportedPlatform {
     console.log("nativeMobile platform detected");
     return "mobile";
   }
-  if (!platform.is.desktop && !platform.is.bex) {
+  if (!platform.is.bex) {
     return "web";
   }
   // TODO: throw warning

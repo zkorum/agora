@@ -1,23 +1,22 @@
 import { useWindowSize } from "@vueuse/core";
 import { defineStore } from "pinia";
-import { onMounted, ref, watch } from "vue";
+import { ref, watch } from "vue";
 
 const DRAWER_BREAKPOINT = 1000;
 
 export const useNavigationStore = defineStore("navigation", () => {
   const { width } = useWindowSize();
 
-  const showMobileDrawer = ref(false);
-  const drawerBehavior = ref<"desktop" | "mobile">("mobile");
+  // Initialize based on current window width instead of using onMounted
+  // (onMounted doesn't work reliably in Pinia stores)
+  const isDesktop = width.value > DRAWER_BREAKPOINT;
+  const showMobileDrawer = ref(isDesktop);
+  const drawerBehavior = ref<"desktop" | "mobile">(isDesktop ? "desktop" : "mobile");
   const cameFromConversationCreation = ref(false);
-
-  onMounted(() => {
-    updateDrawers();
-  });
 
   watch(width, () => {
     updateDrawers();
-  });
+  }, { immediate: true });
 
   function updateDrawers() {
     if (width.value > DRAWER_BREAKPOINT) {
