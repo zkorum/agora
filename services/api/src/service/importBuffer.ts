@@ -216,7 +216,7 @@ export function createImportBuffer(
         }
 
         log.info(
-            `[ImportBuffer] Flushing ${pendingImports.size} pending imports`,
+            `[ImportBuffer] Flushing ${String(pendingImports.size)} pending imports`,
         );
 
         // Take up to maxBatchSize imports
@@ -238,8 +238,19 @@ export function createImportBuffer(
             }
         }
 
-        // Process imports in parallel (they're independent operations)
-        await Promise.allSettled(batch.map((req) => processImport(req)));
+        // Process imports sequentially to prevent database overload
+        for (const request of batch) {
+            try {
+                await processImport(request);
+            } catch (error) {
+                // Log error but continue with next import
+                // Each import's error is handled in processImport()
+                log.error(
+                    error,
+                    `[ImportBuffer] Error processing import ${request.importSlugId}, continuing with next import`,
+                );
+            }
+        }
 
         log.info(`[ImportBuffer] Flush completed`);
     }
