@@ -3,6 +3,7 @@ import { buildAuthorizationHeader } from "../../crypto/ucan/operation";
 import type {
   ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner,
   ApiV1ConversationCreatePost200Response,
+  ApiV1ConversationImportPost200Response,
   ApiV1ConversationImportPostRequest,
 } from "src/api";
 import type { ImportCsvConversationResponse } from "src/shared/types/dto";
@@ -200,7 +201,7 @@ export function useBackendPostApi() {
   }
 
   type ImportConversationSuccessResponse =
-    AxiosSuccessResponse<ApiV1ConversationCreatePost200Response>;
+    AxiosSuccessResponse<ApiV1ConversationImportPost200Response>;
   type ImportConversationResponse =
     | ImportConversationSuccessResponse
     | AxiosErrorResponse;

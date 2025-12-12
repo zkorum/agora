@@ -45,4 +45,4 @@ dev-math-updater:
 	cd services/math-updater && pnpm start:dev
 
 dev-polis:
-	cd services/python-bridge && source .venv/bin/activate && gunicorn -c gunicorn.conf.py main:app
+	cd services/python-bridge && source .venv/bin/activate && make dev

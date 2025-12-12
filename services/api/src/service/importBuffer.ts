@@ -21,25 +21,51 @@ import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 import { log } from "@/app.js";
 import type { NotificationSSEManager } from "./notificationSSE.js";
 import type { VoteBuffer } from "./voteBuffer.js";
+import type { AxiosInstance } from "axios";
+import pLimit from "p-limit";
+import { processCsvImport } from "./csvImport.js";
+import { processUrlImport } from "./urlImport.js";
+import { createImportNotification } from "./conversationImport/notifications.js";
+import type { EventSlug } from "@/shared/types/zod.js";
 
 /**
- * Structure of an import request in the buffer
+ * Common fields for all import requests
  */
-export interface ImportRequest {
+interface ImportRequestBase {
     importSlugId: string;
     userId: string;
-    files: Partial<Record<string, string>>; // CSV file contents
     formData: {
         postAsOrganization?: string;
         indexConversationAt?: string;
         isLoginRequired: boolean;
         isIndexed: boolean;
-        requiresEventTicket?: string;
+        requiresEventTicket?: EventSlug;
     };
     proof: string;
     didWrite: string;
     authorId: string;
 }
+
+/**
+ * CSV import request - files are stored directly
+ */
+export interface CsvImportRequest extends ImportRequestBase {
+    type: "csv";
+    files: Partial<Record<string, string>>; // CSV file contents
+}
+
+/**
+ * URL import request - Polis URL to fetch from
+ */
+export interface UrlImportRequest extends ImportRequestBase {
+    type: "url";
+    polisUrl: string;
+}
+
+/**
+ * Discriminated union for import requests
+ */
+export type ImportRequest = CsvImportRequest | UrlImportRequest;
 
 /**
  * Import buffer instance
@@ -61,8 +87,10 @@ interface ImportBufferDependencies {
     valkey: Valkey | undefined;
     notificationSSEManager: NotificationSSEManager;
     voteBuffer: VoteBuffer;
+    axiosPolis: AxiosInstance | undefined; // For URL imports - fetch from Polis API
     flushIntervalMs: number;
     maxBatchSize: number;
+    maxConcurrency: number; // Max number of imports to process in parallel
 }
 
 /**
@@ -76,9 +104,14 @@ export function createImportBuffer(
         valkey,
         notificationSSEManager,
         voteBuffer,
+        axiosPolis,
         flushIntervalMs,
         maxBatchSize,
+        maxConcurrency,
     } = deps;
+
+    // Create concurrency limiter for parallel import processing
+    const limit = pLimit(maxConcurrency);
 
     // In-memory buffer
     const pendingImports = new Map<string, ImportRequest>();
@@ -87,32 +120,54 @@ export function createImportBuffer(
     let flushTimer: NodeJS.Timeout | undefined;
 
     /**
-     * Process a single import request
+     * Process a single import request (CSV or URL)
      */
     async function processImport(request: ImportRequest): Promise<void> {
         try {
             log.info(
-                `[ImportBuffer] Processing import ${request.importSlugId}`,
+                `[ImportBuffer] Processing ${request.type} import ${request.importSlugId}`,
             );
 
-            // Import the conversation using csvImportService
-            const { processCsvImport } = await import("./csvImport.js");
+            let result: { conversationId: number };
 
-            const result = await processCsvImport({
-                db,
-                voteBuffer,
-                files: request.files,
-                proof: request.proof,
-                didWrite: request.didWrite,
-                authorId: request.authorId,
-                postAsOrganization: request.formData.postAsOrganization,
-                indexConversationAt: request.formData.indexConversationAt,
-                isLoginRequired: request.formData.isLoginRequired,
-                isIndexed: request.formData.isIndexed,
-                requiresEventTicket: request.formData.requiresEventTicket as
-                    | "devconnect-2025"
-                    | undefined,
-            });
+            if (request.type === "csv") {
+                // CSV import - process from uploaded files
+                result = await processCsvImport({
+                    db,
+                    voteBuffer,
+                    files: request.files,
+                    proof: request.proof,
+                    didWrite: request.didWrite,
+                    authorId: request.authorId,
+                    postAsOrganization: request.formData.postAsOrganization,
+                    indexConversationAt: request.formData.indexConversationAt,
+                    isLoginRequired: request.formData.isLoginRequired,
+                    isIndexed: request.formData.isIndexed,
+                    requiresEventTicket: request.formData.requiresEventTicket,
+                });
+            } else {
+                // URL import - fetch from Polis API
+                if (axiosPolis === undefined) {
+                    throw new Error(
+                        "Polis API connection not configured for URL imports",
+                    );
+                }
+
+                result = await processUrlImport({
+                    db,
+                    voteBuffer,
+                    axiosPolis,
+                    polisUrl: request.polisUrl,
+                    proof: request.proof,
+                    didWrite: request.didWrite,
+                    authorId: request.authorId,
+                    postAsOrganization: request.formData.postAsOrganization,
+                    indexConversationAt: request.formData.indexConversationAt,
+                    isLoginRequired: request.formData.isLoginRequired,
+                    isIndexed: request.formData.isIndexed,
+                    requiresEventTicket: request.formData.requiresEventTicket,
+                });
+            }
 
             // Get the import record to get the import ID
             const importRecord = await db
@@ -144,9 +199,6 @@ export function createImportBuffer(
                 );
 
             // Send notification
-            const { createImportNotification } = await import(
-                "./conversationImport/notifications.js"
-            );
             await createImportNotification({
                 db,
                 userId: request.userId,
@@ -157,7 +209,7 @@ export function createImportBuffer(
             });
 
             log.info(
-                `[ImportBuffer] Import ${request.importSlugId} completed successfully`,
+                `[ImportBuffer] ${request.type} import ${request.importSlugId} completed successfully`,
             );
         } catch (error) {
             // Update import status to failed
@@ -187,9 +239,6 @@ export function createImportBuffer(
             // Send failure notification if import record exists
             if (importRecord.length > 0) {
                 const importId = importRecord[0].id;
-                const { createImportNotification } = await import(
-                    "./conversationImport/notifications.js"
-                );
                 await createImportNotification({
                     db,
                     userId: request.userId,
@@ -202,7 +251,7 @@ export function createImportBuffer(
 
             log.error(
                 error,
-                `[ImportBuffer] Import ${request.importSlugId} failed`,
+                `[ImportBuffer] ${request.type} import ${request.importSlugId} failed`,
             );
         }
     }
@@ -238,19 +287,23 @@ export function createImportBuffer(
             }
         }
 
-        // Process imports sequentially to prevent database overload
-        for (const request of batch) {
-            try {
-                await processImport(request);
-            } catch (error) {
-                // Log error but continue with next import
-                // Each import's error is handled in processImport()
-                log.error(
-                    error,
-                    `[ImportBuffer] Error processing import ${request.importSlugId}, continuing with next import`,
-                );
-            }
-        }
+        // Process imports in parallel with concurrency limit
+        // Each import's errors are handled internally in processImport()
+        const importPromises = batch.map((request) =>
+            limit(async () => {
+                try {
+                    await processImport(request);
+                } catch (error) {
+                    // Log error but don't throw - let other imports continue
+                    log.error(
+                        error,
+                        `[ImportBuffer] Error processing import ${request.importSlugId}, continuing with other imports`,
+                    );
+                }
+            }),
+        );
+
+        await Promise.all(importPromises);
 
         log.info(`[ImportBuffer] Flush completed`);
     }

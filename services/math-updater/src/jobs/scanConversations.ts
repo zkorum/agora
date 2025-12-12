@@ -66,6 +66,9 @@ export async function scanConversationsJob(
             )
             .where(
                 and(
+                    // Condition 0: Exclude conversations still being imported
+                    // These have isImporting=true until all data is inserted
+                    eq(conversationTable.isImporting, false),
                     // Condition 1: New data arrived since last math update
                     // (or never processed)
                     or(

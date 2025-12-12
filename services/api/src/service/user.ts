@@ -241,9 +241,13 @@ export async function getUserPosts({
             lastCreatedAt !== undefined
                 ? and(
                       eq(conversationTable.authorId, userId),
+                      eq(conversationTable.isImporting, false),
                       lt(conversationTable.createdAt, lastCreatedAt),
                   )
-                : eq(conversationTable.authorId, userId);
+                : and(
+                      eq(conversationTable.authorId, userId),
+                      eq(conversationTable.isImporting, false),
+                  );
 
         const conversations: ExtendedConversationPerSlugId =
             await fetchPostItems({
@@ -484,4 +488,82 @@ export async function bulkInsertUsersFromExternalPolisConvo({
         voteCount: voteCount,
         opinionCount: opinionCount,
     };
+}
+
+interface SoftDeleteImportedUsersForConversationProps {
+    db: PostgresJsDatabase;
+    conversationId: number;
+}
+
+/**
+ * Soft-deletes all imported users who participated in a specific conversation.
+ * Uses database joins to find users via opinions and votes rather than username patterns.
+ * This is called when an import fails and we need to clean up the created users.
+ */
+export async function softDeleteImportedUsersForConversation({
+    db,
+    conversationId,
+}: SoftDeleteImportedUsersForConversationProps): Promise<number> {
+    const now = new Date();
+
+    // Find all imported users who have opinions in this conversation
+    const usersFromOpinions = await db
+        .selectDistinct({ userId: opinionTable.authorId })
+        .from(opinionTable)
+        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .where(
+            and(
+                eq(opinionTable.conversationId, conversationId),
+                eq(userTable.isImported, true),
+                eq(userTable.isDeleted, false),
+            ),
+        );
+
+    // Find all imported users who have votes on opinions in this conversation
+    // (users may have only voted, without creating opinions)
+    const usersFromVotes = await db
+        .selectDistinct({ userId: voteTable.authorId })
+        .from(voteTable)
+        .innerJoin(opinionTable, eq(opinionTable.id, voteTable.opinionId))
+        .innerJoin(userTable, eq(userTable.id, voteTable.authorId))
+        .where(
+            and(
+                eq(opinionTable.conversationId, conversationId),
+                eq(userTable.isImported, true),
+                eq(userTable.isDeleted, false),
+            ),
+        );
+
+    // Combine and deduplicate user IDs from both sources
+    const userIdSet = new Set<string>();
+    for (const row of usersFromOpinions) {
+        userIdSet.add(row.userId);
+    }
+    for (const row of usersFromVotes) {
+        userIdSet.add(row.userId);
+    }
+    const userIds = Array.from(userIdSet);
+
+    if (userIds.length === 0) {
+        log.info(
+            `[Import Cleanup] No imported users found for conversationId=${String(conversationId)}`,
+        );
+        return 0;
+    }
+
+    // Soft-delete the users
+    await db
+        .update(userTable)
+        .set({
+            isDeleted: true,
+            deletedAt: now,
+            updatedAt: now,
+        })
+        .where(inArray(userTable.id, userIds));
+
+    log.info(
+        `[Import Cleanup] Soft-deleted ${String(userIds.length)} imported users for conversationId=${String(conversationId)}`,
+    );
+
+    return userIds.length;
 }

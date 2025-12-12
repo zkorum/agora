@@ -5,6 +5,7 @@ Enables concurrent request handling with multiple worker processes
 
 import multiprocessing
 import os
+import platform
 
 # Bind to all interfaces on port 5001
 bind = "0.0.0.0:5001"
@@ -52,7 +53,8 @@ max_requests_jitter = 50
 
 # Pre-load the application in the master process
 # This shares memory between workers (reduces memory footprint)
-preload_app = True
+# Disabled on macOS due to fork() + Objective-C runtime conflict (SIGKILL on worker spawn)
+preload_app = platform.system() != "Darwin"
 
 # Number of pending connections (queued when all workers busy)
 # Set to 2048 (Gunicorn default), but actual limit depends on system's net.core.somaxconn:
