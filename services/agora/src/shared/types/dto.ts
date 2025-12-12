@@ -194,7 +194,7 @@ export class Dto {
         .strict();
     static importConversationResponse = z
         .object({
-            conversationSlugId: z.string(),
+            importSlugId: z.string(),
         })
         .strict();
     static importCsvConversationRequest = z

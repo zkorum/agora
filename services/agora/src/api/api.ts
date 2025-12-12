@@ -2276,13 +2276,13 @@ export interface ApiV1ConversationImportActiveGet200ResponseAnyOf1 {
 /**
  * 
  * @export
- * @interface ApiV1ConversationImportCsvPost200Response
+ * @interface ApiV1ConversationImportPost200Response
  */
-export interface ApiV1ConversationImportCsvPost200Response {
+export interface ApiV1ConversationImportPost200Response {
     /**
      * 
      * @type {string}
-     * @memberof ApiV1ConversationImportCsvPost200Response
+     * @memberof ApiV1ConversationImportPost200Response
      */
     'importSlugId': string;
 }
@@ -7462,7 +7462,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ConversationImportCsvPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationImportCsvPost200Response>> {
+        async apiV1ConversationImportCsvPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationImportPost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationImportCsvPost(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationImportCsvPost']?.[localVarOperationServerIndex]?.url;
@@ -7474,7 +7474,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ConversationImportPost(apiV1ConversationImportPostRequest: ApiV1ConversationImportPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationCreatePost200Response>> {
+        async apiV1ConversationImportPost(apiV1ConversationImportPostRequest: ApiV1ConversationImportPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationImportPost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationImportPost(apiV1ConversationImportPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationImportPost']?.[localVarOperationServerIndex]?.url;
@@ -8163,7 +8163,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ConversationImportCsvPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationImportCsvPost200Response> {
+        apiV1ConversationImportCsvPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationImportPost200Response> {
             return localVarFp.apiV1ConversationImportCsvPost(options).then((request) => request(axios, basePath));
         },
         /**
@@ -8172,7 +8172,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ConversationImportPost(apiV1ConversationImportPostRequest: ApiV1ConversationImportPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationCreatePost200Response> {
+        apiV1ConversationImportPost(apiV1ConversationImportPostRequest: ApiV1ConversationImportPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationImportPost200Response> {
             return localVarFp.apiV1ConversationImportPost(apiV1ConversationImportPostRequest, options).then((request) => request(axios, basePath));
         },
         /**

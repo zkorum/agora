@@ -11,6 +11,7 @@ import type {
     GetConversationImportStatusResponse,
     GetActiveImportResponse,
 } from "@/shared/types/dto.js";
+import type { EventSlug } from "@/shared/types/zod.js";
 import type { NotificationSSEManager } from "../notificationSSE.js";
 import * as database from "./database.js";
 import { generateRandomSlugId } from "@/crypto.js";
@@ -28,7 +29,7 @@ interface RequestConversationImportParams {
         indexConversationAt?: string;
         isLoginRequired: boolean;
         isIndexed: boolean;
-        requiresEventTicket?: string;
+        requiresEventTicket?: EventSlug;
     };
     proof: string;
     didWrite: string;
@@ -150,9 +151,90 @@ export async function requestConversationImport(
 
     // Queue CSV import for async processing
     await importBuffer.addImport({
+        type: "csv",
         importSlugId,
         userId,
         files,
+        formData,
+        proof,
+        didWrite,
+        authorId: userId,
+    });
+
+    return { importSlugId };
+}
+
+interface RequestUrlImportParams {
+    db: PostgresDatabase;
+    userId: string;
+    polisUrl: string;
+    formData: {
+        postAsOrganization?: string;
+        indexConversationAt?: string;
+        isLoginRequired: boolean;
+        isIndexed: boolean;
+        requiresEventTicket?: EventSlug;
+    };
+    proof: string;
+    didWrite: string;
+    importBuffer: ImportBuffer;
+    notificationSSEManager: NotificationSSEManager;
+}
+
+/**
+ * Request a URL import - creates a pending import record and queues it for processing
+ */
+export async function requestUrlImport(
+    params: RequestUrlImportParams,
+): Promise<RequestConversationImportResult> {
+    const {
+        db,
+        userId,
+        polisUrl,
+        formData,
+        proof,
+        didWrite,
+        importBuffer,
+        notificationSSEManager,
+    } = params;
+
+    // Check if user already has an active import
+    const activeImport = await database.getActiveImportForUser({
+        db,
+        userId,
+    });
+
+    if (activeImport !== null) {
+        throw new Error(
+            "You already have an import in progress. Please wait for it to complete before starting a new one.",
+        );
+    }
+
+    // Create import record in database
+    const importSlugId = generateRandomSlugId();
+    const importId = await database.createImportRecord({
+        db,
+        importSlugId,
+        userId,
+    });
+
+    // Create notification for import start
+    const { createImportNotification } = await import("./notifications.js");
+    await createImportNotification({
+        db,
+        userId,
+        importId,
+        conversationId: null,
+        type: "import_started",
+        notificationSSEManager,
+    });
+
+    // Queue URL import for async processing
+    await importBuffer.addImport({
+        type: "url",
+        importSlugId,
+        userId,
+        polisUrl,
         formData,
         proof,
         didWrite,

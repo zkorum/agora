@@ -9,20 +9,11 @@ import {
     userTable,
 } from "@/shared-backend/schema.js";
 import { eq, sql, and } from "drizzle-orm";
-import type { ImportConversationResponse } from "@/shared/types/dto.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import type {
-    ExtendedConversation,
-    PolisUrl,
-    EventSlug,
-} from "@/shared/types/zod.js";
-import type { AxiosInstance } from "axios";
-import * as authUtilService from "@/service/authUtil.js";
-import * as polisService from "@/service/polis.js";
-import * as importService from "@/service/import.js";
+import type { ExtendedConversation, EventSlug } from "@/shared/types/zod.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import { postNewOpinion } from "./comment.js";
 import { nowZeroMs } from "@/shared/util.js";
@@ -30,6 +21,7 @@ import type { ConversationIds } from "@/utils/dataStructure.js";
 import { processHtmlBody } from "@/shared-app-api/html.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import { deleteAllConversationExports } from "@/service/conversationExport/index.js";
+import * as authUtilService from "@/service/authUtil.js";
 
 /**
  * Validates that public conversations have either login requirement or event ticket verification.
@@ -72,96 +64,6 @@ interface CreateNewPostProps {
     importCreatedAt?: Date;
     importAuthor?: string;
     importMethod?: "url" | "csv";
-}
-
-interface ImportPostProps {
-    db: PostgresDatabase;
-    voteBuffer: VoteBuffer;
-    authorId: string;
-    didWrite: string;
-    proof: string;
-    polisUrl: PolisUrl;
-    axiosPolis: AxiosInstance;
-    postAsOrganization: string | undefined;
-    indexConversationAt?: string;
-    isIndexed: boolean;
-    isLoginRequired: boolean;
-    requiresEventTicket?: EventSlug;
-    isOrgImportOnly: boolean;
-}
-
-export async function importConversation({
-    db,
-    voteBuffer,
-    authorId,
-    didWrite,
-    proof,
-    polisUrl,
-    axiosPolis,
-    postAsOrganization,
-    indexConversationAt,
-    isLoginRequired,
-    isIndexed,
-    requiresEventTicket,
-    isOrgImportOnly,
-}: ImportPostProps): Promise<ImportConversationResponse> {
-    // Validate organization restriction for imports
-    authUtilService.validateOrgImportRestriction(
-        postAsOrganization,
-        isOrgImportOnly,
-    );
-    if (postAsOrganization !== undefined && postAsOrganization !== "") {
-        let organizationId: number | undefined = undefined;
-        organizationId = await authUtilService.isUserPartOfOrganization({
-            db,
-            organizationName: postAsOrganization,
-            userId: authorId,
-        });
-        if (organizationId === undefined) {
-            throw httpErrors.forbidden(
-                `User '${authorId}' is not part of the organization: '${postAsOrganization}'`,
-            );
-        }
-    }
-
-    if (
-        !isValidPublicConversationAccess({
-            isIndexed,
-            isLoginRequired,
-            requiresEventTicket,
-        })
-    ) {
-        throw httpErrors.forbidden(
-            "Public conversations must either require login or event ticket verification",
-        );
-    }
-    const { importedPolisConversation, polisUrlType } =
-        await polisService.importExternalPolisConversation({
-            polisUrl: polisUrl,
-            axiosPolis: axiosPolis,
-        });
-    const { conversationSlugId } =
-        await importService.loadImportedPolisConversation({
-            db,
-            voteBuffer,
-            importedPolisConversation,
-            importConfig: {
-                method: "url",
-                polisUrl,
-                polisUrlType,
-            },
-            proof: proof,
-            didWrite: didWrite,
-            authorId: authorId,
-            postAsOrganization: postAsOrganization,
-            indexConversationAt,
-            isLoginRequired,
-            isIndexed,
-            requiresEventTicket,
-        });
-    return {
-        conversationSlugId: conversationSlugId,
-    };
 }
 
 export async function createNewPost({

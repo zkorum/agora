@@ -9,16 +9,15 @@
         button-type="largeButton"
         color="primary"
         :label="
-          conversationDraft.importSettings.importType !== null
+          isSubmitButtonLoading
             ? t('importButton')
-            : t('nextButton')
+            : conversationDraft.importSettings.importType !== null
+              ? t('importButton')
+              : t('nextButton')
         "
         size="0.8rem"
         :loading="isSubmitButtonLoading"
-        :disabled="
-          hasActiveImport &&
-          conversationDraft.importSettings.importType === 'csv-import'
-        "
+        :disabled="isSubmitButtonLoading || hasActiveImport"
         @click="onSubmit()"
       />
     </TopMenuWrapper>
@@ -388,9 +387,10 @@ async function handleImportSubmission(): Promise<void> {
 
     if (response.status === "success") {
       conversationDraft.value = createEmptyDraft();
+      // URL import is now async - redirect to import status page to poll for completion
       await router.replace({
-        name: "/conversation/[postSlugId]",
-        params: { postSlugId: response.data.conversationSlugId },
+        name: "/conversation/import/[importSlugId]",
+        params: { importSlugId: response.data.importSlugId },
       });
     } else {
       handleAxiosErrorStatusCodes({

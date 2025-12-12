@@ -4781,12 +4781,12 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "conversationSlugId": {
+                                        "importSlugId": {
                                             "type": "string"
                                         }
                                     },
                                     "required": [
-                                        "conversationSlugId"
+                                        "importSlugId"
                                     ],
                                     "additionalProperties": false
                                 }

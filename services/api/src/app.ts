@@ -85,12 +85,6 @@ const configSchema = sharedConfigSchema.extend({
         .default(
             "1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000, 2500000, 5000000, 10000000",
         ),
-    IS_ORG_IMPORT_ONLY: z
-        .string()
-        .optional()
-        .default("false")
-        .transform((val) => val === "true")
-        .pipe(z.boolean()),
     // S3 configuration for conversation CSV exports
     AWS_S3_REGION: z.string().optional(),
     AWS_S3_BUCKET_NAME: z.string().optional(),
@@ -106,10 +100,41 @@ const configSchema = sharedConfigSchema.extend({
         .min(60)
         .default(3600), // Presigned URL expiry (default: 1 hour)
     CONVERSATION_EXPORT_ENABLED: z
-        .enum(["true", "false"])
-        .optional()
-        .default("true")
-        .transform((val) => val === "true"),
+        .string()
+        .transform((value, ctx) => {
+            if (value.toLowerCase().trim() === "true") {
+                return true;
+            } else if (value.toLowerCase().trim() === "false") {
+                return false;
+            } else {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Value must be true or false",
+                });
+                return z.NEVER;
+            }
+        })
+        .default("true"),
+    IS_ORG_IMPORT_ONLY: z
+        .string()
+        .transform((value, ctx) => {
+            if (value.toLowerCase().trim() === "true") {
+                return true;
+            } else if (value.toLowerCase().trim() === "false") {
+                return false;
+            } else {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Value must be true or false",
+                });
+                return z.NEVER;
+            }
+        })
+        .default("false"),
+    // CSV Import buffer configuration
+    IMPORT_BUFFER_MAX_BATCH_SIZE: z.coerce.number().int().nonnegative().default(4), // Max imports to take from queue per flush (0 = disable imports)
+    IMPORT_BUFFER_MAX_CONCURRENCY: z.coerce.number().int().min(1).default(2), // Max imports to process in parallel
+    IMPORT_BUFFER_FLUSH_INTERVAL_MS: z.coerce.number().int().min(100).default(1000), // Flush interval in ms
 });
 
 export const config = configSchema.parse(process.env);

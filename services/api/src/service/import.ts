@@ -131,10 +131,10 @@ export async function loadImportedPolisConversation({
     }
     conversationBody = `${conversationBody}<br />The data in the Analysis tab has been completely recalculated by Agora.`;
     let trimmedTitle = importedPolisConversation.conversation_data.topic;
-    if (
-        importedPolisConversation.conversation_data.topic.length >
-        MAX_LENGTH_TITLE
-    ) {
+    // Handle empty topic from Polis - provide a fallback title
+    if (trimmedTitle.trim().length === 0) {
+        trimmedTitle = "[No title] Imported conversation";
+    } else if (trimmedTitle.length > MAX_LENGTH_TITLE) {
         const ellipsis = " [...]";
         trimmedTitle = trimmedTitle.slice(
             0,
@@ -168,7 +168,7 @@ export async function loadImportedPolisConversation({
             importCreatedAt: importCreatedAt,
             importAuthor: toUnionUndefined(ownername),
             importMethod: importConfig.method,
-            isImporting: importConfig.method === "csv", // CSV imports are async, hide until complete
+            isImporting: true,
         });
     try {
         const {
@@ -237,17 +237,15 @@ export async function loadImportedPolisConversation({
                 },
             });
         // Mark import as complete - conversation is now visible in feed
-        if (importConfig.method === "csv") {
-            await db
-                .update(conversationTable)
-                .set({ isImporting: false })
-                .where(eq(conversationTable.id, conversationId));
-        }
+        await db
+            .update(conversationTable)
+            .set({ isImporting: false })
+            .where(eq(conversationTable.id, conversationId));
         return { conversationSlugId, conversationId, conversationContentId };
     } catch (e) {
         // TODO: make incremental transactions, implement batch mechanisms to allow for resuming importing that failed midway
         log.warn(
-            "Error while updating imported conversations, marking the incomplete imported conversation as deleted",
+            "Error while updating imported conversations, marking the incomplete imported conversation as deleted and soft-deleting imported users",
         );
         await postService.deletePostBySlugId({
             proof: proof,
@@ -255,6 +253,11 @@ export async function loadImportedPolisConversation({
             didWrite: didWrite,
             conversationSlugId: conversationSlugId,
             userId: authorId,
+        });
+        // Soft-delete all imported users created for this conversation
+        await userService.softDeleteImportedUsersForConversation({
+            db: db,
+            conversationId: conversationId,
         });
         throw e;
     }

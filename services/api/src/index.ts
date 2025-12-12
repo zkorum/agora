@@ -229,6 +229,7 @@ if (config.NOSTR_PROOF_CHANNEL_EVENT_ID !== undefined) {
 }
 
 const mustSendActualSms = config.NODE_ENV === "production";
+const isImportDisabled = config.IMPORT_BUFFER_MAX_BATCH_SIZE === 0;
 let twilioClient: twilio.Twilio | undefined;
 if (mustSendActualSms) {
     if (
@@ -408,11 +409,13 @@ const importBuffer = createImportBuffer({
     valkey,
     notificationSSEManager,
     voteBuffer,
-    flushIntervalMs: 1000,
-    maxBatchSize: 5,
+    axiosPolis,
+    flushIntervalMs: config.IMPORT_BUFFER_FLUSH_INTERVAL_MS,
+    maxBatchSize: config.IMPORT_BUFFER_MAX_BATCH_SIZE,
+    maxConcurrency: config.IMPORT_BUFFER_MAX_CONCURRENCY,
 });
 log.info(
-    `[API] Import buffer initialized (flush interval: 1s, max batch: 5, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
+    `[API] Import buffer initialized (flush interval: ${String(config.IMPORT_BUFFER_FLUSH_INTERVAL_MS)}ms, max batch: ${String(config.IMPORT_BUFFER_MAX_BATCH_SIZE)}, max concurrency: ${String(config.IMPORT_BUFFER_MAX_CONCURRENCY)}, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
 // Cleanup stuck imports/exports from previous server session
@@ -1788,6 +1791,13 @@ server.after(() => {
             },
         },
         handler: async (request) => {
+            // Check if imports are disabled
+            if (isImportDisabled) {
+                throw server.httpErrors.forbidden(
+                    "Imports are currently disabled",
+                );
+            }
+
             const { didWrite, encodedUcan, deviceStatus } =
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: {
@@ -1805,20 +1815,57 @@ server.after(() => {
                 );
             }
 
-            return await postService.importConversation({
-                db: db,
-                voteBuffer: voteBuffer,
-                authorId: deviceStatus.userId,
-                didWrite: didWrite,
-                proof: encodedUcan,
+            // Validate organization restriction for imports
+            authUtilService.validateOrgImportRestriction(
+                request.body.postAsOrganization,
+                config.IS_ORG_IMPORT_ONLY,
+            );
+
+            // Verify organization membership if specified
+            if (
+                request.body.postAsOrganization !== undefined &&
+                request.body.postAsOrganization !== ""
+            ) {
+                const organizationId =
+                    await authUtilService.isUserPartOfOrganization({
+                        db,
+                        organizationName: request.body.postAsOrganization,
+                        userId: deviceStatus.userId,
+                    });
+                if (organizationId === undefined) {
+                    throw server.httpErrors.forbidden(
+                        `User '${deviceStatus.userId}' is not part of the organization: '${request.body.postAsOrganization}'`,
+                    );
+                }
+            }
+
+            // Validate public conversation access requirements
+            if (
+                request.body.isIndexed &&
+                !request.body.isLoginRequired &&
+                !request.body.requiresEventTicket
+            ) {
+                throw server.httpErrors.forbidden(
+                    "Public conversations must either require login or event ticket verification",
+                );
+            }
+
+            // Queue URL import for async processing
+            return await conversationImportService.requestUrlImport({
+                db,
+                userId: deviceStatus.userId,
                 polisUrl: request.body.polisUrl,
-                axiosPolis: axiosPolis,
-                indexConversationAt: request.body.indexConversationAt,
-                postAsOrganization: request.body.postAsOrganization,
-                isIndexed: request.body.isIndexed,
-                isLoginRequired: request.body.isLoginRequired,
-                requiresEventTicket: request.body.requiresEventTicket,
-                isOrgImportOnly: config.IS_ORG_IMPORT_ONLY,
+                formData: {
+                    postAsOrganization: request.body.postAsOrganization,
+                    indexConversationAt: request.body.indexConversationAt,
+                    isLoginRequired: request.body.isLoginRequired,
+                    isIndexed: request.body.isIndexed,
+                    requiresEventTicket: request.body.requiresEventTicket,
+                },
+                proof: encodedUcan,
+                didWrite,
+                importBuffer,
+                notificationSSEManager,
             });
         },
     });
@@ -1880,6 +1927,13 @@ server.after(() => {
             },
         },
         handler: async (request, reply) => {
+            // Check if imports are disabled
+            if (isImportDisabled) {
+                throw server.httpErrors.forbidden(
+                    "Imports are currently disabled",
+                );
+            }
+
             const { didWrite, encodedUcan, deviceStatus } =
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: {
@@ -1946,6 +2000,17 @@ server.after(() => {
                         `User '${deviceStatus.userId}' is not part of the organization: '${parsedFields.postAsOrganization}'`,
                     );
                 }
+            }
+
+            // Validate public conversation access requirements
+            if (
+                parsedFields.isIndexed &&
+                !parsedFields.isLoginRequired &&
+                !parsedFields.requiresEventTicket
+            ) {
+                throw server.httpErrors.forbidden(
+                    "Public conversations must either require login or event ticket verification",
+                );
             }
 
             // Request CSV import (creates record and queues for async processing)
