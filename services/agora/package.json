@@ -60,7 +60,7 @@
     "multiformats": "^13.4.1",
     "pinia": "^3.0.2",
     "primeicons": "^7.0.0",
-    "primevue": "^4.3.9",
+    "primevue": "^4.5.3",
     "qrcode": "^1",
     "quasar": "^2.18.5",
     "sanitize-html": "^2.16.0",
