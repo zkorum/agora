@@ -360,4 +360,8 @@ async function validateNumber(): Promise<boolean> {
   font-size: 1rem;
   color: #dc2626;
 }
+
+:deep(.m-phone-number-input) {
+  row-gap: 1rem;
+}
 </style>
