@@ -2,18 +2,23 @@
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
 
-import { defineConfig } from "#q-app/wrappers";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { visualizer } from "rollup-plugin-visualizer";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
 import type { Plugin } from "vite";
-import { validateEnv, envSchema } from "./src/utils/processEnv";
+
+import { defineConfig } from "#q-app/wrappers";
+
+import { envSchema, validateEnv } from "./src/utils/processEnv";
 
 // TODO: add env var to use TLS/SSL
 // import basicSsl from "@vitejs/plugin-basic-ssl";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+import basicSsl from "@vitejs/plugin-basic-ssl";
 
 export default defineConfig((ctx) => {
   // Build the boot files array
@@ -271,7 +276,7 @@ export default defineConfig((ctx) => {
             // Note: config.env only contains VITE_* vars, so we use process.env
             validateEnv(process.env);
           },
-        } as Plugin,
+        } satisfies Plugin,
         [
           "vite-plugin-checker",
           {

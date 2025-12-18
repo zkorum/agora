@@ -55,6 +55,13 @@ export default defineConfigWithVueTs(
         "error",
         { prefer: "type-imports" },
       ],
+      "@typescript-eslint/consistent-type-assertions": [
+        "error",
+        {
+          assertionStyle: "as",
+          objectLiteralTypeAssertions: "never",
+        },
+      ],
     },
   },
   // https://github.com/vuejs/eslint-config-typescript

@@ -9,7 +9,7 @@ import type { TranslationSchema } from "./types";
 import zh_Hans from "./zh-Hans";
 import zh_Hant from "./zh-Hant";
 
-export default {
+const translations: Record<SupportedDisplayLanguageCodes, TranslationSchema> = {
   en: en,
   es: es,
   fr: fr,
@@ -17,4 +17,6 @@ export default {
   "zh-Hant": zh_Hant,
   ja: ja,
   ar: ar,
-} as Record<SupportedDisplayLanguageCodes, TranslationSchema>;
+};
+
+export default translations;

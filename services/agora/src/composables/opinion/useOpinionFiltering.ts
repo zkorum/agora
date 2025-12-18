@@ -1,7 +1,7 @@
 import type { UseQueryReturnType } from "@tanstack/vue-query";
 import type { OpinionItem } from "src/shared/types/zod";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
-import { computed, type ComputedRef,type Ref, ref } from "vue";
+import { computed, type ComputedRef, type Ref, ref } from "vue";
 
 export interface UseOpinionFilteringParams {
   preloadedQueries: {
@@ -55,16 +55,16 @@ export function useOpinionFiltering({
 
   // Computed data from TanStack Query
   const opinionsNew = computed(
-    (): OpinionItem[] => commentsNewQuery.data.value || []
+    (): OpinionItem[] => commentsNewQuery.data.value ?? []
   );
   const opinionsDiscover = computed(
-    (): OpinionItem[] => commentsDiscoverQuery.data.value || []
+    (): OpinionItem[] => commentsDiscoverQuery.data.value ?? []
   );
   const opinionsModerated = computed(
-    (): OpinionItem[] => commentsModeratedQuery.data.value || []
+    (): OpinionItem[] => commentsModeratedQuery.data.value ?? []
   );
   const opinionsHidden = computed(
-    (): OpinionItem[] => hiddenCommentsQuery.data.value || []
+    (): OpinionItem[] => hiddenCommentsQuery.data.value ?? []
   );
 
   // Computed data source based on current filter
