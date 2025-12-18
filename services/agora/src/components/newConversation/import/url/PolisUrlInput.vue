@@ -1,6 +1,6 @@
 <template>
   <div>
-    <ZKCard :padding="'2rem'" class="cardStyle">
+    <ZKCard padding="2rem" class="cardStyle">
       <div class="content-container">
         <div class="header">
           <i class="pi pi-link icon" />
@@ -14,16 +14,16 @@
           <div class="examples">
             <p class="examples-title">{{ t("validUrlExamples") }}</p>
             <ul class="examples-list">
-              <li><code>{{ "https://pol.is/report/<report_id>" }}</code></li>
-              <li><code>{{ "https://pol.is/<conversation_id>"}}</code></li>
+              <li><code>https://pol.is/report/&lt;report_id&gt;</code></li>
+              <li><code>https://pol.is/&lt;conversation_id&gt;</code></li>
               <li>
                 <code
-                >{{ "https://polis.deepgov.org/conversation/report/<report_id>"}}</code
+                  >https://polis.deepgov.org/conversation/report/&lt;report_id&gt;</code
                 >
               </li>
               <li>
                 <code
-                >{{"https://polis.deepgov.org/conversation/<conversation_id>"}}</code
+                  >https://polis.deepgov.org/conversation/&lt;conversation_id&gt;</code
                 >
               </li>
             </ul>
@@ -41,7 +41,8 @@
             >
             </q-input>
             <div class="legal-notice">
-              <i18n-t keypath="importConversation.legalNotice" tag="p"> <!-- TODO: move to 't' and v-html. This is loaded from global i18n -->
+              <i18n-t keypath="importConversation.legalNotice" tag="p">
+                <!-- TODO: move to 't' and v-html. This is loaded from global i18n -->
                 <!-- Polis Terms link -->
                 <template #polisTerms>
                   <a
@@ -50,14 +51,17 @@
                     rel="noopener noreferrer"
                     class="terms-link"
                   >
-                    {{ t('polisTerms') }} <q-icon name="mdi-open-in-new" />
+                    {{ t("polisTerms") }} <q-icon name="mdi-open-in-new" />
                   </a>
                 </template>
 
                 <!-- Local Terms of Use link -->
                 <template #termsOfUse>
-                  <RouterLink :to="{ name: '/legal/terms/' }" class="terms-link">
-                    {{ t('termsOfUse') }}
+                  <RouterLink
+                    :to="{ name: '/legal/terms/' }"
+                    class="terms-link"
+                  >
+                    {{ t("termsOfUse") }}
                   </RouterLink>
                 </template>
 
@@ -69,7 +73,7 @@
                     rel="noopener noreferrer"
                     class="terms-link"
                   >
-                    {{ t('ccLicense') }} <q-icon name="mdi-open-in-new" />
+                    {{ t("ccLicense") }} <q-icon name="mdi-open-in-new" />
                   </a>
                 </template>
               </i18n-t>

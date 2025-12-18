@@ -48,7 +48,7 @@
           size="50px"
           color="primary"
         />
-        <q-icon v-else :name="'hourglass_empty'" size="50px" color="primary" />
+        <q-icon v-else name="hourglass_empty" size="50px" color="primary" />
         <div class="stateText">
           {{ config.retrying?.text || config.loading?.text || t("loading") }}
         </div>
@@ -66,7 +66,7 @@
           size="50px"
           color="primary"
         />
-        <q-icon v-else :name="'hourglass_empty'" size="50px" color="primary" />
+        <q-icon v-else name="hourglass_empty" size="50px" color="primary" />
         <div class="stateText">
           {{ config.loading?.text || t("loading") }}
         </div>

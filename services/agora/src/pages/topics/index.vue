@@ -33,7 +33,7 @@
           "
           :variant="followedTopicCodeSet.has(topic.code) ? '' : 'outlined'"
           :is-following="followedTopicCodeSet.has(topic.code)"
-          :icon="''"
+          icon=""
           @click="
             clickedFollowButton(
               topic.code,
@@ -47,7 +47,7 @@
     <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="() => {}"
-      :active-intention="'none'"
+      active-intention="none"
     />
   </DrawerLayout>
 </template>

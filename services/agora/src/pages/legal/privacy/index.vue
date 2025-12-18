@@ -19,8 +19,8 @@
         Agora Citizen Network is developed by
         <a
           href="https://www.societe.com/societe/zkorum-984736173.html"
-          target="_blank"
-          rel="noopener"
+          target="_blank" 
+          rel="noopener noreferrer"
           >ZKorum SAS</a
         >. At ZKorum, we believe that privacy is a fundamental right. Our
         mission is to empower users to engage in political and social discourse
@@ -67,7 +67,7 @@
           <li>
             <strong>Soft login (session-based verification):</strong> Verify
             using
-            <a href="https://zupass.org" target="_blank" rel="noopener"
+            <a href="https://zupass.org" target="_blank"  rel="noopener noreferrer"
               >Zupass</a
             >
             for event ticket verification using Group Proof of Credentials
@@ -88,8 +88,8 @@
               <li>
                 <a
                   href="https://rarimo.com/privacy-notice.html"
-                  target="_blank"
-                  rel="noopener"
+                  target="_blank" 
+                  rel="noopener noreferrer"
                   >Rarimo</a
                 >: Passport-based Zero-Knowledge Proof (ZKP) verification
               </li>
@@ -169,15 +169,15 @@
           <li>
             <a
               href="https://rarimo.com/privacy-notice.html"
-              target="_blank"
-              rel="noopener"
+              target="_blank" 
+              rel="noopener noreferrer"
               >Rarimo</a
             >
             (global) for zero-knowledge identity proofs. May process IP
             addresses for security and service operations.
           </li>
           <li>
-            <a href="https://zupass.org" target="_blank" rel="noopener"
+            <a href="https://zupass.org" target="_blank"  rel="noopener noreferrer"
               >Zupass</a
             >
             (global, open-source) for event ticket and identity verification
@@ -188,8 +188,8 @@
           <li>
             <a
               href="https://www.twilio.com/en-us/legal/privacy"
-              target="_blank"
-              rel="noopener"
+              target="_blank" 
+              rel="noopener noreferrer"
               >Twilio</a
             >
             (global) for phone number verification. Twilio stores phone numbers
@@ -201,8 +201,8 @@
           <li>
             <a
               href="https://www.cloudflare.com/privacypolicy/"
-              target="_blank"
-              rel="noopener"
+              target="_blank" 
+              rel="noopener noreferrer"
               >Cloudflare</a
             >
             (global) for DDoS protection and security. Processes IP addresses.
@@ -210,8 +210,8 @@
           <li>
             <a
               href="https://aws.amazon.com/privacy/"
-              target="_blank"
-              rel="noopener"
+              target="_blank" 
+              rel="noopener noreferrer"
               >Amazon Web Services</a
             >
             (EU: Dublin and Paris) for hosting infrastructure, data storage, and
@@ -221,8 +221,8 @@
           <li>
             <a
               href="https://cloud.google.com/terms/cloud-privacy-notice"
-              target="_blank"
-              rel="noopener"
+              target="_blank" 
+              rel="noopener noreferrer"
               >Google Cloud Platform</a
             >
             (U.S. based, us-central1 region) for AI-powered translation of user
@@ -232,8 +232,8 @@
           <li>
             <a
               href="https://plausible.io/data-policy"
-              target="_blank"
-              rel="noopener"
+              target="_blank" 
+              rel="noopener noreferrer"
               >Plausible Analytics</a
             >
             (EU-based) for privacy-friendly web analytics. Temporarily processes
@@ -241,7 +241,7 @@
             data policy for details).
           </li>
           <li>
-            <a href="https://sentry.io/privacy/" target="_blank" rel="noopener"
+            <a href="https://sentry.io/privacy/" target="_blank"  rel="noopener noreferrer"
               >Sentry</a
             >
             (EU servers) for error tracking and crash reporting. Processes IP
@@ -261,7 +261,7 @@
           with third parties. For analytics purposes, Agora uses Plausible
           Analytics, an EU-based solution that does not employ cookies. For more
           details, visit
-          <a href="https://plausible.io/about" target="_blank" rel="noopener"
+          <a href="https://plausible.io/about" target="_blank"  rel="noopener noreferrer"
             >Plausible Analytics</a
           >.
         </p>
@@ -649,8 +649,8 @@
               >Use of
               <a
                 href="https://sentry.io/privacy/"
-                target="_blank"
-                rel="noopener"
+                target="_blank" 
+                rel="noopener noreferrer"
                 >Sentry.io</a
               >
               for anonymized crash reports:</strong
@@ -774,7 +774,7 @@
           </li>
           <li>
             <strong>Twilio:</strong> Phone verification records are retained according to
-            <a href="https://www.twilio.com/en-us/legal/privacy" target="_blank" rel="noopener">Twilio's privacy policy</a>
+            <a href="https://www.twilio.com/en-us/legal/privacy" target="_blank"  rel="noopener noreferrer">TEMP_MARKERTwilio's privacy policy</a>
           </li>
           <li>
             <strong>Third-party services:</strong> Logs and data in Sentry, Cloudflare, AWS, and Google Cloud may be retained according to their respective privacy policies
@@ -793,8 +793,8 @@
           competent data protection authority, i.e. the French Commission
           nationale de l'informatique et des libertés (<a
             href="http://www.cnil.fr/"
-            target="_blank"
-            rel="noopener"
+            target="_blank" 
+            rel="noopener noreferrer"
             >www.cnil.fr</a
           >).
         </p>

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <ZKCard :padding="'2rem'" class="card-style">
+    <ZKCard padding="2rem" class="card-style">
       <div class="content-container">
         <!-- Header -->
         <div class="header">
@@ -60,7 +60,7 @@
     <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="() => {}"
-      :active-intention="'newConversation'"
+      active-intention="newConversation"
     />
   </div>
 </template>
@@ -76,7 +76,7 @@ import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useBackendPostApi } from "src/utils/api/post/post";
 import { ref, watch } from "vue";
 
-import { type CsvFileState,useCsvFile } from "./composables/useCsvFile";
+import { type CsvFileState, useCsvFile } from "./composables/useCsvFile";
 import CsvDropZone from "./CsvDropZone.vue";
 import {
   type PolisCsvUploadTranslations,

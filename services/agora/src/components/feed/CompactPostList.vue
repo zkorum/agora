@@ -79,7 +79,7 @@
       @click="refreshPage(() => {})"
     >
       <ZKButton
-        :button-type="'standardButton'"
+        button-type="standardButton"
         rounded
         color="primary"
         no-caps

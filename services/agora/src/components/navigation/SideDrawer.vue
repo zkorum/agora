@@ -38,7 +38,7 @@
               "
             >
               <ZKHoverEffect
-                :enable-hover="true"
+                enable-hover
                 hover-background-color="#f3f4f6"
                 border-radius="15px"
               >
@@ -85,7 +85,7 @@
     <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="() => {}"
-      :active-intention="'none'"
+      active-intention="none"
     />
   </div>
 </template>

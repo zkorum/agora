@@ -3,7 +3,7 @@
     <div class="container">
       <div class="title">
         <div v-if="showStarInTitle" :style="{ paddingTop: '0.2rem' }">
-          <StaticIcon :src="'/images/icons/stars.svg'" :size="'1rem'" />
+          <StaticIcon src="/images/icons/stars.svg" size="1rem" />
         </div>
         <div>
           {{ props.title }}

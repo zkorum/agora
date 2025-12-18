@@ -133,7 +133,7 @@ import {
 } from "src/utils/language";
 import { useNotify } from "src/utils/ui/notify";
 import type { ComputedRef } from "vue";
-import { computed, nextTick,onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 
 import {
   type SpokenLanguageSelectorTranslations,
@@ -141,8 +141,8 @@ import {
 } from "./SpokenLanguageSelector.i18n";
 
 const emit = defineEmits<{
-  "language-added": [languageCode: SupportedSpokenLanguageCodes];
-  "language-removed": [languageCode: SupportedSpokenLanguageCodes];
+  languageAdded: [languageCode: SupportedSpokenLanguageCodes];
+  languageRemoved: [languageCode: SupportedSpokenLanguageCodes];
   next: [];
 }>();
 
@@ -220,7 +220,7 @@ async function addLanguage(
 
   const newLanguages = [...spokenLanguages.value, languageCode];
   await saveLanguageChanges(newLanguages);
-  emit("language-added", languageCode);
+  emit("languageAdded", languageCode);
 
   // Scroll to the selected languages section after adding
   await scrollToSelectedLanguages();
@@ -244,7 +244,7 @@ async function removeLanguage(
     (code) => code !== languageCode
   );
   await saveLanguageChanges(newLanguages);
-  emit("language-removed", languageCode);
+  emit("languageRemoved", languageCode);
 }
 
 // Save language changes with proper error handling

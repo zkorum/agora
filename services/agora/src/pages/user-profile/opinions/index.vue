@@ -48,7 +48,7 @@
                 :created-at="commentItem.opinionItem.createdAt"
                 :user-identity="commentItem.opinionItem.username"
                 :show-verified-text="false"
-                :organization-image-url="''"
+                organization-image-url=""
               />
 
               <div>

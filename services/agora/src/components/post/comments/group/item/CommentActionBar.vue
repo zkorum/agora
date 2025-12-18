@@ -41,7 +41,7 @@
     <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
-      :active-intention="'agreement'"
+      active-intention="agreement"
       :requires-zupass-event-slug="props.requiresEventTicket"
       :login-required-to-participate="props.loginRequiredToParticipate"
     />

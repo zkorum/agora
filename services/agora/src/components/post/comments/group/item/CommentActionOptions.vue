@@ -15,7 +15,7 @@
     <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginConfirmationOk"
-      :active-intention="'reportUserContent'"
+      active-intention="reportUserContent"
     />
   </div>
 

@@ -18,7 +18,7 @@
             :created-at="opinionItem.createdAt"
             :user-identity="opinionItem.username"
             :show-verified-text="false"
-            :organization-image-url="''"
+            organization-image-url=""
             :is-seed="opinionItem.isSeed"
           />
 

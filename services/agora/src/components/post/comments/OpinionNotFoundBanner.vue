@@ -4,7 +4,7 @@
     padding="1rem"
     class="opinion-not-found-banner"
     role="alert"
-    :aria-live="'polite'"
+    aria-live="polite"
   >
     <div class="banner-container">
       <div class="banner-main-content">

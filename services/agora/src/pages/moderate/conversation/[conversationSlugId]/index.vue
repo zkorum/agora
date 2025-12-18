@@ -9,7 +9,7 @@
     }"
   >
     <template #header>
-      <StandardMenuBar :title="''" :center-content="false" />
+      <StandardMenuBar title="" :center-content="false" />
     </template>
 
     <div class="container">

@@ -65,7 +65,7 @@
     <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
-      :active-intention="'voting'"
+      active-intention="voting"
       :requires-zupass-event-slug="props.requiresEventTicket"
       :login-required-to-participate="props.loginRequiredToParticipate"
     />

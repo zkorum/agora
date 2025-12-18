@@ -49,8 +49,8 @@
             register via
             <a
               href="https://rarimo.com/general-terms.html"
-              target="_blank"
-              rel="noopener"
+              target="_blank" 
+              rel="noopener noreferrer"
               >Rarimo</a
             >
             if you're not 18 years or older.

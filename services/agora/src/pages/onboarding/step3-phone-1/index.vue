@@ -15,7 +15,7 @@
           <template #header>
             <InfoHeader
               :title="t('pageTitle')"
-              :description="''"
+              description=""
               icon-name="mdi-phone"
             />
           </template>

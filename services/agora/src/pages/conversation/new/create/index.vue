@@ -129,7 +129,7 @@
     <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
-      :active-intention="'newConversation'"
+      active-intention="newConversation"
     />
   </NewConversationLayout>
 </template>

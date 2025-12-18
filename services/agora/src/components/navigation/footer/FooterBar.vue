@@ -52,7 +52,7 @@
     <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="() => {}"
-      :active-intention="'none'"
+      active-intention="none"
     />
   </div>
 </template>

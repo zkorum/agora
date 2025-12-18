@@ -13,15 +13,15 @@
     </template>
 
     <div class="container">
-      <ZKCard :padding="'1rem'" class="cardBackground">
+      <ZKCard padding="1rem" class="cardBackground">
         <CreateOrganizationForm />
       </ZKCard>
 
-      <ZKCard :padding="'1rem'" class="cardBackground">
+      <ZKCard padding="1rem" class="cardBackground">
         <DeleteOrganizationForm />
       </ZKCard>
 
-      <ZKCard :padding="'1rem'" class="cardBackground">
+      <ZKCard padding="1rem" class="cardBackground">
         <UserOrganizationMappings />
       </ZKCard>
     </div>

@@ -164,6 +164,30 @@ export default defineConfigWithVueTs(
 
       // Catch unused slot bindings
       "vue/no-unused-vars": "error",
+
+      // Enforce script setup API style (Composition API)
+      "vue/component-api-style": ["error", ["script-setup"]],
+
+      // Enforce camelCase for custom events
+      "vue/custom-event-name-casing": ["error", "camelCase"],
+
+      // Prevent required props with defaults (logical error)
+      "vue/no-required-prop-with-default": "error",
+
+      // Security: require rel attribute on target="_blank"
+      "vue/no-template-target-blank": [
+        "error",
+        {
+          allowReferrer: false,
+          enforceDynamicLinks: "always",
+        },
+      ],
+
+      // Code quality: remove useless mustaches
+      "vue/no-useless-mustaches": "error",
+
+      // Code quality: remove useless v-bind
+      "vue/no-useless-v-bind": "error",
     },
   },
 

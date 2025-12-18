@@ -28,7 +28,7 @@
               :user-identity="profileData.userName"
               :show-is-guest="isGuest"
               :show-verified-text="true"
-              :user-type="'normal'"
+              user-type="normal"
             />
           </div>
         </div>

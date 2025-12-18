@@ -1,6 +1,6 @@
 <template>
   <div v-if="isSeed" class="seed-identity-container">
-    <UserAvatar :user-identity="'seed'" :size="36" />
+    <UserAvatar user-identity="seed" :size="36" />
     <div class="seed-label">{{ t("seedOpinion") }}</div>
   </div>
   <UserIdentityCard

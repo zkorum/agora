@@ -9,7 +9,7 @@
 
       <OrganizationImage
         v-if="organizationImageUrl != ''"
-        :height="'36px'"
+        height="36px"
         :organization-image-url="organizationImageUrl"
         :organization-name="userIdentity"
       />

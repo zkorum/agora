@@ -8,7 +8,7 @@
           :created-at="commentItem.createdAt"
           :user-identity="commentItem.username"
           :show-verified-text="false"
-          :organization-image-url="''"
+          organization-image-url=""
           :is-seed="commentItem.isSeed"
         />
 

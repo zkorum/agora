@@ -75,7 +75,7 @@
             v-if="isAutomaticRedirectPossible"
             :label="t('retryRedirect')"
             severity="primary"
-            :icon="'pi pi-external-link'"
+            icon="pi pi-external-link"
             class="full-width"
             size="small"
             @click="retryAndroidRedirect"
