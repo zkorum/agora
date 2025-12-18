@@ -175,6 +175,22 @@ export default defineConfigWithVueTs(
       // Enforce script setup API style (Composition API)
       "vue/component-api-style": ["error", ["script-setup"]],
 
+      // Require consistent macro variable naming
+      "vue/require-macro-variable-name": [
+        "error",
+        {
+          defineProps: "props",
+          defineEmits: "emit",
+          defineSlots: "slots",
+        },
+      ],
+
+      // Require all emits to be explicitly declared
+      "vue/require-explicit-emits": "error",
+
+      // Add padding lines between blocks for readability
+      "vue/padding-line-between-blocks": ["error", "always"],
+
       // Enforce camelCase for custom events
       "vue/custom-event-name-casing": ["error", "camelCase"],
 
