@@ -93,7 +93,7 @@ export default defineConfig((ctx) => {
       vueRouterMode: "history", // available values: 'hash', 'history'
       // vueRouterBase: "/feed/",
       // vueDevtools,
-      vueOptionsAPI: false,
+      vueOptionsAPI: true,
 
       // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
 

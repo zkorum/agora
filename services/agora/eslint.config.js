@@ -75,7 +75,6 @@ export default defineConfigWithVueTs(
       ecmaVersion: "latest",
       sourceType: "module",
       parserOptions: {
-        project: "./tsconfig.json",
         extraFileExtensions: [".vue"],
       },
 
