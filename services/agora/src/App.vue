@@ -9,7 +9,6 @@
 </template>
 
 <script setup lang="ts">
-import * as swiperElement from "swiper/element/bundle";
 import { onMounted } from "vue";
 
 import EmbeddedBrowserWarningDialog from "./components/embeddedBrowser/EmbeddedBrowserWarningDialog.vue";
@@ -18,8 +17,6 @@ import { useNotificationSSE } from "./composables/useNotificationSSE";
 import { useZupassVerification } from "./composables/zupass/useZupassVerification";
 import { useBackendAuthApi } from "./utils/api/auth";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
-
-swiperElement.register();
 
 const authenticationStore = useBackendAuthApi();
 

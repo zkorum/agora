@@ -197,10 +197,7 @@ export default defineConfig((ctx) => {
           }
 
           // UI utilities
-          if (
-            id.includes("node_modules/@dicebear/") ||
-            id.includes("node_modules/swiper/")
-          ) {
+          if (id.includes("node_modules/@dicebear/")) {
             return "ui-utils";
           }
 
@@ -258,13 +255,7 @@ export default defineConfig((ctx) => {
       // polyfillModulePreload: true,
       // distDir
 
-      viteVuePluginOptions: {
-        template: {
-          compilerOptions: {
-            isCustomElement: (tag) => tag.startsWith("swiper-"),
-          },
-        },
-      },
+      viteVuePluginOptions: {},
 
       vitePlugins: [
         // Custom plugin to validate environment variables at build time
