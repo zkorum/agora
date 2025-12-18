@@ -1,8 +1,9 @@
 import { defineStore, storeToRefs } from "pinia";
-import { ref, watch } from "vue";
-import { useBackendPostApi } from "src/utils/api/post/post";
-import { useAuthenticationStore } from "./authentication";
 import type { ExtendedConversation } from "src/shared/types/zod";
+import { useBackendPostApi } from "src/utils/api/post/post";
+import { ref, watch } from "vue";
+
+import { useAuthenticationStore } from "./authentication";
 import { useUserStore } from "./user";
 
 // Constants for timing and pagination

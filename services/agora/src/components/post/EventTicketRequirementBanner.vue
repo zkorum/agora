@@ -26,18 +26,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import type { EventSlug } from "src/shared/types/zod";
-import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
-import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  eventTicketRequirementBannerTranslations,
-  type EventTicketRequirementBannerTranslations,
-} from "./EventTicketRequirementBanner.i18n";
+import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
+import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
+import type { EventSlug } from "src/shared/types/zod";
 import { getZupassEventConfig } from "src/shared/zupass/eventConfig";
 import { useUserStore } from "src/stores/user";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { computed } from "vue";
+
+import {
+  type EventTicketRequirementBannerTranslations,
+  eventTicketRequirementBannerTranslations,
+} from "./EventTicketRequirementBanner.i18n";
 
 const props = defineProps<{
   requiresEventTicket?: EventSlug;

@@ -105,34 +105,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, type ComponentPublicInstance, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { storeToRefs } from "pinia";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import ConversationTitleWithPrivacyLabel from "src/components/features/conversation/ConversationTitleWithPrivacyLabel.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
+import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
-import { useBackendPostApi } from "src/utils/api/post/post";
-import { useHomeFeedStore } from "src/stores/homeFeed";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { storeToRefs } from "pinia";
-import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
-import { useLoginIntentionStore } from "src/stores/loginIntention";
-import { useCommonApi } from "src/utils/api/common";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
-import ConversationTitleWithPrivacyLabel from "src/components/features/conversation/ConversationTitleWithPrivacyLabel.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  conversationReviewTranslations,
-  type ConversationReviewTranslations,
-} from "./index.i18n";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useHomeFeedStore } from "src/stores/homeFeed";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNavigationStore } from "src/stores/navigation";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import { useCommonApi } from "src/utils/api/common";
+import { useBackendPostApi } from "src/utils/api/post/post";
+import { type ComponentPublicInstance, onMounted,ref } from "vue";
+import { useRouter } from "vue-router";
+
+import {
+  type ConversationReviewTranslations,
+  conversationReviewTranslations,
+} from "./index.i18n";
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const router = useRouter();

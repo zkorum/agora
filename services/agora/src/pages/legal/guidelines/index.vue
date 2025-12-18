@@ -131,12 +131,13 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
+
 import {
-  guidelinesTranslations,
   type GuidelinesTranslations,
+  guidelinesTranslations,
 } from "./index.i18n";
 
 const { t } = useComponentI18n<GuidelinesTranslations>(

@@ -16,12 +16,12 @@ interface Props {
   disabled?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  disabled: false,
-});
-
 defineOptions({
   inheritAttrs: false,
+});
+
+const props = withDefaults(defineProps<Props>(), {
+  disabled: false,
 });
 
 const emit = defineEmits<{

@@ -20,13 +20,14 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { ref } from "vue";
+
 import {
-  createOrganizationFormTranslations,
   type CreateOrganizationFormTranslations,
+  createOrganizationFormTranslations,
 } from "./CreateOrganizationForm.i18n";
 
 const { t } = useComponentI18n<CreateOrganizationFormTranslations>(

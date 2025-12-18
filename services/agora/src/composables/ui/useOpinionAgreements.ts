@@ -1,5 +1,5 @@
-import { type Ref } from "vue";
 import type { OpinionItem, VotingOption } from "src/shared/types/zod";
+import { type Ref } from "vue";
 
 export interface OpinionAgreementSnapshot {
   opinionSlugId: string;

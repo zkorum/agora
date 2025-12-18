@@ -58,27 +58,28 @@
 </template>
 
 <script setup lang="ts">
-import { useBackendModerateApi } from "src/utils/api/moderation";
-import { useRoute, useRouter } from "vue-router";
-import { onMounted, ref } from "vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type {
-  OpinionModerationAction,
   ModerationReason,
   OpinionItem,
+  OpinionModerationAction,
 } from "src/shared/types/zod";
-import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
-import {
-  opinionModerationActionMapping,
-  moderationReasonMapping,
-} from "src/utils/component/moderations";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
-import { StandardMenuBar } from "src/components/navigation/header/variants";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useBackendModerateApi } from "src/utils/api/moderation";
 import {
-  opinionModerationTranslations,
+  moderationReasonMapping,
+  opinionModerationActionMapping,
+} from "src/utils/component/moderations";
+import { onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+
+import {
   type OpinionModerationTranslations,
+  opinionModerationTranslations,
 } from "./index.i18n";
 
 const {

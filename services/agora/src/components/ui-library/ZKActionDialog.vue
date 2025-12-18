@@ -34,9 +34,10 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from "vue";
-import ZKBottomDialogContainer from "./ZKBottomDialogContainer.vue";
 import type { ContentAction } from "src/utils/actions/core/types";
+import { watch } from "vue";
+
+import ZKBottomDialogContainer from "./ZKBottomDialogContainer.vue";
 
 interface Props {
   actions: ContentAction[];

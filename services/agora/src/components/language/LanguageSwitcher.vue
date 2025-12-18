@@ -14,8 +14,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import { useLanguageStore } from "src/stores/language";
+import { computed } from "vue";
 
 const languageStore = useLanguageStore();
 

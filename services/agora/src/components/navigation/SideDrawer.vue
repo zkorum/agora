@@ -92,25 +92,26 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNavigationStore } from "src/stores/navigation";
 import { useUserStore } from "src/stores/user";
+import { navigationIcons } from "src/utils/ui/navigationIcons";
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import type { RouteNamedMap } from "vue-router/auto-routes";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  sideDrawerTranslations,
-  type SideDrawerTranslations,
-} from "./SideDrawer.i18n";
-import { navigationIcons } from "src/utils/ui/navigationIcons";
+
 import UserAvatar from "../account/UserAvatar.vue";
 import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
+import DisplayUsername from "../features/user/DisplayUsername.vue";
+import StartConversationButtonLong from "../newConversation/StartConversationButtonLong.vue";
 import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import ZKStyledIcon from "../ui-library/ZKStyledIcon.vue";
-import StartConversationButtonLong from "../newConversation/StartConversationButtonLong.vue";
-import DisplayUsername from "../features/user/DisplayUsername.vue";
+import {
+  type SideDrawerTranslations,
+  sideDrawerTranslations,
+} from "./SideDrawer.i18n";
 
 const { isGuestOrLoggedIn, isGuest } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());

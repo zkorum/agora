@@ -67,27 +67,34 @@ import PreLoginIntentionDialog from "src/components/authentication/intention/Pre
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKEditor from "src/components/ui-library/ZKEditor.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
+import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
 import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
+import type { EventSlug } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useUserStore } from "src/stores/user";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
+import { useUserStore } from "src/stores/user";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
 import type { RouteLocationNormalized } from "vue-router";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
 import {
-  commentComposerTranslations,
   type CommentComposerTranslations,
+  commentComposerTranslations,
 } from "./CommentComposer.i18n";
-import type { EventSlug } from "src/shared/types/zod";
-import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
-import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
+
+const props = defineProps<{
+  postSlugId: string;
+  loginRequiredToParticipate: boolean;
+  requiresEventTicket?: EventSlug;
+}>();
 
 const emit = defineEmits<{
   submittedComment: [
@@ -100,12 +107,6 @@ const emit = defineEmits<{
   ticketVerified: [
     payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
   ];
-}>();
-
-const props = defineProps<{
-  postSlugId: string;
-  loginRequiredToParticipate: boolean;
-  requiresEventTicket?: EventSlug;
 }>();
 
 const dummyInput = ref<HTMLInputElement>();

@@ -1,6 +1,6 @@
-import { watch, type Ref, type ComputedRef } from "vue";
-import type { OpinionItem } from "src/shared/types/zod";
 import { useComputedPagination } from "src/composables/ui/useComputedPagination";
+import type { OpinionItem } from "src/shared/types/zod";
+import { type ComputedRef,type Ref, watch } from "vue";
 
 export interface UseOpinionPaginationParams {
   currentOpinionData: ComputedRef<OpinionItem[]>;

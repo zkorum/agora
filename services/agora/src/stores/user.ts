@@ -1,13 +1,13 @@
+import { defineStore } from "pinia";
+import type {
+  EventSlug,
+  ExtendedConversation,
+  ExtendedOpinion,
+  OrganizationProperties,
+} from "src/shared/types/zod";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useBackendUserApi } from "src/utils/api/user";
-import type {
-  ExtendedOpinion,
-  ExtendedConversation,
-  OrganizationProperties,
-  EventSlug,
-} from "src/shared/types/zod";
-import { defineStore } from "pinia";
-import { ref, computed, reactive } from "vue";
+import { computed, reactive,ref } from "vue";
 
 export const useUserStore = defineStore("user", () => {
   const { fetchUserProfile, fetchUserPosts, fetchUserComments } =

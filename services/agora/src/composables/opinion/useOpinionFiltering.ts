@@ -1,7 +1,7 @@
-import { computed, ref, type Ref, type ComputedRef } from "vue";
+import type { UseQueryReturnType } from "@tanstack/vue-query";
 import type { OpinionItem } from "src/shared/types/zod";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
-import type { UseQueryReturnType } from "@tanstack/vue-query";
+import { computed, type ComputedRef,type Ref, ref } from "vue";
 
 export interface UseOpinionFilteringParams {
   preloadedQueries: {

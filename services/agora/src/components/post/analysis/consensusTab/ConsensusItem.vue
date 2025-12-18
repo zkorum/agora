@@ -30,34 +30,28 @@
     v-model="showDialog"
     :conversation-slug-id="props.conversationSlugId"
     :opinion-item="props.opinionItem"
-    :vote-count="props.voteCount"
     :cluster-labels="props.clusterLabels"
   />
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import VoteCountVisualizer from "../common/VoteCountVisualizer.vue";
-import OpinionAnalysisDialog from "./OpinionAnalysisDialog.vue";
-import OpinionGridLayout from "../common/OpinionGridLayout.vue";
-import type {
-  AnalysisOpinionItem,
-  PolisClusters,
-  PolisKey,
-} from "src/shared/types/zod";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { AnalysisOpinionItem, PolisKey } from "src/shared/types/zod";
+import { computed, ref } from "vue";
+
+import OpinionGridLayout from "../common/OpinionGridLayout.vue";
+import VoteCountVisualizer from "../common/VoteCountVisualizer.vue";
 import {
-  consensusItemTranslations,
   type ConsensusItemTranslations,
+  consensusItemTranslations,
 } from "./ConsensusItem.i18n";
+import OpinionAnalysisDialog from "./OpinionAnalysisDialog.vue";
 
 const props = defineProps<{
   conversationSlugId: string;
   opinionItem: AnalysisOpinionItem;
   opinionItemForVisualizer: AnalysisOpinionItem;
-  voteCount: number;
-  polisClusters: Partial<PolisClusters>;
   clusterLabels: Partial<Record<PolisKey, string>>;
 }>();
 

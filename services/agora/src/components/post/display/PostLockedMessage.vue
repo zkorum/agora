@@ -40,27 +40,28 @@
 </template>
 
 <script setup lang="ts">
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ConversationModerationProperties } from "src/shared/types/zod";
+import { useUserStore } from "src/stores/user";
 import { moderationReasonMapping } from "src/utils/component/moderations";
 import { ref, watch } from "vue";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useRouter } from "vue-router";
-import { useUserStore } from "src/stores/user";
+
 import ModerationTime from "../common/moderation/ModerationTime.vue";
 import {
-  postLockedMessageTranslations,
   type PostLockedMessageTranslations,
+  postLockedMessageTranslations,
 } from "./PostLockedMessage.i18n";
-
-const { t } = useComponentI18n<PostLockedMessageTranslations>(
-  postLockedMessageTranslations
-);
 
 const props = defineProps<{
   moderationProperty: ConversationModerationProperties;
   postSlugId: string;
 }>();
+
+const { t } = useComponentI18n<PostLockedMessageTranslations>(
+  postLockedMessageTranslations
+);
 
 const moderationReasonName = ref("");
 

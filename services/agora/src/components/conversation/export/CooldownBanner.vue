@@ -7,14 +7,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRouter } from "vue-router";
 import { useNow } from "@vueuse/core";
 import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { computed } from "vue";
+import { useRouter } from "vue-router";
+
 import {
-  cooldownBannerTranslations,
   type CooldownBannerTranslations,
+  cooldownBannerTranslations,
 } from "./CooldownBanner.i18n";
 
 interface Props {

@@ -21,11 +21,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { computed,ref } from "vue";
+
 import {
-  settingsSearchInputTranslations,
   type SettingsSearchInputTranslations,
+  settingsSearchInputTranslations,
 } from "./SettingsSearchInput.i18n";
 
 interface Props {
@@ -37,15 +38,15 @@ interface Emits {
   (e: "update:modelValue", value: string): void;
 }
 
-const { t } = useComponentI18n<SettingsSearchInputTranslations>(
-  settingsSearchInputTranslations
-);
-
 const props = withDefaults(defineProps<Props>(), {
   placeholder: undefined,
 });
 
 const emit = defineEmits<Emits>();
+
+const { t } = useComponentI18n<SettingsSearchInputTranslations>(
+  settingsSearchInputTranslations
+);
 
 const inputRef = ref<{ $el: HTMLInputElement } | null>(null);
 

@@ -1,17 +1,19 @@
-import { defineStore } from "#q-app/wrappers";
 import { createSentryPiniaPlugin } from "@sentry/vue";
 import { createPinia } from "pinia";
 import { type Router } from "vue-router";
+
+import { defineStore } from "#q-app/wrappers";
+
 import type { useAuthenticationStore } from "./authentication";
-import type { useUserStore } from "./user";
-import type { useNewPostDraftsStore } from "./newConversationDrafts";
-import type { useNewOpinionDraftsStore } from "./newOpinionDrafts";
 import type { useHomeFeedStore } from "./homeFeed";
-import type { useNotificationStore } from "./notification";
-import type { useTopicStore } from "./topic";
-import type { useNavigationStore } from "./navigation";
 import type { useLanguageStore } from "./language";
 import type { useLoginIntentionStore } from "./loginIntention";
+import type { useNavigationStore } from "./navigation";
+import type { useNewPostDraftsStore } from "./newConversationDrafts";
+import type { useNewOpinionDraftsStore } from "./newOpinionDrafts";
+import type { useNotificationStore } from "./notification";
+import type { useTopicStore } from "./topic";
+import type { useUserStore } from "./user";
 
 /*
  * When adding new properties to stores, you should also

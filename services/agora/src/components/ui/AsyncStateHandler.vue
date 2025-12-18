@@ -102,13 +102,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
 import type { UseQueryReturnType } from "@tanstack/vue-query";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { computed, ref } from "vue";
+
 import {
-  asyncStateHandlerTranslations,
   type AsyncStateHandlerTranslations,
+  asyncStateHandlerTranslations,
 } from "./AsyncStateHandler.i18n";
+
+const props = withDefaults(defineProps<Props>(), {
+  config: () => ({}),
+  isEmpty: undefined,
+  onRetry: undefined,
+});
+
+const emit = defineEmits<{
+  retry: [];
+}>();
 
 const { t } = useComponentI18n<AsyncStateHandlerTranslations>(
   asyncStateHandlerTranslations
@@ -150,22 +161,12 @@ interface AsyncStateConfig {
   readonly retrying?: RetryingConfig;
 }
 
-const emit = defineEmits<{
-  retry: [];
-}>();
-
 interface Props {
   query: ConstrainedQueryType;
   config?: AsyncStateConfig;
   isEmpty?: boolean | (() => boolean);
   onRetry?: () => void | Promise<void>;
 }
-
-const props = withDefaults(defineProps<Props>(), {
-  config: () => ({}),
-  isEmpty: undefined,
-  onRetry: undefined,
-});
 
 // Reactive state to track retry loading with delay
 const isRetryPending = ref(false);

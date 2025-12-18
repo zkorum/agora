@@ -135,38 +135,39 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { ref, watch, computed } from "vue";
-import { useRouter } from "vue-router";
-import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
-import ZKEditor from "src/components/ui-library/ZKEditor.vue";
-import PolisUrlInput from "src/components/newConversation/import/url/PolisUrlInput.vue";
-import PolisCsvUpload from "src/components/newConversation/import/csv/PolisCsvUpload.vue";
+import { storeToRefs } from "pinia";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ActiveImportBanner from "src/components/conversation/import/ActiveImportBanner.vue";
+import BackButton from "src/components/navigation/buttons/BackButton.vue";
+import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
+import PolisCsvUpload from "src/components/newConversation/import/csv/PolisCsvUpload.vue";
+import PolisUrlInput from "src/components/newConversation/import/url/PolisUrlInput.vue";
+import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
+import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
+import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
+import PollComponent from "src/components/newConversation/poll/PollComponent.vue";
+import ZKEditor from "src/components/ui-library/ZKEditor.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  MAX_LENGTH_BODY,
+  MAX_LENGTH_TITLE,
+  validateHtmlStringCharacterCount,
+} from "src/shared/shared";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 import {
   useNewPostDraftsStore,
   type ValidationErrorField,
 } from "src/stores/newConversationDrafts";
-import { useAuthenticationStore } from "src/stores/authentication";
 import { useCommonApi } from "src/utils/api/common";
-import {
-  MAX_LENGTH_TITLE,
-  MAX_LENGTH_BODY,
-  validateHtmlStringCharacterCount,
-} from "src/shared/shared";
-import { storeToRefs } from "pinia";
-import { useLoginIntentionStore } from "src/stores/loginIntention";
-import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
-import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
-import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
-import BackButton from "src/components/navigation/buttons/BackButton.vue";
-import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
-import PollComponent from "src/components/newConversation/poll/PollComponent.vue";
-import { useBackendPostApi } from "src/utils/api/post/post";
 import { useActiveImportQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
+import { useBackendPostApi } from "src/utils/api/post/post";
+import { computed,ref, watch } from "vue";
+import { useRouter } from "vue-router";
+
 import {
-  createConversationTranslations,
   type CreateConversationTranslations,
+  createConversationTranslations,
 } from "./index.i18n";
 
 const { t } = useComponentI18n<CreateConversationTranslations>(

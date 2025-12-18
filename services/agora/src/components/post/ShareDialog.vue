@@ -15,7 +15,11 @@
           <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="QR Code" />
         </div>
 
-        <ZKButton button-type="largeButton" class="copy-link-button" @click="copyUrl">
+        <ZKButton
+          button-type="largeButton"
+          class="copy-link-button"
+          @click="copyUrl"
+        >
           {{ t("copyLink") }}
         </ZKButton>
       </div>
@@ -24,23 +28,26 @@
 </template>
 
 <script setup lang="ts">
-import { useDialogPluginComponent, copyToClipboard } from "quasar";
 import { useQRCode } from "@vueuse/integrations/useQRCode";
-import { toRef } from "vue";
-import { useNotify } from "src/utils/ui/notify";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { copyToClipboard, useDialogPluginComponent } from "quasar";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useNotify } from "src/utils/ui/notify";
+import { toRef } from "vue";
+
 import {
-  shareDialogTranslations,
   type ShareDialogTranslations,
+  shareDialogTranslations,
 } from "./ShareDialog.i18n";
 
 const props = defineProps<{
   url: string;
-  title: string;
 }>();
 
-defineEmits([...useDialogPluginComponent.emits]);
+defineEmits<{
+  ok: [];
+  hide: [];
+}>();
 
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
 const { showNotifyMessage } = useNotify();

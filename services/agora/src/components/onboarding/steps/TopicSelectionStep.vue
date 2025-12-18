@@ -46,25 +46,26 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import DialogStepLayout from "src/components/onboarding/layouts/DialogStepLayout.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
-import { storeToRefs } from "pinia";
-import { useTopicStore } from "src/stores/topic";
-import { onMounted, computed } from "vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  topicSelectionStepTranslations,
-  type TopicSelectionStepTranslations,
-} from "./TopicSelectionStep.i18n";
+import { useTopicStore } from "src/stores/topic";
+import { computed,onMounted } from "vue";
 
-const { t } = useComponentI18n<TopicSelectionStepTranslations>(
-  topicSelectionStepTranslations
-);
+import {
+  type TopicSelectionStepTranslations,
+  topicSelectionStepTranslations,
+} from "./TopicSelectionStep.i18n";
 
 const emit = defineEmits<{
   (e: "close"): void;
   (e: "back"): void;
 }>();
+
+const { t } = useComponentI18n<TopicSelectionStepTranslations>(
+  topicSelectionStepTranslations
+);
 
 const { loadTopicsData, followTopic, unfollowTopic } = useTopicStore();
 const { fullTopicList, followedTopicCodeSet } = storeToRefs(useTopicStore());

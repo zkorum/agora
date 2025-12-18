@@ -42,17 +42,18 @@
 </template>
 
 <script setup lang="ts">
+import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
-import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
-import { useRouter } from "vue-router";
-import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
-import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
 import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import { useRouter } from "vue-router";
+
 import {
-  step2SignupOnboardingTranslations,
   type Step2SignupOnboardingTranslations,
+  step2SignupOnboardingTranslations,
 } from "./index.i18n";
 
 const { t } = useComponentI18n<Step2SignupOnboardingTranslations>(

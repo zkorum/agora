@@ -53,16 +53,17 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
-import { HomeMenuBar } from "src/components/navigation/header/variants";
 import FollowButton from "src/components/features/topics/FollowButton.vue";
+import { HomeMenuBar } from "src/components/navigation/header/variants";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useTopicStore } from "src/stores/topic";
 import { onMounted, ref } from "vue";
-import { topicsTranslations, type TopicsTranslations } from "./index.i18n";
+
+import { type TopicsTranslations,topicsTranslations } from "./index.i18n";
 
 const { t } = useComponentI18n<TopicsTranslations>(topicsTranslations);
 

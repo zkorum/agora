@@ -30,8 +30,6 @@
           :conversation-slug-id="props.conversationSlugId"
           :opinion-item="consensusItem"
           :opinion-item-for-visualizer="consensusItem"
-          :vote-count="props.voteCount"
-          :polis-clusters="props.clusters"
           :cluster-labels="props.clusterLabels"
         />
       </template>
@@ -40,21 +38,22 @@
 </template>
 
 <script setup lang="ts">
-import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
-import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
-import AnalysisActionButton from "../common/AnalysisActionButton.vue";
-import EmptyStateMessage from "../common/EmptyStateMessage.vue";
-import ConsensusItem from "./ConsensusItem.vue";
-import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   AnalysisOpinionItem,
   PolisClusters,
   PolisKey,
 } from "src/shared/types/zod";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
+
+import AnalysisActionButton from "../common/AnalysisActionButton.vue";
+import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
+import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
+import EmptyStateMessage from "../common/EmptyStateMessage.vue";
+import ConsensusItem from "./ConsensusItem.vue";
 import {
-  consensusTabTranslations,
   type ConsensusTabTranslations,
+  consensusTabTranslations,
 } from "./ConsensusTab.i18n";
 
 const props = defineProps<{
@@ -63,7 +62,6 @@ const props = defineProps<{
   compactMode: boolean;
   clusters: Partial<PolisClusters>;
   clusterLabels: Partial<Record<PolisKey, string>>;
-  voteCount: number;
 }>();
 
 const currentTab = defineModel<ShortcutItem>();

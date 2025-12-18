@@ -51,31 +51,35 @@
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
-import type { OpinionItem } from "src/shared/types/zod";
-import type { ContentAction } from "src/utils/actions/core/types";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { useBackendUserMuteApi } from "src/utils/api/muteUser";
-import { useDeleteCommentMutation } from "src/utils/api/comment/useCommentQueries";
-import { useWebShare } from "src/utils/share/WebShare";
-import { useContentActions } from "src/utils/actions/definitions/content-actions";
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  commentActionOptionsTranslations,
-  type CommentActionOptionsTranslations,
-} from "./CommentActionOptions.i18n";
+import type { OpinionItem } from "src/shared/types/zod";
+import { useAuthenticationStore } from "src/stores/authentication";
+import type { ContentAction } from "src/utils/actions/core/types";
+import { useContentActions } from "src/utils/actions/definitions/content-actions";
+import { useDeleteCommentMutation } from "src/utils/api/comment/useCommentQueries";
+import { useBackendUserMuteApi } from "src/utils/api/muteUser";
+import { useWebShare } from "src/utils/share/WebShare";
+import { ref } from "vue";
+import { useRouter } from "vue-router";
 
-const emit = defineEmits(["deleted", "mutedComment"]);
+import {
+  type CommentActionOptionsTranslations,
+  commentActionOptionsTranslations,
+} from "./CommentActionOptions.i18n";
 
 const props = defineProps<{
   postSlugId: string;
   commentItem: OpinionItem;
+}>();
+
+const emit = defineEmits<{
+  deleted: [];
+  mutedComment: [];
 }>();
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());

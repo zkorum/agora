@@ -66,14 +66,20 @@
 </template>
 
 <script setup lang="ts">
-import PostMetadata from "./PostMetadata.vue";
-import ZKHtmlContent from "../../ui-library/ZKHtmlContent.vue";
-import PollWrapper from "./poll/PollWrapper.vue";
-import ZKCard from "../../ui-library/ZKCard.vue";
-import PostLockedMessage from "./PostLockedMessage.vue";
-import ConversationTitleWithPrivacyLabel from "../../features/conversation/ConversationTitleWithPrivacyLabel.vue";
-import EventTicketRequirementBanner from "../EventTicketRequirementBanner.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";
+
+import ConversationTitleWithPrivacyLabel from "../../features/conversation/ConversationTitleWithPrivacyLabel.vue";
+import ZKCard from "../../ui-library/ZKCard.vue";
+import ZKHtmlContent from "../../ui-library/ZKHtmlContent.vue";
+import EventTicketRequirementBanner from "../EventTicketRequirementBanner.vue";
+import PollWrapper from "./poll/PollWrapper.vue";
+import PostLockedMessage from "./PostLockedMessage.vue";
+import PostMetadata from "./PostMetadata.vue";
+
+defineProps<{
+  extendedPostData: ExtendedConversation;
+  compactMode: boolean;
+}>();
 
 defineEmits<{
   openModerationHistory: [];
@@ -82,10 +88,6 @@ defineEmits<{
   ];
 }>();
 
-defineProps<{
-  extendedPostData: ExtendedConversation;
-  compactMode: boolean;
-}>();
 </script>
 
 <style scoped lang="scss">

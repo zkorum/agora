@@ -1,20 +1,20 @@
-import PrimeVue from "primevue/config";
-import Aura from "@primeuix/themes/aura";
 import { definePreset } from "@primeuix/themes";
-import { defineBoot } from "#q-app/wrappers";
-
+import Aura from "@primeuix/themes/aura";
 import Button from "primevue/button";
 import Card from "primevue/card";
 import Chip from "primevue/chip";
+import PrimeVue from "primevue/config";
 import DatePicker from "primevue/datepicker";
-import Select from "primevue/select";
-import InputOtp from "primevue/inputotp";
-import InputText from "primevue/inputtext";
+import FileUpload from "primevue/fileupload";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
-import FileUpload from "primevue/fileupload";
-import ProgressSpinner from "primevue/progressspinner";
+import InputOtp from "primevue/inputotp";
+import InputText from "primevue/inputtext";
 import Message from "primevue/message";
+import ProgressSpinner from "primevue/progressspinner";
+import Select from "primevue/select";
+
+import { defineBoot } from "#q-app/wrappers";
 
 const customPreset = definePreset(Aura, {
   semantic: {

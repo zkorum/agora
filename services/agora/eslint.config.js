@@ -1,13 +1,14 @@
 import js from "@eslint/js";
-import globals from "globals";
-import pluginVue from "eslint-plugin-vue";
+import jsonPlugin from "@eslint/json";
 import pluginQuasar from "@quasar/app-vite/eslint";
+import prettierSkipFormatting from "@vue/eslint-config-prettier/skip-formatting";
 import {
   defineConfigWithVueTs,
   vueTsConfigs,
 } from "@vue/eslint-config-typescript";
-import prettierSkipFormatting from "@vue/eslint-config-prettier/skip-formatting";
-import jsonPlugin from "@eslint/json";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
+import pluginVue from "eslint-plugin-vue";
+import globals from "globals";
 
 export default defineConfigWithVueTs(
   {
@@ -43,6 +44,9 @@ export default defineConfigWithVueTs(
 
   {
     files: ["**/*.ts", "**/*.vue"],
+    plugins: {
+      "simple-import-sort": simpleImportSort,
+    },
     languageOptions: {
       parser: pluginVue.parser,
     },
@@ -57,6 +61,9 @@ export default defineConfigWithVueTs(
   vueTsConfigs.recommendedTypeChecked,
 
   {
+    plugins: {
+      "simple-import-sort": simpleImportSort,
+    },
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
@@ -117,6 +124,46 @@ export default defineConfigWithVueTs(
       "@typescript-eslint/no-floating-promises": ["error"],
 
       "@typescript-eslint/switch-exhaustiveness-check": "error",
+
+      // Vue component block order
+      "vue/block-order": [
+        "error",
+        {
+          order: ["template", "script", "style"],
+        },
+      ],
+
+      // Vue script setup macros order
+      "vue/define-macros-order": [
+        "error",
+        {
+          order: ["defineOptions", "defineProps", "defineEmits", "defineSlots"],
+        },
+      ],
+
+      // Enforce type-based declarations for defineEmits and defineProps
+      "vue/define-emits-declaration": ["error", "type-based"],
+      "vue/define-props-declaration": ["error", "type-based"],
+
+      // Import ordering - automatically sorts imports
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
+
+      // Forbid unused props and other component properties
+      "vue/no-unused-properties": [
+        "error",
+        {
+          groups: ["props", "data", "computed", "methods", "setup"],
+          deepData: true,
+          ignorePublicMembers: false,
+        },
+      ],
+
+      // Require prop types (for Options API components)
+      "vue/require-prop-types": "error",
+
+      // Catch unused slot bindings
+      "vue/no-unused-vars": "error",
     },
   },
 

@@ -1,17 +1,18 @@
-import { useZupassVerification } from "./useZupassVerification";
-import { useBackendZupassApi } from "src/utils/api/zupass";
-import { useBackendAuthApi } from "src/utils/api/auth";
+import { useQuasar } from "quasar";
+import {
+  type EventTicketRequirementBannerTranslations,
+  eventTicketRequirementBannerTranslations,
+} from "src/components/post/EventTicketRequirementBanner.i18n";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { EventSlug } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
-import { useNotify } from "src/utils/ui/notify";
-import { useQuasar } from "quasar";
+import { useBackendAuthApi } from "src/utils/api/auth";
+import { useBackendZupassApi } from "src/utils/api/zupass";
 import { getPlatform } from "src/utils/common";
-import type { EventSlug } from "src/shared/types/zod";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  eventTicketRequirementBannerTranslations,
-  type EventTicketRequirementBannerTranslations,
-} from "src/components/post/EventTicketRequirementBanner.i18n";
+import { useNotify } from "src/utils/ui/notify";
+
+import { useZupassVerification } from "./useZupassVerification";
 
 export type TicketVerificationResult =
   | {

@@ -1,7 +1,9 @@
 import type { AxiosError } from "axios";
 import { type RawAxiosRequestConfig } from "axios";
 import { useQuasar } from "quasar";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { getPlatform } from "src/utils/common";
+
 import {
   buildAuthorizationHeader,
   buildUcan,
@@ -10,10 +12,9 @@ import {
 } from "../crypto/ucan/operation";
 import { createDidOverwriteIfAlreadyExists } from "../crypto/ucan/operation";
 import { useNotify } from "../ui/notify";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
-  commonApiTranslations,
   type CommonApiTranslations,
+  commonApiTranslations,
 } from "./common.i18n";
 
 export type KeyAction = "overwrite" | "get" | "create";

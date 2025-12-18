@@ -20,18 +20,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
 import { storeToRefs } from "pinia";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.vue";
-import EventTicketSelectionDialog from "./EventTicketSelectionDialog.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useNotify } from "src/utils/ui/notify";
+import { ref } from "vue";
+
 import {
-  eventTicketRequirementDialogTranslations,
   type EventTicketRequirementDialogTranslations,
+  eventTicketRequirementDialogTranslations,
 } from "./EventTicketRequirementDialog.i18n";
+import EventTicketSelectionDialog from "./EventTicketSelectionDialog.vue";
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
 

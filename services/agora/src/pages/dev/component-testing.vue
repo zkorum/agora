@@ -22,17 +22,18 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import PreferencesDialogTest from "./test-components/PreferencesDialogTest.vue";
-import OpinionGroupVisualizationTest from "./test-components/OpinionGroupVisualizationTest.vue";
+
+import {
+  type ComponentTestingTranslations,
+  componentTestingTranslations,
+} from "./component-testing.i18n";
 import AsyncStateHandlerTest from "./test-components/AsyncStateHandlerTest.vue";
 import EmbeddedBrowserWarningTest from "./test-components/EmbeddedBrowserWarningTest.vue";
-import {
-  componentTestingTranslations,
-  type ComponentTestingTranslations,
-} from "./component-testing.i18n";
+import OpinionGroupVisualizationTest from "./test-components/OpinionGroupVisualizationTest.vue";
+import PreferencesDialogTest from "./test-components/PreferencesDialogTest.vue";
 
 const { t } = useComponentI18n<ComponentTestingTranslations>(
   componentTestingTranslations

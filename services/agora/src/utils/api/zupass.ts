@@ -1,8 +1,9 @@
 import type { ApiV1AuthTicketVerifyPost200Response } from "src/api";
-import { DefaultApiFactory, DefaultApiAxiosParamCreator } from "src/api";
-import { api } from "./client";
+import { DefaultApiAxiosParamCreator,DefaultApiFactory } from "src/api";
 import type { EventSlug } from "src/shared/types/zod";
+
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
+import { api } from "./client";
 import { useCommonApi } from "./common";
 
 export interface VerifyTicketParams {

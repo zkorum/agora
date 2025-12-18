@@ -23,22 +23,23 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { ref } from "vue";
-import {
-  organizationViewTranslations,
-  type OrganizationViewTranslations,
-} from "./OrganizationView.i18n";
 
-const { t } = useComponentI18n<OrganizationViewTranslations>(
-  organizationViewTranslations
-);
+import {
+  type OrganizationViewTranslations,
+  organizationViewTranslations,
+} from "./OrganizationView.i18n";
 
 const props = defineProps<{
   organizationName: string;
 }>();
+
+const { t } = useComponentI18n<OrganizationViewTranslations>(
+  organizationViewTranslations
+);
 
 const username = ref("");
 

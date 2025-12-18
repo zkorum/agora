@@ -44,13 +44,14 @@ import { storeToRefs } from "pinia";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useUserStore } from "src/stores/user";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { computed, onMounted, ref, watch } from "vue";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
 import {
-  commentSortingSelectorTranslations,
   type CommentSortingSelectorTranslations,
+  commentSortingSelectorTranslations,
 } from "./CommentSortingSelector.i18n";
 
 const props = defineProps<{

@@ -95,19 +95,20 @@
 </template>
 
 <script setup lang="ts">
-import PostDetails from "../post/PostDetails.vue";
+import { useDocumentVisibility, useWindowScroll } from "@vueuse/core";
+import { storeToRefs } from "pinia";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { onMounted, ref, watch } from "vue";
-import { storeToRefs } from "pinia";
-import { useDocumentVisibility, useWindowScroll } from "@vueuse/core";
 import { useRouter } from "vue-router";
-import { useAuthenticationStore } from "src/stores/authentication";
-import ZKButton from "../ui-library/ZKButton.vue";
+
 import WidthWrapper from "../navigation/WidthWrapper.vue";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import PostDetails from "../post/PostDetails.vue";
+import ZKButton from "../ui-library/ZKButton.vue";
 import {
-  compactPostListTranslations,
   type CompactPostListTranslations,
+  compactPostListTranslations,
 } from "./CompactPostList.i18n";
 
 const {

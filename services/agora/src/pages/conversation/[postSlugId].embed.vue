@@ -10,9 +10,9 @@
 </template>
 
 <script setup lang="ts">
-import EmbedLayout from "src/layouts/EmbedLayout.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
 import { useConversationData } from "src/composables/conversation/useConversationData";
+import EmbedLayout from "src/layouts/EmbedLayout.vue";
 import { ref } from "vue";
 
 const { conversationData, hasConversationData } = useConversationData();

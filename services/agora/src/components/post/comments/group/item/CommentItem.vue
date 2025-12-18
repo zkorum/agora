@@ -38,9 +38,7 @@
         <div>
           <CommentActionBar
             :comment-item="commentItem"
-            :post-slug-id="postSlugId"
             :voting-utilities="votingUtilities"
-            :is-post-locked="isPostLocked"
             :login-required-to-participate="loginRequiredToParticipate"
             :requires-event-ticket="props.requiresEventTicket"
             @change-vote="(vote: VotingAction) => changeVote(vote)"
@@ -53,33 +51,33 @@
 </template>
 
 <script setup lang="ts">
-import type { OpinionItem, VotingAction } from "src/shared/types/zod";
-import type { OpinionVotingUtilities } from "src/composables/opinion/types";
-import CommentModeration from "./CommentModeration.vue";
-import CommentActionOptions from "./CommentActionOptions.vue";
-import CommentActionBar from "./CommentActionBar.vue";
-import ZKHtmlContent from "../../../../ui-library/ZKHtmlContent.vue";
 import OpinionIdentityCard from "src/components/post/comments/OpinionIdentityCard.vue";
+import type { OpinionVotingUtilities } from "src/composables/opinion/types";
+import type { OpinionItem, VotingAction } from "src/shared/types/zod";
+
+import ZKHtmlContent from "../../../../ui-library/ZKHtmlContent.vue";
+import CommentActionBar from "./CommentActionBar.vue";
+import CommentActionOptions from "./CommentActionOptions.vue";
+import CommentModeration from "./CommentModeration.vue";
+
+const props = defineProps<{
+  commentItem: OpinionItem;
+  postSlugId: string;
+  votingUtilities: OpinionVotingUtilities;
+  loginRequiredToParticipate: boolean;
+  requiresEventTicket?: EventSlug;
+}>();
 
 const emit = defineEmits<{
   deleted: [];
   mutedComment: [];
   changeVote: [vote: VotingAction, opinionSlugId: string];
   ticketVerified: [
-    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
   ];
 }>();
 
 import type { EventSlug } from "src/shared/types/zod";
-
-const props = defineProps<{
-  commentItem: OpinionItem;
-  postSlugId: string;
-  votingUtilities: OpinionVotingUtilities;
-  isPostLocked: boolean;
-  loginRequiredToParticipate: boolean;
-  requiresEventTicket?: EventSlug;
-}>();
 
 function changeVote(vote: VotingAction) {
   emit("changeVote", vote, props.commentItem.opinionSlugId);

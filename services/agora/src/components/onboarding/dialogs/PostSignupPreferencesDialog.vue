@@ -16,12 +16,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
 import { storeToRefs } from "pinia";
-import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import SpokenLanguageStep from "src/components/onboarding/steps/SpokenLanguageStep.vue";
 import TopicSelectionStep from "src/components/onboarding/steps/TopicSelectionStep.vue";
+import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useOnboardingPreferencesStore } from "src/stores/onboarding/preferences";
+import { ref } from "vue";
 
 const { showPreferencesDialog } = storeToRefs(useOnboardingPreferencesStore());
 const { closePreferencesDialog } = useOnboardingPreferencesStore();

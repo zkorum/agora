@@ -48,24 +48,25 @@
 </template>
 
 <script setup lang="ts">
-import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
-import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
-import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
-import ConsensusTab from "./consensusTab/ConsensusTab.vue";
-import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
-import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
-import { ref, computed } from "vue";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  analysisPageTranslations,
-  type AnalysisPageTranslations,
-} from "./AnalysisPage.i18n";
 import type { UseQueryReturnType } from "@tanstack/vue-query";
+import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   AnalysisOpinionItem,
   PolisClusters,
   PolisKey,
 } from "src/shared/types/zod";
+import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
+import { computed,ref } from "vue";
+
+import {
+  type AnalysisPageTranslations,
+  analysisPageTranslations,
+} from "./AnalysisPage.i18n";
+import ConsensusTab from "./consensusTab/ConsensusTab.vue";
+import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
+import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
+import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 
 type AnalysisData = {
   consensus: AnalysisOpinionItem[];

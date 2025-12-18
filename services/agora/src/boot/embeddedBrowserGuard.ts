@@ -1,6 +1,6 @@
-import { boot } from "quasar/wrappers";
-import { Platform } from "quasar";
 import InAppSpy from "inapp-spy";
+import { Platform } from "quasar";
+import { boot } from "quasar/wrappers";
 import { useEmbeddedBrowserWarningStore } from "src/stores/embeddedBrowserWarning";
 
 /**

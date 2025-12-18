@@ -1,6 +1,6 @@
-import { defineBoot } from "#q-app/wrappers";
-
 import * as Sentry from "@sentry/vue";
+
+import { defineBoot } from "#q-app/wrappers";
 
 export default defineBoot(({ app, router }) => {
   Sentry.init({

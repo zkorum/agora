@@ -1,6 +1,7 @@
+import { useRouter } from "vue-router";
+
 import { useBackendAuthApi } from "../api/auth";
 import { useNotify } from "../ui/notify";
-import { useRouter } from "vue-router";
 
 export function useAuthSetup() {
   const { logoutFromServer, updateAuthState } = useBackendAuthApi();

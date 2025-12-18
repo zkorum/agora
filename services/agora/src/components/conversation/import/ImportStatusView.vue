@@ -84,7 +84,9 @@
               v-if="importStatusQuery.data.value.failureReason"
               class="error-details"
             >
-              {{ getFailureReasonText(importStatusQuery.data.value.failureReason) }}
+              {{
+                getFailureReasonText(importStatusQuery.data.value.failureReason)
+              }}
             </p>
           </div>
         </div>
@@ -94,19 +96,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import { storeToRefs } from "pinia";
-import { useRouter } from "vue-router";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  importStatusViewTranslations,
-  type ImportStatusViewTranslations,
-} from "./ImportStatusView.i18n";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { formatDateTime } from "src/utils/format";
 import { useImportStatusQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
+import { formatDateTime } from "src/utils/format";
 import type { ImportFailureReason } from "src/shared/types/zod";
+import { computed } from "vue";
+import { useRouter } from "vue-router";
+
+import {
+  type ImportStatusViewTranslations,
+  importStatusViewTranslations,
+} from "./ImportStatusView.i18n";
 
 interface Props {
   importSlugId: string;

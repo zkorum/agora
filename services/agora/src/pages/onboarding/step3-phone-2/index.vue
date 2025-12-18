@@ -82,29 +82,30 @@
 </template>
 
 <script setup lang="ts">
+import { parsePhoneNumberFromString } from "libphonenumber-js/max";
+import { storeToRefs } from "pinia";
+import { useQuasar } from "quasar";
+import { type ApiV1AuthAuthenticatePost200Response } from "src/api";
+import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
-import { storeToRefs } from "pinia";
-import { phoneVerificationStore } from "src/stores/onboarding/phone";
-import { onMounted, ref, computed } from "vue";
-import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useRouter } from "vue-router";
-import { type ApiV1AuthAuthenticatePost200Response } from "src/api";
-import { onboardingFlowStore } from "src/stores/onboarding/flow";
-import type { KeyAction } from "src/utils/api/common";
-import { useNotify } from "src/utils/ui/notify";
-import { createDidOverwriteIfAlreadyExists } from "src/utils/crypto/ucan/operation";
-import { useQuasar } from "quasar";
-import { getPlatform } from "src/utils/common";
-import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import { useBackendAuthApi } from "src/utils/api/auth";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { KeyAction } from "src/utils/api/common";
+import { getPlatform } from "src/utils/common";
+import { createDidOverwriteIfAlreadyExists } from "src/utils/crypto/ucan/operation";
+import { useNotify } from "src/utils/ui/notify";
+import { computed,onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+
 import {
-  step3Phone2Translations,
   type Step3Phone2Translations,
+  step3Phone2Translations,
 } from "./index.i18n";
 
 const { t } = useComponentI18n<Step3Phone2Translations>(

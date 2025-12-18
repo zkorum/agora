@@ -60,7 +60,6 @@
             </p>
 
             <RequestExportButton
-              :loading="requestExportMutation.isPending.value"
               :disabled="readinessQuery.data.value?.status !== 'ready'"
               :aria-label="t('requestExportAriaLabel')"
               @request="handleRequestExport"
@@ -86,33 +85,35 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { storeToRefs } from "pinia";
 import { useNow } from "@vueuse/core";
-import { StandardMenuBar } from "src/components/navigation/header/variants";
-import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import ExportHistoryList from "src/components/conversation/export/ExportHistoryList.vue";
-import RequestExportButton from "src/components/conversation/export/RequestExportButton.vue";
+import { storeToRefs } from "pinia";
 import ActiveExportBanner from "src/components/conversation/export/ActiveExportBanner.vue";
 import CooldownBanner from "src/components/conversation/export/CooldownBanner.vue";
+import ExportHistoryList from "src/components/conversation/export/ExportHistoryList.vue";
+import RequestExportButton from "src/components/conversation/export/RequestExportButton.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
+import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { axiosInstance } from "src/utils/api/client";
 import {
-  useRequestExportMutation,
   useExportHistoryQuery,
   useExportReadinessQuery,
+  useRequestExportMutation,
 } from "src/utils/api/conversationExport/useConversationExportQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  exportPageTranslations,
-  type ExportPageTranslations,
-} from "./export.i18n";
-import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotify } from "src/utils/ui/notify";
 import { processEnv } from "src/utils/processEnv";
+import { computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
+
+import {
+  type ExportPageTranslations,
+  exportPageTranslations,
+} from "./export.i18n";
 
 const { t } = useComponentI18n<ExportPageTranslations>(exportPageTranslations);
 const router = useRouter();

@@ -94,33 +94,34 @@
 </template>
 
 <script setup lang="ts">
-import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
-import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
-import { reactive } from "vue";
 import {
-  parsePhoneNumberFromString,
   type CountryCode,
+  parsePhoneNumberFromString,
   type PhoneNumber as LibPhoneNumber,
 } from "libphonenumber-js/max";
-import { useRouter } from "vue-router";
-import { storeToRefs } from "pinia";
-import { phoneVerificationStore } from "src/stores/onboarding/phone";
-import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
-import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
-import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
-import { processEnv } from "src/utils/processEnv";
-import {
-  zodSupportedCountryCallingCode,
-  type SupportedCountryCallingCode,
-} from "src/shared/types/zod";
 import type { Results } from "maz-ui/components/MazPhoneNumberInput";
 import MazPhoneNumberInput from "maz-ui/components/MazPhoneNumberInput";
+import { storeToRefs } from "pinia";
+import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
+import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
+import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import {
-  phoneOnboardingTranslations,
-  type PhoneOnboardingTranslations,
-} from "./index.i18n";
+  type SupportedCountryCallingCode,
+  zodSupportedCountryCallingCode,
+} from "src/shared/types/zod";
 import { isPhoneNumberTypeSupported } from "src/shared-app-api/phone";
+import { phoneVerificationStore } from "src/stores/onboarding/phone";
+import { processEnv } from "src/utils/processEnv";
+import { reactive } from "vue";
+import { useRouter } from "vue-router";
+
+import {
+  type PhoneOnboardingTranslations,
+  phoneOnboardingTranslations,
+} from "./index.i18n";
 
 const { t } = useComponentI18n<PhoneOnboardingTranslations>(
   phoneOnboardingTranslations

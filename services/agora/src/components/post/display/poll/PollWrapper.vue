@@ -73,32 +73,32 @@
 </template>
 
 <script setup lang="ts">
-import ZKButton from "../../../ui-library/ZKButton.vue";
-import { useHomeFeedStore } from "src/stores/homeFeed";
-import { onBeforeMount, ref, watch, computed } from "vue";
-import { useBackendPollApi } from "src/utils/api/poll";
-import type {
-  UserInteraction,
-  PollList,
-  PollOptionWithResult,
-} from "src/shared/types/zod";
 import { storeToRefs } from "pinia";
-import ZKIcon from "../../../ui-library/ZKIcon.vue";
-import PreLoginIntentionDialog from "../../../authentication/intention/PreLoginIntentionDialog.vue";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { useUserStore } from "src/stores/user";
-import { useBackendAuthApi } from "src/utils/api/auth";
-import PollOption from "./PollOption.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  pollWrapperTranslations,
-  type PollWrapperTranslations,
-} from "./PollWrapper.i18n";
-
-import type { EventSlug } from "src/shared/types/zod";
 import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
 import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
+import type {
+  PollList,
+  PollOptionWithResult,
+  UserInteraction,
+} from "src/shared/types/zod";
+import type { EventSlug } from "src/shared/types/zod";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useHomeFeedStore } from "src/stores/homeFeed";
+import { useUserStore } from "src/stores/user";
+import { useBackendAuthApi } from "src/utils/api/auth";
+import { useBackendPollApi } from "src/utils/api/poll";
+import { computed,onBeforeMount, ref, watch } from "vue";
+
+import PreLoginIntentionDialog from "../../../authentication/intention/PreLoginIntentionDialog.vue";
+import ZKButton from "../../../ui-library/ZKButton.vue";
+import ZKIcon from "../../../ui-library/ZKIcon.vue";
+import PollOption from "./PollOption.vue";
+import {
+  type PollWrapperTranslations,
+  pollWrapperTranslations,
+} from "./PollWrapper.i18n";
 
 const props = defineProps<{
   userResponse: UserInteraction;

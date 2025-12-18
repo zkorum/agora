@@ -1,6 +1,6 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 /**
  * Typed composable for component-specific i18n with per-file translations

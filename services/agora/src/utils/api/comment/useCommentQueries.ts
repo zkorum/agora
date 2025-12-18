@@ -1,18 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
-import { useBackendCommentApi } from "./comment";
-import type { CommentTabFilters } from "./comment";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisKey } from "src/shared/types/zod";
+import type { OpinionItem } from "src/shared/types/zod";
+import { useUserStore } from "src/stores/user";
+import type { Ref } from "vue";
+
+import { useNotify } from "../../ui/notify";
 import type { AxiosErrorResponse } from "../common";
 import { getErrorMessage } from "../common";
-import { useNotify } from "../../ui/notify";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { CommentTabFilters } from "./comment";
+import { useBackendCommentApi } from "./comment";
 import {
-  useCommentQueriesTranslations,
   type UseCommentQueriesTranslations,
+  useCommentQueriesTranslations,
 } from "./useCommentQueries.i18n";
-import type { Ref } from "vue";
-import { useUserStore } from "src/stores/user";
-import type { OpinionItem } from "src/shared/types/zod";
 
 export function useCommentsQuery({
   conversationSlugId,

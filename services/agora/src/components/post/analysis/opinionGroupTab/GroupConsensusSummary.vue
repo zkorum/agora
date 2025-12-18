@@ -36,17 +36,16 @@
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
-import type { PolisKey } from "src/shared/types/zod";
-import { ref } from "vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { ref } from "vue";
+
 import {
-  groupConsensusSummaryTranslations,
   type GroupConsensusSummaryTranslations,
+  groupConsensusSummaryTranslations,
 } from "./GroupConsensusSummary.i18n";
 
 defineProps<{
   summary: string;
-  selectedClusterKey: PolisKey;
 }>();
 
 const { t } = useComponentI18n<GroupConsensusSummaryTranslations>(

@@ -48,35 +48,25 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from "vue";
-import CommentGroup from "./group/CommentGroup.vue";
+import type { UseQueryReturnType } from "@tanstack/vue-query";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
-import OpinionNotFoundBanner from "./OpinionNotFoundBanner.vue";
-import CommentSortingSelector from "./group/CommentSortingSelector.vue";
-import type { CommentFilterOptions } from "src/utils/component/opinion";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
-import {
-  commentSectionTranslations,
-  type CommentSectionTranslations,
-} from "./CommentSection.i18n";
 import { useOpinionFiltering } from "src/composables/opinion/useOpinionFiltering";
+import { useOpinionPagination } from "src/composables/opinion/useOpinionPagination";
 import { useOpinionVoting } from "src/composables/opinion/useOpinionVoting";
 import { useTargetOpinion } from "src/composables/opinion/useTargetOpinion";
-import { useOpinionPagination } from "src/composables/opinion/useOpinionPagination";
-import type { UseQueryReturnType } from "@tanstack/vue-query";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { OpinionItem } from "src/shared/types/zod";
+import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
+import type { CommentFilterOptions } from "src/utils/component/opinion";
+import { computed,onMounted, ref } from "vue";
 
-const emit = defineEmits<{
-  deleted: [];
-  participantCountDelta: [delta: number];
-  voteCast: [];
-  ticketVerified: [
-    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
-  ];
-}>();
-
-import type { EventSlug } from "src/shared/types/zod";
+import {
+  type CommentSectionTranslations,
+  commentSectionTranslations,
+} from "./CommentSection.i18n";
+import CommentGroup from "./group/CommentGroup.vue";
+import CommentSortingSelector from "./group/CommentSortingSelector.vue";
+import OpinionNotFoundBanner from "./OpinionNotFoundBanner.vue";
 
 const props = defineProps<{
   postSlugId: string;
@@ -90,6 +80,17 @@ const props = defineProps<{
     hiddenCommentsQuery: UseQueryReturnType<OpinionItem[], Error>;
   };
 }>();
+
+const emit = defineEmits<{
+  deleted: [];
+  participantCountDelta: [delta: number];
+  voteCast: [];
+  ticketVerified: [
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
+  ];
+}>();
+
+import type { EventSlug } from "src/shared/types/zod";
 
 const isComponentMounted = ref(false);
 

@@ -17,13 +17,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import { storeToRefs } from "pinia";
+import UserAvatar from "src/components/account/UserAvatar.vue";
+import ZKIconButton from "src/components/ui-library/ZKIconButton.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNavigationStore } from "src/stores/navigation";
 import { useUserStore } from "src/stores/user";
-import ZKIconButton from "src/components/ui-library/ZKIconButton.vue";
-import UserAvatar from "src/components/account/UserAvatar.vue";
+import { computed } from "vue";
 
 const isCapacitor = process.env.MODE == "capacitor";
 const { profileData } = storeToRefs(useUserStore());

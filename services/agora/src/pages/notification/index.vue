@@ -90,22 +90,26 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import UserAvatar from "src/components/account/UserAvatar.vue";
+import { HomeMenuBar } from "src/components/navigation/header/variants";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
-import type { NotificationType, RouteTarget } from "src/shared/types/zod";
-import type { DisplayNotification } from "src/utils/notification/transform";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import type {
+  NotificationItem,
+  NotificationType,
+  RouteTarget,
+} from "src/shared/types/zod";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotificationStore } from "src/stores/notification";
 import { useNotificationApi } from "src/utils/api/notification/notification";
 import { onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { HomeMenuBar } from "src/components/navigation/header/variants";
-import ZKIcon from "src/components/ui-library/ZKIcon.vue";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
 import {
-  notificationTranslations,
   type NotificationTranslations,
+  notificationTranslations,
 } from "./index.i18n";
 
 const notificationStore = useNotificationStore();

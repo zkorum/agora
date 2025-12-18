@@ -62,19 +62,20 @@
 </template>
 
 <script setup lang="ts">
+import { useTimeAgo } from "@vueuse/core";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import type { UserReportItem } from "src/shared/types/zod";
 import { useBackendReportApi } from "src/utils/api/report";
 import { useNotify } from "src/utils/ui/notify";
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import type { UserReportItem } from "src/shared/types/zod";
-import { useTimeAgo } from "@vueuse/core";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { StandardMenuBar } from "src/components/navigation/header/variants";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
 import {
-  userReportsViewerTranslations,
   type UserReportsViewerTranslations,
+  userReportsViewerTranslations,
 } from "./[[opinionSlugId]].i18n";
 
 const route = useRoute(

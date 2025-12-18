@@ -25,19 +25,19 @@
 <script setup lang="ts">
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  interactionTabTranslations,
-  type InteractionTabTranslations,
-} from "./InteractionTab.i18n";
 import { formatAmount } from "src/utils/common";
 
-const model = defineModel<"comment" | "analysis">({ required: true });
+import {
+  type InteractionTabTranslations,
+  interactionTabTranslations,
+} from "./InteractionTab.i18n";
+
 const props = defineProps<{
   opinionCount: number;
   compactMode: boolean;
   isLoading?: boolean;
 }>();
-
+const model = defineModel<"comment" | "analysis">({ required: true });
 const { t } = useComponentI18n<InteractionTabTranslations>(
   interactionTabTranslations
 );

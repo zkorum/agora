@@ -20,14 +20,19 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
-import type { EventSlug } from "src/shared/types/zod";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { EventSlug } from "src/shared/types/zod";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+
 import {
-  eventTicketSelectionDialogTranslations,
   type EventTicketSelectionDialogTranslations,
+  eventTicketSelectionDialogTranslations,
 } from "./EventTicketSelectionDialog.i18n";
+
+defineEmits<{
+  goBack: [];
+}>();
 
 const { t } = useComponentI18n<EventTicketSelectionDialogTranslations>(
   eventTicketSelectionDialogTranslations
@@ -36,10 +41,6 @@ const { t } = useComponentI18n<EventTicketSelectionDialogTranslations>(
 const showDialog = defineModel<boolean>("showDialog", { required: true });
 
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
-
-defineEmits<{
-  goBack: [];
-}>();
 
 interface EventOption {
   value: EventSlug;

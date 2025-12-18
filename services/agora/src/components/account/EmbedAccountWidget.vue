@@ -34,11 +34,12 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { useAuthSetup } from "src/utils/auth/setup";
-import UserAvatar from "./UserAvatar.vue";
+
 import {
-  embedAccountWidgetTranslations,
   type EmbedAccountWidgetTranslations,
+  embedAccountWidgetTranslations,
 } from "./EmbedAccountWidget.i18n";
+import UserAvatar from "./UserAvatar.vue";
 
 const { t } = useComponentI18n<EmbedAccountWidgetTranslations>(
   embedAccountWidgetTranslations

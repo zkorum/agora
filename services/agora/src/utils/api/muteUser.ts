@@ -1,14 +1,15 @@
-import { api } from "./client";
-import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import {
   type ApiV1MuteUserCreatePostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
-import { useCommonApi } from "./common";
-import { useNotify } from "../ui/notify";
-import type { UserMuteAction } from "src/shared/types/zod";
 import type { GetMutedUsersResponse } from "src/shared/types/dto";
+import type { UserMuteAction } from "src/shared/types/zod";
+
+import { buildAuthorizationHeader } from "../crypto/ucan/operation";
+import { useNotify } from "../ui/notify";
+import { api } from "./client";
+import { useCommonApi } from "./common";
 
 export function useBackendUserMuteApi() {
   const { buildEncodedUcan } = useCommonApi();

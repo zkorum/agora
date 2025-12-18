@@ -9,17 +9,22 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
-import { type RouteLocationNormalized } from "vue-router";
 import { storeToRefs } from "pinia";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
-import { useRouteGuard } from "src/utils/component/routing/routeGuard";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import { useRouteGuard } from "src/utils/component/routing/routeGuard";
+import { onMounted } from "vue";
+import { type RouteLocationNormalized } from "vue-router";
+
 import {
-  newConversationRouteGuardTranslations,
   type NewConversationRouteGuardTranslations,
+  newConversationRouteGuardTranslations,
 } from "./NewConversationRouteGuard.i18n";
+
+const props = withDefaults(defineProps<Props>(), {
+  allowedRoutes: () => [],
+});
 
 const { t } = useComponentI18n<NewConversationRouteGuardTranslations>(
   newConversationRouteGuardTranslations
@@ -28,10 +33,6 @@ const { t } = useComponentI18n<NewConversationRouteGuardTranslations>(
 interface Props {
   allowedRoutes?: string[];
 }
-
-const props = withDefaults(defineProps<Props>(), {
-  allowedRoutes: () => [],
-});
 
 const { hasUnsavedChanges, createEmptyDraft } = useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());

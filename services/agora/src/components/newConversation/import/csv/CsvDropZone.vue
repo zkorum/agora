@@ -128,23 +128,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
 import { useDropZone } from "@vueuse/core";
-import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import Badge from "primevue/badge";
-import CsvErrorDetailsDialog from "./CsvErrorDetailsDialog.vue";
-import type { FileStatus } from "./composables/useCsvFile";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { computed, ref } from "vue";
+
+import type { FileStatus } from "./composables/useCsvFile";
 import {
-  csvDropZoneTranslations,
   type CsvDropZoneTranslations,
+  csvDropZoneTranslations,
 } from "./CsvDropZone.i18n";
+import CsvErrorDetailsDialog from "./CsvErrorDetailsDialog.vue";
+
+const props = defineProps<Props>();
+
+const emit = defineEmits<Emits>();
 
 const ERROR_TRUNCATE_LENGTH = 100;
 
 interface Props {
   label: string;
-  fileTypeLabel: string;
   dropText: string;
   file: File | null;
   error: string;
@@ -155,9 +159,6 @@ interface Emits {
   (e: "upload", file: File): void;
   (e: "remove"): void;
 }
-
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
 
 const { t } = useComponentI18n<CsvDropZoneTranslations>(
   csvDropZoneTranslations

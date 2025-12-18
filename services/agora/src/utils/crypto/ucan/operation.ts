@@ -1,16 +1,17 @@
 /* eslint-disable no-case-declarations */
-import { publicKeyToDid } from "src/shared/did/util";
-import { type SupportedPlatform } from "src/utils/common";
-import { SecureSigning } from "@zkorum/capacitor-secure-signing";
-import { getWebCryptoStore } from "../store";
-import * as DID from "./did/index";
 import * as ucans from "@ucans/ucans";
+import { SecureSigning } from "@zkorum/capacitor-secure-signing";
+import { publicKeyToDid } from "src/shared/did/util";
+import { base64Decode, base64Encode } from "src/shared-app-api/base64";
 import {
   httpMethodToAbility,
   httpPathnameToResourcePointer,
 } from "src/shared-app-api/ucan/ucan";
-import { base64Decode, base64Encode } from "src/shared-app-api/base64";
+import { type SupportedPlatform } from "src/utils/common";
 import { processEnv } from "src/utils/processEnv";
+
+import { getWebCryptoStore } from "../store";
+import * as DID from "./did/index";
 
 interface CreateDidReturn {
   did: string;

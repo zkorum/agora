@@ -9,16 +9,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  analysisActionButtonTranslations,
-  type AnalysisActionButtonTranslations,
-} from "./AnalysisActionButton.i18n";
+import { computed } from "vue";
 
-const { t } = useComponentI18n<AnalysisActionButtonTranslations>(
-  analysisActionButtonTranslations
-);
+import {
+  type AnalysisActionButtonTranslations,
+  analysisActionButtonTranslations,
+} from "./AnalysisActionButton.i18n";
 
 const props = defineProps<{
   type: "learnMore" | "viewMore" | "none";
@@ -27,6 +24,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   actionClick: [];
 }>();
+
+const { t } = useComponentI18n<AnalysisActionButtonTranslations>(
+  analysisActionButtonTranslations
+);
 
 const buttonText = computed(() => {
   return props.type === "learnMore" ? t("learnMore") : t("viewMore");

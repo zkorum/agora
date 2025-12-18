@@ -38,27 +38,31 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_USERNAME } from "src/shared/shared";
 import { zodUsername } from "src/shared/types/zod";
-import { useBackendAccountApi } from "src/utils/api/account";
-import { ref, onMounted, watch } from "vue";
-import { ZodError } from "zod";
-import ZKButton from "../ui-library/ZKButton.vue";
 import { useUserStore } from "src/stores/user";
-import { storeToRefs } from "pinia";
-import { useNotify } from "src/utils/ui/notify";
+import { useBackendAccountApi } from "src/utils/api/account";
 import { useCommonApi } from "src/utils/api/common";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useNotify } from "src/utils/ui/notify";
+import { onMounted, ref, watch } from "vue";
+import { ZodError } from "zod";
+
+import ZKButton from "../ui-library/ZKButton.vue";
 import {
-  usernameChangeTranslations,
   type UsernameChangeTranslations,
+  usernameChangeTranslations,
 } from "./UsernameChange.i18n";
 
 defineProps<{
   showSubmitButton: boolean;
 }>();
 
-const emit = defineEmits(["isValidUsername", "userName"]);
+const emit = defineEmits<{
+  isValidUsername: [value: boolean];
+  userName: [value: string];
+}>();
 
 const { profileData } = storeToRefs(useUserStore());
 const { loadUserProfile } = useUserStore();

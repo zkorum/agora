@@ -1,21 +1,21 @@
-import { ref, shallowRef } from "vue";
-import { ticketProofRequest } from "@parcnet-js/ticket-spec";
+import type { ParcnetAPI } from "@parcnet-js/app-connector";
 import {
-  init,
   doConnect,
-  type Zapp,
+  init,
   UserCancelledConnectionError,
   UserClosedDialogError,
+  type Zapp,
 } from "@parcnet-js/app-connector";
-import type { ParcnetAPI } from "@parcnet-js/app-connector";
+import { ticketProofRequest } from "@parcnet-js/ticket-spec";
 import type { EventSlug } from "src/shared/types/zod";
 import {
+  getZupassCollectionName,
   getZupassEventConfig,
   getZupassSignerPublicKey,
-  getZupassCollectionName,
 } from "src/shared/zupass/eventConfig";
-import { createDidIfDoesNotExist } from "src/utils/crypto/ucan/operation";
 import type { SupportedPlatform } from "src/utils/common";
+import { createDidIfDoesNotExist } from "src/utils/crypto/ucan/operation";
+import { ref, shallowRef } from "vue";
 
 // Parcnet app configuration
 const ZAPP_CONFIG: Zapp = {

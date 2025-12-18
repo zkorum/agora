@@ -1,11 +1,11 @@
-import { ref, onMounted, watch } from "vue";
-import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import type { ExtendedConversation } from "src/shared/types/zod";
-import { useHomeFeedStore } from "src/stores/homeFeed";
-import { useBackendPostApi } from "src/utils/api/post/post";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { useBackendPostApi } from "src/utils/api/post/post";
+import { onMounted, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 
 export function useConversationData() {
   const { fetchPostBySlugId } = useBackendPostApi();

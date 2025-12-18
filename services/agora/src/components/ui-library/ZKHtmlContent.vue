@@ -12,11 +12,12 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  zkHtmlContentTranslations,
-  type ZKHtmlContentTranslations,
-} from "./ZKHtmlContent.i18n";
 import { processHtmlBody } from "src/shared-app-api/html";
+
+import {
+  type ZKHtmlContentTranslations,
+  zkHtmlContentTranslations,
+} from "./ZKHtmlContent.i18n";
 
 const props = defineProps<{
   htmlBody: string;

@@ -52,15 +52,16 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import ModerationTime from "src/components/post/common/moderation/ModerationTime.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKCard from "src/components/ui-library/ZKCard.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { OpinionItem } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
-import ZKCard from "src/components/ui-library/ZKCard.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ModerationTime from "src/components/post/common/moderation/ModerationTime.vue";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
 import {
-  commentModerationTranslations,
   type CommentModerationTranslations,
+  commentModerationTranslations,
 } from "./CommentModeration.i18n";
 
 defineProps<{

@@ -26,22 +26,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { storeToRefs } from "pinia";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
+import type { EventSlug } from "src/shared/types/zod";
+import { useAuthenticationStore } from "src/stores/authentication";
 import type { PossibleIntentions } from "src/stores/loginIntention";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { storeToRefs } from "pinia";
-import DialogContainer from "./DialogContainer.vue";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  preLoginIntentionDialogTranslations,
-  type PreLoginIntentionDialogTranslations,
-} from "./PreLoginIntentionDialog.i18n";
-import type { EventSlug } from "src/shared/types/zod";
-import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
 
-const showDialog = defineModel<boolean>({ required: true });
+import DialogContainer from "./DialogContainer.vue";
+import {
+  type PreLoginIntentionDialogTranslations,
+  preLoginIntentionDialogTranslations,
+} from "./PreLoginIntentionDialog.i18n";
 
 const props = defineProps<{
   okCallback: () => void;
@@ -49,6 +48,8 @@ const props = defineProps<{
   requiresZupassEventSlug?: EventSlug;
   loginRequiredToParticipate?: boolean;
 }>();
+
+const showDialog = defineModel<boolean>({ required: true });
 
 const { t } = useComponentI18n<PreLoginIntentionDialogTranslations>(
   preLoginIntentionDialogTranslations

@@ -79,16 +79,17 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { MAX_LENGTH_USER_REPORT_EXPLANATION } from "src/shared/shared";
+import type { UserReportReason } from "src/shared/types/zod";
+import { useBackendReportApi } from "src/utils/api/report";
 import { useUserReports } from "src/utils/component/userReports";
 import { ref } from "vue";
+
 import ZKGradientButton from "../ui-library/ZKGradientButton.vue";
-import type { UserReportReason } from "src/shared/types/zod";
-import { MAX_LENGTH_USER_REPORT_EXPLANATION } from "src/shared/shared";
-import { useBackendReportApi } from "src/utils/api/report";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
-  reportContentDialogTranslations,
   type ReportContentDialogTranslations,
+  reportContentDialogTranslations,
 } from "./ReportContentDialog.i18n";
 
 const props = defineProps<{
@@ -96,7 +97,9 @@ const props = defineProps<{
   opinionSlugId: string;
 }>();
 
-const emit = defineEmits(["close"]);
+const emit = defineEmits<{
+  close: [];
+}>();
 
 const explanation = ref("");
 const selectedReason = ref<UserReportReason>();

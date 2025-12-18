@@ -1,27 +1,28 @@
-import { api } from "../client";
+import { storeToRefs } from "pinia";
 import {
   type ApiV1OpinionCreatePostRequest,
-  type ApiV1OpinionFetchByConversationPostRequest,
-  type ApiV1OpinionFetchHiddenByConversationPostRequest,
-  type ApiV1OpinionFetchBySlugIdListPostRequest,
-  type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem,
   type ApiV1OpinionFetchAnalysisByConversationPost200Response,
   type ApiV1OpinionFetchAnalysisByConversationPost200ResponseClusters0,
   type ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner,
+  type ApiV1OpinionFetchByConversationPostRequest,
+  type ApiV1OpinionFetchBySlugIdListPostRequest,
+  type ApiV1OpinionFetchHiddenByConversationPostRequest,
+  type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
-import { useCommonApi } from "../common";
 import type {
-  PolisKey,
-  OpinionItem,
   AnalysisOpinionItem,
-  PolisClusters,
   moderationStatusOptionsType,
+  OpinionItem,
+  PolisClusters,
+  PolisKey,
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { storeToRefs } from "pinia";
+
 import { useBackendAuthApi } from "../auth";
+import { api } from "../client";
+import { useCommonApi } from "../common";
 
 export type CommentTabFilters = "new" | "moderated" | "discover" | "hidden";
 

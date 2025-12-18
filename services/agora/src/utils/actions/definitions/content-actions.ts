@@ -3,20 +3,21 @@
  * This composable integrates permissions, handlers, and dialog management
  */
 
-import { ref } from "vue";
 import { storeToRefs } from "pinia";
-import { useUserStore } from "src/stores/user";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useUserStore } from "src/stores/user";
 import { useEmbedMode } from "src/utils/ui/embedMode";
-import { useActionPermissions, createActionContext } from "../core/permissions";
+import { ref } from "vue";
+
 import { useActionHandlers } from "../core/handlers";
-import { getAvailableCommentActions } from "./comments";
-import { getAvailablePostActions } from "./posts";
+import { createActionContext,useActionPermissions } from "../core/permissions";
 import type {
-  ContentActionDialogState,
   ContentAction,
   ContentActionContext,
+  ContentActionDialogState,
 } from "../core/types";
+import { getAvailableCommentActions } from "./comments";
+import { getAvailablePostActions } from "./posts";
 
 // Confirmation dialog state interface
 interface ConfirmationDialogState {
@@ -30,9 +31,10 @@ interface ConfirmationDialogState {
   pendingActionContext: ContentActionContext | null;
 }
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
 import {
-  actionsTranslations,
   type ActionsTranslations,
+  actionsTranslations,
 } from "./content-actions.i18n";
 
 // Actions that require confirmation before execution

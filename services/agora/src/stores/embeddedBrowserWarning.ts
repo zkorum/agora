@@ -1,7 +1,7 @@
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
 import { useStorage } from '@vueuse/core';
 import type InAppSpy from 'inapp-spy';
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
 
 // Extract AppKey type from inapp-spy library
 export type AppKey = ReturnType<typeof InAppSpy>['appKey'];

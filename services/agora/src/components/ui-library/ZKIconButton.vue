@@ -20,14 +20,14 @@ interface Props {
   disabled?: boolean;
 }
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(defineProps<Props>(), {
   iconSize: "1.2rem",
   iconColor: "7D7A85",
   disabled: false,
-});
-
-defineOptions({
-  inheritAttrs: false,
 });
 
 const emit = defineEmits<{

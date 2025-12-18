@@ -45,25 +45,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useZupassVerification } from 'src/composables/zupass/useZupassVerification';
-import { useBackendZupassApi } from 'src/utils/api/zupass';
-import { useBackendAuthApi } from 'src/utils/api/auth';
-import { useNotify } from 'src/utils/ui/notify';
-import type { EventSlug } from 'src/shared/types/zod';
-import { useComponentI18n } from 'src/composables/ui/useComponentI18n';
-import {
-  zupassTicketVerificationTranslations,
-  type ZupassTicketVerificationTranslations,
-} from './ZupassTicketVerification.i18n';
 import { useQuasar } from 'quasar';
+import { useComponentI18n } from 'src/composables/ui/useComponentI18n';
+import { useZupassVerification } from 'src/composables/zupass/useZupassVerification';
+import type { EventSlug } from 'src/shared/types/zod';
+import { useBackendAuthApi } from 'src/utils/api/auth';
+import { useBackendZupassApi } from 'src/utils/api/zupass';
 import { getPlatform } from 'src/utils/common';
+import { useNotify } from 'src/utils/ui/notify';
+import { ref } from 'vue';
+
+import {
+  type ZupassTicketVerificationTranslations,
+  zupassTicketVerificationTranslations,
+} from './ZupassTicketVerification.i18n';
 
 interface Props {
   eventSlug: EventSlug;
 }
 
 const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  verified: [];
+}>();
 
 const { t } = useComponentI18n<ZupassTicketVerificationTranslations>(
   zupassTicketVerificationTranslations
@@ -154,9 +159,6 @@ function getErrorMessage(errorCode: string): string {
   return errorMessages[errorCode] || errorMessages.unknown;
 }
 
-const emit = defineEmits<{
-  verified: [];
-}>();
 </script>
 
 <style scoped lang="scss">

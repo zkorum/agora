@@ -66,21 +66,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { useBackendPostApi } from "src/utils/api/post/post";
-import ZKCard from "src/components/ui-library/ZKCard.vue";
-import CsvDropZone from "./CsvDropZone.vue";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
-import {
-  polisCsvUploadTranslations,
-  type PolisCsvUploadTranslations,
-} from "./PolisCsvUpload.i18n";
+import ZKCard from "src/components/ui-library/ZKCard.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_CSV_FILE_SIZE_MB } from "src/shared-app-api/csvUpload";
-import { useCsvFile, type CsvFileState } from "./composables/useCsvFile";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import { useBackendPostApi } from "src/utils/api/post/post";
+import { ref, watch } from "vue";
+
+import { type CsvFileState,useCsvFile } from "./composables/useCsvFile";
+import CsvDropZone from "./CsvDropZone.vue";
+import {
+  type PolisCsvUploadTranslations,
+  polisCsvUploadTranslations,
+} from "./PolisCsvUpload.i18n";
 
 const { t } = useComponentI18n<PolisCsvUploadTranslations>(
   polisCsvUploadTranslations

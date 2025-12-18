@@ -16,14 +16,13 @@
 </template>
 
 <script setup lang="ts">
-import DialogContainer from "../authentication/intention/DialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  exitRoutePromptTranslations,
-  type ExitRoutePromptTranslations,
-} from "./ExitRoutePrompt.i18n";
 
-const model = defineModel<boolean>({ required: true });
+import DialogContainer from "../authentication/intention/DialogContainer.vue";
+import {
+  type ExitRoutePromptTranslations,
+  exitRoutePromptTranslations,
+} from "./ExitRoutePrompt.i18n";
 
 defineProps<{
   title: string;
@@ -31,6 +30,8 @@ defineProps<{
   saveDraft: () => void;
   noSaveDraft: () => void;
 }>();
+
+const model = defineModel<boolean>({ required: true });
 
 const { t } = useComponentI18n<ExitRoutePromptTranslations>(
   exitRoutePromptTranslations

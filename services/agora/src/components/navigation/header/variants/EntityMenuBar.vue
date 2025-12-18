@@ -14,8 +14,9 @@
 </template>
 
 <script setup lang="ts">
-import DefaultMenuBar from "../DefaultMenuBar.vue";
 import { useMenuBarActions } from "src/composables/ui/useMenuBarActions";
+
+import DefaultMenuBar from "../DefaultMenuBar.vue";
 
 interface EntityMenuBarProps {
   title?: string;

@@ -64,25 +64,23 @@
 </template>
 
 <script setup lang="ts">
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
-import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
-import { useContentActions } from "src/utils/actions/definitions/content-actions";
-import { ref } from "vue";
-import type { ContentAction } from "src/utils/actions/core/types";
-import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
-import { useRoute, useRouter } from "vue-router";
-import { useBackendUserMuteApi } from "src/utils/api/muteUser";
-import { useHomeFeedStore } from "src/stores/homeFeed";
-import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
-import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
-import { useAuthenticationStore } from "src/stores/authentication";
 import { storeToRefs } from "pinia";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
+import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
+import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
+import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useHomeFeedStore } from "src/stores/homeFeed";
+import type { ContentAction } from "src/utils/actions/core/types";
+import { useContentActions } from "src/utils/actions/definitions/content-actions";
+import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
-import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
-
-const emit = defineEmits(["openModerationHistory"]);
+import { ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 const props = defineProps<{
   authorVerified: boolean;
@@ -92,6 +90,10 @@ const props = defineProps<{
   organizationUrl: string;
   organizationName: string;
   isLoginRequired: boolean;
+}>();
+
+const emit = defineEmits<{
+  openModerationHistory: [];
 }>();
 
 const router = useRouter();

@@ -114,12 +114,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { Platform } from "quasar";
-import { useEmbeddedBrowserWarningStore } from "src/stores/embeddedBrowserWarning";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useEmbeddedBrowserWarningStore } from "src/stores/embeddedBrowserWarning";
 import { useNotify } from "src/utils/ui/notify";
+import { computed, ref } from "vue";
+
 import { embeddedBrowserWarningTranslations } from "./EmbeddedBrowserWarningDialog.i18n";
 
 const { t } = useComponentI18n(embeddedBrowserWarningTranslations);

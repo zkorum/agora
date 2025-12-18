@@ -27,11 +27,11 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
+import PostDetails from "src/components/post/PostDetails.vue";
 import { useUserStore } from "src/stores/user";
 import { ref } from "vue";
-import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
-import PostDetails from "src/components/post/PostDetails.vue";
 
 const { loadMoreUserPosts } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());

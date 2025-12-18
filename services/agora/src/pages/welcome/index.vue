@@ -38,13 +38,14 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useAuthSetup } from "src/utils/auth/setup";
 import { useRouter } from "vue-router";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { welcomeTranslations, type WelcomeTranslations } from "./index.i18n";
+
+import { type WelcomeTranslations,welcomeTranslations } from "./index.i18n";
 
 const { t } = useComponentI18n<WelcomeTranslations>(welcomeTranslations);
 

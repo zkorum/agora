@@ -42,6 +42,7 @@
 import { storeToRefs } from "pinia";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ListSection from "src/components/ui-library/ListSection.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
@@ -52,8 +53,8 @@ import type { SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { settingsTranslations, type SettingsTranslations } from "./index.i18n";
+
+import { type SettingsTranslations,settingsTranslations } from "./index.i18n";
 
 const authStore = useAuthenticationStore();
 const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(authStore);

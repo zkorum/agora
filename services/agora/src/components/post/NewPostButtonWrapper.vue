@@ -16,6 +16,7 @@
 import { storeToRefs } from "pinia";
 import { useLayoutHeaderStore } from "src/stores/layout/header";
 import { useNavigationStore } from "src/stores/navigation";
+
 import StartConversationButtonCompact from "../newConversation/StartConversationButtonCompact.vue";
 
 const { reveal: revealHeader } = storeToRefs(useLayoutHeaderStore());

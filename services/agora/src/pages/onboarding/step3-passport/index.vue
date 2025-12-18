@@ -161,34 +161,35 @@
 </template>
 
 <script setup lang="ts">
+import { useQRCode } from "@vueuse/integrations/useQRCode";
+import { storeToRefs } from "pinia";
+import { useQuasar } from "quasar";
+import { copyToClipboard } from "quasar";
+import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api/api";
+import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
+import RarimoImageExample from "src/components/onboarding/backgrounds/RarimoImageExample.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useQuasar } from "quasar";
-import { useQRCode } from "@vueuse/integrations/useQRCode";
-import { useRouter } from "vue-router";
-import { onMounted, ref, watch } from "vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
-import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api/api";
-import { useCommonApi, type KeyAction } from "src/utils/api/common";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import type { LinkType, RarimoStatusAttributes } from "src/shared/types/zod";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import { useBackendAuthApi } from "src/utils/api/auth";
 import { api } from "src/utils/api/client";
+import { type KeyAction,useCommonApi } from "src/utils/api/common";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
+import { onMounted, ref, watch } from "vue";
 import { onUnmounted } from "vue";
-import { copyToClipboard } from "quasar";
-import { onboardingFlowStore } from "src/stores/onboarding/flow";
-import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
-import RarimoImageExample from "src/components/onboarding/backgrounds/RarimoImageExample.vue";
-import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
-import { useLoginIntentionStore } from "src/stores/loginIntention";
-import { useBackendAuthApi } from "src/utils/api/auth";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { storeToRefs } from "pinia";
-import type { LinkType, RarimoStatusAttributes } from "src/shared/types/zod";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useRouter } from "vue-router";
+
 import {
-  passportOnboardingTranslations,
   type PassportOnboardingTranslations,
+  passportOnboardingTranslations,
 } from "./index.i18n";
 
 const { t } = useComponentI18n<PassportOnboardingTranslations>(

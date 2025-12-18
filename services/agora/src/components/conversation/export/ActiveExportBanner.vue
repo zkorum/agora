@@ -7,12 +7,13 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from "vue-router";
 import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useRouter } from "vue-router";
+
 import {
-  activeExportBannerTranslations,
   type ActiveExportBannerTranslations,
+  activeExportBannerTranslations,
 } from "./ActiveExportBanner.i18n";
 
 interface Props {

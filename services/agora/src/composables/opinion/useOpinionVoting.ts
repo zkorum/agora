@@ -1,12 +1,13 @@
-import { computed, type Ref } from "vue";
 import { storeToRefs } from "pinia";
-import type { VotingAction, OpinionItem } from "src/shared/types/zod";
 import type { CastVoteResponse } from "src/shared/types/dto";
+import type { OpinionItem,VotingAction } from "src/shared/types/zod";
+import { useAuthenticationStore } from "src/stores/authentication";
 import {
   useUserVotesQuery,
   useVoteMutation,
 } from "src/utils/api/vote/useVoteQueries";
-import { useAuthenticationStore } from "src/stores/authentication";
+import { computed, type Ref } from "vue";
+
 import type { UserVote } from "./types";
 
 export interface UseOpinionVotingParams {

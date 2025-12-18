@@ -57,13 +57,14 @@ import { HomeMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import NewPostButtonWrapper from "src/components/post/NewPostButtonWrapper.vue";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import type { HomeFeedSortOption } from "src/stores/homeFeed";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useNavigationStore } from "src/stores/navigation";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { homeTranslations, type HomeTranslations } from "./index.i18n";
+
+import { type HomeTranslations,homeTranslations } from "./index.i18n";
 
 const { t } = useComponentI18n<HomeTranslations>(homeTranslations);
 
