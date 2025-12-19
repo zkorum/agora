@@ -82,7 +82,7 @@
 
         <div v-if="conversationDraft.importSettings.importType === null">
           <div class="editor-style">
-            <ZKEditor
+            <Editor
               v-model="conversationDraft.content"
               :placeholder="t('bodyPlaceholder')"
               min-height="5rem"
@@ -138,13 +138,13 @@ import PreLoginIntentionDialog from "src/components/authentication/intention/Pre
 import ActiveImportBanner from "src/components/conversation/import/ActiveImportBanner.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
+import Editor from "src/components/editor/Editor.vue";
 import PolisCsvUpload from "src/components/newConversation/import/csv/PolisCsvUpload.vue";
 import PolisUrlInput from "src/components/newConversation/import/url/PolisUrlInput.vue";
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import PollComponent from "src/components/newConversation/poll/PollComponent.vue";
-import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   MAX_LENGTH_BODY,
@@ -160,7 +160,7 @@ import {
 import { type AxiosErrorCode, useCommonApi } from "src/utils/api/common";
 import { useActiveImportQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
 import { useBackendPostApi } from "src/utils/api/post/post";
-import { computed,ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import {

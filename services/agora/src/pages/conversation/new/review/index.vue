@@ -59,7 +59,7 @@
                 {{ opinionErrors[index] }}
               </div>
 
-              <ZKEditor
+              <Editor
                 v-model="conversationDraft.seedOpinions[index]"
                 class="textarea-border-style"
                 :placeholder="t('inputTextPlaceholder')"
@@ -114,7 +114,7 @@ import ConversationControlButton from "src/components/newConversation/Conversati
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ZKEditor from "src/components/ui-library/ZKEditor.vue";
+import Editor from "src/components/editor/Editor.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   MAX_LENGTH_OPINION,
@@ -127,7 +127,7 @@ import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useCommonApi } from "src/utils/api/common";
 import { useBackendPostApi } from "src/utils/api/post/post";
-import { type ComponentPublicInstance, onMounted,ref } from "vue";
+import { type ComponentPublicInstance, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import {

@@ -1,7 +1,7 @@
 <template>
   <div ref="target">
     <div class="container borderStyle">
-      <ZKEditor
+      <Editor
         v-model="opinionBody"
         :placeholder="t('placeholder')"
         :min-height="innerFocus ? '6rem' : '2rem'"
@@ -66,10 +66,7 @@ import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ZKEditor from "src/components/ui-library/ZKEditor.vue";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
-import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
+import Editor from "src/components/editor/Editor.vue";
 import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
@@ -102,10 +99,10 @@ const emit = defineEmits<{
       opinionSlugId: string;
       authStateChanged: boolean;
       needsCacheRefresh: boolean;
-    }
+    },
   ];
   ticketVerified: [
-    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
   ];
 }>();
 
@@ -211,12 +208,16 @@ async function onLoginCallback() {
   saveOpinionDraft(props.postSlugId, opinionBody.value);
 
   // Don't unlock route yet - keep draft protected until verification completes
-  createNewOpinionIntention(props.postSlugId, opinionBody.value, props.requiresEventTicket);
+  createNewOpinionIntention(
+    props.postSlugId,
+    opinionBody.value,
+    props.requiresEventTicket
+  );
 
   const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
   const hasZupassRequirement = props.requiresEventTicket !== undefined;
 
-  console.log('[CommentComposer] onLoginCallback', {
+  console.log("[CommentComposer] onLoginCallback", {
     needsLogin,
     hasZupassRequirement,
     isLoggedIn: isLoggedIn.value,
@@ -224,11 +225,11 @@ async function onLoginCallback() {
 
   // If user just needs Zupass verification (no login required), trigger it inline
   if (!needsLogin && hasZupassRequirement) {
-    console.log('[CommentComposer] Triggering inline Zupass verification');
+    console.log("[CommentComposer] Triggering inline Zupass verification");
     await handleZupassVerification();
   } else {
     // Otherwise, unlock route so user can navigate to login
-    console.log('[CommentComposer] Unlocking route for login navigation');
+    console.log("[CommentComposer] Unlocking route for login navigation");
     unlockRoute();
   }
 }
@@ -260,16 +261,16 @@ function checkWordCount() {
 }
 
 async function handleZupassVerification() {
-  console.log('[CommentComposer] handleZupassVerification called', {
+  console.log("[CommentComposer] handleZupassVerification called", {
     requiresEventTicket: props.requiresEventTicket,
   });
 
   if (props.requiresEventTicket === undefined) {
-    console.log('[CommentComposer] No event ticket required, returning');
+    console.log("[CommentComposer] No event ticket required, returning");
     return;
   }
 
-  console.log('[CommentComposer] Starting verifyTicket call');
+  console.log("[CommentComposer] Starting verifyTicket call");
   // Dialog will close when Zupass iframe is ready (via callback)
   const result = await verifyTicket({
     eventSlug: props.requiresEventTicket,
@@ -281,7 +282,7 @@ async function handleZupassVerification() {
 
   if (result.success) {
     // Emit to parent so banner gets refreshed
-    console.log('[CommentComposer] Emitting ticketVerified event', {
+    console.log("[CommentComposer] Emitting ticketVerified event", {
       userIdChanged: result.userIdChanged,
       needsCacheRefresh: result.needsCacheRefresh,
     });
