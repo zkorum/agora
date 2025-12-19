@@ -1,17 +1,23 @@
 <template>
-  <PrimeButton
-    type="button"
-    class="editor-toolbar-button"
-    :class="{ 'is-active': isActive }"
-    :disabled="disabled"
-    text
-    severity="secondary"
-    @click="handleClick"
+  <div
+    class="editor-toolbar-button-wrapper"
+    :class="{ 'is-disabled': disabled }"
+    @mousedown.prevent
   >
-    <div class="icon-wrapper">
-      <Icon :icon="icon" width="20" height="20" />
-    </div>
-  </PrimeButton>
+    <PrimeButton
+      type="button"
+      class="editor-toolbar-button"
+      :class="{ 'is-active': isActive }"
+      :disabled="disabled"
+      text
+      severity="secondary"
+      @click="handleClick"
+    >
+      <div class="icon-wrapper">
+        <Icon :icon="icon" width="20" height="20" />
+      </div>
+    </PrimeButton>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -39,6 +45,16 @@ function handleClick() {
 </script>
 
 <style scoped lang="scss">
+.editor-toolbar-button-wrapper {
+  display: inline-block;
+
+  &.is-disabled {
+    .editor-toolbar-button {
+      pointer-events: none;
+    }
+  }
+}
+
 .editor-toolbar-button {
   width: 40px;
   height: 40px;
@@ -62,7 +78,6 @@ function handleClick() {
 
   &:disabled {
     opacity: 0.4;
-    cursor: not-allowed;
     background-color: transparent !important;
   }
 

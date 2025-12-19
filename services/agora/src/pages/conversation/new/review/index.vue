@@ -63,7 +63,7 @@
                 v-model="conversationDraft.seedOpinions[index]"
                 class="textarea-border-style"
                 :placeholder="t('inputTextPlaceholder')"
-                :show-toolbar="true"
+                :show-toolbar="currentActiveOpinionIndex === index"
                 min-height="1rem"
                 :class="{
                   'textarea-active-border': currentActiveOpinionIndex === index,
@@ -76,6 +76,7 @@
                     clearOpinionError(index);
                   }
                 "
+                @blur="currentActiveOpinionIndex = -1"
               />
             </div>
 

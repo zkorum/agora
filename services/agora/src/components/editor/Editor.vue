@@ -1,7 +1,11 @@
 <template>
   <div class="editor">
     <!-- Static toolbar for desktop and adaptive mode -->
-    <div v-if="editor && showToolbar" class="toolbar toolbar-mobile-hidden">
+    <div
+      v-if="editor && showToolbar"
+      class="toolbar toolbar-mobile-hidden"
+      @mousedown.prevent
+    >
       <EditorToolbarButton
         icon="mdi:format-bold"
         :is-active="editor.isActive('bold')"
@@ -42,7 +46,7 @@
       :editor="editor"
       :options="{ placement: 'bottom', offset: 10 }"
     >
-      <div class="bubble-menu-content">
+      <div class="bubble-menu-content" @mousedown.prevent>
         <EditorToolbarButton
           icon="mdi:format-bold"
           :is-active="editor.isActive('bold')"
@@ -91,6 +95,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   manuallyFocused: [];
+  blur: [];
 }>();
 
 const editor = useEditor({
@@ -135,6 +140,9 @@ const editor = useEditor({
   },
   onFocus: () => {
     emit("manuallyFocused");
+  },
+  onBlur: () => {
+    emit("blur");
   },
 });
 
