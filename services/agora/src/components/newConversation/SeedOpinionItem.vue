@@ -2,7 +2,6 @@
   <PrimeCard
     class="opinion-card"
     :class="{
-      'opinion-card-active': isActive,
       'opinion-card-error': !!errorMessage,
     }"
   >
@@ -31,7 +30,7 @@
           severity="danger"
           text
           rounded
-          @click="$emit('remove')"
+          @mousedown="$emit('remove')"
         />
       </div>
     </template>
@@ -74,31 +73,34 @@ const { t } = useComponentI18n<SeedOpinionItemTranslations>(
 .opinion-card {
   // PrimeVue card customization
   &:deep(.p-card-content) {
-    padding: 0.5rem;
+    padding: 0.75rem;
   }
   &:deep(.p-card-body) {
     padding: 0;
   }
+  background-color: white;
   border-radius: 20px;
-  border: 1px solid #e2e1e7;
-  transition: border-color 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    background-color 0.2s ease;
 
   &:hover {
     border-color: #9a75ff;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   }
-}
-
-.opinion-card-active {
-  border-color: #6b4eff;
 }
 
 .opinion-card-error {
   border-color: #f44336;
+  box-shadow: 0 4px 20px rgba(244, 67, 54, 0.15);
 }
 
 .textarea-border-style {
   padding: 1rem;
-  background-color: white;
+  background-color: transparent;
 
   // Remove border as the parent card now handles it
   border: none;
