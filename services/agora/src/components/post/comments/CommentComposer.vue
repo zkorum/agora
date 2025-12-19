@@ -4,7 +4,7 @@
       <Editor
         v-model="opinionBody"
         :placeholder="t('placeholder')"
-        :min-height="innerFocus ? '6rem' : '3rem'"
+        :min-height="innerFocus ? '6rem' : '2rem'"
         :show-toolbar="innerFocus"
         @update:model-value="checkWordCount()"
         @manually-focused="editorFocused()"
@@ -358,7 +358,7 @@ async function submitPostClicked() {
 <style scoped lang="scss">
 .container {
   width: 100%;
-  background-color: white;
+  background-color: var(--p-blue-50);
 }
 
 .actionBar {
@@ -390,7 +390,6 @@ async function submitPostClicked() {
 
   &.focused {
     border-color: $primary;
-    box-shadow: 0 0 0 1px $primary;
   }
 }
 
