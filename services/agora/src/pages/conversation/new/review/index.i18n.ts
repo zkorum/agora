@@ -6,7 +6,6 @@ export interface ConversationReviewTranslations {
   addSeedOpinions: string;
   seedOpinionsDescription: string;
   add: string;
-  inputTextPlaceholder: string;
   opinionCannotBeEmpty: string;
   opinionExceedsLimit: string;
   opinionDuplicate: string;
@@ -24,7 +23,6 @@ export const conversationReviewTranslations: Record<
     seedOpinionsDescription:
       "It's recommended to seed 8 to 15 opinions across a range of viewpoints. This has a powerful effect on early participation.",
     add: "Add",
-    inputTextPlaceholder: "Input text",
     opinionCannotBeEmpty: "Opinion cannot be empty",
     opinionExceedsLimit:
       "Opinion exceeds {limit} character limit ({count}/{limit})",
@@ -39,7 +37,6 @@ export const conversationReviewTranslations: Record<
     seedOpinionsDescription:
       "يُنصح ببذر 8 إلى 15 رأيًا عبر مجموعة من وجهات النظر. هذا له تأثير قوي على المشاركة المبكرة.",
     add: "إضافة",
-    inputTextPlaceholder: "أدخل النص",
     opinionCannotBeEmpty: "لا يمكن أن يكون الرأي فارغًا",
     opinionExceedsLimit: "الرأي يتجاوز حد الـ {limit} حرف ({count}/{limit})",
     opinionDuplicate: "هذا الرأي مكرر",
@@ -52,7 +49,6 @@ export const conversationReviewTranslations: Record<
     seedOpinionsDescription:
       "Se recomienda sembrar de 8 a 15 opiniones en una gama de puntos de vista. Esto tiene un efecto poderoso en la participación temprana.",
     add: "Agregar",
-    inputTextPlaceholder: "Ingrese texto",
     opinionCannotBeEmpty: "La opinión no puede estar vacía",
     opinionExceedsLimit:
       "La opinión excede el límite de {limit} caracteres ({count}/{limit})",
@@ -66,7 +62,6 @@ export const conversationReviewTranslations: Record<
     seedOpinionsDescription:
       "Il est recommandé de semer 8 à 15 opinions à travers une gamme de points de vue. Cela a un effet puissant sur la participation précoce.",
     add: "Ajouter",
-    inputTextPlaceholder: "Saisir le texte",
     opinionCannotBeEmpty: "L'opinion ne peut pas être vide",
     opinionExceedsLimit:
       "L'opinion dépasse la limite de {limit} caractères ({count}/{limit})",
@@ -81,7 +76,6 @@ export const conversationReviewTranslations: Record<
     seedOpinionsDescription:
       "建议在不同观点范围内播种8到15个意见。这会对早期参与产生强大的影响。",
     add: "添加",
-    inputTextPlaceholder: "输入文本",
     opinionCannotBeEmpty: "意见不能为空",
     opinionExceedsLimit: "意见超过 {limit} 字符限制 ({count}/{limit})",
     opinionDuplicate: "意见重复",
@@ -94,7 +88,6 @@ export const conversationReviewTranslations: Record<
     seedOpinionsDescription:
       "建議在不同觀點範圍內播種8到15個意見。這會對早期參與產生強大的影響。",
     add: "添加",
-    inputTextPlaceholder: "輸入文本",
     opinionCannotBeEmpty: "意見不能為空",
     opinionExceedsLimit: "意見超過 {limit} 字符限制 ({count}/{limit})",
     opinionDuplicate: "意見重複",
@@ -107,7 +100,6 @@ export const conversationReviewTranslations: Record<
     seedOpinionsDescription:
       "様々な視点からで8から15個の意見を投稿（種植え）することをお勧めします。これは初期段階の参加に強力な効果をもたらします。",
     add: "追加",
-    inputTextPlaceholder: "テキストを入力",
     opinionCannotBeEmpty: "意見を入力してください",
     opinionExceedsLimit:
       "意見が {limit} 文字制限を超えています ({count}/{limit})",

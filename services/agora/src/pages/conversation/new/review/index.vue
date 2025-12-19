@@ -41,60 +41,31 @@
           v-if="conversationDraft.seedOpinions.length > 0"
           class="opinions-list"
         >
-          <PrimeCard
+          <SeedOpinionItem
             v-for="(opinion, index) in conversationDraft.seedOpinions"
             :key="index"
             :ref="
               (el: Element | ComponentPublicInstance | null) =>
                 setOpinionRef(el, index)
             "
-            class="opinion-card"
-            :class="{
-              'opinion-card-active': currentActiveOpinionIndex === index,
-              'opinion-card-error': opinionErrors[index],
-            }"
-          >
-            <template #content>
-              <div class="opinion-card-content-wrapper">
-                <div class="opinion-input-container">
-                  <div
-                    v-if="opinionErrors[index]"
-                    class="opinion-error-message"
-                  >
-                    <q-icon
-                      name="mdi-alert-circle"
-                      class="opinion-error-icon"
-                    />
-                    {{ opinionErrors[index] }}
-                  </div>
-
-                  <Editor
-                    v-model="conversationDraft.seedOpinions[index]"
-                    class="textarea-border-style"
-                    :placeholder="t('inputTextPlaceholder')"
-                    :show-toolbar="currentActiveOpinionIndex === index"
-                    min-height="1rem"
-                    @update:model-value="checkOpinionWordCount(index)"
-                    @manually-focused="
-                      () => {
-                        currentActiveOpinionIndex = index;
-                        clearOpinionError(index);
-                      }
-                    "
-                    @blur="currentActiveOpinionIndex = -1"
-                  />
-                </div>
-
-                <PrimeButton
-                  icon="pi pi-trash"
-                  severity="danger"
-                  text
-                  rounded
-                  @click="removeOpinion(index)"
-                />
-              </div>
-            </template>
-          </PrimeCard>
+            :model-value="opinion"
+            :error-message="opinionErrors[index]"
+            :is-active="currentActiveOpinionIndex === index"
+            @update:model-value="
+              (val) => {
+                conversationDraft.seedOpinions[index] = val;
+                checkOpinionWordCount(index);
+              }
+            "
+            @focus="
+              () => {
+                currentActiveOpinionIndex = index;
+                clearOpinionError(index);
+              }
+            "
+            @blur="currentActiveOpinionIndex = -1"
+            @remove="removeOpinion(index)"
+          />
         </div>
       </div>
     </div>
@@ -124,6 +95,7 @@ import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue"
 import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
+import SeedOpinionItem from "src/components/newConversation/SeedOpinionItem.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
@@ -408,83 +380,5 @@ async function onSubmit() {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-}
-
-.opinion-card-content-wrapper {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.opinion-card {
-  // PrimeVue card customization
-  &:deep(.p-card-content) {
-    padding: 0.75rem;
-  }
-  &:deep(.p-card-body) {
-    padding: 0;
-  }
-  border-radius: 12px;
-  border: 1px solid #e2e1e7;
-  transition: border-color 0.2s;
-
-  &:hover {
-    border-color: #9a75ff;
-  }
-}
-
-.opinion-card-active {
-  border-color: #6b4eff;
-}
-
-.opinion-card-error {
-  border-color: #f44336;
-}
-
-.textarea-border-style {
-  padding: 1rem;
-  background-color: white;
-
-  // Remove border as the parent card now handles it
-  border: none;
-  border-radius: 12px;
-}
-
-.opinion-input-container {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.opinion-error-message {
-  display: flex;
-  align-items: center;
-  color: #f44336;
-  font-size: 0.9rem;
-}
-
-.opinion-error-icon {
-  font-size: 1rem;
-  margin-right: 0.5rem;
-}
-
-.opinion-input-container {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.opinion-error-message {
-  display: flex;
-  align-items: center;
-  color: #f44336;
-  font-size: 0.9rem;
-}
-
-.opinion-error-icon {
-  font-size: 1rem;
-  margin-right: 0.5rem;
 }
 </style>

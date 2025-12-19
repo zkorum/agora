@@ -2,8 +2,8 @@
   <div class="editor">
     <!-- Static toolbar for desktop and adaptive mode -->
     <div
-      v-if="editor && showToolbar"
-      class="toolbar toolbar-mobile-hidden"
+      v-if="editor && showToolbar && !$q.platform.is.mobile"
+      class="toolbar"
       @mousedown.prevent
     >
       <EditorToolbarButton
@@ -27,21 +27,23 @@
         @click="editor.chain().focus().toggleUnderline().run()"
       />
       <PrimeDivider layout="vertical" class="toolbar-divider" />
-      <EditorToolbarButton
-        icon="mdi:undo"
-        :disabled="!editor.can().undo()"
-        @click="editor.chain().focus().undo().run()"
-      />
-      <EditorToolbarButton
-        icon="mdi:redo"
-        :disabled="!editor.can().redo()"
-        @click="editor.chain().focus().redo().run()"
-      />
+      <div class="button-group">
+        <EditorToolbarButton
+          icon="mdi:undo"
+          :disabled="!editor.can().undo()"
+          @click="editor.chain().focus().undo().run()"
+        />
+        <EditorToolbarButton
+          icon="mdi:redo"
+          :disabled="!editor.can().redo()"
+          @click="editor.chain().focus().redo().run()"
+        />
+      </div>
     </div>
 
     <!-- Bubble menu for mobile -->
     <BubbleMenu
-      v-if="editor"
+      v-if="editor && $q.platform.is.mobile"
       v-show="showToolbar"
       :editor="editor"
       :options="{ placement: 'bottom', offset: 10 }"
@@ -77,6 +79,7 @@
 
 <script setup lang="ts">
 import { watch, onBeforeUnmount } from "vue";
+import { useQuasar } from "quasar";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import { BubbleMenu } from "@tiptap/vue-3/menus";
 import StarterKit from "@tiptap/starter-kit";
@@ -85,6 +88,7 @@ import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import EditorToolbarButton from "./EditorToolbarButton.vue";
 
+const $q = useQuasar();
 const modelText = defineModel<string>({ required: true });
 
 const props = defineProps<{
@@ -181,13 +185,6 @@ watch(
   gap: 0.25rem;
   padding: 0.5rem;
   flex-wrap: wrap;
-
-  // Hide on mobile when bubble menu is used
-  &.toolbar-mobile-hidden {
-    @media (max-width: 768px) {
-      display: none;
-    }
-  }
 }
 
 .bubble-menu-content {
@@ -222,5 +219,10 @@ watch(
 
 .toolbar-divider {
   margin: 0 0.5rem;
+}
+
+.button-group {
+  display: flex;
+  gap: 0.25rem;
 }
 </style>
