@@ -23,7 +23,7 @@
           :thickness="0.3"
         />
 
-        <q-separator vertical inset />
+        <q-separator v-if="characterProgress > 0" vertical inset />
 
         <PrimeButton
           :label="t('postButton')"
@@ -159,7 +159,12 @@ const {
 } = useRouteGuard(() => characterCount.value > 0, onBeforeRouteLeaveCallback);
 
 const characterProgress = computed(() => {
-  return (characterCount.value / MAX_LENGTH_OPINION) * 100;
+  const progressPercentage = (characterCount.value / MAX_LENGTH_OPINION) * 100;
+  if (progressPercentage < 1 && progressPercentage > 0) {
+    return 1;
+  } else {
+    return progressPercentage;
+  }
 });
 
 const { y: yScroll } = useWindowScroll();
@@ -358,7 +363,10 @@ async function submitPostClicked() {
 <style scoped lang="scss">
 .container {
   width: 100%;
-  background-color: var(--p-blue-50);
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
 .actionBar {
@@ -379,9 +387,9 @@ async function submitPostClicked() {
 }
 
 .borderStyle {
-  border-radius: 15px;
+  border-radius: 20px;
   padding: 0.5rem;
-  border-color: rgb(189, 189, 189);
+  border-color: rgba(255, 255, 255, 0.3);
   border-style: solid;
   border-width: 1px;
   transition:
@@ -389,7 +397,8 @@ async function submitPostClicked() {
     box-shadow 0.2s ease;
 
   &.focused {
-    border-color: $primary;
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
   }
 }
 
