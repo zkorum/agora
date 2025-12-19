@@ -4,7 +4,7 @@
       <Editor
         v-model="opinionBody"
         :placeholder="t('placeholder')"
-        :min-height="innerFocus ? '6rem' : '2rem'"
+        :min-height="innerFocus ? '6rem' : '3rem'"
         :show-toolbar="innerFocus"
         @update:model-value="checkWordCount()"
         @manually-focused="editorFocused()"
@@ -381,7 +381,7 @@ async function submitPostClicked() {
 .borderStyle {
   border-radius: 15px;
   padding: 0.5rem;
-  border-color: rgb(222, 222, 222);
+  border-color: rgb(189, 189, 189);
   border-style: solid;
   border-width: 1px;
   transition:

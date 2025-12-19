@@ -3,11 +3,8 @@
     <TopMenuWrapper>
       <BackButton />
 
-      <ZKButton
-        button-type="largeButton"
-        color="primary"
+      <PrimeButton
         :label="isSubmitButtonLoading ? t('posting') : t('post')"
-        size="0.8rem"
         :loading="isSubmitButtonLoading"
         @click="onSubmit()"
       />
@@ -44,49 +41,60 @@
           v-if="conversationDraft.seedOpinions.length > 0"
           class="opinions-list"
         >
-          <div
+          <PrimeCard
             v-for="(opinion, index) in conversationDraft.seedOpinions"
             :key="index"
             :ref="
               (el: Element | ComponentPublicInstance | null) =>
                 setOpinionRef(el, index)
             "
-            class="opinion-item"
+            class="opinion-card"
+            :class="{
+              'opinion-card-active': currentActiveOpinionIndex === index,
+              'opinion-card-error': opinionErrors[index],
+            }"
           >
-            <div class="opinion-input-container">
-              <div v-if="opinionErrors[index]" class="opinion-error-message">
-                <q-icon name="mdi-alert-circle" class="opinion-error-icon" />
-                {{ opinionErrors[index] }}
+            <template #content>
+              <div class="opinion-card-content-wrapper">
+                <div class="opinion-input-container">
+                  <div
+                    v-if="opinionErrors[index]"
+                    class="opinion-error-message"
+                  >
+                    <q-icon
+                      name="mdi-alert-circle"
+                      class="opinion-error-icon"
+                    />
+                    {{ opinionErrors[index] }}
+                  </div>
+
+                  <Editor
+                    v-model="conversationDraft.seedOpinions[index]"
+                    class="textarea-border-style"
+                    :placeholder="t('inputTextPlaceholder')"
+                    :show-toolbar="currentActiveOpinionIndex === index"
+                    min-height="1rem"
+                    @update:model-value="checkOpinionWordCount(index)"
+                    @manually-focused="
+                      () => {
+                        currentActiveOpinionIndex = index;
+                        clearOpinionError(index);
+                      }
+                    "
+                    @blur="currentActiveOpinionIndex = -1"
+                  />
+                </div>
+
+                <PrimeButton
+                  icon="pi pi-trash"
+                  severity="danger"
+                  text
+                  rounded
+                  @click="removeOpinion(index)"
+                />
               </div>
-
-              <Editor
-                v-model="conversationDraft.seedOpinions[index]"
-                class="textarea-border-style"
-                :placeholder="t('inputTextPlaceholder')"
-                :show-toolbar="currentActiveOpinionIndex === index"
-                min-height="1rem"
-                :class="{
-                  'textarea-active-border': currentActiveOpinionIndex === index,
-                  'textarea-error-border': opinionErrors[index],
-                }"
-                @update:model-value="checkOpinionWordCount(index)"
-                @manually-focused="
-                  () => {
-                    currentActiveOpinionIndex = index;
-                    clearOpinionError(index);
-                  }
-                "
-                @blur="currentActiveOpinionIndex = -1"
-              />
-            </div>
-
-            <ZKButton
-              icon="mdi-delete"
-              button-type="icon"
-              class="buttonColor"
-              @click="removeOpinion(index)"
-            />
-          </div>
+            </template>
+          </PrimeCard>
         </div>
       </div>
     </div>
@@ -106,7 +114,10 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { type ComponentPublicInstance, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import Editor from "src/components/editor/Editor.vue";
 import ConversationTitleWithPrivacyLabel from "src/components/features/conversation/ConversationTitleWithPrivacyLabel.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
@@ -114,7 +125,6 @@ import ConversationControlButton from "src/components/newConversation/Conversati
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
-import Editor from "src/components/editor/Editor.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   MAX_LENGTH_OPINION,
@@ -127,8 +137,6 @@ import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useCommonApi } from "src/utils/api/common";
 import { useBackendPostApi } from "src/utils/api/post/post";
-import { type ComponentPublicInstance, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
 
 import {
   type ConversationReviewTranslations,
@@ -402,35 +410,63 @@ async function onSubmit() {
   gap: 0.75rem;
 }
 
-.opinion-item {
+.opinion-card-content-wrapper {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  align-items: flex-start;
+  gap: 0.5rem;
 }
 
-.buttonColor {
-  color: #9a97a4;
-}
-
-.textarea-border-style {
+.opinion-card {
+  // PrimeVue card customization
+  &:deep(.p-card-content) {
+    padding: 0.75rem;
+  }
+  &:deep(.p-card-body) {
+    padding: 0;
+  }
   border-radius: 12px;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #e2e1e7;
-  padding: 1rem;
-  background-color: white;
+  border: 1px solid #e2e1e7;
+  transition: border-color 0.2s;
 
   &:hover {
-    border-color: #6b4eff;
+    border-color: #9a75ff;
   }
 }
 
-.textarea-active-border {
+.opinion-card-active {
   border-color: #6b4eff;
 }
 
-.textarea-error-border {
+.opinion-card-error {
   border-color: #f44336;
+}
+
+.textarea-border-style {
+  padding: 1rem;
+  background-color: white;
+
+  // Remove border as the parent card now handles it
+  border: none;
+  border-radius: 12px;
+}
+
+.opinion-input-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.opinion-error-message {
+  display: flex;
+  align-items: center;
+  color: #f44336;
+  font-size: 0.9rem;
+}
+
+.opinion-error-icon {
+  font-size: 1rem;
+  margin-right: 0.5rem;
 }
 
 .opinion-input-container {
