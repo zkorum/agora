@@ -204,6 +204,12 @@ watch(
 .editor :deep(.ProseMirror) {
   padding: 0.5rem;
   outline: none;
+  font-size: 1rem;
+  line-height: normal;
+}
+
+.editor :deep(.ProseMirror p) {
+  margin-bottom: 0.5rem;
 }
 
 .toolbar-divider {
