@@ -65,7 +65,6 @@
                 :placeholder="t('inputTextPlaceholder')"
                 :show-toolbar="true"
                 min-height="1rem"
-                :add-background-color="true"
                 :class="{
                   'textarea-active-border': currentActiveOpinionIndex === index,
                   'textarea-error-border': opinionErrors[index],

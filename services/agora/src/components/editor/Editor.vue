@@ -1,6 +1,7 @@
 <template>
   <div class="editor">
-    <div v-if="editor && showToolbar" class="toolbar">
+    <!-- Static toolbar for desktop and adaptive mode -->
+    <div v-if="editor && showToolbar" class="toolbar toolbar-mobile-hidden">
       <EditorToolbarButton
         icon="mdi:format-bold"
         :is-active="editor.isActive('bold')"
@@ -21,6 +22,7 @@
         :is-active="editor.isActive('underline')"
         @click="editor.chain().focus().toggleUnderline().run()"
       />
+      <PrimeDivider layout="vertical" class="toolbar-divider" />
       <EditorToolbarButton
         icon="mdi:undo"
         :disabled="!editor.can().undo()"
@@ -32,13 +34,38 @@
         @click="editor.chain().focus().redo().run()"
       />
     </div>
-    <div
-      class="editor-wrapper"
-      :class="{
-        whiteBackground: addBackgroundColor,
-        plainBackground: !addBackgroundColor,
-      }"
+
+    <!-- Bubble menu for mobile -->
+    <BubbleMenu
+      v-if="editor"
+      v-show="showToolbar"
+      :editor="editor"
+      :options="{ placement: 'bottom', offset: 10 }"
     >
+      <div class="bubble-menu-content">
+        <EditorToolbarButton
+          icon="mdi:format-bold"
+          :is-active="editor.isActive('bold')"
+          @click="editor.chain().focus().toggleBold().run()"
+        />
+        <EditorToolbarButton
+          icon="mdi:format-italic"
+          :is-active="editor.isActive('italic')"
+          @click="editor.chain().focus().toggleItalic().run()"
+        />
+        <EditorToolbarButton
+          icon="mdi:format-strikethrough"
+          :is-active="editor.isActive('strike')"
+          @click="editor.chain().focus().toggleStrike().run()"
+        />
+        <EditorToolbarButton
+          icon="mdi:format-underline"
+          :is-active="editor.isActive('underline')"
+          @click="editor.chain().focus().toggleUnderline().run()"
+        />
+      </div>
+    </BubbleMenu>
+    <div class="editor-wrapper">
       <EditorContent :editor="editor" />
     </div>
   </div>
@@ -47,7 +74,9 @@
 <script setup lang="ts">
 import { watch, onBeforeUnmount } from "vue";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
+import { BubbleMenu } from "@tiptap/vue-3/menus";
 import StarterKit from "@tiptap/starter-kit";
+import BubbleMenuExtension from "@tiptap/extension-bubble-menu";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import EditorToolbarButton from "./EditorToolbarButton.vue";
@@ -58,7 +87,6 @@ const props = defineProps<{
   showToolbar: boolean;
   placeholder: string;
   minHeight: string;
-  addBackgroundColor: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -78,6 +106,7 @@ const editor = useEditor({
       orderedList: false,
       listItem: false,
     }),
+    BubbleMenuExtension,
     Underline,
     Placeholder.configure({
       placeholder: props.placeholder,
@@ -139,19 +168,28 @@ watch(
   padding-bottom: 1rem;
 }
 
-.whiteBackground {
-  background-color: white;
-}
-
-.plainBackground {
-  background-color: $app-background-color;
-}
-
 .toolbar {
   display: flex;
   gap: 0.25rem;
   padding: 0.5rem;
   flex-wrap: wrap;
+
+  // Hide on mobile when bubble menu is used
+  &.toolbar-mobile-hidden {
+    @media (max-width: 768px) {
+      display: none;
+    }
+  }
+}
+
+.bubble-menu-content {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  flex-wrap: wrap;
+  background-color: var(--p-content-background);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Tiptap Placeholder styling - required for the Placeholder extension to display */
@@ -164,7 +202,11 @@ watch(
 }
 
 .editor :deep(.ProseMirror) {
-  padding: 0.75rem;
-  border-radius: 10px;
+  padding: 0.5rem;
+  outline: none;
+}
+
+.toolbar-divider {
+  margin: 0 0.5rem;
 }
 </style>

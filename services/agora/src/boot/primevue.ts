@@ -14,6 +14,7 @@ import Message from "primevue/message";
 import ProgressSpinner from "primevue/progressspinner";
 import Select from "primevue/select";
 import Tag from "primevue/tag";
+import Divider from "primevue/divider";
 
 import { defineBoot } from "#q-app/wrappers";
 
@@ -84,4 +85,5 @@ export default defineBoot(({ app }) => {
   app.component("PrimeProgressSpinner", ProgressSpinner);
   app.component("PrimeMessage", Message);
   app.component("PrimeTag", Tag);
+  app.component("PrimeDivider", Divider);
 });

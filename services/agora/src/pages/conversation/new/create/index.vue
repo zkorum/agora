@@ -87,7 +87,6 @@
               :placeholder="t('bodyPlaceholder')"
               min-height="5rem"
               :show-toolbar="true"
-              :add-background-color="false"
               @update:model-value="updateContent"
             />
 

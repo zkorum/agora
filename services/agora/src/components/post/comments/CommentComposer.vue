@@ -1,12 +1,11 @@
 <template>
   <div ref="target">
-    <div class="container borderStyle">
+    <div class="container borderStyle" :class="{ focused: innerFocus }">
       <Editor
         v-model="opinionBody"
         :placeholder="t('placeholder')"
         :min-height="innerFocus ? '6rem' : '2rem'"
         :show-toolbar="innerFocus"
-        :add-background-color="true"
         @update:model-value="checkWordCount()"
         @manually-focused="editorFocused()"
       />
@@ -26,11 +25,10 @@
 
         <q-separator vertical inset />
 
-        <ZKButton
-          button-type="largeButton"
+        <PrimeButton
           :label="t('postButton')"
-          color="primary"
-          :disable="
+          severity="primary"
+          :disabled="
             characterProgress > 100 ||
             characterProgress == 0 ||
             isSubmissionLoading ||
@@ -65,7 +63,6 @@ import { onClickOutside, useWindowScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
 import Editor from "src/components/editor/Editor.vue";
 import {
   MAX_LENGTH_OPINION,
@@ -361,7 +358,7 @@ async function submitPostClicked() {
 <style scoped lang="scss">
 .container {
   width: 100%;
-  background-color: #e5e5e5;
+  background-color: white;
 }
 
 .actionBar {
@@ -387,6 +384,14 @@ async function submitPostClicked() {
   border-color: rgb(222, 222, 222);
   border-style: solid;
   border-width: 1px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &.focused {
+    border-color: $primary;
+    box-shadow: 0 0 0 1px $primary;
+  }
 }
 
 .dummyInputStyle {
