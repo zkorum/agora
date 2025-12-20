@@ -52,6 +52,10 @@ const handleClick = (event: Event) => {
 </script>
 
 <style lang="scss" scoped>
+:deep(p) {
+  margin-bottom: 0.5rem;
+}
+
 :deep(a[href]) {
   color: rgb(0, 121, 211);
   font-weight: var(--font-weight-medium);
