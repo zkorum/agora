@@ -4,6 +4,7 @@
     :class="{
       'opinion-card-error': !!errorMessage,
     }"
+    @click="handleCardClick"
   >
     <template #content>
       <div class="opinion-card-content-wrapper">
@@ -14,11 +15,12 @@
           </div>
 
           <Editor
+            ref="editorRef"
             :model-value="modelValue"
             class="textarea-border-style"
             :placeholder="t('inputTextPlaceholder')"
             :show-toolbar="isActive"
-            min-height="1rem"
+            min-height="3rem"
             @update:model-value="(val) => $emit('update:modelValue', val)"
             @manually-focused="$emit('focus')"
             @blur="$emit('blur')"
@@ -38,6 +40,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
 import Editor from "src/components/editor/Editor.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
@@ -45,7 +48,7 @@ import {
   type SeedOpinionItemTranslations,
 } from "./SeedOpinionItem.i18n";
 
-defineProps<{
+const props = defineProps<{
   modelValue: string;
   errorMessage?: string;
   isActive: boolean;
@@ -61,6 +64,14 @@ defineEmits<{
 const { t } = useComponentI18n<SeedOpinionItemTranslations>(
   seedOpinionItemTranslations
 );
+
+const editorRef = ref<InstanceType<typeof Editor>>();
+
+const handleCardClick = (): void => {
+  if (!props.isActive) {
+    editorRef.value?.focus();
+  }
+};
 </script>
 
 <style scoped lang="scss">
@@ -71,26 +82,11 @@ const { t } = useComponentI18n<SeedOpinionItemTranslations>(
 }
 
 .opinion-card {
-  // PrimeVue card customization
-  &:deep(.p-card-content) {
-    padding: 0.75rem;
-  }
   &:deep(.p-card-body) {
-    padding: 0;
+    padding: 0.25rem;
   }
   background-color: white;
   border-radius: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease,
-    background-color 0.2s ease;
-
-  &:hover {
-    border-color: #9a75ff;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  }
 }
 
 .opinion-card-error {

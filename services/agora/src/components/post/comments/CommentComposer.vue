@@ -42,8 +42,8 @@
 
     <ExitRoutePrompt
       v-model="showExitDialog"
-      title="Save opinion as draft?"
-      description="Your draft opinion will be here when you return."
+      :title="t('exitPromptTitle')"
+      :description="t('exitPromptDescription')"
       :save-draft="saveDraft"
       :no-save-draft="noSaveDraft"
     />
@@ -366,7 +366,7 @@ async function submitPostClicked() {
   background-color: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
 }
 
 .actionBar {

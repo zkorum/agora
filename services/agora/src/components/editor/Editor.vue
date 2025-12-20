@@ -157,6 +157,13 @@ onBeforeUnmount(() => {
   editor.value?.destroy();
 });
 
+// Expose focus method for parent components
+defineExpose({
+  focus: () => {
+    editor.value?.chain().focus().run();
+  },
+});
+
 // Watch for external changes to modelText using getter function
 watch(
   () => modelText.value,
