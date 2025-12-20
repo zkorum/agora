@@ -72,7 +72,7 @@ import type {
     UserIdPerParticipantId,
 } from "@/utils/dataStructure.js";
 import { nowZeroMs } from "@/shared/util.js";
-import { processHtmlBody } from "@/shared-app-api/html.js";
+import { processOpinionHtml } from "@/shared-app-api/html.js";
 import { alias } from "drizzle-orm/pg-core";
 
 interface GetCommentSlugIdLastCreatedAtProps {
@@ -1082,7 +1082,7 @@ export async function postNewOpinion({
     }
 
     try {
-        commentBody = processHtmlBody(commentBody, true);
+        commentBody = processOpinionHtml(commentBody, true);
     } catch (error) {
         if (error instanceof Error) {
             throw httpErrors.badRequest(error.message);
@@ -1410,7 +1410,7 @@ export async function bulkInsertOpinionsFromExternalPolisConvo({
             importedPolisConversation.comments_data.map((comment) => {
                 const opinionId = opinionIdPerStatementId[comment.statement_id];
                 try {
-                    const commentBody = processHtmlBody(comment.txt, true);
+                    const commentBody = processOpinionHtml(comment.txt, true);
                     return {
                         opinionId: opinionId,
                         conversationContentId: conversationContentId,

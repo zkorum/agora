@@ -67,8 +67,7 @@ function sanitizeOpinionHtml(htmlString: string): string {
     const options: sanitizeHtml.IOptions = {
         allowedTags: ["b", "strong", "i", "em", "strike", "s", "u"],
     };
-    htmlString = sanitizeHtml(htmlString, options);
-    return htmlString;
+    return sanitizeHtml(htmlString, options);
 }
 
 // Sanitize conversation HTML (multi-line, line breaks allowed)
@@ -87,8 +86,7 @@ function sanitizeConversationHtml(htmlString: string): string {
             "p",
         ],
     };
-    htmlString = sanitizeHtml(htmlString, options);
-    return htmlString;
+    return sanitizeHtml(htmlString, options);
 }
 
 // Legacy function for backward compatibility - uses conversation sanitizer
@@ -113,11 +111,26 @@ export function processHtmlBody(htmlString: string, enableLinks: boolean) {
     return htmlString;
 }
 
-// Export new sanitizers for explicit use
-export function processOpinionHtml(htmlString: string): string {
-    return sanitizeOpinionHtml(htmlString);
+// Process opinion HTML (single-line, no line breaks, with optional links)
+export function processOpinionHtml(
+    htmlString: string,
+    enableLinks: boolean,
+): string {
+    htmlString = sanitizeOpinionHtml(htmlString);
+    if (enableLinks) {
+        htmlString = linkifyHtmlBody(htmlString);
+    }
+    return htmlString;
 }
 
-export function processConversationHtml(htmlString: string): string {
-    return sanitizeConversationHtml(htmlString);
+// Process conversation HTML (multi-line, line breaks allowed, with optional links)
+export function processConversationHtml(
+    htmlString: string,
+    enableLinks: boolean,
+): string {
+    htmlString = sanitizeConversationHtml(htmlString);
+    if (enableLinks) {
+        htmlString = linkifyHtmlBody(htmlString);
+    }
+    return htmlString;
 }

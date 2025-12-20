@@ -18,7 +18,7 @@ import { toUnionUndefined } from "@/shared/shared.js";
 import { postNewOpinion } from "./comment.js";
 import { nowZeroMs } from "@/shared/util.js";
 import type { ConversationIds } from "@/utils/dataStructure.js";
-import { processHtmlBody } from "@/shared-app-api/html.js";
+import { processConversationHtml } from "@/shared-app-api/html.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import { deleteAllConversationExports } from "@/service/conversationExport/index.js";
 import * as authUtilService from "@/service/authUtil.js";
@@ -106,7 +106,7 @@ export async function createNewPost({
 
     if (conversationBody != null) {
         try {
-            conversationBody = processHtmlBody(conversationBody, true);
+            conversationBody = processConversationHtml(conversationBody, true);
         } catch (error) {
             if (error instanceof Error) {
                 throw httpErrors.badRequest(error.message);
