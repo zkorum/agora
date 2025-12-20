@@ -92,6 +92,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import CharacterCount from "@tiptap/extension-character-count";
 import EditorToolbarButton from "./EditorToolbarButton.vue";
 import { MAX_LENGTH_BODY } from "src/shared/shared";
+import sanitizeHtml from "sanitize-html";
 
 const $q = useQuasar();
 const modelText = defineModel<string>({ required: true });
@@ -100,6 +101,7 @@ const props = defineProps<{
   showToolbar: boolean;
   placeholder: string;
   minHeight: string;
+  disabled: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -109,6 +111,7 @@ const emit = defineEmits<{
 
 const editor = useEditor({
   content: modelText.value,
+  editable: !props.disabled,
   extensions: [
     StarterKit.configure({
       // Disable features we don't need
@@ -133,12 +136,14 @@ const editor = useEditor({
     attributes: {
       style: `min-height: ${props.minHeight}`,
     },
-    // Handle paste to strip formatting
+    // Handle paste to preserve only TipTap-enabled formatting
     transformPastedHTML(html) {
-      // Strip all HTML tags and keep only text content
-      const div = document.createElement("div");
-      div.innerHTML = html;
-      return div.textContent || div.innerText || "";
+      // Only allow tags that TipTap supports: b, strong, i, em, strike, s, u, p, br
+      const options: sanitizeHtml.IOptions = {
+        allowedTags: ["b", "strong", "i", "em", "strike", "s", "u", "p", "br"],
+        allowedAttributes: {},
+      };
+      return sanitizeHtml(html, options);
     },
   },
   onUpdate: ({ editor }) => {
@@ -169,22 +174,26 @@ defineExpose({
   },
 });
 
-// Watch for external changes to modelText using getter function
+// Watch for external changes to modelText
 watch(
   () => modelText.value,
   (newValue) => {
     if (editor.value) {
       const currentContent = editor.value.getHTML();
       // Only update if the content is actually different
-      if (
-        newValue !== currentContent &&
-        !(
-          (newValue === "" || newValue === "<p></p>") &&
-          (currentContent === "" || currentContent === "<p></p>")
-        )
-      ) {
+      if (newValue !== currentContent) {
         editor.value.commands.setContent(newValue);
       }
+    }
+  }
+);
+
+// Watch for disabled prop changes to update editor
+watch(
+  () => props.disabled,
+  (newDisabled) => {
+    if (editor.value) {
+      editor.value.setEditable(!newDisabled);
     }
   }
 );

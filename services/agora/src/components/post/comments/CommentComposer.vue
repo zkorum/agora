@@ -6,6 +6,7 @@
         :placeholder="t('placeholder')"
         :min-height="innerFocus ? '6rem' : '2rem'"
         :show-toolbar="innerFocus"
+        :disabled="isPostLocked"
         @update:model-value="checkWordCount()"
         @manually-focused="editorFocused()"
       />
@@ -88,6 +89,7 @@ const props = defineProps<{
   postSlugId: string;
   loginRequiredToParticipate: boolean;
   requiresEventTicket?: EventSlug;
+  isPostLocked: boolean;
 }>();
 
 const emit = defineEmits<{

@@ -98,26 +98,6 @@ export function processHtmlBody(htmlString: string, enableLinks: boolean) {
     return htmlString;
 }
 
-// Process opinion HTML (with optional links)
-export function processOpinionHtml(
-    htmlString: string,
-    enableLinks: boolean,
-): string {
-    htmlString = sanitizeUserHtml(htmlString);
-    if (enableLinks) {
-        htmlString = linkifyHtmlBody(htmlString);
-    }
-    return htmlString;
-}
-
-// Process conversation HTML (with optional links)
-export function processConversationHtml(
-    htmlString: string,
-    enableLinks: boolean,
-): string {
-    htmlString = sanitizeUserHtml(htmlString);
-    if (enableLinks) {
-        htmlString = linkifyHtmlBody(htmlString);
-    }
-    return htmlString;
-}
+// Export aliases for backwards compatibility - all do the same thing
+export { processHtmlBody as processOpinionHtml };
+export { processHtmlBody as processConversationHtml };

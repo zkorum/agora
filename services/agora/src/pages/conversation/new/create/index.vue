@@ -88,6 +88,7 @@
               :placeholder="t('bodyPlaceholder')"
               min-height="5rem"
               :show-toolbar="true"
+              :disabled="false"
               @update:model-value="updateContent"
             />
 
