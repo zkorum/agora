@@ -86,7 +86,6 @@ import { useQuasar } from "quasar";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import { BubbleMenu } from "@tiptap/vue-3/menus";
 import StarterKit from "@tiptap/starter-kit";
-import BubbleMenuExtension from "@tiptap/extension-bubble-menu";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import CharacterCount from "@tiptap/extension-character-count";
@@ -123,7 +122,6 @@ const editor = useEditor({
       orderedList: false,
       listItem: false,
     }),
-    BubbleMenuExtension,
     Underline,
     Placeholder.configure({
       placeholder: props.placeholder,

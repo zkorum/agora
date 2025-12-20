@@ -11,6 +11,7 @@ import {
     zodConversationTitle,
     zodConversationBody,
     zodConversationBodyInput,
+    zodOpinionContent,
     zodOpinionContentInput,
     zodVotingOption,
     zodVotingAction,

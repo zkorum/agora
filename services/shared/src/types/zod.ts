@@ -137,7 +137,7 @@ export const zodDevice = z
 export const zodDevices = z.array(zodDevice); // list of didWrite of all the devices belonging to a user
 export const zodConversationTitle = z.string().max(MAX_LENGTH_TITLE).min(1);
 
-// Output schema (lenient - for responses from database)
+// Output schema (lenient - for DB responses, after linkification)
 export const zodConversationBody = z
     .string()
     .max(MAX_LENGTH_BODY_HTML, {
@@ -145,7 +145,7 @@ export const zodConversationBody = z
     })
     .optional();
 
-// Input schema (strict - for new submissions)
+// Input schema (strict - validates BEFORE linkification)
 export const zodConversationBodyInput = z
     .string()
     .max(MAX_LENGTH_BODY_HTML, {
@@ -471,7 +471,7 @@ export const zodConversationMetadataWithId = z
     .strict();
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
 
-// Output schema (lenient - for responses from database)
+// Output schema (lenient - for DB responses, after linkification)
 export const zodOpinionContent = z
     .string()
     .min(1)
@@ -479,7 +479,7 @@ export const zodOpinionContent = z
         message: `Raw HTML content exceeds maximum length of ${MAX_LENGTH_OPINION_HTML} characters`,
     });
 
-// Input schema (strict - for new submissions)
+// Input schema (strict - validates BEFORE linkification)
 export const zodOpinionContentInput = z
     .string()
     .min(1)
