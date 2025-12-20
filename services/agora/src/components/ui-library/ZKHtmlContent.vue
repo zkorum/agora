@@ -11,9 +11,9 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { processHtmlBody } from "src/shared-app-api/html";
 import { computed } from "vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { processUserGeneratedHtml } from "src/shared-app-api/html";
 
 import {
   type ZKHtmlContentTranslations,
@@ -32,7 +32,7 @@ const { t } = useComponentI18n<ZKHtmlContentTranslations>(
 
 const sanitizedHtmlBody = computed(() => {
   try {
-    return processHtmlBody(props.htmlBody, props.enableLinks);
+    return processUserGeneratedHtml(props.htmlBody, props.enableLinks);
   } catch (error) {
     console.error("Error sanitizing HTML content:", error);
     // Fallback to plain text if sanitization fails

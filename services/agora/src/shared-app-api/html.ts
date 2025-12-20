@@ -63,42 +63,47 @@ export function domainFromEmail(email: string): string | undefined {
     }
 }
 
-// Sanitize HTML for user-generated content (allows formatting and line breaks)
-function sanitizeUserHtml(htmlString: string): string {
+// Sanitize user-generated rich text content (allows basic formatting tags only)
+// mode "input": strict validation for new TipTap content (no legacy "div" tags)
+// mode "output": permissive validation for displaying existing content (includes legacy "div" tags)
+function sanitizeRichTextContent(
+    htmlString: string,
+    mode: "input" | "output",
+): string {
+    const allowedTags =
+        mode === "input"
+            ? ["b", "strong", "i", "em", "strike", "s", "u", "p", "br"] // TipTap only
+            : ["b", "strong", "i", "em", "strike", "s", "u", "br", "div", "p"]; // Legacy + TipTap
+
     const options: sanitizeHtml.IOptions = {
-        allowedTags: [
-            "b",
-            "strong",
-            "i",
-            "em",
-            "strike",
-            "s",
-            "u",
-            "br",
-            "div",
-            "p",
-        ],
+        allowedTags,
+        allowedAttributes: {},
     };
     return sanitizeHtml(htmlString, options);
 }
 
-function linkifyHtmlBody(htmlString: string) {
+// Convert plain URLs in HTML to clickable links with security attributes
+function linkifyHtmlContent(htmlString: string): string {
     const opts: Opts = {
         attributes: {
             target: "_blank",
+            rel: "noopener noreferrer nofollow",
         },
     };
     return linkifyHtml(htmlString, opts);
 }
 
-export function processHtmlBody(htmlString: string, enableLinks: boolean) {
-    htmlString = sanitizeUserHtml(htmlString);
+// Process user-generated HTML content: sanitize and optionally add links
+// mode "input": strict validation for new content from TipTap editor
+// mode "output": permissive validation for displaying existing content (default for backwards compatibility)
+export function processUserGeneratedHtml(
+    htmlString: string,
+    enableLinks: boolean,
+    mode: "input" | "output" = "output",
+): string {
+    htmlString = sanitizeRichTextContent(htmlString, mode);
     if (enableLinks) {
-        htmlString = linkifyHtmlBody(htmlString);
+        htmlString = linkifyHtmlContent(htmlString);
     }
     return htmlString;
 }
-
-// Export aliases for backwards compatibility - all do the same thing
-export { processHtmlBody as processOpinionHtml };
-export { processHtmlBody as processConversationHtml };
