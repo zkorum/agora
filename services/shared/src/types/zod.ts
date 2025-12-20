@@ -231,7 +231,7 @@ export const zodUsername = z
 export const zodUserMuteAction = z.enum(["mute", "unmute"]);
 export const zodUserMuteItem = z
     .object({
-        createdAt: z.date(),
+        createdAt: zodDateTimeFlexible,
         username: z.string(),
     })
     .strict();
@@ -244,7 +244,7 @@ export const zodUserReportItem = z.object({
     username: z.string(),
     reason: zodUserReportReason,
     explanation: zodUserReportExplanation.optional(),
-    createdAt: z.date(),
+    createdAt: zodDateTimeFlexible,
     id: z.number(),
 });
 
