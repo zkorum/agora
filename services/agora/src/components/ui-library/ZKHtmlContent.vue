@@ -52,7 +52,24 @@ const handleClick = (event: Event) => {
 </script>
 
 <style lang="scss" scoped>
+.textBreak {
+  font-size: 1rem;
+  line-height: normal;
+  word-break: break-word;
+  /* Prevent potential layout issues with long content */
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
 :deep(p) {
+  margin-bottom: 0.5rem;
+}
+
+:deep(p:empty) {
+  min-height: 1.2em;
+}
+
+:deep(div) {
   margin-bottom: 0.5rem;
 }
 
@@ -69,13 +86,6 @@ const handleClick = (event: Event) => {
   -webkit-line-clamp: 5;
   line-clamp: 5;
   -webkit-box-orient: vertical;
-}
-
-.textBreak {
-  word-break: break-word;
-  /* Prevent potential layout issues with long content */
-  overflow-wrap: break-word;
-  hyphens: auto;
 }
 
 /* Ensure any remaining potentially dangerous content is hidden */

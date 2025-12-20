@@ -227,6 +227,10 @@ watch(
   margin-bottom: 0.5rem;
 }
 
+.editor :deep(.ProseMirror p:empty) {
+  min-height: 1.2em;
+}
+
 .toolbar-divider {
   margin: 0 0.5rem;
 }
