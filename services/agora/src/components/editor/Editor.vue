@@ -43,7 +43,7 @@
 
     <!-- Bubble menu for mobile -->
     <BubbleMenu
-      v-if="editor && $q.platform.is.mobile"
+      v-if="editor"
       v-show="showToolbar"
       :editor="editor"
       :options="{
