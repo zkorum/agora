@@ -7,6 +7,9 @@ import {
     MIN_LENGTH_USERNAME,
     MAX_LENGTH_USERNAME,
     MAX_LENGTH_BODY,
+    MAX_LENGTH_BODY_HTML,
+    MAX_LENGTH_OPINION,
+    MAX_LENGTH_OPINION_HTML,
     MAX_LENGTH_USER_REPORT_EXPLANATION,
     validateHtmlStringCharacterCount,
 } from "../shared.js";
@@ -134,15 +137,28 @@ export const zodDevice = z
     .strict();
 export const zodDevices = z.array(zodDevice); // list of didWrite of all the devices belonging to a user
 export const zodConversationTitle = z.string().max(MAX_LENGTH_TITLE).min(1);
+
+// Output schema (lenient - for responses from database)
 export const zodConversationBody = z
     .string()
+    .max(MAX_LENGTH_BODY_HTML, {
+        message: `Raw HTML content exceeds maximum length of ${MAX_LENGTH_BODY_HTML} characters`,
+    })
+    .optional();
+
+// Input schema (strict - for new submissions)
+export const zodConversationBodyInput = z
+    .string()
+    .max(MAX_LENGTH_BODY_HTML, {
+        message: `Raw HTML content exceeds maximum length of ${MAX_LENGTH_BODY_HTML} characters`,
+    })
     .refine(
         (val: string) => {
             return validateHtmlStringCharacterCount(val, "conversation")
                 .isValid;
         },
         {
-            message: "The HTML body's character count had exceeded the limit",
+            message: `Plain text content exceeds maximum length of ${MAX_LENGTH_BODY} characters`,
         },
     )
     .optional();
@@ -455,15 +471,28 @@ export const zodConversationMetadataWithId = z
     })
     .strict();
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
+
+// Output schema (lenient - for responses from database)
 export const zodOpinionContent = z
     .string()
     .min(1)
+    .max(MAX_LENGTH_OPINION_HTML, {
+        message: `Raw HTML content exceeds maximum length of ${MAX_LENGTH_OPINION_HTML} characters`,
+    });
+
+// Input schema (strict - for new submissions)
+export const zodOpinionContentInput = z
+    .string()
+    .min(1)
+    .max(MAX_LENGTH_OPINION_HTML, {
+        message: `Raw HTML content exceeds maximum length of ${MAX_LENGTH_OPINION_HTML} characters`,
+    })
     .refine(
         (val: string) => {
             return validateHtmlStringCharacterCount(val, "opinion").isValid;
         },
         {
-            message: "The HTML body's character count had exceeded the limit",
+            message: `Plain text content exceeds maximum length of ${MAX_LENGTH_OPINION} characters`,
         },
     );
 export const zodAgreementType = z.enum(["agree", "disagree"]);

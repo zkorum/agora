@@ -89,7 +89,9 @@ import StarterKit from "@tiptap/starter-kit";
 import BubbleMenuExtension from "@tiptap/extension-bubble-menu";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
+import CharacterCount from "@tiptap/extension-character-count";
 import EditorToolbarButton from "./EditorToolbarButton.vue";
+import { MAX_LENGTH_BODY } from "src/shared/shared";
 
 const $q = useQuasar();
 const modelText = defineModel<string>({ required: true });
@@ -122,6 +124,9 @@ const editor = useEditor({
     Underline,
     Placeholder.configure({
       placeholder: props.placeholder,
+    }),
+    CharacterCount.configure({
+      limit: MAX_LENGTH_BODY,
     }),
   ],
   editorProps: {

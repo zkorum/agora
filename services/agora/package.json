@@ -45,6 +45,7 @@
     "@tanstack/vue-query": "^5.89.0",
     "@tiptap/core": "^3.13.0",
     "@tiptap/extension-bubble-menu": "^3.14.0",
+    "@tiptap/extension-character-count": "^3.14.0",
     "@tiptap/extension-placeholder": "^3.13.0",
     "@tiptap/extensions": "^3.13.0",
     "@tiptap/pm": "^3.13.0",

@@ -37,8 +37,10 @@ export function validateHtmlStringCharacterCount(
     };
     const rawTextWithoutTags = sanitizeHtml(htmlString, options);
 
+    // Validate plain text against plain text limits (not HTML limits)
+    // HTML limits are only for database storage to account for markup overhead
     const characterLimit =
-        mode == "conversation" ? MAX_LENGTH_BODY_HTML : MAX_LENGTH_OPINION_HTML;
+        mode == "conversation" ? MAX_LENGTH_BODY : MAX_LENGTH_OPINION;
     if (rawTextWithoutTags.length <= characterLimit) {
         return { isValid: true, characterCount: rawTextWithoutTags.length };
     } else {

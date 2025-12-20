@@ -1765,6 +1765,11 @@
   resolved "https://registry.yarnpkg.com/@tiptap/extension-bullet-list/-/extension-bullet-list-3.13.0.tgz#277c9380704f618d71b63278da7bba45ed2b7905"
   integrity sha512-fFQmmEUoPzRGiQJ/KKutG35ZX21GE+1UCDo8Q6PoWH7Al9lex47nvyeU1BiDYOhcTKgIaJRtEH5lInsOsRJcSA==
 
+"@tiptap/extension-character-count@^3.14.0":
+  version "3.14.0"
+  resolved "https://registry.yarnpkg.com/@tiptap/extension-character-count/-/extension-character-count-3.14.0.tgz#e82c13aabcdbaf0c347797d54d3eb53051750c27"
+  integrity sha512-zFsY68XMAngRh4D5ILhV4Y1WSW4Fv4ZdfYspf4XgG6HjUm9LhzndkYHQ7aSLoUAmjz0CA+Pwox7PuP2WnV+BMA==
+
 "@tiptap/extension-code-block@^3.13.0":
   version "3.13.0"
   resolved "https://registry.yarnpkg.com/@tiptap/extension-code-block/-/extension-code-block-3.13.0.tgz#ded41a224db15e938c6a871462a0c33c00acd657"
