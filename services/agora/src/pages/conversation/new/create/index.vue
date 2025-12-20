@@ -526,5 +526,6 @@ watch(
 
 .large-text-input :deep(.q-field__native) {
   font-weight: var(--font-weight-medium);
+  line-height: 1.5;
 }
 </style>
