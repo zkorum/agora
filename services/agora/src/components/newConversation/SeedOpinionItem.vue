@@ -20,7 +20,6 @@
             class="textarea-border-style"
             :placeholder="t('inputTextPlaceholder')"
             :show-toolbar="isActive"
-            :allow-line-breaks="false"
             min-height="3rem"
             @update:model-value="(val) => $emit('update:modelValue', val)"
             @manually-focused="$emit('focus')"

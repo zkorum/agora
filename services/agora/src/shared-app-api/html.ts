@@ -63,16 +63,8 @@ export function domainFromEmail(email: string): string | undefined {
     }
 }
 
-// Sanitize opinion HTML (single-line, no line breaks allowed)
-function sanitizeOpinionHtml(htmlString: string): string {
-    const options: sanitizeHtml.IOptions = {
-        allowedTags: ["b", "strong", "i", "em", "strike", "s", "u"],
-    };
-    return sanitizeHtml(htmlString, options);
-}
-
-// Sanitize conversation HTML (multi-line, line breaks allowed)
-function sanitizeConversationHtml(htmlString: string): string {
+// Sanitize HTML for user-generated content (allows formatting and line breaks)
+function sanitizeUserHtml(htmlString: string): string {
     const options: sanitizeHtml.IOptions = {
         allowedTags: [
             "b",
@@ -90,11 +82,6 @@ function sanitizeConversationHtml(htmlString: string): string {
     return sanitizeHtml(htmlString, options);
 }
 
-// Legacy function for backward compatibility - uses conversation sanitizer
-function sanitizeHtmlInput(htmlString: string): string {
-    return sanitizeConversationHtml(htmlString);
-}
-
 function linkifyHtmlBody(htmlString: string) {
     const opts: Opts = {
         attributes: {
@@ -105,31 +92,31 @@ function linkifyHtmlBody(htmlString: string) {
 }
 
 export function processHtmlBody(htmlString: string, enableLinks: boolean) {
-    htmlString = sanitizeHtmlInput(htmlString);
+    htmlString = sanitizeUserHtml(htmlString);
     if (enableLinks) {
         htmlString = linkifyHtmlBody(htmlString);
     }
     return htmlString;
 }
 
-// Process opinion HTML (single-line, no line breaks, with optional links)
+// Process opinion HTML (with optional links)
 export function processOpinionHtml(
     htmlString: string,
     enableLinks: boolean,
 ): string {
-    htmlString = sanitizeOpinionHtml(htmlString);
+    htmlString = sanitizeUserHtml(htmlString);
     if (enableLinks) {
         htmlString = linkifyHtmlBody(htmlString);
     }
     return htmlString;
 }
 
-// Process conversation HTML (multi-line, line breaks allowed, with optional links)
+// Process conversation HTML (with optional links)
 export function processConversationHtml(
     htmlString: string,
     enableLinks: boolean,
 ): string {
-    htmlString = sanitizeConversationHtml(htmlString);
+    htmlString = sanitizeUserHtml(htmlString);
     if (enableLinks) {
         htmlString = linkifyHtmlBody(htmlString);
     }

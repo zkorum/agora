@@ -6,7 +6,6 @@
         :placeholder="t('placeholder')"
         :min-height="innerFocus ? '6rem' : '2rem'"
         :show-toolbar="innerFocus"
-        :allow-line-breaks="false"
         @update:model-value="checkWordCount()"
         @manually-focused="editorFocused()"
       />
