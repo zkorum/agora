@@ -868,10 +868,12 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
    * Centralized mutation for updating title with validation
    */
   function updateTitle(newTitle: string): MutationResult {
-    conversationDraft.value.title = newTitle;
+    // Strip any line breaks (handles pasted multi-line content)
+    const sanitizedTitle = newTitle.replace(/[\r\n]+/g, " ");
+    conversationDraft.value.title = sanitizedTitle;
 
     // Clear error when user starts typing
-    if (validationState.value.title.showError && newTitle.trim()) {
+    if (validationState.value.title.showError && sanitizedTitle.trim()) {
       clearValidationError("title");
     }
 

@@ -50,8 +50,7 @@
             borderless
             no-error-icon
             :placeholder="t('titlePlaceholder')"
-            type="textarea"
-            autogrow
+            type="text"
             :maxlength="MAX_LENGTH_TITLE"
             required
             :error="validationState.title.showError"
