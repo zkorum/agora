@@ -98,6 +98,7 @@ const props = defineProps<{
   showToolbar: boolean;
   placeholder: string;
   minHeight: string;
+  allowLineBreaks: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -134,6 +135,14 @@ const editor = useEditor({
       const div = document.createElement("div");
       div.innerHTML = html;
       return div.textContent || div.innerText || "";
+    },
+    // Prevent Enter key in single-line mode
+    handleKeyDown(view, event) {
+      if (!props.allowLineBreaks && event.key === "Enter") {
+        event.preventDefault();
+        return true;
+      }
+      return false;
     },
   },
   onUpdate: ({ editor }) => {

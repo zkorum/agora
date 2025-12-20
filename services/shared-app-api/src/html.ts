@@ -62,13 +62,38 @@ export function domainFromEmail(email: string): string | undefined {
     }
 }
 
-function sanitizeHtmlInput(htmlString: string): string {
+// Sanitize opinion HTML (single-line, no line breaks allowed)
+function sanitizeOpinionHtml(htmlString: string): string {
     const options: sanitizeHtml.IOptions = {
-        allowedTags: ["b", "br", "i", "strike", "u", "div"],
+        allowedTags: ["b", "strong", "i", "em", "strike", "s", "u"],
     };
     htmlString = sanitizeHtml(htmlString, options);
-
     return htmlString;
+}
+
+// Sanitize conversation HTML (multi-line, line breaks allowed)
+function sanitizeConversationHtml(htmlString: string): string {
+    const options: sanitizeHtml.IOptions = {
+        allowedTags: [
+            "b",
+            "strong",
+            "i",
+            "em",
+            "strike",
+            "s",
+            "u",
+            "br",
+            "div",
+            "p",
+        ],
+    };
+    htmlString = sanitizeHtml(htmlString, options);
+    return htmlString;
+}
+
+// Legacy function for backward compatibility - uses conversation sanitizer
+function sanitizeHtmlInput(htmlString: string): string {
+    return sanitizeConversationHtml(htmlString);
 }
 
 function linkifyHtmlBody(htmlString: string) {
@@ -86,4 +111,13 @@ export function processHtmlBody(htmlString: string, enableLinks: boolean) {
         htmlString = linkifyHtmlBody(htmlString);
     }
     return htmlString;
+}
+
+// Export new sanitizers for explicit use
+export function processOpinionHtml(htmlString: string): string {
+    return sanitizeOpinionHtml(htmlString);
+}
+
+export function processConversationHtml(htmlString: string): string {
+    return sanitizeConversationHtml(htmlString);
 }
