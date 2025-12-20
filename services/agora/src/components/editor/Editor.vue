@@ -46,7 +46,10 @@
       v-if="editor && $q.platform.is.mobile"
       v-show="showToolbar"
       :editor="editor"
-      :options="{ placement: 'bottom', offset: 10 }"
+      :options="{
+        placement: $q.platform.is.ios ? 'top' : 'bottom',
+        offset: 10,
+      }"
     >
       <div class="bubble-menu-content" @mousedown.prevent>
         <EditorToolbarButton
