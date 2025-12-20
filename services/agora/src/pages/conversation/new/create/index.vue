@@ -37,35 +37,27 @@
         <div
           v-if="conversationDraft.importSettings.importType === null"
           ref="titleInputRef"
-          :style="{ paddingLeft: '0.5rem' }"
         >
           <div v-if="validationState.title.showError" class="titleErrorMessage">
             <q-icon name="mdi-alert-circle" class="titleErrorIcon" />
             {{ validationState.title.error }}
           </div>
 
-          <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
-          <q-input
+          <Editor
             v-model="conversationDraft.title"
-            borderless
-            no-error-icon
             :placeholder="t('titlePlaceholder')"
-            type="textarea"
-            autogrow
-            rows="1"
-            :maxlength="MAX_LENGTH_TITLE"
-            required
-            :error="validationState.title.showError"
-            class="large-text-input"
+            :show-toolbar="false"
+            :single-line="true"
+            :max-length="MAX_LENGTH_TITLE"
+            min-height="auto"
+            :disabled="false"
+            class="title-editor"
             @update:model-value="updateTitle"
-          >
-            <template #after>
-              <div class="wordCountDiv">
-                {{ conversationDraft.title.length }} /
-                {{ MAX_LENGTH_TITLE }}
-              </div>
-            </template>
-          </q-input>
+          />
+
+          <div class="wordCountDiv" :style="{ paddingLeft: '0.5rem' }">
+            {{ conversationDraft.title.length }} / {{ MAX_LENGTH_TITLE }}
+          </div>
         </div>
         <div v-else class="import-section">
           <PolisUrlInput
@@ -88,6 +80,8 @@
               :placeholder="t('bodyPlaceholder')"
               min-height="5rem"
               :show-toolbar="true"
+              :single-line="false"
+              :max-length="MAX_LENGTH_BODY"
               :disabled="false"
               @update:model-value="updateContent"
             />

@@ -20,6 +20,8 @@
             class="textarea-border-style"
             :placeholder="t('inputTextPlaceholder')"
             :show-toolbar="isActive"
+            :single-line="false"
+            :max-length="MAX_LENGTH_OPINION"
             :disabled="false"
             min-height="3rem"
             @update:model-value="(val) => $emit('update:modelValue', val)"
@@ -44,6 +46,7 @@
 import { ref } from "vue";
 import Editor from "src/components/editor/Editor.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { MAX_LENGTH_OPINION } from "src/shared/shared";
 import {
   seedOpinionItemTranslations,
   type SeedOpinionItemTranslations,

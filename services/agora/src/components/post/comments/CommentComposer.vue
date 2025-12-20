@@ -6,6 +6,8 @@
         :placeholder="t('placeholder')"
         :min-height="innerFocus ? '6rem' : '2rem'"
         :show-toolbar="innerFocus"
+        :single-line="false"
+        :max-length="MAX_LENGTH_OPINION"
         :disabled="isPostLocked"
         @update:model-value="checkWordCount()"
         @manually-focused="editorFocused()"

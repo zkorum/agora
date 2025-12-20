@@ -88,9 +88,13 @@ import { BubbleMenu } from "@tiptap/vue-3/menus";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import CharacterCount from "@tiptap/extension-character-count";
+import Underline from "@tiptap/extension-underline";
+import { Extension } from "@tiptap/core";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { DOMSerializer } from "@tiptap/pm/model";
 import EditorToolbarButton from "./EditorToolbarButton.vue";
-import { MAX_LENGTH_BODY } from "src/shared/shared";
 import sanitizeHtml from "sanitize-html";
+import { htmlToCountedText } from "src/shared/shared";
 
 const $q = useQuasar();
 const modelText = defineModel<string>({ required: true });
@@ -100,12 +104,61 @@ const props = defineProps<{
   placeholder: string;
   minHeight: string;
   disabled: boolean;
+  singleLine: boolean;
+  maxLength: number;
 }>();
 
 const emit = defineEmits<{
   manuallyFocused: [];
   blur: [];
 }>();
+
+// Custom extension to block Enter key in single-line mode
+const BlockEnterExtension = Extension.create({
+  name: "blockEnter",
+  addKeyboardShortcuts() {
+    return {
+      Enter: () => true, // Returning true prevents default behavior
+    };
+  },
+});
+
+// Custom extension factory to enforce character limits using transaction filtering
+const createCharacterLimitExtension = (maxLength: number) =>
+  Extension.create({
+    name: "characterLimit",
+
+    addProseMirrorPlugins() {
+      return [
+        new Plugin({
+          key: new PluginKey("characterLimit"),
+          filterTransaction: (transaction, state) => {
+            // Allow non-document-changing transactions
+            if (!transaction.docChanged) {
+              return true;
+            }
+
+            // Get the new document that would result from this transaction
+            const newDoc = transaction.doc;
+
+            // Serialize to HTML
+            const fragment = DOMSerializer.fromSchema(
+              state.schema
+            ).serializeFragment(newDoc.content);
+            const div = document.createElement("div");
+            div.appendChild(fragment);
+            const html = div.innerHTML;
+
+            // Convert to plain text with our counting logic
+            const plainText = htmlToCountedText(html);
+
+            // Block transaction if it would exceed the limit
+            return plainText.length <= maxLength;
+          },
+        }),
+      ];
+    },
+  });
 
 const editor = useEditor({
   content: modelText.value,
@@ -120,13 +173,18 @@ const editor = useEditor({
       bulletList: false,
       orderedList: false,
       listItem: false,
+      // Disable hard breaks in single-line mode
+      hardBreak: props.singleLine ? false : {},
     }),
+    Underline,
     Placeholder.configure({
       placeholder: props.placeholder,
     }),
-    CharacterCount.configure({
-      limit: MAX_LENGTH_BODY,
-    }),
+    CharacterCount,
+    // Add character limit enforcement
+    createCharacterLimitExtension(props.maxLength),
+    // Add Enter key blocker for single-line mode
+    ...(props.singleLine ? [BlockEnterExtension] : []),
   ],
   editorProps: {
     attributes: {
@@ -143,12 +201,19 @@ const editor = useEditor({
     },
   },
   onUpdate: ({ editor }) => {
-    const html = editor.getHTML();
-    // Clean up empty content
-    if (html === "<p></p>" || html === "<br>" || html === "") {
-      modelText.value = "";
+    if (props.singleLine) {
+      // Get plain text for single-line mode
+      const text = editor.getText();
+      modelText.value = text;
     } else {
-      modelText.value = html;
+      // Get HTML for multi-line mode
+      const html = editor.getHTML();
+      // Clean up empty content
+      if (html === "<p></p>" || html === "<br>" || html === "") {
+        modelText.value = "";
+      } else {
+        modelText.value = html;
+      }
     }
   },
   onFocus: () => {
@@ -175,7 +240,9 @@ watch(
   () => modelText.value,
   (newValue) => {
     if (editor.value) {
-      const currentContent = editor.value.getHTML();
+      const currentContent = props.singleLine
+        ? editor.value.getText()
+        : editor.value.getHTML();
       // Only update if the content is actually different
       if (newValue !== currentContent) {
         editor.value.commands.setContent(newValue);
@@ -197,7 +264,7 @@ watch(
 
 <style lang="scss" scoped>
 .editor {
-  padding-bottom: 1rem;
+  padding-bottom: 0rem;
 }
 
 .toolbar {

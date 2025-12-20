@@ -28,15 +28,33 @@ interface ValidateHtmlStringCharacterCountReturn {
     characterCount: number;
 }
 
-export function validateHtmlStringCharacterCount(
-    htmlString: string,
-    mode: "conversation" | "opinion",
-): ValidateHtmlStringCharacterCountReturn {
+/**
+ * Converts HTML content to plain text with newlines preserved
+ * This is used for character counting across the application
+ */
+export function htmlToCountedText(htmlString: string): string {
+    // Convert block-level HTML elements to newlines before stripping tags
+    // This ensures line breaks are counted as characters
+    let textWithNewlines = htmlString
+        .replace(/<\/p>/gi, "\n") // </p> becomes newline
+        .replace(/<br\s*\/?>/gi, "\n") // <br> and <br/> become newline
+        .replace(/<p>/gi, ""); // Remove opening <p> tags
+
     const options: sanitizeHtml.IOptions = {
         allowedTags: [],
         allowedAttributes: {},
     };
-    const rawTextWithoutTags = sanitizeHtml(htmlString, options);
+    const plainText = sanitizeHtml(textWithNewlines, options);
+
+    // Trim trailing newline (single paragraph ends with \n which shouldn't be counted)
+    return plainText.replace(/\n$/, "");
+}
+
+export function validateHtmlStringCharacterCount(
+    htmlString: string,
+    mode: "conversation" | "opinion",
+): ValidateHtmlStringCharacterCountReturn {
+    const rawTextWithoutTags = htmlToCountedText(htmlString);
 
     // Validate plain text against plain text limits (not HTML limits)
     // HTML limits are only for database storage to account for markup overhead

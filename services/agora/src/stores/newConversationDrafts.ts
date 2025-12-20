@@ -880,24 +880,14 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Centralized mutation for updating title with validation
+   * Centralized mutation for updating title
+   * Length validation is handled by the Editor component
    */
   function updateTitle(newTitle: string): MutationResult {
-    // Strip any line breaks (handles pasted multi-line content)
-    const sanitizedTitle = newTitle.replace(/[\r\n]+/g, " ");
-
-    // Validate length with Zod - prevent exceeding limit
-    if (sanitizedTitle.length > MAX_LENGTH_TITLE) {
-      console.warn(
-        `Title exceeds max length (${sanitizedTitle.length}/${MAX_LENGTH_TITLE}), keeping old value`
-      );
-      return { success: false, error: "Title too long" };
-    }
-
-    conversationDraft.value.title = sanitizedTitle;
+    conversationDraft.value.title = newTitle;
 
     // Clear error when user starts typing
-    if (validationState.value.title.showError && sanitizedTitle.trim()) {
+    if (validationState.value.title.showError && newTitle.trim()) {
       clearValidationError("title");
     }
 
@@ -905,22 +895,10 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Centralized mutation for updating body content with validation
+   * Centralized mutation for updating body content
+   * Length validation is handled by the Editor component
    */
   function updateContent(newContent: string): MutationResult {
-    // Validate HTML character count before updating
-    const bodyValidation = validateHtmlStringCharacterCount(
-      newContent,
-      "conversation"
-    );
-
-    if (!bodyValidation.isValid) {
-      console.warn(
-        `Content exceeds limit: ${bodyValidation.characterCount}/${MAX_LENGTH_BODY}, keeping old value`
-      );
-      return { success: false, error: "Content too long" };
-    }
-
     conversationDraft.value.content = newContent;
 
     // Clear error when content becomes valid
