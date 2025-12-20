@@ -75,7 +75,7 @@
       </div>
     </BubbleMenu>
     <div class="editor-wrapper">
-      <EditorContent :editor="editor" />
+      <EditorContent v-if="editor" :editor="editor" />
     </div>
   </div>
 </template>
