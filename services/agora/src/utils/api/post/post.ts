@@ -23,7 +23,6 @@ import type {
   EventSlug,
   ExtendedConversation,
   FeedSortAlgorithm,
-  moderationStatusOptionsType,
 } from "src/shared/types/zod";
 import { zodExtendedConversationData } from "src/shared/types/zod";
 import { CSV_UPLOAD_FIELD_NAMES } from "src/shared-app-api/csvUpload";
@@ -350,30 +349,10 @@ export function useBackendPostApi() {
   function composeInternalPostList(
     incomingPostList: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner[]
   ): ExtendedConversation[] {
-    // Convert API response format to zod-compatible format (string dates to Date objects)
-    const transformedList = incomingPostList.map((item) => ({
-      ...item,
-      metadata: {
-        ...item.metadata,
-        createdAt: new Date(item.metadata.createdAt),
-        updatedAt: new Date(item.metadata.updatedAt),
-        lastReactedAt: new Date(item.metadata.lastReactedAt),
-        moderation:
-          (item.metadata.moderation.status as moderationStatusOptionsType) ===
-          "moderated"
-            ? {
-                ...item.metadata.moderation,
-                createdAt: new Date(item.metadata.moderation.createdAt),
-                updatedAt: new Date(item.metadata.moderation.updatedAt),
-              }
-            : item.metadata.moderation,
-      },
-    }));
-
-    // Use zod to parse and validate the transformed conversation data
+    // Use zod to parse and validate - zodDateTimeFlexible handles date conversion automatically
     const conversationListResult = zodExtendedConversationData
       .array()
-      .safeParse(transformedList);
+      .safeParse(incomingPostList);
 
     if (!conversationListResult.success) {
       console.error(

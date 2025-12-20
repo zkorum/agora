@@ -405,8 +405,8 @@ export const zodConversationModerationProperties = z.discriminatedUnion(
                 action: zodConversationModerationAction,
                 reason: zodModerationReason,
                 explanation: zodModerationExplanation,
-                createdAt: z.date(),
-                updatedAt: z.date(),
+                createdAt: zodDateTimeFlexible,
+                updatedAt: zodDateTimeFlexible,
             })
             .strict(),
         z
@@ -424,8 +424,8 @@ export const zodOpinionModerationProperties = z.discriminatedUnion("status", [
             action: zodOpinionModerationAction,
             reason: zodModerationReason,
             explanation: zodModerationExplanation,
-            createdAt: z.date(),
-            updatedAt: z.date(),
+            createdAt: zodDateTimeFlexible,
+            updatedAt: zodDateTimeFlexible,
         })
         .strict(),
     z
@@ -438,9 +438,9 @@ export const zodOpinionModerationProperties = z.discriminatedUnion("status", [
 export const zodConversationMetadata = z
     .object({
         conversationSlugId: zodSlugId,
-        createdAt: z.date(),
-        updatedAt: z.date(),
-        lastReactedAt: z.date(),
+        createdAt: zodDateTimeFlexible,
+        updatedAt: zodDateTimeFlexible,
+        lastReactedAt: zodDateTimeFlexible,
         opinionCount: zodCount,
         voteCount: zodCount,
         participantCount: zodCount,
@@ -509,8 +509,8 @@ export const zodClusterStats = z.object({
 export const zodOpinionItem = z
     .object({
         opinionSlugId: zodSlugId,
-        createdAt: z.date(),
-        updatedAt: z.date(),
+        createdAt: zodDateTimeFlexible,
+        updatedAt: zodDateTimeFlexible,
         opinion: zodOpinionContentOutput,
         numParticipants: z.number().int().nonnegative(),
         numAgrees: z.number().int().nonnegative(),

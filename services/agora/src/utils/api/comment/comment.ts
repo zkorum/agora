@@ -2,22 +2,16 @@ import { storeToRefs } from "pinia";
 import {
   type ApiV1OpinionCreatePostRequest,
   type ApiV1OpinionFetchAnalysisByConversationPost200Response,
-  type ApiV1OpinionFetchAnalysisByConversationPost200ResponseClusters0,
-  type ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner,
-  type ApiV1OpinionFetchByConversationPostRequest,
-  type ApiV1OpinionFetchBySlugIdListPostRequest,
-  type ApiV1OpinionFetchHiddenByConversationPostRequest,
-  type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
 import type {
   AnalysisOpinionItem,
-  moderationStatusOptionsType,
-  OpinionItem,
   PolisClusters,
-  PolisKey,
+  OpinionItem,
 } from "src/shared/types/zod";
+import { zodOpinionItem } from "src/shared/types/zod";
+import { Dto } from "src/shared/types/dto";
 import { useAuthenticationStore } from "src/stores/authentication";
 
 import { useBackendAuthApi } from "../auth";
@@ -34,35 +28,15 @@ export function useBackendCommentApi() {
   function createLocalCommentObject(
     webCommentItemList: ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem[]
   ): OpinionItem[] {
-    const parsedCommentItemList: OpinionItem[] = [];
+    // Use zod to parse and validate - zodDateTimeFlexible handles date conversion automatically
+    const result = zodOpinionItem.array().safeParse(webCommentItemList);
 
-    webCommentItemList.forEach((item) => {
-      const moderationStatus = item.moderation
-        .status as moderationStatusOptionsType;
+    if (!result.success) {
+      console.error("Failed to parse opinion data with zod:", result.error);
+      return [];
+    }
 
-      parsedCommentItemList.push({
-        opinion: item.opinion,
-        opinionSlugId: item.opinionSlugId,
-        createdAt: new Date(item.createdAt),
-        numParticipants: item.numParticipants,
-        numDisagrees: item.numDisagrees,
-        numAgrees: item.numAgrees,
-        numPasses: item.numPasses,
-        updatedAt: new Date(item.updatedAt),
-        username: String(item.username),
-        isSeed: item.isSeed,
-        moderation: {
-          status: moderationStatus,
-          action: item.moderation.action,
-          explanation: item.moderation.explanation,
-          reason: item.moderation.reason,
-          createdAt: new Date(item.moderation.createdAt),
-          updatedAt: new Date(item.moderation.updatedAt),
-        },
-      });
-    });
-
-    return parsedCommentItemList;
+    return result.data;
   }
 
   async function fetchHiddenCommentsForPost(
@@ -264,47 +238,13 @@ export function useBackendCommentApi() {
       data = response.data;
     }
 
-    const clusters: Partial<PolisClusters> = {};
-
-    for (const [key, val] of Object.entries(data.clusters)) {
-      const clusterData =
-        val as ApiV1OpinionFetchAnalysisByConversationPost200ResponseClusters0;
-      const representative: Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner> =
-        clusterData.representative;
-      const representativeItems = representative.map((item) => ({
-        ...item,
-        createdAt: new Date(item.createdAt),
-        updatedAt: new Date(item.updatedAt),
-      }));
-      clusters[key as PolisKey] = {
-        ...clusterData,
-        representative: representativeItems,
-      };
-    }
-
-    const opinionConsensusItem: AnalysisOpinionItem[] = data.consensus.map(
-      (val) => {
-        return {
-          ...val,
-          createdAt: new Date(val.createdAt),
-          updatedAt: new Date(val.updatedAt),
-        };
-      }
-    );
-
-    const opinionControversialItem: AnalysisOpinionItem[] =
-      data.controversial.map((val) => {
-        return {
-          ...val,
-          createdAt: new Date(val.createdAt),
-          updatedAt: new Date(val.updatedAt),
-        };
-      });
+    // Use zod to parse and validate - zodDateTimeFlexible handles date conversion automatically
+    const parsedData = Dto.fetchAnalysisResponse.parse(data);
 
     return {
-      consensus: opinionConsensusItem,
-      controversial: opinionControversialItem,
-      polisClusters: clusters,
+      consensus: parsedData.consensus,
+      controversial: parsedData.controversial,
+      polisClusters: parsedData.clusters,
     };
   }
 

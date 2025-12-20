@@ -5,10 +5,9 @@ import {
   DefaultApiFactory,
 } from "src/api";
 import type { GetUserProfileResponse } from "src/shared/types/dto";
+import { Dto } from "src/shared/types/dto";
 import type {
   ExtendedConversation,
-  ExtendedOpinion,
-  moderationStatusOptionsType,
 } from "src/shared/types/zod";
 
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
@@ -115,45 +114,8 @@ export function useBackendUserApi() {
         },
       });
 
-      const extendedCommentList: ExtendedOpinion[] = [];
-      response.data.forEach((responseItem) => {
-        // Patch OpenAPI bug on discriminatedUnion
-        const moderationStatus = responseItem.opinionItem.moderation
-          .status as moderationStatusOptionsType;
-
-        const extendedComment: ExtendedOpinion = {
-          conversationData: createInternalPostData(
-            responseItem.conversationData
-          ),
-          opinionItem: {
-            opinion: responseItem.opinionItem.opinion,
-            opinionSlugId: responseItem.opinionItem.opinionSlugId,
-            createdAt: new Date(responseItem.opinionItem.createdAt),
-            numParticipants: responseItem.opinionItem.numParticipants,
-            numDisagrees: responseItem.opinionItem.numDisagrees,
-            numAgrees: responseItem.opinionItem.numAgrees,
-            numPasses: responseItem.opinionItem.numPasses,
-            updatedAt: new Date(responseItem.opinionItem.updatedAt),
-            username: String(responseItem.opinionItem.username),
-            isSeed: responseItem.opinionItem.isSeed,
-            moderation: {
-              status: moderationStatus,
-              action: responseItem.opinionItem.moderation.action,
-              explanation: responseItem.opinionItem.moderation.explanation,
-              reason: responseItem.opinionItem.moderation.reason,
-              createdAt: new Date(
-                responseItem.opinionItem.moderation.createdAt
-              ),
-              updatedAt: new Date(
-                responseItem.opinionItem.moderation.updatedAt
-              ),
-            },
-          },
-        };
-        extendedCommentList.push(extendedComment);
-      });
-
-      return extendedCommentList;
+      // The DTO already contains fully parsed ExtendedOpinion objects with Date objects
+      return Dto.fetchUserOpinionsResponse.parse(response.data);
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch user's personal comments.");
