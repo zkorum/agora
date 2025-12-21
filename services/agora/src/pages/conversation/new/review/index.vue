@@ -63,7 +63,7 @@
             :label="t('addOpinion')"
             :show-border="false"
             variant="filled"
-            @click="addNewOpinion"
+            @mousedown.prevent="addNewOpinion"
           />
         </div>
       </div>
@@ -84,7 +84,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { type ComponentPublicInstance, onMounted, ref } from "vue";
+import { ref, type ComponentPublicInstance, onMounted, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import Editor from "src/components/editor/Editor.vue";
@@ -132,6 +132,9 @@ const routeGuard = ref<{ unlockRoute: () => void } | undefined>(undefined);
 // Validation state
 const opinionErrors = ref<Record<number, string>>({});
 const opinionRefs = ref<Record<number, HTMLElement>>({});
+const opinionComponentRefs = ref<
+  Record<number, InstanceType<typeof SeedOpinionItem>>
+>({});
 
 const { createNewConversationIntention } = useLoginIntentionStore();
 const navigationStore = useNavigationStore();
@@ -154,11 +157,15 @@ function onLoginCallback() {
 function setOpinionRef(
   el: Element | ComponentPublicInstance | null,
   index: number
-) {
+): void {
   if (el) {
     // Handle Vue component instance
     if ("$el" in el) {
       opinionRefs.value[index] = el.$el as HTMLElement;
+      // Store component instance for calling focus method
+      opinionComponentRefs.value[index] = el as InstanceType<
+        typeof SeedOpinionItem
+      >;
     } else {
       // Handle direct DOM element
       opinionRefs.value[index] = el as HTMLElement;
@@ -188,11 +195,33 @@ function checkOpinionWordCount(index: number) {
   }
 }
 
-function addNewOpinion() {
+async function addNewOpinion(): Promise<void> {
   conversationDraft.value.seedOpinions.push("");
+  const newIndex = conversationDraft.value.seedOpinions.length - 1;
+
+  // Wait for Vue to render the new element
+  await nextTick();
+
+  // Scroll to the new opinion and focus it
+  const newElement = opinionRefs.value[newIndex];
+  if (newElement) {
+    newElement.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }
+
+  // Focus the new opinion's editor
+  const newComponent = opinionComponentRefs.value[newIndex];
+  if (newComponent) {
+    // Small delay to ensure scroll completes before focus
+    setTimeout(() => {
+      newComponent.focus();
+    }, 100);
+  }
 }
 
-function removeOpinion(index: number) {
+function removeOpinion(index: number): void {
   conversationDraft.value.seedOpinions.splice(index, 1);
   // Clear any error for this index
   clearOpinionError(index);
@@ -220,6 +249,22 @@ function removeOpinion(index: number) {
     // Skip the removed index (idx === index) to clean it up
   });
   opinionRefs.value = newRefs;
+
+  // Clean up opinionComponentRefs to prevent memory leaks
+  const newComponentRefs: Record<
+    number,
+    InstanceType<typeof SeedOpinionItem>
+  > = {};
+  Object.keys(opinionComponentRefs.value).forEach((key) => {
+    const idx = parseInt(key);
+    if (idx < index) {
+      newComponentRefs[idx] = opinionComponentRefs.value[idx];
+    } else if (idx > index) {
+      newComponentRefs[idx - 1] = opinionComponentRefs.value[idx];
+    }
+    // Skip the removed index (idx === index) to clean it up
+  });
+  opinionComponentRefs.value = newComponentRefs;
 }
 
 function validateSeedOpinions(): boolean {
@@ -390,7 +435,7 @@ async function onSubmit() {
   padding-top: 1.5rem;
 
   // For devices with notches/home indicators
-  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
 
   // Make button span full width
   > * {
@@ -401,6 +446,6 @@ async function onSubmit() {
 .opinions-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 2rem;
 }
 </style>

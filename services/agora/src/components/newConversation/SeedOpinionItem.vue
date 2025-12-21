@@ -28,15 +28,18 @@
             @manually-focused="$emit('focus')"
             @blur="$emit('blur')"
           />
-        </div>
 
-        <PrimeButton
-          icon="pi pi-trash"
-          severity="danger"
-          text
-          rounded
-          @mousedown="$emit('remove')"
-        />
+          <!-- Delete button - visible when active -->
+          <PrimeButton
+            v-if="isActive"
+            :label="t('deleteOpinion')"
+            icon="pi pi-trash"
+            severity="danger"
+            text
+            class="delete-button"
+            @mousedown="$emit('remove')"
+          />
+        </div>
       </div>
     </template>
   </PrimeCard>
@@ -76,6 +79,15 @@ const handleCardClick = (): void => {
     editorRef.value?.focus();
   }
 };
+
+// Expose focus method for parent component
+const focus = (): void => {
+  editorRef.value?.focus();
+};
+
+defineExpose({
+  focus,
+});
 </script>
 
 <style scoped lang="scss">
@@ -87,7 +99,10 @@ const handleCardClick = (): void => {
 
 .opinion-card {
   &:deep(.p-card-body) {
-    padding: 0.25rem;
+    padding-top: 1rem;
+    padding-left: 0rem;
+    padding-right: 0rem;
+    padding-bottom: 1rem;
   }
   background-color: white;
   border-radius: 20px;
@@ -124,5 +139,16 @@ const handleCardClick = (): void => {
 .opinion-error-icon {
   font-size: 1rem;
   margin-right: 0.5rem;
+}
+
+.delete-button {
+  width: 100%;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  margin-top: 0.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  // Ensure delete button stays below the Editor's bubble menu
+  position: relative;
 }
 </style>

@@ -46,10 +46,10 @@
       v-if="editor"
       v-show="showToolbar"
       :editor="editor"
-      :options="{
-        placement: $q.platform.is.ios ? 'bottom' : 'top',
-        offset: $q.platform.is.mobile ? 20 : 15,
-        flip: false,
+      :tippy-options="{
+        placement: $q.platform.is.android ? 'top' : 'bottom',
+        offset: [0, $q.platform.is.mobile ? 20 : 15],
+        flip: !$q.platform.is.mobile,
       }"
     >
       <div class="bubble-menu-content" @mousedown.prevent>
