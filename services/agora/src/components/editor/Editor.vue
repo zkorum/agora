@@ -48,7 +48,7 @@
       :editor="editor"
       :options="{
         placement: $q.platform.is.ios ? 'top' : 'bottom',
-        offset: 10,
+        offset: $q.platform.is.mobile ? 20 : 15,
       }"
     >
       <div class="bubble-menu-content" @mousedown.prevent>
