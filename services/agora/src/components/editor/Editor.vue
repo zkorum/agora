@@ -47,8 +47,9 @@
       v-show="showToolbar"
       :editor="editor"
       :options="{
-        placement: $q.platform.is.ios ? 'top' : 'bottom',
+        placement: $q.platform.is.ios ? 'bottom' : 'top',
         offset: $q.platform.is.mobile ? 20 : 15,
+        flip: false,
       }"
     >
       <div class="bubble-menu-content" @mousedown.prevent>
