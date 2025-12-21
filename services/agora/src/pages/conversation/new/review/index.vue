@@ -25,17 +25,6 @@
           {{ t("seedOpinionsDescription") }}
         </p>
 
-        <!-- Add Opinion Button -->
-        <div class="add-button-container">
-          <ConversationControlButton
-            :label="t('add')"
-            icon="pi pi-plus"
-            :show-border="false"
-            icon-position="left"
-            @click="addNewOpinion"
-          />
-        </div>
-
         <!-- Seed Opinions List -->
         <div
           v-if="conversationDraft.seedOpinions.length > 0"
@@ -65,6 +54,16 @@
             "
             @blur="currentActiveOpinionIndex = -1"
             @remove="removeOpinion(index)"
+          />
+        </div>
+
+        <!-- Add Opinion Button -->
+        <div class="add-button-container">
+          <ConversationControlButton
+            :label="t('addOpinion')"
+            :show-border="false"
+            variant="filled"
+            @click="addNewOpinion"
           />
         </div>
       </div>
@@ -372,8 +371,31 @@ async function onSubmit() {
 }
 
 .add-button-container {
+  position: sticky;
+  bottom: 0;
   display: flex;
-  justify-content: flex-start;
+  padding: 1rem;
+  margin: 1rem -1rem 0; // Negative margin to extend to container edges
+  z-index: 10;
+
+  // Subtle background with gradient fade for visual separation
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.9) 15%,
+    rgba(255, 255, 255, 1) 30%
+  );
+
+  // Padding to account for the gradient transparency
+  padding-top: 1.5rem;
+
+  // For devices with notches/home indicators
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+
+  // Make button span full width
+  > * {
+    width: 100%;
+  }
 }
 
 .opinions-list {
