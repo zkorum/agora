@@ -69,10 +69,10 @@
             />
             <p>{{ t("failedMessage") }}</p>
             <p
-              v-if="exportStatusQuery.data.value.errorMessage"
+              v-if="exportStatusQuery.data.value.failureReason"
               class="error-details"
             >
-              {{ exportStatusQuery.data.value.errorMessage }}
+              {{ getFailureReasonText(exportStatusQuery.data.value.failureReason) }}
             </p>
           </div>
           <div
@@ -113,11 +113,11 @@
               {{ formatDateTime(exportStatusQuery.data.value.deletedAt) }}
             </p>
             <p
-              v-if="exportStatusQuery.data.value.errorMessage"
+              v-if="exportStatusQuery.data.value.failureReason"
               class="error-details"
             >
               {{ t("originalError") }}:
-              {{ exportStatusQuery.data.value.errorMessage }}
+              {{ getFailureReasonText(exportStatusQuery.data.value.failureReason) }}
             </p>
             <p
               v-if="exportStatusQuery.data.value.cancellationReason"
@@ -233,6 +233,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { useNotify } from "src/utils/ui/notify";
 import { formatDateTime, formatFileSize, isUrlExpired } from "src/utils/format";
+import type { ExportFailureReason } from "src/shared/types/zod";
 
 interface Props {
   exportSlugId: string;
@@ -311,6 +312,17 @@ function handleRequestNewExport(): void {
       conversationSlugId: exportData.conversationSlugId,
     },
   });
+}
+
+function getFailureReasonText(reason: ExportFailureReason): string {
+  switch (reason) {
+    case "processing_error":
+    case "server_restart":
+      // Show server_restart as generic processing error (not helpful to show internal details)
+      return t("failureReasonProcessingError");
+    case "timeout":
+      return t("failureReasonTimeout");
+  }
 }
 </script>
 

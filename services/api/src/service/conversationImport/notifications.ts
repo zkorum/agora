@@ -54,7 +54,7 @@ export async function createImportNotification({
         });
 
         log.info(
-            `Created ${type} notification for user ${userId}, import ${importId}`,
+            `Created ${type} notification for user ${userId}, import ${String(importId)}`,
         );
 
         // Broadcast notification via SSE (don't await to avoid blocking)

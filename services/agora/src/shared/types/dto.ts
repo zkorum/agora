@@ -43,6 +43,8 @@ import {
     zodExportStatus,
     zodExportFileInfo,
     zodDateTimeFlexible,
+    zodExportFailureReason,
+    zodImportFailureReason,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
@@ -299,12 +301,12 @@ export class Dto {
                     updatedAt: zodDateTimeFlexible,
                 })
                 .strict(),
-            // Failed - has error message
+            // Failed - has failure reason
             z
                 .object({
                     status: z.literal("failed"),
                     importSlugId: zodSlugId,
-                    errorMessage: z.string().optional(),
+                    failureReason: zodImportFailureReason.optional(),
                     createdAt: zodDateTimeFlexible,
                     updatedAt: zodDateTimeFlexible,
                 })
@@ -737,17 +739,32 @@ export class Dto {
             conversationSlugId: zodSlugId,
         })
         .strict();
-    static requestConversationExportResponse = z.discriminatedUnion("status", [
+    static requestConversationExportResponse = z.union([
+        // Success case: queued
         z
             .object({
+                success: z.literal(true),
                 status: z.literal("queued"),
                 exportSlugId: zodSlugId,
             })
             .strict(),
+        // Success case: cooldown active
         z
             .object({
+                success: z.literal(true),
                 status: z.literal("cooldown_active"),
                 cooldownEndsAt: zodDateTimeFlexible,
+            })
+            .strict(),
+        // Failure cases
+        z
+            .object({
+                success: z.literal(false),
+                reason: z.enum([
+                    "active_export_in_progress",
+                    "conversation_not_found",
+                    "no_opinions",
+                ]),
             })
             .strict(),
     ]);
@@ -780,13 +797,13 @@ export class Dto {
                     expiresAt: zodDateTimeFlexible,
                 })
                 .strict(),
-            // Failed - has error message, no files
+            // Failed - has failure reason, no files
             z
                 .object({
                     status: z.literal("failed"),
                     exportSlugId: zodSlugId,
                     conversationSlugId: zodSlugId,
-                    errorMessage: z.string().optional(),
+                    failureReason: zodExportFailureReason.optional(),
                     createdAt: zodDateTimeFlexible,
                     expiresAt: zodDateTimeFlexible,
                 })
@@ -802,13 +819,13 @@ export class Dto {
                     expiresAt: zodDateTimeFlexible,
                 })
                 .strict(),
-            // Expired - has deletedAt, no files, may have error/cancellation from original status
+            // Expired - has deletedAt, no files, may have failure reason/cancellation from original status
             z
                 .object({
                     status: z.literal("expired"),
                     exportSlugId: zodSlugId,
                     conversationSlugId: zodSlugId,
-                    errorMessage: z.string().optional(),
+                    failureReason: zodExportFailureReason.optional(),
                     cancellationReason: z.string().optional(),
                     createdAt: zodDateTimeFlexible,
                     expiresAt: zodDateTimeFlexible,

@@ -24,7 +24,6 @@ import {
 import type { ProcessConversationExportParams } from "./types.js";
 import { createExportNotification } from "./notifications.js";
 import type { ExportBuffer } from "../exportBuffer.js";
-import { getExportReadinessForConversation } from "./readiness.js";
 
 // Maximum number of exports to keep per conversation
 const MAX_EXPORTS_PER_CONVERSATION = 7;
@@ -38,7 +37,18 @@ interface RequestConversationExportParams {
 
 /**
  * Request a new conversation export.
- * This function delegates to the export buffer for cooldown enforcement and batching.
+ *
+ * Delegates to exportBuffer.add() which handles ALL validation synchronously:
+ * - Conversation existence check
+ * - Active export check (per user+conversation)
+ * - Cooldown check
+ * - Opinion count check
+ *
+ * Only after validation passes does it:
+ * - Create DB record with "processing" status
+ * - Add to Valkey queue for async processing
+ *
+ * Returns a discriminated union with success: true/false for proper i18n support.
  */
 export async function requestConversationExport({
     db,
@@ -46,7 +56,7 @@ export async function requestConversationExport({
     userId,
     exportBuffer,
 }: RequestConversationExportParams): Promise<RequestConversationExportResponse> {
-    // Verify conversation exists
+    // Get conversationId from slugId for the buffer
     const conversation = await db
         .select({ id: conversationTable.id })
         .from(conversationTable)
@@ -54,26 +64,13 @@ export async function requestConversationExport({
         .limit(1);
 
     if (conversation.length === 0) {
-        throw httpErrors.notFound("Conversation not found");
+        return { success: false, reason: "conversation_not_found" };
     }
 
     const conversationId = conversation[0].id;
 
-    // Check if user already has an active export for this conversation
-    const activeExport = await getActiveExportForConversation({
-        db,
-        conversationSlugId,
-        userId,
-    });
-
-    if (activeExport.hasActiveExport) {
-        throw httpErrors.badRequest(
-            "You already have an export in progress for this conversation. Please wait for it to complete before requesting a new export.",
-        );
-    }
-
-    // Delegate to export buffer - handles cooldown, batching, and processing
-    const result = await exportBuffer.add({
+    // Delegate to export buffer - handles all validation synchronously before queueing
+    return await exportBuffer.add({
         exportRequest: {
             userId,
             conversationId,
@@ -81,20 +78,6 @@ export async function requestConversationExport({
             timestamp: new Date(),
         },
     });
-
-    // Handle cooldown response - return it directly instead of throwing error
-    if (result.status === "cooldown_active") {
-        return {
-            status: "cooldown_active",
-            cooldownEndsAt: result.cooldownEndsAt,
-        };
-    }
-
-    // Return success response with exportSlugId
-    return {
-        status: "queued",
-        exportSlugId: result.exportSlugId,
-    };
 }
 
 /**
@@ -301,10 +284,7 @@ export async function processConversationExport({
             .update(conversationExportTable)
             .set({
                 status: "failed",
-                errorMessage:
-                    error instanceof Error
-                        ? error.message
-                        : "Unknown error occurred",
+                failureReason: "processing_error",
                 updatedAt: new Date(),
             })
             .where(
@@ -378,7 +358,7 @@ export async function getConversationExportStatus({
             exportSlugId: conversationExportTable.slugId,
             status: conversationExportTable.status,
             conversationSlugId: conversationTable.slugId,
-            errorMessage: conversationExportTable.errorMessage,
+            failureReason: conversationExportTable.failureReason,
             cancellationReason: conversationExportTable.cancellationReason,
             createdAt: conversationExportTable.createdAt,
             isDeleted: conversationExportTable.isDeleted,
@@ -410,7 +390,7 @@ export async function getConversationExportStatus({
             status: "expired" as const,
             exportSlugId: exportRecord.exportSlugId,
             conversationSlugId: exportRecord.conversationSlugId,
-            errorMessage: exportRecord.errorMessage ?? undefined,
+            failureReason: exportRecord.failureReason ?? undefined,
             cancellationReason: exportRecord.cancellationReason ?? undefined,
             createdAt: exportRecord.createdAt,
             expiresAt: exportRecord.expiresAt,
@@ -492,7 +472,7 @@ export async function getConversationExportStatus({
             return {
                 ...baseResponse,
                 status: "failed" as const,
-                errorMessage: exportRecord.errorMessage ?? undefined,
+                failureReason: exportRecord.failureReason ?? undefined,
             };
         case "cancelled":
             return {
@@ -727,8 +707,7 @@ export async function cleanupStaleExports({
         .update(conversationExportTable)
         .set({
             status: "failed",
-            errorMessage:
-                "Export timed out - processing took longer than expected",
+            failureReason: "timeout",
             updatedAt: new Date(),
         })
         .where(
@@ -751,7 +730,6 @@ interface StuckExportRecord {
 
 interface CleanupStuckExportsOnStartupParams {
     db: PostgresDatabase;
-    errorMessage: string;
 }
 
 interface CleanupStuckExportsResult {
@@ -768,7 +746,6 @@ interface CleanupStuckExportsResult {
  */
 export async function cleanupStuckExportsOnStartup({
     db,
-    errorMessage,
 }: CleanupStuckExportsOnStartupParams): Promise<CleanupStuckExportsResult> {
     // First, get all stuck exports (to return for notification sending)
     const stuckExports = await db
@@ -793,7 +770,7 @@ export async function cleanupStuckExportsOnStartup({
         .update(conversationExportTable)
         .set({
             status: "failed",
-            errorMessage: errorMessage,
+            failureReason: "server_restart",
             updatedAt: new Date(),
         })
         .where(eq(conversationExportTable.status, "processing"));

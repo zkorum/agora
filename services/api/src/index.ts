@@ -26,10 +26,8 @@ import * as authUtilService from "@/service/authUtil.js";
 import * as csvImportService from "@/service/csvImport.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
-import {
-    validateCsvFieldNames,
-    MAX_CSV_FILE_SIZE,
-} from "@/shared-app-api/csvUpload.js";
+import { MAX_CSV_FILE_SIZE } from "@/shared-app-api/csvUpload.js";
+import { zodCsvFiles } from "@/service/csvImport.js";
 import * as conversationExportService from "@/service/conversationExport/index.js";
 import * as conversationImportService from "@/service/conversationImport/index.js";
 import { cleanupStuckImportsOnStartup } from "@/service/conversationImport/database.js";
@@ -373,16 +371,17 @@ if (
 }
 
 // Initialize Valkey (optional - for vote buffer persistence)
-const valkey = initializeValkey({ valkeyUrl: config.VALKEY_URL, log });
+const valkey = await initializeValkey({ valkeyUrl: config.VALKEY_URL, log });
 
 // Initialize VoteBuffer (batches votes to reduce DB contention)
 const voteBuffer = createVoteBuffer({
     db,
     valkey,
-    flushIntervalMs: 1000,
+    flushIntervalMs: config.VOTE_BUFFER_FLUSH_INTERVAL_MS,
+    valkeyBatchLimit: config.VOTE_BUFFER_VALKEY_BATCH_LIMIT,
 });
 log.info(
-    `[API] Vote buffer initialized (flush interval: 1s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
+    `[API] Vote buffer initialized (flush interval: ${String(config.VOTE_BUFFER_FLUSH_INTERVAL_MS)}ms, batch limit: ${String(config.VOTE_BUFFER_VALKEY_BATCH_LIMIT)}, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
 // Initialize Notification SSE Manager for real-time notifications
@@ -395,12 +394,15 @@ const exportBuffer = createExportBuffer({
     valkey,
     notificationSSEManager,
     flushIntervalMs: 1000,
-    maxBatchSize: 100,
+    maxBatchSize: config.EXPORT_BUFFER_MAX_BATCH_SIZE,
+    maxConcurrency: config.EXPORT_BUFFER_MAX_CONCURRENCY,
     cooldownSeconds: config.CONVERSATION_EXPORT_COOLDOWN_SECONDS,
     exportExpiryDays: config.CONVERSATION_EXPORT_EXPIRY_DAYS,
+    staleThresholdMs: config.EXPORT_BUFFER_STALE_THRESHOLD_MS,
+    staleCleanupEveryNFlushes: config.EXPORT_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES,
 });
 log.info(
-    `[API] Export buffer initialized (flush interval: 1s, cooldown: ${String(config.CONVERSATION_EXPORT_COOLDOWN_SECONDS)}s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
+    `[API] Export buffer initialized (flush interval: 1s, max batch: ${String(config.EXPORT_BUFFER_MAX_BATCH_SIZE)}, cooldown: ${String(config.CONVERSATION_EXPORT_COOLDOWN_SECONDS)}s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
 // Initialize ImportBuffer (batches import requests to reduce system load)
@@ -413,6 +415,8 @@ const importBuffer = createImportBuffer({
     flushIntervalMs: config.IMPORT_BUFFER_FLUSH_INTERVAL_MS,
     maxBatchSize: config.IMPORT_BUFFER_MAX_BATCH_SIZE,
     maxConcurrency: config.IMPORT_BUFFER_MAX_CONCURRENCY,
+    staleThresholdMs: config.IMPORT_BUFFER_STALE_THRESHOLD_MS,
+    staleCleanupEveryNFlushes: config.IMPORT_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES,
 });
 log.info(
     `[API] Import buffer initialized (flush interval: ${String(config.IMPORT_BUFFER_FLUSH_INTERVAL_MS)}ms, max batch: ${String(config.IMPORT_BUFFER_MAX_BATCH_SIZE)}, max concurrency: ${String(config.IMPORT_BUFFER_MAX_CONCURRENCY)}, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
@@ -421,13 +425,9 @@ log.info(
 // Cleanup stuck imports/exports from previous server session
 // This runs once on startup to handle jobs that were interrupted by server restart
 const performStartupCleanup = async (): Promise<void> => {
-    const SERVER_RESTART_ERROR_MESSAGE =
-        "Processing was interrupted by a server restart. Please try again.";
-
     // Cleanup stuck imports and send notifications
     const importCleanupResult = await cleanupStuckImportsOnStartup({
         db,
-        errorMessage: SERVER_RESTART_ERROR_MESSAGE,
     });
 
     if (importCleanupResult.cleanedCount > 0) {
@@ -458,7 +458,6 @@ const performStartupCleanup = async (): Promise<void> => {
     // Cleanup stuck exports and send notifications
     const exportCleanupResult = await cleanupStuckExportsOnStartup({
         db,
-        errorMessage: SERVER_RESTART_ERROR_MESSAGE,
     });
 
     if (exportCleanupResult.cleanedCount > 0) {
@@ -1892,19 +1891,14 @@ server.after(() => {
 
             for await (const part of parts) {
                 if (part.type === "file") {
-                    // Validate file size before buffering to prevent memory exhaustion
-                    const chunks: Buffer[] = [];
-                    let totalSize = 0;
-                    for await (const chunk of part.file) {
-                        totalSize += chunk.length;
-                        if (totalSize > MAX_CSV_FILE_SIZE) {
-                            throw server.httpErrors.payloadTooLarge(
-                                `File '${part.fieldname}' exceeds maximum size of 50MB`,
-                            );
-                        }
-                        chunks.push(chunk);
+                    // Use the built-in toBuffer() method for type safety
+                    // File size limits are enforced by fastify-multipart config
+                    const buffer = await part.toBuffer();
+                    if (buffer.length > MAX_CSV_FILE_SIZE) {
+                        throw server.httpErrors.payloadTooLarge(
+                            `File '${part.fieldname}' exceeds maximum size of 50MB`,
+                        );
                     }
-                    const buffer = Buffer.concat(chunks);
                     files[part.fieldname] = buffer.toString("utf-8");
                 }
                 // Ignore form fields - validation doesn't need them
@@ -1949,19 +1943,14 @@ server.after(() => {
 
             for await (const part of parts) {
                 if (part.type === "file") {
-                    // Validate file size before buffering to prevent memory exhaustion
-                    const chunks: Buffer[] = [];
-                    let totalSize = 0;
-                    for await (const chunk of part.file) {
-                        totalSize += chunk.length;
-                        if (totalSize > MAX_CSV_FILE_SIZE) {
-                            throw server.httpErrors.payloadTooLarge(
-                                `File '${part.fieldname}' exceeds maximum size of 50MB`,
-                            );
-                        }
-                        chunks.push(chunk);
+                    // Use the built-in toBuffer() method for type safety
+                    // File size limits are enforced by fastify-multipart config
+                    const buffer = await part.toBuffer();
+                    if (buffer.length > MAX_CSV_FILE_SIZE) {
+                        throw server.httpErrors.payloadTooLarge(
+                            `File '${part.fieldname}' exceeds maximum size of 50MB`,
+                        );
                     }
-                    const buffer = Buffer.concat(chunks);
                     files[part.fieldname] = buffer.toString("utf-8");
                 } else {
                     // Parse form fields
@@ -1969,11 +1958,11 @@ server.after(() => {
                 }
             }
 
-            // Validate that all required files are present
-            const fileValidation = validateCsvFieldNames(Object.keys(files));
-            if (!fileValidation.isValid) {
+            // Parse and validate that all required files are present
+            const parsedFiles = zodCsvFiles.safeParse(files);
+            if (!parsedFiles.success) {
                 throw server.httpErrors.badRequest(
-                    `Missing required CSV files: ${fileValidation.missingFields.join(", ")}`,
+                    `Invalid CSV files: ${parsedFiles.error.message}`,
                 );
             }
 
@@ -2018,7 +2007,7 @@ server.after(() => {
                 await conversationImportService.requestConversationImport({
                     db,
                     userId: deviceStatus.userId,
-                    files,
+                    files: parsedFiles.data,
                     formData: {
                         postAsOrganization: parsedFields.postAsOrganization,
                         indexConversationAt: parsedFields.indexConversationAt,
@@ -3053,7 +3042,7 @@ if (
 
             // Close Valkey connection
             if (valkey !== undefined) {
-                await valkey.quit();
+                valkey.close();
                 log.info("[Valkey] Connection closed");
             }
 

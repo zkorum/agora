@@ -105,7 +105,6 @@ import {
   useExportReadinessQuery,
 } from "src/utils/api/conversationExport/useConversationExportQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
-import { axiosInstance } from "src/utils/api/client";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   exportPageTranslations,
@@ -177,8 +176,30 @@ async function handleRequestExport(): Promise<void> {
       conversationSlugId.value
     );
 
-    // Handle cooldown response
+    // Handle failure responses (success: false)
+    if (!result.success) {
+      // Map reason to i18n key
+      const reasonMessages: Record<typeof result.reason, string> = {
+        active_export_in_progress: t("errorActiveExportInProgress"),
+        conversation_not_found: t("errorConversationNotFound"),
+        no_opinions: t("errorNoOpinions"),
+      };
+      showNotifyMessage(reasonMessages[result.reason]);
+      return;
+    }
+
+    // Handle cooldown response (success: true, but cooldown active)
     if (result.status === "cooldown_active") {
+      // Validate cooldownEndsAt is present (Zod can't narrow nested discriminated unions)
+      if (result.cooldownEndsAt === undefined) {
+        console.error(
+          "[Export] Invalid response: cooldown_active status but cooldownEndsAt is undefined",
+          result
+        );
+        showNotifyMessage(t("exportRequestError"));
+        return;
+      }
+
       // Calculate remaining time
       const cooldownEnd = new Date(result.cooldownEndsAt);
       const remainingMs = cooldownEnd.getTime() - now.value.getTime();
@@ -203,7 +224,17 @@ async function handleRequestExport(): Promise<void> {
       return;
     }
 
-    // Success - navigate to export status page
+    // Success (queued) - validate exportSlugId is present
+    if (result.exportSlugId === undefined) {
+      console.error(
+        "[Export] Invalid response: queued status but exportSlugId is undefined",
+        result
+      );
+      showNotifyMessage(t("exportRequestError"));
+      return;
+    }
+
+    // Navigate to export status page
     await router.push({
       name: "/conversation/[conversationSlugId]/export.[exportId]",
       params: {
@@ -212,19 +243,8 @@ async function handleRequestExport(): Promise<void> {
       },
     });
   } catch (error) {
-    console.error(error);
-
-    if (axiosInstance.isAxiosError(error)) {
-      if (error.response?.status === 400 && error.response?.data?.message) {
-        // Display the specific error message from the server for bad requests
-        showNotifyMessage(error.response.data.message);
-      } else {
-        // Display generic error for other cases
-        showNotifyMessage(t("exportRequestError"));
-      }
-    } else {
-      showNotifyMessage(t("exportRequestError"));
-    }
+    console.error("[Export] Failed to request export:", error);
+    showNotifyMessage(t("exportRequestError"));
   }
 }
 </script>

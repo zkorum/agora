@@ -5040,8 +5040,14 @@
                                                     "type": "string",
                                                     "maxLength": 10
                                                 },
-                                                "errorMessage": {
-                                                    "type": "string"
+                                                "failureReason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "processing_error",
+                                                        "timeout",
+                                                        "server_restart",
+                                                        "invalid_data_format"
+                                                    ]
                                                 },
                                                 "createdAt": {
                                                     "type": "string",
@@ -6301,9 +6307,6 @@
                                                             "isRead": {
                                                                 "type": "boolean"
                                                             },
-                                                            "message": {
-                                                                "type": "string"
-                                                            },
                                                             "createdAt": {
                                                                 "type": "string",
                                                                 "format": "date-time"
@@ -6342,16 +6345,19 @@
                                                             "numVotes": {
                                                                 "type": "integer",
                                                                 "minimum": 1
+                                                            },
+                                                            "message": {
+                                                                "type": "string"
                                                             }
                                                         },
                                                         "required": [
                                                             "slugId",
                                                             "isRead",
-                                                            "message",
                                                             "createdAt",
                                                             "type",
                                                             "routeTarget",
-                                                            "numVotes"
+                                                            "numVotes",
+                                                            "message"
                                                         ],
                                                         "additionalProperties": false
                                                     },
@@ -6364,9 +6370,6 @@
                                                             },
                                                             "isRead": {
                                                                 "type": "boolean"
-                                                            },
-                                                            "message": {
-                                                                "type": "string"
                                                             },
                                                             "createdAt": {
                                                                 "type": "string",
@@ -6405,16 +6408,19 @@
                                                             },
                                                             "username": {
                                                                 "type": "string"
+                                                            },
+                                                            "message": {
+                                                                "type": "string"
                                                             }
                                                         },
                                                         "required": [
                                                             "slugId",
                                                             "isRead",
-                                                            "message",
                                                             "createdAt",
                                                             "type",
                                                             "routeTarget",
-                                                            "username"
+                                                            "username",
+                                                            "message"
                                                         ],
                                                         "additionalProperties": false
                                                     },
@@ -6427,9 +6433,6 @@
                                                             },
                                                             "isRead": {
                                                                 "type": "boolean"
-                                                            },
-                                                            "message": {
-                                                                "type": "string"
                                                             },
                                                             "createdAt": {
                                                                 "type": "string",
@@ -6465,15 +6468,18 @@
                                                                     "exportSlugId"
                                                                 ],
                                                                 "additionalProperties": false
+                                                            },
+                                                            "conversationTitle": {
+                                                                "type": "string"
                                                             }
                                                         },
                                                         "required": [
                                                             "slugId",
                                                             "isRead",
-                                                            "message",
                                                             "createdAt",
                                                             "type",
-                                                            "routeTarget"
+                                                            "routeTarget",
+                                                            "conversationTitle"
                                                         ],
                                                         "additionalProperties": false
                                                     },
@@ -6486,9 +6492,6 @@
                                                             },
                                                             "isRead": {
                                                                 "type": "boolean"
-                                                            },
-                                                            "message": {
-                                                                "type": "string"
                                                             },
                                                             "createdAt": {
                                                                 "type": "string",
@@ -6524,15 +6527,18 @@
                                                                     "exportSlugId"
                                                                 ],
                                                                 "additionalProperties": false
+                                                            },
+                                                            "conversationTitle": {
+                                                                "type": "string"
                                                             }
                                                         },
                                                         "required": [
                                                             "slugId",
                                                             "isRead",
-                                                            "message",
                                                             "createdAt",
                                                             "type",
-                                                            "routeTarget"
+                                                            "routeTarget",
+                                                            "conversationTitle"
                                                         ],
                                                         "additionalProperties": false
                                                     },
@@ -6545,9 +6551,6 @@
                                                             },
                                                             "isRead": {
                                                                 "type": "boolean"
-                                                            },
-                                                            "message": {
-                                                                "type": "string"
                                                             },
                                                             "createdAt": {
                                                                 "type": "string",
@@ -6584,17 +6587,25 @@
                                                                 ],
                                                                 "additionalProperties": false
                                                             },
-                                                            "errorMessage": {
+                                                            "conversationTitle": {
                                                                 "type": "string"
+                                                            },
+                                                            "failureReason": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "processing_error",
+                                                                    "timeout",
+                                                                    "server_restart"
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
                                                             "slugId",
                                                             "isRead",
-                                                            "message",
                                                             "createdAt",
                                                             "type",
-                                                            "routeTarget"
+                                                            "routeTarget",
+                                                            "conversationTitle"
                                                         ],
                                                         "additionalProperties": false
                                                     },
@@ -6607,9 +6618,6 @@
                                                             },
                                                             "isRead": {
                                                                 "type": "boolean"
-                                                            },
-                                                            "message": {
-                                                                "type": "string"
                                                             },
                                                             "createdAt": {
                                                                 "type": "string",
@@ -6646,6 +6654,9 @@
                                                                 ],
                                                                 "additionalProperties": false
                                                             },
+                                                            "conversationTitle": {
+                                                                "type": "string"
+                                                            },
                                                             "cancellationReason": {
                                                                 "type": "string"
                                                             }
@@ -6653,10 +6664,10 @@
                                                         "required": [
                                                             "slugId",
                                                             "isRead",
-                                                            "message",
                                                             "createdAt",
                                                             "type",
                                                             "routeTarget",
+                                                            "conversationTitle",
                                                             "cancellationReason"
                                                         ],
                                                         "additionalProperties": false
@@ -6670,9 +6681,6 @@
                                                             },
                                                             "isRead": {
                                                                 "type": "boolean"
-                                                            },
-                                                            "message": {
-                                                                "type": "string"
                                                             },
                                                             "createdAt": {
                                                                 "type": "string",
@@ -6712,7 +6720,6 @@
                                                         "required": [
                                                             "slugId",
                                                             "isRead",
-                                                            "message",
                                                             "createdAt",
                                                             "type",
                                                             "routeTarget"
@@ -6728,9 +6735,6 @@
                                                             },
                                                             "isRead": {
                                                                 "type": "boolean"
-                                                            },
-                                                            "message": {
-                                                                "type": "string"
                                                             },
                                                             "createdAt": {
                                                                 "type": "string",
@@ -6770,7 +6774,6 @@
                                                         "required": [
                                                             "slugId",
                                                             "isRead",
-                                                            "message",
                                                             "createdAt",
                                                             "type",
                                                             "routeTarget"
@@ -6786,9 +6789,6 @@
                                                             },
                                                             "isRead": {
                                                                 "type": "boolean"
-                                                            },
-                                                            "message": {
-                                                                "type": "string"
                                                             },
                                                             "createdAt": {
                                                                 "type": "string",
@@ -6824,14 +6824,19 @@
                                                                 ],
                                                                 "additionalProperties": false
                                                             },
-                                                            "errorMessage": {
-                                                                "type": "string"
+                                                            "failureReason": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "processing_error",
+                                                                    "timeout",
+                                                                    "server_restart",
+                                                                    "invalid_data_format"
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
                                                             "slugId",
                                                             "isRead",
-                                                            "message",
                                                             "createdAt",
                                                             "type",
                                                             "routeTarget"
@@ -7165,6 +7170,12 @@
                                         {
                                             "type": "object",
                                             "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
                                                 "status": {
                                                     "type": "string",
                                                     "enum": [
@@ -7177,6 +7188,7 @@
                                                 }
                                             },
                                             "required": [
+                                                "success",
                                                 "status",
                                                 "exportSlugId"
                                             ],
@@ -7185,6 +7197,12 @@
                                         {
                                             "type": "object",
                                             "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
                                                 "status": {
                                                     "type": "string",
                                                     "enum": [
@@ -7197,8 +7215,33 @@
                                                 }
                                             },
                                             "required": [
+                                                "success",
                                                 "status",
                                                 "cooldownEndsAt"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "active_export_in_progress",
+                                                        "conversation_not_found",
+                                                        "no_opinions"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
                                             ],
                                             "additionalProperties": false
                                         }
@@ -7365,8 +7408,13 @@
                                                     "type": "string",
                                                     "maxLength": 10
                                                 },
-                                                "errorMessage": {
-                                                    "type": "string"
+                                                "failureReason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "processing_error",
+                                                        "timeout",
+                                                        "server_restart"
+                                                    ]
                                                 },
                                                 "createdAt": {
                                                     "type": "string",
@@ -7442,8 +7490,13 @@
                                                     "type": "string",
                                                     "maxLength": 10
                                                 },
-                                                "errorMessage": {
-                                                    "type": "string"
+                                                "failureReason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "processing_error",
+                                                        "timeout",
+                                                        "server_restart"
+                                                    ]
                                                 },
                                                 "cancellationReason": {
                                                     "type": "string"

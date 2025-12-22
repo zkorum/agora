@@ -7,6 +7,7 @@ import {
     conversationImportTable,
     conversationTable,
     importStatusEnum,
+    importFailureReasonEnum,
 } from "@/shared-backend/schema.js";
 import { eq, and, lt } from "drizzle-orm";
 import { log } from "@/app.js";
@@ -47,7 +48,7 @@ interface GetImportStatusParams {
 interface ImportStatusResult {
     status: (typeof importStatusEnum.enumValues)[number];
     conversationSlugId: string | null;
-    errorMessage: string | null;
+    failureReason: (typeof importFailureReasonEnum.enumValues)[number] | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -65,7 +66,7 @@ export async function getImportStatus(
         .select({
             status: conversationImportTable.status,
             conversationSlugId: conversationTable.slugId,
-            errorMessage: conversationImportTable.errorMessage,
+            failureReason: conversationImportTable.failureReason,
             createdAt: conversationImportTable.createdAt,
             updatedAt: conversationImportTable.updatedAt,
         })
@@ -105,8 +106,7 @@ export async function cleanupStaleImports(
         .update(conversationImportTable)
         .set({
             status: "failed",
-            errorMessage:
-                "Import timed out - processing took longer than expected",
+            failureReason: "timeout",
             updatedAt: new Date(),
         })
         .where(
@@ -170,7 +170,6 @@ interface StuckImportRecord {
 
 interface CleanupStuckImportsOnStartupParams {
     db: PostgresDatabase;
-    errorMessage: string;
 }
 
 interface CleanupStuckImportsResult {
@@ -187,7 +186,6 @@ interface CleanupStuckImportsResult {
  */
 export async function cleanupStuckImportsOnStartup({
     db,
-    errorMessage,
 }: CleanupStuckImportsOnStartupParams): Promise<CleanupStuckImportsResult> {
     // First, get all stuck imports (to return for notification sending)
     const stuckImports = await db
@@ -211,7 +209,7 @@ export async function cleanupStuckImportsOnStartup({
         .update(conversationImportTable)
         .set({
             status: "failed",
-            errorMessage: errorMessage,
+            failureReason: "server_restart",
             updatedAt: new Date(),
         })
         .where(eq(conversationImportTable.status, "processing"));

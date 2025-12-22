@@ -10,6 +10,10 @@ export interface ExportPageTranslations {
   exportCooldownSeconds: string; // Expects {seconds} parameter
   viewConversation: string;
   requestExportAriaLabel: string;
+  // Export request failure reasons (i18n for discriminated union reasons)
+  errorActiveExportInProgress: string;
+  errorConversationNotFound: string;
+  errorNoOpinions: string;
 }
 
 export const exportPageTranslations: Record<
@@ -30,6 +34,11 @@ export const exportPageTranslations: Record<
       "Export cooldown active. You can request another export in {seconds} second(s).",
     viewConversation: "View conversation",
     requestExportAriaLabel: "Request export of conversation data",
+    errorActiveExportInProgress:
+      "An export is already in progress. Please wait for it to complete.",
+    errorConversationNotFound: "Conversation not found.",
+    errorNoOpinions:
+      "This conversation has no opinions to export. Add some opinions first.",
   },
   ar: {
     pageTitle: "تصدير المحادثة",
@@ -43,6 +52,11 @@ export const exportPageTranslations: Record<
       "فترة التهدئة للتصدير نشطة. يمكنك طلب تصدير آخر خلال {seconds} ثانية.",
     viewConversation: "عرض المحادثة",
     requestExportAriaLabel: "طلب تصدير بيانات المحادثة",
+    errorActiveExportInProgress:
+      "التصدير قيد التقدم بالفعل. يرجى الانتظار حتى يكتمل.",
+    errorConversationNotFound: "المحادثة غير موجودة.",
+    errorNoOpinions:
+      "لا توجد آراء في هذه المحادثة للتصدير. أضف بعض الآراء أولاً.",
   },
   es: {
     pageTitle: "Exportar Conversación",
@@ -59,6 +73,11 @@ export const exportPageTranslations: Record<
       "Período de espera activo. Puedes solicitar otra exportación en {seconds} segundo(s).",
     viewConversation: "Ver conversación",
     requestExportAriaLabel: "Solicitar exportación de datos de conversación",
+    errorActiveExportInProgress:
+      "Ya hay una exportación en progreso. Por favor, espera a que se complete.",
+    errorConversationNotFound: "Conversación no encontrada.",
+    errorNoOpinions:
+      "Esta conversación no tiene opiniones para exportar. Añade algunas opiniones primero.",
   },
   fr: {
     pageTitle: "Exporter la Conversation",
@@ -76,6 +95,11 @@ export const exportPageTranslations: Record<
     viewConversation: "Voir la conversation",
     requestExportAriaLabel:
       "Demander l'exportation des données de conversation",
+    errorActiveExportInProgress:
+      "Une exportation est déjà en cours. Veuillez attendre qu'elle soit terminée.",
+    errorConversationNotFound: "Conversation introuvable.",
+    errorNoOpinions:
+      "Cette conversation n'a pas d'opinions à exporter. Ajoutez d'abord quelques opinions.",
   },
   "zh-Hans": {
     pageTitle: "导出对话",
@@ -88,6 +112,9 @@ export const exportPageTranslations: Record<
     exportCooldownSeconds: "导出冷却中。您可以在{seconds}秒后请求另一个导出。",
     viewConversation: "查看对话",
     requestExportAriaLabel: "请求导出对话数据",
+    errorActiveExportInProgress: "导出正在进行中。请等待完成。",
+    errorConversationNotFound: "未找到对话。",
+    errorNoOpinions: "此对话没有可导出的意见。请先添加一些意见。",
   },
   "zh-Hant": {
     pageTitle: "匯出對話",
@@ -100,6 +127,9 @@ export const exportPageTranslations: Record<
     exportCooldownSeconds: "匯出冷卻中。您可以在{seconds}秒後請求另一個匯出。",
     viewConversation: "檢視對話",
     requestExportAriaLabel: "請求匯出對話資料",
+    errorActiveExportInProgress: "匯出正在進行中。請等待完成。",
+    errorConversationNotFound: "未找到對話。",
+    errorNoOpinions: "此對話沒有可匯出的意見。請先新增一些意見。",
   },
   ja: {
     pageTitle: "会話をエクスポート",
@@ -116,5 +146,10 @@ export const exportPageTranslations: Record<
       "エクスポートのクールダウン中です。{seconds}秒後に別のエクスポートをリクエストできます。",
     viewConversation: "会話を表示",
     requestExportAriaLabel: "会話データのエクスポートをリクエスト",
+    errorActiveExportInProgress:
+      "エクスポートはすでに進行中です。完了するまでお待ちください。",
+    errorConversationNotFound: "会話が見つかりません。",
+    errorNoOpinions:
+      "この会話にはエクスポートする意見がありません。まず意見を追加してください。",
   },
 };

@@ -5,19 +5,32 @@ import {
     parseCommentsCsv,
     parseVotesCsv,
 } from "./polisCsvParser.js";
-import {
-    validateCsvFieldNames,
-    CSV_UPLOAD_FIELD_NAMES,
-} from "@/shared-app-api/csvUpload.js";
+import { CSV_UPLOAD_FIELD_NAMES } from "@/shared-app-api/csvUpload.js";
 import * as importService from "./import.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import type { ValidateCsvResponse } from "@/shared/types/dto.js";
 import type { EventSlug } from "@/shared/types/zod.js";
+import { z } from "zod";
+
+/**
+ * Zod schema for CSV file contents
+ * Requires all three files with string content, rejects extra fields
+ * Use .safeParse() or .parse() to convert unknown input to typed CsvFiles
+ */
+export const zodCsvFiles = z
+    .object({
+        [CSV_UPLOAD_FIELD_NAMES.SUMMARY_FILE]: z.string(),
+        [CSV_UPLOAD_FIELD_NAMES.COMMENTS_FILE]: z.string(),
+        [CSV_UPLOAD_FIELD_NAMES.VOTES_FILE]: z.string(),
+    })
+    .strict();
+
+export type CsvFiles = z.infer<typeof zodCsvFiles>;
 
 interface ProcessCsvImportProps {
     db: PostgresJsDatabase;
     voteBuffer: VoteBuffer;
-    files: Partial<Record<string, string>>; // fieldname -> content
+    files: CsvFiles;
     proof: string;
     didWrite: string;
     authorId: string;
@@ -30,44 +43,16 @@ interface ProcessCsvImportProps {
 
 /**
  * Process CSV files to import a Polis conversation
- * Validates field names, parses CSV content, transforms to ImportPolisResults format,
+ * Parses CSV content, transforms to ImportPolisResults format,
  * and uses existing import logic
  */
 export async function processCsvImport(props: ProcessCsvImportProps) {
-    // 1. Validate field names
-    const fieldNames = Object.keys(props.files);
-    const validation = validateCsvFieldNames(fieldNames);
-
-    if (!validation.isValid) {
-        const errors: string[] = [];
-        if (validation.missingFields.length > 0) {
-            errors.push(
-                `Missing required fields: ${validation.missingFields.join(", ")}`,
-            );
-        }
-        if (validation.unexpectedFields.length > 0) {
-            errors.push(
-                `Unexpected fields: ${validation.unexpectedFields.join(", ")}`,
-            );
-        }
-        throw new Error(`CSV field validation failed: ${errors.join("; ")}`);
-    }
-
-    // 2. Extract file contents using type-safe field names
+    // Files are already parsed and validated via zodCsvFiles
     const summaryContent = props.files[CSV_UPLOAD_FIELD_NAMES.SUMMARY_FILE];
     const commentsContent = props.files[CSV_UPLOAD_FIELD_NAMES.COMMENTS_FILE];
     const votesContent = props.files[CSV_UPLOAD_FIELD_NAMES.VOTES_FILE];
 
-    // Ensure all files are present (should never happen if validation passed)
-    if (
-        summaryContent === undefined ||
-        commentsContent === undefined ||
-        votesContent === undefined
-    ) {
-        throw new Error("Required CSV files are missing");
-    }
-
-    // 3. Parse and validate all CSV files
+    // Parse and validate all CSV files
     const summary = await parseSummaryCsv(summaryContent);
     const comments = await parseCommentsCsv(commentsContent);
     const votes = await parseVotesCsv(votesContent);
