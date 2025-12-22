@@ -21,6 +21,9 @@ export const envSchema = z.object({
   NODE_ENV: z.string(), // Node environment: "development" | "production"
   VITE_API_BASE_URL: z.string(), // Backend API endpoint (e.g., "http://localhost:8084")
   VITE_BACK_DID: z.string(), // Backend DID, must match backend config (e.g., "did:web:localhost%3A8084")
+  // Note: We use z.enum instead of transform because import.meta.env contains raw strings at runtime.
+  // The processEnv object is just a type cast of import.meta.env, so transforms don't run at runtime.
+  // Compare with string "true"/"false" when using this value.
   VITE_IS_ORG_IMPORT_ONLY: z.enum(["true", "false"]), // If "true", only organizations can import conversations
 
   // Optional environment variables
@@ -30,6 +33,10 @@ export const envSchema = z.object({
   VITE_DEV_AUTHORIZED_PHONES: z.string().optional(), // Comma-separated list of phone numbers for dev/staging testing (must match backend). Must not be set in production (safety check enforced)
   VITE_SENTRY_AUTH_TOKEN: z.string().optional(), // Sentry auth token for production builds
   VITE_DISCORD_LINK: z.string().optional(), // Discord invite link for support
+  // Note: We use z.enum instead of transform because import.meta.env contains raw strings at runtime.
+  // The processEnv object is just a type cast of import.meta.env, so transforms don't run at runtime.
+  // Compare with string "true"/"false" when using this value.
+  VITE_CONVERSATION_EXPORT_ENABLED: z.enum(["true", "false"]).default("true"), // Enable/disable conversation export feature (must match backend)
 });
 
 export type ProcessEnv = z.infer<typeof envSchema>;
@@ -93,6 +100,6 @@ export function validateEnv(
  * Note: In Node.js build context (quasar.config.ts), import.meta.env doesn't exist.
  * The actual values are only needed at browser runtime, not during config evaluation.
  */
-export const processEnv = (typeof import.meta !== 'undefined' && import.meta.env
-  ? import.meta.env
-  : {}) as ProcessEnv;
+export const processEnv = (
+  typeof import.meta !== "undefined" && import.meta.env ? import.meta.env : {}
+) as ProcessEnv;

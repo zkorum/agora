@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
@@ -32,12 +32,25 @@ import {
   exportStatusPageTranslations,
   type ExportStatusPageTranslations,
 } from "./export.[exportId].i18n";
+import { useNotify } from "src/utils/ui/notify";
+import { processEnv } from "src/utils/processEnv";
 
 const { t } = useComponentI18n<ExportStatusPageTranslations>(
   exportStatusPageTranslations
 );
+const router = useRouter();
+const { showNotifyMessage } = useNotify();
 
 const route = useRoute("/conversation/[conversationSlugId]/export.[exportId]");
+
+const conversationSlugId = computed(() => {
+  const value = route.params.conversationSlugId;
+  if (Array.isArray(value)) {
+    return value[0] || "";
+  }
+  return value || "";
+});
+
 const exportSlugId = computed(() => {
   const value = route.params.exportId;
   if (Array.isArray(value)) {
@@ -45,6 +58,15 @@ const exportSlugId = computed(() => {
   }
   return value || "";
 });
+
+// Redirect if export feature is disabled
+if (processEnv.VITE_CONVERSATION_EXPORT_ENABLED === "false") {
+  showNotifyMessage(t("exportFeatureDisabled"));
+  void router.replace({
+    name: "/conversation/[postSlugId]",
+    params: { postSlugId: conversationSlugId.value },
+  });
+}
 </script>
 
 <style scoped lang="scss">

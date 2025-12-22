@@ -108,7 +108,7 @@ const configSchema = sharedConfigSchema.extend({
                 return false;
             } else {
                 ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
+                    code: "custom",
                     message: "Value must be true or false",
                 });
                 return z.NEVER;
@@ -128,7 +128,7 @@ const configSchema = sharedConfigSchema.extend({
                 return false;
             } else {
                 ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
+                    code: "custom",
                     message: "Value must be true or false",
                 });
                 return z.NEVER;

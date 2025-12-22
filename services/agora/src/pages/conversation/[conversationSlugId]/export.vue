@@ -112,6 +112,7 @@ import {
 } from "./export.i18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotify } from "src/utils/ui/notify";
+import { processEnv } from "src/utils/processEnv";
 
 const { t } = useComponentI18n<ExportPageTranslations>(exportPageTranslations);
 const router = useRouter();
@@ -128,6 +129,15 @@ const conversationSlugId = computed(() => {
   }
   return value || "";
 });
+
+// Redirect if export feature is disabled
+if (processEnv.VITE_CONVERSATION_EXPORT_ENABLED === "false") {
+  showNotifyMessage(t("exportFeatureDisabled"));
+  void router.replace({
+    name: "/conversation/[postSlugId]",
+    params: { postSlugId: conversationSlugId.value },
+  });
+}
 
 const conversationQuery = useConversationQuery({
   conversationSlugId: conversationSlugId,
