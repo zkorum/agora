@@ -15,15 +15,13 @@ import type { EventSlug } from "@/shared/types/zod.js";
 import type { NotificationSSEManager } from "../notificationSSE.js";
 import * as database from "./database.js";
 import { generateRandomSlugId } from "@/crypto.js";
-import {
-    validateCsvFieldNames,
-    CSV_UPLOAD_FIELD_NAMES,
-} from "@/shared-app-api/csvUpload.js";
+import { CSV_UPLOAD_FIELD_NAMES } from "@/shared-app-api/csvUpload.js";
+import type { CsvFiles } from "@/service/csvImport.js";
 
 interface RequestConversationImportParams {
     db: PostgresDatabase;
     userId: string;
-    files: Partial<Record<string, string>>;
+    files: CsvFiles;
     formData: {
         postAsOrganization?: string;
         indexConversationAt?: string;
@@ -58,38 +56,15 @@ export async function requestConversationImport(
         notificationSSEManager,
     } = params;
 
-    // Early CSV validation - fail fast before creating database records
-    const fieldNames = Object.keys(files);
-    const validation = validateCsvFieldNames(fieldNames);
-
-    if (!validation.isValid) {
-        const errors: string[] = [];
-        if (validation.missingFields.length > 0) {
-            errors.push(
-                `Missing required CSV files: ${validation.missingFields.join(", ")}`,
-            );
-        }
-        if (validation.unexpectedFields.length > 0) {
-            errors.push(
-                `Unexpected files uploaded: ${validation.unexpectedFields.join(", ")}`,
-            );
-        }
-        throw new Error(
-            `Please upload all required CSV files (summary, comments, votes). ${errors.join("; ")}`,
-        );
-    }
-
-    // Verify all required files have content
+    // Files are already parsed and validated by caller via zodCsvFiles
     const summaryContent = files[CSV_UPLOAD_FIELD_NAMES.SUMMARY_FILE];
     const commentsContent = files[CSV_UPLOAD_FIELD_NAMES.COMMENTS_FILE];
     const votesContent = files[CSV_UPLOAD_FIELD_NAMES.VOTES_FILE];
 
+    // Verify files have content (Zod schema ensures they're strings, but could be empty)
     if (
-        !summaryContent ||
         summaryContent.trim().length === 0 ||
-        !commentsContent ||
         commentsContent.trim().length === 0 ||
-        !votesContent ||
         votesContent.trim().length === 0
     ) {
         throw new Error(
@@ -261,7 +236,7 @@ export async function getConversationImportStatus(
     }
 
     const importSlugId = params.importSlugId;
-    const { status, conversationSlugId, errorMessage, createdAt, updatedAt } =
+    const { status, conversationSlugId, failureReason, createdAt, updatedAt } =
         result;
 
     // Return discriminated union based on status
@@ -290,7 +265,7 @@ export async function getConversationImportStatus(
         return {
             status: "failed",
             importSlugId,
-            errorMessage: errorMessage ?? undefined,
+            failureReason: failureReason ?? undefined,
             createdAt,
             updatedAt,
         };

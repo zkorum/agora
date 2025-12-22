@@ -15,7 +15,7 @@ import {
 import type { FetchNotificationsResponse } from "@/shared/types/dto.js";
 import type { NotificationItem } from "@/shared/types/zod.js";
 import { zodNotificationItem } from "@/shared/types/zod.js";
-import { and, desc, eq, lt, lte } from "drizzle-orm";
+import { and, desc, eq, lt } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
@@ -259,7 +259,7 @@ export async function getNotifications({
                 conversationSlugId: conversationTable.slugId,
                 conversationTitle: conversationContentTable.title,
                 exportSlugId: conversationExportTable.slugId,
-                errorMessage: conversationExportTable.errorMessage,
+                failureReason: conversationExportTable.failureReason,
                 cancellationReason: conversationExportTable.cancellationReason,
                 slugId: notificationTable.slugId,
             })
@@ -296,100 +296,74 @@ export async function getNotifications({
             .orderBy(orderByClause)
             .limit(fetchLimit);
 
-        notificationTableResponse.forEach((notificationItem) => {
+        for (const notificationItem of notificationTableResponse) {
             if (
-                notificationItem.conversationSlugId &&
-                notificationItem.conversationTitle &&
-                notificationItem.exportSlugId &&
-                (notificationItem.notificationType === "export_started" ||
-                    notificationItem.notificationType === "export_completed" ||
-                    notificationItem.notificationType === "export_failed" ||
-                    notificationItem.notificationType === "export_cancelled")
+                !notificationItem.conversationSlugId ||
+                !notificationItem.conversationTitle ||
+                !notificationItem.exportSlugId
             ) {
-                // Construct notification based on type
-                if (notificationItem.notificationType === "export_started") {
-                    const parsedItem: NotificationItem = {
+                continue;
+            }
+
+            const baseNotification = {
+                slugId: notificationItem.slugId,
+                createdAt: notificationItem.createdAt,
+                isRead: notificationItem.isRead,
+                routeTarget: {
+                    type: "export" as const,
+                    conversationSlugId: notificationItem.conversationSlugId,
+                    exportSlugId: notificationItem.exportSlugId,
+                },
+            };
+
+            let parsedItem: NotificationItem | null = null;
+
+            switch (notificationItem.notificationType) {
+                case "export_started":
+                    parsedItem = {
+                        ...baseNotification,
                         type: "export_started",
-                        slugId: notificationItem.slugId,
-                        createdAt: notificationItem.createdAt,
-                        isRead: notificationItem.isRead,
-                        message: `"${notificationItem.conversationTitle}"`,
-                        routeTarget: {
-                            type: "export",
-                            conversationSlugId:
-                                notificationItem.conversationSlugId,
-                            exportSlugId: notificationItem.exportSlugId,
-                        },
+                        conversationTitle: notificationItem.conversationTitle,
                     };
-                    notificationItemList.push(parsedItem);
-                } else if (
-                    notificationItem.notificationType === "export_completed"
-                ) {
-                    const parsedItem: NotificationItem = {
+                    break;
+                case "export_completed":
+                    parsedItem = {
+                        ...baseNotification,
                         type: "export_completed",
-                        slugId: notificationItem.slugId,
-                        createdAt: notificationItem.createdAt,
-                        isRead: notificationItem.isRead,
-                        message: `"${notificationItem.conversationTitle}"`,
-                        routeTarget: {
-                            type: "export",
-                            conversationSlugId:
-                                notificationItem.conversationSlugId,
-                            exportSlugId: notificationItem.exportSlugId,
-                        },
+                        conversationTitle: notificationItem.conversationTitle,
                     };
-                    notificationItemList.push(parsedItem);
-                } else if (
-                    notificationItem.notificationType === "export_failed"
-                ) {
-                    const parsedItem: NotificationItem = {
+                    break;
+                case "export_failed":
+                    parsedItem = {
+                        ...baseNotification,
                         type: "export_failed",
-                        slugId: notificationItem.slugId,
-                        createdAt: notificationItem.createdAt,
-                        isRead: notificationItem.isRead,
-                        message: notificationItem.errorMessage
-                            ? `${notificationItem.errorMessage}`
-                            : `"${notificationItem.conversationTitle}"`,
-                        routeTarget: {
-                            type: "export",
-                            conversationSlugId:
-                                notificationItem.conversationSlugId,
-                            exportSlugId: notificationItem.exportSlugId,
-                        },
-                        ...(notificationItem.errorMessage && {
-                            errorMessage: notificationItem.errorMessage,
+                        conversationTitle: notificationItem.conversationTitle,
+                        ...(notificationItem.failureReason && {
+                            failureReason: notificationItem.failureReason,
                         }),
                     };
-                    notificationItemList.push(parsedItem);
-                } else if (
-                    notificationItem.notificationType === "export_cancelled"
-                ) {
-                    const parsedItem: NotificationItem = {
+                    break;
+                case "export_cancelled":
+                    parsedItem = {
+                        ...baseNotification,
                         type: "export_cancelled",
-                        slugId: notificationItem.slugId,
-                        createdAt: notificationItem.createdAt,
-                        isRead: notificationItem.isRead,
-                        message: notificationItem.cancellationReason
-                            ? `${notificationItem.cancellationReason}`
-                            : `"${notificationItem.conversationTitle}"`,
-                        routeTarget: {
-                            type: "export",
-                            conversationSlugId:
-                                notificationItem.conversationSlugId,
-                            exportSlugId: notificationItem.exportSlugId,
-                        },
+                        conversationTitle: notificationItem.conversationTitle,
                         cancellationReason:
-                            notificationItem.cancellationReason ||
+                            notificationItem.cancellationReason ??
                             "Export was cancelled",
                     };
-                    notificationItemList.push(parsedItem);
-                }
-
-                if (!notificationItem.isRead) {
-                    numNewNotifications += 1;
-                }
+                    break;
+                default:
+                    // Skip non-export notification types
+                    continue;
             }
-        });
+
+            notificationItemList.push(parsedItem);
+
+            if (!notificationItem.isRead) {
+                numNewNotifications += 1;
+            }
+        }
     }
 
     // Fetch import notifications
@@ -401,7 +375,7 @@ export async function getNotifications({
                 notificationType: notificationTable.notificationType,
                 importSlugId: conversationImportTable.slugId,
                 conversationSlugId: conversationTable.slugId,
-                errorMessage: conversationImportTable.errorMessage,
+                failureReason: conversationImportTable.failureReason,
                 slugId: notificationTable.slugId,
             })
             .from(notificationTable)
@@ -430,36 +404,34 @@ export async function getNotifications({
             .orderBy(orderByClause)
             .limit(fetchLimit);
 
-        notificationTableResponse.forEach((notificationItem) => {
-            if (
-                notificationItem.importSlugId &&
-                (notificationItem.notificationType === "import_started" ||
-                    notificationItem.notificationType === "import_completed" ||
-                    notificationItem.notificationType === "import_failed")
-            ) {
-                // Construct notification based on type
-                if (notificationItem.notificationType === "import_started") {
-                    const parsedItem: NotificationItem = {
+        for (const notificationItem of notificationTableResponse) {
+            if (!notificationItem.importSlugId) {
+                continue;
+            }
+
+            const baseNotification = {
+                slugId: notificationItem.slugId,
+                createdAt: notificationItem.createdAt,
+                isRead: notificationItem.isRead,
+            };
+
+            let parsedItem: NotificationItem | null = null;
+
+            switch (notificationItem.notificationType) {
+                case "import_started":
+                    parsedItem = {
+                        ...baseNotification,
                         type: "import_started",
-                        slugId: notificationItem.slugId,
-                        createdAt: notificationItem.createdAt,
-                        isRead: notificationItem.isRead,
-                        message: "CSV import has started",
                         routeTarget: {
                             type: "import",
                             importSlugId: notificationItem.importSlugId,
                         },
                     };
-                    notificationItemList.push(parsedItem);
-                } else if (
-                    notificationItem.notificationType === "import_completed"
-                ) {
-                    const parsedItem: NotificationItem = {
+                    break;
+                case "import_completed":
+                    parsedItem = {
+                        ...baseNotification,
                         type: "import_completed",
-                        slugId: notificationItem.slugId,
-                        createdAt: notificationItem.createdAt,
-                        isRead: notificationItem.isRead,
-                        message: "CSV import completed successfully",
                         routeTarget: {
                             type: "import",
                             importSlugId: notificationItem.importSlugId,
@@ -469,34 +441,31 @@ export async function getNotifications({
                             }),
                         },
                     };
-                    notificationItemList.push(parsedItem);
-                } else if (
-                    notificationItem.notificationType === "import_failed"
-                ) {
-                    const parsedItem: NotificationItem = {
+                    break;
+                case "import_failed":
+                    parsedItem = {
+                        ...baseNotification,
                         type: "import_failed",
-                        slugId: notificationItem.slugId,
-                        createdAt: notificationItem.createdAt,
-                        isRead: notificationItem.isRead,
-                        message: notificationItem.errorMessage
-                            ? `${notificationItem.errorMessage}`
-                            : "CSV import failed",
                         routeTarget: {
                             type: "import",
                             importSlugId: notificationItem.importSlugId,
                         },
-                        ...(notificationItem.errorMessage && {
-                            errorMessage: notificationItem.errorMessage,
+                        ...(notificationItem.failureReason && {
+                            failureReason: notificationItem.failureReason,
                         }),
                     };
-                    notificationItemList.push(parsedItem);
-                }
-
-                if (!notificationItem.isRead) {
-                    numNewNotifications += 1;
-                }
+                    break;
+                default:
+                    // Skip non-import notification types
+                    continue;
             }
-        });
+
+            notificationItemList.push(parsedItem);
+
+            if (!notificationItem.isRead) {
+                numNewNotifications += 1;
+            }
+        }
     }
 
     notificationItemList.sort(function (a, b) {
@@ -530,7 +499,7 @@ async function buildExportNotification(
                 conversationSlugId: conversationTable.slugId,
                 conversationTitle: conversationContentTable.title,
                 exportSlugId: conversationExportTable.slugId,
-                errorMessage: conversationExportTable.errorMessage,
+                failureReason: conversationExportTable.failureReason,
                 cancellationReason: conversationExportTable.cancellationReason,
             })
             .from(notificationTable)
@@ -552,81 +521,61 @@ async function buildExportNotification(
             .where(eq(notificationTable.slugId, notificationSlugId))
             .limit(1);
 
-        if (
-            result.length === 1 &&
-            result[0].conversationSlugId &&
-            result[0].conversationTitle &&
-            result[0].exportSlugId &&
-            (result[0].notificationType === "export_started" ||
-                result[0].notificationType === "export_completed" ||
-                result[0].notificationType === "export_failed" ||
-                result[0].notificationType === "export_cancelled")
-        ) {
-            // Construct notification based on type
-            if (result[0].notificationType === "export_started") {
+        if (result.length !== 1) {
+            return null;
+        }
+
+        const data = result[0];
+        const { conversationSlugId, conversationTitle, exportSlugId } = data;
+
+        if (!conversationSlugId || !conversationTitle || !exportSlugId) {
+            return null;
+        }
+
+        const baseNotification = {
+            slugId: notificationSlugId,
+            createdAt: data.createdAt,
+            isRead: data.isRead,
+            routeTarget: {
+                type: "export" as const,
+                conversationSlugId,
+                exportSlugId,
+            },
+        };
+
+        switch (data.notificationType) {
+            case "export_started":
                 return {
+                    ...baseNotification,
                     type: "export_started",
-                    slugId: notificationSlugId,
-                    createdAt: result[0].createdAt,
-                    isRead: result[0].isRead,
-                    message: `"${result[0].conversationTitle}"`,
-                    routeTarget: {
-                        type: "export",
-                        conversationSlugId: result[0].conversationSlugId,
-                        exportSlugId: result[0].exportSlugId,
-                    },
+                    conversationTitle,
                 };
-            } else if (result[0].notificationType === "export_completed") {
+            case "export_completed":
                 return {
+                    ...baseNotification,
                     type: "export_completed",
-                    slugId: notificationSlugId,
-                    createdAt: result[0].createdAt,
-                    isRead: result[0].isRead,
-                    message: `"${result[0].conversationTitle}"`,
-                    routeTarget: {
-                        type: "export",
-                        conversationSlugId: result[0].conversationSlugId,
-                        exportSlugId: result[0].exportSlugId,
-                    },
+                    conversationTitle,
                 };
-            } else if (result[0].notificationType === "export_failed") {
+            case "export_failed":
                 return {
+                    ...baseNotification,
                     type: "export_failed",
-                    slugId: notificationSlugId,
-                    createdAt: result[0].createdAt,
-                    isRead: result[0].isRead,
-                    message: result[0].errorMessage
-                        ? `${result[0].errorMessage}`
-                        : `"${result[0].conversationTitle}"`,
-                    routeTarget: {
-                        type: "export",
-                        conversationSlugId: result[0].conversationSlugId,
-                        exportSlugId: result[0].exportSlugId,
-                    },
-                    ...(result[0].errorMessage && {
-                        errorMessage: result[0].errorMessage,
+                    conversationTitle,
+                    ...(data.failureReason && {
+                        failureReason: data.failureReason,
                     }),
                 };
-            } else if (result[0].notificationType === "export_cancelled") {
+            case "export_cancelled":
                 return {
+                    ...baseNotification,
                     type: "export_cancelled",
-                    slugId: notificationSlugId,
-                    createdAt: result[0].createdAt,
-                    isRead: result[0].isRead,
-                    message: result[0].cancellationReason
-                        ? `${result[0].cancellationReason}`
-                        : `"${result[0].conversationTitle}"`,
-                    routeTarget: {
-                        type: "export",
-                        conversationSlugId: result[0].conversationSlugId,
-                        exportSlugId: result[0].exportSlugId,
-                    },
+                    conversationTitle,
                     cancellationReason:
-                        result[0].cancellationReason || "Export was cancelled",
+                        data.cancellationReason ?? "Export was cancelled",
                 };
-            }
+            default:
+                return null;
         }
-        return null;
     } catch (error) {
         log.error(
             error,
@@ -937,83 +886,89 @@ async function buildImportNotification(
     conversationId: number | null,
 ): Promise<NotificationItem | null> {
     try {
-        const result = await db
+        // Build base query without conversation join
+        const baseQuery = db
             .select({
                 createdAt: notificationTable.createdAt,
                 isRead: notificationTable.isRead,
                 notificationType: notificationTable.notificationType,
                 importSlugId: conversationImportTable.slugId,
-                conversationSlugId: conversationTable.slugId,
-                errorMessage: conversationImportTable.errorMessage,
+                failureReason: conversationImportTable.failureReason,
             })
             .from(notificationTable)
             .leftJoin(
                 conversationImportTable,
                 eq(conversationImportTable.id, importId),
             )
-            .leftJoin(
-                conversationTable,
-                conversationId
-                    ? eq(conversationTable.id, conversationId)
-                    : undefined,
-            )
             .where(eq(notificationTable.slugId, notificationSlugId))
             .limit(1);
 
-        if (
-            result.length === 1 &&
-            result[0].importSlugId &&
-            (result[0].notificationType === "import_started" ||
-                result[0].notificationType === "import_completed" ||
-                result[0].notificationType === "import_failed")
-        ) {
-            // Construct notification based on type
-            if (result[0].notificationType === "import_started") {
-                return {
-                    type: "import_started",
-                    slugId: notificationSlugId,
-                    createdAt: result[0].createdAt,
-                    isRead: result[0].isRead,
-                    message: "CSV import has started",
-                    routeTarget: {
-                        type: "import",
-                        importSlugId: result[0].importSlugId,
-                    },
-                };
-            } else if (result[0].notificationType === "import_completed") {
-                return {
-                    type: "import_completed",
-                    slugId: notificationSlugId,
-                    createdAt: result[0].createdAt,
-                    isRead: result[0].isRead,
-                    message: "CSV import completed successfully",
-                    routeTarget: {
-                        type: "import",
-                        importSlugId: result[0].importSlugId,
-                        conversationSlugId:
-                            result[0].conversationSlugId ?? undefined,
-                    },
-                };
-            } else if (result[0].notificationType === "import_failed") {
-                return {
-                    type: "import_failed",
-                    slugId: notificationSlugId,
-                    createdAt: result[0].createdAt,
-                    isRead: result[0].isRead,
-                    message: result[0].errorMessage
-                        ? `${result[0].errorMessage}`
-                        : "CSV import failed",
-                    routeTarget: {
-                        type: "import",
-                        importSlugId: result[0].importSlugId,
-                    },
-                    ...(result[0].errorMessage && {
-                        errorMessage: result[0].errorMessage,
-                    }),
-                };
+        const baseResult = await baseQuery;
+
+        if (baseResult.length !== 1) {
+            return null;
+        }
+
+        const baseData = baseResult[0];
+
+        // Fetch conversation slug separately if conversationId exists
+        let conversationSlugId: string | null = null;
+        if (conversationId !== null) {
+            const convResult = await db
+                .select({ slugId: conversationTable.slugId })
+                .from(conversationTable)
+                .where(eq(conversationTable.id, conversationId))
+                .limit(1);
+            if (convResult.length === 1) {
+                conversationSlugId = convResult[0].slugId;
             }
         }
-        return null;
+
+        const { importSlugId, failureReason } = baseData;
+
+        if (!importSlugId) {
+            return null;
+        }
+
+        const baseNotification = {
+            slugId: notificationSlugId,
+            createdAt: baseData.createdAt,
+            isRead: baseData.isRead,
+        };
+
+        switch (baseData.notificationType) {
+            case "import_started":
+                return {
+                    ...baseNotification,
+                    type: "import_started",
+                    routeTarget: {
+                        type: "import",
+                        importSlugId,
+                    },
+                };
+            case "import_completed":
+                return {
+                    ...baseNotification,
+                    type: "import_completed",
+                    routeTarget: {
+                        type: "import",
+                        importSlugId,
+                        conversationSlugId: conversationSlugId ?? undefined,
+                    },
+                };
+            case "import_failed":
+                return {
+                    ...baseNotification,
+                    type: "import_failed",
+                    routeTarget: {
+                        type: "import",
+                        importSlugId,
+                    },
+                    ...(failureReason && { failureReason }),
+                };
+            default:
+                return null;
+        }
     } catch (error) {
         log.error(
             error,

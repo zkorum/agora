@@ -7,11 +7,18 @@
 
 export const VALKEY_QUEUE_KEYS = {
     /**
-     * Vote buffer queue - stores buffered votes for batch processing
+     * Vote buffer index - sorted set for ordering votes by timestamp
      * Used by: voteBuffer.ts
-     * Pattern: User votes are added here and flushed every 1s
+     * Pattern: Member = userId:opinionId, Score = timestamp
      */
-    VOTE_BUFFER: "queue:votes",
+    VOTE_BUFFER_INDEX: "queue:votes:index",
+
+    /**
+     * Vote buffer data - hash storing full vote JSON data
+     * Used by: voteBuffer.ts
+     * Pattern: Field = userId:opinionId, Value = JSON vote data
+     */
+    VOTE_BUFFER_DATA: "queue:votes:data",
 
     /**
      * Export buffer queue - stores export requests for batch processing

@@ -1,3 +1,73 @@
+/**
+ * Vote Buffer Service
+ *
+ * ============================================================================
+ * ARCHITECTURE RATIONALE
+ * ============================================================================
+ *
+ * This service buffers votes in Valkey before flushing them to PostgreSQL.
+ * The goal is to reduce database write pressure during heavy voting periods
+ * by batching votes and updating opinion counters once per flush instead of
+ * once per vote.
+ *
+ * DATA STRUCTURE: Sorted Set + Hash
+ * ---------------------------------
+ * We use TWO Valkey structures working together:
+ *
+ * 1. Sorted Set (queue:votes:index):
+ *    - Member: "userId:opinionId" (dedup key)
+ *    - Score: timestamp in milliseconds
+ *    - Purpose: Ordering for fair processing, deduplication, batch limiting
+ *
+ * 2. Hash (queue:votes:data):
+ *    - Field: "userId:opinionId" (same as sorted set member)
+ *    - Value: Full vote JSON data
+ *    - Purpose: Store complete vote information
+ *
+ * WHY NOT A SINGLE STRUCTURE?
+ * ---------------------------
+ * - Hash alone: No ordering, HSCAN count is just a hint (can't guarantee batch size)
+ * - Sorted Set alone: Can only store score (number), not arbitrary JSON data
+ * - Streams: More complex, designed for different use cases (consumer groups, etc.)
+ *
+ * LUA SCRIPTS FOR ATOMICITY
+ * -------------------------
+ * Using two structures creates a sync risk: if ZADD succeeds but HSET fails,
+ * data is inconsistent. Lua scripts solve this by executing atomically.
+ *
+ * But the MAIN reason we need Lua is the RACE CONDITION ON DELETE:
+ *
+ * Problem scenario:
+ *   1. Flush reads vote A (timestamp 100) from Valkey
+ *   2. User submits vote B (timestamp 200) - overwrites vote A in Valkey
+ *   3. Flush completes DB write for vote A
+ *   4. Flush deletes from Valkey - BUT NOW IT DELETES VOTE B!
+ *   5. Vote B is lost forever - terrible UX, user's vote disappeared
+ *
+ * Solution: Conditional delete with score check
+ *   - CLEANUP_VOTES_SCRIPT only deletes if current score == expected score
+ *   - In the scenario above, score is now 200 (vote B), expected is 100 (vote A)
+ *   - Delete is skipped, vote B survives and gets processed next flush
+ *
+ * We could have used Hash alone with a compare-and-delete Lua script, but since
+ * we need Lua anyway, we might as well use Sorted Set + Hash for proper ordering
+ * and guaranteed batch size limits.
+ *
+ * AT-LEAST-ONCE DELIVERY
+ * ----------------------
+ * - Votes are deleted from Valkey ONLY after successful PostgreSQL transaction
+ * - On flush error: votes remain in Valkey, will be retried on next flush
+ * - PostgreSQL handles duplicates via onConflictDoNothing - if a vote was
+ *   partially written before a crash, the retry will skip already-inserted rows
+ *
+ * MEMORY MANAGEMENT
+ * -----------------
+ * Script objects from valkey-glide must call release() on shutdown to prevent
+ * memory leaks. The shutdown() method handles this.
+ *
+ * ============================================================================
+ */
+
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq, and, sql, isNotNull, isNull, type SQL } from "drizzle-orm";
 import {
@@ -10,22 +80,91 @@ import {
     opinionModerationTable,
     userTable,
 } from "@/shared-backend/schema.js";
-import type { VotingOption } from "@/shared/types/zod.js";
+import { zodVotingAction, type VotingOption } from "@/shared/types/zod.js";
+import { z } from "zod";
 import { log } from "@/app.js";
 import { nowZeroMs } from "@/shared/util.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
+import { Script } from "@valkey/valkey-glide";
 
-export interface BufferedVote {
-    userId: string;
-    opinionId: number;
-    opinionContentId: number;
-    conversationId: number;
-    vote: VotingOption | "cancel";
-    didWrite: string;
-    proof: string;
-    timestamp: Date;
-}
+// ============================================================================
+// Lua Scripts (inline for bundling - no separate files needed)
+// ============================================================================
+
+/**
+ * Atomic add vote script:
+ * - ZADD with GT + CH options (only update if new score > existing, return 1 if changed)
+ * - HSET only if ZADD succeeded (newer timestamp)
+ *
+ * KEYS[1] = sorted set key (index)
+ * KEYS[2] = hash key (data)
+ * ARGV[1] = member (userId:opinionId)
+ * ARGV[2] = score (timestamp in ms)
+ * ARGV[3] = data (JSON vote)
+ *
+ * Returns: 1 if added/updated, 0 if rejected (older timestamp)
+ */
+export const ADD_VOTE_SCRIPT = `
+local indexKey = KEYS[1]
+local dataKey = KEYS[2]
+local member = ARGV[1]
+local score = tonumber(ARGV[2])
+local data = ARGV[3]
+
+local changed = redis.call('ZADD', indexKey, 'GT', 'CH', score, member)
+if changed == 1 then
+    redis.call('HSET', dataKey, member, data)
+end
+return changed
+`;
+
+/**
+ * Atomic cleanup votes script:
+ * - Only delete if current score matches expected (vote hasn't been updated)
+ * - Removes from both sorted set and hash atomically
+ *
+ * KEYS[1] = sorted set key (index)
+ * KEYS[2] = hash key (data)
+ * ARGV = pairs of [member, expectedScore, member, expectedScore, ...]
+ *
+ * Returns: number of entries deleted
+ */
+export const CLEANUP_VOTES_SCRIPT = `
+local indexKey = KEYS[1]
+local dataKey = KEYS[2]
+local deleted = 0
+
+for i = 1, #ARGV, 2 do
+    local member = ARGV[i]
+    local expectedScore = tonumber(ARGV[i + 1])
+    local currentScore = redis.call('ZSCORE', indexKey, member)
+
+    if currentScore and tonumber(currentScore) == expectedScore then
+        redis.call('ZREM', indexKey, member)
+        redis.call('HDEL', dataKey, member)
+        deleted = deleted + 1
+    end
+end
+return deleted
+`;
+
+// ============================================================================
+// Types and Schemas
+// ============================================================================
+
+// Zod schema for BufferedVote - used to safely parse data from Valkey and local queue
+const zodBufferedVote = z.object({
+    userId: z.string(),
+    opinionId: z.number(),
+    opinionContentId: z.number(),
+    conversationId: z.number(),
+    vote: zodVotingAction,
+    didWrite: z.string(),
+    proof: z.string(),
+    timestamp: z.coerce.date(),
+});
+type BufferedVote = z.infer<typeof zodBufferedVote>;
 
 interface CounterDelta {
     numAgrees: number;
@@ -43,8 +182,13 @@ export interface VoteBuffer {
 interface CreateVoteBufferParams {
     db: PostgresJsDatabase;
     valkey?: Valkey;
-    flushIntervalMs?: number;
+    flushIntervalMs: number;
+    valkeyBatchLimit: number;
 }
+
+// ============================================================================
+// Vote Buffer Implementation
+// ============================================================================
 
 /**
  * Create vote buffer with encapsulated state
@@ -52,6 +196,9 @@ interface CreateVoteBufferParams {
  * Architecture:
  * - In-memory mode: Fastest, but lost on restart (single instance)
  * - Valkey mode: Persistent, works across instances (production)
+ *   - Sorted Set: Orders votes by timestamp for fair processing
+ *   - Hash: Stores full vote JSON data
+ *   - Lua scripts: Atomic operations to prevent sync issues
  *
  * Batching reduces opinion UPDATE frequency from 100x/sec to 1x/sec
  * during heavy voting periods, eliminating hot row contention.
@@ -63,14 +210,25 @@ interface CreateVoteBufferParams {
  */
 export function createVoteBuffer({
     db,
-    valkey = undefined,
-    flushIntervalMs = 1000,
+    valkey,
+    flushIntervalMs,
+    valkeyBatchLimit,
 }: CreateVoteBufferParams): VoteBuffer {
     // Encapsulated mutable state (private to closure)
     const pendingVotes = new Map<string, BufferedVote>();
     let isShuttingDown = false;
 
-    // Helper functions (pure)
+    // Lua script objects (created once, reused for all calls)
+    // IMPORTANT: Must call release() on shutdown to prevent memory leaks
+    let addVoteScript: Script | undefined;
+    let cleanupVotesScript: Script | undefined;
+
+    if (valkey !== undefined) {
+        addVoteScript = new Script(ADD_VOTE_SCRIPT);
+        cleanupVotesScript = new Script(CLEANUP_VOTES_SCRIPT);
+    }
+
+    // Helper functions
     const getVoteKey = (userId: string, opinionId: number): string =>
         `${userId}:${String(opinionId)}`;
 
@@ -108,7 +266,7 @@ export function createVoteBuffer({
 
     /**
      * Add vote to buffer (or update existing buffered vote)
-     * Last write wins for votes within the same flush interval
+     * Uses Lua script for atomic ZADD GT + HSET in Valkey
      */
     const add = ({ vote }: { vote: BufferedVote }): void => {
         if (isShuttingDown) {
@@ -121,14 +279,23 @@ export function createVoteBuffer({
         const wasExisting = pendingVotes.has(key);
         pendingVotes.set(key, vote);
 
-        // Valkey: Add to queue (if configured)
-        if (valkey !== undefined) {
+        // Valkey: Atomic add using Lua script
+        if (valkey !== undefined && addVoteScript !== undefined) {
+            const score = vote.timestamp.getTime();
+            const data = JSON.stringify(vote);
+
             valkey
-                .rpush(VALKEY_QUEUE_KEYS.VOTE_BUFFER, JSON.stringify(vote))
+                .invokeScript(addVoteScript, {
+                    keys: [
+                        VALKEY_QUEUE_KEYS.VOTE_BUFFER_INDEX,
+                        VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA,
+                    ],
+                    args: [key, String(score), data],
+                })
                 .catch((error: unknown) => {
                     log.error(
                         error,
-                        "[VoteBuffer] Failed to push vote to Valkey buffer",
+                        "[VoteBuffer] Failed to add vote to Valkey buffer",
                     );
                 });
         }
@@ -150,46 +317,106 @@ export function createVoteBuffer({
      * Groups votes by opinion to UPDATE each opinion counter only once
      */
     const flush = async (): Promise<void> => {
-        // Get votes from in-memory buffer
-        let batch = Array.from(pendingVotes.values());
+        // Get votes from in-memory buffer and validate with safeParse
+        const localVotes = Array.from(pendingVotes.values());
         pendingVotes.clear();
 
-        // Get votes from Valkey (if configured)
+        // Validate local votes with safeParse (skip invalid entries)
+        const validLocalVotes: BufferedVote[] = [];
+        for (const vote of localVotes) {
+            const result = zodBufferedVote.safeParse(vote);
+            if (result.success) {
+                validLocalVotes.push(result.data);
+            } else {
+                log.warn(
+                    `[VoteBuffer] Skipping invalid local vote: ${result.error.message}`,
+                );
+            }
+        }
+
+        // Build vote map from valid local votes (dedup by key, keep latest timestamp)
+        const voteMap = new Map(
+            validLocalVotes.map((v) => [getVoteKey(v.userId, v.opinionId), v]),
+        );
+
+        // Track processed Valkey entries for cleanup (member + score pairs)
+        const processedValkeyEntries: { member: string; score: number }[] = [];
+
+        // Get votes from Valkey sorted set + hash (if configured)
         if (valkey !== undefined) {
             try {
-                const valkeyVotes = await valkey.lrange(
-                    VALKEY_QUEUE_KEYS.VOTE_BUFFER,
-                    0,
-                    -1,
-                );
-                await valkey.del(VALKEY_QUEUE_KEYS.VOTE_BUFFER);
-
-                const parsedValkeyVotes = valkeyVotes.map(
-                    (v: string) => JSON.parse(v) as BufferedVote,
+                // Fetch oldest N members from sorted set (ordered by timestamp)
+                const members = await valkey.zrange(
+                    VALKEY_QUEUE_KEYS.VOTE_BUFFER_INDEX,
+                    { start: 0, end: valkeyBatchLimit - 1 },
                 );
 
-                // Merge with in-memory votes (deduplicate by key, last write wins)
-                const voteMap = new Map(
-                    batch.map((v) => [getVoteKey(v.userId, v.opinionId), v]),
-                );
-
-                for (const valkeyVote of parsedValkeyVotes) {
-                    const key = getVoteKey(
-                        valkeyVote.userId,
-                        valkeyVote.opinionId,
+                if (members.length > 0) {
+                    // Get scores for conditional cleanup
+                    const membersWithScores = await valkey.zrangeWithScores(
+                        VALKEY_QUEUE_KEYS.VOTE_BUFFER_INDEX,
+                        { start: 0, end: valkeyBatchLimit - 1 },
                     );
-                    // Last write wins (prefer Valkey if timestamp newer)
-                    const existing = voteMap.get(key);
-                    if (
-                        !existing ||
-                        new Date(valkeyVote.timestamp) >
-                            new Date(existing.timestamp)
-                    ) {
-                        voteMap.set(key, valkeyVote);
-                    }
-                }
 
-                batch = Array.from(voteMap.values());
+                    // Get vote data from hash
+                    const voteDataList = await valkey.hmget(
+                        VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA,
+                        members,
+                    );
+
+                    // Process each vote
+                    // Note: membersWithScores has same length as members (same ZRANGE query)
+                    for (let i = 0; i < members.length; i++) {
+                        const member = String(members[i]);
+                        const voteJson = voteDataList[i];
+                        const scoreEntry = membersWithScores[i];
+                        const score = scoreEntry.score;
+
+                        // Always track for cleanup (even if data is invalid/missing)
+                        processedValkeyEntries.push({ member, score });
+
+                        if (voteJson === null) {
+                            log.warn(
+                                `[VoteBuffer] Skipping Valkey vote with missing data: ${member}`,
+                            );
+                            continue;
+                        }
+
+                        try {
+                            const parsed: unknown = JSON.parse(String(voteJson));
+                            const result = zodBufferedVote.safeParse(parsed);
+
+                            if (result.success) {
+                                const valkeyVote = result.data;
+                                const key = getVoteKey(
+                                    valkeyVote.userId,
+                                    valkeyVote.opinionId,
+                                );
+
+                                // Last write wins (prefer newer timestamp)
+                                const existing = voteMap.get(key);
+                                if (
+                                    existing === undefined ||
+                                    valkeyVote.timestamp > existing.timestamp
+                                ) {
+                                    voteMap.set(key, valkeyVote);
+                                }
+                            } else {
+                                log.warn(
+                                    `[VoteBuffer] Skipping invalid Valkey vote: ${result.error.message}`,
+                                );
+                            }
+                        } catch {
+                            log.warn(
+                                `[VoteBuffer] Skipping malformed JSON in Valkey: ${member}`,
+                            );
+                        }
+                    }
+
+                    log.info(
+                        `[VoteBuffer] Fetched ${String(members.length)} votes from Valkey`,
+                    );
+                }
             } catch (error: unknown) {
                 log.error(
                     error,
@@ -197,6 +424,8 @@ export function createVoteBuffer({
                 );
             }
         }
+
+        const batch = Array.from(voteMap.values());
 
         if (batch.length === 0) {
             return;
@@ -808,43 +1037,46 @@ export function createVoteBuffer({
             log.info(
                 `[VoteBuffer] Successfully flushed ${String(batch.length)} votes across ${String(batches.length)} transaction(s)`,
             );
+
+            // At-least-once: Delete from Valkey only after successful processing
+            // Use Lua script for conditional delete (only if score matches)
+            if (
+                valkey !== undefined &&
+                cleanupVotesScript !== undefined &&
+                processedValkeyEntries.length > 0
+            ) {
+                try {
+                    // Build args array: [member1, score1, member2, score2, ...]
+                    const cleanupArgs: string[] = [];
+                    for (const entry of processedValkeyEntries) {
+                        cleanupArgs.push(entry.member, String(entry.score));
+                    }
+
+                    const deletedCount = (await valkey.invokeScript(
+                        cleanupVotesScript,
+                        {
+                            keys: [
+                                VALKEY_QUEUE_KEYS.VOTE_BUFFER_INDEX,
+                                VALKEY_QUEUE_KEYS.VOTE_BUFFER_DATA,
+                            ],
+                            args: cleanupArgs,
+                        },
+                    )) as number;
+
+                    log.info(
+                        `[VoteBuffer] Cleaned up ${String(deletedCount)} entries from Valkey (${String(processedValkeyEntries.length)} attempted)`,
+                    );
+                } catch (error: unknown) {
+                    log.error(
+                        error,
+                        "[VoteBuffer] Failed to cleanup Valkey entries (will be retried on next flush)",
+                    );
+                }
+            }
         } catch (error: unknown) {
             log.error(error, "[VoteBuffer] Failed to flush votes");
-            // Re-add failed votes to buffer for retry
-            // Keep only the LATEST vote per user/opinion (last write wins)
-            const failedVotesByKey = new Map<string, BufferedVote>();
-
-            for (const vote of batch) {
-                const key = getVoteKey(vote.userId, vote.opinionId);
-                const existing = failedVotesByKey.get(key);
-
-                // Keep latest timestamp
-                if (
-                    !existing ||
-                    new Date(vote.timestamp) > new Date(existing.timestamp)
-                ) {
-                    failedVotesByKey.set(key, vote);
-                }
-            }
-
-            // Merge failed votes back into buffer, preserving newer votes already buffered
-            for (const [key, failedVote] of failedVotesByKey) {
-                const bufferedVote = pendingVotes.get(key);
-
-                // Only re-add if no vote exists, or failed vote is newer
-                if (
-                    !bufferedVote ||
-                    new Date(failedVote.timestamp) >
-                        new Date(bufferedVote.timestamp)
-                ) {
-                    pendingVotes.set(key, failedVote);
-                }
-            }
-
-            log.info(
-                `[VoteBuffer] Re-added ${String(failedVotesByKey.size)} failed votes to buffer (deduplicated from ${String(batch.length)} events)`,
-            );
-
+            // At-least-once: Votes remain in Valkey for retry on next flush
+            // No need to re-add - Valkey is the source of truth
             throw error;
         }
     };
@@ -860,6 +1092,16 @@ export function createVoteBuffer({
         clearInterval(flushInterval);
 
         await flush();
+
+        // Release Lua script objects to prevent memory leaks
+        if (addVoteScript !== undefined) {
+            addVoteScript.release();
+            addVoteScript = undefined;
+        }
+        if (cleanupVotesScript !== undefined) {
+            cleanupVotesScript.release();
+            cleanupVotesScript = undefined;
+        }
 
         log.info("[VoteBuffer] Shutdown complete");
     };

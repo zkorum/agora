@@ -7,8 +7,6 @@ import {
     conversationTable,
     userTable,
     opinionModerationTable,
-    notificationTable,
-    notificationNewOpinionTable,
     polisClusterTable,
     polisClusterOpinionTable,
     polisClusterUserTable,

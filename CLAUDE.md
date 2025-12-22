@@ -331,6 +331,36 @@ if (probabilities.length !== types.length) {
 - Data from untyped sources (raw SQL, environment variables)
 - Legacy code integration where types cannot be guaranteed
 
+### Parse, Don't Validate
+
+Follow the ["Parse, Don't Validate"](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) principle: use parsing to transform untyped data into typed data, rather than validating and then casting.
+
+**Preferred approach:**
+```typescript
+// ✅ GOOD: Parse with Zod, get typed result
+const zodFilesSchema = z.record(z.string(), z.string());
+
+function processImport(rawFiles: unknown): void {
+    const files = zodFilesSchema.parse(rawFiles); // throws if invalid
+    // `files` is now typed as Record<string, string>
+    useFiles(files);
+}
+```
+
+**Avoid:**
+```typescript
+// ❌ BAD: Validate then cast - loses type safety guarantee
+function processImport(files: Partial<Record<string, string>>): void {
+    if (!validateFiles(files)) {
+        throw new Error("Invalid files");
+    }
+    // Cast is unsafe - validation logic could diverge from type
+    useFiles(files as Record<string, string>);
+}
+```
+
+**Key principle:** Parsing returns a new value with a more precise type. Validation returns a boolean and requires unsafe casting. Parsing makes invalid states unrepresentable in the type system.
+
 ### Functional Programming Style: Closure Pattern (Zustand-style)
 
 **Preferred Pattern**: Closure-based state encapsulation with immutable API

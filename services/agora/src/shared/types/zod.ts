@@ -47,6 +47,19 @@ export const zodExportStatus = z.enum([
     "cancelled",
     "expired",
 ]);
+// Export failure reasons - keep in sync with schema.ts exportFailureReasonEnum
+export const zodExportFailureReason = z.enum([
+    "processing_error", // Generic error during CSV generation or S3 upload
+    "timeout", // Export timed out during processing
+    "server_restart", // Server restarted while processing (stuck exports)
+]);
+// Import failure reasons - keep in sync with schema.ts importFailureReasonEnum
+export const zodImportFailureReason = z.enum([
+    "processing_error", // Generic error during import processing
+    "timeout", // Import timed out during processing
+    "server_restart", // Server restarted while processing (stuck imports)
+    "invalid_data_format", // Invalid data format in queue
+]);
 export const zodExportFileType = z.enum([
     "comments",
     "votes",
@@ -270,20 +283,20 @@ export const zodNotificationType = z.enum([
     "import_failed",
 ]);
 
-// Base notification schema with common fields
+// Base notification schema with common fields (no message - each type defines its own content)
 const zodNotificationBase = z.object({
     slugId: zodSlugId,
     isRead: z.boolean(),
-    message: z.string(),
     createdAt: zodDateTimeFlexible,
 });
 
-// Opinion notification schemas
+// Opinion notification schemas - use 'message' for opinion content
 const zodOpinionVoteNotification = zodNotificationBase
     .extend({
         type: z.literal("opinion_vote"),
         routeTarget: zodOpinionRouteTarget,
         numVotes: z.number().int().min(1),
+        message: z.string(), // Opinion content
     })
     .strict();
 
@@ -292,14 +305,16 @@ const zodNewOpinionNotification = zodNotificationBase
         type: z.literal("new_opinion"),
         routeTarget: zodOpinionRouteTarget,
         username: z.string(),
+        message: z.string(), // Opinion content
     })
     .strict();
 
-// Export notification schemas
+// Export notification schemas - use 'conversationTitle' for context
 const zodExportStartedNotification = zodNotificationBase
     .extend({
         type: z.literal("export_started"),
         routeTarget: zodExportRouteTarget,
+        conversationTitle: z.string(),
     })
     .strict();
 
@@ -307,6 +322,7 @@ const zodExportCompletedNotification = zodNotificationBase
     .extend({
         type: z.literal("export_completed"),
         routeTarget: zodExportRouteTarget,
+        conversationTitle: z.string(),
     })
     .strict();
 
@@ -314,7 +330,8 @@ const zodExportFailedNotification = zodNotificationBase
     .extend({
         type: z.literal("export_failed"),
         routeTarget: zodExportRouteTarget,
-        errorMessage: z.string().optional(),
+        conversationTitle: z.string(),
+        failureReason: zodExportFailureReason.optional(),
     })
     .strict();
 
@@ -322,11 +339,12 @@ const zodExportCancelledNotification = zodNotificationBase
     .extend({
         type: z.literal("export_cancelled"),
         routeTarget: zodExportRouteTarget,
+        conversationTitle: z.string(),
         cancellationReason: z.string(),
     })
     .strict();
 
-// Import notification schemas
+// Import notification schemas - no message needed, frontend translates type
 const zodImportStartedNotification = zodNotificationBase
     .extend({
         type: z.literal("import_started"),
@@ -345,7 +363,7 @@ const zodImportFailedNotification = zodNotificationBase
     .extend({
         type: z.literal("import_failed"),
         routeTarget: zodImportRouteTarget,
-        errorMessage: z.string().optional(),
+        failureReason: zodImportFailureReason.optional(),
     })
     .strict();
 
@@ -1136,6 +1154,8 @@ export type PolisClustersMetadata = z.infer<typeof zodPolisClustersMetadata>;
 export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;
 export type EventSlug = z.infer<typeof zodEventSlug>;
 export type ExportStatus = z.infer<typeof zodExportStatus>;
+export type ExportFailureReason = z.infer<typeof zodExportFailureReason>;
+export type ImportFailureReason = z.infer<typeof zodImportFailureReason>;
 export type ExportFileType = z.infer<typeof zodExportFileType>;
 export type ExportFileInfo = z.infer<typeof zodExportFileInfo>;
 

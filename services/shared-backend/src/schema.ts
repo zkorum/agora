@@ -592,6 +592,23 @@ export const exportCancellationReasonEnum = pgEnum(
     ["duplicate_in_batch", "cooldown_active"],
 );
 
+// Export failure reasons (for status="failed")
+// Keep in sync with zodExportFailureReason in shared/src/types/zod.ts
+export const exportFailureReasonEnum = pgEnum("export_failure_reason_enum", [
+    "processing_error",
+    "timeout",
+    "server_restart",
+]);
+
+// Import failure reasons (for status="failed")
+// Keep in sync with zodImportFailureReason in shared/src/types/zod.ts
+export const importFailureReasonEnum = pgEnum("import_failure_reason_enum", [
+    "processing_error",
+    "timeout",
+    "server_restart",
+    "invalid_data_format",
+]);
+
 // Export file types
 export const exportFileTypeEnum = pgEnum("export_file_type_enum", [
     "comments",
@@ -2006,7 +2023,7 @@ export const conversationExportTable = pgTable(
         status: exportStatusEnum("status").notNull().default("processing"),
         totalFileSize: integer("total_file_size"), // null until completed
         totalFileCount: integer("total_file_count"), // null until completed
-        errorMessage: text("error_message"), // populated if status="failed"
+        failureReason: exportFailureReasonEnum("failure_reason"), // populated if status="failed"
         cancellationReason: exportCancellationReasonEnum("cancellation_reason"), // populated if status="cancelled"
         expiresAt: timestamp("expires_at", {
             mode: "date",
@@ -2075,7 +2092,7 @@ export const conversationImportTable = pgTable(
             .references(() => userTable.id)
             .notNull(),
         status: importStatusEnum("status").notNull().default("processing"),
-        errorMessage: text("error_message"), // populated if status="failed"
+        failureReason: importFailureReasonEnum("failure_reason"), // populated if status="failed"
         csvFileMetadata: jsonb("csv_file_metadata"), // Optional metadata (file sizes, row counts for transparency)
         createdAt: timestamp("created_at", {
             mode: "date",

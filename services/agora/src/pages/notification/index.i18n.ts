@@ -14,6 +14,10 @@ export interface NotificationTranslations {
   importStarted: string;
   importCompleted: string;
   importFailed: string;
+  // Failure reason translations
+  failureReasonProcessingError: string;
+  failureReasonTimeout: string;
+  failureReasonInvalidDataFormat: string;
 }
 
 export const notificationTranslations: Record<
@@ -35,6 +39,9 @@ export const notificationTranslations: Record<
     importStarted: "Your conversation import has started",
     importCompleted: "Your conversation import is complete",
     importFailed: "Your conversation import failed",
+    failureReasonProcessingError: "A processing error occurred",
+    failureReasonTimeout: "The operation timed out",
+    failureReasonInvalidDataFormat: "The data format was invalid",
   },
   ar: {
     notifications: "الإشعارات",
@@ -50,6 +57,9 @@ export const notificationTranslations: Record<
     importStarted: "بدأ استيراد محادثتك",
     importCompleted: "اكتمل استيراد محادثتك",
     importFailed: "فشل استيراد محادثتك",
+    failureReasonProcessingError: "حدث خطأ في المعالجة",
+    failureReasonTimeout: "انتهت مهلة العملية",
+    failureReasonInvalidDataFormat: "تنسيق البيانات غير صالح",
   },
   es: {
     notifications: "Notificaciones",
@@ -66,6 +76,9 @@ export const notificationTranslations: Record<
     importStarted: "Su importación de conversación ha comenzado",
     importCompleted: "Su importación de conversación está completa",
     importFailed: "Su importación de conversación falló",
+    failureReasonProcessingError: "Ocurrió un error de procesamiento",
+    failureReasonTimeout: "La operación expiró",
+    failureReasonInvalidDataFormat: "El formato de datos no es válido",
   },
   fr: {
     notifications: "Notifications",
@@ -82,6 +95,9 @@ export const notificationTranslations: Record<
     importStarted: "Votre importation de conversation a commencé",
     importCompleted: "Votre importation de conversation est terminée",
     importFailed: "Votre importation de conversation a échoué",
+    failureReasonProcessingError: "Une erreur de traitement s'est produite",
+    failureReasonTimeout: "L'opération a expiré",
+    failureReasonInvalidDataFormat: "Le format des données est invalide",
   },
   "zh-Hans": {
     notifications: "通知",
@@ -97,6 +113,9 @@ export const notificationTranslations: Record<
     importStarted: "您的对话导入已开始",
     importCompleted: "您的对话导入已完成",
     importFailed: "您的对话导入失败",
+    failureReasonProcessingError: "处理时发生错误",
+    failureReasonTimeout: "操作超时",
+    failureReasonInvalidDataFormat: "数据格式无效",
   },
   "zh-Hant": {
     notifications: "通知",
@@ -112,6 +131,9 @@ export const notificationTranslations: Record<
     importStarted: "您的對話匯入已開始",
     importCompleted: "您的對話匯入已完成",
     importFailed: "您的對話匯入失敗",
+    failureReasonProcessingError: "處理時發生錯誤",
+    failureReasonTimeout: "操作逾時",
+    failureReasonInvalidDataFormat: "資料格式無效",
   },
   ja: {
     notifications: "通知",
@@ -127,5 +149,8 @@ export const notificationTranslations: Record<
     importStarted: "会話のインポートが開始されました",
     importCompleted: "会話のインポートが完了しました",
     importFailed: "会話のインポートに失敗しました",
+    failureReasonProcessingError: "処理中にエラーが発生しました",
+    failureReasonTimeout: "操作がタイムアウトしました",
+    failureReasonInvalidDataFormat: "データ形式が無効です",
   },
 };

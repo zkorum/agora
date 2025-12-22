@@ -54,7 +54,7 @@ export async function createExportNotification({
         });
 
         log.info(
-            `Created ${type} notification for user ${userId}, export ${exportId}`,
+            `Created ${type} notification for user ${userId}, export ${String(exportId)}`,
         );
 
         // Broadcast notification via SSE (don't await to avoid blocking)

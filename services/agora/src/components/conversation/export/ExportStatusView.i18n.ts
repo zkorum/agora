@@ -37,6 +37,9 @@ export interface ExportStatusViewTranslations {
   deleteConfirmMessage: string;
   deleteSuccess: string;
   deleteError: string;
+  // Failure reason translations
+  failureReasonProcessingError: string;
+  failureReasonTimeout: string;
 }
 
 export const exportStatusViewTranslations: Record<
@@ -84,6 +87,8 @@ export const exportStatusViewTranslations: Record<
       "Are you sure you want to delete this export? This action cannot be undone.",
     deleteSuccess: "Export deleted successfully",
     deleteError: "Failed to delete export",
+    failureReasonProcessingError: "A processing error occurred",
+    failureReasonTimeout: "The operation timed out",
   },
   ar: {
     loadingStatus: "جارٍ تحميل حالة التصدير...",
@@ -126,6 +131,8 @@ export const exportStatusViewTranslations: Record<
       "هل أنت متأكد من رغبتك في حذف هذا التصدير؟ لا يمكن التراجع عن هذا الإجراء.",
     deleteSuccess: "تم حذف التصدير بنجاح",
     deleteError: "فشل حذف التصدير",
+    failureReasonProcessingError: "حدث خطأ في المعالجة",
+    failureReasonTimeout: "انتهت مهلة العملية",
   },
   es: {
     loadingStatus: "Cargando estado de exportación...",
@@ -169,6 +176,8 @@ export const exportStatusViewTranslations: Record<
       "¿Está seguro de que desea eliminar esta exportación? Esta acción no se puede deshacer.",
     deleteSuccess: "Exportación eliminada con éxito",
     deleteError: "Error al eliminar la exportación",
+    failureReasonProcessingError: "Ocurrió un error de procesamiento",
+    failureReasonTimeout: "La operación expiró",
   },
   fr: {
     loadingStatus: "Chargement de l'état de l'exportation...",
@@ -212,6 +221,8 @@ export const exportStatusViewTranslations: Record<
       "Êtes-vous sûr de vouloir supprimer cette exportation ? Cette action ne peut pas être annulée.",
     deleteSuccess: "Exportation supprimée avec succès",
     deleteError: "Échec de la suppression de l'exportation",
+    failureReasonProcessingError: "Une erreur de traitement s'est produite",
+    failureReasonTimeout: "L'opération a expiré",
   },
   "zh-Hans": {
     loadingStatus: "正在加载导出状态...",
@@ -250,6 +261,8 @@ export const exportStatusViewTranslations: Record<
     deleteConfirmMessage: "您确定要删除此导出吗？此操作无法撤销。",
     deleteSuccess: "导出删除成功",
     deleteError: "删除导出失败",
+    failureReasonProcessingError: "处理时发生错误",
+    failureReasonTimeout: "操作超时",
   },
   "zh-Hant": {
     loadingStatus: "正在載入匯出狀態...",
@@ -288,6 +301,8 @@ export const exportStatusViewTranslations: Record<
     deleteConfirmMessage: "您確定要刪除此匯出嗎？此操作無法撤銷。",
     deleteSuccess: "匯出刪除成功",
     deleteError: "刪除匯出失敗",
+    failureReasonProcessingError: "處理時發生錯誤",
+    failureReasonTimeout: "操作逾時",
   },
   ja: {
     loadingStatus: "エクスポートステータスを読み込んでいます...",
@@ -331,5 +346,7 @@ export const exportStatusViewTranslations: Record<
       "このエクスポートを削除してもよろしいですか？この操作は元に戻せません。",
     deleteSuccess: "エクスポートが正常に削除されました",
     deleteError: "エクスポートの削除に失敗しました",
+    failureReasonProcessingError: "処理中にエラーが発生しました",
+    failureReasonTimeout: "操作がタイムアウトしました",
   },
 };

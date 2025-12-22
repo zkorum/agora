@@ -183,7 +183,7 @@ export function parseCommentsCsv(
                     comments.push(validated);
                 } catch (error) {
                     errors.push(
-                        `Row ${rowNumber}: ${
+                        `Row ${String(rowNumber)}: ${
                             error instanceof Error
                                 ? error.message
                                 : String(error)
@@ -199,7 +199,7 @@ export function parseCommentsCsv(
                         );
                         reject(
                             new Error(
-                                `Comments CSV validation failed (showing first ${MAX_ERRORS} errors):\n${errors.join("\n")}\n\nThis file may be the wrong type. Expected columns: ${expectedColumns.join(", ")}`,
+                                `Comments CSV validation failed (showing first ${String(MAX_ERRORS)} errors):\n${errors.join("\n")}\n\nThis file may be the wrong type. Expected columns: ${expectedColumns.join(", ")}`,
                             ),
                         );
                     }
@@ -279,7 +279,7 @@ export function parseVotesCsv(csvContent: string): Promise<PolisVoteCsv[]> {
                     votes.push(validated);
                 } catch (error) {
                     errors.push(
-                        `Row ${rowNumber}: ${
+                        `Row ${String(rowNumber)}: ${
                             error instanceof Error
                                 ? error.message
                                 : String(error)
@@ -294,7 +294,7 @@ export function parseVotesCsv(csvContent: string): Promise<PolisVoteCsv[]> {
                             getSchemaColumns(PolisVoteCsvSchema);
                         reject(
                             new Error(
-                                `Votes CSV validation failed (showing first ${MAX_ERRORS} errors):\n${errors.join("\n")}\n\nThis file may be the wrong type. Expected columns: ${expectedColumns.join(", ")}`,
+                                `Votes CSV validation failed (showing first ${String(MAX_ERRORS)} errors):\n${errors.join("\n")}\n\nThis file may be the wrong type. Expected columns: ${expectedColumns.join(", ")}`,
                             ),
                         );
                     }

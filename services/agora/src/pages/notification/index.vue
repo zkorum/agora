@@ -58,9 +58,12 @@
                       {{ getTitleFromNotification(notificationItem) }}
                     </div>
 
-                    <div class="messageStyle">
+                    <div
+                      v-if="notificationItem.displayMessage"
+                      class="messageStyle"
+                    >
                       <ZKHtmlContent
-                        :html-body="notificationItem.message"
+                        :html-body="notificationItem.displayMessage"
                         :compact-mode="false"
                         :enable-links="false"
                       />
@@ -89,11 +92,8 @@ import { storeToRefs } from "pinia";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
-import type {
-  NotificationItem,
-  NotificationType,
-  RouteTarget,
-} from "src/shared/types/zod";
+import type { NotificationType, RouteTarget } from "src/shared/types/zod";
+import type { DisplayNotification } from "src/utils/notification/transform";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useNotificationStore } from "src/stores/notification";
 import { useNotificationApi } from "src/utils/api/notification/notification";
@@ -193,7 +193,7 @@ function getIconFromNotificationType(
   return icon;
 }
 
-function getTitleFromNotification(notificationItem: NotificationItem): string {
+function getTitleFromNotification(notificationItem: DisplayNotification): string {
   let title;
   switch (notificationItem.type) {
     case "new_opinion":

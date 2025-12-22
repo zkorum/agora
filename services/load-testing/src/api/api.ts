@@ -1336,6 +1336,12 @@ export type ApiV1ConversationExportReadinessConversationSlugIdGet200ResponseAnyO
 export interface ApiV1ConversationExportRequestPost200Response {
     /**
      * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationExportRequestPost200Response
+     */
+    'success': boolean;
+    /**
+     * 
      * @type {string}
      * @memberof ApiV1ConversationExportRequestPost200Response
      */
@@ -1352,6 +1358,12 @@ export interface ApiV1ConversationExportRequestPost200Response {
      * @memberof ApiV1ConversationExportRequestPost200Response
      */
     'cooldownEndsAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200Response
+     */
+    'reason': ApiV1ConversationExportRequestPost200ResponseReasonEnum;
 }
 
 export const ApiV1ConversationExportRequestPost200ResponseStatusEnum = {
@@ -1359,6 +1371,13 @@ export const ApiV1ConversationExportRequestPost200ResponseStatusEnum = {
 } as const;
 
 export type ApiV1ConversationExportRequestPost200ResponseStatusEnum = typeof ApiV1ConversationExportRequestPost200ResponseStatusEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseStatusEnum];
+export const ApiV1ConversationExportRequestPost200ResponseReasonEnum = {
+    ActiveExportInProgress: 'active_export_in_progress',
+    ConversationNotFound: 'conversation_not_found',
+    NoOpinions: 'no_opinions'
+} as const;
+
+export type ApiV1ConversationExportRequestPost200ResponseReasonEnum = typeof ApiV1ConversationExportRequestPost200ResponseReasonEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseReasonEnum];
 
 /**
  * 
@@ -1366,6 +1385,12 @@ export type ApiV1ConversationExportRequestPost200ResponseStatusEnum = typeof Api
  * @interface ApiV1ConversationExportRequestPost200ResponseAnyOf
  */
 export interface ApiV1ConversationExportRequestPost200ResponseAnyOf {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationExportRequestPost200ResponseAnyOf
+     */
+    'success': boolean;
     /**
      * 
      * @type {string}
@@ -1394,6 +1419,12 @@ export type ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum = typeo
 export interface ApiV1ConversationExportRequestPost200ResponseAnyOf1 {
     /**
      * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationExportRequestPost200ResponseAnyOf1
+     */
+    'success': boolean;
+    /**
+     * 
      * @type {string}
      * @memberof ApiV1ConversationExportRequestPost200ResponseAnyOf1
      */
@@ -1411,6 +1442,34 @@ export const ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum = {
 } as const;
 
 export type ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum = typeof ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum];
+
+/**
+ * 
+ * @export
+ * @interface ApiV1ConversationExportRequestPost200ResponseAnyOf2
+ */
+export interface ApiV1ConversationExportRequestPost200ResponseAnyOf2 {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiV1ConversationExportRequestPost200ResponseAnyOf2
+     */
+    'success': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1ConversationExportRequestPost200ResponseAnyOf2
+     */
+    'reason': ApiV1ConversationExportRequestPost200ResponseAnyOf2ReasonEnum;
+}
+
+export const ApiV1ConversationExportRequestPost200ResponseAnyOf2ReasonEnum = {
+    ActiveExportInProgress: 'active_export_in_progress',
+    ConversationNotFound: 'conversation_not_found',
+    NoOpinions: 'no_opinions'
+} as const;
+
+export type ApiV1ConversationExportRequestPost200ResponseAnyOf2ReasonEnum = typeof ApiV1ConversationExportRequestPost200ResponseAnyOf2ReasonEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseAnyOf2ReasonEnum];
 
 /**
  * 
@@ -1459,7 +1518,7 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200Response {
      * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200Response
      */
-    'errorMessage'?: string;
+    'failureReason'?: ApiV1ConversationExportStatusExportSlugIdGet200ResponseFailureReasonEnum;
     /**
      * 
      * @type {string}
@@ -1479,6 +1538,13 @@ export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum =
 } as const;
 
 export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseStatusEnum];
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseFailureReasonEnum = {
+    ProcessingError: 'processing_error',
+    Timeout: 'timeout',
+    ServerRestart: 'server_restart'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseFailureReasonEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFailureReasonEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseFailureReasonEnum];
 
 /**
  * 
@@ -1657,7 +1723,7 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2 {
      * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2
      */
-    'errorMessage'?: string;
+    'failureReason'?: ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2FailureReasonEnum;
     /**
      * 
      * @type {string}
@@ -1677,6 +1743,13 @@ export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2Status
 } as const;
 
 export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2StatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2StatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2StatusEnum];
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2FailureReasonEnum = {
+    ProcessingError: 'processing_error',
+    Timeout: 'timeout',
+    ServerRestart: 'server_restart'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2FailureReasonEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2FailureReasonEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf2FailureReasonEnum];
 
 /**
  * 
@@ -1757,7 +1830,7 @@ export interface ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4 {
      * @type {string}
      * @memberof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4
      */
-    'errorMessage'?: string;
+    'failureReason'?: ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4FailureReasonEnum;
     /**
      * 
      * @type {string}
@@ -1789,6 +1862,13 @@ export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4Status
 } as const;
 
 export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4StatusEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4StatusEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4StatusEnum];
+export const ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4FailureReasonEnum = {
+    ProcessingError: 'processing_error',
+    Timeout: 'timeout',
+    ServerRestart: 'server_restart'
+} as const;
+
+export type ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4FailureReasonEnum = typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4FailureReasonEnum[keyof typeof ApiV1ConversationExportStatusExportSlugIdGet200ResponseAnyOf4FailureReasonEnum];
 
 /**
  * 
@@ -2377,7 +2457,7 @@ export interface ApiV1ConversationImportStatusImportSlugIdGet200Response {
      * @type {string}
      * @memberof ApiV1ConversationImportStatusImportSlugIdGet200Response
      */
-    'errorMessage'?: string;
+    'failureReason'?: ApiV1ConversationImportStatusImportSlugIdGet200ResponseFailureReasonEnum;
 }
 
 export const ApiV1ConversationImportStatusImportSlugIdGet200ResponseStatusEnum = {
@@ -2385,6 +2465,14 @@ export const ApiV1ConversationImportStatusImportSlugIdGet200ResponseStatusEnum =
 } as const;
 
 export type ApiV1ConversationImportStatusImportSlugIdGet200ResponseStatusEnum = typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseStatusEnum[keyof typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseStatusEnum];
+export const ApiV1ConversationImportStatusImportSlugIdGet200ResponseFailureReasonEnum = {
+    ProcessingError: 'processing_error',
+    Timeout: 'timeout',
+    ServerRestart: 'server_restart',
+    InvalidDataFormat: 'invalid_data_format'
+} as const;
+
+export type ApiV1ConversationImportStatusImportSlugIdGet200ResponseFailureReasonEnum = typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseFailureReasonEnum[keyof typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseFailureReasonEnum];
 
 /**
  * 
@@ -2491,7 +2579,7 @@ export interface ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2 {
      * @type {string}
      * @memberof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2
      */
-    'errorMessage'?: string;
+    'failureReason'?: ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2FailureReasonEnum;
     /**
      * 
      * @type {string}
@@ -2511,6 +2599,14 @@ export const ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2Status
 } as const;
 
 export type ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2StatusEnum = typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2StatusEnum[keyof typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2StatusEnum];
+export const ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2FailureReasonEnum = {
+    ProcessingError: 'processing_error',
+    Timeout: 'timeout',
+    ServerRestart: 'server_restart',
+    InvalidDataFormat: 'invalid_data_format'
+} as const;
+
+export type ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2FailureReasonEnum = typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2FailureReasonEnum[keyof typeof ApiV1ConversationImportStatusImportSlugIdGet200ResponseAnyOf2FailureReasonEnum];
 
 /**
  * 
@@ -2899,12 +2995,6 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
-    'message': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
-     */
     'createdAt': string;
     /**
      * 
@@ -2929,13 +3019,25 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInner {
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
     'username': string;
     /**
      * 
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
      */
-    'errorMessage'?: string;
+    'conversationTitle': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInner
+     */
+    'failureReason'?: ApiV1NotificationFetchPost200ResponseNotificationListInnerFailureReasonEnum;
     /**
      * 
      * @type {string}
@@ -2957,6 +3059,14 @@ export const ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum 
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerTypeEnum];
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerFailureReasonEnum = {
+    ProcessingError: 'processing_error',
+    Timeout: 'timeout',
+    ServerRestart: 'server_restart',
+    InvalidDataFormat: 'invalid_data_format'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerFailureReasonEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerFailureReasonEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerFailureReasonEnum];
 
 /**
  * 
@@ -2981,12 +3091,6 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      */
-    'message': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
-     */
     'createdAt': string;
     /**
      * 
@@ -3006,6 +3110,12 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      */
     'numVotes': number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
+     */
+    'message': string;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOfTypeEnum = {
@@ -3037,12 +3147,6 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
      */
-    'message': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
-     */
     'createdAt': string;
     /**
      * 
@@ -3062,6 +3166,12 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
      */
     'username': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1
+     */
+    'message': string;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf1TypeEnum = {
@@ -3093,12 +3203,6 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
      */
-    'message': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
-     */
     'createdAt': string;
     /**
      * 
@@ -3112,6 +3216,12 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
      */
     'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2
+     */
+    'conversationTitle': string;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2TypeEnum = {
@@ -3175,12 +3285,6 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
      */
-    'message': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
-     */
     'createdAt': string;
     /**
      * 
@@ -3194,6 +3298,12 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
      */
     'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3
+     */
+    'conversationTitle': string;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf3TypeEnum = {
@@ -3225,12 +3335,6 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
      */
-    'message': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
-     */
     'createdAt': string;
     /**
      * 
@@ -3249,7 +3353,13 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
      */
-    'errorMessage'?: string;
+    'conversationTitle': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4
+     */
+    'failureReason'?: ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4FailureReasonEnum;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum = {
@@ -3257,6 +3367,13 @@ export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4Typ
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4TypeEnum];
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4FailureReasonEnum = {
+    ProcessingError: 'processing_error',
+    Timeout: 'timeout',
+    ServerRestart: 'server_restart'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4FailureReasonEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4FailureReasonEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf4FailureReasonEnum];
 
 /**
  * 
@@ -3281,12 +3398,6 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
      */
-    'message': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
-     */
     'createdAt': string;
     /**
      * 
@@ -3300,6 +3411,12 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
      */
     'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf2RouteTarget;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf5
+     */
+    'conversationTitle': string;
     /**
      * 
      * @type {string}
@@ -3332,12 +3449,6 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
      */
     'isRead': boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf6
-     */
-    'message': string;
     /**
      * 
      * @type {string}
@@ -3419,12 +3530,6 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
      */
-    'message': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf7
-     */
     'createdAt': string;
     /**
      * 
@@ -3469,12 +3574,6 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
      */
-    'message': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
-     */
     'createdAt': string;
     /**
      * 
@@ -3493,7 +3592,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf
      * @type {string}
      * @memberof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8
      */
-    'errorMessage'?: string;
+    'failureReason'?: ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8FailureReasonEnum;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8TypeEnum = {
@@ -3501,6 +3600,14 @@ export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8Typ
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8TypeEnum];
+export const ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8FailureReasonEnum = {
+    ProcessingError: 'processing_error',
+    Timeout: 'timeout',
+    ServerRestart: 'server_restart',
+    InvalidDataFormat: 'invalid_data_format'
+} as const;
+
+export type ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8FailureReasonEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8FailureReasonEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerAnyOf8FailureReasonEnum];
 
 /**
  * 

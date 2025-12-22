@@ -1,15 +1,49 @@
 /** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
-import { Redis } from "ioredis";
+import { GlideClient, Decoder } from "@valkey/valkey-glide";
 import type { Logger } from "pino";
 import type { FastifyBaseLogger } from "fastify";
 
-// Valkey is Redis-compatible, so we use the ioredis client
-// Valkey is a fork of Redis with enhanced features and open governance
-export type Valkey = Redis;
+// Using valkey-glide, the official Valkey client
+export type Valkey = GlideClient;
 
 interface InitializeValkeyParams {
     valkeyUrl: string | undefined;
     log: Logger | FastifyBaseLogger;
+}
+
+interface ParsedValkeyUrl {
+    host: string;
+    port: number;
+    username?: string;
+    password?: string;
+    useTLS: boolean;
+}
+
+/**
+ * Parse a Valkey/Redis URL into components for valkey-glide
+ *
+ * Supported formats:
+ * - valkey://localhost:6379
+ * - valkeys://localhost:6379 (TLS)
+ * - redis://localhost:6379
+ * - rediss://localhost:6379 (TLS)
+ * - valkey://user:password@localhost:6379
+ * - valkeys://user:password@localhost:6379
+ */
+function parseValkeyUrl(urlString: string): ParsedValkeyUrl {
+    const url = new URL(urlString);
+
+    const useTLS =
+        url.protocol === "valkeys:" || url.protocol === "rediss:";
+
+    const host = url.hostname;
+    const port = url.port ? parseInt(url.port, 10) : 6379;
+
+    // Decode username and password (they may be URL-encoded)
+    const username = url.username ? decodeURIComponent(url.username) : undefined;
+    const password = url.password ? decodeURIComponent(url.password) : undefined;
+
+    return { host, port, username, password, useTLS };
 }
 
 /**
@@ -25,11 +59,12 @@ interface InitializeValkeyParams {
  * Configuration:
  * - Local: valkey://localhost:6379
  * - Production: AWS ElastiCache endpoint with TLS (Valkey-compatible)
+ *   Example: valkeys://username:password@my-cluster.xxxxx.cache.amazonaws.com:6379
  */
-export function initializeValkey({
+export async function initializeValkey({
     valkeyUrl,
     log,
-}: InitializeValkeyParams): Valkey | undefined {
+}: InitializeValkeyParams): Promise<Valkey | undefined> {
     if (valkeyUrl === undefined) {
         log.info(
             "[Valkey] Not configured - services will use in-memory storage only",
@@ -41,48 +76,41 @@ export function initializeValkey({
         log.info(
             `[Valkey] Initializing connection to ${valkeyUrl.replace(/:[^:@]+@/, ":***@")}`,
         );
-        const valkey = new Redis(valkeyUrl, {
-            // Retry strategy for failover handling
-            retryStrategy: (times: number) => {
-                const delay = Math.min(times * 50, 2000);
-                log.warn(`[Valkey] Retry attempt ${String(times)}, delay: ${String(delay)}ms`);
-                return delay;
+
+        const { host, port, username, password, useTLS } =
+            parseValkeyUrl(valkeyUrl);
+
+        // Build credentials only if password is provided (required by valkey-glide)
+        const credentials =
+            password !== undefined
+                ? { username, password }
+                : undefined;
+
+        const valkey = await GlideClient.createClient({
+            addresses: [{ host, port }],
+            credentials,
+            useTLS,
+            // Request timeout: time to wait for command completion including retries
+            requestTimeout: 5000, // 5 seconds
+            // Connection backoff: exponential retry strategy for reconnections
+            // Formula: rand(0 ... factor * (exponentBase ^ N)) where N = attempt number
+            connectionBackoff: {
+                numberOfRetries: 10, // Max retries before delay becomes constant
+                factor: 100, // Base delay multiplier in ms
+                exponentBase: 2, // Delay doubles each retry: 100ms, 200ms, 400ms...
             },
-            // Reconnect on READONLY error (ElastiCache failover)
-            reconnectOnError: (err: Error) => {
-                const targetError = "READONLY";
-                if (err.message.includes(targetError)) {
-                    log.warn(
-                        "[Valkey] READONLY error detected, reconnecting (failover)",
-                    );
-                    return 2; // Reconnect and resend command
-                }
-                return false;
+            // Advanced connection settings
+            advancedConfiguration: {
+                // Time to wait for TCP/TLS connection to complete
+                // Note: Default is 250ms (not 2000ms as documented - known bug)
+                connectionTimeout: 5000, // 5 seconds for ElastiCache/slow networks
             },
-            maxRetriesPerRequest: 3,
-            enableReadyCheck: true,
-            lazyConnect: false, // Connect immediately
+            // Use string decoder by default - all our data is JSON (UTF-8)
+            // This ensures lrange/get/etc return string instead of Buffer
+            defaultDecoder: Decoder.String,
         });
 
-        valkey.on("connect", () => {
-            log.info("[Valkey] Connected successfully");
-        });
-
-        valkey.on("ready", () => {
-            log.info("[Valkey] Ready to accept commands");
-        });
-
-        valkey.on("error", (err: Error) => {
-            log.error(err, "[Valkey] Connection error");
-        });
-
-        valkey.on("close", () => {
-            log.warn("[Valkey] Connection closed");
-        });
-
-        valkey.on("reconnecting", () => {
-            log.info("[Valkey] Reconnecting...");
-        });
+        log.info("[Valkey] Connected successfully");
 
         return valkey;
     } catch (error) {

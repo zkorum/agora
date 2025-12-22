@@ -2,11 +2,16 @@ import { defineStore } from "pinia";
 import type { NotificationItem } from "src/shared/types/zod";
 import { useNotificationApi } from "src/utils/api/notification/notification";
 import { ref } from "vue";
+import {
+  type DisplayNotification,
+  transformNotification,
+  transformNotifications,
+} from "src/utils/notification/transform";
 
 export const useNotificationStore = defineStore("notification", () => {
   const { fetchNotifications } = useNotificationApi();
 
-  const notificationList = ref<NotificationItem[]>([]);
+  const notificationList = ref<DisplayNotification[]>([]);
   const numNewNotifications = ref(0);
 
   async function loadNotificationData(loadMore: boolean): Promise<boolean> {
@@ -20,10 +25,11 @@ export const useNotificationStore = defineStore("notification", () => {
 
     const response = await fetchNotifications(lastSlugId);
     if (response) {
+      const transformed = transformNotifications(response.notificationList);
       if (loadMore) {
-        notificationList.value.push(...response.notificationList);
+        notificationList.value.push(...transformed);
       } else {
-        notificationList.value = response.notificationList;
+        notificationList.value = transformed;
       }
       calculateNumNewNotification();
 
@@ -61,8 +67,9 @@ export const useNotificationStore = defineStore("notification", () => {
       return;
     }
 
-    // Add notification to the beginning of the list (most recent first)
-    notificationList.value.unshift(notification);
+    // Transform and add notification to the beginning of the list (most recent first)
+    const transformed = transformNotification(notification);
+    notificationList.value.unshift(transformed);
 
     // Update new notification count if it's unread
     if (!notification.isRead) {

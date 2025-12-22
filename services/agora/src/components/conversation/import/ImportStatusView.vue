@@ -81,10 +81,10 @@
             />
             <p>{{ t("failedMessage") }}</p>
             <p
-              v-if="importStatusQuery.data.value.errorMessage"
+              v-if="importStatusQuery.data.value.failureReason"
               class="error-details"
             >
-              {{ importStatusQuery.data.value.errorMessage }}
+              {{ getFailureReasonText(importStatusQuery.data.value.failureReason) }}
             </p>
           </div>
         </div>
@@ -106,6 +106,7 @@ import {
 import { useAuthenticationStore } from "src/stores/authentication";
 import { formatDateTime } from "src/utils/format";
 import { useImportStatusQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
+import type { ImportFailureReason } from "src/shared/types/zod";
 
 interface Props {
   importSlugId: string;
@@ -135,6 +136,19 @@ function handleViewConversation(): void {
     name: "/conversation/[postSlugId]",
     params: { postSlugId: data.conversationSlugId },
   });
+}
+
+function getFailureReasonText(reason: ImportFailureReason): string {
+  switch (reason) {
+    case "processing_error":
+    case "server_restart":
+      // Show server_restart as generic processing error (not helpful to show internal details)
+      return t("failureReasonProcessingError");
+    case "timeout":
+      return t("failureReasonTimeout");
+    case "invalid_data_format":
+      return t("failureReasonInvalidDataFormat");
+  }
 }
 </script>
 

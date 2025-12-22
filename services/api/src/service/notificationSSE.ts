@@ -44,6 +44,10 @@ export class NotificationSSEManager {
             this.cleanupStaleConnections();
         }, 300000);
 
+        // Prevent intervals from keeping process alive during shutdown
+        this.heartbeatInterval.unref();
+        this.cleanupInterval.unref();
+
         log.info("[SSE] Notification SSE Manager initialized");
     }
 
@@ -163,8 +167,7 @@ export class NotificationSSEManager {
      */
     private cleanupStaleConnections(): void {
         const now = Date.now();
-        const staleConnections: Array<{ userId: string; reply: FastifyReply }> =
-            [];
+        const staleConnections: { userId: string; reply: FastifyReply }[] = [];
 
         for (const [userId, userConnections] of this.connections.entries()) {
             for (const reply of userConnections) {
