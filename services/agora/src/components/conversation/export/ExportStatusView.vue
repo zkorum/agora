@@ -223,6 +223,7 @@ import { useQuasar } from "quasar";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { ExportFailureReason } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import {
@@ -231,7 +232,6 @@ import {
 } from "src/utils/api/conversationExport/useConversationExportQueries";
 import { formatDateTime, formatFileSize, isUrlExpired } from "src/utils/format";
 import { useNotify } from "src/utils/ui/notify";
-import type { ExportFailureReason } from "src/shared/types/zod";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 

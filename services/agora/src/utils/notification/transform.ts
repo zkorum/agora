@@ -6,9 +6,9 @@
  */
 
 import type {
-    NotificationItem,
-    ExportFailureReason,
-    ImportFailureReason,
+  ExportFailureReason,
+  ImportFailureReason,
+  NotificationItem,
 } from "src/shared/types/zod";
 
 /**
@@ -19,28 +19,28 @@ import type {
  * Also includes `failureReasonKey` for i18n lookup when a failure reason is present.
  */
 export type DisplayNotification = NotificationItem & {
-    displayMessage: string | null;
-    failureReasonKey: string | null;
+  displayMessage: string | null;
+  failureReasonKey: string | null;
 };
 
 /**
  * Convert failure reason enum to i18n key.
  */
 function getFailureReasonKey(
-    reason: ExportFailureReason | ImportFailureReason | undefined
+  reason: ExportFailureReason | ImportFailureReason | undefined
 ): string | null {
-    if (!reason) return null;
+  if (!reason) return null;
 
-    switch (reason) {
-        case "processing_error":
-        case "server_restart":
-            // Show server_restart as generic processing error (not helpful to show internal details)
-            return "failureReasonProcessingError";
-        case "timeout":
-            return "failureReasonTimeout";
-        case "invalid_data_format":
-            return "failureReasonInvalidDataFormat";
-    }
+  switch (reason) {
+    case "processing_error":
+    case "server_restart":
+      // Show server_restart as generic processing error (not helpful to show internal details)
+      return "failureReasonProcessingError";
+    case "timeout":
+      return "failureReasonTimeout";
+    case "invalid_data_format":
+      return "failureReasonInvalidDataFormat";
+  }
 }
 
 /**
@@ -49,63 +49,69 @@ function getFailureReasonKey(
  * - Export notifications: use `conversationTitle` (wrapped in quotes)
  * - Import notifications: no message content (null) - title is sufficient
  */
-export function getDisplayMessage(notification: NotificationItem): string | null {
-    switch (notification.type) {
-        case "new_opinion":
-        case "opinion_vote":
-            return notification.message;
+export function getDisplayMessage(
+  notification: NotificationItem
+): string | null {
+  switch (notification.type) {
+    case "new_opinion":
+    case "opinion_vote":
+      return notification.message;
 
-        case "export_started":
-        case "export_completed":
-        case "export_failed":
-        case "export_cancelled":
-            return `"${notification.conversationTitle}"`;
+    case "export_started":
+    case "export_completed":
+    case "export_failed":
+    case "export_cancelled":
+      return `"${notification.conversationTitle}"`;
 
-        case "import_started":
-        case "import_completed":
-        case "import_failed":
-            // Import notifications don't have additional message content
-            // The title already says "Your conversation import has started/completed/failed"
-            return null;
-    }
+    case "import_started":
+    case "import_completed":
+    case "import_failed":
+      // Import notifications don't have additional message content
+      // The title already says "Your conversation import has started/completed/failed"
+      return null;
+  }
 }
 
 /**
  * Get the failure reason i18n key from a notification.
  */
 function getFailureReasonKeyFromNotification(
-    notification: NotificationItem
+  notification: NotificationItem
 ): string | null {
-    switch (notification.type) {
-        case "export_failed":
-            return getFailureReasonKey(notification.failureReason);
-        case "import_failed":
-            return getFailureReasonKey(notification.failureReason);
-        case "new_opinion":
-        case "opinion_vote":
-        case "export_started":
-        case "export_completed":
-        case "export_cancelled":
-        case "import_started":
-        case "import_completed":
-            return null;
-    }
+  switch (notification.type) {
+    case "export_failed":
+      return getFailureReasonKey(notification.failureReason);
+    case "import_failed":
+      return getFailureReasonKey(notification.failureReason);
+    case "new_opinion":
+    case "opinion_vote":
+    case "export_started":
+    case "export_completed":
+    case "export_cancelled":
+    case "import_started":
+    case "import_completed":
+      return null;
+  }
 }
 
 /**
  * Transform a notification to include the display message and failure reason key.
  */
-export function transformNotification(notification: NotificationItem): DisplayNotification {
-    return {
-        ...notification,
-        displayMessage: getDisplayMessage(notification),
-        failureReasonKey: getFailureReasonKeyFromNotification(notification),
-    };
+export function transformNotification(
+  notification: NotificationItem
+): DisplayNotification {
+  return {
+    ...notification,
+    displayMessage: getDisplayMessage(notification),
+    failureReasonKey: getFailureReasonKeyFromNotification(notification),
+  };
 }
 
 /**
  * Transform a list of notifications.
  */
-export function transformNotifications(notifications: NotificationItem[]): DisplayNotification[] {
-    return notifications.map(transformNotification);
+export function transformNotifications(
+  notifications: NotificationItem[]
+): DisplayNotification[] {
+  return notifications.map(transformNotification);
 }

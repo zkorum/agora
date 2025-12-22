@@ -96,14 +96,11 @@ import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import type {
-  NotificationItem,
-  NotificationType,
-  RouteTarget,
-} from "src/shared/types/zod";
+import type { NotificationType, RouteTarget } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotificationStore } from "src/stores/notification";
 import { useNotificationApi } from "src/utils/api/notification/notification";
+import type { DisplayNotification } from "src/utils/notification/transform";
 import { onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -197,7 +194,9 @@ function getIconFromNotificationType(
   return icon;
 }
 
-function getTitleFromNotification(notificationItem: DisplayNotification): string {
+function getTitleFromNotification(
+  notificationItem: DisplayNotification
+): string {
   let title;
   switch (notificationItem.type) {
     case "new_opinion":
@@ -250,7 +249,13 @@ function pullDownTriggered(done: () => void) {
   }, 500);
 }
 
-async function redirectPage(routeTarget: RouteTarget): Promise<void> {
+async function redirectPage(
+  routeTarget: RouteTarget | undefined
+): Promise<void> {
+  if (!routeTarget) {
+    return;
+  }
+
   switch (routeTarget.type) {
     case "opinion":
       await router.push({

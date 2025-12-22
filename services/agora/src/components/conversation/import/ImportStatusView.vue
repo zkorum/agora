@@ -99,10 +99,10 @@
 import { storeToRefs } from "pinia";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { ImportFailureReason } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useImportStatusQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
 import { formatDateTime } from "src/utils/format";
-import type { ImportFailureReason } from "src/shared/types/zod";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 

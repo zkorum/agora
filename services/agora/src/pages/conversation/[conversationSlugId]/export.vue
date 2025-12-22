@@ -98,15 +98,14 @@ import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { axiosInstance } from "src/utils/api/client";
 import {
   useExportHistoryQuery,
   useExportReadinessQuery,
   useRequestExportMutation,
 } from "src/utils/api/conversationExport/useConversationExportQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
-import { useNotify } from "src/utils/ui/notify";
 import { processEnv } from "src/utils/processEnv";
+import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
