@@ -30,6 +30,7 @@
           </div>
 
           <div>
+            <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
             <q-input
               v-model="model"
               :placeholder="t('urlPlaceholder')"

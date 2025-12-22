@@ -17,7 +17,6 @@
         <div class="drop-zones-container">
           <CsvDropZone
             :label="t('summaryDropZoneLabel')"
-            :file-type-label="t('summaryFile')"
             :drop-text="t('dropOrClickText')"
             :file="summaryFile.file.value"
             :error="summaryFile.error.value"
@@ -28,7 +27,6 @@
 
           <CsvDropZone
             :label="t('commentsDropZoneLabel')"
-            :file-type-label="t('commentsFile')"
             :drop-text="t('dropOrClickText')"
             :file="commentsFile.file.value"
             :error="commentsFile.error.value"
@@ -39,7 +37,6 @@
 
           <CsvDropZone
             :label="t('votesDropZoneLabel')"
-            :file-type-label="t('votesFile')"
             :drop-text="t('dropOrClickText')"
             :file="votesFile.file.value"
             :error="votesFile.error.value"

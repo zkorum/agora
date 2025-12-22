@@ -34,7 +34,6 @@
               userVotes,
               castVote,
             }"
-            :is-post-locked="isPostLocked"
             :login-required-to-participate="props.loginRequiredToParticipate"
             :requires-event-ticket="props.requiresEventTicket"
             @deleted="handleOpinionDeleted()"
@@ -70,7 +69,6 @@ import OpinionNotFoundBanner from "./OpinionNotFoundBanner.vue";
 
 const props = defineProps<{
   postSlugId: string;
-  isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
   requiresEventTicket?: EventSlug;
   preloadedQueries: {

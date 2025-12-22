@@ -22,7 +22,7 @@ import {
 } from "./ShortcutBar.i18n";
 import ShortcutButton from "./ShortcutButton.vue";
 
-const currentTab = defineModel<ShortcutItem>();
+const currentTab = defineModel<ShortcutItem>({ required: true });
 
 const { t } = useComponentI18n<ShortcutBarTranslations>(
   shortcutBarTranslations

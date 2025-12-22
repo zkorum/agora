@@ -1,15 +1,15 @@
 <template>
-  <div>
-    <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility and screen reader support -->
-    <!-- This poll option should be focusable and keyboard navigable for users who rely on assistive technologies -->
-    <div
-      class="commonBase commonBefore"
-      :class="{
-        'gradient-border-result': displayMode == 'result',
-        'gradient-border-option': displayMode == 'option' && !disabled,
-        'gradient-border-disabled': disabled,
-      }"
-    >
+  <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility and screen reader support -->
+  <!-- This poll option should be focusable and keyboard navigable for users who rely on assistive technologies -->
+  <div
+    class="commonBase commonBefore"
+    :class="{
+      'gradient-border-result': displayMode == 'result',
+      'gradient-border-option': displayMode == 'option' && !disabled,
+      'gradient-border-disabled': disabled,
+    }"
+    @click.stop="emit('select')"
+  >
       <div
         v-if="displayMode == 'result'"
         class="progress-bar"
@@ -34,7 +34,6 @@
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -44,6 +43,10 @@ defineProps<{
   votedByUser: boolean;
   displayMode: "option" | "result";
   disabled?: boolean;
+}>();
+
+const emit = defineEmits<{
+  select: [];
 }>();
 </script>
 

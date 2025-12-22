@@ -7,7 +7,6 @@
           :key="postData.metadata.conversationSlugId"
         >
           <PostDetails
-            v-model="currentTab"
             :conversation-data="postData"
             :compact-mode="true"
             class="showCursor"
@@ -37,7 +36,6 @@ const { loadMoreUserPosts } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
 
 const canLoadMore = ref(true);
-const currentTab = ref<"comment" | "analysis">("comment");
 
 const router = useRouter();
 

@@ -2,6 +2,7 @@
   <DialogStepLayout :title="t('title')">
     <!-- Topics Grid -->
     <div class="topics-container">
+      <!-- @vue-expect-error PrimeVue Chip doesn't type onClick event handler -->
       <PrimeChip
         v-for="topic in fullTopicList"
         :key="topic.code"

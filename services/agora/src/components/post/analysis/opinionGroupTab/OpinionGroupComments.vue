@@ -36,7 +36,6 @@
         :conversation-slug-id="props.conversationSlugId"
         :opinion-item="comment"
         :opinion-item-for-visualizer="getModifiedOpinionItem(comment)"
-        :vote-count="props.voteCount"
         :cluster-labels="props.clusterLabels"
       />
     </div>
@@ -59,7 +58,6 @@ const props = defineProps<{
   itemList: AnalysisOpinionItem[];
   currentClusterTab: PolisKey;
   hasUngroupedParticipants: boolean;
-  voteCount: number;
   clusterLabels: Partial<Record<PolisKey, string>>;
 }>();
 

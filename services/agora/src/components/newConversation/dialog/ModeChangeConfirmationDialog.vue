@@ -75,7 +75,7 @@ const { t } = useComponentI18n<ModeChangeConfirmationDialogTranslations>(
   modeChangeConfirmationDialogTranslations
 );
 
-const showDialog = defineModel<boolean>();
+const showDialog = defineModel<boolean>({ required: true });
 
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 

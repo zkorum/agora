@@ -74,7 +74,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const showDialog = defineModel<boolean>();
+const showDialog = defineModel<boolean>({ required: true });
 
 const { t } = useComponentI18n<CsvErrorDetailsDialogTranslations>(
   csvErrorDetailsDialogTranslations

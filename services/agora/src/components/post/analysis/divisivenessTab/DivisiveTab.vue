@@ -64,7 +64,7 @@ const props = defineProps<{
   clusterLabels: Partial<Record<PolisKey, string>>;
 }>();
 
-const currentTab = defineModel<ShortcutItem>();
+const currentTab = defineModel<ShortcutItem>({ required: true });
 
 const { t } = useComponentI18n<DivisiveTabTranslations>(
   divisiveTabTranslations

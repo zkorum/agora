@@ -55,7 +55,7 @@ withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 
-const showDialog = defineModel<boolean>();
+const showDialog = defineModel<boolean>({ required: true });
 
 /**
  * Handle confirm button click

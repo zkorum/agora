@@ -47,7 +47,6 @@
                 :key="postData.metadata.conversationSlugId"
               >
                 <PostDetails
-                  v-model="currentTab"
                   :conversation-data="postData"
                   :compact-mode="true"
                   @click="openPost(postData.metadata.conversationSlugId)"
@@ -72,6 +71,7 @@
       </q-pull-to-refresh>
     </WidthWrapper>
 
+    <!-- @vue-expect-error Quasar q-page-sticky doesn't type onClick event handler -->
     <q-page-sticky
       v-if="hasPendingNewPosts"
       position="top"
@@ -100,7 +100,7 @@ import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
-import { onMounted, ref, watch } from "vue";
+import { onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import WidthWrapper from "../navigation/WidthWrapper.vue";
@@ -127,8 +127,6 @@ const documentVisibility = useDocumentVisibility();
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 
 const { y: windowY } = useWindowScroll();
-
-const currentTab = ref<"comment" | "analysis">("comment");
 
 const { t } = useComponentI18n<CompactPostListTranslations>(
   compactPostListTranslations

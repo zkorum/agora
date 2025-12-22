@@ -14,7 +14,6 @@
           :compact-mode="currentTab === 'Summary'"
           :clusters="analysisQuery.data.value?.polisClusters || {}"
           :cluster-labels="clusterLabels"
-          :vote-count="props.participantCount"
         />
       </div>
 
@@ -29,7 +28,6 @@
           :compact-mode="currentTab === 'Summary'"
           :clusters="analysisQuery.data.value?.polisClusters || {}"
           :cluster-labels="clusterLabels"
-          :vote-count="props.participantCount"
         />
       </div>
 

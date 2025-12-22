@@ -46,6 +46,7 @@
         map-options
       />
 
+      <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
       <q-input
         v-model="moderationExplanation"
         :label="t('explanationOptional')"

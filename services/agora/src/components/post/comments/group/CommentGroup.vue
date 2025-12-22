@@ -48,10 +48,6 @@
         :requires-event-ticket="props.requiresEventTicket"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
-        @change-vote="
-          (vote: VotingAction, opinionSlugId: string) =>
-            changeVote(vote, opinionSlugId)
-        "
         @ticket-verified="(payload) => emit('ticketVerified', payload)"
       />
     </ZKCard>
@@ -61,7 +57,7 @@
 <script setup lang="ts">
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
-import type { OpinionItem, VotingAction } from "src/shared/types/zod";
+import type { OpinionItem } from "src/shared/types/zod";
 import { computed, nextTick } from "vue";
 
 import CommentItem from "./item/CommentItem.vue";
@@ -78,7 +74,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   deleted: [];
   mutedComment: [];
-  changeVote: [vote: VotingAction, opinionSlugId: string];
   ticketVerified: [
     payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
   ];
@@ -186,13 +181,6 @@ async function focusCommentById(commentId: string): Promise<void> {
   if (element) {
     element.focus();
   }
-}
-
-/**
- * Emits vote change event
- */
-function changeVote(vote: VotingAction, opinionSlugId: string): void {
-  emit("changeVote", vote, opinionSlugId);
 }
 
 /**

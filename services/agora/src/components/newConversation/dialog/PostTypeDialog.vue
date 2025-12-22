@@ -34,7 +34,7 @@ const { t } = useComponentI18n<PostTypeDialogTranslations>(
   postTypeDialogTranslations
 );
 
-const showDialog = defineModel<boolean>();
+const showDialog = defineModel<boolean>({ required: true });
 
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 

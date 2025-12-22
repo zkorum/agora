@@ -46,6 +46,7 @@
         </div>
 
         <div>
+          <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
           <q-input
             v-model="explanation"
             :maxlength="MAX_LENGTH_USER_REPORT_EXPLANATION"

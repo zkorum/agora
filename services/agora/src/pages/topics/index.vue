@@ -31,7 +31,6 @@
           :label="
             followedTopicCodeSet.has(topic.code) ? t('following') : t('follow')
           "
-          :variant="followedTopicCodeSet.has(topic.code) ? '' : 'outlined'"
           :is-following="followedTopicCodeSet.has(topic.code)"
           icon=""
           @click="

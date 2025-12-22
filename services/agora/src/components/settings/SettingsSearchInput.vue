@@ -2,6 +2,7 @@
   <div class="settings-background">
     <PrimeIconField class="search-field">
       <PrimeInputIcon class="pi pi-search" />
+      <!-- @vue-expect-error PrimeVue InputText types modelValue as string | undefined -->
       <PrimeInputText
         ref="inputRef"
         v-model="internalValue"
@@ -11,6 +12,7 @@
       />
       <!-- TODO: ACCESSIBILITY - Change <PrimeInputIcon> to <button> element for keyboard accessibility -->
       <!-- Clear search button should be keyboard accessible for users with motor disabilities -->
+      <!-- @vue-expect-error PrimeVue InputIcon doesn't type onClick event handler -->
       <PrimeInputIcon
         v-if="modelValue"
         class="pi pi-times cursor-pointer clear-icon"

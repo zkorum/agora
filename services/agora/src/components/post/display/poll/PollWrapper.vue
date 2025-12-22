@@ -18,7 +18,7 @@
               ? 0
               : Math.round((optionItem.numResponses * 100) / totalVoteCount)
           "
-          @click="clickedVotingOption(optionItem.optionNumber - 1, $event)"
+          @select="clickedVotingOption(optionItem.optionNumber - 1)"
         />
       </div>
 
@@ -231,7 +231,7 @@ function showVoteInterface() {
   currentDisplayMode.value = DisplayModes.Vote;
 }
 
-async function clickedVotingOption(selectedIndex: number, event: MouseEvent) {
+async function clickedVotingOption(selectedIndex: number) {
   if (currentDisplayMode.value === DisplayModes.Results) {
     return;
   }
@@ -240,8 +240,6 @@ async function clickedVotingOption(selectedIndex: number, event: MouseEvent) {
   if (isVerifyingZupass.value) {
     return;
   }
-
-  event.stopPropagation();
 
   // Check if user needs login or Zupass verification
   const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;

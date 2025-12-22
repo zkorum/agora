@@ -30,6 +30,7 @@
                 There are no solution to fix the issue but since it doesn't affect production
                 it can be safely ignored.
               -->
+              <!-- @vue-expect-error MazPhoneNumberInput types v-model as T | undefined -->
               <MazPhoneNumberInput
                 v-model="phoneData.phoneNumber"
                 v-model:country-code="phoneData.countryCode"

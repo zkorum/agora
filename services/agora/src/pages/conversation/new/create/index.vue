@@ -6,8 +6,6 @@
       </div>
 
       <PrimeButton
-        button-type="largeButton"
-        color="primary"
         :label="
           isSubmitButtonLoading
             ? t('importButton')
@@ -46,6 +44,7 @@
             {{ validationState.title.error }}
           </div>
 
+          <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
           <q-input
             v-model="conversationDraft.title"
             borderless
@@ -87,7 +86,6 @@
               v-model="conversationDraft.content"
               :placeholder="t('bodyPlaceholder')"
               min-height="5rem"
-              :focus-editor="false"
               :show-toolbar="true"
               :add-background-color="false"
               @update:model-value="updateContent"
@@ -159,7 +157,7 @@ import {
   useNewPostDraftsStore,
   type ValidationErrorField,
 } from "src/stores/newConversationDrafts";
-import { useCommonApi } from "src/utils/api/common";
+import { type AxiosErrorCode, useCommonApi } from "src/utils/api/common";
 import { useActiveImportQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
 import { useBackendPostApi } from "src/utils/api/post/post";
 import { computed,ref, watch } from "vue";
@@ -364,10 +362,11 @@ async function handleImportSubmission(): Promise<void> {
         name: "/conversation/import/[importSlugId]",
         params: { importSlugId: response.importSlugId },
       });
-    } catch (error) {
+    } catch (error: unknown) {
       // Handle backend errors (org restriction, validation failures, etc.)
+      const axiosError = error as { code?: AxiosErrorCode };
       handleAxiosErrorStatusCodes({
-        axiosErrorCode: error.code || "ERR_UNKNOWN",
+        axiosErrorCode: axiosError.code ?? "ERR_BAD_RESPONSE",
         defaultMessage: "Error while importing conversation from CSV",
       });
       // Don't clear the draft on error - let user fix and retry

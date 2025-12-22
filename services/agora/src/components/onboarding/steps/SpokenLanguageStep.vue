@@ -1,9 +1,6 @@
 <template>
   <DialogStepLayout :title="t('title')">
-    <SpokenLanguageSelector
-      :show-selected-section="false"
-      @next="emit('next')"
-    />
+    <SpokenLanguageSelector @next="emit('next')" />
 
     <template #footer>
       <PrimeButton

@@ -8,6 +8,7 @@
         </div>
 
         <div class="date-picker-container">
+          <!-- @vue-expect-error PrimeVue DatePicker types modelValue as Date | Date[] | null | undefined -->
           <PrimeDatePicker
             v-model="customDate"
             show-time

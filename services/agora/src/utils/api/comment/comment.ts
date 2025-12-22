@@ -266,24 +266,21 @@ export function useBackendCommentApi() {
 
     const clusters: Partial<PolisClusters> = {};
 
-    Object.entries(data.clusters).forEach(
-      ([key, val]: [
-        PolisKey,
-        ApiV1OpinionFetchAnalysisByConversationPost200ResponseClusters0,
-      ]) => {
-        const representative: Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner> =
-          val.representative;
-        const representativeItems = representative.map((item) => ({
-          ...item,
-          createdAt: new Date(item.createdAt),
-          updatedAt: new Date(item.updatedAt),
-        }));
-        clusters[key] = {
-          ...val,
-          representative: representativeItems,
-        };
-      }
-    );
+    for (const [key, val] of Object.entries(data.clusters)) {
+      const clusterData =
+        val as ApiV1OpinionFetchAnalysisByConversationPost200ResponseClusters0;
+      const representative: Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner> =
+        clusterData.representative;
+      const representativeItems = representative.map((item) => ({
+        ...item,
+        createdAt: new Date(item.createdAt),
+        updatedAt: new Date(item.updatedAt),
+      }));
+      clusters[key as PolisKey] = {
+        ...clusterData,
+        representative: representativeItems,
+      };
+    }
 
     const opinionConsensusItem: AnalysisOpinionItem[] = data.consensus.map(
       (val) => {

@@ -53,9 +53,7 @@
             :item-list="props.clusters[currentClusterTab]?.representative ?? []"
             :current-cluster-tab="currentClusterTab"
             :has-ungrouped-participants="hasUngroupedParticipants"
-            :vote-count="props.totalParticipantCount"
             :cluster-labels="clusterLabels"
-            @update:current-cluster-tab="currentClusterTab = $event"
           />
         </template>
       </template>

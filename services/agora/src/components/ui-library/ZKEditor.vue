@@ -6,6 +6,7 @@
       autocomplete="off"
       spellcheck="false"
     >
+      <!-- @vue-expect-error Quasar q-editor doesn't type onPaste/onFocus event handlers -->
       <q-editor
         ref="editorRef"
         v-model="modelText"

@@ -1,5 +1,6 @@
 <template>
   <form class="container">
+    <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
     <q-input
       v-model="username"
       :label="t('usernameLabel')"
