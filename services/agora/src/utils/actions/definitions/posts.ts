@@ -4,6 +4,7 @@
  */
 
 import type { ContentAction, ContentActionContext } from "../core/types";
+import { processEnv } from "src/utils/processEnv";
 
 /**
  * Translation keys for post actions
@@ -97,7 +98,9 @@ export function getPostActions(
       icon: "mdi-download",
       handler: exportConversationCallback,
       isVisible: (context: ContentActionContext) =>
-        context.isLoggedIn && !context.isEmbeddedMode,
+        context.isLoggedIn &&
+        !context.isEmbeddedMode &&
+        processEnv.VITE_CONVERSATION_EXPORT_ENABLED === "true",
     },
   ];
 }
