@@ -8,6 +8,55 @@ import type { Opts } from "linkifyjs";
 import linkifyHtml from "linkify-html";
 
 /**
+ * Converts HTML content to plain text with newlines preserved
+ * This is used for character counting across the application
+ */
+export function htmlToCountedText(htmlString: string): string {
+    // Convert block-level HTML elements to newlines before stripping tags
+    // This ensures line breaks are counted as characters
+    const textWithNewlines = htmlString
+        .replace(/<\/p>/gi, "\n") // </p> becomes newline
+        .replace(/<br\s*\/?>/gi, "\n") // <br> and <br/> become newline
+        .replace(/<p>/gi, ""); // Remove opening <p> tags
+
+    const options: sanitizeHtml.IOptions = {
+        allowedTags: [],
+        allowedAttributes: {},
+    };
+    const plainText = sanitizeHtml(textWithNewlines, options);
+
+    // Trim trailing newline (single paragraph ends with \n which shouldn't be counted)
+    return plainText.replace(/\n$/, "");
+}
+
+/**
+ * Normalizes HTML content by trimming leading and trailing empty lines
+ * Only removes unnecessary whitespace at the beginning and end of content
+ *
+ * @param htmlString - The HTML string to normalize
+ * @returns Normalized HTML string with leading/trailing empty elements removed
+ */
+export function normalizeEmptyLines(htmlString: string): string {
+    if (!htmlString || htmlString.trim() === "") {
+        return htmlString;
+    }
+
+    // Step 1: Trim leading empty paragraphs
+    htmlString = htmlString.replace(/^(\s*<p>\s*<\/p>\s*)+/i, "");
+
+    // Step 2: Trim trailing empty paragraphs
+    htmlString = htmlString.replace(/(\s*<p>\s*<\/p>\s*)+$/i, "");
+
+    // Step 3: Trim leading <br> tags
+    htmlString = htmlString.replace(/^(\s*<br\s*\/?>\s*)+/i, "");
+
+    // Step 4: Trim trailing <br> tags
+    htmlString = htmlString.replace(/(\s*<br\s*\/?>\s*)+$/i, "");
+
+    return htmlString;
+}
+
+/**
  * Is this browser supported?
  */
 export async function isSupported(): Promise<boolean> {
@@ -93,7 +142,7 @@ function linkifyHtmlContent(htmlString: string): string {
     return linkifyHtml(htmlString, opts);
 }
 
-// Process user-generated HTML content: sanitize and optionally add links
+// Process user-generated HTML content: sanitize, normalize empty lines, and optionally add links
 // mode "input": strict validation for new content from TipTap editor
 // mode "output": permissive validation for displaying existing content (default for backwards compatibility)
 export function processUserGeneratedHtml(
@@ -101,9 +150,16 @@ export function processUserGeneratedHtml(
     enableLinks: boolean,
     mode: "input" | "output" = "output",
 ): string {
+    // Step 1: Sanitize to remove disallowed tags
     htmlString = sanitizeRichTextContent(htmlString, mode);
+
+    // Step 2: Normalize excessive empty lines (limit to max 2 consecutive)
+    htmlString = normalizeEmptyLines(htmlString);
+
+    // Step 3: Convert URLs to clickable links if enabled
     if (enableLinks) {
         htmlString = linkifyHtmlContent(htmlString);
     }
+
     return htmlString;
 }

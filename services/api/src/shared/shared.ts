@@ -1,6 +1,4 @@
 /** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
-import sanitizeHtml from "sanitize-html";
-
 // WARNING: this is also used in schema.ts and cannot be imported there so it was copy-pasted
 // IF YOU CHANGE THESE VALUES ALSO CHANGE THEM IN SCHEMA.TS
 export const MAX_LENGTH_OPTION = 30;
@@ -28,25 +26,13 @@ interface ValidateHtmlStringCharacterCountReturn {
     characterCount: number;
 }
 
-/**
- * Converts HTML content to plain text with newlines preserved
- * This is used for character counting across the application
- */
 export function htmlToCountedText(htmlString: string): string {
-    // Convert block-level HTML elements to newlines before stripping tags
-    // This ensures line breaks are counted as characters
-    let textWithNewlines = htmlString
-        .replace(/<\/p>/gi, "\n") // </p> becomes newline
-        .replace(/<br\s*\/?>/gi, "\n") // <br> and <br/> become newline
-        .replace(/<p>/gi, ""); // Remove opening <p> tags
+    const textWithNewlines = htmlString
+        .replace(/<\/p>/gi, "\n")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<p>/gi, "");
 
-    const options: sanitizeHtml.IOptions = {
-        allowedTags: [],
-        allowedAttributes: {},
-    };
-    const plainText = sanitizeHtml(textWithNewlines, options);
-
-    // Trim trailing newline (single paragraph ends with \n which shouldn't be counted)
+    const plainText = textWithNewlines.replace(/<[^>]*>/g, "");
     return plainText.replace(/\n$/, "");
 }
 
@@ -55,9 +41,6 @@ export function validateHtmlStringCharacterCount(
     mode: "conversation" | "opinion",
 ): ValidateHtmlStringCharacterCountReturn {
     const rawTextWithoutTags = htmlToCountedText(htmlString);
-
-    // Validate plain text against plain text limits (not HTML limits)
-    // HTML limits are only for database storage to account for markup overhead
     const characterLimit =
         mode == "conversation" ? MAX_LENGTH_BODY : MAX_LENGTH_OPINION;
     if (rawTextWithoutTags.length <= characterLimit) {
