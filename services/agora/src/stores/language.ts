@@ -1,17 +1,17 @@
-import { defineStore } from "pinia";
-import { computed } from "vue";
-import { useI18n } from "vue-i18n";
 import { useLocalStorage } from "@vueuse/core";
-import { useBackendLanguageApi } from "src/utils/api/language";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { useNotify } from "src/utils/ui/notify";
+import { defineStore } from "pinia";
 import type {
-  SupportedSpokenLanguageCodes,
   SupportedDisplayLanguageCodes,
+  SupportedSpokenLanguageCodes,
 } from "src/shared/languages";
-import { parseBrowserLanguage } from "src/utils/language";
 import type { LanguagePreferences } from "src/shared/types/zod";
 import { zodLanguagePreferences } from "src/shared/types/zod";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useBackendLanguageApi } from "src/utils/api/language";
+import { parseBrowserLanguage } from "src/utils/language";
+import { useNotify } from "src/utils/ui/notify";
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
 function getDefaultDisplayLanguage(): SupportedDisplayLanguageCodes {
   // Use browser detection for smart default

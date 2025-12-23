@@ -4,9 +4,10 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
 import {
-  staticIconTranslations,
   type StaticIconTranslations,
+  staticIconTranslations,
 } from "./StaticIcon.i18n";
 
 const props = defineProps<{

@@ -73,16 +73,17 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisClusters, PolisKey } from "src/shared/types/zod";
-import { formatClusterLabel } from "src/utils/component/opinion";
 import { calculatePercentage } from "src/shared/util";
 import { formatPercentage } from "src/utils/common";
+import { formatClusterLabel } from "src/utils/component/opinion";
 import { ref, watch } from "vue";
 import { z } from "zod";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
 import {
-  clusterVisualizationTranslations,
   type ClusterVisualizationTranslations,
+  clusterVisualizationTranslations,
 } from "./ClusterVisualization.i18n";
 
 const props = defineProps<{

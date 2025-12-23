@@ -52,7 +52,7 @@
     <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="() => {}"
-      :active-intention="'none'"
+      active-intention="none"
     />
   </div>
 </template>
@@ -63,16 +63,17 @@ import PreLoginIntentionDialog from "src/components/authentication/intention/Pre
 import NewNotificationIndicator from "src/components/notification/NewNotificationIndicator.vue";
 import ZKStyledIcon from "src/components/ui-library/ZKStyledIcon.vue";
 import ZKStyledText from "src/components/ui-library/ZKStyledText.vue";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { ref } from "vue";
-import type { RouteNamedMap } from "vue-router/auto-routes";
-import { useRoute } from "vue-router";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  footerBarTranslations,
-  type FooterBarTranslations,
-} from "./FooterBar.i18n";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { navigationIcons } from "src/utils/ui/navigationIcons";
+import { ref } from "vue";
+import { useRoute } from "vue-router";
+import type { RouteNamedMap } from "vue-router/auto-routes";
+
+import {
+  type FooterBarTranslations,
+  footerBarTranslations,
+} from "./FooterBar.i18n";
 
 const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
 

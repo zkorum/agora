@@ -1,5 +1,5 @@
-import type { VotingAction, VotingOption } from "src/shared/types/zod";
 import type { CastVoteResponse } from "src/shared/types/dto";
+import type { VotingAction, VotingOption } from "src/shared/types/zod";
 
 export interface UserVote {
   opinionSlugId: string;

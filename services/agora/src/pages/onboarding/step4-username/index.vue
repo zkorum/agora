@@ -36,21 +36,22 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
+import UsernameChange from "src/components/account/UsernameChange.vue";
+import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
-import { useBackendAccountApi } from "src/utils/api/account";
-import UsernameChange from "src/components/account/UsernameChange.vue";
-import { ref } from "vue";
-import { useUserStore } from "src/stores/user";
-import { storeToRefs } from "pinia";
-import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
-import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
-import { useNotify } from "src/utils/ui/notify";
-import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { useUserStore } from "src/stores/user";
+import { useBackendAccountApi } from "src/utils/api/account";
+import { useNotify } from "src/utils/ui/notify";
+import { ref } from "vue";
+
 import {
-  step4UsernameTranslations,
   type Step4UsernameTranslations,
+  step4UsernameTranslations,
 } from "./index.i18n";
 
 const { t } = useComponentI18n<Step4UsernameTranslations>(

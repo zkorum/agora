@@ -1,13 +1,14 @@
 import js from "@eslint/js";
-import globals from "globals";
-import pluginVue from "eslint-plugin-vue";
+import jsonPlugin from "@eslint/json";
 import pluginQuasar from "@quasar/app-vite/eslint";
+import prettierSkipFormatting from "@vue/eslint-config-prettier/skip-formatting";
 import {
   defineConfigWithVueTs,
   vueTsConfigs,
 } from "@vue/eslint-config-typescript";
-import prettierSkipFormatting from "@vue/eslint-config-prettier/skip-formatting";
-import jsonPlugin from "@eslint/json";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
+import pluginVue from "eslint-plugin-vue";
+import globals from "globals";
 
 export default defineConfigWithVueTs(
   {
@@ -43,6 +44,9 @@ export default defineConfigWithVueTs(
 
   {
     files: ["**/*.ts", "**/*.vue"],
+    plugins: {
+      "simple-import-sort": simpleImportSort,
+    },
     languageOptions: {
       parser: pluginVue.parser,
     },
@@ -51,17 +55,26 @@ export default defineConfigWithVueTs(
         "error",
         { prefer: "type-imports" },
       ],
+      "@typescript-eslint/consistent-type-assertions": [
+        "error",
+        {
+          assertionStyle: "as",
+          objectLiteralTypeAssertions: "never",
+        },
+      ],
     },
   },
   // https://github.com/vuejs/eslint-config-typescript
   vueTsConfigs.recommendedTypeChecked,
 
   {
+    plugins: {
+      "simple-import-sort": simpleImportSort,
+    },
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
       parserOptions: {
-        project: "./tsconfig.json",
         extraFileExtensions: [".vue"],
       },
 
@@ -117,6 +130,86 @@ export default defineConfigWithVueTs(
       "@typescript-eslint/no-floating-promises": ["error"],
 
       "@typescript-eslint/switch-exhaustiveness-check": "error",
+
+      // Vue component block order
+      "vue/block-order": [
+        "error",
+        {
+          order: ["template", "script", "style"],
+        },
+      ],
+
+      // Vue script setup macros order
+      "vue/define-macros-order": [
+        "error",
+        {
+          order: ["defineOptions", "defineProps", "defineEmits", "defineSlots"],
+        },
+      ],
+
+      // Enforce type-based declarations for defineEmits and defineProps
+      "vue/define-emits-declaration": ["error", "type-based"],
+      "vue/define-props-declaration": ["error", "type-based"],
+
+      // Import ordering - automatically sorts imports
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
+
+      // Forbid unused props and other component properties
+      "vue/no-unused-properties": [
+        "error",
+        {
+          groups: ["props", "data", "computed", "methods", "setup"],
+          deepData: true,
+          ignorePublicMembers: false,
+        },
+      ],
+
+      // Require prop types (for Options API components)
+      "vue/require-prop-types": "error",
+
+      // Catch unused slot bindings
+      "vue/no-unused-vars": "error",
+
+      // Enforce script setup API style (Composition API)
+      "vue/component-api-style": ["error", ["script-setup"]],
+
+      // Require consistent macro variable naming
+      "vue/require-macro-variable-name": [
+        "error",
+        {
+          defineProps: "props",
+          defineEmits: "emit",
+          defineSlots: "slots",
+        },
+      ],
+
+      // Require all emits to be explicitly declared
+      "vue/require-explicit-emits": "error",
+
+      // Add padding lines between blocks for readability
+      "vue/padding-line-between-blocks": ["error", "always"],
+
+      // Enforce camelCase for custom events
+      "vue/custom-event-name-casing": ["error", "camelCase"],
+
+      // Prevent required props with defaults (logical error)
+      "vue/no-required-prop-with-default": "error",
+
+      // Security: require rel attribute on target="_blank"
+      "vue/no-template-target-blank": [
+        "error",
+        {
+          allowReferrer: false,
+          enforceDynamicLinks: "always",
+        },
+      ],
+
+      // Code quality: remove useless mustaches
+      "vue/no-useless-mustaches": "error",
+
+      // Code quality: remove useless v-bind
+      "vue/no-useless-v-bind": "error",
     },
   },
 

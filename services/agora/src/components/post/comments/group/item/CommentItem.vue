@@ -8,7 +8,7 @@
           :created-at="commentItem.createdAt"
           :user-identity="commentItem.username"
           :show-verified-text="false"
-          :organization-image-url="''"
+          organization-image-url=""
           :is-seed="commentItem.isSeed"
         />
 
@@ -38,12 +38,9 @@
         <div>
           <CommentActionBar
             :comment-item="commentItem"
-            :post-slug-id="postSlugId"
             :voting-utilities="votingUtilities"
-            :is-post-locked="isPostLocked"
             :login-required-to-participate="loginRequiredToParticipate"
             :requires-event-ticket="props.requiresEventTicket"
-            @change-vote="(vote: VotingAction) => changeVote(vote)"
             @ticket-verified="(payload) => emit('ticketVerified', payload)"
           />
         </div>
@@ -53,37 +50,32 @@
 </template>
 
 <script setup lang="ts">
-import type { OpinionItem, VotingAction } from "src/shared/types/zod";
-import type { OpinionVotingUtilities } from "src/composables/opinion/types";
-import CommentModeration from "./CommentModeration.vue";
-import CommentActionOptions from "./CommentActionOptions.vue";
-import CommentActionBar from "./CommentActionBar.vue";
-import ZKHtmlContent from "../../../../ui-library/ZKHtmlContent.vue";
 import OpinionIdentityCard from "src/components/post/comments/OpinionIdentityCard.vue";
+import type { OpinionVotingUtilities } from "src/composables/opinion/types";
+import type { OpinionItem } from "src/shared/types/zod";
 
-const emit = defineEmits<{
-  deleted: [];
-  mutedComment: [];
-  changeVote: [vote: VotingAction, opinionSlugId: string];
-  ticketVerified: [
-    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
-  ];
-}>();
-
-import type { EventSlug } from "src/shared/types/zod";
+import ZKHtmlContent from "../../../../ui-library/ZKHtmlContent.vue";
+import CommentActionBar from "./CommentActionBar.vue";
+import CommentActionOptions from "./CommentActionOptions.vue";
+import CommentModeration from "./CommentModeration.vue";
 
 const props = defineProps<{
   commentItem: OpinionItem;
   postSlugId: string;
   votingUtilities: OpinionVotingUtilities;
-  isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
   requiresEventTicket?: EventSlug;
 }>();
 
-function changeVote(vote: VotingAction) {
-  emit("changeVote", vote, props.commentItem.opinionSlugId);
-}
+const emit = defineEmits<{
+  deleted: [];
+  mutedComment: [];
+  ticketVerified: [
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
+  ];
+}>();
+
+import type { EventSlug } from "src/shared/types/zod";
 
 function deletedComment() {
   emit("deleted");

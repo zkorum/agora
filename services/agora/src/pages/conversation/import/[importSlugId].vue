@@ -21,16 +21,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRoute } from "vue-router";
+import ImportStatusView from "src/components/conversation/import/ImportStatusView.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import ImportStatusView from "src/components/conversation/import/ImportStatusView.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import { computed } from "vue";
+import { useRoute } from "vue-router";
+
 import {
-  importStatusPageTranslations,
   type ImportStatusPageTranslations,
+  importStatusPageTranslations,
 } from "./[importSlugId].i18n";
 
 const { t } = useComponentI18n<ImportStatusPageTranslations>(

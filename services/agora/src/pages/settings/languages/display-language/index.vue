@@ -51,25 +51,26 @@
 </template>
 
 <script setup lang="ts">
-import type { ComputedRef } from "vue";
+import { storeToRefs } from "pinia";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import MenuItem from "src/components/ui-library/MenuItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  displayLanguageSettingsTranslations,
-  type DisplayLanguageSettingsTranslations,
-} from "./index.i18n";
-import { storeToRefs } from "pinia";
-import { useLanguageStore } from "src/stores/language";
-import { useAuthenticationStore } from "src/stores/authentication";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type {
-  SupportedDisplayLanguageCodes,
   DisplayLanguageMetadata,
+  SupportedDisplayLanguageCodes,
 } from "src/shared/languages";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useLanguageStore } from "src/stores/language";
 import { getDisplayLanguages } from "src/utils/language";
+import type { ComputedRef } from "vue";
 import { computed, onMounted } from "vue";
+
+import {
+  type DisplayLanguageSettingsTranslations,
+  displayLanguageSettingsTranslations,
+} from "./index.i18n";
 
 const { t } = useComponentI18n<DisplayLanguageSettingsTranslations>(
   displayLanguageSettingsTranslations

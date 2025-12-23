@@ -1,7 +1,7 @@
-import { useLoginIntentionStore } from "src/stores/loginIntention";
-import { useRoute } from "vue-router";
-import { useEmbedMode } from "src/utils/ui/embedMode";
 import type { EventSlug } from "src/shared/types/zod";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { useEmbedMode } from "src/utils/ui/embedMode";
+import { useRoute } from "vue-router";
 
 export function useConversationLoginIntentions() {
   const route = useRoute();

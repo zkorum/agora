@@ -1,12 +1,13 @@
-import { api } from "./client";
-import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import {
+  type ApiV1PollRespondPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
-  type ApiV1PollRespondPostRequest,
 } from "src/api";
-import { useCommonApi } from "./common";
+
+import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useNotify } from "../ui/notify";
+import { api } from "./client";
+import { useCommonApi } from "./common";
 
 export function useBackendPollApi() {
   const { buildEncodedUcan } = useCommonApi();

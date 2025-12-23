@@ -14,8 +14,8 @@
 </template>
 
 <script setup lang="ts">
-import UserAvatar from "src/components/account/UserAvatar.vue";
 import OrganizationImage from "src/components/account/OrganizationImage.vue";
+import UserAvatar from "src/components/account/UserAvatar.vue";
 
 defineProps<{
   userIdentity: string;

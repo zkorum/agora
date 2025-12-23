@@ -11,18 +11,17 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
 import {
-  requestExportButtonTranslations,
   type RequestExportButtonTranslations,
+  requestExportButtonTranslations,
 } from "./RequestExportButton.i18n";
 
 interface Props {
-  loading?: boolean;
   disabled?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
-  loading: false,
   disabled: false,
 });
 

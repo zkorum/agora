@@ -7,7 +7,6 @@
           :key="postData.metadata.conversationSlugId"
         >
           <PostDetails
-            v-model="currentTab"
             :conversation-data="postData"
             :compact-mode="true"
             class="showCursor"
@@ -27,17 +26,16 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
+import PostDetails from "src/components/post/PostDetails.vue";
 import { useUserStore } from "src/stores/user";
 import { ref } from "vue";
-import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
-import PostDetails from "src/components/post/PostDetails.vue";
 
 const { loadMoreUserPosts } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
 
 const canLoadMore = ref(true);
-const currentTab = ref<"comment" | "analysis">("comment");
 
 const router = useRouter();
 

@@ -22,12 +22,10 @@ interface ZKHoverEffectProps {
   enableHover: boolean;
   backgroundColor?: string;
   hoverBackgroundColor?: string;
-  cursor?: "pointer" | "default";
   borderRadius?: string;
 }
 
 const props = withDefaults(defineProps<ZKHoverEffectProps>(), {
-  cursor: "pointer",
   backgroundColor: undefined,
   hoverBackgroundColor: "#e2e8f0", // $hover-background-color
   borderRadius: undefined,
@@ -81,12 +79,12 @@ const handleTouchEnd = (): void => {
 /* Touch active state for visual feedback */
 .touchInteractionEffect:active {
   background-color: v-bind("props.hoverBackgroundColor");
-  cursor: v-bind("props.cursor");
+  cursor: pointer;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .desktopHoverEffect:hover {
-    cursor: v-bind("props.cursor");
+    cursor: pointer;
   }
 
   .backgroundHoverEffect:hover {
@@ -96,7 +94,7 @@ const handleTouchEnd = (): void => {
 
 .desktopHoverEffect:focus,
 .desktopHoverEffect:focus-visible {
-  cursor: v-bind("props.cursor");
+  cursor: pointer;
 }
 
 .backgroundHoverEffect:focus,

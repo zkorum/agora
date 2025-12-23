@@ -48,7 +48,7 @@
                 :created-at="commentItem.opinionItem.createdAt"
                 :user-identity="commentItem.opinionItem.username"
                 :show-verified-text="false"
-                :organization-image-url="''"
+                organization-image-url=""
               />
 
               <div>
@@ -82,16 +82,16 @@
 </template>
 
 <script setup lang="ts">
-import { useUserStore } from "src/stores/user";
-import { ref } from "vue";
 import { storeToRefs } from "pinia";
-import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
+import ConversationTitleWithPrivacyLabel from "src/components/features/conversation/ConversationTitleWithPrivacyLabel.vue";
+import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 import CommentActionOptions from "src/components/post/comments/group/item/CommentActionOptions.vue";
 import CommentModeration from "src/components/post/comments/group/item/CommentModeration.vue";
+import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
-import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
-import ConversationTitleWithPrivacyLabel from "src/components/features/conversation/ConversationTitleWithPrivacyLabel.vue";
+import { useUserStore } from "src/stores/user";
 import { useRouterNavigation } from "src/utils/router/navigation";
+import { ref } from "vue";
 
 const { loadMoreUserComments } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());

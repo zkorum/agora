@@ -4,7 +4,7 @@
     color="red"
     rounded
     floating
-    transparant
+    transparent
   ></q-badge>
 </template>
 

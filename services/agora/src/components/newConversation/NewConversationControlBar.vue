@@ -42,25 +42,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
 import { storeToRefs } from "pinia";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useUserStore } from "src/stores/user";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue";
 import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
-import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
-import PostTypeDialog from "./dialog/PostTypeDialog.vue";
-import ModeChangeConfirmationDialog from "src/components/newConversation/dialog/ModeChangeConfirmationDialog.vue";
-import VisibilityOptionsDialog from "src/components/newConversation/dialog/VisibilityOptionsDialog.vue";
+import EventTicketRequirementDialog from "src/components/newConversation/dialog/EventTicketRequirementDialog.vue";
 import LoginRequirementDialog from "src/components/newConversation/dialog/LoginRequirementDialog.vue";
 import MakePublicTimerDialog from "src/components/newConversation/dialog/MakePublicTimerDialog.vue";
-import EventTicketRequirementDialog from "src/components/newConversation/dialog/EventTicketRequirementDialog.vue";
+import ModeChangeConfirmationDialog from "src/components/newConversation/dialog/ModeChangeConfirmationDialog.vue";
+import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
+import VisibilityOptionsDialog from "src/components/newConversation/dialog/VisibilityOptionsDialog.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import { useUserStore } from "src/stores/user";
 import { processEnv } from "src/utils/processEnv";
+import { computed,ref } from "vue";
+
+import PostTypeDialog from "./dialog/PostTypeDialog.vue";
 import {
-  newConversationControlBarTranslations,
   type NewConversationControlBarTranslations,
+  newConversationControlBarTranslations,
 } from "./NewConversationControlBar.i18n";
 
 interface ControlButton {

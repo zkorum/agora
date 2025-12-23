@@ -42,7 +42,6 @@
             v-if="currentTab == 'comment'"
             ref="opinionSectionRef"
             :post-slug-id="conversationData.metadata.conversationSlugId"
-            :is-post-locked="isPostLocked"
             :login-required-to-participate="conversationData.metadata.isLoginRequired"
             :requires-event-ticket="conversationData.metadata.requiresEventTicket"
             :preloaded-queries="{
@@ -82,37 +81,38 @@
 </template>
 
 <script setup lang="ts">
-import CommentSection from "./comments/CommentSection.vue";
-import PostContent from "./display/PostContent.vue";
-import PostActionBar from "./interactionBar/PostActionBar.vue";
-import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
-import CommentComposer from "./comments/CommentComposer.vue";
-import { ref, computed, watch, onMounted } from "vue";
-import { useWebShare } from "src/utils/share/WebShare";
-import { useQuasar, copyToClipboard } from "quasar";
-import ShareDialog from "./ShareDialog.vue";
-import { useConversationUrl } from "src/utils/url/conversationUrl";
-import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
-import ZKActionDialog from "../ui-library/ZKActionDialog.vue";
+import { storeToRefs } from "pinia";
+import { copyToClipboard,useQuasar } from "quasar";
+import { useShareActions } from "src/composables/share/useShareActions";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ExtendedConversation } from "src/shared/types/zod";
+import { useUserStore } from "src/stores/user";
 import type { ContentAction } from "src/utils/actions/core/types";
-import AnalysisPage from "./analysis/AnalysisPage.vue";
+import { useBackendAuthApi } from "src/utils/api/auth";
 import {
   useAnalysisQuery,
   useCommentsQuery,
   useHiddenCommentsQuery,
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
-import { storeToRefs } from "pinia";
-import { useUserStore } from "src/stores/user";
-import { useShareActions } from "src/composables/share/useShareActions";
+import { useWebShare } from "src/utils/share/WebShare";
 import { useNotify } from "src/utils/ui/notify";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useConversationUrl } from "src/utils/url/conversationUrl";
+import { computed, onMounted,ref, watch } from "vue";
+
+import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
+import ZKActionDialog from "../ui-library/ZKActionDialog.vue";
+import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
+import AnalysisPage from "./analysis/AnalysisPage.vue";
+import CommentComposer from "./comments/CommentComposer.vue";
+import CommentSection from "./comments/CommentSection.vue";
+import PostContent from "./display/PostContent.vue";
+import PostActionBar from "./interactionBar/PostActionBar.vue";
 import {
-  postDetailsTranslations,
   type PostDetailsTranslations,
+  postDetailsTranslations,
 } from "./PostDetails.i18n";
-import { useBackendAuthApi } from "src/utils/api/auth";
+import ShareDialog from "./ShareDialog.vue";
 
 const props = defineProps<{
   conversationData: ExtendedConversation;
@@ -197,24 +197,6 @@ const hiddenCommentsQuery = useHiddenCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   voteCount: props.conversationData.metadata.voteCount,
   enabled: !props.compactMode && isModerator.value,
-});
-
-const { verifiedEventTickets } = storeToRefs(userStore);
-
-const isPostLocked = computed((): boolean => {
-  const isModeratedAndLocked =
-    props.conversationData.metadata.moderation.status === "moderated" &&
-    props.conversationData.metadata.moderation.action === "lock";
-
-  const requiresEventTicket = props.conversationData.metadata.requiresEventTicket;
-
-  // Convert Set to Array for better reactivity tracking
-  const verifiedTicketsArray = Array.from(verifiedEventTickets.value);
-  const requiresTicketButNotVerified =
-    requiresEventTicket !== undefined &&
-    !verifiedTicketsArray.includes(requiresEventTicket);
-
-  return isModeratedAndLocked || requiresTicketButNotVerified;
 });
 
 // Track loading states from child components

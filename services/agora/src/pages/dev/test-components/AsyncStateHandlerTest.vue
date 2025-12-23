@@ -181,13 +181,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
 import type { UseQueryReturnType } from "@tanstack/vue-query";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { computed,ref } from "vue";
+
 import {
-  asyncStateHandlerTestTranslations,
   type AsyncStateHandlerTestTranslations,
+  asyncStateHandlerTestTranslations,
 } from "./AsyncStateHandlerTest.i18n";
 
 const { t } = useComponentI18n<AsyncStateHandlerTestTranslations>(

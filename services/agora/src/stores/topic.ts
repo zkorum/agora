@@ -2,9 +2,10 @@ import { defineStore, storeToRefs } from "pinia";
 import type { ZodTopicObject } from "src/shared/types/zod";
 import { useCommonApi } from "src/utils/api/common";
 import { useBackendTopicApi } from "src/utils/api/topic";
-import { ref } from "vue";
-import { useAuthenticationStore } from "./authentication";
 import { useNotify } from "src/utils/ui/notify";
+import { ref } from "vue";
+
+import { useAuthenticationStore } from "./authentication";
 
 export const useTopicStore = defineStore("topic", () => {
   const {

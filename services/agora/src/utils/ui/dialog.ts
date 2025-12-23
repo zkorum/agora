@@ -1,4 +1,5 @@
 import { useQuasar } from "quasar";
+
 import { useNotify } from "./notify";
 
 export const useDialog = () => {

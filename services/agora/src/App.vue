@@ -9,16 +9,14 @@
 </template>
 
 <script setup lang="ts">
-import PostSignupPreferencesDialog from "./components/onboarding/dialogs/PostSignupPreferencesDialog.vue";
-import EmbeddedBrowserWarningDialog from "./components/embeddedBrowser/EmbeddedBrowserWarningDialog.vue";
-import * as swiperElement from "swiper/element/bundle";
 import { onMounted } from "vue";
+
+import EmbeddedBrowserWarningDialog from "./components/embeddedBrowser/EmbeddedBrowserWarningDialog.vue";
+import PostSignupPreferencesDialog from "./components/onboarding/dialogs/PostSignupPreferencesDialog.vue";
+import { useNotificationSSE } from "./composables/useNotificationSSE";
+import { useZupassVerification } from "./composables/zupass/useZupassVerification";
 import { useBackendAuthApi } from "./utils/api/auth";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
-import { useZupassVerification } from "./composables/zupass/useZupassVerification";
-import { useNotificationSSE } from "./composables/useNotificationSSE";
-
-swiperElement.register();
 
 const authenticationStore = useBackendAuthApi();
 

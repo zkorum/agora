@@ -28,7 +28,7 @@
               :user-identity="profileData.userName"
               :show-is-guest="isGuest"
               :show-verified-text="true"
-              :user-type="'normal'"
+              user-type="normal"
             />
           </div>
         </div>
@@ -59,22 +59,23 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import UserAvatar from "src/components/account/UserAvatar.vue";
-import { useUserStore } from "src/stores/user";
-import { onMounted, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { getDateString } from "src/utils/common";
 import { storeToRefs } from "pinia";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import { StandardMenuBar } from "src/components/navigation/header/variants";
-import type { RouteRecordName } from "vue-router";
-import ZKTab from "src/components/ui-library/ZKTab.vue";
+import UserAvatar from "src/components/account/UserAvatar.vue";
 import UserMetadata from "src/components/features/user/UserMetadata.vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
+import ZKTab from "src/components/ui-library/ZKTab.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useUserStore } from "src/stores/user";
+import { getDateString } from "src/utils/common";
+import { onMounted, ref, watch } from "vue";
+import type { RouteRecordName } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+
 import {
-  userProfileTranslations,
   type UserProfileTranslations,
+  userProfileTranslations,
 } from "./user-profile.i18n";
 
 const router = useRouter();

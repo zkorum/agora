@@ -16,24 +16,25 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+
 import {
-  postTypeDialogTranslations,
   type PostTypeDialogTranslations,
+  postTypeDialogTranslations,
 } from "./PostTypeDialog.i18n";
+
+const emit = defineEmits<{
+  modeChangeRequested: [importType: "polis-url" | "csv-import" | null];
+}>();
 
 const { t } = useComponentI18n<PostTypeDialogTranslations>(
   postTypeDialogTranslations
 );
 
-const showDialog = defineModel<boolean>();
-
-const emit = defineEmits<{
-  modeChangeRequested: [importType: "polis-url" | "csv-import" | null];
-}>();
+const showDialog = defineModel<boolean>({ required: true });
 
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 

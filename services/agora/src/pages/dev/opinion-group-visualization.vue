@@ -64,19 +64,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from "vue";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import OpinionGroupTab from "src/components/post/analysis/opinionGroupTab/OpinionGroupTab.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type {
   AnalysisOpinionItem,
   PolisClusters,
   PolisKey,
 } from "src/shared/types/zod";
+import { computed, onMounted,ref } from "vue";
+
 import {
-  opinionGroupVisualizationTranslations,
   type OpinionGroupVisualizationTranslations,
+  opinionGroupVisualizationTranslations,
 } from "./opinion-group-visualization.i18n";
 
 const { t } = useComponentI18n<OpinionGroupVisualizationTranslations>(

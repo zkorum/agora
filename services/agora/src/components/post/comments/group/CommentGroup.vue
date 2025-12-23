@@ -44,49 +44,42 @@
         :comment-item="commentItem"
         :post-slug-id="postSlugId"
         :voting-utilities="votingUtilities"
-        :is-post-locked="isPostLocked"
         :login-required-to-participate="loginRequiredToParticipate"
         :requires-event-ticket="props.requiresEventTicket"
         @deleted="deletedComment()"
         @muted-comment="mutedComment()"
-        @change-vote="
-          (vote: VotingAction, opinionSlugId: string) =>
-            changeVote(vote, opinionSlugId)
-        "
-        @ticket-verified="(payload) => emit('ticketVerified', payload)
-        "
+        @ticket-verified="(payload) => emit('ticketVerified', payload)"
       />
     </ZKCard>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick } from "vue";
-import type { OpinionItem, VotingAction } from "src/shared/types/zod";
-import type { OpinionVotingUtilities } from "src/composables/opinion/types";
-import CommentItem from "./item/CommentItem.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import type { OpinionVotingUtilities } from "src/composables/opinion/types";
+import type { OpinionItem } from "src/shared/types/zod";
+import { computed, nextTick } from "vue";
 
-const emit = defineEmits<{
-  deleted: [];
-  mutedComment: [];
-  changeVote: [vote: VotingAction, opinionSlugId: string];
-  ticketVerified: [
-    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
-  ];
-}>();
-
-import type { EventSlug } from "src/shared/types/zod";
+import CommentItem from "./item/CommentItem.vue";
 
 const props = defineProps<{
   commentItemList: OpinionItem[];
   postSlugId: string;
   highlightedOpinion?: OpinionItem | null;
   votingUtilities: OpinionVotingUtilities;
-  isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
   requiresEventTicket?: EventSlug;
 }>();
+
+const emit = defineEmits<{
+  deleted: [];
+  mutedComment: [];
+  ticketVerified: [
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
+  ];
+}>();
+
+import type { EventSlug } from "src/shared/types/zod";
 
 const finalCommentList = computed((): OpinionItem[] => {
   const result: OpinionItem[] = [];
@@ -188,13 +181,6 @@ async function focusCommentById(commentId: string): Promise<void> {
   if (element) {
     element.focus();
   }
-}
-
-/**
- * Emits vote change event
- */
-function changeVote(vote: VotingAction, opinionSlugId: string): void {
-  emit("changeVote", vote, opinionSlugId);
 }
 
 /**

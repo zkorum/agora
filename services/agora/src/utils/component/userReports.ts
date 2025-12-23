@@ -1,8 +1,9 @@
-import type { UserReportReason } from "src/shared/types/zod";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { UserReportReason } from "src/shared/types/zod";
+
 import {
-  userReportsTranslations,
   type UserReportsTranslations,
+  userReportsTranslations,
 } from "./userReports.i18n";
 
 export interface UserReportReasonMapping {

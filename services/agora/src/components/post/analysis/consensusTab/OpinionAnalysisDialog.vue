@@ -18,7 +18,7 @@
             :created-at="opinionItem.createdAt"
             :user-identity="opinionItem.username"
             :show-verified-text="false"
-            :organization-image-url="''"
+            organization-image-url=""
             :is-seed="opinionItem.isSeed"
           />
 
@@ -174,28 +174,25 @@
 </template>
 
 <script setup lang="ts">
+import OpinionIdentityCard from "src/components/post/comments/OpinionIdentityCard.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
-import OpinionIdentityCard from "src/components/post/comments/OpinionIdentityCard.vue";
-import type {
-  AnalysisOpinionItem,
-  PolisKey,
-} from "src/shared/types/zod";
-import { formatClusterLabel } from "src/utils/component/opinion";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { AnalysisOpinionItem, PolisKey } from "src/shared/types/zod";
 import { calculatePercentage } from "src/shared/util";
 import { formatAmount, formatPercentage } from "src/utils/common";
+import { formatClusterLabel } from "src/utils/component/opinion";
 import { useRouterNavigation } from "src/utils/router/navigation";
 import { computed } from "vue";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
 import {
-  opinionAnalysisDialogTranslations,
   type OpinionAnalysisDialogTranslations,
+  opinionAnalysisDialogTranslations,
 } from "./OpinionAnalysisDialog.i18n";
 
 const props = defineProps<{
   conversationSlugId: string;
   opinionItem: AnalysisOpinionItem;
-  voteCount: number;
   clusterLabels: Partial<Record<PolisKey, string>>;
 }>();
 

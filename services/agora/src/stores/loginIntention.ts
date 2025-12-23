@@ -1,9 +1,10 @@
 import { defineStore } from "pinia";
+import type { EventSlug } from "src/shared/types/zod";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { useOnboardingPreferencesStore } from "./onboarding/preferences";
+
 import { onboardingFlowStore } from "./onboarding/flow";
-import type { EventSlug } from "src/shared/types/zod";
+import { useOnboardingPreferencesStore } from "./onboarding/preferences";
 
 interface VotingIntention {
   enabled: boolean;

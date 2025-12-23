@@ -13,15 +13,16 @@
 </template>
 
 <script setup lang="ts">
-import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
-import ShortcutButton from "./ShortcutButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  shortcutBarTranslations,
-  type ShortcutBarTranslations,
-} from "./ShortcutBar.i18n";
+import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 
-const currentTab = defineModel<ShortcutItem>();
+import {
+  type ShortcutBarTranslations,
+  shortcutBarTranslations,
+} from "./ShortcutBar.i18n";
+import ShortcutButton from "./ShortcutButton.vue";
+
+const currentTab = defineModel<ShortcutItem>({ required: true });
 
 const { t } = useComponentI18n<ShortcutBarTranslations>(
   shortcutBarTranslations

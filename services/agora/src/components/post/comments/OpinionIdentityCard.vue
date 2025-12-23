@@ -1,6 +1,6 @@
 <template>
   <div v-if="isSeed" class="seed-identity-container">
-    <UserAvatar :user-identity="'seed'" :size="36" />
+    <UserAvatar user-identity="seed" :size="36" />
     <div class="seed-label">{{ t("seedOpinion") }}</div>
   </div>
   <UserIdentityCard
@@ -17,14 +17,11 @@
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  opinionIdentityCardTranslations,
-  type OpinionIdentityCardTranslations,
-} from "./OpinionIdentityCard.i18n";
 
-const { t } = useComponentI18n<OpinionIdentityCardTranslations>(
-  opinionIdentityCardTranslations
-);
+import {
+  type OpinionIdentityCardTranslations,
+  opinionIdentityCardTranslations,
+} from "./OpinionIdentityCard.i18n";
 
 defineProps<{
   userIdentity: string;
@@ -34,6 +31,11 @@ defineProps<{
   organizationImageUrl: string;
   isSeed: boolean;
 }>();
+
+const { t } = useComponentI18n<OpinionIdentityCardTranslations>(
+  opinionIdentityCardTranslations
+);
+
 </script>
 
 <style lang="scss" scoped>

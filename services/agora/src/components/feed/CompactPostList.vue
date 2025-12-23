@@ -47,7 +47,6 @@
                 :key="postData.metadata.conversationSlugId"
               >
                 <PostDetails
-                  v-model="currentTab"
                   :conversation-data="postData"
                   :compact-mode="true"
                   @click="openPost(postData.metadata.conversationSlugId)"
@@ -72,6 +71,7 @@
       </q-pull-to-refresh>
     </WidthWrapper>
 
+    <!-- @vue-expect-error Quasar q-page-sticky doesn't type onClick event handler -->
     <q-page-sticky
       v-if="hasPendingNewPosts"
       position="top"
@@ -79,7 +79,7 @@
       @click="refreshPage(() => {})"
     >
       <ZKButton
-        :button-type="'standardButton'"
+        button-type="standardButton"
         rounded
         color="primary"
         no-caps
@@ -95,19 +95,20 @@
 </template>
 
 <script setup lang="ts">
-import PostDetails from "../post/PostDetails.vue";
-import { useHomeFeedStore } from "src/stores/homeFeed";
-import { onMounted, ref, watch } from "vue";
-import { storeToRefs } from "pinia";
 import { useDocumentVisibility, useWindowScroll } from "@vueuse/core";
-import { useRouter } from "vue-router";
-import { useAuthenticationStore } from "src/stores/authentication";
-import ZKButton from "../ui-library/ZKButton.vue";
-import WidthWrapper from "../navigation/WidthWrapper.vue";
+import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useHomeFeedStore } from "src/stores/homeFeed";
+import { onMounted, watch } from "vue";
+import { useRouter } from "vue-router";
+
+import WidthWrapper from "../navigation/WidthWrapper.vue";
+import PostDetails from "../post/PostDetails.vue";
+import ZKButton from "../ui-library/ZKButton.vue";
 import {
-  compactPostListTranslations,
   type CompactPostListTranslations,
+  compactPostListTranslations,
 } from "./CompactPostList.i18n";
 
 const {
@@ -126,8 +127,6 @@ const documentVisibility = useDocumentVisibility();
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 
 const { y: windowY } = useWindowScroll();
-
-const currentTab = ref<"comment" | "analysis">("comment");
 
 const { t } = useComponentI18n<CompactPostListTranslations>(
   compactPostListTranslations

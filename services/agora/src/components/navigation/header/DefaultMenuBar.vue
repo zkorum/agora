@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 import { type DefaultMenuBarProps } from "src/utils/model/props";
+
 import TopMenuWrapper from "./TopMenuWrapper.vue";
 
 const props = withDefaults(defineProps<DefaultMenuBarProps>(), {

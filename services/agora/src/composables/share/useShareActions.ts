@@ -3,22 +3,22 @@
  * Manages share action menu state and execution
  */
 
-import { ref, type Ref } from "vue";
+import { storeToRefs } from "pinia";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useUserStore } from "src/stores/user";
+import { createActionContext } from "src/utils/actions/core/permissions";
 import type {
   ContentAction,
   ContentActionDialogState,
 } from "src/utils/actions/core/types";
-import { createActionContext } from "src/utils/actions/core/permissions";
 import { getAvailableShareActions } from "src/utils/actions/definitions/share-actions";
 import {
-  shareActionsTranslations,
   type ShareActionsTranslations,
+  shareActionsTranslations,
 } from "src/utils/actions/definitions/share-actions.i18n";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { storeToRefs } from "pinia";
-import { useUserStore } from "src/stores/user";
-import { useAuthenticationStore } from "src/stores/authentication";
 import { useEmbedMode } from "src/utils/ui/embedMode";
+import { type Ref,ref } from "vue";
 
 export interface ShareActionsComposable {
   dialogState: Ref<ContentActionDialogState>;

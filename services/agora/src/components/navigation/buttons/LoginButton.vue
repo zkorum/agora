@@ -10,15 +10,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import { storeToRefs } from "pinia";
-import { useAuthenticationStore } from "src/stores/authentication";
+import {
+  type DefaultMenuBarTranslations,
+  defaultMenuBarTranslations,
+} from "src/components/navigation/header/DefaultMenuBar.i18n";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  defaultMenuBarTranslations,
-  type DefaultMenuBarTranslations,
-} from "src/components/navigation/header/DefaultMenuBar.i18n";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { computed } from "vue";
 
 const { isLoggedIn, isAuthInitialized } = storeToRefs(useAuthenticationStore());
 const { t } = useComponentI18n<DefaultMenuBarTranslations>(

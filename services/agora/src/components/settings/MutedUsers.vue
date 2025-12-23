@@ -48,14 +48,15 @@
 import { useTimeAgo } from "@vueuse/core";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { UserMuteItem } from "src/shared/types/zod";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
-import { ref, onMounted } from "vue";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { onMounted,ref } from "vue";
+
 import {
-  mutedUsersTranslations,
   type MutedUsersTranslations,
+  mutedUsersTranslations,
 } from "./MutedUsers.i18n";
 
 const { getMutedUsers, muteUser } = useBackendUserMuteApi();

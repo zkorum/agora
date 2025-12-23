@@ -26,9 +26,10 @@
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useRouter } from "vue-router";
+
 import {
-  opinionGroupVisualizationTestTranslations,
   type OpinionGroupVisualizationTestTranslations,
+  opinionGroupVisualizationTestTranslations,
 } from "./OpinionGroupVisualizationTest.i18n";
 
 const { t } = useComponentI18n<OpinionGroupVisualizationTestTranslations>(

@@ -9,7 +9,7 @@
 
       <OrganizationImage
         v-if="organizationImageUrl != ''"
-        :height="'36px'"
+        height="36px"
         :organization-image-url="organizationImageUrl"
         :organization-name="userIdentity"
       />
@@ -42,13 +42,14 @@
 
 <script setup lang="ts">
 import { useTimeAgo } from "@vueuse/core";
-import UserAvatar from "src/components/account/UserAvatar.vue";
 import OrganizationImage from "src/components/account/OrganizationImage.vue";
+import UserAvatar from "src/components/account/UserAvatar.vue";
 import UserMetadata from "src/components/features/user/UserMetadata.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
 import {
-  userIdentityCardTranslations,
   type UserIdentityCardTranslations,
+  userIdentityCardTranslations,
 } from "./UserIdentityCard.i18n";
 
 defineProps<{

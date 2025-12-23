@@ -1,16 +1,16 @@
-import { useStorage, type RemovableRef } from "@vueuse/core";
+import { type RemovableRef,useStorage } from "@vueuse/core";
 import { defineStore } from "pinia";
-import { computed, ref, watch } from "vue";
-import { z } from "zod";
-import type { OrganizationProperties, EventSlug } from "src/shared/types/zod";
-import { zodEventSlug } from "src/shared/types/zod";
 import {
-  validateHtmlStringCharacterCount,
   MAX_LENGTH_BODY,
   MAX_LENGTH_TITLE,
+  validateHtmlStringCharacterCount,
 } from "src/shared/shared";
+import type { EventSlug,OrganizationProperties } from "src/shared/types/zod";
+import { zodEventSlug } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { processEnv } from "src/utils/processEnv";
+import { computed, ref, watch } from "vue";
+import { z } from "zod";
 
 // ============================================================================
 // Zod Schemas for Draft Validation

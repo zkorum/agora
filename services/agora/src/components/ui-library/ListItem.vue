@@ -30,6 +30,7 @@
 
 <script setup lang="ts">
 import type { SettingsInterface } from "src/utils/component/settings/settings";
+
 import MenuItem from "./MenuItem.vue";
 
 const props = defineProps<{

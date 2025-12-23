@@ -26,9 +26,10 @@
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useOnboardingPreferencesStore } from "src/stores/onboarding/preferences";
+
 import {
-  preferencesDialogTestTranslations,
   type PreferencesDialogTestTranslations,
+  preferencesDialogTestTranslations,
 } from "./PreferencesDialogTest.i18n";
 
 const { t } = useComponentI18n<PreferencesDialogTestTranslations>(

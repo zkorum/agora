@@ -9,7 +9,7 @@
     }"
   >
     <template #header>
-      <StandardMenuBar :title="''" :center-content="false" />
+      <StandardMenuBar title="" :center-content="false" />
     </template>
 
     <q-pull-to-refresh @refresh="handleRefresh">
@@ -27,17 +27,17 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
 import { useConversationData } from "src/composables/conversation/useConversationData";
-import { ref, onBeforeUnmount, onMounted, watch } from "vue";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { storeToRefs } from "pinia";
 import { useInvalidateVoteQueries } from "src/utils/api/vote/useVoteQueries";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const postDetailsRef = ref<InstanceType<typeof PostDetails>>();
 const { conversationData, hasConversationData, refreshConversation } =

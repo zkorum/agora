@@ -19,14 +19,11 @@
 <script setup lang="ts">
 import DisplayUsername from "src/components/features/user/DisplayUsername.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  userMetadataTranslations,
-  type UserMetadataTranslations,
-} from "./UserMetadata.i18n";
 
-const { t } = useComponentI18n<UserMetadataTranslations>(
-  userMetadataTranslations
-);
+import {
+  type UserMetadataTranslations,
+  userMetadataTranslations,
+} from "./UserMetadata.i18n";
 
 defineProps<{
   showIsGuest: boolean;
@@ -35,6 +32,11 @@ defineProps<{
   showVerifiedText: boolean;
   userType: "organization" | "normal";
 }>();
+
+const { t } = useComponentI18n<UserMetadataTranslations>(
+  userMetadataTranslations
+);
+
 </script>
 
 <style lang="scss" scoped>

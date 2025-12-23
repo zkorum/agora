@@ -57,14 +57,15 @@
 </template>
 
 <script setup lang="ts">
+import { useClipboard } from "@vueuse/core";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { processEnv } from "src/utils/processEnv";
-import { useClipboard } from "@vueuse/core";
 import { useNotify } from "src/utils/ui/notify";
+
 import {
-  csvErrorDetailsDialogTranslations,
   type CsvErrorDetailsDialogTranslations,
+  csvErrorDetailsDialogTranslations,
 } from "./CsvErrorDetailsDialog.i18n";
 
 interface Props {
@@ -73,7 +74,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const showDialog = defineModel<boolean>();
+const showDialog = defineModel<boolean>({ required: true });
 
 const { t } = useComponentI18n<CsvErrorDetailsDialogTranslations>(
   csvErrorDetailsDialogTranslations

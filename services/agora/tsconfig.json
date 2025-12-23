@@ -1,10 +1,11 @@
 {
   "extends": "./.quasar/tsconfig.json",
   "compilerOptions": {
-    "strictNullChecks": true,
-    "alwaysStrict": true,
-    "noImplicitThis": true,
-    "noImplicitAny": true,
+    "strict": true,
     "types": ["unplugin-vue-router/client"]
+  },
+  "vueCompilerOptions": {
+    "strictTemplates": true,
+    "fallthroughAttributes": true
   }
 }

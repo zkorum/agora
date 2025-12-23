@@ -19,13 +19,14 @@
 <script setup lang="ts">
 import { EntityMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
 import {
-  topicPageTranslations,
   type TopicPageTranslations,
+  topicPageTranslations,
 } from "./[topicCode].i18n";
 
 const { t } = useComponentI18n<TopicPageTranslations>(topicPageTranslations);

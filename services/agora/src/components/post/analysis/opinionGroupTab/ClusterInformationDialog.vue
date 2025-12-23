@@ -19,9 +19,10 @@
 <script setup lang="ts">
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
 import {
-  clusterInformationDialogTranslations,
   type ClusterInformationDialogTranslations,
+  clusterInformationDialogTranslations,
 } from "./ClusterInformationDialog.i18n";
 
 const { t } = useComponentI18n<ClusterInformationDialogTranslations>(

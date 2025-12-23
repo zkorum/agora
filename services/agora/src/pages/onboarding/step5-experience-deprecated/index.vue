@@ -64,14 +64,15 @@
 <script setup lang="ts">
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
-import { ref } from "vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import { ref } from "vue";
+
 import {
-  step5ExperienceTranslations,
   type Step5ExperienceTranslations,
+  step5ExperienceTranslations,
 } from "./index.i18n";
 
 const { t } = useComponentI18n<Step5ExperienceTranslations>(

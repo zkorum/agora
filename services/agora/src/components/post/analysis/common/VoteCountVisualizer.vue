@@ -45,18 +45,15 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { calculatePercentage } from "src/shared/util";
 import { formatPercentage } from "src/utils/common";
 import { computed } from "vue";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  voteCountVisualizerTranslations,
-  type VoteCountVisualizerTranslations,
-} from "./VoteCountVisualizer.i18n";
 
-const { t } = useComponentI18n<VoteCountVisualizerTranslations>(
-  voteCountVisualizerTranslations
-);
+import {
+  type VoteCountVisualizerTranslations,
+  voteCountVisualizerTranslations,
+} from "./VoteCountVisualizer.i18n";
 
 const props = defineProps<{
   voteCount1: number;
@@ -70,6 +67,10 @@ const props = defineProps<{
   label4?: string;
   showLegend?: boolean;
 }>();
+
+const { t } = useComponentI18n<VoteCountVisualizerTranslations>(
+  voteCountVisualizerTranslations
+);
 
 const legendItems = computed(() => {
   return [

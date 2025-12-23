@@ -9,7 +9,7 @@
     }"
   >
     <template #header>
-      <StandardMenuBar :title="''" :center-content="false" />
+      <StandardMenuBar title="" :center-content="false" />
     </template>
 
     <div class="container">
@@ -46,6 +46,7 @@
         map-options
       />
 
+      <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
       <q-input
         v-model="moderationExplanation"
         :label="t('explanationOptional')"
@@ -68,28 +69,29 @@
 </template>
 
 <script setup lang="ts">
-import { useBackendModerateApi } from "src/utils/api/moderation";
-import { useRoute, useRouter } from "vue-router";
-import { onMounted, ref } from "vue";
+import { StandardMenuBar } from "src/components/navigation/header/variants";
+import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type {
   ConversationModerationAction,
   ExtendedConversation,
   ModerationReason,
 } from "src/shared/types/zod";
-import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
+import { useHomeFeedStore } from "src/stores/homeFeed";
+import { useBackendModerateApi } from "src/utils/api/moderation";
+import { useBackendPostApi } from "src/utils/api/post/post";
 import {
   moderationActionPostsMapping,
   moderationReasonMapping,
 } from "src/utils/component/moderations";
-import { useHomeFeedStore } from "src/stores/homeFeed";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import { useBackendPostApi } from "src/utils/api/post/post";
-import { StandardMenuBar } from "src/components/navigation/header/variants";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+
 import {
-  conversationModerationTranslations,
   type ConversationModerationTranslations,
+  conversationModerationTranslations,
 } from "./index.i18n";
 
 const {

@@ -72,7 +72,9 @@
               v-if="exportStatusQuery.data.value.failureReason"
               class="error-details"
             >
-              {{ getFailureReasonText(exportStatusQuery.data.value.failureReason) }}
+              {{
+                getFailureReasonText(exportStatusQuery.data.value.failureReason)
+              }}
             </p>
           </div>
           <div
@@ -117,7 +119,9 @@
               class="error-details"
             >
               {{ t("originalError") }}:
-              {{ getFailureReasonText(exportStatusQuery.data.value.failureReason) }}
+              {{
+                getFailureReasonText(exportStatusQuery.data.value.failureReason)
+              }}
             </p>
             <p
               v-if="exportStatusQuery.data.value.cancellationReason"
@@ -214,26 +218,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
-import { useRouter } from "vue-router";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
-import {
-  useExportStatusQuery,
-  useDeleteExportMutation,
-} from "src/utils/api/conversationExport/useConversationExportQueries";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  exportStatusViewTranslations,
-  type ExportStatusViewTranslations,
-} from "./ExportStatusView.i18n";
+import type { ExportFailureReason } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
-import { useNotify } from "src/utils/ui/notify";
+import {
+  useDeleteExportMutation,
+  useExportStatusQuery,
+} from "src/utils/api/conversationExport/useConversationExportQueries";
 import { formatDateTime, formatFileSize, isUrlExpired } from "src/utils/format";
-import type { ExportFailureReason } from "src/shared/types/zod";
+import { useNotify } from "src/utils/ui/notify";
+import { computed } from "vue";
+import { useRouter } from "vue-router";
+
+import {
+  type ExportStatusViewTranslations,
+  exportStatusViewTranslations,
+} from "./ExportStatusView.i18n";
 
 interface Props {
   exportSlugId: string;

@@ -55,26 +55,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import { storeToRefs } from "pinia";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import { computed } from "vue";
+
 import {
-  modeChangeConfirmationDialogTranslations,
   type ModeChangeConfirmationDialogTranslations,
+  modeChangeConfirmationDialogTranslations,
 } from "./ModeChangeConfirmationDialog.i18n";
-
-const { t } = useComponentI18n<ModeChangeConfirmationDialogTranslations>(
-  modeChangeConfirmationDialogTranslations
-);
-
-const showDialog = defineModel<boolean>();
 
 const emit = defineEmits<{
   confirm: [];
   cancel: [];
 }>();
+
+const { t } = useComponentI18n<ModeChangeConfirmationDialogTranslations>(
+  modeChangeConfirmationDialogTranslations
+);
+
+const showDialog = defineModel<boolean>({ required: true });
 
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 

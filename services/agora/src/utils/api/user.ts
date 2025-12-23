@@ -1,20 +1,21 @@
 import {
+  type ApiV1UserConversationFetchPostRequest,
+  type ApiV1UserOpinionFetchPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
-  type ApiV1UserOpinionFetchPostRequest,
-  type ApiV1UserConversationFetchPostRequest,
 } from "src/api";
-import { api } from "./client";
-import { buildAuthorizationHeader } from "../crypto/ucan/operation";
-import { useCommonApi } from "./common";
+import type { GetUserProfileResponse } from "src/shared/types/dto";
 import type {
-  ExtendedOpinion,
   ExtendedConversation,
+  ExtendedOpinion,
   moderationStatusOptionsType,
 } from "src/shared/types/zod";
-import { useBackendPostApi } from "./post/post";
+
+import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useNotify } from "../ui/notify";
-import type { GetUserProfileResponse } from "src/shared/types/dto";
+import { api } from "./client";
+import { useCommonApi } from "./common";
+import { useBackendPostApi } from "./post/post";
 
 export function useBackendUserApi() {
   const { buildEncodedUcan } = useCommonApi();

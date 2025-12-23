@@ -4,8 +4,8 @@ import {
   BiometryError,
   BiometryErrorType,
 } from "@aparajita/capacitor-biometric-auth";
-import { Dialog } from "quasar";
 import { App } from "@capacitor/app";
+import { Dialog } from "quasar";
 
 export async function nativeAuthenticate() {
   const info = await BiometricAuth.checkBiometry();

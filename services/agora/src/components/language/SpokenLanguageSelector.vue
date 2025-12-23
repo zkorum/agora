@@ -114,40 +114,41 @@
 </template>
 
 <script setup lang="ts">
-import type { ComputedRef } from "vue";
-import { computed, ref, onMounted, nextTick } from "vue";
 import { storeToRefs } from "pinia";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  spokenLanguageSelectorTranslations,
-  type SpokenLanguageSelectorTranslations,
-} from "./SpokenLanguageSelector.i18n";
-import MenuItem from "src/components/ui-library/MenuItem.vue";
 import SettingsSearchInput from "src/components/settings/SettingsSearchInput.vue";
+import MenuItem from "src/components/ui-library/MenuItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
-import { useLanguageStore } from "src/stores/language";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { useNotify } from "src/utils/ui/notify";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
-  SupportedSpokenLanguageCodes,
   LanguageMetadata,
+  SupportedSpokenLanguageCodes,
 } from "src/shared/languages";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useLanguageStore } from "src/stores/language";
 import {
+  getLanguageByCode,
   getSpokenLanguages,
   searchLanguages,
   sortLanguagesByEnglishName,
-  getLanguageByCode,
 } from "src/utils/language";
+import { useNotify } from "src/utils/ui/notify";
+import type { ComputedRef } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
+
+import {
+  type SpokenLanguageSelectorTranslations,
+  spokenLanguageSelectorTranslations,
+} from "./SpokenLanguageSelector.i18n";
+
+const emit = defineEmits<{
+  languageAdded: [languageCode: SupportedSpokenLanguageCodes];
+  languageRemoved: [languageCode: SupportedSpokenLanguageCodes];
+  next: [];
+}>();
 
 const { t } = useComponentI18n<SpokenLanguageSelectorTranslations>(
   spokenLanguageSelectorTranslations
 );
-
-const emit = defineEmits<{
-  "language-added": [languageCode: SupportedSpokenLanguageCodes];
-  "language-removed": [languageCode: SupportedSpokenLanguageCodes];
-  next: [];
-}>();
 
 const languageStore = useLanguageStore();
 const { spokenLanguages } = storeToRefs(languageStore);
@@ -219,7 +220,7 @@ async function addLanguage(
 
   const newLanguages = [...spokenLanguages.value, languageCode];
   await saveLanguageChanges(newLanguages);
-  emit("language-added", languageCode);
+  emit("languageAdded", languageCode);
 
   // Scroll to the selected languages section after adding
   await scrollToSelectedLanguages();
@@ -243,7 +244,7 @@ async function removeLanguage(
     (code) => code !== languageCode
   );
   await saveLanguageChanges(newLanguages);
-  emit("language-removed", languageCode);
+  emit("languageRemoved", languageCode);
 }
 
 // Save language changes with proper error handling

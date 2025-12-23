@@ -1,34 +1,35 @@
-import { api } from "./client";
-import { queryClient } from "../query/client";
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import {
-  DefaultApiAxiosParamCreator,
-  DefaultApiFactory,
   type ApiV1AuthAuthenticatePost200Response,
   type ApiV1AuthAuthenticatePostRequest,
   type ApiV1AuthPhoneVerifyOtpPost200Response,
   type ApiV1AuthPhoneVerifyOtpPostRequest,
+  DefaultApiAxiosParamCreator,
+  DefaultApiFactory,
 } from "src/api";
-import { processEnv } from "src/utils/processEnv";
 import type {
   DeviceLoginStatus,
   SupportedCountryCallingCode,
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useHomeFeedStore } from "src/stores/homeFeed";
+import { useLanguageStore } from "src/stores/language";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useNotificationStore } from "src/stores/notification";
-import { useHomeFeedStore } from "src/stores/homeFeed";
+import { useTopicStore } from "src/stores/topic";
 import { useUserStore } from "src/stores/user";
+import { processEnv } from "src/utils/processEnv";
+import { useRoute } from "vue-router";
+
 import { useNewPostDraftsStore } from "../../stores/newConversationDrafts";
-import { useLanguageStore } from "src/stores/language";
 import { getPlatform } from "../common";
 import { buildAuthorizationHeader, deleteDid } from "../crypto/ucan/operation";
-import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
-import { useCommonApi, type KeyAction } from "./common";
-import { useRoute } from "vue-router";
+import { queryClient } from "../query/client";
 import { useRouterGuard } from "../router/guard";
-import { useTopicStore } from "src/stores/topic";
+import { api } from "./client";
+import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
+import { type KeyAction,useCommonApi } from "./common";
 
 interface SendSmsCodeProps {
   phoneNumber: string;

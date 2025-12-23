@@ -64,14 +64,15 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import ZKCard from "src/components/ui-library/ZKCard.vue";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { storeToRefs } from "pinia";
+import ZKCard from "src/components/ui-library/ZKCard.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_OPTION } from "src/shared/shared";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+
 import {
-  pollComponentTranslations,
   type PollComponentTranslations,
+  pollComponentTranslations,
 } from "./PollComponent.i18n";
 
 const { t } = useComponentI18n<PollComponentTranslations>(

@@ -1,4 +1,3 @@
-import { defineRouter } from "#q-app/wrappers";
 import { useRouterGuard } from "src/utils/router/guard";
 import {
   createMemoryHistory,
@@ -7,6 +6,8 @@ import {
   createWebHistory,
 } from "vue-router";
 import { routes } from "vue-router/auto-routes";
+
+import { defineRouter } from "#q-app/wrappers";
 
 /*
  * If not building with SSR mode, you can

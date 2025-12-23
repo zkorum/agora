@@ -1,6 +1,6 @@
 import type {
-  LanguageMetadata,
   DisplayLanguageMetadata,
+  LanguageMetadata,
   SupportedDisplayLanguageCodes,
   SupportedSpokenLanguageCodes,
 } from "src/shared/languages";

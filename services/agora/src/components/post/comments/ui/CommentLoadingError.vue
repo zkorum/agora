@@ -21,8 +21,6 @@
 </template>
 
 <script setup lang="ts">
-const emit = defineEmits(["retry"]);
-
 defineProps<{
   title: string;
   message?: string | null;
@@ -32,6 +30,10 @@ defineProps<{
   isRetrying?: boolean;
   icon?: string;
   iconColor?: string;
+}>();
+
+const emit = defineEmits<{
+  retry: [];
 }>();
 
 function handleRetry(): void {

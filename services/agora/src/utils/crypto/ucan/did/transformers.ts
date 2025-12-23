@@ -1,10 +1,11 @@
 // Copyright ts-odd team
 // Apache v2 License
 // Extracted from: https://github.com/oddsdk/ts-odd/tree/f90bde37416d9986d1c0afed406182a95ce7c1d7
-import * as uint8arrays from "uint8arrays";
-import type * as Crypto from "../implementation.js";
-import { BASE58_DID_PREFIX } from "src/shared/did/util.js";
 import { equal } from "src/shared/arrbufs.js";
+import { BASE58_DID_PREFIX } from "src/shared/did/util.js";
+import * as uint8arrays from "uint8arrays";
+
+import type * as Crypto from "../implementation.js";
 
 /**
  * Determines if an ArrayBuffer has a given indeterminate length-prefix.

@@ -6,17 +6,19 @@
     role="user-content"
     :aria-label="compactMode ? t('postContentPreview') : t('postContent')"
     @click="handleClick"
-    v-html="sanitizedHtmlBody()"
+    v-html="sanitizedHtmlBody"
   ></span>
 </template>
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  zkHtmlContentTranslations,
-  type ZKHtmlContentTranslations,
-} from "./ZKHtmlContent.i18n";
 import { processHtmlBody } from "src/shared-app-api/html";
+import { computed } from "vue";
+
+import {
+  type ZKHtmlContentTranslations,
+  zkHtmlContentTranslations,
+} from "./ZKHtmlContent.i18n";
 
 const props = defineProps<{
   htmlBody: string;
@@ -28,7 +30,7 @@ const { t } = useComponentI18n<ZKHtmlContentTranslations>(
   zkHtmlContentTranslations
 );
 
-const sanitizedHtmlBody = () => {
+const sanitizedHtmlBody = computed(() => {
   try {
     return processHtmlBody(props.htmlBody, props.enableLinks);
   } catch (error) {
@@ -36,7 +38,7 @@ const sanitizedHtmlBody = () => {
     // Fallback to plain text if sanitization fails
     return props.htmlBody.replace(/<[^>]*>/g, "");
   }
-};
+});
 
 const handleClick = (event: Event) => {
   const target = event.target as HTMLElement;

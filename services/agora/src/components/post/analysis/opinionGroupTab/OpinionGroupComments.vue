@@ -36,8 +36,6 @@
         :conversation-slug-id="props.conversationSlugId"
         :opinion-item="comment"
         :opinion-item-for-visualizer="getModifiedOpinionItem(comment)"
-        :vote-count="props.voteCount"
-        :polis-clusters="props.polisClusters"
         :cluster-labels="props.clusterLabels"
       />
     </div>
@@ -45,17 +43,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
-import type {
-  AnalysisOpinionItem,
-  PolisClusters,
-  PolisKey,
-} from "src/shared/types/zod";
-import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { AnalysisOpinionItem, PolisKey } from "src/shared/types/zod";
+import { computed, ref, watch } from "vue";
+
+import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 import {
-  opinionGroupCommentsTranslations,
   type OpinionGroupCommentsTranslations,
+  opinionGroupCommentsTranslations,
 } from "./OpinionGroupComments.i18n";
 
 const props = defineProps<{
@@ -63,8 +58,6 @@ const props = defineProps<{
   itemList: AnalysisOpinionItem[];
   currentClusterTab: PolisKey;
   hasUngroupedParticipants: boolean;
-  voteCount: number;
-  polisClusters: Partial<PolisClusters>;
   clusterLabels: Partial<Record<PolisKey, string>>;
 }>();
 
@@ -145,7 +138,9 @@ function getActiveVotes(comment: AnalysisOpinionItem) {
   }
 }
 
-function getModifiedOpinionItem(comment: AnalysisOpinionItem): AnalysisOpinionItem {
+function getModifiedOpinionItem(
+  comment: AnalysisOpinionItem
+): AnalysisOpinionItem {
   const activeVotes = getActiveVotes(comment);
   return {
     ...comment,

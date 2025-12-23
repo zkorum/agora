@@ -46,20 +46,14 @@
           <GroupConsensusSummary
             v-if="currentAiSummary"
             :summary="currentAiSummary"
-            :selected-cluster-key="currentClusterTab"
           />
 
           <OpinionGroupComments
             :conversation-slug-id="props.conversationSlugId"
-            :item-list="
-              props.clusters[currentClusterTab]?.representative ?? []
-            "
+            :item-list="props.clusters[currentClusterTab]?.representative ?? []"
             :current-cluster-tab="currentClusterTab"
             :has-ungrouped-participants="hasUngroupedParticipants"
-            :vote-count="props.totalParticipantCount"
-            :polis-clusters="props.clusters"
             :cluster-labels="clusterLabels"
-            @update:current-cluster-tab="currentClusterTab = $event"
           />
         </template>
       </template>
@@ -70,28 +64,26 @@
 </template>
 
 <script setup lang="ts">
-import type {
-  PolisClusters,
-  PolisKey,
-} from "src/shared/types/zod";
-import { computed, ref } from "vue";
 import { storeToRefs } from "pinia";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { PolisClusters, PolisKey } from "src/shared/types/zod";
+import { useNavigationStore } from "src/stores/navigation";
+import { computed, ref } from "vue";
+
+import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
+import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
+import EmptyStateMessage from "../common/EmptyStateMessage.vue";
+import ClusterInformationDialog from "./ClusterInformationDialog.vue";
 import ClusterVisualization from "./ClusterVisualization.vue";
-import OpinionGroupSelector from "./OpinionGroupSelector.vue";
 import GroupConsensusSummary from "./GroupConsensusSummary.vue";
 import OpinionGroupComments from "./OpinionGroupComments.vue";
-import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
-import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
-import EmptyStateMessage from "../common/EmptyStateMessage.vue";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import OpinionGroupSelector from "./OpinionGroupSelector.vue";
 import {
-  opinionGroupTabTranslations,
   type OpinionGroupTabTranslations,
+  opinionGroupTabTranslations,
 } from "./OpinionGroupTab.i18n";
-import ClusterInformationDialog from "./ClusterInformationDialog.vue";
-import ZKIcon from "src/components/ui-library/ZKIcon.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useNavigationStore } from "src/stores/navigation";
 
 const props = defineProps<{
   conversationSlugId: string;

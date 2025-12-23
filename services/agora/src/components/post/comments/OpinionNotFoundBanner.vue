@@ -4,7 +4,7 @@
     padding="1rem"
     class="opinion-not-found-banner"
     role="alert"
-    :aria-live="'polite'"
+    aria-live="polite"
   >
     <div class="banner-container">
       <div class="banner-main-content">
@@ -37,18 +37,19 @@
 <script setup lang="ts">
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  opinionNotFoundBannerTranslations,
-  type OpinionNotFoundBannerTranslations,
-} from "./OpinionNotFoundBanner.i18n";
 
-const emit = defineEmits<{
-  dismiss: [];
-}>();
+import {
+  type OpinionNotFoundBannerTranslations,
+  opinionNotFoundBannerTranslations,
+} from "./OpinionNotFoundBanner.i18n";
 
 defineProps<{
   isVisible: boolean;
   opinionId: string | null;
+}>();
+
+const emit = defineEmits<{
+  dismiss: [];
 }>();
 
 const { t } = useComponentI18n<OpinionNotFoundBannerTranslations>(

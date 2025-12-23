@@ -27,7 +27,6 @@
 <script setup lang="ts">
 defineProps<{
   label: string;
-  variant: string;
   icon?: string;
   isFollowing: boolean;
 }>();

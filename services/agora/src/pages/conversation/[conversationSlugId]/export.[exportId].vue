@@ -21,19 +21,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import ExportStatusView from "src/components/conversation/export/ExportStatusView.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
-import ExportStatusView from "src/components/conversation/export/ExportStatusView.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  exportStatusPageTranslations,
-  type ExportStatusPageTranslations,
-} from "./export.[exportId].i18n";
-import { useNotify } from "src/utils/ui/notify";
+import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { processEnv } from "src/utils/processEnv";
+import { useNotify } from "src/utils/ui/notify";
+import { computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
+
+import {
+  type ExportStatusPageTranslations,
+  exportStatusPageTranslations,
+} from "./export.[exportId].i18n";
 
 const { t } = useComponentI18n<ExportStatusPageTranslations>(
   exportStatusPageTranslations

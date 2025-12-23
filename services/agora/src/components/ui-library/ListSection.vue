@@ -26,6 +26,7 @@
 
 <script setup lang="ts">
 import { type SettingsInterface } from "src/utils/component/settings/settings";
+
 import ListItem from "./ListItem.vue";
 
 defineProps<{

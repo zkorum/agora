@@ -1,11 +1,12 @@
 import { useShare } from "@vueuse/core";
 import { useClipboard } from "@vueuse/core";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
 import { useDialog } from "../ui/dialog";
 import { useNotify } from "../ui/notify";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
-  webShareTranslations,
   type WebShareTranslations,
+  webShareTranslations,
 } from "./WebShare.i18n";
 
 export function useWebShare() {

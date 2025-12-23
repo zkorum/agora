@@ -2,6 +2,7 @@
   <div class="settings-background">
     <PrimeIconField class="search-field">
       <PrimeInputIcon class="pi pi-search" />
+      <!-- @vue-expect-error PrimeVue InputText types modelValue as string | undefined -->
       <PrimeInputText
         ref="inputRef"
         v-model="internalValue"
@@ -11,6 +12,7 @@
       />
       <!-- TODO: ACCESSIBILITY - Change <PrimeInputIcon> to <button> element for keyboard accessibility -->
       <!-- Clear search button should be keyboard accessible for users with motor disabilities -->
+      <!-- @vue-expect-error PrimeVue InputIcon doesn't type onClick event handler -->
       <PrimeInputIcon
         v-if="modelValue"
         class="pi pi-times cursor-pointer clear-icon"
@@ -21,11 +23,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { computed,ref } from "vue";
+
 import {
-  settingsSearchInputTranslations,
   type SettingsSearchInputTranslations,
+  settingsSearchInputTranslations,
 } from "./SettingsSearchInput.i18n";
 
 interface Props {
@@ -37,15 +40,15 @@ interface Emits {
   (e: "update:modelValue", value: string): void;
 }
 
-const { t } = useComponentI18n<SettingsSearchInputTranslations>(
-  settingsSearchInputTranslations
-);
-
 const props = withDefaults(defineProps<Props>(), {
   placeholder: undefined,
 });
 
 const emit = defineEmits<Emits>();
+
+const { t } = useComponentI18n<SettingsSearchInputTranslations>(
+  settingsSearchInputTranslations
+);
 
 const inputRef = ref<{ $el: HTMLInputElement } | null>(null);
 

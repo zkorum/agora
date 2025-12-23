@@ -1,9 +1,6 @@
 <template>
   <DialogStepLayout :title="t('title')">
-    <SpokenLanguageSelector
-      :show-selected-section="false"
-      @next="emit('next')"
-    />
+    <SpokenLanguageSelector @next="emit('next')" />
 
     <template #footer>
       <PrimeButton
@@ -16,19 +13,21 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DialogStepLayout from "src/components/onboarding/layouts/DialogStepLayout.vue";
 import SpokenLanguageSelector from "src/components/language/SpokenLanguageSelector.vue";
+import DialogStepLayout from "src/components/onboarding/layouts/DialogStepLayout.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
 import {
-  spokenLanguageStepTranslations,
   type SpokenLanguageStepTranslations,
+  spokenLanguageStepTranslations,
 } from "./SpokenLanguageStep.i18n";
+
+const emit = defineEmits<{ (e: "next"): void }>();
 
 const { t } = useComponentI18n<SpokenLanguageStepTranslations>(
   spokenLanguageStepTranslations
 );
 
-const emit = defineEmits<{ (e: "next"): void }>();
 </script>
 
 <style scoped lang="scss">

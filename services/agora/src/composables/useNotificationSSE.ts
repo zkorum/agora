@@ -1,17 +1,17 @@
-import { ref, onUnmounted, watch } from "vue";
-import { useCommonApi } from "src/utils/api/common";
-import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { DefaultApiAxiosParamCreator } from "src/api";
-import { zodNotificationItem } from "src/shared/types/zod";
 import type {
   SSEConnectedData,
-  SSENotificationData,
   SSEHeartbeatData,
+  SSENotificationData,
   SSEShutdownData,
 } from "src/shared/types/dto";
-import { useNotificationStore } from "src/stores/notification";
+import { zodNotificationItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useNotificationStore } from "src/stores/notification";
+import { useCommonApi } from "src/utils/api/common";
+import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
+import { onUnmounted, ref, watch } from "vue";
 
 export function useNotificationSSE() {
   const { buildEncodedUcan } = useCommonApi();

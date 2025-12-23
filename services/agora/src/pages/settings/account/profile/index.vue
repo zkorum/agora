@@ -24,15 +24,16 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import UsernameChange from "src/components/account/UsernameChange.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+
 import {
-  profileSettingsTranslations,
   type ProfileSettingsTranslations,
+  profileSettingsTranslations,
 } from "./index.i18n";
 
 const { t } = useComponentI18n<ProfileSettingsTranslations>(

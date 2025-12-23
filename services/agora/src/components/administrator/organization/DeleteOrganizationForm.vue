@@ -18,11 +18,12 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { OrganizationProperties } from "src/shared/types/zod";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { onMounted, ref } from "vue";
-import OrganizationView from "./OrganizationView.vue";
+
 import {
-  deleteOrganizationFormTranslations,
   type DeleteOrganizationFormTranslations,
+  deleteOrganizationFormTranslations,
 } from "./DeleteOrganizationForm.i18n";
+import OrganizationView from "./OrganizationView.vue";
 
 const { t } = useComponentI18n<DeleteOrganizationFormTranslations>(
   deleteOrganizationFormTranslations

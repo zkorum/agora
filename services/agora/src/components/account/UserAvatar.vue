@@ -3,8 +3,8 @@
 </template>
 
 <script setup lang="ts">
-import { createAvatar } from "@dicebear/core";
 import { thumbs } from "@dicebear/collection";
+import { createAvatar } from "@dicebear/core";
 import { ref, watch } from "vue";
 
 const props = defineProps<{

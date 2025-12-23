@@ -1,13 +1,14 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
-import { computed } from "vue";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
-import { useBackendVoteApi } from "../vote";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { useInvalidateCommentQueries } from "../comment/useCommentQueries";
 import type { VotingAction } from "src/shared/types/zod";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { computed } from "vue";
+
+import { useNotify } from "../../ui/notify";
+import { useInvalidateCommentQueries } from "../comment/useCommentQueries";
 import type { AxiosErrorResponse } from "../common";
 import { getErrorMessage } from "../common";
-import { useNotify } from "../../ui/notify";
+import { useBackendVoteApi } from "../vote";
 
 export function useUserVotesQuery({ postSlugId }: { postSlugId: string }) {
   const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();

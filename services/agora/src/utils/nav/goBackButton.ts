@@ -1,5 +1,5 @@
-import { useRouter } from "vue-router";
 import { useNavigationStore } from "src/stores/navigation";
+import { useRouter } from "vue-router";
 
 export function useGoBackButtonHandler() {
   const router = useRouter();

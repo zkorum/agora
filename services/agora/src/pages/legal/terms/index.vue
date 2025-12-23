@@ -49,8 +49,8 @@
             register via
             <a
               href="https://rarimo.com/general-terms.html"
-              target="_blank"
-              rel="noopener"
+              target="_blank" 
+              rel="noopener noreferrer"
               >Rarimo</a
             >
             if you're not 18 years or older.
@@ -505,12 +505,13 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
+
 import {
-  termsOfServiceTranslations,
   type TermsOfServiceTranslations,
+  termsOfServiceTranslations,
 } from "./index.i18n";
 
 const { t } = useComponentI18n<TermsOfServiceTranslations>(

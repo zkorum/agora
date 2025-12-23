@@ -41,7 +41,7 @@
     <PreLoginIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
-      :active-intention="'agreement'"
+      active-intention="agreement"
       :requires-zupass-event-slug="props.requiresEventTicket"
       :login-required-to-participate="props.loginRequiredToParticipate"
     />
@@ -51,36 +51,34 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import VotingButton from "src/components/features/opinion/VotingButton.vue";
+import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
+import type { OpinionVotingUtilities } from "src/composables/opinion/types";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
+import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
+import type { EventSlug } from "src/shared/types/zod";
 import {
   type OpinionItem,
   type VotingAction,
   type VotingOption,
 } from "src/shared/types/zod";
-import type { OpinionVotingUtilities } from "src/composables/opinion/types";
+import { calculatePercentage } from "src/shared/util";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
-import { calculatePercentage } from "src/shared/util";
 import { formatPercentage } from "src/utils/common";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, ref, onMounted, watch } from "vue";
-import VotingButton from "src/components/features/opinion/VotingButton.vue";
-import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  commentActionBarTranslations,
-  type CommentActionBarTranslations,
-} from "./CommentActionBar.i18n";
-import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
-import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
+import { computed, onMounted, ref, watch } from "vue";
 
-import type { EventSlug } from "src/shared/types/zod";
+import {
+  type CommentActionBarTranslations,
+  commentActionBarTranslations,
+} from "./CommentActionBar.i18n";
 
 const props = defineProps<{
   commentItem: OpinionItem;
-  postSlugId: string;
   votingUtilities: OpinionVotingUtilities;
-  isPostLocked: boolean;
   loginRequiredToParticipate: boolean;
   requiresEventTicket?: EventSlug;
 }>();

@@ -34,9 +34,10 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from "vue";
-import ZKBottomDialogContainer from "./ZKBottomDialogContainer.vue";
 import type { ContentAction } from "src/utils/actions/core/types";
+import { watch } from "vue";
+
+import ZKBottomDialogContainer from "./ZKBottomDialogContainer.vue";
 
 interface Props {
   actions: ContentAction[];
@@ -52,7 +53,7 @@ interface Emits {
 defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const showDialog = defineModel<boolean>();
+const showDialog = defineModel<boolean>({ required: true });
 
 /**
  * Get CSS class for action variant

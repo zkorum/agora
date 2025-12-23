@@ -1,5 +1,6 @@
 <template>
   <form class="container">
+    <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
     <q-input
       v-model="username"
       :label="t('usernameLabel')"
@@ -34,14 +35,15 @@
 </template>
 
 <script setup lang="ts">
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { OrganizationProperties } from "src/shared/types/zod";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { ref } from "vue";
-import type { OrganizationProperties } from "src/shared/types/zod";
+
 import {
-  userOrganizationMappingsTranslations,
   type UserOrganizationMappingsTranslations,
+  userOrganizationMappingsTranslations,
 } from "./UserOrganizationMappings.i18n";
 
 const { t } = useComponentI18n<UserOrganizationMappingsTranslations>(

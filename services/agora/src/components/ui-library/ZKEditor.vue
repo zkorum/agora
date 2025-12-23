@@ -6,6 +6,7 @@
       autocomplete="off"
       spellcheck="false"
     >
+      <!-- @vue-expect-error Quasar q-editor doesn't type onPaste/onFocus event handlers -->
       <q-editor
         ref="editorRef"
         v-model="modelText"
@@ -27,8 +28,6 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 
-const modelText = defineModel<string>({ required: true });
-
 defineProps<{
   showToolbar: boolean;
   placeholder: string;
@@ -36,7 +35,11 @@ defineProps<{
   addBackgroundColor: boolean;
 }>();
 
-const emit = defineEmits(["manuallyFocused"]);
+const emit = defineEmits<{
+  manuallyFocused: [];
+}>();
+
+const modelText = defineModel<string>({ required: true });
 
 const editorRef = ref<HTMLElement | null>(null);
 
@@ -63,19 +66,19 @@ function onPaste(evt: Event) {
   evt.preventDefault();
   evt.stopPropagation();
   /* @ts-expect-error Event definition is missing */
-  if (evt.originalEvent && evt.originalEvent.clipboardData.getData) {
+  if (evt.originalEvent?.clipboardData.getData) {
     /* @ts-expect-error Event definition is missing */
     text = evt.originalEvent.clipboardData.getData("text/plain");
     /* @ts-expect-error Element not properly defined */
     editorRef.value?.runCmd("insertText", text);
     // @ts-expect-error Type error
-  } else if (evt.clipboardData && evt.clipboardData.getData) {
+  } else if (evt.clipboardData?.getData) {
     /* @ts-expect-error Event definition is missing */
     text = evt.clipboardData.getData("text/plain");
     /* @ts-expect-error Element not properly defined */
     editorRef.value?.runCmd("insertText", text);
     // @ts-expect-error Type error
-  } else if (window.clipboardData && window.clipboardData.getData) {
+  } else if (window.clipboardData?.getData) {
     if (!onPasteStripFormattingIEPaste) {
       onPasteStripFormattingIEPaste = true;
       /* @ts-expect-error Element not properly defined */

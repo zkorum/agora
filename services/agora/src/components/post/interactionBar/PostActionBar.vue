@@ -35,15 +35,16 @@
 </template>
 
 <script setup lang="ts">
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { formatAmount } from "src/utils/common";
+
 import ZKButton from "../../ui-library/ZKButton.vue";
 import ZKIcon from "../../ui-library/ZKIcon.vue";
 import InteractionTab from "./InteractionTab.vue";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
-  postActionBarTranslations,
   type PostActionBarTranslations,
+  postActionBarTranslations,
 } from "./PostActionBar.i18n";
-import { formatAmount } from "src/utils/common";
 
 const props = defineProps<{
   compactMode: boolean;
@@ -53,6 +54,10 @@ const props = defineProps<{
   isLoading?: boolean;
 }>();
 
+defineEmits<{
+  share: [];
+}>();
+
 const currentTab = defineModel<"comment" | "analysis">({
   required: true,
 });
@@ -60,8 +65,6 @@ const currentTab = defineModel<"comment" | "analysis">({
 const { t } = useComponentI18n<PostActionBarTranslations>(
   postActionBarTranslations
 );
-
-defineEmits(["share"]);
 </script>
 
 <style scoped lang="scss">
