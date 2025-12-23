@@ -53,7 +53,7 @@ const handleClick = (event: Event) => {
 
 <style lang="scss" scoped>
 .textBreak {
-  font-size: 1rem;
+  font-size: 0.9rem;
   line-height: normal;
   word-break: break-word;
   /* Prevent potential layout issues with long content */
