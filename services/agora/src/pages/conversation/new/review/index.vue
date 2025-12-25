@@ -421,6 +421,9 @@ async function onSubmit() {
   margin: 1rem -1rem 0; // Negative margin to extend to container edges
   z-index: 10;
 
+  // Border for visual separation when overlapping with opinion cards
+  border-top: 1px solid #e0e0e0;
+
   // Subtle background with gradient fade for visual separation
   background: linear-gradient(
     to bottom,
