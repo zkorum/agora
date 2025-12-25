@@ -902,7 +902,7 @@ export async function fetchAnalysisByConversationSlugId({
             polisContentId: undefined,
             consensus: [],
             controversial: [],
-            clusters: {},
+            clusters: undefined,
         };
     }
 

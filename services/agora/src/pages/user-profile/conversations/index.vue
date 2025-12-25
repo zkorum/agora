@@ -2,17 +2,11 @@
   <div>
     <q-infinite-scroll :offset="2000" :disable="!canLoadMore" @load="onLoad">
       <div class="container">
-        <div
+        <PostListItem
           v-for="postData in profileData.userPostList"
           :key="postData.metadata.conversationSlugId"
-        >
-          <PostDetails
-            :conversation-data="postData"
-            :compact-mode="true"
-            class="showCursor"
-            @click="openPost(postData.metadata.conversationSlugId)"
-          />
-        </div>
+          :conversation-data="postData"
+        />
       </div>
     </q-infinite-scroll>
 
@@ -27,17 +21,14 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import PostDetails from "src/components/post/PostDetails.vue";
+import PostListItem from "src/components/post/list/PostListItem.vue";
 import { useUserStore } from "src/stores/user";
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 
 const { loadMoreUserPosts } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
 
 const canLoadMore = ref(true);
-
-const router = useRouter();
 
 async function onLoad(index: number, done: () => void) {
   if (canLoadMore.value) {
@@ -45,13 +36,6 @@ async function onLoad(index: number, done: () => void) {
     canLoadMore.value = !response.reachedEndOfFeed;
   }
   done();
-}
-
-async function openPost(postSlugId: string) {
-  await router.push({
-    name: "/conversation/[postSlugId]",
-    params: { postSlugId: postSlugId },
-  });
 }
 </script>
 

@@ -251,7 +251,7 @@ export function useBackendCommentApi() {
     return {
       consensus: parsedData.consensus,
       controversial: parsedData.controversial,
-      polisClusters: parsedData.clusters,
+      polisClusters: parsedData.clusters ?? {},
     };
   }
 

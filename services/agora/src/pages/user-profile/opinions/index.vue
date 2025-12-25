@@ -2,73 +2,17 @@
   <div>
     <q-infinite-scroll :offset="2000" :disable="!canLoadMore" @load="onLoad">
       <div class="container">
-        <div
+        <OpinionListItem
           v-for="commentItem in profileData.userCommentList"
           :key="commentItem.opinionItem.opinionSlugId"
-        >
-          <ZKHoverEffect
-            :enable-hover="true"
-            background-color="white"
-            hover-background-color="#e2e8f0"
-          >
-            <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
-            <!-- Comment item click areas should be keyboard navigable for users with motor disabilities -->
-            <div
-              class="commentItemStyle"
-              @click="
-                openComment(
-                  commentItem.conversationData.metadata.conversationSlugId,
-                  commentItem.opinionItem.opinionSlugId
-                )
-              "
-            >
-              <div class="topRowFlex">
-                <div class="postTitle">
-                  <ConversationTitleWithPrivacyLabel
-                    :is-private="
-                      !commentItem.conversationData.metadata.isIndexed
-                    "
-                    :title="commentItem.conversationData.payload.title"
-                    size="medium"
-                  />
-                </div>
-                <div>
-                  <CommentActionOptions
-                    :comment-item="commentItem.opinionItem"
-                    :post-slug-id="
-                      commentItem.conversationData.metadata.conversationSlugId
-                    "
-                  />
-                </div>
-              </div>
-
-              <!-- TODO: Map author verification status -->
-              <UserIdentityCard
-                :author-verified="false"
-                :created-at="commentItem.opinionItem.createdAt"
-                :user-identity="commentItem.opinionItem.username"
-                :show-verified-text="false"
-                organization-image-url=""
-              />
-
-              <div>
-                <ZKHtmlContent
-                  :html-body="commentItem.opinionItem.opinion"
-                  :compact-mode="false"
-                  :enable-links="false"
-                />
-              </div>
-
-              <CommentModeration
-                v-if="commentItem.opinionItem.moderation?.status == 'moderated'"
-                :comment-item="commentItem.opinionItem"
-                :post-slug-id="
-                  commentItem.conversationData.metadata.conversationSlugId
-                "
-              />
-            </div>
-          </ZKHoverEffect>
-        </div>
+          :conversation-slug-id="
+            commentItem.conversationData.metadata.conversationSlugId
+          "
+          :conversation-title="commentItem.conversationData.payload.title"
+          :is-indexed="commentItem.conversationData.metadata.isIndexed"
+          :opinion-slug-id="commentItem.opinionItem.opinionSlugId"
+          :opinion-item="commentItem.opinionItem"
+        />
       </div>
     </q-infinite-scroll>
 
@@ -83,22 +27,14 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import ConversationTitleWithPrivacyLabel from "src/components/features/conversation/ConversationTitleWithPrivacyLabel.vue";
-import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
-import CommentActionOptions from "src/components/post/comments/group/item/CommentActionOptions.vue";
-import CommentModeration from "src/components/post/comments/group/item/CommentModeration.vue";
-import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
-import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
+import OpinionListItem from "src/components/post/list/OpinionListItem.vue";
 import { useUserStore } from "src/stores/user";
-import { useRouterNavigation } from "src/utils/router/navigation";
 import { ref } from "vue";
 
 const { loadMoreUserComments } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
 
 const canLoadMore = ref(true);
-
-const { openComment } = useRouterNavigation();
 
 async function onLoad(index: number, done: () => void) {
   if (canLoadMore.value) {
@@ -110,32 +46,10 @@ async function onLoad(index: number, done: () => void) {
 </script>
 
 <style scoped lang="scss">
-.postTitle {
-  width: 100%;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
-  font-size: 1.2rem;
-  font-weight: var(--font-weight-medium);
-}
-
 .container {
   display: flex;
   flex-direction: column;
   gap: $feed-flex-gap;
-}
-
-.commentItemStyle {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: $container-padding;
-}
-
-.topRowFlex {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
 }
 
 .emptyMessage {

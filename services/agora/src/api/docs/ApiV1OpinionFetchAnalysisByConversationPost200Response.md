@@ -8,7 +8,7 @@ Name | Type | Description | Notes
 **polisContentId** | **number** |  | [optional] [default to undefined]
 **consensus** | [**Array&lt;ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner&gt;**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner.md) |  | [default to undefined]
 **controversial** | [**Array&lt;ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner&gt;**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner.md) |  | [default to undefined]
-**clusters** | [**{ [key: string]: ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue; }**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue.md) |  | [default to undefined]
+**clusters** | [**{ [key: string]: ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue; }**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue.md) |  | [optional] [default to undefined]
 
 ## Example
 

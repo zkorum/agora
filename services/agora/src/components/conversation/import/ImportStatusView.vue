@@ -58,12 +58,17 @@
               aria-hidden="true"
             />
             <p>{{ t("completedMessage") }}</p>
-            <PrimeButton
-              v-if="statusData.conversationSlugId"
+            <ButtonLink
+              v-if="importStatusQuery.data.value.conversationSlugId"
+              :to="{
+                name: '/conversation/[postSlugId]',
+                params: {
+                  postSlugId: importStatusQuery.data.value.conversationSlugId,
+                },
+              }"
               :label="t('viewConversation')"
               icon="pi pi-arrow-right"
               class="view-conversation-button"
-              @click="handleViewConversation"
             />
           </div>
           <div
@@ -92,13 +97,13 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
+import ButtonLink from "src/components/ui-library/ButtonLink.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ImportFailureReason } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useImportStatusQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
 import { formatDateTime } from "src/utils/format";
 import { computed } from "vue";
-import { useRouter } from "vue-router";
 
 import {
   type ImportStatusViewTranslations,
@@ -118,13 +123,12 @@ const { t } = useComponentI18n<ImportStatusViewTranslations>(
 const authStore = useAuthenticationStore();
 const { isGuestOrLoggedIn } = storeToRefs(authStore);
 
-const router = useRouter();
-
 const importStatusQuery = useImportStatusQuery({
   importSlugId: props.importSlugId,
   enabled: computed(() => isGuestOrLoggedIn.value),
 });
 
+<<<<<<< HEAD
 // Type-safe accessor for import status data
 // AsyncStateHandler guarantees data exists when content slot is rendered
 const statusData = computed(() => importStatusQuery.data.value);
@@ -139,6 +143,19 @@ function handleViewConversation(): void {
   });
 }
 
+||||||| parent of 10d684d1 (Import status button replace with native routing)
+function handleViewConversation(): void {
+  const data = importStatusQuery.data.value;
+  if (!data || data.status !== "completed") return;
+
+  void router.push({
+    name: "/conversation/[postSlugId]",
+    params: { postSlugId: data.conversationSlugId },
+  });
+}
+
+=======
+>>>>>>> 10d684d1 (Import status button replace with native routing)
 function getFailureReasonText(reason: ImportFailureReason): string {
   switch (reason) {
     case "processing_error":

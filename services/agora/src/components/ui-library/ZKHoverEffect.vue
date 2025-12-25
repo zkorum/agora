@@ -21,18 +21,23 @@ import { computed, ref } from "vue";
 interface ZKHoverEffectProps {
   enableHover: boolean;
   backgroundColor?: string;
-  hoverBackgroundColor?: string;
+  hoverVariant?: "light" | "medium";
   borderRadius?: string;
 }
 
 const props = withDefaults(defineProps<ZKHoverEffectProps>(), {
   backgroundColor: undefined,
-  hoverBackgroundColor: "#e2e8f0", // $hover-background-color
+  hoverVariant: "light",
   borderRadius: undefined,
 });
 
 // Touch interaction state
 const isTouchPressed = ref<boolean>(false);
+
+// Compute hover color based on variant
+const hoverBackgroundColor = computed(() => {
+  return props.hoverVariant === "medium" ? "#e5e7eb" : "#f3f4f6";
+});
 
 // Optimized computed property with proper TypeScript typing for Vue StyleValue
 const optimizedTransitionStyles = computed(() => {
@@ -78,7 +83,7 @@ const handleTouchEnd = (): void => {
 
 /* Touch active state for visual feedback */
 .touchInteractionEffect:active {
-  background-color: v-bind("props.hoverBackgroundColor");
+  background-color: v-bind("hoverBackgroundColor");
   cursor: pointer;
 }
 
@@ -88,7 +93,7 @@ const handleTouchEnd = (): void => {
   }
 
   .backgroundHoverEffect:hover {
-    background-color: v-bind("props.hoverBackgroundColor");
+    background-color: v-bind("hoverBackgroundColor");
   }
 }
 
@@ -99,6 +104,6 @@ const handleTouchEnd = (): void => {
 
 .backgroundHoverEffect:focus,
 .backgroundHoverEffect:focus-visible {
-  background-color: v-bind("props.hoverBackgroundColor");
+  background-color: v-bind("hoverBackgroundColor");
 }
 </style>

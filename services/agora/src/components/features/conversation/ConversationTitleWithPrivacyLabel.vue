@@ -57,6 +57,7 @@ const { t } = useComponentI18n<ConversationTitleWithPrivacyLabelTranslations>(
 }
 
 .conversation-title {
+  margin: 0;
   font-size: 1.2rem;
   font-weight: var(--font-weight-medium);
   color: #0a0714;
