@@ -6,67 +6,48 @@
       role="navigation"
     >
       <RouterLink
-        v-for="iconItem in bottomIconList"
+        v-for="iconItem in visibleBottomIconList"
         :key="iconItem.name"
-        v-slot="{ navigate }"
         :to="iconItem.route"
-        custom
+        class="iconStyle navigation-link"
+        :aria-label="`Navigate to ${iconItem.name}`"
+        :aria-current="route.name === iconItem.route ? 'page' : undefined"
+        @click="handleNavigationClick($event, iconItem.route)"
       >
-        <button
-          class="iconStyle navigation-link"
-          :aria-label="`Navigate to ${iconItem.name}`"
-          :aria-current="route.name === iconItem.route ? 'page' : undefined"
-          @click="handleNavigationClick({ _event: $event, iconItem, navigate })"
-          @keydown.enter="
-            handleNavigationClick({ _event: $event, iconItem, navigate })
-          "
-          @keydown.space.prevent="
-            handleNavigationClick({ _event: $event, iconItem, navigate })
-          "
-        >
-          <div class="iconDiv">
-            <NewNotificationIndicator
-              v-if="iconItem.route === '/notification/'"
-            />
-            <ZKStyledIcon
-              class="icon-container"
-              :class="{ 'icon-active': route.name === iconItem.route }"
-              :svg-string="
-                route.name === iconItem.route
-                  ? iconItem.filled
-                  : iconItem.standard
-              "
-            />
-          </div>
-
-          <ZKStyledText
-            class="icon-label"
-            :class="{ 'label-active': route.name === iconItem.route }"
-            :text="iconItem.name"
-            :add-gradient="route.name === iconItem.route"
+        <div class="iconDiv">
+          <NewNotificationIndicator
+            v-if="iconItem.route === '/notification/'"
           />
-        </button>
+          <ZKStyledIcon
+            class="icon-container"
+            :class="{ 'icon-active': route.name === iconItem.route }"
+            :svg-string="
+              route.name === iconItem.route
+                ? iconItem.filled
+                : iconItem.standard
+            "
+          />
+        </div>
+
+        <ZKStyledText
+          class="icon-label"
+          :class="{ 'label-active': route.name === iconItem.route }"
+          :text="iconItem.name"
+          :add-gradient="route.name === iconItem.route"
+        />
       </RouterLink>
     </nav>
-
-    <PreLoginIntentionDialog
-      v-model="showLoginDialog"
-      :ok-callback="() => {}"
-      active-intention="none"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
-import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import NewNotificationIndicator from "src/components/notification/NewNotificationIndicator.vue";
 import ZKStyledIcon from "src/components/ui-library/ZKStyledIcon.vue";
 import ZKStyledText from "src/components/ui-library/ZKStyledText.vue";
+import { useAuthenticatedNavigation } from "src/composables/navigation/useAuthenticatedNavigation";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useAuthenticationStore } from "src/stores/authentication";
 import { navigationIcons } from "src/utils/ui/navigationIcons";
-import { ref } from "vue";
+import { computed } from "vue";
 import { useRoute } from "vue-router";
 import type { RouteNamedMap } from "vue-router/auto-routes";
 
@@ -75,7 +56,7 @@ import {
   footerBarTranslations,
 } from "./FooterBar.i18n";
 
-const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
+const { isRouteVisible } = useAuthenticatedNavigation();
 
 const { t } = useComponentI18n<FooterBarTranslations>(footerBarTranslations);
 
@@ -84,7 +65,6 @@ interface BottomIcon {
   standard: string;
   filled: string;
   route: keyof RouteNamedMap;
-  requireAuth: boolean;
 }
 
 const bottomIconList: BottomIcon[] = [
@@ -93,42 +73,36 @@ const bottomIconList: BottomIcon[] = [
     standard: navigationIcons.home.standard,
     filled: navigationIcons.home.filled,
     route: "/",
-    requireAuth: false,
   },
   {
     name: t("explore"),
     standard: navigationIcons.explore.standard,
     filled: navigationIcons.explore.filled,
     route: "/topics/",
-    requireAuth: false,
   },
   {
     name: t("dings"),
     standard: navigationIcons.notification.standard,
     filled: navigationIcons.notification.filled,
     route: "/notification/",
-    requireAuth: true,
   },
 ];
 
 const route = useRoute();
-const showLoginDialog = ref(false);
 
-function handleNavigationClick({
-  _event,
-  iconItem,
-  navigate,
-}: {
-  _event: Event;
-  iconItem: BottomIcon;
-  navigate: () => void;
-}): void {
-  if (iconItem.requireAuth && isGuestOrLoggedIn.value === false) {
-    showLoginDialog.value = true;
-  } else if (route.name === iconItem.route) {
+// Filter bottom icon list based on authentication state
+const visibleBottomIconList = computed(() => {
+  return bottomIconList.filter((icon) => isRouteVisible(icon.route));
+});
+
+function handleNavigationClick(
+  event: Event,
+  targetRoute: keyof RouteNamedMap
+): void {
+  // If clicking on the current route, scroll to top
+  if (route.name === targetRoute) {
+    event.preventDefault();
     window.scrollTo({ top: 0, behavior: "smooth" });
-  } else {
-    navigate();
   }
 }
 </script>

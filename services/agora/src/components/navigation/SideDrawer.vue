@@ -23,49 +23,38 @@
           <RouterLink
             v-for="menuItem in navigationMenuItems"
             :key="menuItem.name"
-            v-slot="{ navigate }"
             :to="menuItem.route"
-            custom
+            class="navigation-link"
+            @click="handleNavigationClick"
           >
-            <div
-              class="navigation-link"
-              @click="
-                handleAuthenticatedRouteClick({
-                  _event: $event,
-                  requireAuth: menuItem.requireAuth,
-                  navigate,
-                })
-              "
+            <ZKHoverEffect
+              enable-hover
+              hover-background-color="#f3f4f6"
+              border-radius="15px"
             >
-              <ZKHoverEffect
-                enable-hover
-                hover-background-color="#f3f4f6"
-                border-radius="15px"
+              <div
+                class="settingItemStyle"
+                :class="{
+                  activeRoute: menuItem.matchRouteList.includes(route.name),
+                }"
               >
-                <div
-                  class="settingItemStyle"
-                  :class="{
-                    activeRoute: menuItem.matchRouteList.includes(route.name),
-                  }"
-                >
-                  <div class="iconItem">
-                    <ZKStyledIcon
-                      :svg-string="
-                        menuItem.matchRouteList.includes(route.name)
-                          ? menuItem.svgStringFilled
-                          : menuItem.svgStringStandard
-                      "
-                    />
+                <div class="iconItem">
+                  <ZKStyledIcon
+                    :svg-string="
+                      menuItem.matchRouteList.includes(route.name)
+                        ? menuItem.svgStringFilled
+                        : menuItem.svgStringStandard
+                    "
+                  />
 
-                    <NewNotificationIndicator v-if="menuItem.name == 'Dings'" />
-                  </div>
-
-                  <div class="itemName">
-                    {{ menuItem.name }}
-                  </div>
+                  <NewNotificationIndicator v-if="menuItem.name == 'Dings'" />
                 </div>
-              </ZKHoverEffect>
-            </div>
+
+                <div class="itemName">
+                  {{ menuItem.name }}
+                </div>
+              </div>
+            </ZKHoverEffect>
           </RouterLink>
         </div>
       </div>
@@ -81,17 +70,12 @@
         </div>
       </div>
     </div>
-
-    <PreLoginIntentionDialog
-      v-model="showLoginDialog"
-      :ok-callback="() => {}"
-      active-intention="none"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { useAuthenticatedNavigation } from "src/composables/navigation/useAuthenticatedNavigation";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNavigationStore } from "src/stores/navigation";
@@ -102,7 +86,6 @@ import { useRoute } from "vue-router";
 import type { RouteNamedMap } from "vue-router/auto-routes";
 
 import UserAvatar from "../account/UserAvatar.vue";
-import PreLoginIntentionDialog from "../authentication/intention/PreLoginIntentionDialog.vue";
 import DisplayUsername from "../features/user/DisplayUsername.vue";
 import StartConversationButtonLong from "../newConversation/StartConversationButtonLong.vue";
 import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
@@ -113,9 +96,14 @@ import {
   sideDrawerTranslations,
 } from "./SideDrawer.i18n";
 
-const { isGuestOrLoggedIn, isGuest } = storeToRefs(useAuthenticationStore());
+const { isGuestOrLoggedIn: authIsGuestOrLoggedIn, isRouteVisible } =
+  useAuthenticatedNavigation();
+const { isGuest } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
 const { drawerBehavior, showMobileDrawer } = storeToRefs(useNavigationStore());
+
+// Create local ref for template usage
+const isGuestOrLoggedIn = authIsGuestOrLoggedIn;
 
 const route = useRoute();
 
@@ -123,21 +111,12 @@ const { t, locale } = useComponentI18n<SideDrawerTranslations>(
   sideDrawerTranslations
 );
 
-const showLoginDialog = ref(false);
-
 interface NavigationMenuItem {
   name: string;
   route: keyof RouteNamedMap;
   matchRouteList: (keyof RouteNamedMap)[];
-  requireAuth: boolean;
   svgStringStandard: string;
   svgStringFilled: string;
-}
-
-interface HandleAuthenticatedRouteClickParams {
-  _event: Event;
-  requireAuth: boolean;
-  navigate: () => void;
 }
 
 const navigationMenuItems = ref<NavigationMenuItem[]>([]);
@@ -151,17 +130,20 @@ watch(locale, () => {
   initializeMenu();
 });
 
+watch(isGuestOrLoggedIn, () => {
+  initializeMenu();
+});
+
 function initializeMenu(): void {
   navigationMenuItems.value = []; // Clear existing items
   const menuItems: NavigationMenuItem[] = [];
 
   if (drawerBehavior.value === "desktop") {
-    menuItems.push(
+    const desktopMenuItems: NavigationMenuItem[] = [
       {
         name: t("home"),
         route: "/",
         matchRouteList: ["/"],
-        requireAuth: false,
         svgStringStandard: navigationIcons.home.standard,
         svgStringFilled: navigationIcons.home.filled,
       },
@@ -169,7 +151,6 @@ function initializeMenu(): void {
         name: t("explore"),
         route: "/topics/",
         matchRouteList: ["/topics/"],
-        requireAuth: false,
         svgStringStandard: navigationIcons.explore.standard,
         svgStringFilled: navigationIcons.explore.filled,
       },
@@ -177,19 +158,22 @@ function initializeMenu(): void {
         name: t("dings"),
         route: "/notification/",
         matchRouteList: ["/notification/"],
-        requireAuth: true,
         svgStringStandard: navigationIcons.notification.standard,
         svgStringFilled: navigationIcons.notification.filled,
-      }
+      },
+    ];
+
+    // Filter based on authentication requirements
+    menuItems.push(
+      ...desktopMenuItems.filter((item) => isRouteVisible(item.route))
     );
   }
 
-  const settingItemList: NavigationMenuItem[] = [
+  const settingMenuItems: NavigationMenuItem[] = [
     {
       name: t("profile"),
       route: "/user-profile/conversations/",
       matchRouteList: ["/user-profile/conversations/"],
-      requireAuth: true,
       svgStringStandard: navigationIcons.profile.standard,
       svgStringFilled: navigationIcons.profile.filled,
     },
@@ -197,27 +181,22 @@ function initializeMenu(): void {
       name: t("settings"),
       route: "/settings/",
       matchRouteList: ["/settings/"],
-      requireAuth: false,
       svgStringStandard: navigationIcons.settings.standard,
       svgStringFilled: navigationIcons.settings.filled,
     },
   ];
 
+  // Filter based on authentication requirements
+  const settingItemList = settingMenuItems.filter((item) =>
+    isRouteVisible(item.route)
+  );
+
   navigationMenuItems.value = [...menuItems, ...settingItemList];
 }
 
-function handleAuthenticatedRouteClick({
-  _event,
-  requireAuth,
-  navigate,
-}: HandleAuthenticatedRouteClickParams): void {
-  if (requireAuth && isGuestOrLoggedIn.value === false) {
-    showLoginDialog.value = true;
-  } else {
-    if (drawerBehavior.value == "mobile") {
-      showMobileDrawer.value = false;
-    }
-    navigate();
+function handleNavigationClick(): void {
+  if (drawerBehavior.value == "mobile") {
+    showMobileDrawer.value = false;
   }
 }
 </script>
