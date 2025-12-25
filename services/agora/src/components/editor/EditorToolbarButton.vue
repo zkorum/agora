@@ -29,15 +29,15 @@ interface Props {
   disabled?: boolean;
 }
 
-// Emits should be defined before logic, though not strict.
-const emit = defineEmits<{
-  click: [];
-}>();
-
 withDefaults(defineProps<Props>(), {
   isActive: false,
   disabled: false,
 });
+
+// Emits should be defined before logic, though not strict.
+const emit = defineEmits<{
+  click: [];
+}>();
 
 function handleClick() {
   emit("click");

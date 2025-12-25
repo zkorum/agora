@@ -65,8 +65,8 @@
 import { onClickOutside, useWindowScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
-import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import Editor from "src/components/editor/Editor.vue";
+import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,

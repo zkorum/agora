@@ -5,6 +5,7 @@ import Card from "primevue/card";
 import Chip from "primevue/chip";
 import PrimeVue from "primevue/config";
 import DatePicker from "primevue/datepicker";
+import Divider from "primevue/divider";
 import FileUpload from "primevue/fileupload";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
@@ -14,7 +15,6 @@ import Message from "primevue/message";
 import ProgressSpinner from "primevue/progressspinner";
 import Select from "primevue/select";
 import Tag from "primevue/tag";
-import Divider from "primevue/divider";
 
 import { defineBoot } from "#q-app/wrappers";
 

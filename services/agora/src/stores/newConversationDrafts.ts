@@ -2,8 +2,8 @@ import { type RemovableRef, useStorage } from "@vueuse/core";
 import { defineStore } from "pinia";
 import {
   MAX_LENGTH_BODY,
-  MAX_LENGTH_TITLE,
   MAX_LENGTH_OPTION,
+  MAX_LENGTH_TITLE,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
 import type { EventSlug, OrganizationProperties } from "src/shared/types/zod";
@@ -12,6 +12,7 @@ import { isValidPolisUrl } from "src/shared/utils/polis";
 import { processEnv } from "src/utils/processEnv";
 import { computed, ref, watch } from "vue";
 import { z } from "zod";
+
 import { useLanguageStore } from "./language";
 import { newConversationDraftsTranslations } from "./newConversationDrafts.i18n";
 

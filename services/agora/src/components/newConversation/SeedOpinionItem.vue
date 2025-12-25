@@ -46,13 +46,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
 import Editor from "src/components/editor/Editor.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_OPINION } from "src/shared/shared";
+import { ref } from "vue";
+
 import {
-  seedOpinionItemTranslations,
   type SeedOpinionItemTranslations,
+  seedOpinionItemTranslations,
 } from "./SeedOpinionItem.i18n";
 
 const props = defineProps<{

@@ -131,9 +131,9 @@
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ActiveImportBanner from "src/components/conversation/import/ActiveImportBanner.vue";
+import Editor from "src/components/editor/Editor.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
-import Editor from "src/components/editor/Editor.vue";
 import PolisCsvUpload from "src/components/newConversation/import/csv/PolisCsvUpload.vue";
 import PolisUrlInput from "src/components/newConversation/import/url/PolisUrlInput.vue";
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";

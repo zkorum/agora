@@ -11,9 +11,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { processUserGeneratedHtml } from "src/shared-app-api/html";
+import { computed } from "vue";
 
 import {
   type ZKHtmlContentTranslations,

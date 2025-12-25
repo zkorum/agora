@@ -81,23 +81,21 @@
 </template>
 
 <script setup lang="ts">
-import { watch, onBeforeUnmount } from "vue";
-import { useQuasar } from "quasar";
-import { useEditor, EditorContent } from "@tiptap/vue-3";
-import { BubbleMenu } from "@tiptap/vue-3/menus";
-import StarterKit from "@tiptap/starter-kit";
-import Placeholder from "@tiptap/extension-placeholder";
-import CharacterCount from "@tiptap/extension-character-count";
-import Underline from "@tiptap/extension-underline";
 import { Extension } from "@tiptap/core";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
+import CharacterCount from "@tiptap/extension-character-count";
+import Placeholder from "@tiptap/extension-placeholder";
+import Underline from "@tiptap/extension-underline";
 import { DOMSerializer } from "@tiptap/pm/model";
-import EditorToolbarButton from "./EditorToolbarButton.vue";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
+import StarterKit from "@tiptap/starter-kit";
+import { EditorContent,useEditor } from "@tiptap/vue-3";
+import { BubbleMenu } from "@tiptap/vue-3/menus";
+import { useQuasar } from "quasar";
 import sanitizeHtml from "sanitize-html";
 import { htmlToCountedText } from "src/shared/shared";
+import { onBeforeUnmount,watch } from "vue";
 
-const $q = useQuasar();
-const modelText = defineModel<string>({ required: true });
+import EditorToolbarButton from "./EditorToolbarButton.vue";
 
 const props = defineProps<{
   showToolbar: boolean;
@@ -107,11 +105,12 @@ const props = defineProps<{
   singleLine: boolean;
   maxLength: number;
 }>();
-
 const emit = defineEmits<{
   manuallyFocused: [];
   blur: [];
 }>();
+const $q = useQuasar();
+const modelText = defineModel<string>({ required: true });
 
 // Custom extension to block Enter key in single-line mode
 const BlockEnterExtension = Extension.create({
