@@ -1,48 +1,49 @@
 <template>
-  <PrimeCard
-    class="opinion-card"
-    :class="{
-      'opinion-card-error': !!errorMessage,
-    }"
-    @click="handleCardClick"
-  >
-    <template #content>
-      <div class="opinion-card-content-wrapper">
-        <div class="opinion-input-container">
-          <div v-if="errorMessage" class="opinion-error-message">
-            <q-icon name="mdi-alert-circle" class="opinion-error-icon" />
-            {{ errorMessage }}
+  <div @click="handleCardClick">
+    <PrimeCard
+      class="opinion-card"
+      :class="{
+        'opinion-card-error': !!errorMessage,
+      }"
+    >
+      <template #content>
+        <div class="opinion-card-content-wrapper">
+          <div class="opinion-input-container">
+            <div v-if="errorMessage" class="opinion-error-message">
+              <q-icon name="mdi-alert-circle" class="opinion-error-icon" />
+              {{ errorMessage }}
+            </div>
+
+            <Editor
+              ref="editorRef"
+              :model-value="modelValue"
+              class="textarea-border-style"
+              :placeholder="t('inputTextPlaceholder')"
+              :show-toolbar="isActive"
+              :single-line="false"
+              :max-length="MAX_LENGTH_OPINION"
+              :disabled="false"
+              min-height="3rem"
+              @update:model-value="(val) => $emit('update:modelValue', val)"
+              @manually-focused="$emit('focus')"
+              @blur="$emit('blur')"
+            />
+
+            <!-- Delete button - visible when active -->
+            <PrimeButton
+              v-if="isActive"
+              :label="t('deleteOpinion')"
+              icon="pi pi-trash"
+              severity="danger"
+              text
+              class="delete-button"
+              @mousedown="$emit('remove')"
+            />
           </div>
-
-          <Editor
-            ref="editorRef"
-            :model-value="modelValue"
-            class="textarea-border-style"
-            :placeholder="t('inputTextPlaceholder')"
-            :show-toolbar="isActive"
-            :single-line="false"
-            :max-length="MAX_LENGTH_OPINION"
-            :disabled="false"
-            min-height="3rem"
-            @update:model-value="(val) => $emit('update:modelValue', val)"
-            @manually-focused="$emit('focus')"
-            @blur="$emit('blur')"
-          />
-
-          <!-- Delete button - visible when active -->
-          <PrimeButton
-            v-if="isActive"
-            :label="t('deleteOpinion')"
-            icon="pi pi-trash"
-            severity="danger"
-            text
-            class="delete-button"
-            @mousedown="$emit('remove')"
-          />
         </div>
-      </div>
-    </template>
-  </PrimeCard>
+      </template>
+    </PrimeCard>
+  </div>
 </template>
 
 <script setup lang="ts">

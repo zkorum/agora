@@ -8,6 +8,7 @@ import type { GetUserProfileResponse } from "src/shared/types/dto";
 import { Dto } from "src/shared/types/dto";
 import type {
   ExtendedConversation,
+  ExtendedOpinion,
 } from "src/shared/types/zod";
 
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";

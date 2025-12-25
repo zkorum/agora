@@ -67,6 +67,9 @@ import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import Editor from "src/components/editor/Editor.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
+import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
 import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,

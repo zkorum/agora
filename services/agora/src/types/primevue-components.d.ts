@@ -58,6 +58,7 @@ declare module "vue" {
     PrimeProgressSpinner: typeof import("primevue/progressspinner")["default"];
     PrimeMessage: typeof import("primevue/message")["default"];
     PrimeTag: typeof import("primevue/tag")["default"];
+    PrimeDivider: typeof import("primevue/divider")["default"];
   }
 }
 

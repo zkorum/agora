@@ -2,6 +2,10 @@ import { storeToRefs } from "pinia";
 import {
   type ApiV1OpinionCreatePostRequest,
   type ApiV1OpinionFetchAnalysisByConversationPost200Response,
+  type ApiV1OpinionFetchByConversationPostRequest,
+  type ApiV1OpinionFetchBySlugIdListPostRequest,
+  type ApiV1OpinionFetchHiddenByConversationPostRequest,
+  type ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";

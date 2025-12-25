@@ -42,7 +42,6 @@
             v-if="currentTab == 'comment'"
             ref="opinionSectionRef"
             :post-slug-id="conversationData.metadata.conversationSlugId"
-            :is-post-locked="isPostLocked"
             :login-required-to-participate="
               conversationData.metadata.isLoginRequired
             "
