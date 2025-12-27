@@ -131,7 +131,7 @@ const conversationSlugId = computed(() => {
 });
 
 // Redirect if export feature is disabled
-if (processEnv.VITE_CONVERSATION_EXPORT_ENABLED === "false") {
+if (processEnv.VITE_EXPORT_CONVOS_ENABLED === "false") {
   showNotifyMessage(t("exportFeatureDisabled"));
   void router.replace({
     name: "/conversation/[postSlugId]",
