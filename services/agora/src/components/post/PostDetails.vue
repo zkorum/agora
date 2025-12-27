@@ -22,7 +22,9 @@
           :participant-count="participantCountLocal"
           :vote-count="props.conversationData.metadata.voteCount"
           :is-loading="isCurrentTabLoading"
-          @share="shareClicked()"
+          :conversation-slug-id="conversationData.metadata.conversationSlugId"
+          :conversation-title="conversationData.payload.title"
+          :author-username="conversationData.metadata.authorUsername"
         />
 
         <div v-if="!compactMode">
@@ -76,25 +78,13 @@
         @ticket-verified="(payload) => handleTicketVerified(payload)"
       />
     </FloatingBottomContainer>
-
-    <!-- Share Actions Dialog -->
-    <ZKActionDialog
-      v-model="shareActions.dialogState.value.isVisible"
-      :actions="shareActions.dialogState.value.actions"
-      @action-selected="handleShareActionSelected"
-      @dialog-closed="shareActions.closeDialog"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { copyToClipboard, useQuasar } from "quasar";
-import { useShareActions } from "src/composables/share/useShareActions";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
-import type { ContentAction } from "src/utils/actions/core/types";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import {
   useAnalysisQuery,
@@ -102,24 +92,15 @@ import {
   useHiddenCommentsQuery,
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
-import { useWebShare } from "src/utils/share/WebShare";
-import { useNotify } from "src/utils/ui/notify";
-import { useConversationUrl } from "src/utils/url/conversationUrl";
 import { computed, onMounted, ref, watch } from "vue";
 
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
-import ZKActionDialog from "../ui-library/ZKActionDialog.vue";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import AnalysisPage from "./analysis/AnalysisPage.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
 import CommentSection from "./comments/CommentSection.vue";
 import PostContent from "./display/PostContent.vue";
 import PostActionBar from "./interactionBar/PostActionBar.vue";
-import {
-  type PostDetailsTranslations,
-  postDetailsTranslations,
-} from "./PostDetails.i18n";
-import ShareDialog from "./ShareDialog.vue";
 
 const props = defineProps<{
   conversationData: ExtendedConversation;
@@ -139,20 +120,12 @@ const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
 
 const opinionCountOffset = ref(0);
 
-const webShare = useWebShare();
-const $q = useQuasar();
-const { getConversationUrl } = useConversationUrl();
 const {
   invalidateAnalysis,
   forceRefreshAnalysis,
   invalidateComments,
   invalidateHiddenComments,
 } = useInvalidateCommentQueries();
-const shareActions = useShareActions();
-const notify = useNotify();
-const { t } = useComponentI18n<PostDetailsTranslations>(
-  postDetailsTranslations
-);
 const { loadAuthenticatedModules } = useBackendAuthApi();
 const userStore = useUserStore();
 
@@ -299,45 +272,6 @@ async function submittedComment(data: {
       }
     }
   }
-}
-
-function shareClicked(): void {
-  const sharePostUrl = getConversationUrl(
-    props.conversationData.metadata.conversationSlugId
-  );
-  const shareTitle = "Agora - " + props.conversationData.payload.title;
-
-  // Check if Web Share API is available
-  const isWebShareAvailable =
-    typeof navigator !== "undefined" && navigator.share !== undefined;
-
-  // Show share actions menu
-  shareActions.showShareActions({
-    targetType: "post",
-    targetId: props.conversationData.metadata.conversationSlugId,
-    targetAuthor: props.conversationData.metadata.authorUsername,
-    copyLinkCallback: async () => {
-      await copyToClipboard(sharePostUrl);
-      notify.showNotifyMessage(t("copiedToClipboard"));
-    },
-    openQrCodeCallback: () => {
-      $q.dialog({
-        component: ShareDialog,
-        componentProps: {
-          url: sharePostUrl,
-          title: shareTitle,
-        },
-      });
-    },
-    shareViaCallback: async () => {
-      await webShare.share(shareTitle, sharePostUrl);
-    },
-    isWebShareAvailable,
-  });
-}
-
-async function handleShareActionSelected(action: ContentAction): Promise<void> {
-  await shareActions.executeAction(action);
 }
 
 onMounted(async () => {
