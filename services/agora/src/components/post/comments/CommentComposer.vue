@@ -1,12 +1,14 @@
 <template>
   <div ref="target">
-    <div class="container borderStyle">
-      <ZKEditor
+    <div class="container borderStyle" :class="{ focused: innerFocus }">
+      <Editor
         v-model="opinionBody"
         :placeholder="t('placeholder')"
         :min-height="innerFocus ? '6rem' : '2rem'"
         :show-toolbar="innerFocus"
-        :add-background-color="true"
+        :single-line="false"
+        :max-length="MAX_LENGTH_OPINION"
+        :disabled="isPostLocked"
         @update:model-value="checkWordCount()"
         @manually-focused="editorFocused()"
       />
@@ -24,13 +26,12 @@
           :thickness="0.3"
         />
 
-        <q-separator vertical inset />
+        <q-separator v-if="characterProgress > 0" vertical inset />
 
-        <ZKButton
-          button-type="largeButton"
+        <PrimeButton
           :label="t('postButton')"
-          color="primary"
-          :disable="
+          severity="primary"
+          :disabled="
             characterProgress > 100 ||
             characterProgress == 0 ||
             isSubmissionLoading ||
@@ -44,8 +45,8 @@
 
     <ExitRoutePrompt
       v-model="showExitDialog"
-      title="Save opinion as draft?"
-      description="Your draft opinion will be here when you return."
+      :title="t('exitPromptTitle')"
+      :description="t('exitPromptDescription')"
       :save-draft="saveDraft"
       :no-save-draft="noSaveDraft"
     />
@@ -64,9 +65,8 @@
 import { onClickOutside, useWindowScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import Editor from "src/components/editor/Editor.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
 import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
@@ -94,6 +94,7 @@ const props = defineProps<{
   postSlugId: string;
   loginRequiredToParticipate: boolean;
   requiresEventTicket?: EventSlug;
+  isPostLocked: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -102,10 +103,10 @@ const emit = defineEmits<{
       opinionSlugId: string;
       authStateChanged: boolean;
       needsCacheRefresh: boolean;
-    }
+    },
   ];
   ticketVerified: [
-    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
   ];
 }>();
 
@@ -165,7 +166,12 @@ const {
 } = useRouteGuard(() => characterCount.value > 0, onBeforeRouteLeaveCallback);
 
 const characterProgress = computed(() => {
-  return (characterCount.value / MAX_LENGTH_OPINION) * 100;
+  const progressPercentage = (characterCount.value / MAX_LENGTH_OPINION) * 100;
+  if (progressPercentage < 1 && progressPercentage > 0) {
+    return 1;
+  } else {
+    return progressPercentage;
+  }
 });
 
 const { y: yScroll } = useWindowScroll();
@@ -211,12 +217,16 @@ async function onLoginCallback() {
   saveOpinionDraft(props.postSlugId, opinionBody.value);
 
   // Don't unlock route yet - keep draft protected until verification completes
-  createNewOpinionIntention(props.postSlugId, opinionBody.value, props.requiresEventTicket);
+  createNewOpinionIntention(
+    props.postSlugId,
+    opinionBody.value,
+    props.requiresEventTicket
+  );
 
   const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
   const hasZupassRequirement = props.requiresEventTicket !== undefined;
 
-  console.log('[CommentComposer] onLoginCallback', {
+  console.log("[CommentComposer] onLoginCallback", {
     needsLogin,
     hasZupassRequirement,
     isLoggedIn: isLoggedIn.value,
@@ -224,11 +234,11 @@ async function onLoginCallback() {
 
   // If user just needs Zupass verification (no login required), trigger it inline
   if (!needsLogin && hasZupassRequirement) {
-    console.log('[CommentComposer] Triggering inline Zupass verification');
+    console.log("[CommentComposer] Triggering inline Zupass verification");
     await handleZupassVerification();
   } else {
     // Otherwise, unlock route so user can navigate to login
-    console.log('[CommentComposer] Unlocking route for login navigation');
+    console.log("[CommentComposer] Unlocking route for login navigation");
     unlockRoute();
   }
 }
@@ -260,16 +270,16 @@ function checkWordCount() {
 }
 
 async function handleZupassVerification() {
-  console.log('[CommentComposer] handleZupassVerification called', {
+  console.log("[CommentComposer] handleZupassVerification called", {
     requiresEventTicket: props.requiresEventTicket,
   });
 
   if (props.requiresEventTicket === undefined) {
-    console.log('[CommentComposer] No event ticket required, returning');
+    console.log("[CommentComposer] No event ticket required, returning");
     return;
   }
 
-  console.log('[CommentComposer] Starting verifyTicket call');
+  console.log("[CommentComposer] Starting verifyTicket call");
   // Dialog will close when Zupass iframe is ready (via callback)
   const result = await verifyTicket({
     eventSlug: props.requiresEventTicket,
@@ -281,7 +291,7 @@ async function handleZupassVerification() {
 
   if (result.success) {
     // Emit to parent so banner gets refreshed
-    console.log('[CommentComposer] Emitting ticketVerified event', {
+    console.log("[CommentComposer] Emitting ticketVerified event", {
       userIdChanged: result.userIdChanged,
       needsCacheRefresh: result.needsCacheRefresh,
     });
@@ -360,7 +370,10 @@ async function submitPostClicked() {
 <style scoped lang="scss">
 .container {
   width: 100%;
-  background-color: #e5e5e5;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
 }
 
 .actionBar {
@@ -381,11 +394,19 @@ async function submitPostClicked() {
 }
 
 .borderStyle {
-  border-radius: 15px;
+  border-radius: 20px;
   padding: 0.5rem;
-  border-color: rgb(222, 222, 222);
+  border-color: rgba(255, 255, 255, 0.3);
   border-style: solid;
   border-width: 1px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &.focused {
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+  }
 }
 
 .dummyInputStyle {

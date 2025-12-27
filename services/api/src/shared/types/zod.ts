@@ -7,6 +7,9 @@ import {
     MIN_LENGTH_USERNAME,
     MAX_LENGTH_USERNAME,
     MAX_LENGTH_BODY,
+    MAX_LENGTH_BODY_HTML,
+    MAX_LENGTH_OPINION,
+    MAX_LENGTH_OPINION_HTML,
     MAX_LENGTH_USER_REPORT_EXPLANATION,
     validateHtmlStringCharacterCount,
 } from "../shared.js";
@@ -134,17 +137,30 @@ export const zodDevice = z
     .strict();
 export const zodDevices = z.array(zodDevice); // list of didWrite of all the devices belonging to a user
 export const zodConversationTitle = z.string().max(MAX_LENGTH_TITLE).min(1);
-export const zodConversationBody = z
+
+// For API input validation - validates both HTML string length AND plain text character count
+export const zodConversationBodyInput = z
     .string()
+    .max(MAX_LENGTH_BODY_HTML, {
+        message: `Raw HTML content exceeds maximum length of ${MAX_LENGTH_BODY_HTML} characters`,
+    })
     .refine(
         (val: string) => {
             return validateHtmlStringCharacterCount(val, "conversation")
                 .isValid;
         },
         {
-            message: "The HTML body's character count had exceeded the limit",
+            message: `Plain text content exceeds maximum length of ${MAX_LENGTH_BODY} characters`,
         },
     )
+    .optional();
+
+// For database/API output - validates HTML string length only (after linkification may add extra chars)
+export const zodConversationBodyOutput = z
+    .string()
+    .max(MAX_LENGTH_BODY_HTML, {
+        message: `Raw HTML content exceeds maximum length of ${MAX_LENGTH_BODY_HTML} characters`,
+    })
     .optional();
 export const zodPollOptionTitle = z.string().max(MAX_LENGTH_OPTION).min(1);
 export const zodPollOptionWithResult = z
@@ -158,7 +174,7 @@ export const zodConversationList = z.array(zodPollOptionWithResult).optional();
 export const zodConversationDataWithResult = z
     .object({
         title: zodConversationTitle,
-        body: zodConversationBody,
+        body: zodConversationBodyOutput,
         poll: zodConversationList,
     })
     .strict();
@@ -216,7 +232,7 @@ export const zodUsername = z
 export const zodUserMuteAction = z.enum(["mute", "unmute"]);
 export const zodUserMuteItem = z
     .object({
-        createdAt: z.date(),
+        createdAt: zodDateTimeFlexible,
         username: z.string(),
     })
     .strict();
@@ -229,7 +245,7 @@ export const zodUserReportItem = z.object({
     username: z.string(),
     reason: zodUserReportReason,
     explanation: zodUserReportExplanation.optional(),
-    createdAt: z.date(),
+    createdAt: zodDateTimeFlexible,
     id: z.number(),
 });
 
@@ -389,8 +405,8 @@ export const zodConversationModerationProperties = z.discriminatedUnion(
                 action: zodConversationModerationAction,
                 reason: zodModerationReason,
                 explanation: zodModerationExplanation,
-                createdAt: z.date(),
-                updatedAt: z.date(),
+                createdAt: zodDateTimeFlexible,
+                updatedAt: zodDateTimeFlexible,
             })
             .strict(),
         z
@@ -408,8 +424,8 @@ export const zodOpinionModerationProperties = z.discriminatedUnion("status", [
             action: zodOpinionModerationAction,
             reason: zodModerationReason,
             explanation: zodModerationExplanation,
-            createdAt: z.date(),
-            updatedAt: z.date(),
+            createdAt: zodDateTimeFlexible,
+            updatedAt: zodDateTimeFlexible,
         })
         .strict(),
     z
@@ -422,9 +438,9 @@ export const zodOpinionModerationProperties = z.discriminatedUnion("status", [
 export const zodConversationMetadata = z
     .object({
         conversationSlugId: zodSlugId,
-        createdAt: z.date(),
-        updatedAt: z.date(),
-        lastReactedAt: z.date(),
+        createdAt: zodDateTimeFlexible,
+        updatedAt: zodDateTimeFlexible,
+        lastReactedAt: zodDateTimeFlexible,
         opinionCount: zodCount,
         voteCount: zodCount,
         participantCount: zodCount,
@@ -455,17 +471,30 @@ export const zodConversationMetadataWithId = z
     })
     .strict();
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
-export const zodOpinionContent = z
+
+// For API input validation - validates both HTML string length AND plain text character count
+export const zodOpinionContentInput = z
     .string()
     .min(1)
+    .max(MAX_LENGTH_OPINION_HTML, {
+        message: `Raw HTML content exceeds maximum length of ${MAX_LENGTH_OPINION_HTML} characters`,
+    })
     .refine(
         (val: string) => {
             return validateHtmlStringCharacterCount(val, "opinion").isValid;
         },
         {
-            message: "The HTML body's character count had exceeded the limit",
+            message: `Plain text content exceeds maximum length of ${MAX_LENGTH_OPINION} characters`,
         },
     );
+
+// For database/API output - validates HTML string length only (after linkification may add extra chars)
+export const zodOpinionContentOutput = z
+    .string()
+    .min(1)
+    .max(MAX_LENGTH_OPINION_HTML, {
+        message: `Raw HTML content exceeds maximum length of ${MAX_LENGTH_OPINION_HTML} characters`,
+    });
 export const zodAgreementType = z.enum(["agree", "disagree"]);
 export const zodVotingOption = z.enum(["agree", "disagree", "pass"]);
 export const zodVotingAction = z.enum(["agree", "disagree", "pass", "cancel"]);
@@ -480,9 +509,9 @@ export const zodClusterStats = z.object({
 export const zodOpinionItem = z
     .object({
         opinionSlugId: zodSlugId,
-        createdAt: z.date(),
-        updatedAt: z.date(),
-        opinion: zodOpinionContent,
+        createdAt: zodDateTimeFlexible,
+        updatedAt: zodDateTimeFlexible,
+        opinion: zodOpinionContentOutput,
         numParticipants: z.number().int().nonnegative(),
         numAgrees: z.number().int().nonnegative(),
         numDisagrees: z.number().int().nonnegative(),
@@ -1075,7 +1104,7 @@ export type ExtendedConversationPayload = z.infer<
     typeof zodConversationDataWithResult
 >;
 export type PollOptionWithResult = z.infer<typeof zodPollOptionWithResult>;
-export type CommentContent = z.infer<typeof zodOpinionContent>;
+export type CommentContent = z.infer<typeof zodOpinionContentOutput>;
 export type OpinionItem = z.infer<typeof zodOpinionItem>;
 export type AnalysisOpinionItem = z.infer<typeof zodAnalysisOpinionItem>;
 export type OpinionItemPerSlugId = z.infer<typeof zodOpinionItemPerSlugId>;

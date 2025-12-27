@@ -3,11 +3,8 @@
     <TopMenuWrapper>
       <BackButton />
 
-      <ZKButton
-        button-type="largeButton"
-        color="primary"
+      <PrimeButton
         :label="isSubmitButtonLoading ? t('posting') : t('post')"
-        size="0.8rem"
         :loading="isSubmitButtonLoading"
         @click="onSubmit()"
       />
@@ -28,65 +25,46 @@
           {{ t("seedOpinionsDescription") }}
         </p>
 
-        <!-- Add Opinion Button -->
-        <div class="add-button-container">
-          <ConversationControlButton
-            :label="t('add')"
-            icon="pi pi-plus"
-            :show-border="false"
-            icon-position="left"
-            @click="addNewOpinion"
-          />
-        </div>
-
         <!-- Seed Opinions List -->
         <div
           v-if="conversationDraft.seedOpinions.length > 0"
           class="opinions-list"
         >
-          <div
+          <SeedOpinionItem
             v-for="(opinion, index) in conversationDraft.seedOpinions"
             :key="index"
             :ref="
               (el: Element | ComponentPublicInstance | null) =>
                 setOpinionRef(el, index)
             "
-            class="opinion-item"
-          >
-            <div class="opinion-input-container">
-              <div v-if="opinionErrors[index]" class="opinion-error-message">
-                <q-icon name="mdi-alert-circle" class="opinion-error-icon" />
-                {{ opinionErrors[index] }}
-              </div>
+            :model-value="opinion"
+            :error-message="opinionErrors[index]"
+            :is-active="currentActiveOpinionIndex === index"
+            @update:model-value="
+              (val) => {
+                conversationDraft.seedOpinions[index] = val;
+                checkOpinionWordCount(index);
+              }
+            "
+            @focus="
+              () => {
+                currentActiveOpinionIndex = index;
+                clearOpinionError(index);
+              }
+            "
+            @blur="currentActiveOpinionIndex = -1"
+            @remove="removeOpinion(index)"
+          />
+        </div>
 
-              <ZKEditor
-                v-model="conversationDraft.seedOpinions[index]"
-                class="textarea-border-style"
-                :placeholder="t('inputTextPlaceholder')"
-                :show-toolbar="true"
-                min-height="1rem"
-                :add-background-color="true"
-                :class="{
-                  'textarea-active-border': currentActiveOpinionIndex === index,
-                  'textarea-error-border': opinionErrors[index],
-                }"
-                @update:model-value="checkOpinionWordCount(index)"
-                @manually-focused="
-                  () => {
-                    currentActiveOpinionIndex = index;
-                    clearOpinionError(index);
-                  }
-                "
-              />
-            </div>
-
-            <ZKButton
-              icon="mdi-delete"
-              button-type="icon"
-              class="buttonColor"
-              @click="removeOpinion(index)"
-            />
-          </div>
+        <!-- Add Opinion Button -->
+        <div class="add-button-container">
+          <ConversationControlButton
+            :label="t('addOpinion')"
+            :show-border="false"
+            variant="filled"
+            @mousedown.prevent="addNewOpinion"
+          />
         </div>
       </div>
     </div>
@@ -113,8 +91,7 @@ import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue"
 import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ZKEditor from "src/components/ui-library/ZKEditor.vue";
+import SeedOpinionItem from "src/components/newConversation/SeedOpinionItem.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   MAX_LENGTH_OPINION,
@@ -127,7 +104,7 @@ import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useCommonApi } from "src/utils/api/common";
 import { useBackendPostApi } from "src/utils/api/post/post";
-import { type ComponentPublicInstance, onMounted,ref } from "vue";
+import { type ComponentPublicInstance, nextTick,onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -153,6 +130,9 @@ const routeGuard = ref<{ unlockRoute: () => void } | undefined>(undefined);
 // Validation state
 const opinionErrors = ref<Record<number, string>>({});
 const opinionRefs = ref<Record<number, HTMLElement>>({});
+const opinionComponentRefs = ref<
+  Record<number, InstanceType<typeof SeedOpinionItem>>
+>({});
 
 const { createNewConversationIntention } = useLoginIntentionStore();
 const navigationStore = useNavigationStore();
@@ -175,11 +155,15 @@ function onLoginCallback() {
 function setOpinionRef(
   el: Element | ComponentPublicInstance | null,
   index: number
-) {
+): void {
   if (el) {
     // Handle Vue component instance
     if ("$el" in el) {
       opinionRefs.value[index] = el.$el as HTMLElement;
+      // Store component instance for calling focus method
+      opinionComponentRefs.value[index] = el as InstanceType<
+        typeof SeedOpinionItem
+      >;
     } else {
       // Handle direct DOM element
       opinionRefs.value[index] = el as HTMLElement;
@@ -209,11 +193,33 @@ function checkOpinionWordCount(index: number) {
   }
 }
 
-function addNewOpinion() {
+async function addNewOpinion(): Promise<void> {
   conversationDraft.value.seedOpinions.push("");
+  const newIndex = conversationDraft.value.seedOpinions.length - 1;
+
+  // Wait for Vue to render the new element
+  await nextTick();
+
+  // Scroll to the new opinion and focus it
+  const newElement = opinionRefs.value[newIndex];
+  if (newElement) {
+    newElement.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }
+
+  // Focus the new opinion's editor
+  const newComponent = opinionComponentRefs.value[newIndex];
+  if (newComponent) {
+    // Small delay to ensure scroll completes before focus
+    setTimeout(() => {
+      newComponent.focus();
+    }, 100);
+  }
 }
 
-function removeOpinion(index: number) {
+function removeOpinion(index: number): void {
   conversationDraft.value.seedOpinions.splice(index, 1);
   // Clear any error for this index
   clearOpinionError(index);
@@ -241,6 +247,22 @@ function removeOpinion(index: number) {
     // Skip the removed index (idx === index) to clean it up
   });
   opinionRefs.value = newRefs;
+
+  // Clean up opinionComponentRefs to prevent memory leaks
+  const newComponentRefs: Record<
+    number,
+    InstanceType<typeof SeedOpinionItem>
+  > = {};
+  Object.keys(opinionComponentRefs.value).forEach((key) => {
+    const idx = parseInt(key);
+    if (idx < index) {
+      newComponentRefs[idx] = opinionComponentRefs.value[idx];
+    } else if (idx > index) {
+      newComponentRefs[idx - 1] = opinionComponentRefs.value[idx];
+    }
+    // Skip the removed index (idx === index) to clean it up
+  });
+  opinionComponentRefs.value = newComponentRefs;
 }
 
 function validateSeedOpinions(): boolean {
@@ -392,63 +414,39 @@ async function onSubmit() {
 }
 
 .add-button-container {
+  position: sticky;
+  bottom: 0;
   display: flex;
-  justify-content: flex-start;
+  padding: 1rem;
+  margin: 1rem -1rem 0; // Negative margin to extend to container edges
+  z-index: 10;
+
+  // Border for visual separation when overlapping with opinion cards
+  border-top: 1px solid #e0e0e0;
+
+  // Subtle background with gradient fade for visual separation
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.9) 15%,
+    rgba(255, 255, 255, 1) 30%
+  );
+
+  // Padding to account for the gradient transparency
+  padding-top: 1.5rem;
+
+  // For devices with notches/home indicators
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+
+  // Make button span full width
+  > * {
+    width: 100%;
+  }
 }
 
 .opinions-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-}
-
-.opinion-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.buttonColor {
-  color: #9a97a4;
-}
-
-.textarea-border-style {
-  border-radius: 12px;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #e2e1e7;
-  padding: 1rem;
-  background-color: white;
-
-  &:hover {
-    border-color: #6b4eff;
-  }
-}
-
-.textarea-active-border {
-  border-color: #6b4eff;
-}
-
-.textarea-error-border {
-  border-color: #f44336;
-}
-
-.opinion-input-container {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.opinion-error-message {
-  display: flex;
-  align-items: center;
-  color: #f44336;
-  font-size: 0.9rem;
-}
-
-.opinion-error-icon {
-  font-size: 1rem;
-  margin-right: 0.5rem;
+  gap: 2rem;
 }
 </style>

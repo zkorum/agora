@@ -14,5 +14,13 @@
   bottom: 0rem;
   width: min(35rem, 100%);
   z-index: 100;
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
 }
 </style>
