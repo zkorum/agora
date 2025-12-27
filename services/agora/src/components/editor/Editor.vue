@@ -122,6 +122,33 @@ const BlockEnterExtension = Extension.create({
   },
 });
 
+// Extension to clear storedMarks on selection change (for mobile bubble menu)
+// This prevents formatting from persisting when user clicks elsewhere after applying a mark
+const ClearStoredMarksOnSelectionChange = Extension.create({
+  name: "clearStoredMarksOnSelectionChange",
+
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: new PluginKey("clearStoredMarksOnSelectionChange"),
+        appendTransaction(transactions, oldState, newState) {
+          // Check if selection changed but doc didn't change
+          const selectionChanged = !oldState.selection.eq(newState.selection);
+          const docChanged = transactions.some((tr) => tr.docChanged);
+
+          // Only clear storedMarks if selection changed without doc change
+          // (i.e., user clicked somewhere, not typed or formatted)
+          if (selectionChanged && !docChanged) {
+            // setStoredMarks([]) means "next typed character has no marks"
+            return newState.tr.setStoredMarks([]);
+          }
+          return null;
+        },
+      }),
+    ];
+  },
+});
+
 // Custom extension factory to enforce character limits using transaction filtering
 const createCharacterLimitExtension = (maxLength: number) =>
   Extension.create({
@@ -184,6 +211,8 @@ const editor = useEditor({
     createCharacterLimitExtension(props.maxLength),
     // Add Enter key blocker for single-line mode
     ...(props.singleLine ? [BlockEnterExtension] : []),
+    // Clear storedMarks on selection change for mobile (bubble menu UX)
+    ...($q.platform.is.mobile ? [ClearStoredMarksOnSelectionChange] : []),
   ],
   editorProps: {
     attributes: {
