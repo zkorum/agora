@@ -149,7 +149,10 @@ export async function processConversationExport({
         const generators = factory.getAllGenerators();
 
         // Validate S3 configuration
-        if (!config.AWS_S3_BUCKET_NAME || !config.AWS_S3_REGION) {
+        if (
+            !config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME ||
+            !config.EXPORT_CONVOS_AWS_S3_REGION
+        ) {
             throw new Error("S3 configuration is missing");
         }
 
@@ -191,7 +194,7 @@ export async function processConversationExport({
                 await uploadToS3({
                     s3Key,
                     buffer: csvBuffer,
-                    bucketName: config.AWS_S3_BUCKET_NAME,
+                    bucketName: config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME,
                     fileName: downloadFileName,
                 });
 
@@ -233,7 +236,7 @@ export async function processConversationExport({
                 try {
                     await deleteFromS3({
                         s3Key,
-                        bucketName: config.AWS_S3_BUCKET_NAME,
+                        bucketName: config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME,
                     });
                     log.info(`Rolled back S3 file: ${s3Key}`);
                 } catch (deleteError: unknown) {
@@ -421,11 +424,11 @@ export async function getConversationExportStatus({
     let filesWithUrls: ExportFileInfo[] | undefined = undefined;
 
     if (fileRecords.length > 0) {
-        if (!config.AWS_S3_BUCKET_NAME) {
+        if (!config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME) {
             throw new Error("S3 configuration is missing");
         }
 
-        const bucketName = config.AWS_S3_BUCKET_NAME;
+        const bucketName = config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME;
 
         filesWithUrls = await Promise.all(
             fileRecords.map(async (file) => {
@@ -433,7 +436,8 @@ export async function getConversationExportStatus({
                 const { url, expiresAt } = await generatePresignedUrl({
                     s3Key: file.s3Key,
                     bucketName,
-                    expiresIn: config.S3_PRESIGNED_URL_EXPIRY_SECONDS,
+                    expiresIn:
+                        config.EXPORT_CONVOS_S3_PRESIGNED_URL_EXPIRY_SECONDS,
                 });
 
                 return {
@@ -657,10 +661,10 @@ export async function deleteConversationExport({
 
         // Delete from S3
         for (const file of fileRecords) {
-            if (file.s3Key && config.AWS_S3_BUCKET_NAME) {
+            if (file.s3Key && config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME) {
                 await deleteFromS3({
                     s3Key: file.s3Key,
-                    bucketName: config.AWS_S3_BUCKET_NAME,
+                    bucketName: config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME,
                 });
             }
         }
@@ -829,10 +833,10 @@ export async function cleanupExpiredExports({
 
             // Delete from S3
             for (const file of fileRecords) {
-                if (file.s3Key && config.AWS_S3_BUCKET_NAME) {
+                if (file.s3Key && config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME) {
                     await deleteFromS3({
                         s3Key: file.s3Key,
-                        bucketName: config.AWS_S3_BUCKET_NAME,
+                        bucketName: config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME,
                     });
                 }
             }
@@ -921,11 +925,12 @@ export async function deleteAllConversationExports({
 
                 // Delete from S3
                 for (const file of fileRecords) {
-                    if (file.s3Key && config.AWS_S3_BUCKET_NAME) {
+                    if (file.s3Key && config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME) {
                         try {
                             await deleteFromS3({
                                 s3Key: file.s3Key,
-                                bucketName: config.AWS_S3_BUCKET_NAME,
+                                bucketName:
+                                    config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME,
                             });
                         } catch (s3Error: unknown) {
                             log.error(

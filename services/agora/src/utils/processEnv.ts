@@ -36,7 +36,7 @@ export const envSchema = z.object({
   // Note: We use z.enum instead of transform because import.meta.env contains raw strings at runtime.
   // The processEnv object is just a type cast of import.meta.env, so transforms don't run at runtime.
   // Compare with string "true"/"false" when using this value.
-  VITE_CONVERSATION_EXPORT_ENABLED: z.enum(["true", "false"]).default("true"), // Enable/disable conversation export feature (must match backend)
+  VITE_EXPORT_CONVOS_ENABLED: z.enum(["true", "false"]).default("true"), // Enable/disable conversation export feature (must match backend)
 });
 
 export type ProcessEnv = z.infer<typeof envSchema>;

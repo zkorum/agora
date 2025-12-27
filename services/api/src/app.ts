@@ -86,20 +86,16 @@ const configSchema = sharedConfigSchema.extend({
             "1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000, 2500000, 5000000, 10000000",
         ),
     // S3 configuration for conversation CSV exports
-    AWS_S3_REGION: z.string().optional(),
-    AWS_S3_BUCKET_NAME: z.string().optional(),
-    CONVERSATION_EXPORT_EXPIRY_DAYS: z.coerce.number().int().min(1).default(30), // Export file expiry
-    CONVERSATION_EXPORT_COOLDOWN_SECONDS: z.coerce
-        .number()
-        .int()
-        .min(0)
-        .default(300), // Cooldown between exports for same conversation (default: 5 minutes)
-    S3_PRESIGNED_URL_EXPIRY_SECONDS: z.coerce
+    EXPORT_CONVOS_AWS_S3_REGION: z.string().optional(),
+    EXPORT_CONVOS_AWS_S3_BUCKET_NAME: z.string().optional(),
+    EXPORT_CONVOS_EXPIRY_DAYS: z.coerce.number().int().min(1).default(30), // Export file expiry
+    EXPORT_CONVOS_COOLDOWN_SECONDS: z.coerce.number().int().min(0).default(300), // Cooldown between exports for same conversation (default: 5 minutes)
+    EXPORT_CONVOS_S3_PRESIGNED_URL_EXPIRY_SECONDS: z.coerce
         .number()
         .int()
         .min(60)
         .default(3600), // Presigned URL expiry (default: 1 hour)
-    CONVERSATION_EXPORT_ENABLED: z
+    EXPORT_CONVOS_ENABLED: z
         .string()
         .transform((value, ctx) => {
             if (value.toLowerCase().trim() === "true") {
@@ -115,10 +111,26 @@ const configSchema = sharedConfigSchema.extend({
             }
         })
         .default("true"),
-    EXPORT_BUFFER_MAX_BATCH_SIZE: z.coerce.number().int().min(1).default(100), // Max exports to take from queue per flush
-    EXPORT_BUFFER_MAX_CONCURRENCY: z.coerce.number().int().min(1).default(5), // Max exports to process in parallel (exports are I/O-bound: CSV generation + S3 upload)
-    EXPORT_BUFFER_STALE_THRESHOLD_MS: z.coerce.number().int().min(30000).default(300000), // 5 minutes - mark "processing" exports as failed after this
-    EXPORT_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES: z.coerce.number().int().min(1).default(60), // Run stale cleanup every N flushes (~1 minute at 1s flush)
+    EXPORT_CONVOS_BUFFER_MAX_BATCH_SIZE: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .default(100), // Max exports to take from queue per flush
+    EXPORT_CONVOS_BUFFER_MAX_CONCURRENCY: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .default(5), // Max exports to process in parallel (exports are I/O-bound: CSV generation + S3 upload)
+    EXPORT_CONVOS_BUFFER_STALE_THRESHOLD_MS: z.coerce
+        .number()
+        .int()
+        .min(30000)
+        .default(300000), // 5 minutes - mark "processing" exports as failed after this
+    EXPORT_CONVOS_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .default(60), // Run stale cleanup every N flushes (~1 minute at 1s flush)
     IS_ORG_IMPORT_ONLY: z
         .string()
         .transform((value, ctx) => {
@@ -136,14 +148,38 @@ const configSchema = sharedConfigSchema.extend({
         })
         .default("false"),
     // CSV Import buffer configuration
-    IMPORT_BUFFER_MAX_BATCH_SIZE: z.coerce.number().int().nonnegative().default(4), // Max imports to take from queue per flush (0 = disable imports)
+    IMPORT_BUFFER_MAX_BATCH_SIZE: z.coerce
+        .number()
+        .int()
+        .nonnegative()
+        .default(4), // Max imports to take from queue per flush (0 = disable imports)
     IMPORT_BUFFER_MAX_CONCURRENCY: z.coerce.number().int().min(1).default(2), // Max imports to process in parallel
-    IMPORT_BUFFER_FLUSH_INTERVAL_MS: z.coerce.number().int().min(100).default(1000), // Flush interval in ms
-    IMPORT_BUFFER_STALE_THRESHOLD_MS: z.coerce.number().int().min(30000).default(300000), // 5 minutes - mark "processing" imports as failed after this
-    IMPORT_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES: z.coerce.number().int().min(1).default(60), // Run stale cleanup every N flushes (~1 minute at 1s flush)
+    IMPORT_BUFFER_FLUSH_INTERVAL_MS: z.coerce
+        .number()
+        .int()
+        .min(100)
+        .default(1000), // Flush interval in ms
+    IMPORT_BUFFER_STALE_THRESHOLD_MS: z.coerce
+        .number()
+        .int()
+        .min(30000)
+        .default(300000), // 5 minutes - mark "processing" imports as failed after this
+    IMPORT_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .default(60), // Run stale cleanup every N flushes (~1 minute at 1s flush)
     // Vote buffer configuration (batches votes to reduce DB contention)
-    VOTE_BUFFER_FLUSH_INTERVAL_MS: z.coerce.number().int().min(100).default(1000), // Flush interval in ms
-    VOTE_BUFFER_VALKEY_BATCH_LIMIT: z.coerce.number().int().min(1).default(5000), // Max votes to fetch from Valkey per flush
+    VOTE_BUFFER_FLUSH_INTERVAL_MS: z.coerce
+        .number()
+        .int()
+        .min(100)
+        .default(1000), // Flush interval in ms
+    VOTE_BUFFER_VALKEY_BATCH_LIMIT: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .default(5000), // Max votes to fetch from Valkey per flush
 });
 
 export const config = configSchema.parse(process.env);

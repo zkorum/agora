@@ -101,7 +101,7 @@ export function getPostActions(
       isVisible: (context: ContentActionContext) =>
         context.isLoggedIn &&
         !context.isEmbeddedMode &&
-        processEnv.VITE_CONVERSATION_EXPORT_ENABLED === "true",
+        processEnv.VITE_EXPORT_CONVOS_ENABLED === "true",
     },
   ];
 }

@@ -322,15 +322,20 @@ server.setErrorHandler((error, _request, reply) => {
 const db = await createDb(config, log);
 
 // Validate S3 configuration if export feature is enabled
-if (config.CONVERSATION_EXPORT_ENABLED) {
-    if (!config.AWS_S3_BUCKET_NAME || !config.AWS_S3_REGION) {
+if (config.EXPORT_CONVOS_ENABLED) {
+    if (
+        !config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME ||
+        !config.EXPORT_CONVOS_AWS_S3_REGION
+    ) {
         log.error(
             "[API] S3 configuration missing but export feature is enabled",
         );
         process.exit(1);
     }
     try {
-        await validateS3Access({ bucketName: config.AWS_S3_BUCKET_NAME });
+        await validateS3Access({
+            bucketName: config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME,
+        });
     } catch (error) {
         log.error(error, "[API] Failed to validate S3 access");
         process.exit(1);
@@ -394,15 +399,16 @@ const exportBuffer = createExportBuffer({
     valkey,
     notificationSSEManager,
     flushIntervalMs: 1000,
-    maxBatchSize: config.EXPORT_BUFFER_MAX_BATCH_SIZE,
-    maxConcurrency: config.EXPORT_BUFFER_MAX_CONCURRENCY,
-    cooldownSeconds: config.CONVERSATION_EXPORT_COOLDOWN_SECONDS,
-    exportExpiryDays: config.CONVERSATION_EXPORT_EXPIRY_DAYS,
-    staleThresholdMs: config.EXPORT_BUFFER_STALE_THRESHOLD_MS,
-    staleCleanupEveryNFlushes: config.EXPORT_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES,
+    maxBatchSize: config.EXPORT_CONVOS_BUFFER_MAX_BATCH_SIZE,
+    maxConcurrency: config.EXPORT_CONVOS_BUFFER_MAX_CONCURRENCY,
+    cooldownSeconds: config.EXPORT_CONVOS_COOLDOWN_SECONDS,
+    exportExpiryDays: config.EXPORT_CONVOS_EXPIRY_DAYS,
+    staleThresholdMs: config.EXPORT_CONVOS_BUFFER_STALE_THRESHOLD_MS,
+    staleCleanupEveryNFlushes:
+        config.EXPORT_CONVOS_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES,
 });
 log.info(
-    `[API] Export buffer initialized (flush interval: 1s, max batch: ${String(config.EXPORT_BUFFER_MAX_BATCH_SIZE)}, cooldown: ${String(config.CONVERSATION_EXPORT_COOLDOWN_SECONDS)}s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
+    `[API] Export buffer initialized (flush interval: 1s, max batch: ${String(config.EXPORT_CONVOS_BUFFER_MAX_BATCH_SIZE)}, cooldown: ${String(config.EXPORT_CONVOS_COOLDOWN_SECONDS)}s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
 // Initialize ImportBuffer (batches import requests to reduce system load)
@@ -416,7 +422,8 @@ const importBuffer = createImportBuffer({
     maxBatchSize: config.IMPORT_BUFFER_MAX_BATCH_SIZE,
     maxConcurrency: config.IMPORT_BUFFER_MAX_CONCURRENCY,
     staleThresholdMs: config.IMPORT_BUFFER_STALE_THRESHOLD_MS,
-    staleCleanupEveryNFlushes: config.IMPORT_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES,
+    staleCleanupEveryNFlushes:
+        config.IMPORT_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES,
 });
 log.info(
     `[API] Import buffer initialized (flush interval: ${String(config.IMPORT_BUFFER_FLUSH_INTERVAL_MS)}ms, max batch: ${String(config.IMPORT_BUFFER_MAX_BATCH_SIZE)}, max concurrency: ${String(config.IMPORT_BUFFER_MAX_CONCURRENCY)}, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
@@ -723,7 +730,7 @@ async function verifyUcanAndKnownDeviceStatus(
 const apiVersion = "v1";
 
 function checkConversationExportEnabled(): void {
-    if (!config.CONVERSATION_EXPORT_ENABLED) {
+    if (!config.EXPORT_CONVOS_ENABLED) {
         throw server.httpErrors.serviceUnavailable(
             "Conversation export feature is currently disabled",
         );
@@ -2937,7 +2944,7 @@ server.after(() => {
                     conversationSlugId: request.params.conversationSlugId,
                     userId: deviceStatus.userId,
                     cooldownSeconds:
-                        config.CONVERSATION_EXPORT_COOLDOWN_SECONDS,
+                        config.EXPORT_CONVOS_COOLDOWN_SECONDS,
                 },
             );
         },
