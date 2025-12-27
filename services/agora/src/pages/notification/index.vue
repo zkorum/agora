@@ -40,11 +40,13 @@
                 hover-background-color="#e2e8f0"
               >
                 <div class="notificationItemBase">
-                  <ZKIcon
-                    :name="getIconFromNotificationType(notificationItem.type)"
-                    size="1.8rem"
-                    color="black"
-                  />
+                  <div class="iconWrapper">
+                    <ZKIcon
+                      :name="getIconFromNotificationType(notificationItem.type)"
+                      size="1.8rem"
+                      color="black"
+                    />
+                  </div>
 
                   <div class="notificationRightPortion">
                     <div>
@@ -301,7 +303,14 @@ async function redirectPage(
   padding: $container-padding;
 }
 
+.iconWrapper {
+  flex-shrink: 0;
+  align-self: center;
+}
+
 .notificationRightPortion {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;

@@ -37,34 +37,27 @@
         <div
           v-if="conversationDraft.importSettings.importType === null"
           ref="titleInputRef"
-          :style="{ paddingLeft: '0.5rem' }"
         >
           <div v-if="validationState.title.showError" class="titleErrorMessage">
             <q-icon name="mdi-alert-circle" class="titleErrorIcon" />
             {{ validationState.title.error }}
           </div>
 
-          <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
-          <q-input
+          <Editor
             v-model="conversationDraft.title"
-            borderless
-            no-error-icon
             :placeholder="t('titlePlaceholder')"
-            type="textarea"
-            autogrow
-            :maxlength="MAX_LENGTH_TITLE"
-            required
-            :error="validationState.title.showError"
-            class="large-text-input"
+            :show-toolbar="false"
+            :single-line="true"
+            :max-length="MAX_LENGTH_TITLE"
+            min-height="auto"
+            :disabled="false"
+            class="title-editor"
             @update:model-value="updateTitle"
-          >
-            <template #after>
-              <div class="wordCountDiv">
-                {{ conversationDraft.title.length }} /
-                {{ MAX_LENGTH_TITLE }}
-              </div>
-            </template>
-          </q-input>
+          />
+
+          <div class="wordCountDiv" :style="{ paddingLeft: '0.5rem' }">
+            {{ conversationDraft.title.length }} / {{ MAX_LENGTH_TITLE }}
+          </div>
         </div>
         <div v-else class="import-section">
           <PolisUrlInput
@@ -82,12 +75,14 @@
 
         <div v-if="conversationDraft.importSettings.importType === null">
           <div class="editor-style">
-            <ZKEditor
+            <Editor
               v-model="conversationDraft.content"
               :placeholder="t('bodyPlaceholder')"
               min-height="5rem"
               :show-toolbar="true"
-              :add-background-color="false"
+              :single-line="false"
+              :max-length="MAX_LENGTH_BODY"
+              :disabled="false"
               @update:model-value="updateContent"
             />
 
@@ -136,6 +131,7 @@
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ActiveImportBanner from "src/components/conversation/import/ActiveImportBanner.vue";
+import Editor from "src/components/editor/Editor.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import PolisCsvUpload from "src/components/newConversation/import/csv/PolisCsvUpload.vue";
@@ -144,7 +140,6 @@ import NewConversationControlBar from "src/components/newConversation/NewConvers
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import PollComponent from "src/components/newConversation/poll/PollComponent.vue";
-import ZKEditor from "src/components/ui-library/ZKEditor.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   MAX_LENGTH_BODY,
@@ -160,7 +155,7 @@ import {
 import { type AxiosErrorCode, useCommonApi } from "src/utils/api/common";
 import { useActiveImportQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
 import { useBackendPostApi } from "src/utils/api/post/post";
-import { computed,ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -526,5 +521,6 @@ watch(
 
 .large-text-input :deep(.q-field__native) {
   font-weight: var(--font-weight-medium);
+  line-height: 1.5;
 }
 </style>

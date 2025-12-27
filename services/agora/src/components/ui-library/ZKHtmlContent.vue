@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { processHtmlBody } from "src/shared-app-api/html";
+import { processUserGeneratedHtml } from "src/shared-app-api/html";
 import { computed } from "vue";
 
 import {
@@ -32,7 +32,7 @@ const { t } = useComponentI18n<ZKHtmlContentTranslations>(
 
 const sanitizedHtmlBody = computed(() => {
   try {
-    return processHtmlBody(props.htmlBody, props.enableLinks);
+    return processUserGeneratedHtml(props.htmlBody, props.enableLinks);
   } catch (error) {
     console.error("Error sanitizing HTML content:", error);
     // Fallback to plain text if sanitization fails
@@ -52,6 +52,27 @@ const handleClick = (event: Event) => {
 </script>
 
 <style lang="scss" scoped>
+.textBreak {
+  font-size: 0.9rem;
+  line-height: normal;
+  word-break: break-word;
+  /* Prevent potential layout issues with long content */
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+:deep(p) {
+  margin-bottom: 0.5rem;
+}
+
+:deep(p:empty) {
+  min-height: 1.2em;
+}
+
+:deep(div) {
+  margin-bottom: 0.5rem;
+}
+
 :deep(a[href]) {
   color: rgb(0, 121, 211);
   font-weight: var(--font-weight-medium);
@@ -65,13 +86,6 @@ const handleClick = (event: Event) => {
   -webkit-line-clamp: 5;
   line-clamp: 5;
   -webkit-box-orient: vertical;
-}
-
-.textBreak {
-  word-break: break-word;
-  /* Prevent potential layout issues with long content */
-  overflow-wrap: break-word;
-  hyphens: auto;
 }
 
 /* Ensure any remaining potentially dangerous content is hidden */

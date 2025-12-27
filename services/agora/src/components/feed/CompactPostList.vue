@@ -42,16 +42,11 @@
               class="postListFlex"
               :class="{ 'loading-overlay': isLoadingFeed }"
             >
-              <div
+              <PostListItem
                 v-for="postData in partialHomeFeedList"
                 :key="postData.metadata.conversationSlugId"
-              >
-                <PostDetails
-                  :conversation-data="postData"
-                  :compact-mode="true"
-                  @click="openPost(postData.metadata.conversationSlugId)"
-                />
-              </div>
+                :conversation-data="postData"
+              />
             </div>
           </div>
 
@@ -101,10 +96,9 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { onMounted, watch } from "vue";
-import { useRouter } from "vue-router";
 
 import WidthWrapper from "../navigation/WidthWrapper.vue";
-import PostDetails from "../post/PostDetails.vue";
+import PostListItem from "../post/list/PostListItem.vue";
 import ZKButton from "../ui-library/ZKButton.vue";
 import {
   type CompactPostListTranslations,
@@ -119,8 +113,6 @@ const {
   isLoadingFeed,
 } = storeToRefs(useHomeFeedStore());
 const { loadPostData, hasNewPostCheck, loadMore } = useHomeFeedStore();
-
-const router = useRouter();
 
 const documentVisibility = useDocumentVisibility();
 
@@ -157,13 +149,6 @@ function pullDownTriggered(done: () => void) {
       done();
     })();
   }, 500);
-}
-
-async function openPost(postSlugId: string) {
-  await router.push({
-    name: "/conversation/[postSlugId]",
-    params: { postSlugId: postSlugId },
-  });
 }
 
 async function refreshPage(done: () => void) {

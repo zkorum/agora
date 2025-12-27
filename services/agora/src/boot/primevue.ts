@@ -5,6 +5,7 @@ import Card from "primevue/card";
 import Chip from "primevue/chip";
 import PrimeVue from "primevue/config";
 import DatePicker from "primevue/datepicker";
+import Divider from "primevue/divider";
 import FileUpload from "primevue/fileupload";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
@@ -84,4 +85,5 @@ export default defineBoot(({ app }) => {
   app.component("PrimeProgressSpinner", ProgressSpinner);
   app.component("PrimeMessage", Message);
   app.component("PrimeTag", Tag);
+  app.component("PrimeDivider", Divider);
 });

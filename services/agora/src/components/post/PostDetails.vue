@@ -22,7 +22,9 @@
           :participant-count="participantCountLocal"
           :vote-count="props.conversationData.metadata.voteCount"
           :is-loading="isCurrentTabLoading"
-          @share="shareClicked()"
+          :conversation-slug-id="conversationData.metadata.conversationSlugId"
+          :conversation-title="conversationData.payload.title"
+          :author-username="conversationData.metadata.authorUsername"
         />
 
         <div v-if="!compactMode">
@@ -42,8 +44,12 @@
             v-if="currentTab == 'comment'"
             ref="opinionSectionRef"
             :post-slug-id="conversationData.metadata.conversationSlugId"
-            :login-required-to-participate="conversationData.metadata.isLoginRequired"
-            :requires-event-ticket="conversationData.metadata.requiresEventTicket"
+            :login-required-to-participate="
+              conversationData.metadata.isLoginRequired
+            "
+            :requires-event-ticket="
+              conversationData.metadata.requiresEventTicket
+            "
             :preloaded-queries="{
               commentsDiscoverQuery,
               commentsNewQuery,
@@ -63,31 +69,22 @@
     <FloatingBottomContainer v-if="!compactMode">
       <CommentComposer
         :post-slug-id="conversationData.metadata.conversationSlugId"
-        :login-required-to-participate="conversationData.metadata.isLoginRequired"
+        :is-post-locked="isPostLocked"
+        :login-required-to-participate="
+          conversationData.metadata.isLoginRequired
+        "
         :requires-event-ticket="conversationData.metadata.requiresEventTicket"
         @submitted-comment="submittedComment"
         @ticket-verified="(payload) => handleTicketVerified(payload)"
       />
     </FloatingBottomContainer>
-
-    <!-- Share Actions Dialog -->
-    <ZKActionDialog
-      v-model="shareActions.dialogState.value.isVisible"
-      :actions="shareActions.dialogState.value.actions"
-      @action-selected="handleShareActionSelected"
-      @dialog-closed="shareActions.closeDialog"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { copyToClipboard,useQuasar } from "quasar";
-import { useShareActions } from "src/composables/share/useShareActions";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
-import type { ContentAction } from "src/utils/actions/core/types";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import {
   useAnalysisQuery,
@@ -95,24 +92,15 @@ import {
   useHiddenCommentsQuery,
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
-import { useWebShare } from "src/utils/share/WebShare";
-import { useNotify } from "src/utils/ui/notify";
-import { useConversationUrl } from "src/utils/url/conversationUrl";
-import { computed, onMounted,ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
-import ZKActionDialog from "../ui-library/ZKActionDialog.vue";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import AnalysisPage from "./analysis/AnalysisPage.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
 import CommentSection from "./comments/CommentSection.vue";
 import PostContent from "./display/PostContent.vue";
 import PostActionBar from "./interactionBar/PostActionBar.vue";
-import {
-  type PostDetailsTranslations,
-  postDetailsTranslations,
-} from "./PostDetails.i18n";
-import ShareDialog from "./ShareDialog.vue";
 
 const props = defineProps<{
   conversationData: ExtendedConversation;
@@ -121,10 +109,9 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   ticketVerified: [
-    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
+    payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
   ];
 }>();
-
 
 const currentTab = ref<"comment" | "analysis">("comment");
 
@@ -133,20 +120,12 @@ const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
 
 const opinionCountOffset = ref(0);
 
-const webShare = useWebShare();
-const $q = useQuasar();
-const { getConversationUrl } = useConversationUrl();
 const {
   invalidateAnalysis,
   forceRefreshAnalysis,
   invalidateComments,
   invalidateHiddenComments,
 } = useInvalidateCommentQueries();
-const shareActions = useShareActions();
-const notify = useNotify();
-const { t } = useComponentI18n<PostDetailsTranslations>(
-  postDetailsTranslations
-);
 const { loadAuthenticatedModules } = useBackendAuthApi();
 const userStore = useUserStore();
 
@@ -199,6 +178,25 @@ const hiddenCommentsQuery = useHiddenCommentsQuery({
   enabled: !props.compactMode && isModerator.value,
 });
 
+const { verifiedEventTickets } = storeToRefs(userStore);
+
+const isPostLocked = computed((): boolean => {
+  const isModeratedAndLocked =
+    props.conversationData.metadata.moderation.status === "moderated" &&
+    props.conversationData.metadata.moderation.action === "lock";
+
+  const requiresEventTicket =
+    props.conversationData.metadata.requiresEventTicket;
+
+  // Convert Set to Array for better reactivity tracking
+  const verifiedTicketsArray = Array.from(verifiedEventTickets.value);
+  const requiresTicketButNotVerified =
+    requiresEventTicket !== undefined &&
+    !verifiedTicketsArray.includes(requiresEventTicket);
+
+  return isModeratedAndLocked || requiresTicketButNotVerified;
+});
+
 // Track loading states from child components
 const isCurrentTabLoading = computed((): boolean => {
   if (props.compactMode) {
@@ -238,7 +236,9 @@ async function submittedComment(data: {
   // before this function is called, so the vote is already in the database
 
   if (opinionSectionRef.value) {
-    await opinionSectionRef.value.refreshAndHighlightOpinion(data.opinionSlugId);
+    await opinionSectionRef.value.refreshAndHighlightOpinion(
+      data.opinionSlugId
+    );
   }
 
   // Force refresh analysis data since new opinion affects analysis results
@@ -257,7 +257,9 @@ async function submittedComment(data: {
     // Fetch the opinion again to get updated author info with username
     // Using refreshAndHighlightOpinion instead of refreshData to force immediate refetch
     if (opinionSectionRef.value) {
-      await opinionSectionRef.value.refreshAndHighlightOpinion(data.opinionSlugId);
+      await opinionSectionRef.value.refreshAndHighlightOpinion(
+        data.opinionSlugId
+      );
 
       // Update user store with username from the fetched opinion
       // This is necessary because loadUserProfile() may hit a read replica that doesn't yet
@@ -270,45 +272,6 @@ async function submittedComment(data: {
       }
     }
   }
-}
-
-function shareClicked(): void {
-  const sharePostUrl = getConversationUrl(
-    props.conversationData.metadata.conversationSlugId
-  );
-  const shareTitle = "Agora - " + props.conversationData.payload.title;
-
-  // Check if Web Share API is available
-  const isWebShareAvailable =
-    typeof navigator !== "undefined" && navigator.share !== undefined;
-
-  // Show share actions menu
-  shareActions.showShareActions({
-    targetType: "post",
-    targetId: props.conversationData.metadata.conversationSlugId,
-    targetAuthor: props.conversationData.metadata.authorUsername,
-    copyLinkCallback: async () => {
-      await copyToClipboard(sharePostUrl);
-      notify.showNotifyMessage(t("copiedToClipboard"));
-    },
-    openQrCodeCallback: () => {
-      $q.dialog({
-        component: ShareDialog,
-        componentProps: {
-          url: sharePostUrl,
-          title: shareTitle,
-        },
-      });
-    },
-    shareViaCallback: async () => {
-      await webShare.share(shareTitle, sharePostUrl);
-    },
-    isWebShareAvailable,
-  });
-}
-
-async function handleShareActionSelected(action: ContentAction): Promise<void> {
-  await shareActions.executeAction(action);
 }
 
 onMounted(async () => {
@@ -374,14 +337,19 @@ async function handleTicketVerified(payload: {
   userIdChanged: boolean;
   needsCacheRefresh: boolean;
 }): Promise<void> {
-  console.log('[PostDetails] Ticket verified event received - emitting to parent', payload);
+  console.log(
+    "[PostDetails] Ticket verified event received - emitting to parent",
+    payload
+  );
   // This is called directly by PostContent when EventTicketRequirementBanner emits verified
   // Emit to parent (conversation page) so it can refresh conversation data AND all tab data
-  emit('ticketVerified', payload);
+  emit("ticketVerified", payload);
 
   // Handle deferred cache refresh if a new guest was created via Zupass
   if (payload.needsCacheRefresh) {
-    console.log('[PostDetails] New guest via Zupass - performing deferred cache refresh');
+    console.log(
+      "[PostDetails] New guest via Zupass - performing deferred cache refresh"
+    );
     // Load authenticated modules (including user profile) after ticket verification
     // The underlying problem is read replica lag: when a new guest user is created via Zupass,
     // the username is written to the primary database but may not yet be replicated to read replicas.

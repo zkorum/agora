@@ -1,16 +1,20 @@
-import { type RemovableRef,useStorage } from "@vueuse/core";
+import { type RemovableRef, useStorage } from "@vueuse/core";
 import { defineStore } from "pinia";
 import {
   MAX_LENGTH_BODY,
+  MAX_LENGTH_OPTION,
   MAX_LENGTH_TITLE,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import type { EventSlug,OrganizationProperties } from "src/shared/types/zod";
+import type { EventSlug, OrganizationProperties } from "src/shared/types/zod";
 import { zodEventSlug } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { processEnv } from "src/utils/processEnv";
 import { computed, ref, watch } from "vue";
 import { z } from "zod";
+
+import { useLanguageStore } from "./language";
+import { newConversationDraftsTranslations } from "./newConversationDrafts.i18n";
 
 // ============================================================================
 // Zod Schemas for Draft Validation
@@ -284,6 +288,14 @@ export interface MutationResult {
 }
 
 export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
+  /**
+   * Helper function to get translations based on current display language
+   */
+  function getTranslations() {
+    const languageStore = useLanguageStore();
+    return newConversationDraftsTranslations[languageStore.displayLanguage];
+  }
+
   /**
    * Comprehensive validation state for all form fields
    */
@@ -762,7 +774,11 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     );
 
     if (!bodyValidation.isValid) {
-      const error = `Body content exceeds ${MAX_LENGTH_BODY} character limit (${bodyValidation.characterCount}/${MAX_LENGTH_BODY})`;
+      const t = getTranslations();
+      const error = t.bodyExceedsLimit(
+        bodyValidation.characterCount,
+        MAX_LENGTH_BODY
+      );
       validationState.value.body = {
         isValid: false,
         error,
@@ -783,13 +799,14 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
    * Centralized validation function for Polis URL using Zod
    */
   function validatePolisUrlField(): MutationResult {
+    const t = getTranslations();
     const url = conversationDraft.value.importSettings.polisUrl;
     const importType = conversationDraft.value.importSettings.importType;
 
     // When import type is 'polis-url', URL is required and must be valid
     if (importType === "polis-url") {
       if (!url || url.trim() === "") {
-        const error = "Please enter a Polis URL to import";
+        const error = t.polisUrlRequired;
         validationState.value.polisUrl = {
           isValid: false,
           error,
@@ -802,8 +819,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     const result = zodPolisUrlValidation.safeParse(url);
 
     if (!result.success) {
-      const error =
-        result.error.issues[0]?.message || "Polis URL validation failed";
+      const error = t.polisUrlInvalid;
       validationState.value.polisUrl = {
         isValid: false,
         error,
@@ -865,7 +881,8 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Centralized mutation for updating title with validation
+   * Centralized mutation for updating title
+   * Length validation is handled by the Editor component
    */
   function updateTitle(newTitle: string): MutationResult {
     conversationDraft.value.title = newTitle;
@@ -879,20 +896,15 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   }
 
   /**
-   * Centralized mutation for updating body content with validation
+   * Centralized mutation for updating body content
+   * Length validation is handled by the Editor component
    */
   function updateContent(newContent: string): MutationResult {
     conversationDraft.value.content = newContent;
 
     // Clear error when content becomes valid
     if (validationState.value.body.showError) {
-      const bodyValidation = validateHtmlStringCharacterCount(
-        newContent,
-        "conversation"
-      );
-      if (bodyValidation.isValid) {
-        clearValidationError("body");
-      }
+      clearValidationError("body");
     }
 
     return { success: true };
@@ -922,6 +934,14 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       return { success: false, error: "Invalid poll option index" };
     }
 
+    // Validate poll option length
+    if (value.length > MAX_LENGTH_OPTION) {
+      console.warn(
+        `Poll option exceeds max length (${value.length}/${MAX_LENGTH_OPTION}), keeping old value`
+      );
+      return { success: false, error: "Poll option too long" };
+    }
+
     conversationDraft.value.poll.options[index] = value;
 
     // Clear poll validation error when user starts fixing issues
@@ -936,11 +956,12 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
    * Centralized mutation for adding poll option with validation
    */
   function addPollOptionWithValidation(): MutationResult {
+    const t = getTranslations();
     const maxOptions = 6;
     if (conversationDraft.value.poll.options.length >= maxOptions) {
       return {
         success: false,
-        error: `Maximum ${maxOptions} poll options allowed`,
+        error: t.pollMaxOptionsError(maxOptions),
       };
     }
 
@@ -958,13 +979,14 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
    * Centralized mutation for removing poll option with validation
    */
   function removePollOptionWithValidation(index: number): MutationResult {
+    const t = getTranslations();
     const options = conversationDraft.value.poll.options;
     const minOptions = 2;
 
     if (options.length <= minOptions) {
       return {
         success: false,
-        error: `Minimum ${minOptions} poll options required`,
+        error: t.pollMinOptionsError(minOptions),
       };
     }
 
@@ -1002,6 +1024,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
    * This centralizes all validation logic used by both create page and review page entry guard
    */
   function validateForReview(): ValidationResult {
+    const t = getTranslations();
     const result: ValidationResult = {
       isValid: true,
       errors: {},
@@ -1015,7 +1038,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       // Validate title
       if (!draft.title.trim()) {
         result.isValid = false;
-        result.errors.title = "Title is required to continue";
+        result.errors.title = t.titleRequired;
         if (!result.firstErrorField) result.firstErrorField = "title";
       }
 
@@ -1026,7 +1049,10 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       );
       if (!bodyValidation.isValid) {
         result.isValid = false;
-        result.errors.body = `Body content exceeds ${MAX_LENGTH_BODY} character limit (${bodyValidation.characterCount}/${MAX_LENGTH_BODY})`;
+        result.errors.body = t.bodyExceedsLimit(
+          bodyValidation.characterCount,
+          MAX_LENGTH_BODY
+        );
         if (!result.firstErrorField) result.firstErrorField = "body";
       }
 
@@ -1049,7 +1075,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
         !isValidPolisUrl(draft.importSettings.polisUrl)
       ) {
         result.isValid = false;
-        result.errors.polisUrl = "Please enter a valid Polis URL.";
+        result.errors.polisUrl = t.polisUrlInvalid;
         if (!result.firstErrorField) result.firstErrorField = "polisUrl";
       }
     }

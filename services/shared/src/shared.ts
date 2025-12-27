@@ -1,5 +1,3 @@
-import sanitizeHtml from "sanitize-html";
-
 // WARNING: this is also used in schema.ts and cannot be imported there so it was copy-pasted
 // IF YOU CHANGE THESE VALUES ALSO CHANGE THEM IN SCHEMA.TS
 export const MAX_LENGTH_OPTION = 30;
@@ -27,18 +25,23 @@ interface ValidateHtmlStringCharacterCountReturn {
     characterCount: number;
 }
 
+export function htmlToCountedText(htmlString: string): string {
+    const textWithNewlines = htmlString
+        .replace(/<\/p>/gi, "\n")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<p>/gi, "");
+
+    const plainText = textWithNewlines.replace(/<[^>]*>/g, "");
+    return plainText.replace(/\n$/, "");
+}
+
 export function validateHtmlStringCharacterCount(
     htmlString: string,
     mode: "conversation" | "opinion",
 ): ValidateHtmlStringCharacterCountReturn {
-    const options: sanitizeHtml.IOptions = {
-        allowedTags: [],
-        allowedAttributes: {},
-    };
-    const rawTextWithoutTags = sanitizeHtml(htmlString, options);
-
+    const rawTextWithoutTags = htmlToCountedText(htmlString);
     const characterLimit =
-        mode == "conversation" ? MAX_LENGTH_BODY_HTML : MAX_LENGTH_OPINION_HTML;
+        mode == "conversation" ? MAX_LENGTH_BODY : MAX_LENGTH_OPINION;
     if (rawTextWithoutTags.length <= characterLimit) {
         return { isValid: true, characterCount: rawTextWithoutTags.length };
     } else {

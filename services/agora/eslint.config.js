@@ -76,6 +76,7 @@ export default defineConfigWithVueTs(
       sourceType: "module",
       parserOptions: {
         extraFileExtensions: [".vue"],
+        project: ["./tsconfig.json"],
       },
 
       globals: {
@@ -210,6 +211,10 @@ export default defineConfigWithVueTs(
 
       // Code quality: remove useless v-bind
       "vue/no-useless-v-bind": "error",
+
+      // Disable conflicting rules for simple-import-sort
+      "sort-imports": "off",
+      "import/order": "off",
     },
   },
 

@@ -809,7 +809,8 @@
                                                                 "minLength": 1
                                                             },
                                                             "body": {
-                                                                "type": "string"
+                                                                "type": "string",
+                                                                "maxLength": 3000
                                                             },
                                                             "poll": {
                                                                 "type": "array",
@@ -1614,7 +1615,8 @@
                                                         "minLength": 1
                                                     },
                                                     "body": {
-                                                        "type": "string"
+                                                        "type": "string",
+                                                        "maxLength": 3000
                                                     },
                                                     "poll": {
                                                         "type": "array",
@@ -1877,7 +1879,8 @@
                                                                 "minLength": 1
                                                             },
                                                             "body": {
-                                                                "type": "string"
+                                                                "type": "string",
+                                                                "maxLength": 3000
                                                             },
                                                             "poll": {
                                                                 "type": "array",
@@ -1955,7 +1958,8 @@
                                                     },
                                                     "opinion": {
                                                         "type": "string",
-                                                        "minLength": 1
+                                                        "minLength": 1,
+                                                        "maxLength": 3000
                                                     },
                                                     "numParticipants": {
                                                         "type": "integer",
@@ -2338,7 +2342,9 @@
                                         "type": "string"
                                     },
                                     "opinionBody": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 3000
                                     }
                                 },
                                 "required": [
@@ -2475,7 +2481,8 @@
                                             },
                                             "opinion": {
                                                 "type": "string",
-                                                "minLength": 1
+                                                "minLength": 1,
+                                                "maxLength": 3000
                                             },
                                             "numParticipants": {
                                                 "type": "integer",
@@ -2644,7 +2651,8 @@
                                                     },
                                                     "opinion": {
                                                         "type": "string",
-                                                        "minLength": 1
+                                                        "minLength": 1,
+                                                        "maxLength": 3000
                                                     },
                                                     "numParticipants": {
                                                         "type": "integer",
@@ -2821,7 +2829,8 @@
                                                     },
                                                     "opinion": {
                                                         "type": "string",
-                                                        "minLength": 1
+                                                        "minLength": 1,
+                                                        "maxLength": 3000
                                                     },
                                                     "numParticipants": {
                                                         "type": "integer",
@@ -3036,7 +3045,8 @@
                                                                     },
                                                                     "opinion": {
                                                                         "type": "string",
-                                                                        "minLength": 1
+                                                                        "minLength": 1,
+                                                                        "maxLength": 3000
                                                                     },
                                                                     "numParticipants": {
                                                                         "type": "integer",
@@ -3249,7 +3259,8 @@
                                                                     },
                                                                     "opinion": {
                                                                         "type": "string",
-                                                                        "minLength": 1
+                                                                        "minLength": 1,
+                                                                        "maxLength": 3000
                                                                     },
                                                                     "numParticipants": {
                                                                         "type": "integer",
@@ -3462,7 +3473,8 @@
                                                                     },
                                                                     "opinion": {
                                                                         "type": "string",
-                                                                        "minLength": 1
+                                                                        "minLength": 1,
+                                                                        "maxLength": 3000
                                                                     },
                                                                     "numParticipants": {
                                                                         "type": "integer",
@@ -3675,7 +3687,8 @@
                                                                     },
                                                                     "opinion": {
                                                                         "type": "string",
-                                                                        "minLength": 1
+                                                                        "minLength": 1,
+                                                                        "maxLength": 3000
                                                                     },
                                                                     "numParticipants": {
                                                                         "type": "integer",
@@ -3888,7 +3901,8 @@
                                                                     },
                                                                     "opinion": {
                                                                         "type": "string",
-                                                                        "minLength": 1
+                                                                        "minLength": 1,
+                                                                        "maxLength": 3000
                                                                     },
                                                                     "numParticipants": {
                                                                         "type": "integer",
@@ -4101,7 +4115,8 @@
                                                                     },
                                                                     "opinion": {
                                                                         "type": "string",
-                                                                        "minLength": 1
+                                                                        "minLength": 1,
+                                                                        "maxLength": 3000
                                                                     },
                                                                     "numParticipants": {
                                                                         "type": "integer",
@@ -4334,7 +4349,8 @@
                                             },
                                             "opinion": {
                                                 "type": "string",
-                                                "minLength": 1
+                                                "minLength": 1,
+                                                "maxLength": 3000
                                             },
                                             "numParticipants": {
                                                 "type": "integer",
@@ -4500,7 +4516,8 @@
                                             },
                                             "opinion": {
                                                 "type": "string",
-                                                "minLength": 1
+                                                "minLength": 1,
+                                                "maxLength": 3000
                                             },
                                             "numParticipants": {
                                                 "type": "integer",
@@ -4659,7 +4676,8 @@
                                         "minLength": 1
                                     },
                                     "conversationBody": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "maxLength": 3000
                                     },
                                     "postAsOrganization": {
                                         "type": "string"
@@ -4685,7 +4703,9 @@
                                     "seedOpinionList": {
                                         "type": "array",
                                         "items": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 3000
                                         }
                                     },
                                     "requiresEventTicket": {
@@ -5271,7 +5291,8 @@
                                                             "minLength": 1
                                                         },
                                                         "body": {
-                                                            "type": "string"
+                                                            "type": "string",
+                                                            "maxLength": 3000
                                                         },
                                                         "poll": {
                                                             "type": "array",

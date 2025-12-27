@@ -7,6 +7,8 @@ export interface CommentComposerTranslations {
   createOpinionError: string;
   eventTicketRequiredTitle: string;
   eventTicketRequiredMessage: string;
+  exitPromptTitle: string;
+  exitPromptDescription: string;
 }
 
 export const commentComposerTranslations: Record<
@@ -22,6 +24,8 @@ export const commentComposerTranslations: Record<
     eventTicketRequiredTitle: "Event Ticket Required",
     eventTicketRequiredMessage:
       "You need to verify your Devconnect 2025 ticket to participate in this conversation.",
+    exitPromptTitle: "Save opinion as draft?",
+    exitPromptDescription: "Your draft opinion will be here when you return.",
   },
   ar: {
     placeholder: "أضف رأيك الخاص",
@@ -31,6 +35,8 @@ export const commentComposerTranslations: Record<
     eventTicketRequiredTitle: "تذكرة الحدث مطلوبة",
     eventTicketRequiredMessage:
       "تحتاج إلى التحقق من تذكرة Devconnect 2025 الخاصة بك للمشاركة في هذه المحادثة.",
+    exitPromptTitle: "حفظ الرأي كمسودة؟",
+    exitPromptDescription: "ستكون مسودتك هنا عند عودتك.",
   },
   es: {
     placeholder: "Añade tu propia opinión",
@@ -41,6 +47,8 @@ export const commentComposerTranslations: Record<
     eventTicketRequiredTitle: "Entrada del evento requerida",
     eventTicketRequiredMessage:
       "Necesitas verificar tu entrada de Devconnect 2025 para participar en esta conversación.",
+    exitPromptTitle: "¿Guardar opinión como borrador?",
+    exitPromptDescription: "Tu borrador estará aquí cuando regreses.",
   },
   fr: {
     placeholder: "Ajoutez votre propre opinion",
@@ -52,6 +60,8 @@ export const commentComposerTranslations: Record<
     eventTicketRequiredTitle: "Billet d'événement requis",
     eventTicketRequiredMessage:
       "Vous devez vérifier votre billet Devconnect 2025 pour participer à cette conversation.",
+    exitPromptTitle: "Enregistrer l'opinion comme brouillon ?",
+    exitPromptDescription: "Votre brouillon sera ici à votre retour.",
   },
   "zh-Hans": {
     placeholder: "添加您自己的意见",
@@ -61,6 +71,8 @@ export const commentComposerTranslations: Record<
     eventTicketRequiredTitle: "需要活动门票",
     eventTicketRequiredMessage:
       "您需要验证您的 Devconnect 2025 门票才能参与此对话。",
+    exitPromptTitle: "将意见保存为草稿？",
+    exitPromptDescription: "您的草稿将在您返回时保留在这里。",
   },
   "zh-Hant": {
     placeholder: "添加您自己的意見",
@@ -70,6 +82,8 @@ export const commentComposerTranslations: Record<
     eventTicketRequiredTitle: "需要活動門票",
     eventTicketRequiredMessage:
       "您需要驗證您的 Devconnect 2025 門票才能參與此對話。",
+    exitPromptTitle: "將意見儲存為草稿？",
+    exitPromptDescription: "您的草稿將在您返回時保留在這裡。",
   },
   ja: {
     placeholder: "あなた自身の意見を追加",
@@ -79,5 +93,7 @@ export const commentComposerTranslations: Record<
     eventTicketRequiredTitle: "イベントチケットが必要",
     eventTicketRequiredMessage:
       "この会話に参加するには、Devconnect 2025 チケットを確認する必要があります。",
+    exitPromptTitle: "意見を下書きとして保存しますか？",
+    exitPromptDescription: "下書きは戻ったときにここにあります。",
   },
 };

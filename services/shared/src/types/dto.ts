@@ -8,7 +8,10 @@ import {
     zodAnalysisOpinionItem,
     zodPollOptionTitle,
     zodConversationTitle,
-    zodConversationBody,
+    zodConversationBodyInput,
+    zodConversationBodyOutput,
+    zodOpinionContentInput,
+    zodOpinionContentOutput,
     zodVotingOption,
     zodVotingAction,
     zodUsername,
@@ -170,13 +173,13 @@ export class Dto {
     static createNewConversationRequest = z
         .object({
             conversationTitle: zodConversationTitle,
-            conversationBody: zodConversationBody,
+            conversationBody: zodConversationBodyInput,
             postAsOrganization: z.string().optional(),
             indexConversationAt: z.string().datetime().optional(),
             isIndexed: z.boolean(),
             isLoginRequired: z.boolean(),
             pollingOptionList: zodPollOptionTitle.array().optional(),
-            seedOpinionList: z.array(z.string()),
+            seedOpinionList: z.array(zodOpinionContentInput),
             requiresEventTicket: zodEventSlug.optional(),
         })
         .strict();
@@ -348,7 +351,7 @@ export class Dto {
     static createOpinionRequest = z
         .object({
             conversationSlugId: z.string(),
-            opinionBody: z.string(),
+            opinionBody: zodOpinionContentInput,
         })
         .strict();
     static createOpinionResponse = z.discriminatedUnion("success", [
