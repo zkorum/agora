@@ -2,10 +2,10 @@
 // Copyright ts-odd team
 // Apache v2 License
 // Extracted from: https://github.com/oddsdk/ts-odd/tree/f90bde37416d9986d1c0afed406182a95ce7c1d7
-import linkifyHtml from "linkify-html";
-import type { Opts } from "linkifyjs";
 import localforage from "localforage";
 import sanitizeHtml from "sanitize-html";
+import type { Opts } from "linkifyjs";
+import linkifyHtml from "linkify-html";
 
 /**
  * Converts HTML content to plain text with newlines preserved
