@@ -11,7 +11,7 @@ import { config, log } from "@/app.js";
 // Initialize S3 client following the same pattern as SecretsManagerClient in index.ts
 // Credentials are automatically loaded from IAM role or environment variables
 export const s3Client = new S3Client({
-    region: config.AWS_S3_REGION,
+    region: config.EXPORT_CONVOS_AWS_S3_REGION,
 });
 
 /**

@@ -85,14 +85,14 @@ The API provides a conversation export feature that allows users to download con
 
 ```bash
 # S3 bucket configuration
-AWS_S3_REGION=us-east-1                                    # AWS region for S3 bucket
-AWS_S3_BUCKET_NAME=agora-conversation-exports              # S3 bucket name
+EXPORT_CONVOS_AWS_S3_REGION=us-east-1                      # AWS region for S3 bucket
+EXPORT_CONVOS_AWS_S3_BUCKET_NAME=agora-conversation-exports # S3 bucket name
 
 # Optional configuration (with defaults)
-CONVERSATION_EXPORT_EXPIRY_DAYS=30                         # Days until exports auto-delete (default: 30)
-CONVERSATION_EXPORT_COOLDOWN_SECONDS=300                   # Cooldown between exports for same conversation (default: 300s/5min)
-S3_PRESIGNED_URL_EXPIRY_SECONDS=3600                       # Presigned URL validity (default: 3600s/1 hour)
-CONVERSATION_EXPORT_ENABLED=true                           # Enable/disable export feature (default: true)
+EXPORT_CONVOS_EXPIRY_DAYS=30                               # Days until exports auto-delete (default: 30)
+EXPORT_CONVOS_COOLDOWN_SECONDS=300                         # Cooldown between exports for same conversation (default: 300s/5min)
+EXPORT_CONVOS_S3_PRESIGNED_URL_EXPIRY_SECONDS=3600         # Presigned URL validity (default: 3600s/1 hour)
+EXPORT_CONVOS_ENABLED=true                                 # Enable/disable export feature (default: true)
 
 # Optional: Valkey for export queue persistence across instances
 VALKEY_URL=redis://localhost:6379                          # If not set, uses in-memory storage (lost on restart)
@@ -168,7 +168,7 @@ aws s3api put-public-access-block --bucket agora-conversation-exports \
   --public-access-block-configuration \
   "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
 
-# Set lifecycle policy (auto-delete after 30 days - should match CONVERSATION_EXPORT_EXPIRY_DAYS)
+# Set lifecycle policy (auto-delete after 30 days - should match EXPORT_CONVOS_EXPIRY_DAYS)
 aws s3api put-bucket-lifecycle-configuration --bucket agora-conversation-exports \
   --lifecycle-configuration '{
     "Rules": [{
@@ -196,7 +196,7 @@ aws s3api put-bucket-lifecycle-configuration --bucket agora-conversation-exports
 To disable the CSV export feature entirely:
 
 ```bash
-CONVERSATION_EXPORT_ENABLED=false
+EXPORT_CONVOS_ENABLED=false
 ```
 
 When disabled, export API endpoints will return 404 Not Found.
