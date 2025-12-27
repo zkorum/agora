@@ -48,7 +48,7 @@
             :text="tabItem.label"
             :is-highlighted="currentTab === tabItem.value"
             :should-underline-on-highlight="true"
-            @click="selectedTab(tabItem.route)"
+            :to="{ name: tabItem.route }"
           />
         </div>
       </div>
@@ -71,14 +71,12 @@ import { useUserStore } from "src/stores/user";
 import { getDateString } from "src/utils/common";
 import { onMounted, ref, watch } from "vue";
 import type { RouteRecordName } from "vue-router";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 
 import {
   type UserProfileTranslations,
   userProfileTranslations,
 } from "./user-profile.i18n";
-
-const router = useRouter();
 
 const { loadUserProfile } = useUserStore();
 const { isGuest } = storeToRefs(useAuthenticationStore());
@@ -134,7 +132,7 @@ async function initialize() {
       isLoading.value = true;
       await loadUserProfile();
     } catch (error) {
-      console.error('Failed to load user profile:', error);
+      console.error("Failed to load user profile:", error);
     } finally {
       isLoading.value = false;
     }
@@ -154,16 +152,6 @@ function applyCurrentTab() {
     currentTab.value = 0;
   } else {
     currentTab.value = 1;
-  }
-}
-
-async function selectedTab(routeName: RouteRecordName) {
-  if (routeName == "/user-profile/conversations/") {
-    await router.replace({ name: "/user-profile/conversations/" });
-  } else if (routeName == "/user-profile/opinions/") {
-    await router.replace({ name: "/user-profile/opinions/" });
-  } else {
-    console.error("Unknown route: " + String(routeName));
   }
 }
 </script>
