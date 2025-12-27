@@ -60,10 +60,10 @@ import ConversationTitleWithPrivacyLabel from "src/components/features/conversat
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 import type { OpinionItem } from "src/shared/types/zod";
 
-import CommentActionOptions from "../comments/group/item/CommentActionOptions.vue";
-import CommentModeration from "../comments/group/item/CommentModeration.vue";
 import ZKHoverEffect from "../../ui-library/ZKHoverEffect.vue";
 import ZKHtmlContent from "../../ui-library/ZKHtmlContent.vue";
+import CommentActionOptions from "../comments/group/item/CommentActionOptions.vue";
+import CommentModeration from "../comments/group/item/CommentModeration.vue";
 
 defineProps<{
   conversationSlugId: string;
