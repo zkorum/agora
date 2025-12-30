@@ -232,6 +232,13 @@
       "when": 1769022463445,
       "tag": "0032_chubby_lockheed",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1769136197590,
+      "tag": "0033_bizarre_mindworm",
+      "breakpoints": true
     }
   ]
 }

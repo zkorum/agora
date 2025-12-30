@@ -4,9 +4,7 @@
       <ZKDialogOptionsList
         :options="postTypeOptions"
         :selected-value="
-          conversationDraft.importSettings.importType !== null
-            ? 'import'
-            : 'regular'
+          importSettings.importType !== null ? 'import' : 'regular'
         "
         @option-selected="handleOptionSelected"
       />
@@ -15,11 +13,10 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.vue";
+import type { ConversationImportSettings } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 
 import {
   type PostTypeDialogTranslations,
@@ -35,8 +32,10 @@ const { t } = useComponentI18n<PostTypeDialogTranslations>(
 );
 
 const showDialog = defineModel<boolean>({ required: true });
-
-const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
+const importSettings = defineModel<ConversationImportSettings>(
+  "importSettings",
+  { required: true }
+);
 
 const postTypeOptions = [
   {
@@ -60,7 +59,7 @@ function handleOptionSelected(option: {
   title: string;
   description: string;
   value: string;
-}) {
+}): void {
   if (showDialog.value) {
     showDialog.value = false;
   }

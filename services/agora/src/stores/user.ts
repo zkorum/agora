@@ -5,14 +5,12 @@ import type {
   ExtendedOpinion,
   OrganizationProperties,
 } from "src/shared/types/zod";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useBackendUserApi } from "src/utils/api/user";
-import { computed, reactive,ref } from "vue";
+import { computed, reactive, ref } from "vue";
 
 export const useUserStore = defineStore("user", () => {
   const { fetchUserProfile, fetchUserPosts, fetchUserComments } =
     useBackendUserApi();
-  const { validateSelectedOrganization } = useNewPostDraftsStore();
 
   interface UserProfile {
     activePostCount: number;
@@ -64,8 +62,6 @@ export const useUserStore = defineStore("user", () => {
         verifiedEventTickets: userProfile.verifiedEventTickets,
       };
     }
-
-    validateSelectedOrganization(profileData.value.organizationList);
   }
 
   async function loadMoreUserPosts() {
@@ -134,18 +130,20 @@ export const useUserStore = defineStore("user", () => {
   // Track transient verification states (verifying, error) in reactive state
   // These are per-session UI states that don't need persistence
   type TransientStateInfo =
-    | { state: 'verifying' }
-    | { state: 'error'; errorMessage: string };
+    | { state: "verifying" }
+    | { state: "error"; errorMessage: string };
 
   // Use a reactive Map for transient states
-  const ticketVerificationStates = reactive(new Map<EventSlug, TransientStateInfo>());
+  const ticketVerificationStates = reactive(
+    new Map<EventSlug, TransientStateInfo>()
+  );
 
   function setTicketVerifying(eventSlug: EventSlug): void {
-    ticketVerificationStates.set(eventSlug, { state: 'verifying' });
+    ticketVerificationStates.set(eventSlug, { state: "verifying" });
   }
 
   function setTicketError(eventSlug: EventSlug, errorMessage: string): void {
-    ticketVerificationStates.set(eventSlug, { state: 'error', errorMessage });
+    ticketVerificationStates.set(eventSlug, { state: "error", errorMessage });
   }
 
   function clearTicketState(eventSlug: EventSlug): void {
@@ -154,15 +152,16 @@ export const useUserStore = defineStore("user", () => {
 
   // Get the current verification state for an event
   // Returns: 'verified' | 'verifying' | 'error' | 'not_verified'
-  function getTicketVerificationState(eventSlug: EventSlug):
-    | { state: 'verified' }
-    | { state: 'verifying' }
-    | { state: 'error'; errorMessage: string }
-    | { state: 'not_verified' } {
-
+  function getTicketVerificationState(
+    eventSlug: EventSlug
+  ):
+    | { state: "verified" }
+    | { state: "verifying" }
+    | { state: "error"; errorMessage: string }
+    | { state: "not_verified" } {
     // Check if ticket is verified (from backend)
     if (isTicketVerified(eventSlug)) {
-      return { state: 'verified' };
+      return { state: "verified" };
     }
 
     // Check for transient states (verifying or error)
@@ -171,7 +170,7 @@ export const useUserStore = defineStore("user", () => {
       return transientState;
     }
 
-    return { state: 'not_verified' };
+    return { state: "not_verified" };
   }
 
   return {

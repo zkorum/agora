@@ -4532,6 +4532,353 @@
                 }
             }
         },
+        "/api/v1/conversation/get-for-edit": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "conversationSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "conversationTitle": {
+                                                    "type": "string",
+                                                    "minLength": 1,
+                                                    "maxLength": 140
+                                                },
+                                                "conversationBody": {
+                                                    "type": "string",
+                                                    "maxLength": 3000
+                                                },
+                                                "pollingOptionList": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 30
+                                                    }
+                                                },
+                                                "isIndexed": {
+                                                    "type": "boolean"
+                                                },
+                                                "isLoginRequired": {
+                                                    "type": "boolean"
+                                                },
+                                                "requiresEventTicket": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "devconnect-2025"
+                                                    ]
+                                                },
+                                                "indexConversationAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "createdAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updatedAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "hasPoll": {
+                                                    "type": "boolean"
+                                                },
+                                                "isLocked": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "conversationSlugId",
+                                                "conversationTitle",
+                                                "isIndexed",
+                                                "isLoginRequired",
+                                                "createdAt",
+                                                "updatedAt",
+                                                "hasPoll",
+                                                "isLocked"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "not_found",
+                                                        "not_author"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/update": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    },
+                                    "conversationTitle": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 140
+                                    },
+                                    "conversationBody": {
+                                        "type": "string",
+                                        "maxLength": 3000
+                                    },
+                                    "pollAction": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "action": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "none"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "action"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "action": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "keep"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "action"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "action": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "remove"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "action"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "action": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "create"
+                                                        ]
+                                                    },
+                                                    "options": {
+                                                        "minItems": 2,
+                                                        "maxItems": 6,
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 30
+                                                        }
+                                                    }
+                                                },
+                                                "required": [
+                                                    "action",
+                                                    "options"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "action": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "replace"
+                                                        ]
+                                                    },
+                                                    "options": {
+                                                        "minItems": 2,
+                                                        "maxItems": 6,
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 30
+                                                        }
+                                                    }
+                                                },
+                                                "required": [
+                                                    "action",
+                                                    "options"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        ]
+                                    },
+                                    "isIndexed": {
+                                        "type": "boolean"
+                                    },
+                                    "isLoginRequired": {
+                                        "type": "boolean"
+                                    },
+                                    "requiresEventTicket": {
+                                        "type": "string",
+                                        "enum": [
+                                            "devconnect-2025"
+                                        ]
+                                    },
+                                    "indexConversationAt": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId",
+                                    "conversationTitle",
+                                    "pollAction",
+                                    "isIndexed",
+                                    "isLoginRequired"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "not_found",
+                                                        "not_author",
+                                                        "conversation_locked",
+                                                        "invalid_access_settings",
+                                                        "poll_already_exists",
+                                                        "poll_exists_use_keep_or_remove",
+                                                        "no_poll_to_remove",
+                                                        "no_poll_to_keep",
+                                                        "no_poll_to_replace"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/zkp/generate-verification-link": {
             "post": {
                 "requestBody": {

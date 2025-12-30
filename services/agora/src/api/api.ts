@@ -932,6 +932,45 @@ export const ApiV1ConversationFetchRecentPostRequestSortAlgorithmEnum = {
 
 export type ApiV1ConversationFetchRecentPostRequestSortAlgorithmEnum = typeof ApiV1ConversationFetchRecentPostRequestSortAlgorithmEnum[keyof typeof ApiV1ConversationFetchRecentPostRequestSortAlgorithmEnum];
 
+/**
+ * @type ApiV1ConversationGetForEditPost200Response
+ */
+export type ApiV1ConversationGetForEditPost200Response = ApiV1ConversationGetForEditPost200ResponseOneOf | ApiV1ConversationGetForEditPost200ResponseOneOf1;
+
+export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
+    'success': boolean;
+    'conversationSlugId': string;
+    'conversationTitle': string;
+    'conversationBody'?: string;
+    'pollingOptionList'?: Array<string>;
+    'isIndexed': boolean;
+    'isLoginRequired': boolean;
+    'requiresEventTicket'?: ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum;
+    'indexConversationAt'?: string;
+    'createdAt': string;
+    'updatedAt': string;
+    'hasPoll': boolean;
+    'isLocked': boolean;
+}
+
+export const ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum = {
+    Devconnect2025: 'devconnect-2025'
+} as const;
+
+export type ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum];
+
+export interface ApiV1ConversationGetForEditPost200ResponseOneOf1 {
+    'success': boolean;
+    'reason': ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum;
+}
+
+export const ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum = {
+    NotFound: 'not_found',
+    NotAuthor: 'not_author'
+} as const;
+
+export type ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum];
+
 export interface ApiV1ConversationGetPost200Response {
     'conversationData': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner;
 }
@@ -1039,6 +1078,104 @@ export const ApiV1ConversationOpenPost200ResponseOneOfReasonEnum = {
 } as const;
 
 export type ApiV1ConversationOpenPost200ResponseOneOfReasonEnum = typeof ApiV1ConversationOpenPost200ResponseOneOfReasonEnum[keyof typeof ApiV1ConversationOpenPost200ResponseOneOfReasonEnum];
+
+/**
+ * @type ApiV1ConversationUpdatePost200Response
+ */
+export type ApiV1ConversationUpdatePost200Response = ApiV1ConversationClosePost200ResponseOneOf | ApiV1ConversationUpdatePost200ResponseOneOf;
+
+export interface ApiV1ConversationUpdatePost200ResponseOneOf {
+    'success': boolean;
+    'reason': ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum;
+}
+
+export const ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum = {
+    NotFound: 'not_found',
+    NotAuthor: 'not_author',
+    ConversationLocked: 'conversation_locked',
+    InvalidAccessSettings: 'invalid_access_settings',
+    PollAlreadyExists: 'poll_already_exists',
+    PollExistsUseKeepOrRemove: 'poll_exists_use_keep_or_remove',
+    NoPollToRemove: 'no_poll_to_remove',
+    NoPollToKeep: 'no_poll_to_keep',
+    NoPollToReplace: 'no_poll_to_replace'
+} as const;
+
+export type ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum = typeof ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum[keyof typeof ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum];
+
+export interface ApiV1ConversationUpdatePostRequest {
+    'conversationSlugId': string;
+    'conversationTitle': string;
+    'conversationBody'?: string;
+    'pollAction': ApiV1ConversationUpdatePostRequestPollAction;
+    'isIndexed': boolean;
+    'isLoginRequired': boolean;
+    'requiresEventTicket'?: ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum;
+    'indexConversationAt'?: string;
+}
+
+export const ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = {
+    Devconnect2025: 'devconnect-2025'
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = typeof ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum[keyof typeof ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum];
+
+/**
+ * @type ApiV1ConversationUpdatePostRequestPollAction
+ */
+export type ApiV1ConversationUpdatePostRequestPollAction = ApiV1ConversationUpdatePostRequestPollActionOneOf | ApiV1ConversationUpdatePostRequestPollActionOneOf1 | ApiV1ConversationUpdatePostRequestPollActionOneOf2 | ApiV1ConversationUpdatePostRequestPollActionOneOf3 | ApiV1ConversationUpdatePostRequestPollActionOneOf4;
+
+export interface ApiV1ConversationUpdatePostRequestPollActionOneOf {
+    'action': ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum;
+}
+
+export const ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum = {
+    None: 'none'
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum];
+
+export interface ApiV1ConversationUpdatePostRequestPollActionOneOf1 {
+    'action': ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum;
+}
+
+export const ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum = {
+    Keep: 'keep'
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum];
+
+export interface ApiV1ConversationUpdatePostRequestPollActionOneOf2 {
+    'action': ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum;
+}
+
+export const ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum = {
+    Remove: 'remove'
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum];
+
+export interface ApiV1ConversationUpdatePostRequestPollActionOneOf3 {
+    'action': ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum;
+    'options': Array<string>;
+}
+
+export const ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum = {
+    Create: 'create'
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum];
+
+export interface ApiV1ConversationUpdatePostRequestPollActionOneOf4 {
+    'action': ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum;
+    'options': Array<string>;
+}
+
+export const ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum = {
+    Replace: 'replace'
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum];
 
 export interface ApiV1ConversationValidateCsvPost200Response {
     'summaryFile'?: ApiV1ConversationValidateCsvPost200ResponseSummaryFile;
@@ -2675,6 +2812,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
+        apiV1ConversationGetForEditPost: async (apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationConversationWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationGetForEditPost', 'apiV1ModerationConversationWithdrawPostRequest', apiV1ModerationConversationWithdrawPostRequest)
+            const localVarPath = `/api/v1/conversation/get-for-edit`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationConversationWithdrawPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
         apiV1ConversationGetPost: async (apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'apiV1ModerationConversationWithdrawPostRequest' is not null or undefined
             assertParamExists('apiV1ConversationGetPost', 'apiV1ModerationConversationWithdrawPostRequest', apiV1ModerationConversationWithdrawPostRequest)
@@ -2881,6 +3056,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationConversationWithdrawPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationUpdatePostRequest} apiV1ConversationUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationUpdatePost: async (apiV1ConversationUpdatePostRequest: ApiV1ConversationUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ConversationUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationUpdatePost', 'apiV1ConversationUpdatePostRequest', apiV1ConversationUpdatePostRequest)
+            const localVarPath = `/api/v1/conversation/update`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationUpdatePostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -4532,6 +4745,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
+        async apiV1ConversationGetForEditPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationGetForEditPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationGetForEditPost(apiV1ModerationConversationWithdrawPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationGetForEditPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
         async apiV1ConversationGetPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationGetPost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationGetPost(apiV1ModerationConversationWithdrawPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
@@ -4594,6 +4819,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationOpenPost(apiV1ModerationConversationWithdrawPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationOpenPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationUpdatePostRequest} apiV1ConversationUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationUpdatePost(apiV1ConversationUpdatePostRequest: ApiV1ConversationUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationUpdatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationUpdatePost(apiV1ConversationUpdatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationUpdatePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -5259,6 +5496,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
+        apiV1ConversationGetForEditPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationGetForEditPost200Response> {
+            return localVarFp.apiV1ConversationGetForEditPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
         apiV1ConversationGetPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationGetPost200Response> {
             return localVarFp.apiV1ConversationGetPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
@@ -5304,6 +5550,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1ConversationOpenPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationOpenPost200Response> {
             return localVarFp.apiV1ConversationOpenPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationUpdatePostRequest} apiV1ConversationUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationUpdatePost(apiV1ConversationUpdatePostRequest: ApiV1ConversationUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationUpdatePost200Response> {
+            return localVarFp.apiV1ConversationUpdatePost(apiV1ConversationUpdatePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -5879,6 +6134,16 @@ export class DefaultApi extends BaseAPI {
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
+    public apiV1ConversationGetForEditPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationGetForEditPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
     public apiV1ConversationGetPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ConversationGetPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
@@ -5929,6 +6194,16 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1ConversationOpenPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ConversationOpenPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ConversationUpdatePostRequest} apiV1ConversationUpdatePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1ConversationUpdatePost(apiV1ConversationUpdatePostRequest: ApiV1ConversationUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationUpdatePost(apiV1ConversationUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

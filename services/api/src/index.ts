@@ -1,7 +1,4 @@
-import {
-    Dto,
-    type GetConversationResponse,
-} from "@/shared/types/dto.js";
+import { Dto, type GetConversationResponse } from "@/shared/types/dto.js";
 import {
     authenticateRequestBody,
     verifyOtpReqBody,
@@ -33,6 +30,7 @@ import * as authUtilService from "@/service/authUtil.js";
 import * as csvImportService from "@/service/csvImport.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
+import * as postEditService from "@/service/postEdit.js";
 import { MAX_CSV_FILE_SIZE } from "@/shared-app-api/csvUpload.js";
 import { zodCsvFiles } from "@/service/csvImport.js";
 import * as conversationExportService from "@/service/conversationExport/index.js";
@@ -1392,7 +1390,6 @@ server.after(() => {
                 db: db,
                 proof: encodedUcan,
                 didWrite: didWrite,
-                httpErrors: server.httpErrors,
                 postSlugId: request.body.conversationSlugId,
                 voteOptionChoice: request.body.voteOptionChoice,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
@@ -1442,7 +1439,6 @@ server.after(() => {
                 db: db,
                 postSlugIdList: request.body,
                 authorId: deviceStatus.userId,
-                httpErrors: server.httpErrors,
             });
         },
     });
@@ -2193,6 +2189,89 @@ server.after(() => {
                     conversationData: postItem,
                 };
                 return response;
+            }
+        },
+    });
+
+    // Get conversation data for editing
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/get-for-edit`,
+        schema: {
+            body: Dto.getConversationForEditRequest,
+            response: {
+                200: Dto.getConversationForEditResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+            return await postEditService.getConversationForEdit({
+                db: db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
+            });
+        },
+    });
+
+    // Update conversation
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/update`,
+        schema: {
+            body: Dto.updateConversationRequest,
+            response: {
+                200: Dto.updateConversationResponse,
+            },
+        },
+        handler: async (request, reply) => {
+            const { didWrite, encodedUcan, deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                });
+
+            const updateResult = await postEditService.updateConversation({
+                db: db,
+                userId: deviceStatus.userId,
+                didWrite: didWrite,
+                proof: encodedUcan,
+                data: request.body,
+            });
+
+            reply.send(updateResult);
+
+            // Broadcast proof to Nostr if successful
+            if (updateResult.success) {
+                const proofChannel40EventId =
+                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
+                if (proofChannel40EventId !== undefined) {
+                    try {
+                        await nostrService.broadcastProof({
+                            proof: encodedUcan,
+                            secretKey: nostrSecretKey,
+                            publicKey: nostrPublicKey,
+                            proofChannel40EventId: proofChannel40EventId,
+                            relay: relay,
+                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
+                        });
+                    } catch (e) {
+                        log.error(
+                            "Error while trying to broadcast proof to Nostr:",
+                        );
+                        log.error(e);
+                    }
+                }
             }
         },
     });

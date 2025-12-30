@@ -39,10 +39,9 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import type { PrivateConversationSettings } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { ref, watch } from "vue";
 
 import {
@@ -59,20 +58,21 @@ const { t } = useComponentI18n<CustomTimerDialogTranslations>(
 );
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
-
-const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
+const privateConversationSettings = defineModel<PrivateConversationSettings>(
+  "privateConversationSettings",
+  { required: true }
+);
 
 const customDate = ref<Date>(new Date());
 
-const initializeDate = () => {
-  // Use existing conversionDate from conversationDraft if available and hasScheduledConversion is enabled
+const initializeDate = (): void => {
+  // Use existing conversionDate if available and hasScheduledConversion is enabled
   if (
-    conversationDraft.value.privateConversationSettings
-      .hasScheduledConversion &&
-    conversationDraft.value.privateConversationSettings.conversionDate
+    privateConversationSettings.value.hasScheduledConversion &&
+    privateConversationSettings.value.conversionDate
   ) {
     customDate.value = new Date(
-      conversationDraft.value.privateConversationSettings.conversionDate
+      privateConversationSettings.value.conversionDate
     );
   } else {
     // Set initial custom date to 1 day from now as fallback
@@ -100,9 +100,11 @@ function goBack(): void {
 
 function confirmSelection(): void {
   if (customDate.value) {
-    conversationDraft.value.privateConversationSettings.hasScheduledConversion = true;
-    conversationDraft.value.privateConversationSettings.conversionDate =
-      customDate.value;
+    privateConversationSettings.value = {
+      ...privateConversationSettings.value,
+      hasScheduledConversion: true,
+      conversionDate: customDate.value,
+    };
     showDialog.value = false;
   }
 }

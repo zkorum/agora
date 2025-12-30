@@ -10,7 +10,7 @@ import { useEmbedMode } from "src/utils/ui/embedMode";
 import { ref } from "vue";
 
 import { useActionHandlers } from "../core/handlers";
-import { createActionContext,useActionPermissions } from "../core/permissions";
+import { createActionContext, useActionPermissions } from "../core/permissions";
 import type {
   ContentAction,
   ContentActionContext,
@@ -134,6 +134,7 @@ export function useContentActions() {
       moderatePostCallback: () => void | Promise<void>;
       moderationHistoryCallback: () => void | Promise<void>;
       copyEmbedLinkCallback: () => void | Promise<void>;
+      editConversationCallback: () => void | Promise<void>;
       exportConversationCallback: () => void | Promise<void>;
     }
   ): void => {
@@ -159,6 +160,7 @@ export function useContentActions() {
       report: t("report"),
       muteUser: t("muteUser"),
       delete: t("delete"),
+      edit: t("edit"),
       moderationHistory: t("moderationHistory"),
       embedLink: t("embedLink"),
       moderate: t("moderate"),
@@ -175,6 +177,7 @@ export function useContentActions() {
       callbacks.moderationHistoryCallback,
       callbacks.copyEmbedLinkCallback,
       deletePostCallback,
+      callbacks.editConversationCallback,
       callbacks.exportConversationCallback,
       postTranslations
     );

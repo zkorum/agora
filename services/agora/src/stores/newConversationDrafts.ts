@@ -1,381 +1,24 @@
 import { type RemovableRef, useStorage } from "@vueuse/core";
 import { defineStore } from "pinia";
 import {
-  MAX_LENGTH_BODY,
-  MAX_LENGTH_OPTION,
-  MAX_LENGTH_TITLE,
-  validateHtmlStringCharacterCount,
-} from "src/shared/shared";
-import type { EventSlug, OrganizationProperties } from "src/shared/types/zod";
-import { zodEventSlug } from "src/shared/types/zod";
-import { isValidPolisUrl } from "src/shared/utils/polis";
+  type SerializableConversationDraft,
+  zodSerializableConversationDraft,
+} from "src/composables/conversation/draft/conversationDraft.schema";
+import type {
+  ConversationDraft,
+  ConversationImportType,
+} from "src/composables/conversation/draft/conversationDraft.types";
+import { createEmptyDraft } from "src/composables/conversation/draft/conversationDraft.utils";
+import type { OrganizationProperties } from "src/shared/types/zod";
 import { processEnv } from "src/utils/processEnv";
-import { computed, ref, watch } from "vue";
-import { z } from "zod";
-
-import { useLanguageStore } from "./language";
-import { newConversationDraftsTranslations } from "./newConversationDrafts.i18n";
-
-// ============================================================================
-// Zod Schemas for Draft Validation
-// ============================================================================
-
-/**
- * Zod schema for validating poll options (when poll is enabled)
- */
-const zodPollOptions = z
-  .array(z.string().trim().min(1, "All poll options must be filled in"))
-  .min(2, "Poll must have at least 2 options")
-  .max(6, "Maximum 6 poll options allowed")
-  .refine(
-    (options) => {
-      const trimmedLower = options.map((opt) => opt.toLowerCase());
-      return new Set(trimmedLower).size === trimmedLower.length;
-    },
-    { message: "Poll options must be unique" }
-  );
-
-/**
- * Zod schema for poll settings
- */
-const zodPollSettings = z.object({
-  enabled: z.boolean(),
-  options: z.array(z.string()),
-});
-
-/**
- * Zod schema for post-as settings
- */
-const zodPostAsSettings = z.object({
-  postAsOrganization: z.boolean(),
-  organizationName: z.string(),
-});
-
-/**
- * Zod schema for private conversation settings (serializable version with ISO string)
- */
-const zodSerializablePrivateConversationSettings = z.object({
-  requiresLogin: z.boolean(),
-  hasScheduledConversion: z.boolean(),
-  conversionDate: z.iso.datetime(), // Validates ISO 8601 datetime format
-});
-
-/**
- * Zod schema for CSV file metadata
- */
-const zodCsvFileMetadata = z
-  .object({
-    name: z.string(),
-    size: z.number().nonnegative(),
-  })
-  .nullable();
-
-/**
- * Zod schema for CSV file metadata set
- */
-const zodCsvFileMetadataSet = z.object({
-  summary: zodCsvFileMetadata,
-  comments: zodCsvFileMetadata,
-  votes: zodCsvFileMetadata,
-});
-
-/**
- * Zod schema for title validation (runtime validation)
- */
-const zodTitleValidation = z
-  .string()
-  .trim()
-  .min(1, "Title is required to continue")
-  .max(MAX_LENGTH_TITLE);
-
-/**
- * Zod schema for Polis URL validation (runtime validation)
- */
-const zodPolisUrlValidation = z
-  .string()
-  .refine((url) => !url || isValidPolisUrl(url), {
-    message: "Please enter a valid Polis URL.",
-  });
-
-/**
- * Zod schema for conversation import type
- */
-const zodConversationImportType = z
-  .enum(["polis-url", "csv-import"])
-  .nullable();
-
-/**
- * Zod schema for conversation import settings
- */
-const zodConversationImportSettings = z.object({
-  importType: zodConversationImportType,
-  polisUrl: z.string(),
-  csvFileMetadata: zodCsvFileMetadataSet,
-});
-
-/**
- * Zod schema for serializable conversation draft
- * This is the main schema used for localStorage validation
- */
-const zodSerializableConversationDraft = z.object({
-  // Basic content
-  title: z.string().max(MAX_LENGTH_TITLE),
-  content: z.string(), // Body length validation happens in validateHtmlStringCharacterCount
-  seedOpinions: z.array(z.string()),
-
-  // Poll configuration
-  poll: zodPollSettings,
-
-  // Publishing options
-  postAs: zodPostAsSettings,
-
-  // Privacy settings
-  isPrivate: z.boolean(),
-  privateConversationSettings: zodSerializablePrivateConversationSettings,
-
-  // Event ticket verification
-  requiresEventTicket: zodEventSlug.optional(),
-
-  // Import settings
-  importSettings: zodConversationImportSettings,
-});
-
-/**
- * Type inference from zod schema - replaces the SerializableConversationDraft interface
- */
-type SerializableConversationDraft = z.infer<
-  typeof zodSerializableConversationDraft
->;
-
-// ============================================================================
-// TypeScript Interfaces (for runtime types with Date objects)
-// ============================================================================
-
-/**
- * Settings for posting as an organization
- */
-export interface PostAsSettings {
-  /** Whether to publish this post on behalf of an organization */
-  postAsOrganization: boolean;
-  /** The name of the organization (only relevant if postAsOrganization is true) */
-  organizationName: string;
-}
-
-/**
- * Advanced settings for private conversations
- * Only relevant when the conversation is private
- */
-export interface PrivateConversationSettings {
-  /** Whether to automatically convert this conversation on a specific date */
-  hasScheduledConversion: boolean;
-  /** The target date for automatic conversion */
-  conversionDate: Date;
-}
-
-/**
- * Type of conversation import method
- */
-export type ConversationImportType = "polis-url" | "csv-import";
-
-/**
- * Settings for importing conversations
- */
-export interface ConversationImportSettings {
-  /** How this conversation is being imported (null for manual creation) */
-  importType: ConversationImportType | null;
-  /** The Polis conversation URL (only relevant for 'polis-url' type) */
-  polisUrl: string;
-  /** Metadata for uploaded CSV files (only relevant for 'csv-import' type) */
-  csvFileMetadata: {
-    summary: { name: string; size: number } | null;
-    comments: { name: string; size: number } | null;
-    votes: { name: string; size: number } | null;
-  };
-}
-
-/**
- * Polling configuration for the conversation
- */
-export interface PollSettings {
-  /** Whether this conversation includes a poll */
-  enabled: boolean;
-  /** List of poll options */
-  options: string[];
-}
-
-/**
- * Represents a draft of a new conversation post with all its configuration options
- */
-export interface NewConversationDraft {
-  // Basic Content
-  /** The title/subject of the conversation post */
-  title: string;
-  /** The main content/body text of the conversation post */
-  content: string;
-  /** Initial opinion responses to seed the conversation */
-  seedOpinions: string[];
-
-  // Polling Configuration
-  poll: PollSettings;
-
-  // Publishing Options
-  postAs: PostAsSettings;
-
-  // Privacy and Advanced Settings
-  /** Whether this is a private conversation (enables advanced settings) */
-  isPrivate: boolean;
-  /** Whether users must be logged in to participate (applies to both public and private conversations) */
-  requiresLogin: boolean;
-  /** Advanced settings for private conversations (only relevant when isPrivate is true) */
-  privateConversationSettings: PrivateConversationSettings;
-
-  // Event Ticket Verification
-  /** If set, requires users to verify ownership of the specified event ticket. If undefined, no verification required. */
-  requiresEventTicket?: EventSlug;
-
-  // Import Settings
-  importSettings: ConversationImportSettings;
-}
-
-/**
- * Comprehensive validation state for all form fields
- */
-export interface ValidationState {
-  title: {
-    isValid: boolean;
-    error: string;
-    showError: boolean;
-  };
-  body: {
-    isValid: boolean;
-    error: string;
-    showError: boolean;
-  };
-  poll: {
-    isValid: boolean;
-    error: string;
-    showError: boolean;
-  };
-  polisUrl: {
-    isValid: boolean;
-    error: string;
-    showError: boolean;
-  };
-}
-
-export type ValidationErrorField = "title" | "poll" | "body" | "polisUrl";
-
-/**
- * Result of validation checks for proceeding to review page
- */
-export interface ValidationResult {
-  isValid: boolean;
-  errors: {
-    title?: string;
-    poll?: string;
-    body?: string;
-    polisUrl?: string;
-  };
-  firstErrorField?: ValidationErrorField;
-}
-
-/**
- * Mutation result interface for consistent error handling
- */
-export interface MutationResult {
-  success: boolean;
-  error?: string;
-}
+import { watch } from "vue";
 
 export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
-  /**
-   * Helper function to get translations based on current display language
-   */
-  function getTranslations() {
-    const languageStore = useLanguageStore();
-    return newConversationDraftsTranslations[languageStore.displayLanguage];
-  }
-
-  /**
-   * Comprehensive validation state for all form fields
-   */
-  const validationState = ref<ValidationState>({
-    title: {
-      isValid: true,
-      error: "",
-      showError: false,
-    },
-    body: {
-      isValid: true,
-      error: "",
-      showError: false,
-    },
-    poll: {
-      isValid: true,
-      error: "",
-      showError: false,
-    },
-    polisUrl: {
-      isValid: true,
-      error: "",
-      showError: false,
-    },
-  });
-
-  /**
-   * Creates a new empty conversation draft with sensible defaults
-   */
-  function createEmptyDraft(): NewConversationDraft {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    return {
-      // Basic Content
-      title: "",
-      content: "",
-      seedOpinions: [],
-
-      // Polling Configuration
-      poll: {
-        enabled: false,
-        options: ["", ""], // Start with two empty options
-      },
-
-      // Publishing Options
-      postAs: {
-        postAsOrganization: false,
-        organizationName: "",
-      },
-
-      // Privacy and Advanced Settings
-      isPrivate: false,
-      requiresLogin: true,
-      privateConversationSettings: {
-        hasScheduledConversion: false,
-        conversionDate: tomorrow,
-      },
-
-      // Event Ticket Verification
-      requiresEventTicket: undefined,
-
-      // Creation Settings
-      importSettings: {
-        importType: null,
-        polisUrl: "",
-        csvFileMetadata: {
-          summary: null,
-          comments: null,
-          votes: null,
-        },
-      },
-    };
-  }
-
   /**
    * Parses and validates stored draft data using zod schema
    * Returns parsed draft if valid, null otherwise
    */
-  function parseStoredDraft(data: unknown): NewConversationDraft | null {
+  function parseStoredDraft(data: unknown): ConversationDraft | null {
     const result = zodSerializableConversationDraft.safeParse(data);
 
     if (!result.success) {
@@ -403,13 +46,13 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   /**
    * Persistent storage for the conversation draft with automatic serialization
    */
-  const conversationDraft: RemovableRef<NewConversationDraft> = useStorage(
+  const conversationDraft: RemovableRef<ConversationDraft> = useStorage(
     "conversationDraft",
     createEmptyDraft(),
     localStorage,
     {
       serializer: {
-        read: (storedValue: string): NewConversationDraft => {
+        read: (storedValue: string): ConversationDraft => {
           try {
             const parsedData = JSON.parse(storedValue);
             const draft = parseStoredDraft(parsedData);
@@ -430,7 +73,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
             return createEmptyDraft();
           }
         },
-        write: (draft: NewConversationDraft): string => {
+        write: (draft: ConversationDraft): string => {
           try {
             // Convert runtime format to serialized format
             // Move requiresLogin into privateConversationSettings and convert Date to ISO string
@@ -467,6 +110,10 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       },
     }
   );
+
+  // ============================================================================
+  // State Checking Functions
+  // ============================================================================
 
   /**
    * Checks if the current draft has been modified from its default state
@@ -537,6 +184,10 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     return current.title.trim() !== "" || current.content.trim() !== "";
   }
 
+  // ============================================================================
+  // Draft Management Functions
+  // ============================================================================
+
   /**
    * Resets the conversation draft to its default empty state
    */
@@ -573,6 +224,10 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
         emptyDraft.privateConversationSettings;
     }
   }
+
+  // ============================================================================
+  // Organization Management Functions
+  // ============================================================================
 
   /**
    * Sets posting as an organization with the specified name
@@ -628,6 +283,10 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     }
   }
 
+  // ============================================================================
+  // Import Type Management Functions
+  // ============================================================================
+
   /**
    * Checks if user has content that would be lost when switching creation type
    */
@@ -649,17 +308,13 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     conversationDraft.value.content = "";
     conversationDraft.value.poll.enabled = false;
     conversationDraft.value.poll.options = ["", ""];
-    // Clear any validation errors for cleared fields
-    clearValidationError("title");
-    clearValidationError("body");
-    clearValidationError("poll");
   }
 
   /**
    * Sets creation type with optional content clearing
    * Returns whether confirmation is needed before proceeding
    */
-  function setImportType(newType: ConversationImportType | null): {
+  function setImportType(newType: ConversationImportType): {
     needsConfirmation: boolean;
   } {
     const currentType = conversationDraft.value.importSettings.importType;
@@ -681,9 +336,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   /**
    * Sets creation type and performs necessary clearing without confirmation
    */
-  function setImportTypeWithClearing(
-    newType: ConversationImportType | null
-  ): void {
+  function setImportTypeWithClearing(newType: ConversationImportType): void {
     const oldType = conversationDraft.value.importSettings.importType;
 
     conversationDraft.value.importSettings.importType = newType;
@@ -697,7 +350,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     if (newType !== "polis-url") {
       // Clear Polis URL when not using Polis URL type
       conversationDraft.value.importSettings.polisUrl = "";
-      clearValidationError("polisUrl");
     }
 
     if (newType !== "csv-import") {
@@ -710,388 +362,9 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     }
   }
 
-  /**
-   * Validates Polis URL format
-   */
-  function validatePolisUrl(): boolean {
-    return isValidPolisUrl(conversationDraft.value.importSettings.polisUrl);
-  }
-
-  /**
-   * Validates poll options when polling is enabled using Zod
-   */
-  function validatePoll(): { isValid: boolean; errorMessage?: string } {
-    if (!conversationDraft.value.poll.enabled) {
-      return { isValid: true };
-    }
-
-    const options = conversationDraft.value.poll.options;
-    const result = zodPollOptions.safeParse(options);
-
-    if (!result.success) {
-      // Extract the first error message from Zod
-      const errorMessage =
-        result.error.issues[0]?.message || "Poll validation failed";
-      return { isValid: false, errorMessage };
-    }
-
-    return { isValid: true };
-  }
-
-  /**
-   * Centralized validation function for title field using Zod
-   */
-  function validateTitleField(): MutationResult {
-    const title = conversationDraft.value.title;
-    const result = zodTitleValidation.safeParse(title);
-
-    if (!result.success) {
-      const error =
-        result.error.issues[0]?.message || "Title validation failed";
-      validationState.value.title = {
-        isValid: false,
-        error,
-        showError: true,
-      };
-      return { success: false, error };
-    }
-
-    validationState.value.title = {
-      isValid: true,
-      error: "",
-      showError: false,
-    };
-    return { success: true };
-  }
-
-  /**
-   * Centralized validation function for body content
-   */
-  function validateBodyField(): MutationResult {
-    const bodyValidation = validateHtmlStringCharacterCount(
-      conversationDraft.value.content,
-      "conversation"
-    );
-
-    if (!bodyValidation.isValid) {
-      const t = getTranslations();
-      const error = t.bodyExceedsLimit(
-        bodyValidation.characterCount,
-        MAX_LENGTH_BODY
-      );
-      validationState.value.body = {
-        isValid: false,
-        error,
-        showError: true,
-      };
-      return { success: false, error };
-    }
-
-    validationState.value.body = {
-      isValid: true,
-      error: "",
-      showError: false,
-    };
-    return { success: true };
-  }
-
-  /**
-   * Centralized validation function for Polis URL using Zod
-   */
-  function validatePolisUrlField(): MutationResult {
-    const t = getTranslations();
-    const url = conversationDraft.value.importSettings.polisUrl;
-    const importType = conversationDraft.value.importSettings.importType;
-
-    // When import type is 'polis-url', URL is required and must be valid
-    if (importType === "polis-url") {
-      if (!url || url.trim() === "") {
-        const error = t.polisUrlRequired;
-        validationState.value.polisUrl = {
-          isValid: false,
-          error,
-          showError: true,
-        };
-        return { success: false, error };
-      }
-    }
-
-    const result = zodPolisUrlValidation.safeParse(url);
-
-    if (!result.success) {
-      const error = t.polisUrlInvalid;
-      validationState.value.polisUrl = {
-        isValid: false,
-        error,
-        showError: true,
-      };
-      return { success: false, error };
-    }
-
-    validationState.value.polisUrl = {
-      isValid: true,
-      error: "",
-      showError: false,
-    };
-    return { success: true };
-  }
-
-  /**
-   * Centralized validation function for poll
-   */
-  function validatePollField(): MutationResult {
-    const validation = validatePoll();
-
-    if (!validation.isValid) {
-      const error = validation.errorMessage || "Poll validation failed";
-      validationState.value.poll = {
-        isValid: false,
-        error,
-        showError: true,
-      };
-      return { success: false, error };
-    }
-
-    validationState.value.poll = {
-      isValid: true,
-      error: "",
-      showError: false,
-    };
-    return { success: true };
-  }
-
-  /**
-   * Clears validation error for a specific field
-   */
-  function clearValidationError(field: keyof ValidationState): void {
-    validationState.value[field] = {
-      isValid: true,
-      error: "",
-      showError: false,
-    };
-  }
-
-  /**
-   * Clears all validation errors
-   */
-  function clearAllValidationErrors(): void {
-    Object.keys(validationState.value).forEach((field) => {
-      clearValidationError(field as keyof ValidationState);
-    });
-  }
-
-  /**
-   * Centralized mutation for updating title
-   * Length validation is handled by the Editor component
-   */
-  function updateTitle(newTitle: string): MutationResult {
-    conversationDraft.value.title = newTitle;
-
-    // Clear error when user starts typing
-    if (validationState.value.title.showError && newTitle.trim()) {
-      clearValidationError("title");
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Centralized mutation for updating body content
-   * Length validation is handled by the Editor component
-   */
-  function updateContent(newContent: string): MutationResult {
-    conversationDraft.value.content = newContent;
-
-    // Clear error when content becomes valid
-    if (validationState.value.body.showError) {
-      clearValidationError("body");
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Centralized mutation for updating Polis URL with validation
-   */
-  function updatePolisUrl(newUrl: string): MutationResult {
-    conversationDraft.value.importSettings.polisUrl = newUrl;
-
-    // Clear error when URL becomes valid
-    if (validationState.value.polisUrl.showError) {
-      if (!newUrl || isValidPolisUrl(newUrl)) {
-        clearValidationError("polisUrl");
-      }
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Centralized mutation for updating poll option with validation
-   */
-  function updatePollOption(index: number, value: string): MutationResult {
-    if (index < 0 || index >= conversationDraft.value.poll.options.length) {
-      return { success: false, error: "Invalid poll option index" };
-    }
-
-    // Validate poll option length
-    if (value.length > MAX_LENGTH_OPTION) {
-      console.warn(
-        `Poll option exceeds max length (${value.length}/${MAX_LENGTH_OPTION}), keeping old value`
-      );
-      return { success: false, error: "Poll option too long" };
-    }
-
-    conversationDraft.value.poll.options[index] = value;
-
-    // Clear poll validation error when user starts fixing issues
-    if (validationState.value.poll.showError) {
-      clearValidationError("poll");
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Centralized mutation for adding poll option with validation
-   */
-  function addPollOptionWithValidation(): MutationResult {
-    const t = getTranslations();
-    const maxOptions = 6;
-    if (conversationDraft.value.poll.options.length >= maxOptions) {
-      return {
-        success: false,
-        error: t.pollMaxOptionsError(maxOptions),
-      };
-    }
-
-    conversationDraft.value.poll.options.push("");
-
-    // Clear poll validation error
-    if (validationState.value.poll.showError) {
-      clearValidationError("poll");
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Centralized mutation for removing poll option with validation
-   */
-  function removePollOptionWithValidation(index: number): MutationResult {
-    const t = getTranslations();
-    const options = conversationDraft.value.poll.options;
-    const minOptions = 2;
-
-    if (options.length <= minOptions) {
-      return {
-        success: false,
-        error: t.pollMinOptionsError(minOptions),
-      };
-    }
-
-    if (index < 0 || index >= options.length) {
-      return { success: false, error: "Invalid poll option index" };
-    }
-
-    options.splice(index, 1);
-
-    // Clear poll validation error
-    if (validationState.value.poll.showError) {
-      clearValidationError("poll");
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Centralized mutation for toggling poll with validation
-   */
-  function togglePollWithValidation(enabled: boolean): MutationResult {
-    conversationDraft.value.poll.enabled = enabled;
-
-    if (!enabled) {
-      // Reset poll options when disabling
-      conversationDraft.value.poll.options = ["", ""];
-      clearValidationError("poll");
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Validates the draft for proceeding to review page
-   * This centralizes all validation logic used by both create page and review page entry guard
-   */
-  function validateForReview(): ValidationResult {
-    const t = getTranslations();
-    const result: ValidationResult = {
-      isValid: true,
-      errors: {},
-    };
-
-    const draft = conversationDraft.value;
-    const importType = draft.importSettings.importType;
-
-    // For manual creation, validate title and content
-    if (importType === null) {
-      // Validate title
-      if (!draft.title.trim()) {
-        result.isValid = false;
-        result.errors.title = t.titleRequired;
-        if (!result.firstErrorField) result.firstErrorField = "title";
-      }
-
-      // Validate body content length
-      const bodyValidation = validateHtmlStringCharacterCount(
-        draft.content,
-        "conversation"
-      );
-      if (!bodyValidation.isValid) {
-        result.isValid = false;
-        result.errors.body = t.bodyExceedsLimit(
-          bodyValidation.characterCount,
-          MAX_LENGTH_BODY
-        );
-        if (!result.firstErrorField) result.firstErrorField = "body";
-      }
-
-      // Validate poll if enabled
-      if (draft.poll.enabled) {
-        const pollValidation = validatePoll();
-        if (!pollValidation.isValid) {
-          result.isValid = false;
-          result.errors.poll =
-            pollValidation.errorMessage || "Poll validation failed";
-          if (!result.firstErrorField) result.firstErrorField = "poll";
-        }
-      }
-    }
-
-    // For Polis URL import, validate URL
-    if (importType === "polis-url") {
-      if (
-        !draft.importSettings.polisUrl ||
-        !isValidPolisUrl(draft.importSettings.polisUrl)
-      ) {
-        result.isValid = false;
-        result.errors.polisUrl = t.polisUrlInvalid;
-        if (!result.firstErrorField) result.firstErrorField = "polisUrl";
-      }
-    }
-
-    // For CSV import, validation will be handled by the PolisCsvUpload component
-    // The component will expose an isValid method that the create page can check
-
-    return result;
-  }
-
-  /**
-   * Computed property to check if the draft is ready for review
-   */
-  const canAccessReview = computed(() => {
-    return validateForReview().isValid;
-  });
+  // ============================================================================
+  // Watchers
+  // ============================================================================
 
   if (processEnv.VITE_IS_ORG_IMPORT_ONLY === "true") {
     /**
@@ -1119,7 +392,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   return {
     // Main draft state
     conversationDraft,
-    validationState,
 
     // Factory functions
     createEmptyDraft,
@@ -1127,46 +399,22 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     // State checking functions
     hasUnsavedChanges,
     hasContent,
-    canAccessReview,
     hasContentThatWouldBeCleared,
 
-    // Centralized validation functions
-    validateTitleField,
-    validateBodyField,
-    validatePolisUrlField,
-    validatePollField,
-    clearValidationError,
-    clearAllValidationErrors,
-
-    // Centralized mutation functions
-    updateTitle,
-    updateContent,
-    updatePolisUrl,
-    updatePollOption,
-    addPollOptionWithValidation,
-    removePollOptionWithValidation,
-    togglePollWithValidation,
-
-    // Comprehensive validation functions
-    validateForReview,
-    validatePoll,
-
-    // Action functions
+    // Draft management functions
     resetDraft,
     resetPoll,
     addInitialOpinion,
     togglePrivacy,
+
+    // Organization management functions
     setPostAsOrganization,
     disablePostAsOrganization,
     validateSelectedOrganization,
+
+    // Import type management functions
     setImportType,
     setImportTypeWithClearing,
     clearContentFields,
-    validatePolisUrl,
-
-    // Poll management functions
-    addPollOption: addPollOptionWithValidation,
-    removePollOption: removePollOptionWithValidation,
-    togglePoll: togglePollWithValidation,
   };
 });

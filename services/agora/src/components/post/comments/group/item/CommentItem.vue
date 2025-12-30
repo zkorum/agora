@@ -6,6 +6,7 @@
         <OpinionIdentityCard
           :author-verified="false"
           :created-at="commentItem.createdAt"
+          :updated-at="commentItem.updatedAt"
           :user-identity="commentItem.username"
           :show-verified-text="false"
           organization-image-url=""

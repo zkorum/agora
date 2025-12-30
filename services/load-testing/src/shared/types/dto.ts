@@ -6,8 +6,10 @@ import {
     zodOpinionItem,
     zodAnalysisOpinionItem,
     zodPollOptionTitle,
+    zodPollAction,
     zodConversationTitle,
     zodConversationBodyInput,
+    zodConversationBodyOutput,
     zodOpinionContentInput,
     zodVotingOption,
     zodVotingAction,
@@ -276,6 +278,71 @@ export class Dto {
             conversationData: zodExtendedConversationData,
         })
         .strict();
+    static getConversationForEditRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static getConversationForEditResponse = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+                conversationSlugId: zodSlugId,
+                conversationTitle: zodConversationTitle,
+                conversationBody: zodConversationBodyOutput,
+                pollingOptionList: z.array(zodPollOptionTitle).optional(),
+                isIndexed: z.boolean(),
+                isLoginRequired: z.boolean(),
+                requiresEventTicket: zodEventSlug.optional(),
+                indexConversationAt: zodDateTimeFlexible.optional(),
+                createdAt: zodDateTimeFlexible,
+                updatedAt: zodDateTimeFlexible,
+                hasPoll: z.boolean(),
+                isLocked: z.boolean(),
+            })
+            .strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: z.enum(["not_found", "not_author"]),
+            })
+            .strict(),
+    ]);
+    static updateConversationRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            conversationTitle: zodConversationTitle,
+            conversationBody: zodConversationBodyInput,
+            pollAction: zodPollAction,
+            isIndexed: z.boolean(),
+            isLoginRequired: z.boolean(),
+            requiresEventTicket: zodEventSlug.optional(),
+            indexConversationAt: z.string().datetime().optional(),
+        })
+        .strict();
+    static updateConversationResponse = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+            })
+            .strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: z.enum([
+                    "not_found",
+                    "not_author",
+                    "conversation_locked",
+                    "invalid_access_settings",
+                    "poll_already_exists",
+                    "poll_exists_use_keep_or_remove",
+                    "no_poll_to_remove",
+                    "no_poll_to_keep",
+                    "no_poll_to_replace",
+                ]),
+            })
+            .strict(),
+    ]);
     static createOpinionRequest = z
         .object({
             conversationSlugId: z.string(),
@@ -850,6 +917,18 @@ export type ImportCsvConversationResponse = z.infer<
 >;
 export type GetConversationResponse = z.infer<
     typeof Dto.getConversationResponse
+>;
+export type GetConversationForEditRequest = z.infer<
+    typeof Dto.getConversationForEditRequest
+>;
+export type GetConversationForEditResponse = z.infer<
+    typeof Dto.getConversationForEditResponse
+>;
+export type UpdateConversationRequest = z.infer<
+    typeof Dto.updateConversationRequest
+>;
+export type UpdateConversationResponse = z.infer<
+    typeof Dto.updateConversationResponse
 >;
 export type CreateCommentResponse = z.infer<typeof Dto.createOpinionResponse>;
 export type GetUserPollResponseByConversations200 = z.infer<
