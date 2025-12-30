@@ -4356,6 +4356,256 @@
                 }
             }
         },
+        "/api/v1/conversation/get-for-edit": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "conversationSlugId": {
+                                                    "type": "string",
+                                                    "maxLength": 10
+                                                },
+                                                "conversationTitle": {
+                                                    "type": "string",
+                                                    "maxLength": 140,
+                                                    "minLength": 1
+                                                },
+                                                "conversationBody": {
+                                                    "type": "string",
+                                                    "maxLength": 3000
+                                                },
+                                                "pollingOptionList": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "maxLength": 30,
+                                                        "minLength": 1
+                                                    }
+                                                },
+                                                "isIndexed": {
+                                                    "type": "boolean"
+                                                },
+                                                "isLoginRequired": {
+                                                    "type": "boolean"
+                                                },
+                                                "requiresEventTicket": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "devconnect-2025"
+                                                    ]
+                                                },
+                                                "indexConversationAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "createdAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updatedAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "hasPoll": {
+                                                    "type": "boolean"
+                                                },
+                                                "seedOpinionCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "conversationSlugId",
+                                                "conversationTitle",
+                                                "isIndexed",
+                                                "isLoginRequired",
+                                                "createdAt",
+                                                "updatedAt",
+                                                "hasPoll",
+                                                "seedOpinionCount"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "not_found",
+                                                        "not_author"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/update": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    },
+                                    "conversationTitle": {
+                                        "type": "string",
+                                        "maxLength": 140,
+                                        "minLength": 1
+                                    },
+                                    "conversationBody": {
+                                        "type": "string",
+                                        "maxLength": 3000
+                                    },
+                                    "pollingOptionList": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "maxLength": 30,
+                                            "minLength": 1
+                                        }
+                                    },
+                                    "isIndexed": {
+                                        "type": "boolean"
+                                    },
+                                    "isLoginRequired": {
+                                        "type": "boolean"
+                                    },
+                                    "requiresEventTicket": {
+                                        "type": "string",
+                                        "enum": [
+                                            "devconnect-2025"
+                                        ]
+                                    },
+                                    "indexConversationAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "removePoll": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId",
+                                    "conversationTitle",
+                                    "isIndexed",
+                                    "isLoginRequired"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "not_found",
+                                                        "not_author",
+                                                        "conversation_locked"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/zkp/generate-verification-link": {
             "post": {
                 "requestBody": {
