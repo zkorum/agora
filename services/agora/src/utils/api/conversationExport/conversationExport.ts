@@ -20,9 +20,10 @@ export function useBackendConversationExportApi() {
   async function fetchExportHistory(
     conversationSlugId: string
   ): Promise<GetConversationExportHistoryResponse> {
+    const params = { conversationSlugId };
     const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1ConversationExportHistoryConversationSlugIdGet(
-        conversationSlugId
+      await DefaultApiAxiosParamCreator().apiV1ConversationExportHistoryPost(
+        params
       );
     const encodedUcan = await buildEncodedUcan(url, options);
 
@@ -30,8 +31,8 @@ export function useBackendConversationExportApi() {
       undefined,
       undefined,
       api
-    ).apiV1ConversationExportHistoryConversationSlugIdGet(
-      conversationSlugId,
+    ).apiV1ConversationExportHistoryPost(
+      params,
       createRawAxiosRequestConfig({
         encodedUcan: encodedUcan,
         timeoutProfile: "standard",
@@ -78,9 +79,10 @@ export function useBackendConversationExportApi() {
   async function fetchExportStatus(
     exportSlugId: string
   ): Promise<GetConversationExportStatusResponse> {
+    const params = { exportSlugId };
     const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1ConversationExportStatusExportSlugIdGet(
-        exportSlugId
+      await DefaultApiAxiosParamCreator().apiV1ConversationExportStatusPost(
+        params
       );
     const encodedUcan = await buildEncodedUcan(url, options);
 
@@ -88,8 +90,8 @@ export function useBackendConversationExportApi() {
       undefined,
       undefined,
       api
-    ).apiV1ConversationExportStatusExportSlugIdGet(
-      exportSlugId,
+    ).apiV1ConversationExportStatusPost(
+      params,
       createRawAxiosRequestConfig({
         encodedUcan: encodedUcan,
         timeoutProfile: "standard",
@@ -103,9 +105,10 @@ export function useBackendConversationExportApi() {
   }
 
   async function deleteExport(exportSlugId: string): Promise<void> {
+    const params = { exportSlugId };
     const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1ConversationExportExportSlugIdDelete(
-        exportSlugId
+      await DefaultApiAxiosParamCreator().apiV1ConversationExportDeletePost(
+        params
       );
     const encodedUcan = await buildEncodedUcan(url, options);
 
@@ -113,8 +116,8 @@ export function useBackendConversationExportApi() {
       undefined,
       undefined,
       api
-    ).apiV1ConversationExportExportSlugIdDelete(
-      exportSlugId,
+    ).apiV1ConversationExportDeletePost(
+      params,
       createRawAxiosRequestConfig({
         encodedUcan: encodedUcan,
         timeoutProfile: "standard",
@@ -125,9 +128,10 @@ export function useBackendConversationExportApi() {
   async function fetchExportReadiness(
     conversationSlugId: string
   ): Promise<GetExportReadinessResponse> {
+    const params = { conversationSlugId };
     const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1ConversationExportReadinessConversationSlugIdGet(
-        conversationSlugId
+      await DefaultApiAxiosParamCreator().apiV1ConversationExportReadinessPost(
+        params
       );
     const encodedUcan = await buildEncodedUcan(url, options);
 
@@ -135,8 +139,8 @@ export function useBackendConversationExportApi() {
       undefined,
       undefined,
       api
-    ).apiV1ConversationExportReadinessConversationSlugIdGet(
-      conversationSlugId,
+    ).apiV1ConversationExportReadinessPost(
+      params,
       createRawAxiosRequestConfig({
         encodedUcan: encodedUcan,
         timeoutProfile: "standard",

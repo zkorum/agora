@@ -2086,9 +2086,9 @@ export const conversationImportTable = pgTable(
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
-        conversationId: integer("conversation_id").references(
-            () => conversationTable.id,
-        ), // null until import completes successfully
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .unique(), // null until import completes successfully; unique constraint allows multiple NULLs
         userId: uuid("user_id") // User who requested the import
             .references(() => userTable.id)
             .notNull(),
