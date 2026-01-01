@@ -19,7 +19,7 @@ import {
 
 export type KeyAction = "overwrite" | "get" | "create";
 
-export type ApiTimeoutProfile = "standard" | "extended";
+export type ApiTimeoutProfile = "standard" | "extended" | "file-upload";
 
 export type AxiosErrorCode =
   | typeof AxiosError.ERR_FR_TOO_MANY_REDIRECTS
@@ -92,6 +92,7 @@ export function useCommonApi() {
 
   const STANDARD_TIMEOUT_MS = 8000;
   const EXTENDED_TIMEOUT_MS = 20000;
+  const FILE_UPLOAD_TIMEOUT_MS = 90000;
 
   interface CreateRawAxiosRequestConfigProps {
     encodedUcan?: string;
@@ -182,6 +183,8 @@ export function useCommonApi() {
         return STANDARD_TIMEOUT_MS;
       case "extended":
         return EXTENDED_TIMEOUT_MS;
+      case "file-upload":
+        return FILE_UPLOAD_TIMEOUT_MS;
       default:
         return STANDARD_TIMEOUT_MS;
     }
@@ -204,7 +207,8 @@ export function useCommonApi() {
   async function buildEncodedUcan(
     url: string,
     options: RawAxiosRequestConfig,
-    keyAction: KeyAction = "create" // if the key doesn't correspond to an existing logged-in user, HTTP requests requiring authentication will throw a 401 error, and the router will redirect the user to the log-in screen, which is the expected behavior
+    keyAction: KeyAction = "create", // if the key doesn't correspond to an existing logged-in user, HTTP requests requiring authentication will throw a 401 error, and the router will redirect the user to the log-in screen, which is the expected behavior
+    lifetimeInSeconds?: number
   ) {
     let platform: "mobile" | "web" = "web";
 
@@ -233,6 +237,7 @@ export function useCommonApi() {
       pathname: url,
       method: options.method,
       platform,
+      lifetimeInSeconds,
     });
     return encodedUcan;
     // TODO: get DID if exist, else create it

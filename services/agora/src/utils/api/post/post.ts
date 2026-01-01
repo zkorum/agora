@@ -28,7 +28,10 @@ import { zodExtendedConversationData } from "src/shared/types/zod";
 import { CSV_UPLOAD_FIELD_NAMES } from "src/shared-app-api/csvUpload";
 import { useRouter } from "vue-router";
 
-import { buildAuthorizationHeader } from "../../crypto/ucan/operation";
+import {
+  buildAuthorizationHeader,
+  FILE_UPLOAD_UCAN_LIFETIME_SECONDS,
+} from "../../crypto/ucan/operation";
 import { useNotify } from "../../ui/notify";
 import { api,axiosInstance } from "../client";
 import type { AxiosErrorResponse, AxiosSuccessResponse } from "../common";
@@ -240,12 +243,17 @@ export function useBackendPostApi() {
     // Get URL from OpenAPI spec
     const { url, options } =
       await DefaultApiAxiosParamCreator().apiV1ConversationImportCsvPost();
-    const encodedUcan = await buildEncodedUcan(url, options);
+    const encodedUcan = await buildEncodedUcan(
+      url,
+      options,
+      "create",
+      FILE_UPLOAD_UCAN_LIFETIME_SECONDS
+    );
 
-    // Use createRawAxiosRequestConfig with extended timeout for large files
+    // Use createRawAxiosRequestConfig with file-upload timeout for large files
     const config = createRawAxiosRequestConfig({
       encodedUcan,
-      timeoutProfile: "extended",
+      timeoutProfile: "file-upload",
     });
 
     const response = await api.post(url, formData, {
@@ -420,11 +428,17 @@ export function useBackendPostApi() {
       // Get URL from OpenAPI spec
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1ConversationValidateCsvPost();
-      const encodedUcan = await buildEncodedUcan(url, options);
+      const encodedUcan = await buildEncodedUcan(
+        url,
+        options,
+        "create",
+        FILE_UPLOAD_UCAN_LIFETIME_SECONDS
+      );
 
-      // Use standard timeout for validation (should be fast)
+      // Use file-upload timeout for validation (large files can take time to upload and parse)
       const config = createRawAxiosRequestConfig({
         encodedUcan,
+        timeoutProfile: "file-upload",
       });
 
       const response = await api.post(url, formData, {
@@ -445,9 +459,10 @@ export function useBackendPostApi() {
   async function getConversationImportStatus(
     importSlugId: string
   ): Promise<GetConversationImportStatusResponse> {
+    const params = { importSlugId };
     const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1ConversationImportStatusImportSlugIdGet(
-        importSlugId
+      await DefaultApiAxiosParamCreator().apiV1ConversationImportStatusPost(
+        params
       );
     const encodedUcan = await buildEncodedUcan(url, options);
 
@@ -455,7 +470,7 @@ export function useBackendPostApi() {
       undefined,
       undefined,
       api
-    ).apiV1ConversationImportStatusImportSlugIdGet(importSlugId, {
+    ).apiV1ConversationImportStatusPost(params, {
       headers: {
         ...buildAuthorizationHeader(encodedUcan),
       },
@@ -466,14 +481,14 @@ export function useBackendPostApi() {
 
   async function getActiveImport(): Promise<GetActiveImportResponse> {
     const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1ConversationImportActiveGet();
+      await DefaultApiAxiosParamCreator().apiV1ConversationImportActivePost();
     const encodedUcan = await buildEncodedUcan(url, options);
 
     const response = await DefaultApiFactory(
       undefined,
       undefined,
       api
-    ).apiV1ConversationImportActiveGet({
+    ).apiV1ConversationImportActivePost({
       headers: {
         ...buildAuthorizationHeader(encodedUcan),
       },

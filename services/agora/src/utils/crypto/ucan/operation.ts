@@ -113,12 +113,19 @@ export async function deleteDid(platform: SupportedPlatform): Promise<void> {
   }
 }
 //
+// Default UCAN lifetime for standard API calls (30 seconds)
+const DEFAULT_UCAN_LIFETIME_SECONDS = 30;
+
+// Extended UCAN lifetime for file uploads (2 minutes)
+export const FILE_UPLOAD_UCAN_LIFETIME_SECONDS = 120;
+
 interface CreateUcanProps {
   did: string;
   prefixedKey: string;
   pathname: string;
   method: string | undefined;
   platform: SupportedPlatform;
+  lifetimeInSeconds?: number;
 }
 
 async function buildWebUcan({
@@ -126,6 +133,7 @@ async function buildWebUcan({
   prefixedKey,
   pathname,
   method,
+  lifetimeInSeconds = DEFAULT_UCAN_LIFETIME_SECONDS,
 }: CreateUcanProps): Promise<string> {
   const webCryptoStore = await getWebCryptoStore();
   const u = await ucans.Builder.create()
@@ -136,7 +144,7 @@ async function buildWebUcan({
         webCryptoStore.keystore.sign(msg, prefixedKey),
     })
     .toAudience(processEnv.VITE_BACK_DID)
-    .withLifetimeInSeconds(30)
+    .withLifetimeInSeconds(lifetimeInSeconds)
     .claimCapability({
       // with: { scheme: "wnfs", hierPart: "//boris.fission.name/public/photos/" },
       // can: { namespace: "wnfs", segments: ["OVERWRITE"] },
@@ -153,6 +161,7 @@ async function buildMobileUcan({
   prefixedKey,
   pathname,
   method,
+  lifetimeInSeconds = DEFAULT_UCAN_LIFETIME_SECONDS,
 }: CreateUcanProps): Promise<string> {
   const u = await ucans.Builder.create()
     .issuedBy({
@@ -167,7 +176,7 @@ async function buildMobileUcan({
       },
     })
     .toAudience(processEnv.VITE_BACK_DID)
-    .withLifetimeInSeconds(30)
+    .withLifetimeInSeconds(lifetimeInSeconds)
     .claimCapability({
       // with: { scheme: "wnfs", hierPart: "//boris.fission.name/public/photos/" },
       // can: { namespace: "wnfs", segments: ["OVERWRITE"] },

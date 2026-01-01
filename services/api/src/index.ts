@@ -703,9 +703,12 @@ async function verifyUcanAndKnownDeviceStatus(
         },
     };
     let actualOptions: OptionsVerifyUcan;
-    if (options !== undefined) {
+    if (options?.expectedKnownDeviceStatus !== undefined) {
         actualOptions = {
-            expectedDeviceStatus: { isKnown: true, ...options },
+            expectedDeviceStatus: {
+                isKnown: true,
+                ...options.expectedKnownDeviceStatus,
+            },
         };
     } else {
         actualOptions = defaultOptions;
@@ -2034,7 +2037,7 @@ server.after(() => {
 
     // Get Active Import for User
     server.withTypeProvider<ZodTypeProvider>().route({
-        method: "GET",
+        method: "POST",
         url: `/api/${apiVersion}/conversation/import/active`,
         schema: {
             response: {
@@ -2059,10 +2062,10 @@ server.after(() => {
 
     // Conversation Import Status Route
     server.withTypeProvider<ZodTypeProvider>().route({
-        method: "GET",
-        url: `/api/${apiVersion}/conversation/import/status/:importSlugId`,
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/import/status`,
         schema: {
-            params: Dto.getConversationImportStatusRequest,
+            body: Dto.getConversationImportStatusRequest,
             response: {
                 200: Dto.getConversationImportStatusResponse,
             },
@@ -2075,7 +2078,7 @@ server.after(() => {
             const status =
                 await conversationImportService.getConversationImportStatus({
                     db: db,
-                    importSlugId: request.params.importSlugId,
+                    importSlugId: request.body.importSlugId,
                 });
 
             if (status === null) {
@@ -2877,10 +2880,10 @@ server.after(() => {
     });
 
     server.withTypeProvider<ZodTypeProvider>().route({
-        method: "GET",
-        url: `/api/${apiVersion}/conversation/export/status/:exportSlugId`,
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/export/status`,
         schema: {
-            params: Dto.getConversationExportStatusRequest,
+            body: Dto.getConversationExportStatusRequest,
             response: {
                 200: Dto.getConversationExportStatusResponse,
             },
@@ -2892,16 +2895,16 @@ server.after(() => {
             });
             return await conversationExportService.getConversationExportStatus({
                 db: db,
-                exportSlugId: request.params.exportSlugId,
+                exportSlugId: request.body.exportSlugId,
             });
         },
     });
 
     server.withTypeProvider<ZodTypeProvider>().route({
-        method: "GET",
-        url: `/api/${apiVersion}/conversation/export/history/:conversationSlugId`,
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/export/history`,
         schema: {
-            params: Dto.getConversationExportHistoryRequest,
+            body: Dto.getConversationExportHistoryRequest,
             response: {
                 200: Dto.getConversationExportHistoryResponse,
             },
@@ -2914,17 +2917,17 @@ server.after(() => {
             return await conversationExportService.getConversationExportHistory(
                 {
                     db: db,
-                    conversationSlugId: request.params.conversationSlugId,
+                    conversationSlugId: request.body.conversationSlugId,
                 },
             );
         },
     });
 
     server.withTypeProvider<ZodTypeProvider>().route({
-        method: "GET",
-        url: `/api/${apiVersion}/conversation/export/readiness/:conversationSlugId`,
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/export/readiness`,
         schema: {
-            params: Dto.getConversationExportHistoryRequest,
+            body: Dto.getConversationExportHistoryRequest,
             response: {
                 200: Dto.getExportReadinessResponse,
             },
@@ -2941,20 +2944,19 @@ server.after(() => {
             return await conversationExportService.getExportReadinessForConversation(
                 {
                     db: db,
-                    conversationSlugId: request.params.conversationSlugId,
+                    conversationSlugId: request.body.conversationSlugId,
                     userId: deviceStatus.userId,
-                    cooldownSeconds:
-                        config.EXPORT_CONVOS_COOLDOWN_SECONDS,
+                    cooldownSeconds: config.EXPORT_CONVOS_COOLDOWN_SECONDS,
                 },
             );
         },
     });
 
     server.withTypeProvider<ZodTypeProvider>().route({
-        method: "DELETE",
-        url: `/api/${apiVersion}/conversation/export/:exportSlugId`,
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/export/delete`,
         schema: {
-            params: Dto.deleteConversationExportRequest,
+            body: Dto.deleteConversationExportRequest,
         },
         handler: async (request) => {
             checkConversationExportEnabled();
@@ -2979,7 +2981,7 @@ server.after(() => {
 
             await conversationExportService.deleteConversationExport({
                 db: db,
-                exportSlugId: request.params.exportSlugId,
+                exportSlugId: request.body.exportSlugId,
             });
         },
     });

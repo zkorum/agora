@@ -2990,14 +2990,6 @@
                                         },
                                         "clusters": {
                                             "type": "object",
-                                            "required": [
-                                                "0",
-                                                "1",
-                                                "2",
-                                                "3",
-                                                "4",
-                                                "5"
-                                            ],
                                             "properties": {
                                                 "0": {
                                                     "type": "object",
@@ -4906,7 +4898,7 @@
             }
         },
         "/api/v1/conversation/import/active": {
-            "get": {
+            "post": {
                 "responses": {
                     "200": {
                         "description": "Default Response",
@@ -4962,19 +4954,28 @@
                 }
             }
         },
-        "/api/v1/conversation/import/status/{importSlugId}": {
-            "get": {
-                "parameters": [
-                    {
-                        "schema": {
-                            "type": "string",
-                            "maxLength": 10
-                        },
-                        "in": "path",
-                        "name": "importSlugId",
-                        "required": true
-                    }
-                ],
+        "/api/v1/conversation/import/status": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "importSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "importSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
                 "responses": {
                     "200": {
                         "description": "Default Response",
@@ -7274,19 +7275,28 @@
                 }
             }
         },
-        "/api/v1/conversation/export/status/{exportSlugId}": {
-            "get": {
-                "parameters": [
-                    {
-                        "schema": {
-                            "type": "string",
-                            "maxLength": 10
-                        },
-                        "in": "path",
-                        "name": "exportSlugId",
-                        "required": true
-                    }
-                ],
+        "/api/v1/conversation/export/status": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "exportSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "exportSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
                 "responses": {
                     "200": {
                         "description": "Default Response",
@@ -7553,19 +7563,28 @@
                 }
             }
         },
-        "/api/v1/conversation/export/history/{conversationSlugId}": {
-            "get": {
-                "parameters": [
-                    {
-                        "schema": {
-                            "type": "string",
-                            "maxLength": 10
-                        },
-                        "in": "path",
-                        "name": "conversationSlugId",
-                        "required": true
-                    }
-                ],
+        "/api/v1/conversation/export/history": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
                 "responses": {
                     "200": {
                         "description": "Default Response",
@@ -7609,19 +7628,28 @@
                 }
             }
         },
-        "/api/v1/conversation/export/readiness/{conversationSlugId}": {
-            "get": {
-                "parameters": [
-                    {
-                        "schema": {
-                            "type": "string",
-                            "maxLength": 10
-                        },
-                        "in": "path",
-                        "name": "conversationSlugId",
-                        "required": true
-                    }
-                ],
+        "/api/v1/conversation/export/readiness": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
                 "responses": {
                     "200": {
                         "description": "Default Response",
@@ -7702,19 +7730,28 @@
                 }
             }
         },
-        "/api/v1/conversation/export/{exportSlugId}": {
-            "delete": {
-                "parameters": [
-                    {
-                        "schema": {
-                            "type": "string",
-                            "maxLength": 10
-                        },
-                        "in": "path",
-                        "name": "exportSlugId",
-                        "required": true
-                    }
-                ],
+        "/api/v1/conversation/export/delete": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "exportSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "exportSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
                 "responses": {
                     "200": {
                         "description": "Default Response"
