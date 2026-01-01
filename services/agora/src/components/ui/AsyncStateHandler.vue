@@ -19,11 +19,11 @@
           <div class="errorTitle">
             {{ config.error?.title || t("errorTitle") }}
           </div>
-          <div v-if="errorMessage" class="errorDetail">
-            {{ errorMessage }}
-          </div>
-          <div v-else-if="config.error?.message" class="errorDetail">
+          <div v-if="config.error?.message" class="errorDetail">
             {{ config.error.message }}
+          </div>
+          <div v-else-if="errorMessage" class="errorDetail">
+            {{ errorMessage }}
           </div>
           <div v-else class="errorDetail">
             {{ t("defaultErrorMessage") }}
@@ -271,6 +271,7 @@ async function handleRetry(): Promise<void> {
   justify-content: center;
   gap: 1rem;
   padding-top: 4rem;
+  padding-bottom: 10rem;
   text-align: center;
 }
 

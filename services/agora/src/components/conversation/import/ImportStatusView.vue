@@ -2,13 +2,12 @@
   <div class="import-status-view">
     <AsyncStateHandler
       :query="importStatusQuery"
-      :is-empty="() => false"
       :config="{
         loading: { text: t('loadingStatus') },
         error: { title: t('errorLoadingStatus') },
       }"
     >
-      <div v-if="importStatusQuery.data.value" class="status-content">
+      <div v-if="statusData" class="status-content">
         <!-- Import Info Card -->
         <div class="import-info-card">
           <dl class="import-info-grid">
@@ -19,13 +18,13 @@
             <div class="import-info-item">
               <dt class="import-info-label">{{ t("status") }}:</dt>
               <dd class="import-info-value">
-                {{ t(`status_${importStatusQuery.data.value.status}`) }}
+                {{ t(`status_${statusData.status}`) }}
               </dd>
             </div>
             <div class="import-info-item">
               <dt class="import-info-label">{{ t("createdAt") }}:</dt>
               <dd class="import-info-value">
-                {{ formatDateTime(importStatusQuery.data.value.createdAt) }}
+                {{ formatDateTime(statusData.createdAt) }}
               </dd>
             </div>
           </dl>
@@ -34,7 +33,7 @@
         <!-- Status Message -->
         <div class="status-message">
           <div
-            v-if="importStatusQuery.data.value.status === 'processing'"
+            v-if="statusData.status === 'processing'"
             class="processing-message"
             role="status"
             aria-live="polite"
@@ -47,7 +46,7 @@
             <p>{{ t("processingMessage") }}</p>
           </div>
           <div
-            v-else-if="importStatusQuery.data.value.status === 'completed'"
+            v-else-if="statusData.status === 'completed'"
             class="completed-message"
             role="status"
             aria-live="polite"
@@ -60,7 +59,7 @@
             />
             <p>{{ t("completedMessage") }}</p>
             <PrimeButton
-              v-if="importStatusQuery.data.value.conversationSlugId"
+              v-if="statusData.conversationSlugId"
               :label="t('viewConversation')"
               icon="pi pi-arrow-right"
               class="view-conversation-button"
@@ -68,7 +67,7 @@
             />
           </div>
           <div
-            v-else-if="importStatusQuery.data.value.status === 'failed'"
+            v-else-if="statusData.status === 'failed'"
             class="failed-message"
             role="alert"
             aria-live="assertive"
@@ -80,13 +79,8 @@
               aria-hidden="true"
             />
             <p>{{ t("failedMessage") }}</p>
-            <p
-              v-if="importStatusQuery.data.value.failureReason"
-              class="error-details"
-            >
-              {{
-                getFailureReasonText(importStatusQuery.data.value.failureReason)
-              }}
+            <p v-if="statusData.failureReason" class="error-details">
+              {{ getFailureReasonText(statusData.failureReason) }}
             </p>
           </div>
         </div>
@@ -122,14 +116,18 @@ const { t } = useComponentI18n<ImportStatusViewTranslations>(
 );
 
 const authStore = useAuthenticationStore();
-const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(authStore);
+const { isGuestOrLoggedIn } = storeToRefs(authStore);
 
 const router = useRouter();
 
 const importStatusQuery = useImportStatusQuery({
   importSlugId: props.importSlugId,
-  enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
+  enabled: computed(() => isGuestOrLoggedIn.value),
 });
+
+// Type-safe accessor for import status data
+// AsyncStateHandler guarantees data exists when content slot is rendered
+const statusData = computed(() => importStatusQuery.data.value);
 
 function handleViewConversation(): void {
   const data = importStatusQuery.data.value;
