@@ -98,10 +98,12 @@ export function getPostActions(
       label: translations.exportConversation,
       icon: "mdi-download",
       handler: exportConversationCallback,
+      // Use !== "false" instead of === "true" so export is enabled by default
+      // when the env var is not set (Zod defaults don't apply at runtime)
       isVisible: (context: ContentActionContext) =>
         context.isLoggedIn &&
         !context.isEmbeddedMode &&
-        processEnv.VITE_EXPORT_CONVOS_ENABLED === "true",
+        processEnv.VITE_EXPORT_CONVOS_ENABLED !== "false",
     },
   ];
 }

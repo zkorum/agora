@@ -36,7 +36,10 @@ export const envSchema = z.object({
   // Note: We use z.enum instead of transform because import.meta.env contains raw strings at runtime.
   // The processEnv object is just a type cast of import.meta.env, so transforms don't run at runtime.
   // Compare with string "true"/"false" when using this value.
-  VITE_EXPORT_CONVOS_ENABLED: z.enum(["true", "false"]).default("true"), // Enable/disable conversation export feature (must match backend)
+  // DO NOT use .default() here - it only applies during Zod parsing, but processEnv is a
+  // direct type cast of import.meta.env without runtime parsing. Code using this variable
+  // must use !== "false" checks to treat undefined as enabled by default.
+  VITE_EXPORT_CONVOS_ENABLED: z.enum(["true", "false"]).optional(), // Enable/disable conversation export feature (must match backend)
 });
 
 export type ProcessEnv = z.infer<typeof envSchema>;
