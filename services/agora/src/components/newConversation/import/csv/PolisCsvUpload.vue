@@ -63,6 +63,7 @@
 </template>
 
 <script setup lang="ts">
+import { type AxiosError } from "axios";
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
@@ -70,6 +71,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_CSV_FILE_SIZE_MB } from "src/shared-app-api/csvUpload";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import { axiosInstance } from "src/utils/api/client";
 import { useBackendPostApi } from "src/utils/api/post/post";
 import { ref, watch } from "vue";
 
@@ -95,6 +97,88 @@ const showLoginDialog = ref(false);
 const summaryFile = useCsvFile("summary");
 const commentsFile = useCsvFile("comments");
 const votesFile = useCsvFile("votes");
+
+/**
+ * Formats error details for display and copying.
+ * Captures all available error information in a readable format.
+ */
+function formatErrorDetails(error: unknown): string {
+  if (axiosInstance.isAxiosError(error)) {
+    const axiosError = error as AxiosError;
+    const parts: string[] = [];
+
+    // HTTP status and status text
+    if (axiosError.response) {
+      parts.push(
+        `HTTP ${axiosError.response.status} ${axiosError.response.statusText || ""}`
+      );
+
+      // Response body (could be HTML from nginx or JSON from API)
+      const responseData = axiosError.response.data;
+      if (typeof responseData === "string" && responseData.length > 0) {
+        parts.push(`Response:\n${responseData}`);
+      } else if (responseData && typeof responseData === "object") {
+        parts.push(`Response:\n${JSON.stringify(responseData, null, 2)}`);
+      }
+    }
+
+    // Error message and code
+    parts.push(`Message: ${axiosError.message}`);
+    if (axiosError.code) {
+      parts.push(`Code: ${axiosError.code}`);
+    }
+
+    // Request URL
+    if (axiosError.config?.url) {
+      parts.push(`URL: ${axiosError.config.url}`);
+    }
+
+    // Stack trace
+    if (axiosError.stack) {
+      parts.push(`Stack trace:\n${axiosError.stack}`);
+    }
+
+    // Also include the full error object as JSON for completeness
+    try {
+      const errorJson = JSON.stringify(
+        axiosError,
+        Object.getOwnPropertyNames(axiosError),
+        2
+      );
+      parts.push(`Full error object:\n${errorJson}`);
+    } catch {
+      // Ignore stringify errors (circular references, etc.)
+    }
+
+    return parts.join("\n\n");
+  }
+
+  // Generic error handling
+  if (error instanceof Error) {
+    const parts: string[] = [`Message: ${error.message}`];
+    if (error.stack) {
+      parts.push(`Stack trace:\n${error.stack}`);
+    }
+    try {
+      const errorJson = JSON.stringify(
+        error,
+        Object.getOwnPropertyNames(error),
+        2
+      );
+      parts.push(`Full error object:\n${errorJson}`);
+    } catch {
+      // Ignore stringify errors
+    }
+    return parts.join("\n\n");
+  }
+
+  // Fallback for unknown error types
+  try {
+    return JSON.stringify(error, null, 2);
+  } catch {
+    return String(error);
+  }
+}
 
 /**
  * Handle file upload for a specific drop zone
@@ -160,8 +244,8 @@ async function validateSingleFile(
     }
   } catch (error) {
     console.error(`CSV validation error for ${fileType}:`, error);
-    // Network error or other exception - show in the specific drop zone
-    csvFileState.error.value = t("serverError");
+    // Capture full error details for display and copying
+    csvFileState.error.value = formatErrorDetails(error);
   } finally {
     csvFileState.setValidating(false);
   }
