@@ -254,6 +254,67 @@ When adding API endpoints:
 - Run `make generate` to update frontend client
 - Never manually edit generated API client code
 
+### REST API Design: POST-Only Pattern
+
+This codebase uses a **POST-only API pattern** similar to JSON-RPC but with free-form endpoint naming. This is NOT a traditional RESTful API.
+
+**Rules:**
+1. **ALL endpoints use POST** - Never use GET, PUT, PATCH, or DELETE HTTP methods
+2. **Request data goes in the body** - Never use URL parameters or query strings for data
+3. **Soft-delete only** - All "delete" operations are soft-deletes (set `deletedAt` timestamp), never hard-deletes
+
+**Why POST-only:**
+- ✅ **Consistent authentication**: UCAN tokens work reliably in POST request bodies/headers
+- ✅ **No URL length limits**: Complex queries with many parameters work without issues
+- ✅ **Simpler caching control**: No accidental browser/CDN caching of sensitive data
+- ✅ **Uniform request handling**: All requests follow the same pattern
+
+**Exception:** Server-Sent Events (SSE) endpoints MUST use GET (protocol requirement). Example: `/api/v1/notification/stream`
+
+**Example endpoint patterns:**
+```typescript
+// ✅ GOOD: POST with body parameters
+server.route({
+    method: "POST",
+    url: `/api/${apiVersion}/conversation/export/status`,
+    schema: {
+        body: Dto.getConversationExportStatusRequest, // { exportSlugId: string }
+        response: { 200: Dto.getConversationExportStatusResponse },
+    },
+    handler: async (request) => {
+        const { exportSlugId } = request.body;
+        // ...
+    },
+});
+
+// ✅ GOOD: "Delete" operation uses POST + soft-delete
+server.route({
+    method: "POST",
+    url: `/api/${apiVersion}/conversation/export/delete`,
+    schema: {
+        body: Dto.deleteConversationExportRequest, // { exportSlugId: string }
+    },
+    handler: async (request) => {
+        // Sets deletedAt, does NOT remove from database
+        await softDeleteExport({ exportSlugId: request.body.exportSlugId });
+    },
+});
+
+// ❌ BAD: GET with URL parameters
+server.route({
+    method: "GET",
+    url: `/api/${apiVersion}/conversation/export/status/:exportSlugId`,
+    // ...
+});
+
+// ❌ BAD: DELETE method
+server.route({
+    method: "DELETE",
+    url: `/api/${apiVersion}/conversation/export/:exportSlugId`,
+    // ...
+});
+```
+
 ### Background Jobs (pg-boss)
 
 Math-updater uses PostgreSQL-based job queue:
