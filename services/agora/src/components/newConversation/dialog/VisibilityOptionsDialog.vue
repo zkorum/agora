@@ -3,7 +3,7 @@
     <ZKBottomDialogContainer>
       <ZKDialogOptionsList
         :options="visibilityOptions"
-        :selected-value="conversationDraft.isPrivate ? 'private' : 'public'"
+        :selected-value="isPrivate ? 'private' : 'public'"
         @option-selected="handleOptionSelected"
       />
     </ZKBottomDialogContainer>
@@ -11,11 +11,10 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import type { EventSlug } from "src/shared/types/zod";
 import { useNotify } from "src/utils/ui/notify";
 
 import {
@@ -24,10 +23,12 @@ import {
 } from "./VisibilityOptionsDialog.i18n";
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
-
-const store = useNewPostDraftsStore();
-const { conversationDraft } = storeToRefs(store);
-const { togglePrivacy } = store;
+const isPrivate = defineModel<boolean>("isPrivate", { required: true });
+const requiresLogin = defineModel<boolean>("requiresLogin", { required: true });
+const requiresEventTicket = defineModel<EventSlug | undefined>(
+  "requiresEventTicket",
+  { required: true }
+);
 
 const { t } = useComponentI18n<VisibilityOptionsDialogTranslations>(
   visibilityOptionsDialogTranslations
@@ -52,18 +53,18 @@ function handleOptionSelected(option: {
   title: string;
   description: string;
   value: string;
-}) {
+}): void {
   const isPublic = option.value === "public";
-  const hasGuestParticipation = !conversationDraft.value.requiresLogin;
-  const hasTicketVerification =
-    conversationDraft.value.requiresEventTicket !== undefined;
+  const hasGuestParticipation = !requiresLogin.value;
+  const hasTicketVerification = requiresEventTicket.value !== undefined;
 
+  // Cross-cutting validation: public + guest participation requires event ticket
   if (isPublic && hasGuestParticipation && !hasTicketVerification) {
-    conversationDraft.value.requiresLogin = true;
+    requiresLogin.value = true;
     showNotifyMessage(t("guestParticipationDisabledForPublic"));
   }
 
+  isPrivate.value = option.value === "private";
   showDialog.value = false;
-  togglePrivacy(option.value === "private");
 }
 </script>

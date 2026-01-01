@@ -9,10 +9,8 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { onMounted } from "vue";
 import { type RouteLocationNormalized } from "vue-router";
@@ -22,6 +20,12 @@ import {
   newConversationRouteGuardTranslations,
 } from "./NewConversationRouteGuard.i18n";
 
+interface Props {
+  allowedRoutes?: string[];
+  hasUnsavedChanges: () => boolean;
+  resetDraft: () => void;
+}
+
 const props = withDefaults(defineProps<Props>(), {
   allowedRoutes: () => [],
 });
@@ -30,20 +34,13 @@ const { t } = useComponentI18n<NewConversationRouteGuardTranslations>(
   newConversationRouteGuardTranslations
 );
 
-interface Props {
-  allowedRoutes?: string[];
-}
-
-const { hasUnsavedChanges, createEmptyDraft } = useNewPostDraftsStore();
-const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
-
 const {
   lockRoute,
   unlockRoute,
   showExitDialog,
   proceedWithNavigation,
   isRouteLockedCheck,
-} = useRouteGuard(() => hasUnsavedChanges(), onBeforeRouteLeaveCallback);
+} = useRouteGuard(() => props.hasUnsavedChanges(), onBeforeRouteLeaveCallback);
 
 defineExpose({
   unlockRoute,
@@ -58,7 +55,7 @@ function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
     return true;
   }
 
-  if (hasUnsavedChanges() && isRouteLockedCheck()) {
+  if (props.hasUnsavedChanges() && isRouteLockedCheck()) {
     return false;
   } else {
     return true;
@@ -70,7 +67,7 @@ async function saveDraft() {
 }
 
 async function noSaveDraft() {
-  conversationDraft.value = createEmptyDraft();
+  props.resetDraft();
   await proceedWithNavigation(() => {});
 }
 </script>

@@ -179,6 +179,13 @@ async function exportConversationCallback() {
   });
 }
 
+async function editConversationCallback() {
+  await router.push({
+    name: "/conversation/[conversationSlugId]/edit/",
+    params: { conversationSlugId: props.postSlugId },
+  });
+}
+
 function clickedMoreIcon() {
   // Show post actions using the new system
   postActions.showPostActions(props.postSlugId, props.posterUserName, {
@@ -188,6 +195,7 @@ function clickedMoreIcon() {
     moderatePostCallback,
     moderationHistoryCallback,
     copyEmbedLinkCallback,
+    editConversationCallback,
     exportConversationCallback,
   });
 }
