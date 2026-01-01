@@ -1,0 +1,1 @@
+ALTER TABLE "conversation_import" ADD CONSTRAINT "conversation_import_conversation_id_unique" UNIQUE("conversation_id");
