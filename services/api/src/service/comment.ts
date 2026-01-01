@@ -1336,39 +1336,26 @@ export async function bulkInsertOpinionsFromExternalPolisConvo({
                 comment.statement_id,
             ) ?? { agrees: 0, disagrees: 0, passes: 0 };
             const calculatedNumAgrees = voteCounts.agrees;
-            // just for logging
-            const polisNumAgrees = comment.agree_count;
-            if (polisNumAgrees === null) {
-                log.warn(
-                    `[Import] comment.agree_count is null while importing conversationSlugId=${conversationSlugId} and opinionSludId=${opinionSlugId}`,
-                );
-            } else if (polisNumAgrees !== calculatedNumAgrees) {
+            // Log mismatch only when Polis provided a non-null value that differs from calculated
+            // Null values are treated as 0 (Polis didn't provide the count)
+            const polisNumAgrees = comment.agree_count ?? 0;
+            if (comment.agree_count !== null && polisNumAgrees !== calculatedNumAgrees) {
                 log.warn(
                     `[Import] comment.agree_count = ${String(polisNumAgrees)} !== calculated numAgrees = ${String(calculatedNumAgrees)} while importing conversationSlugId=${conversationSlugId} and opinionSludId=${opinionSlugId}`,
                 );
             }
 
             const calculatedNumDisagrees = voteCounts.disagrees;
-            // just for logging
-            const polisNumDisagrees = comment.disagree_count;
-            if (polisNumDisagrees === null) {
-                log.warn(
-                    `[Import] comment.disagree_count is null while importing conversationSlugId=${conversationSlugId} and opinionSludId=${opinionSlugId}`,
-                );
-            } else if (polisNumDisagrees !== calculatedNumDisagrees) {
+            const polisNumDisagrees = comment.disagree_count ?? 0;
+            if (comment.disagree_count !== null && polisNumDisagrees !== calculatedNumDisagrees) {
                 log.warn(
                     `[Import] comment.disagree_count = ${String(polisNumDisagrees)} !== calculated numDisagrees = ${String(calculatedNumDisagrees)} while importing conversationSlugId=${conversationSlugId} and opinionSludId=${opinionSlugId}`,
                 );
             }
 
             const calculatedNumPasses = voteCounts.passes;
-            // just for logging
-            const polisNumPasses = comment.pass_count;
-            if (polisNumPasses === null) {
-                log.warn(
-                    `[Import] comment.pass_count is null while importing conversationSlugId=${conversationSlugId} and opinionSludId=${opinionSlugId}`,
-                );
-            } else if (polisNumPasses !== calculatedNumPasses) {
+            const polisNumPasses = comment.pass_count ?? 0;
+            if (comment.pass_count !== null && polisNumPasses !== calculatedNumPasses) {
                 log.warn(
                     `[Import] comment.pass_count = ${String(polisNumPasses)} !== calculated numPasses = ${String(calculatedNumPasses)} while importing conversationSlugId=${conversationSlugId} and opinionSludId=${opinionSlugId}`,
                 );

@@ -71,15 +71,8 @@ const router = useRouter();
 
 function getTitle(): string {
   const hasZupassRequirement = props.requiresZupassEventSlug !== undefined;
-  const needsLogin = props.loginRequiredToParticipate === true && !isLoggedIn.value;
-
-  console.log('[PreLoginIntentionDialog] getTitle()', {
-    loginRequiredToParticipate: props.loginRequiredToParticipate,
-    requiresZupassEventSlug: props.requiresZupassEventSlug,
-    isLoggedIn: isLoggedIn.value,
-    hasZupassRequirement,
-    needsLogin,
-  });
+  const needsLogin =
+    props.loginRequiredToParticipate === true && !isLoggedIn.value;
 
   if (hasZupassRequirement && !needsLogin) {
     return t("titleZupassOnly");
@@ -90,15 +83,8 @@ function getTitle(): string {
 
 function getMessage(): string {
   const hasZupassRequirement = props.requiresZupassEventSlug !== undefined;
-  const needsLogin = props.loginRequiredToParticipate === true && !isLoggedIn.value;
-
-  console.log('[PreLoginIntentionDialog] getMessage()', {
-    loginRequiredToParticipate: props.loginRequiredToParticipate,
-    requiresZupassEventSlug: props.requiresZupassEventSlug,
-    isLoggedIn: isLoggedIn.value,
-    hasZupassRequirement,
-    needsLogin,
-  });
+  const needsLogin =
+    props.loginRequiredToParticipate === true && !isLoggedIn.value;
 
   if (hasZupassRequirement && needsLogin) {
     return t("messageBothRequired");
@@ -111,7 +97,8 @@ function getMessage(): string {
 
 function getLabelOk(): string {
   const hasZupassRequirement = props.requiresZupassEventSlug !== undefined;
-  const needsLogin = props.loginRequiredToParticipate === true && !isLoggedIn.value;
+  const needsLogin =
+    props.loginRequiredToParticipate === true && !isLoggedIn.value;
 
   if (hasZupassRequirement && !needsLogin) {
     return t("labelOkZupass");
@@ -122,32 +109,25 @@ function getLabelOk(): string {
 
 async function okButtonClicked() {
   const hasZupassRequirement = props.requiresZupassEventSlug !== undefined;
-  const needsLogin = props.loginRequiredToParticipate === true && !isLoggedIn.value;
-
-  console.log('[PreLoginIntentionDialog] okButtonClicked()', {
-    loginRequiredToParticipate: props.loginRequiredToParticipate,
-    requiresZupassEventSlug: props.requiresZupassEventSlug,
-    isLoggedIn: isLoggedIn.value,
-    hasZupassRequirement,
-    needsLogin,
-    willRouteToWelcome: needsLogin,
-    willTriggerInlineVerification: !needsLogin && hasZupassRequirement,
-  });
+  const needsLogin =
+    props.loginRequiredToParticipate === true && !isLoggedIn.value;
 
   if (needsLogin) {
     // Need to login first - use existing login flow
-    console.log('[PreLoginIntentionDialog] Routing to /welcome/ for login');
+    console.log("[PreLoginIntentionDialog] Routing to /welcome/ for login");
     props.okCallback();
     setActiveUserIntention(props.activeIntention);
     await router.push({ name: "/welcome/" });
   } else if (hasZupassRequirement) {
     // Zupass verification needed (either logged in or guest)
     // Trigger the verification flow inline via callback
-    console.log('[PreLoginIntentionDialog] Triggering inline Zupass verification');
+    console.log(
+      "[PreLoginIntentionDialog] Triggering inline Zupass verification"
+    );
     props.okCallback();
   } else {
     // Standard login-only flow (no Zupass required)
-    console.log('[PreLoginIntentionDialog] Standard login flow');
+    console.log("[PreLoginIntentionDialog] Standard login flow");
     props.okCallback();
     setActiveUserIntention(props.activeIntention);
     await router.push({ name: "/welcome/" });
