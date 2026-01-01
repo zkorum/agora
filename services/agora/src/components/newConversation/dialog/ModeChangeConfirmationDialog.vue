@@ -55,16 +55,21 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
-import { computed } from "vue";
 
 import {
   type ModeChangeConfirmationDialogTranslations,
   modeChangeConfirmationDialogTranslations,
 } from "./ModeChangeConfirmationDialog.i18n";
+
+interface Props {
+  hasTitle: boolean;
+  hasBody: boolean;
+  hasPoll: boolean;
+}
+
+defineProps<Props>();
 
 const emit = defineEmits<{
   confirm: [];
@@ -76,17 +81,6 @@ const { t } = useComponentI18n<ModeChangeConfirmationDialogTranslations>(
 );
 
 const showDialog = defineModel<boolean>({ required: true });
-
-const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
-
-// Computed properties to determine what content would be cleared
-const hasTitle = computed(() => conversationDraft.value.title.trim() !== "");
-const hasBody = computed(() => conversationDraft.value.content.trim() !== "");
-const hasPoll = computed(
-  () =>
-    conversationDraft.value.poll.enabled &&
-    conversationDraft.value.poll.options.some((opt) => opt.trim() !== "")
-);
 
 function handleConfirm(): void {
   showDialog.value = false;
