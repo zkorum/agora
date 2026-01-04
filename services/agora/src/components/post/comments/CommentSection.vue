@@ -36,7 +36,7 @@
             }"
             :login-required-to-participate="props.loginRequiredToParticipate"
             :requires-event-ticket="props.requiresEventTicket"
-            @deleted="handleOpinionDeleted()"
+            @deleted="(opinionSlugId) => handleOpinionDeleted(opinionSlugId)"
             @muted-comment="handleOpinionMuted()"
             @ticket-verified="(payload) => emit('ticketVerified', payload)"
           />
@@ -174,7 +174,11 @@ async function handleOpinionMuted(): Promise<void> {
   await refreshData();
 }
 
-function handleOpinionDeleted(): void {
+function handleOpinionDeleted(opinionSlugId: string): void {
+  // If the deleted opinion is the currently highlighted one, clear it
+  if (targetOpinion.value?.opinionSlugId === opinionSlugId) {
+    targetOpinion.value = null;
+  }
   emit("deleted");
 }
 

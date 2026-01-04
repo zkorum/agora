@@ -85,13 +85,14 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
-import { type ApiV1AuthAuthenticatePost200Response } from "src/api";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import type { AuthenticateResponse } from "src/shared/types/dto";
+import { Dto } from "src/shared/types/dto";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
@@ -100,7 +101,7 @@ import type { KeyAction } from "src/utils/api/common";
 import { getPlatform } from "src/utils/common";
 import { createDidOverwriteIfAlreadyExists } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
-import { computed,onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -201,15 +202,16 @@ async function nextButtonClicked() {
   isSubmitButtonLoading.value = false;
 
   if (response.status == "success") {
-    if (response.data.success) {
+    const data = Dto.verifyOtp200.parse(response.data);
+    if (data.success) {
       // Show appropriate message based on account state
-      if (response.data.accountMerged) {
+      if (data.accountMerged) {
         showNotifyMessage(t("accountMerged"));
       } else {
         showNotifyMessage(t("verificationSuccessful"));
       }
       await updateAuthState({
-        partialLoginStatus: { isLoggedIn: true, userId: response.data.userId },
+        partialLoginStatus: { isLoggedIn: true, userId: data.userId },
         forceRefresh: true,
       });
       if (onboardingMode == "LOGIN") {
@@ -218,7 +220,7 @@ async function nextButtonClicked() {
         await router.push({ name: "/onboarding/step4-username/" });
       }
     } else {
-      switch (response.data.reason) {
+      switch (data.reason) {
         case "expired_code":
           codeExpired();
           showNotifyMessage(t("codeExpiredResend"));
@@ -273,10 +275,11 @@ async function requestCodeClicked(
     keyAction: keyAction,
   });
   if (response.status == "success") {
-    if (response.data.success) {
-      processRequestCodeResponse(response.data);
+    const data = Dto.authenticate200.parse(response.data);
+    if (data.success) {
+      processRequestCodeResponse(data);
     } else {
-      switch (response.data.reason) {
+      switch (data.reason) {
         case "already_logged_in":
           showNotifyMessage(t("verificationSuccessful"));
           await updateAuthState({
@@ -294,15 +297,12 @@ async function requestCodeClicked(
           await requestCodeClicked(isRequestingNewCode, "overwrite");
           break;
         case "throttled":
-          processRequestCodeResponse(response.data);
           showNotifyMessage(t("tooManyAttempts"));
           break;
         case "invalid_phone_number":
-          processRequestCodeResponse(response.data);
           showNotifyMessage(t("invalidPhoneNumber"));
           break;
         case "restricted_phone_type":
-          processRequestCodeResponse(response.data);
           showNotifyMessage(t("restrictedPhoneType"));
           break;
       }
@@ -318,7 +318,7 @@ function codeExpired() {
 }
 
 function processRequestCodeResponse(
-  data: ApiV1AuthAuthenticatePost200Response
+  data: Extract<AuthenticateResponse, { success: true }>
 ) {
   const nowMinusMinusOneSecond = new Date();
   nowMinusMinusOneSecond.setSeconds(nowMinusMinusOneSecond.getSeconds() - 1); // this is to avoid rounding errors that make us wait 9 seconds instead of 10

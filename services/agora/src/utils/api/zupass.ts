@@ -1,5 +1,5 @@
-import type { ApiV1AuthTicketVerifyPost200Response } from "src/api";
-import { DefaultApiAxiosParamCreator,DefaultApiFactory } from "src/api";
+import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
+import { Dto, type VerifyEventTicket200 } from "src/shared/types/dto";
 import type { EventSlug } from "src/shared/types/zod";
 
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
@@ -21,7 +21,7 @@ export function useBackendZupassApi() {
   async function verifyEventTicket({
     proof,
     eventSlug,
-  }: VerifyTicketParams): Promise<ApiV1AuthTicketVerifyPost200Response> {
+  }: VerifyTicketParams): Promise<VerifyEventTicket200> {
     const params = {
       proof,
       eventSlug,
@@ -40,7 +40,7 @@ export function useBackendZupassApi() {
       },
     });
 
-    return response.data;
+    return Dto.verifyEventTicket200.parse(response.data);
   }
 
   return { verifyEventTicket };

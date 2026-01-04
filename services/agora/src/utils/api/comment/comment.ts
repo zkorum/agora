@@ -143,7 +143,9 @@ export function useBackendCommentApi() {
       createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
     );
 
-    if (response.data.success) {
+    const data = Dto.createOpinionResponse.parse(response.data);
+
+    if (data.success) {
       // TODO: properly manage errors in backend and return login status to update to
       // Update auth state but defer cache operations to avoid clearing cache before opinion refresh
       const { authStateChanged, needsCacheRefresh } = await updateAuthState({
@@ -152,14 +154,14 @@ export function useBackendCommentApi() {
       });
       return {
         success: true,
-        opinionSlugId: response.data.opinionSlugId,
+        opinionSlugId: data.opinionSlugId,
         authStateChanged,
         needsCacheRefresh,
       };
     } else {
       return {
         success: false,
-        reason: response.data.reason,
+        reason: data.reason,
       };
     }
   }

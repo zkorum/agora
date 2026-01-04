@@ -6,11 +6,11 @@ import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
+import { Dto } from "src/shared/types/dto";
 import type {
   ConversationModerationAction,
   ConversationModerationProperties,
   ModerationReason,
-  moderationStatusOptionsType,
   OpinionModerationAction,
   OpinionModerationProperties,
 } from "src/shared/types/zod";
@@ -125,17 +125,7 @@ export function useBackendModerateApi() {
         },
       });
 
-      const moderationStatus = response.data
-        .status as moderationStatusOptionsType;
-
-      return {
-        status: moderationStatus,
-        action: response.data.action,
-        explanation: response.data.explanation,
-        reason: response.data.reason,
-        createdAt: new Date(response.data.createdAt),
-        updatedAt: new Date(response.data.updatedAt),
-      };
+      return Dto.getConversationModerationStatusResponse.parse(response.data);
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch post moderation details");
@@ -168,17 +158,7 @@ export function useBackendModerateApi() {
         },
       });
 
-      const moderationStatus = response.data
-        .status as moderationStatusOptionsType;
-
-      return {
-        status: moderationStatus,
-        action: response.data.action,
-        explanation: response.data.explanation,
-        reason: response.data.reason,
-        createdAt: new Date(response.data.createdAt),
-        updatedAt: new Date(response.data.updatedAt),
-      };
+      return Dto.getOpinionModerationStatusResponse.parse(response.data);
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to fetch comment moderation details");

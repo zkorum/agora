@@ -46,7 +46,7 @@
         :voting-utilities="votingUtilities"
         :login-required-to-participate="loginRequiredToParticipate"
         :requires-event-ticket="props.requiresEventTicket"
-        @deleted="deletedComment()"
+        @deleted="deletedComment(commentItem.opinionSlugId)"
         @muted-comment="mutedComment()"
         @ticket-verified="(payload) => emit('ticketVerified', payload)"
       />
@@ -72,7 +72,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  deleted: [];
+  deleted: [opinionSlugId: string];
   mutedComment: [];
   ticketVerified: [
     payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
@@ -186,8 +186,8 @@ async function focusCommentById(commentId: string): Promise<void> {
 /**
  * Emits deleted comment event
  */
-function deletedComment(): void {
-  emit("deleted");
+function deletedComment(opinionSlugId: string): void {
+  emit("deleted", opinionSlugId);
 }
 
 /**

@@ -1,13 +1,16 @@
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import {
-  type ApiV1AuthAuthenticatePost200Response,
   type ApiV1AuthAuthenticatePostRequest,
-  type ApiV1AuthPhoneVerifyOtpPost200Response,
   type ApiV1AuthPhoneVerifyOtpPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
+import {
+  type AuthenticateResponse,
+  Dto,
+  type VerifyOtp200,
+} from "src/shared/types/dto";
 import type {
   DeviceLoginStatus,
   SupportedCountryCallingCode,
@@ -69,7 +72,7 @@ export function useBackendAuthApi() {
   const $q = useQuasar();
 
   type SendSmsCodeSuccessResponse =
-    AxiosSuccessResponse<ApiV1AuthAuthenticatePost200Response>;
+    AxiosSuccessResponse<AuthenticateResponse>;
 
   type SendSmsCodeResponse = SendSmsCodeSuccessResponse | AxiosErrorResponse;
 
@@ -98,7 +101,7 @@ export function useBackendAuthApi() {
       );
       return {
         status: "success",
-        data: otpDetails.data,
+        data: Dto.authenticate200.parse(otpDetails.data),
       };
     } catch (error) {
       return createAxiosErrorResponse(error);
@@ -106,7 +109,7 @@ export function useBackendAuthApi() {
   }
 
   type VerifyPhoneOtpSuccessResponse =
-    AxiosSuccessResponse<ApiV1AuthPhoneVerifyOtpPost200Response>;
+    AxiosSuccessResponse<VerifyOtp200>;
 
   type VerifyPhoneOtpResponse =
     | VerifyPhoneOtpSuccessResponse
@@ -140,7 +143,7 @@ export function useBackendAuthApi() {
       );
       return {
         status: "success",
-        data: response.data,
+        data: Dto.verifyOtp200.parse(response.data),
       };
     } catch (error) {
       return createAxiosErrorResponse(error);
