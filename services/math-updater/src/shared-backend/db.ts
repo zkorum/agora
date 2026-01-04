@@ -7,13 +7,12 @@ import {
     GetSecretValueCommand,
     SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager";
-import pino from "pino";
+import type pino from "pino";
 import { DrizzleFastifyLogger } from "./logger.js";
-import type { FastifyBaseLogger } from "fastify";
 
 async function createPostgresClient(
     config: SharedConfigSchema,
-    log: pino.Logger | FastifyBaseLogger,
+    log: Pick<pino.BaseLogger, "info" | "error">,
     useReadReplica = false,
 ) {
     const awsSecretId = useReadReplica && config.AWS_SECRET_ID_READ
@@ -124,7 +123,7 @@ async function createPostgresClient(
 
 export async function createDb(
     config: SharedConfigSchema,
-    log: pino.Logger | FastifyBaseLogger,
+    log: Pick<pino.BaseLogger, "info" | "error">,
 ) {
     const primaryClient = await createPostgresClient(config, log, false);
     const primaryDb = drizzle(primaryClient, {

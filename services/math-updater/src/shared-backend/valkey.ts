@@ -1,14 +1,13 @@
 /** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 import { GlideClient, Decoder } from "@valkey/valkey-glide";
-import type { Logger } from "pino";
-import type { FastifyBaseLogger } from "fastify";
+import type { BaseLogger } from "pino";
 
 // Using valkey-glide, the official Valkey client
 export type Valkey = GlideClient;
 
 interface InitializeValkeyParams {
     valkeyUrl: string | undefined;
-    log: Logger | FastifyBaseLogger;
+    log: Pick<BaseLogger, "info" | "error">;
 }
 
 interface ParsedValkeyUrl {
@@ -121,3 +120,4 @@ export async function initializeValkey({
         return undefined;
     }
 }
+
