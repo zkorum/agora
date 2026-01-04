@@ -165,7 +165,7 @@ export class Dto {
     static fetchHiddenOpinionsRequest = z
         .object({
             conversationSlugId: zodSlugId, // z.object() does not exist :(
-            createdAt: z.string().datetime().optional(),
+            createdAt: z.iso.datetime().optional(),
         })
         .strict();
     static fetchHiddenOpinionsResponse = z.array(zodOpinionItem);
@@ -174,7 +174,7 @@ export class Dto {
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBodyInput,
             postAsOrganization: z.string().optional(),
-            indexConversationAt: z.string().datetime().optional(),
+            indexConversationAt: z.iso.datetime().optional(),
             isIndexed: z.boolean(),
             isLoginRequired: z.boolean(),
             pollingOptionList: zodPollOptionTitle.array().optional(),
@@ -189,7 +189,7 @@ export class Dto {
         .object({
             polisUrl: zodPolisUrl,
             postAsOrganization: z.string().optional(),
-            indexConversationAt: z.string().datetime().optional(),
+            indexConversationAt: z.iso.datetime().optional(),
             isIndexed: z.boolean(),
             isLoginRequired: z.boolean(),
             requiresEventTicket: zodEventSlug.optional(),
@@ -203,7 +203,7 @@ export class Dto {
     static importCsvConversationRequest = z
         .object({
             postAsOrganization: z.string().optional(),
-            indexConversationAt: z.string().datetime().optional(),
+            indexConversationAt: z.iso.datetime().optional(),
             isIndexed: z.boolean(),
             isLoginRequired: z.boolean(),
         })
@@ -216,7 +216,7 @@ export class Dto {
             ),
             indexConversationAt: z.preprocess(
                 (val) => (val === "" || val === undefined ? undefined : val),
-                z.string().datetime().optional(),
+                z.iso.datetime().optional(),
             ),
             isIndexed: z.preprocess(
                 (val) => val === "true" || val === true,
@@ -452,7 +452,7 @@ export class Dto {
         z
             .object({
                 success: z.literal(true),
-                verificationLink: z.string().url(),
+                verificationLink: z.url(),
             })
             .strict(),
         z.object({
@@ -575,7 +575,7 @@ export class Dto {
             organizationName: z.string(),
             imagePath: z.string(),
             isFullImagePath: z.boolean(),
-            websiteUrl: z.string().url(),
+            websiteUrl: z.url(),
             description: z.string(),
         })
         .strict();
