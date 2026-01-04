@@ -69,8 +69,8 @@ export async function createExportNotification({
     } catch (error: unknown) {
         // Don't fail the export if notification creation fails
         log.error(
-            `Failed to create ${type} notification for user ${userId}, export ${String(exportId)}:`,
             error,
+            `Failed to create ${type} notification for user ${userId}, export ${String(exportId)}:`,
         );
     }
 }

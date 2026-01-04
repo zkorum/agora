@@ -26,7 +26,7 @@ export async function validateS3Access({
         await s3Client.send(new HeadBucketCommand({ Bucket: bucketName }));
         log.info(`S3 bucket verified: ${bucketName}`);
     } catch (error) {
-        log.error("S3 configuration error:", error);
+        log.error(error, "S3 configuration error:");
         throw new Error("S3 bucket not accessible. Check configuration.");
     }
 }

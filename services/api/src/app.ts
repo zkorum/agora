@@ -76,15 +76,15 @@ const configSchema = sharedConfigSchema.extend({
     ),
     VOTE_NOTIF_MILESTONES: z
         .string()
-        .transform((value) =>
-            value.split(",").map((item) => {
-                return item.trim();
-            }),
-        )
-        .pipe(z.coerce.number().int().min(1).array().nonempty())
         .default(
             "1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000, 2500000, 5000000, 10000000",
-        ),
+        )
+        .transform((value) =>
+            value.split(",").map((item) => {
+                return parseInt(item.trim(), 10);
+            }),
+        )
+        .pipe(z.number().int().min(1).array().nonempty()),
     // S3 configuration for conversation CSV exports
     EXPORT_CONVOS_AWS_S3_REGION: z.string().optional(),
     EXPORT_CONVOS_AWS_S3_BUCKET_NAME: z.string().optional(),
@@ -97,6 +97,7 @@ const configSchema = sharedConfigSchema.extend({
         .default(3600), // Presigned URL expiry (default: 1 hour)
     EXPORT_CONVOS_ENABLED: z
         .string()
+        .default("true")
         .transform((value, ctx) => {
             if (value.toLowerCase().trim() === "true") {
                 return true;
@@ -109,8 +110,7 @@ const configSchema = sharedConfigSchema.extend({
                 });
                 return z.NEVER;
             }
-        })
-        .default("true"),
+        }),
     EXPORT_CONVOS_BUFFER_MAX_BATCH_SIZE: z.coerce
         .number()
         .int()
@@ -133,6 +133,7 @@ const configSchema = sharedConfigSchema.extend({
         .default(60), // Run stale cleanup every N flushes (~1 minute at 1s flush)
     IS_ORG_IMPORT_ONLY: z
         .string()
+        .default("false")
         .transform((value, ctx) => {
             if (value.toLowerCase().trim() === "true") {
                 return true;
@@ -145,8 +146,7 @@ const configSchema = sharedConfigSchema.extend({
                 });
                 return z.NEVER;
             }
-        })
-        .default("false"),
+        }),
     // CSV Import buffer configuration
     IMPORT_BUFFER_MAX_BATCH_SIZE: z.coerce
         .number()

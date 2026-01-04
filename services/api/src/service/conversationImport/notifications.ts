@@ -69,8 +69,8 @@ export async function createImportNotification({
     } catch (error: unknown) {
         // Don't fail the import if notification creation fails
         log.error(
-            `Failed to create ${type} notification for user ${userId}, import ${String(importId)}:`,
             error,
+            `Failed to create ${type} notification for user ${userId}, import ${String(importId)}:`,
         );
     }
 }
