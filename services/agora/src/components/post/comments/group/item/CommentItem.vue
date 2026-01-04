@@ -68,7 +68,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  deleted: [];
+  deleted: [opinionSlugId: string];
   mutedComment: [];
   ticketVerified: [
     payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
@@ -78,7 +78,7 @@ const emit = defineEmits<{
 import type { EventSlug } from "src/shared/types/zod";
 
 function deletedComment() {
-  emit("deleted");
+  emit("deleted", props.commentItem.opinionSlugId);
 }
 
 function mutedComment() {

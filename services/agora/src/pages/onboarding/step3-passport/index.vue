@@ -129,7 +129,10 @@
                       :loading="verificationLink === ''"
                       @click="clickedVerifyButton()"
                     />
-                    <div v-if="verificationLink.length != 0" class="mobileUrlContainer">
+                    <div
+                      v-if="verificationLink.length != 0"
+                      class="mobileUrlContainer"
+                    >
                       <div class="mobileUrl">{{ verificationLink }}</div>
                       <ZKButton
                         button-type="standardButton"
@@ -174,13 +177,14 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import { Dto } from "src/shared/types/dto";
 import type { LinkType, RarimoStatusAttributes } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { api } from "src/utils/api/client";
-import { type KeyAction,useCommonApi } from "src/utils/api/common";
+import { type KeyAction, useCommonApi } from "src/utils/api/common";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
 import { onMounted, ref, watch } from "vue";
@@ -254,8 +258,9 @@ async function generateVerificationLink(keyAction?: KeyAction) {
         ...buildAuthorizationHeader(encodedUcan),
       },
     });
-    if (response.data.success) {
-      verificationLink.value = response.data.verificationLink;
+    const data = Dto.generateVerificationLink200.parse(response.data);
+    if (data.success) {
+      verificationLink.value = data.verificationLink;
       if (isDeviceLoggedInIntervalId === undefined) {
         isDeviceLoggedInIntervalId = window.setInterval(
           () => void isDeviceLoggedIn(),
@@ -269,7 +274,7 @@ async function generateVerificationLink(keyAction?: KeyAction) {
         );
       }
     } else {
-      switch (response.data.reason) {
+      switch (data.reason) {
         case "already_logged_in":
           qrcodeVerificationStatus.value = "verified";
           break;
@@ -348,23 +353,29 @@ async function isDeviceLoggedIn() {
         ...buildAuthorizationHeader(encodedUcan),
       },
     });
-    if (response.data.success) {
+
+    const data = Dto.verifyUserStatusAndAuthenticate200.parse(response.data);
+
+    if (data.success) {
       // When success is true, check rarimoStatus to distinguish verified vs other statuses
-      if (response.data.rarimoStatus === "not_verified") {
-        qrcodeVerificationStatus.value = "not_verified";
-      } else if (response.data.rarimoStatus === "failed_verification") {
-        qrcodeVerificationStatus.value = "failed_verification";
-      } else if (response.data.rarimoStatus === "uniqueness_check_failed") {
-        qrcodeVerificationStatus.value = "uniqueness_check_failed";
-      } else {
-        // success: true with rarimoStatus: "verified" (TypeScript doesn't see this in enum)
-        // This case means the user is verified
-        qrcodeVerificationStatus.value = "verified";
-        accountMerged.value = response.data.accountMerged;
-        verifiedUserId.value = response.data.userId;
+      switch (data.rarimoStatus) {
+        case "not_verified":
+          qrcodeVerificationStatus.value = "not_verified";
+          break;
+        case "failed_verification":
+          qrcodeVerificationStatus.value = "failed_verification";
+          break;
+        case "uniqueness_check_failed":
+          qrcodeVerificationStatus.value = "uniqueness_check_failed";
+          break;
+        case "verified":
+          qrcodeVerificationStatus.value = "verified";
+          accountMerged.value = data.accountMerged;
+          verifiedUserId.value = data.userId;
+          break;
       }
     } else {
-      switch (response.data.reason) {
+      switch (data.reason) {
         case "already_logged_in":
           qrcodeVerificationStatus.value = "verified";
           break;

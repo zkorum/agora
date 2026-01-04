@@ -545,19 +545,10 @@ const zodPolisClusterValue = z
     })
     .strict();
 
-// Use z.object with optional fields instead of z.record with enum key.
-// z.record with enum key requires ALL enum values to be present,
-// but conversations can have fewer than 6 clusters.
-export const zodPolisClusters = z
-    .object({
-        "0": zodPolisClusterValue.optional(),
-        "1": zodPolisClusterValue.optional(),
-        "2": zodPolisClusterValue.optional(),
-        "3": zodPolisClusterValue.optional(),
-        "4": zodPolisClusterValue.optional(),
-        "5": zodPolisClusterValue.optional(),
-    })
-    .strict();
+export const zodPolisClusters = z.partialRecord(
+    zodPolisKey,
+    zodPolisClusterValue,
+);
 
 // Use z.object with optional fields for the same reason as above
 export const zodPolisClustersMetadata = z

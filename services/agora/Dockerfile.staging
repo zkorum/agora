@@ -3,8 +3,9 @@ FROM node:22-alpine AS build
 WORKDIR /app
 ENV PATH=/app/node_modules/.bin:$PATH
 COPY . ./
-RUN yarn install --frozen-lockfile
-RUN yarn build:staging
+RUN npm install -g pnpm
+RUN pnpm install --frozen-lockfile
+RUN pnpm run build:staging
 
 # production environment
 FROM nginx:stable-alpine

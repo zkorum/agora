@@ -126,15 +126,15 @@ async function handleVerify() {
 
       // Show appropriate message based on account state
       if (verifyResult.accountMerged) {
-        showNotifyMessage(t('accountMerged'));
+        showNotifyMessage(t("accountMerged"));
       } else {
-        showNotifyMessage(t('successMessage'));
+        showNotifyMessage(t("successMessage"));
       }
 
       // Emit success event
-      emit('verified');
+      emit("verified");
     } else {
-      const errorCode = verifyResult.reason || 'unknown';
+      const errorCode = verifyResult.reason || "unknown";
       const message = getErrorMessage(errorCode);
       error.value = errorCode;
       showNotifyMessage(message);

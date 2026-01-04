@@ -4,7 +4,7 @@ import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
-import type { CastVoteResponse,FetchUserVotesForPostSlugIdsResponse } from "src/shared/types/dto";
+import { type CastVoteResponse, Dto, type FetchUserVotesForPostSlugIdsResponse } from "src/shared/types/dto";
 import { type VotingAction } from "src/shared/types/zod";
 
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
@@ -36,7 +36,8 @@ export function useBackendVoteApi() {
       },
     });
 
-    return response.data;
+    const data = Dto.castVoteResponse.parse(response.data);
+    return data;
   }
 
   async function fetchUserVotesForPostSlugIds(

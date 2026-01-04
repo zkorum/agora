@@ -119,7 +119,10 @@ export function useTicketVerificationFlow() {
 
       if (!verifyResult.success) {
         const errorReason = verifyResult.reason || "unknown";
-        console.log("[TicketVerificationFlow] Verification failed with reason:", errorReason);
+        console.log(
+          "[TicketVerificationFlow] Verification failed with reason:",
+          errorReason
+        );
         const errorMessage = getErrorMessage(errorReason);
         userStore.setTicketError(eventSlug, errorMessage);
         showNotifyMessage(errorMessage);
@@ -142,15 +145,20 @@ export function useTicketVerificationFlow() {
       // will now return "verified"
       userStore.addVerifiedTicket(eventSlug);
       userStore.clearTicketState(eventSlug);
-      console.log("[TicketVerificationFlow] Ticket verified and state cleared for", eventSlug);
+      console.log(
+        "[TicketVerificationFlow] Ticket verified and state cleared for",
+        eventSlug
+      );
 
       // Show success message
       if (successMessage !== undefined) {
         showNotifyMessage(successMessage);
-      } else if (verifyResult.accountMerged) {
-        showNotifyMessage("Account merged successfully");
       } else {
-        showNotifyMessage("Event ticket verified successfully");
+        if (verifyResult.accountMerged) {
+          showNotifyMessage("Account merged successfully");
+        } else {
+          showNotifyMessage("Event ticket verified successfully");
+        }
       }
 
       const result: TicketVerificationResult = {

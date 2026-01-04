@@ -42,7 +42,7 @@
         "postgres": "^3.4.5",
         "sanitize-html": "^2.17.0",
         "uint8arrays": "^5.1.0",
-        "zod": "^3.24.4"
+        "zod": "^4.3.5"
     },
     "devDependencies": {
         "@eslint/js": "^9.27.0",
