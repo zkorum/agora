@@ -3255,7 +3255,8 @@
                                     },
                                     "required": [
                                         "consensus",
-                                        "controversial"
+                                        "controversial",
+                                        "clusters"
                                     ],
                                     "additionalProperties": false
                                 }

@@ -1348,7 +1348,7 @@ export interface ApiV1OpinionFetchAnalysisByConversationPost200Response {
     'polisContentId'?: number;
     'consensus': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner>;
     'controversial': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner>;
-    'clusters'?: { [key: string]: ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue; };
+    'clusters': { [key: string]: ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue; };
 }
 export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue {
     'key': ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValueKeyEnum;
