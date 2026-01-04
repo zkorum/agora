@@ -98,9 +98,9 @@ export interface FetchMainPageResponse {
  * Fetch all opinions in a conversation (public/unauthenticated endpoint)
  * Uses the fetch-by-conversation endpoint with "new" filter to get all opinions
  */
-export async function fetchOpinions(
+export function fetchOpinions(
     params: FetchOpinionsParams,
-): Promise<FetchOpinionsResponse> {
+): FetchOpinionsResponse {
     const { conversationSlugId } = params;
 
     const url = `${API_BASE_URL}/api/v1/opinion/fetch-by-conversation`;
@@ -125,9 +125,9 @@ export async function fetchOpinions(
         const responseTime = Date.now() - startTime;
 
         if (response.status === 200) {
-            const responseData = JSON.parse(response.body as string) as Array<{
+            const responseData = JSON.parse(response.body as string) as {
                 opinionSlugId: string;
-            }>;
+            }[];
             return {
                 success: true,
                 opinions: responseData.map((item) => ({
@@ -140,7 +140,11 @@ export async function fetchOpinions(
                 success: false,
                 opinions: [],
                 responseTime,
-                error: `HTTP ${response.status}: ${response.body}`,
+                error: `HTTP ${String(response.status)}: ${
+                    typeof response.body === "string"
+                        ? response.body
+                        : "Unknown body"
+                }`,
             };
         }
     } catch (error) {
@@ -215,7 +219,11 @@ export async function createOpinion(
         } else {
             return {
                 success: false,
-                reason: `HTTP ${response.status}: ${response.body}`,
+                reason: `HTTP ${String(response.status)}: ${
+                    typeof response.body === "string"
+                        ? response.body
+                        : "Unknown body"
+                }`,
                 responseTime,
             };
         }
@@ -400,9 +408,9 @@ export async function deleteUser(
  * - Fetch user interactions (if authenticated)
  * All of these hit the read replica and cause CPU load
  */
-export async function fetchConversationPage(
+export function fetchConversationPage(
     params: FetchConversationPageParams,
-): Promise<FetchConversationPageResponse> {
+): FetchConversationPageResponse {
     const { conversationSlugId } = params;
 
     const url = `${FRONTEND_BASE_URL}/c/${conversationSlugId}`;
@@ -419,7 +427,10 @@ export async function fetchConversationPage(
         return {
             success: response.status === 200,
             responseTime,
-            error: response.status >= 400 ? `HTTP ${response.status}` : undefined,
+            error:
+                response.status >= 400
+                    ? `HTTP ${String(response.status)}`
+                    : undefined,
         };
     } catch (error) {
         return {
@@ -438,7 +449,7 @@ export async function fetchConversationPage(
  * - Fetch user data (if authenticated)
  * All of these hit the read replica
  */
-export async function fetchMainPage(): Promise<FetchMainPageResponse> {
+export function fetchMainPage(): FetchMainPageResponse {
     const url = FRONTEND_BASE_URL;
 
     try {
@@ -453,7 +464,10 @@ export async function fetchMainPage(): Promise<FetchMainPageResponse> {
         return {
             success: response.status === 200,
             responseTime,
-            error: response.status >= 400 ? `HTTP ${response.status}` : undefined,
+            error:
+                response.status >= 400
+                    ? `HTTP ${String(response.status)}`
+                    : undefined,
         };
     } catch (error) {
         return {
