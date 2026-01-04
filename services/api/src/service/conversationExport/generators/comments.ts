@@ -76,25 +76,37 @@ export class CommentsGenerator implements CsvGenerator {
             .where(eq(opinionTable.conversationId, conversationId))
             .orderBy(opinionTable.createdAt);
 
+        // Track author IDs to remap them to sequential integers starting from 0
+        const authorIdMap = new Map<number, number>();
+        let nextAuthorId = 0;
+
         // Generate CSV rows following Polis spec
         // Note: fast-csv handles escaping automatically, so we don't need escapeCsvField
-        const rows = opinions.map((opinion) => ({
-            timestamp: Math.floor(opinion.createdAt.getTime() / 1000),
-            datetime: formatDatetime(opinion.createdAt),
-            "comment-id": opinion.opinionId,
-            "author-id": opinion.authorParticipantId,
-            agrees: opinion.numAgrees,
-            disagrees: opinion.numDisagrees,
-            moderated:
-                opinion.moderationId === null
-                    ? 0 // unmoderated
-                    : opinion.moderationAction === "hide"
-                      ? -1 // banned/hidden
-                      : opinion.moderationAction === "move"
-                        ? -1 // moved (also treated as banned)
-                        : 1, // approved (fallback, though no explicit "approve" action exists)
-            "comment-body": stripHtmlForCsv(opinion.content),
-        }));
+        const rows = opinions.map((opinion, index) => {
+            let authorId = authorIdMap.get(opinion.authorParticipantId);
+            if (authorId === undefined) {
+                authorId = nextAuthorId++;
+                authorIdMap.set(opinion.authorParticipantId, authorId);
+            }
+
+            return {
+                timestamp: Math.floor(opinion.createdAt.getTime() / 1000),
+                datetime: formatDatetime(opinion.createdAt),
+                "comment-id": index, // Remap comment_id to 0-based index
+                "author-id": authorId, // Remap author_id to 0-based index per conversation
+                agrees: opinion.numAgrees,
+                disagrees: opinion.numDisagrees,
+                moderated:
+                    opinion.moderationId === null
+                        ? 0 // unmoderated
+                        : opinion.moderationAction === "hide"
+                          ? -1 // banned/hidden
+                          : opinion.moderationAction === "move"
+                            ? -1 // moved (also treated as banned)
+                            : 1, // approved (fallback, though no explicit "approve" action exists)
+                "comment-body": stripHtmlForCsv(opinion.content),
+            };
+        });
 
         const csvStream = formatCsv({ headers: true });
         const chunks: Buffer[] = [];
