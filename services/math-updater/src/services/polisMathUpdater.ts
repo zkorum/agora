@@ -4,10 +4,22 @@
  * Contains only functions needed for math-updater service
  */
 
-import type { PolisKey } from "@/shared/types/zod.js";
+import type {
+    PolisKey,
+    GenLabelSummaryOutputClusterStrict,
+    GenLabelSummaryOutputClusterLoose,
+} from "@/shared/types/zod.js";
 import type { AxiosInstance } from "axios";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { and, eq, inArray, isNotNull, isNull, sql, type SQL } from "drizzle-orm";
+import {
+    and,
+    eq,
+    inArray,
+    isNotNull,
+    isNull,
+    sql,
+    type SQL,
+} from "drizzle-orm";
 import {
     polisClusterOpinionTable,
     polisClusterUserTable,
@@ -390,10 +402,9 @@ async function phase3ActivateNewData({
     clusterIdsByKey: Record<PolisKey, number>;
     groupCommentStatsByKey: Record<PolisKey, any[]>;
     minNumberOfClusters: number;
-    aiClustersLabelsAndSummaries?: Record<
-        string,
-        { label: string; summary: string } | undefined
-    >;
+    aiClustersLabelsAndSummaries?:
+        | GenLabelSummaryOutputClusterStrict
+        | GenLabelSummaryOutputClusterLoose;
     translations?: Array<{
         polisClusterId: number;
         languageCode: string;
@@ -427,7 +438,8 @@ async function phase3ActivateNewData({
                 stmt.statement_id,
                 {
                     priority: stmt.priority,
-                    groupAwareConsensusAgree: stmt["group-aware-consensus-agree"],
+                    groupAwareConsensusAgree:
+                        stmt["group-aware-consensus-agree"],
                     groupAwareConsensusDisagree:
                         stmt["group-aware-consensus-disagree"],
                     extremity: stmt.extremity,
@@ -472,7 +484,8 @@ async function phase3ActivateNewData({
                 )} and conversationId=${conversationId}`,
             );
         } else {
-            for (const consensusOpinion of polisMathResults.consensus.disagree) {
+            for (const consensusOpinion of polisMathResults.consensus
+                .disagree) {
                 majorityOpinions.push({
                     probability: sql`WHEN ${opinionTable.id} = ${consensusOpinion.tid}::int THEN ${consensusOpinion["p-success"]}::real`,
                     type: sql`WHEN ${opinionTable.id} = ${consensusOpinion.tid}::int THEN 'disagree'::vote_enum_simple`,
@@ -787,7 +800,8 @@ export async function getAndUpdatePolisMath({
         `[Math] Phase 2: Calling external APIs for conversationId=${conversationId} and polisClusterId=${String(polisContentId)}`,
     );
     let aiClustersLabelsAndSummaries:
-        | Record<string, { label: string; summary: string } | undefined>
+        | GenLabelSummaryOutputClusterStrict
+        | GenLabelSummaryOutputClusterLoose
         | undefined = undefined;
     let translations:
         | Array<{
