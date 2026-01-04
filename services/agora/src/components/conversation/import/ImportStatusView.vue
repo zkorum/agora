@@ -59,11 +59,11 @@
             />
             <p>{{ t("completedMessage") }}</p>
             <ButtonLink
-              v-if="importStatusQuery.data.value.conversationSlugId"
+              v-if="statusData.conversationSlugId"
               :to="{
                 name: '/conversation/[postSlugId]',
                 params: {
-                  postSlugId: importStatusQuery.data.value.conversationSlugId,
+                  postSlugId: statusData.conversationSlugId,
                 },
               }"
               :label="t('viewConversation')"
@@ -128,34 +128,10 @@ const importStatusQuery = useImportStatusQuery({
   enabled: computed(() => isGuestOrLoggedIn.value),
 });
 
-<<<<<<< HEAD
 // Type-safe accessor for import status data
 // AsyncStateHandler guarantees data exists when content slot is rendered
 const statusData = computed(() => importStatusQuery.data.value);
 
-function handleViewConversation(): void {
-  const data = importStatusQuery.data.value;
-  if (!data || data.status !== "completed") return;
-
-  void router.push({
-    name: "/conversation/[postSlugId]",
-    params: { postSlugId: data.conversationSlugId },
-  });
-}
-
-||||||| parent of 10d684d1 (Import status button replace with native routing)
-function handleViewConversation(): void {
-  const data = importStatusQuery.data.value;
-  if (!data || data.status !== "completed") return;
-
-  void router.push({
-    name: "/conversation/[postSlugId]",
-    params: { postSlugId: data.conversationSlugId },
-  });
-}
-
-=======
->>>>>>> 10d684d1 (Import status button replace with native routing)
 function getFailureReasonText(reason: ImportFailureReason): string {
   switch (reason) {
     case "processing_error":

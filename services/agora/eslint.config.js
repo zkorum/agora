@@ -76,7 +76,6 @@ export default defineConfigWithVueTs(
       sourceType: "module",
       parserOptions: {
         extraFileExtensions: [".vue"],
-        project: ["./tsconfig.json"],
       },
 
       globals: {
