@@ -69,7 +69,7 @@ const opinionSuccessRate = new Rate("opinion_success_rate");
 const voteSuccessRate = new Rate("vote_success_rate");
 
 // Track failure reasons for debugging
-const opinionFailureReasons: { [key: string]: number } = {};
+const opinionFailureReasons: Record<string, number> = {};
 
 // Test configuration - Single VU scenario, each VU does everything sequentially
 export const options = {
@@ -193,7 +193,7 @@ export default async function (data: SetupData) {
     // Step 2: Fetch conversation page (simulates user landing on the frontend page)
     // This will trigger the frontend to make multiple API calls to the backend
     console.log(`[${userId}] Fetching conversation page...`);
-    const conversationPageResult = await fetchConversationPage({
+    const conversationPageResult = fetchConversationPage({
         conversationSlugId: CONVERSATION_SLUG_ID,
     });
 
@@ -223,7 +223,7 @@ export default async function (data: SetupData) {
     for (let attempt = 1; attempt <= OPINION_FETCH_RETRY_ATTEMPTS; attempt++) {
         console.log(`[${userId}] Fetching opinions (attempt ${String(attempt)}/${String(OPINION_FETCH_RETRY_ATTEMPTS)})...`);
 
-        const fetchResult = await fetchOpinions({
+        const fetchResult = fetchOpinions({
             conversationSlugId: CONVERSATION_SLUG_ID,
         });
 
@@ -279,12 +279,12 @@ export default async function (data: SetupData) {
             if (opinionResult.success && opinionResult.opinionSlugId) {
                 opinionsCreated.add(1);
                 opinionSuccessRate.add(1);
-                console.log(`[${userId}] Created opinion: ${opinionResult.opinionSlugId} (${opinionResult.responseTime}ms)`);
+                console.log(`[${userId}] Created opinion: ${opinionResult.opinionSlugId} (${String(opinionResult.responseTime)}ms)`);
             } else {
                 opinionsFailed.add(1);
                 opinionSuccessRate.add(0);
-                const reason = String(opinionResult.reason || "Unknown error");
-                console.error(`[${userId}] ❌ OPINION CREATION FAILED - Reason: ${reason} - Response time: ${opinionResult.responseTime}ms`);
+                const reason = opinionResult.reason ?? "Unknown error";
+                console.error(`[${userId}] ❌ OPINION CREATION FAILED - Reason: ${reason} - Response time: ${String(opinionResult.responseTime)}ms`);
 
                 // Track failure reason
                 if (!opinionFailureReasons[reason]) {
@@ -359,8 +359,9 @@ export async function teardown(data: SetupData) {
             usersDeleted.add(1);
         } else {
             usersFailedCount++;
+            const errorMessage: string = result.error ?? "Unknown error";
             console.error(
-                `Failed to delete user ${user.did}: ${String(result.error)}`,
+                `Failed to delete user ${user.did}: ${errorMessage}`,
             );
         }
 

@@ -168,9 +168,6 @@ async function updateClustersLabelsAndSummaries({
         aiClustersLabelsAndSummaries,
     ) as (keyof typeof aiClustersLabelsAndSummaries)[] /* necessary otherwise the fine-grained type of `key` is lost */) {
         const aiClusterLabelAndSummary = aiClustersLabelsAndSummaries[key];
-        if (aiClusterLabelAndSummary === undefined) {
-            continue;
-        }
         // we use raw sql because update ... from with multiple join doesn't work properly in drizzle
         // WARN: this is not typesafe
         await db.execute(sql`

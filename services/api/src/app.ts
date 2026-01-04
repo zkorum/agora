@@ -20,18 +20,15 @@ const configSchema = sharedConfigSchema.extend({
     PORT: z.coerce.number().int().nonnegative().default(defaultPort),
     MODE: z.enum(["web", "capacitor", "test"]).default("web"),
     IMAGES_SERVICE_BASE_URL: z
-        .string()
         .url()
         .default("https://staging.agoracitizen.app/images/"),
     SERVER_URL_DEV: z
-        .string()
         .url()
         .default(`http://localhost:${defaultPort.toString()}`),
     SERVER_URL_STAGING: z
-        .string()
         .url()
         .default(`https://staging.agoracitizen.app`),
-    SERVER_URL_PROD: z.string().url().default(`https://www.agoracitizen.app`),
+    SERVER_URL_PROD: z.url().default(`https://www.agoracitizen.app`),
     SERVER_DID_DEV: zodDidWeb.default(
         `did:web:localhost%3A${defaultPort.toString()}`,
     ),
@@ -53,7 +50,7 @@ const configSchema = sharedConfigSchema.extend({
             }),
         )
         .pipe(z.string().min(16).array().nonempty()),
-    VERIFICATOR_SVC_BASE_URL: z.string().url(),
+    VERIFICATOR_SVC_BASE_URL: z.url(),
     BASE_EVENT_ID: z.string().min(20).default("63957849393154643868"),
     // Zupass public key for verifying event ticket PCDs
     // This is the official Devcon Podbox pipeline public key
@@ -62,8 +59,8 @@ const configSchema = sharedConfigSchema.extend({
         .string()
         .default("YwahfUdUYehkGMaWh0+q3F8itx2h8mybjPmt8CmTJSs"),
     NOSTR_PROOF_CHANNEL_EVENT_ID: z.string().optional(), // if undefined, then nostr functionalities are disabled
-    NOSTR_DEFAULT_RELAY_URL: z.string().url().default("wss://nos.lol"),
-    POLIS_BASE_URL: z.string().url().optional(),
+    NOSTR_DEFAULT_RELAY_URL: z.url().default("wss://nos.lol"),
+    POLIS_BASE_URL: z.url().optional(),
     POLIS_CONV_TO_IMPORT_ON_RUN: z.undefined().or(
         z
             .string()

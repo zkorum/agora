@@ -50,7 +50,7 @@ const CLEANUP_BATCH_PAUSE_SIZE = 50; // Pause after this many deletions
 const CLEANUP_BATCH_PAUSE_DURATION = 1.0; // Seconds to pause
 
 // Vote finding configuration
-const MAX_VOTE_TARGET_FIND_ATTEMPTS = 10;
+// const MAX_VOTE_TARGET_FIND_ATTEMPTS = 10;
 
 // Custom metrics
 const opinionsCreated = new Counter("opinions_created");
@@ -102,12 +102,12 @@ const CONVERSATION_SLUG_IDS = CONVERSATION_SLUG_IDS_STR.split(",").map((id) =>
 
 if (CONVERSATION_SLUG_IDS.length < 2) {
     throw new Error(
-        `At least 2 conversation IDs are required for multiple conversations test. Got: ${CONVERSATION_SLUG_IDS.length}`,
+        `At least 2 conversation IDs are required for multiple conversations test. Got: ${String(CONVERSATION_SLUG_IDS.length)}`,
     );
 }
 
 console.log(
-    `Testing with ${CONVERSATION_SLUG_IDS.length} conversations: ${CONVERSATION_SLUG_IDS.join(", ")}`,
+    `Testing with ${String(CONVERSATION_SLUG_IDS.length)} conversations: ${CONVERSATION_SLUG_IDS.join(", ")}`,
 );
 
 // Sample opinion texts for variety
@@ -132,24 +132,29 @@ const opinionTexts = new SharedArray("opinion_texts", function () {
 });
 
 // Voting options (users vote once per opinion, can't change their vote)
-const VOTING_OPTIONS: Array<"agree" | "disagree" | "pass"> = [
+const VOTING_OPTIONS: ("agree" | "disagree" | "pass")[] = [
     "agree",
     "disagree",
     "pass",
 ];
 
 // Shared arrays to store created data for cleanup
-const createdOpinions: Array<{
+const createdOpinions: {
     slugId: string;
     conversationSlugId: string;
     did: string;
     prefixedKey: string;
-}> = [];
+}[] = [];
 
-const createdUsers: Array<{
+const createdUsers: {
     did: string;
     prefixedKey: string;
-}> = [];
+}[] = [];
+
+const createdUsers: {
+    did: string;
+    prefixedKey: string;
+}[] = [];
 
 // Backend DID from environment variable
 // Default to localhost for local development
@@ -208,11 +213,11 @@ export default async function () {
                     did,
                     prefixedKey,
                 });
-                console.log(`User ${String(uniqueUserId)} created opinion: ${opinionResult.opinionSlugId}`);
+                console.log(`User ${uniqueUserId} created opinion: ${opinionResult.opinionSlugId}`);
             } else {
                 opinionsFailed.add(1);
                 opinionSuccessRate.add(0);
-                console.error(`User ${String(uniqueUserId)} opinion creation failed: ${String(opinionResult.reason)}`);
+                console.error(`User ${uniqueUserId} opinion creation failed: ${String(opinionResult.reason)}`);
             }
             opinionResponseTime.add(opinionResult.responseTime);
         },
@@ -221,7 +226,9 @@ export default async function () {
             if (voteResult.success) {
                 votesSuccessful.add(1);
                 voteSuccessRate.add(1);
-                console.log(`User ${String(voteResult.userId)} voted on opinion: ${String(voteResult.targetOpinionSlugId)}`);
+                const votedUserId = voteResult.userId ?? "unknown";
+                const targetOpinion = voteResult.targetOpinionSlugId ?? "unknown";
+                console.log(`User ${votedUserId} voted on opinion: ${targetOpinion}`);
             } else {
                 votesFailed.add(1);
                 voteSuccessRate.add(0);
@@ -256,7 +263,7 @@ export default async function () {
 export async function teardown() {
     console.log("=== Starting Teardown ===");
     console.log(
-        `Deleting ${createdOpinions.length} opinions across ${CONVERSATION_SLUG_IDS.length} conversations and ${createdUsers.length} users...`,
+        `Deleting ${String(createdOpinions.length)} opinions across ${String(CONVERSATION_SLUG_IDS.length)} conversations and ${String(createdUsers.length)} users...`,
     );
 
     // Step 1: Delete all opinions
@@ -277,8 +284,9 @@ export async function teardown() {
             opinionsDeleted.add(1);
         } else {
             opinionsFailedCount++;
+            const errorMessage: string = result.error ?? "Unknown error";
             console.error(
-                `Failed to delete opinion ${opinion.slugId}: ${result.error}`,
+                `Failed to delete opinion ${opinion.slugId}: ${errorMessage}`,
             );
         }
 
@@ -290,7 +298,7 @@ export async function teardown() {
     }
 
     console.log(
-        `Opinions: ${opinionsDeletedCount} deleted, ${opinionsFailedCount} failed`,
+        `Opinions: ${String(opinionsDeletedCount)} deleted, ${String(opinionsFailedCount)} failed`,
     );
 
     // Step 2: Delete all user accounts
@@ -310,7 +318,8 @@ export async function teardown() {
             usersDeleted.add(1);
         } else {
             usersFailedCount++;
-            console.error(`Failed to delete user ${user.did}: ${result.error}`);
+            const errorMessage: string = result.error ?? "Unknown error";
+            console.error(`Failed to delete user ${user.did}: ${errorMessage}`);
         }
 
         deleteResponseTime.add(result.responseTime);
@@ -321,7 +330,7 @@ export async function teardown() {
     }
 
     console.log(
-        `Users: ${usersDeletedCount} deleted, ${usersFailedCount} failed`,
+        `Users: ${String(usersDeletedCount)} deleted, ${String(usersFailedCount)} failed`,
     );
     console.log("=== Teardown Complete ===");
 }

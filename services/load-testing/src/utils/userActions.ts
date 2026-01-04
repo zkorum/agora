@@ -98,7 +98,7 @@ export async function performUserActions(
         // Randomly fetch pages to simulate realistic browsing behavior
         if (fetchMainPageProbability && Math.random() < fetchMainPageProbability) {
             console.log(`[${userId}] Fetching main page (during opinion creation)`);
-            const mainPageResult = await fetchMainPage();
+            const mainPageResult = fetchMainPage();
             metrics.mainPageFetches++;
             metrics.totalMainPageResponseTime += mainPageResult.responseTime;
         }
@@ -107,7 +107,18 @@ export async function performUserActions(
             const conversationSlugId =
                 conversationSlugIds[Math.floor(Math.random() * conversationSlugIds.length)];
             console.log(`[${userId}] Fetching conversation page (during opinion creation)`);
-            const conversationPageResult = await fetchConversationPage({
+            const conversationPageResult = fetchConversationPage({
+                conversationSlugId,
+            });
+            metrics.conversationPageFetches++;
+            metrics.totalConversationPageResponseTime += conversationPageResult.responseTime;
+        }
+
+        if (fetchConversationPageProbability && Math.random() < fetchConversationPageProbability) {
+            const conversationSlugId =
+                conversationSlugIds[Math.floor(Math.random() * conversationSlugIds.length)];
+            console.log(`[${userId}] Fetching conversation page (during opinion creation)`);
+            const conversationPageResult = fetchConversationPage({
                 conversationSlugId,
             });
             metrics.conversationPageFetches++;
@@ -150,7 +161,7 @@ export async function performUserActions(
         // Randomly fetch pages to simulate realistic browsing behavior
         if (fetchMainPageProbability && Math.random() < fetchMainPageProbability) {
             console.log(`[${userId}] Fetching main page (during voting)`);
-            const mainPageResult = await fetchMainPage();
+            const mainPageResult = fetchMainPage();
             metrics.mainPageFetches++;
             metrics.totalMainPageResponseTime += mainPageResult.responseTime;
         }
@@ -159,7 +170,18 @@ export async function performUserActions(
             const conversationSlugId =
                 conversationSlugIds[Math.floor(Math.random() * conversationSlugIds.length)];
             console.log(`[${userId}] Fetching conversation page (during voting)`);
-            const conversationPageResult = await fetchConversationPage({
+            const conversationPageResult = fetchConversationPage({
+                conversationSlugId,
+            });
+            metrics.conversationPageFetches++;
+            metrics.totalConversationPageResponseTime += conversationPageResult.responseTime;
+        }
+
+        if (fetchConversationPageProbability && Math.random() < fetchConversationPageProbability) {
+            const conversationSlugId =
+                conversationSlugIds[Math.floor(Math.random() * conversationSlugIds.length)];
+            console.log(`[${userId}] Fetching conversation page (during voting)`);
+            const conversationPageResult = fetchConversationPage({
                 conversationSlugId,
             });
             metrics.conversationPageFetches++;

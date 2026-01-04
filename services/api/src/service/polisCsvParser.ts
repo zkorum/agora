@@ -6,7 +6,7 @@ import { Readable } from "stream";
 export const PolisSummaryCsvSchema = z
     .object({
         topic: z.string().min(1).max(140),
-        url: z.string().url().optional().or(z.literal("")),
+        url: z.url().optional().or(z.literal("")),
         views: z.coerce.number().int().min(0).optional(),
         voters: z.coerce.number().int().min(0),
         "voters-in-conv": z.coerce.number().int().min(0),

@@ -75,7 +75,7 @@ export const zodExportFileInfo = z
         fileName: z.string(),
         fileSize: z.number().int().positive(),
         recordCount: z.number().int().nonnegative(),
-        downloadUrl: z.string().url(),
+        downloadUrl: z.url(),
         urlExpiresAt: zodDateTimeFlexible,
     })
     .strict();
@@ -95,7 +95,6 @@ export const zodOrganization = z
         name: z.string(),
         imageUrl: z.string(),
         websiteUrl: z
-            .string()
             .url({ message: "Invalid organization website url" }),
         description: z.string(),
     })
@@ -127,7 +126,7 @@ export const zodDidWeb = z
 export const zodModerationExplanation = z.string().max(MAX_LENGTH_BODY);
 export const zodCode = z.coerce.number().min(0).max(999999);
 export const zodDigit = z.coerce.number().int().nonnegative().lte(9);
-export const zodUserId = z.string().uuid().min(1);
+export const zodUserId = z.uuid().min(1);
 export const zodDevice = z
     .object({
         didWrite: zodDidKey,
@@ -1089,7 +1088,6 @@ export const zodLanguagePreferences = z
 
 export const zodLinkType = z.enum(["http", "deep"]);
 export const zodPolisUrl = z
-    .string()
     .url({
         message: "Invalid url",
     })
