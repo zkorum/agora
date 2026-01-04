@@ -75,8 +75,8 @@ export class Dto {
         z
             .object({
                 success: z.literal(true),
-                codeExpiry: z.date(),
-                nextCodeSoonestTime: z.date(),
+                codeExpiry: zodDateTimeFlexible,
+                nextCodeSoonestTime: zodDateTimeFlexible,
             })
             .strict(),
         z.object({
