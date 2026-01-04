@@ -21,7 +21,7 @@
     "build:ios": "quasar build -m capacitor -T ios --skip-pkg",
     "build:android": "quasar build -m capacitor -T android -- bundleRelease",
     "sign:android": "./scripts/artifact_sign.sh",
-    "build:ci:ios": "yarn quasar build -m capacitor -T ios --skip-pkg",
+    "build:ci:ios": "pnpm quasar build -m capacitor -T ios --skip-pkg",
     "image:build": "docker build -f Dockerfile.production -t agora-app .",
     "image:buildx": "docker buildx build -f Dockerfile.production --platform linux/amd64 -t agora-app --load .",
     "image:build:staging": "docker build -f Dockerfile.staging -t agora-app-staging .",
@@ -78,7 +78,7 @@
     "vue": "^3.5.25",
     "vue-i18n": "^11.1.12",
     "vue-router": "^4.6.4",
-    "zod": "^4.1.9"
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
@@ -101,7 +101,7 @@
     "prettier": "^3.4.2",
     "serve": "^14.2.5",
     "typescript": "5.9.3",
-    "unplugin-vue-router": "^0.19.1",
+    "unplugin-vue-router": "^0.19.2",
     "vite-plugin-checker": "^0.12.0",
     "vue-tsc": "^3.2.1"
   },

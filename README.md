@@ -36,7 +36,6 @@ Install:
 - [pnpm](https://pnpm.io/)
 - [watchman](https://facebook.github.io/watchman/)
 - [docker](https://www.docker.com/)
-- [yarn](https://yarnpkg.com/)
 
 ## Services
 

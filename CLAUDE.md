@@ -92,7 +92,7 @@ make dev-generate
 
 ```bash
 # Frontend
-cd services/agora && yarn lint && yarn test
+cd services/agora && pnpm lint && pnpm test
 
 # Backend API
 cd services/api && pnpm lint && pnpm test
@@ -197,7 +197,7 @@ pnpm db:undo
 
 ```bash
 # Build images for each service
-cd services/agora && yarn image:build
+cd services/agora && pnpm image:build
 cd services/api && pnpm image:build
 cd services/math-updater && pnpm image:build
 ```

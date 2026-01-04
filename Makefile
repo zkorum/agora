@@ -2,12 +2,12 @@ all: dev
 
 generate:
 	docker run --rm \
-		-v ${PWD}:/local openapitools/openapi-generator-cli:v7.12.0 generate \
+		-v ${PWD}:/local openapitools/openapi-generator-cli generate \
 		-i /local/services/api/openapi-zkorum.json \
 		-g typescript-axios \
 		-o /local/services/agora/src/api
 	docker run --rm \
-		-v ${PWD}:/local openapitools/openapi-generator-cli:v7.12.0 generate \
+		-v ${PWD}:/local openapitools/openapi-generator-cli generate \
 		-i /local/services/api/openapi-zkorum.json \
 		-g typescript-axios \
 		-o /local/services/load-testing/src/api
@@ -36,7 +36,7 @@ dev-generate:
 	watchman-make -p 'services/api/openapi-zkorum.json' -t generate
 
 dev-app:
-	cd services/agora && yarn dev 
+	cd services/agora && pnpm dev 
 
 dev-api:
 	cd services/api && pnpm start:dev
