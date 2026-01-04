@@ -31,7 +31,7 @@ export function useConversationQuery({
     enabled: computed(
       () => toValue(enabled) && toValue(conversationSlugId).length > 0
     ),
-    staleTime: 0,
+    staleTime: 60 * 1000,
     retry: false,
   });
 }

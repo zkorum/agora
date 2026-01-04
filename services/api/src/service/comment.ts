@@ -1339,7 +1339,10 @@ export async function bulkInsertOpinionsFromExternalPolisConvo({
             // Log mismatch only when Polis provided a non-null value that differs from calculated
             // Null values are treated as 0 (Polis didn't provide the count)
             const polisNumAgrees = comment.agree_count ?? 0;
-            if (comment.agree_count !== null && polisNumAgrees !== calculatedNumAgrees) {
+            if (
+                comment.agree_count !== null &&
+                polisNumAgrees !== calculatedNumAgrees
+            ) {
                 log.warn(
                     `[Import] comment.agree_count = ${String(polisNumAgrees)} !== calculated numAgrees = ${String(calculatedNumAgrees)} while importing conversationSlugId=${conversationSlugId} and opinionSludId=${opinionSlugId}`,
                 );
@@ -1347,7 +1350,10 @@ export async function bulkInsertOpinionsFromExternalPolisConvo({
 
             const calculatedNumDisagrees = voteCounts.disagrees;
             const polisNumDisagrees = comment.disagree_count ?? 0;
-            if (comment.disagree_count !== null && polisNumDisagrees !== calculatedNumDisagrees) {
+            if (
+                comment.disagree_count !== null &&
+                polisNumDisagrees !== calculatedNumDisagrees
+            ) {
                 log.warn(
                     `[Import] comment.disagree_count = ${String(polisNumDisagrees)} !== calculated numDisagrees = ${String(calculatedNumDisagrees)} while importing conversationSlugId=${conversationSlugId} and opinionSludId=${opinionSlugId}`,
                 );
@@ -1355,7 +1361,10 @@ export async function bulkInsertOpinionsFromExternalPolisConvo({
 
             const calculatedNumPasses = voteCounts.passes;
             const polisNumPasses = comment.pass_count ?? 0;
-            if (comment.pass_count !== null && polisNumPasses !== calculatedNumPasses) {
+            if (
+                comment.pass_count !== null &&
+                polisNumPasses !== calculatedNumPasses
+            ) {
                 log.warn(
                     `[Import] comment.pass_count = ${String(polisNumPasses)} !== calculated numPasses = ${String(calculatedNumPasses)} while importing conversationSlugId=${conversationSlugId} and opinionSludId=${opinionSlugId}`,
                 );

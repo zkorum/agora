@@ -210,6 +210,10 @@ export default defineConfigWithVueTs(
 
       // Code quality: remove useless v-bind
       "vue/no-useless-v-bind": "error",
+
+      // Disable conflicting rules for simple-import-sort
+      "sort-imports": "off",
+      "import/order": "off",
     },
   },
 

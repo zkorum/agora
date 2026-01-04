@@ -1,7 +1,7 @@
 <template>
-  <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility and screen reader support -->
-  <!-- Tab elements should be keyboard navigable and have proper ARIA attributes for assistive technologies -->
-  <div
+  <component
+    :is="to ? 'router-link' : 'button'"
+    :to="to"
     class="tabStyle"
     :class="{
       highlightTab: isHighlighted,
@@ -9,6 +9,7 @@
       activeTabUnderlineColor: isHighlighted && shouldUnderlineOnHighlight,
       inactiveTabUnderlineColor: !isHighlighted && shouldUnderlineOnHighlight,
     }"
+    @click="handleClick"
   >
     <!--  TODO: proper icon color -->
     <!-- :color="isHighlighted ? 'primary' : '#7D7A85'" -->
@@ -23,21 +24,32 @@
       :name="iconCode"
       size="1rem"
     />
-    <div v-if="text !== undefined" :style="{ paddingBottom: '3px' }">
+    <span v-if="text !== undefined" :style="{ paddingBottom: '3px' }">
       {{ text }}
-    </div>
-  </div>
+    </span>
+  </component>
 </template>
 
 <script setup lang="ts">
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import type { RouteNamedMap } from "vue-router/auto-routes";
+
 defineProps<{
   text?: string;
   iconCode?: string;
   isHighlighted: boolean;
   shouldUnderlineOnHighlight: boolean;
   isLoading?: boolean;
+  to?: { name: keyof RouteNamedMap };
 }>();
+
+const emit = defineEmits<{
+  click: [event: MouseEvent];
+}>();
+
+function handleClick(event: MouseEvent): void {
+  emit("click", event);
+}
 </script>
 
 <style lang="scss" scoped>
@@ -54,6 +66,9 @@ defineProps<{
   font-weight: var(--font-weight-medium);
   color: #7d7a85;
   user-select: none;
+  text-decoration: none;
+  background: none;
+  border: none;
 }
 
 .highlightTab {

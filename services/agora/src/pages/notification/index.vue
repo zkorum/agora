@@ -29,15 +29,16 @@
       >
         <div class="widthConstraint">
           <div class="notificaitonListFlexStyle">
-            <div
+            <router-link
               v-for="notificationItem in notificationList"
               :key="notificationItem.slugId"
-              @click="redirectPage(notificationItem.routeTarget)"
+              :to="getRouteFromTarget(notificationItem.routeTarget) ?? {}"
+              class="notificationLink"
             >
               <ZKHoverEffect
                 :enable-hover="true"
                 background-color="white"
-                hover-background-color="#e2e8f0"
+                hover-variant="medium"
               >
                 <div class="notificationItemBase">
                   <div class="iconWrapper">
@@ -73,7 +74,7 @@
                   </div>
                 </div>
               </ZKHoverEffect>
-            </div>
+            </router-link>
           </div>
         </div>
 
@@ -104,7 +105,7 @@ import { useNotificationStore } from "src/stores/notification";
 import { useNotificationApi } from "src/utils/api/notification/notification";
 import type { DisplayNotification } from "src/utils/notification/transform";
 import { onMounted, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import type { RouteLocationRaw } from "vue-router";
 
 import {
   type NotificationTranslations,
@@ -121,8 +122,6 @@ const { markAllNotificationsAsRead } = useNotificationApi();
 
 const hasMore = ref(true);
 const isLoading = ref(true);
-
-const router = useRouter();
 
 const { t } = useComponentI18n<NotificationTranslations>(
   notificationTranslations
@@ -251,52 +250,55 @@ function pullDownTriggered(done: () => void) {
   }, 500);
 }
 
-async function redirectPage(
+function getRouteFromTarget(
   routeTarget: RouteTarget | undefined
-): Promise<void> {
+): RouteLocationRaw | undefined {
   if (!routeTarget) {
-    return;
+    return undefined;
   }
 
   switch (routeTarget.type) {
     case "opinion":
-      await router.push({
+      return {
         name: "/conversation/[postSlugId]",
         params: { postSlugId: routeTarget.conversationSlugId },
         query: { opinion: routeTarget.opinionSlugId },
-      });
-      break;
+      };
 
     case "export":
-      await router.push({
+      return {
         name: "/conversation/[conversationSlugId]/export.[exportId]",
         params: {
           conversationSlugId: routeTarget.conversationSlugId,
           exportId: routeTarget.exportSlugId,
         },
-      });
-      break;
+      };
 
     case "import":
       // If import completed with conversationSlugId, go directly to conversation
       // Otherwise go to import status page
       if (routeTarget.conversationSlugId) {
-        await router.push({
+        return {
           name: "/conversation/[postSlugId]",
           params: { postSlugId: routeTarget.conversationSlugId },
-        });
+        };
       } else {
-        await router.push({
+        return {
           name: "/conversation/import/[importSlugId]",
           params: { importSlugId: routeTarget.importSlugId },
-        });
+        };
       }
-      break;
   }
 }
 </script>
 
 <style lang="scss" scoped>
+.notificationLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
 .notificationItemBase {
   display: flex;
   gap: 0.5rem;

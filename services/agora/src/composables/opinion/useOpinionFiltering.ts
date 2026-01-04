@@ -2,6 +2,8 @@ import type { UseQueryReturnType } from "@tanstack/vue-query";
 import type { OpinionItem } from "src/shared/types/zod";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { computed, type ComputedRef, type Ref, ref } from "vue";
+import { useRoute } from "vue-router";
+import { z } from "zod";
 
 export interface UseOpinionFilteringParams {
   preloadedQueries: {
@@ -29,7 +31,11 @@ export interface UseOpinionFilteringReturn {
 export function useOpinionFiltering({
   preloadedQueries,
 }: UseOpinionFilteringParams): UseOpinionFilteringReturn {
-  const currentFilter = ref<CommentFilterOptions>("discover");
+  const route = useRoute();
+
+  // Initialize filter from route query parameter if present
+  const initialFilter = getInitialFilterFromRoute(route);
+  const currentFilter = ref<CommentFilterOptions>(initialFilter);
 
   // Use the preloaded queries directly
   const commentsNewQuery = preloadedQueries.commentsNewQuery;
@@ -143,4 +149,32 @@ export function useOpinionFiltering({
     getOpinionDataForFilter,
     handleRetryLoadComments,
   };
+}
+
+/**
+ * Zod schema for validating CommentFilterOptions
+ */
+const CommentFilterOptionsSchema = z.enum([
+  "new",
+  "moderated",
+  "hidden",
+  "discover",
+]);
+
+/**
+ * Get initial filter from route query parameter using zod for type-safe parsing
+ */
+function getInitialFilterFromRoute(
+  route: ReturnType<typeof useRoute>
+): CommentFilterOptions {
+  const filterParam = route.query.filter;
+
+  // Use zod to safely parse the filter parameter
+  const parseResult = CommentFilterOptionsSchema.safeParse(filterParam);
+
+  if (parseResult.success) {
+    return parseResult.data;
+  }
+
+  return "discover"; // Default filter
 }

@@ -208,6 +208,20 @@ When disabled, export API endpoints will return 404 Not Found.
 pnpm run test
 ```
 
+## Troubleshooting
+
+### "Backend is stale" / Requests pending in development
+
+If you observe that backend requests are hanging or the UI reports the backend is "stale" while running locally, you likely hit the **browser's connection limit**.
+
+- **Cause:** Browsers limit the number of persistent connections per domain (typically 6 for HTTP/1.1).
+- **Context:** The local dev server runs on HTTP/1.1. Since each app tab opens a persistent SSE connection for notifications, opening **6 or more tabs** consumes all available sockets. Subsequent requests from any tab will queue indefinitely.
+- **Solution:**
+  - Close unused tabs (keep open tabs < 6).
+  - Use a different browser (Chrome, Firefox, Safari each have their own pool).
+  - Access the app via `127.0.0.1` for a second set of connections (treated as a different origin than `localhost`).
+- **Note:** This issue does not affect staging/production environments that use HTTP/2 (which supports multiplexing).
+
 ## License
 
 See [COPYING](COPYING)
