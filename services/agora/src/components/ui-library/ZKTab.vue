@@ -69,8 +69,6 @@ function handleClick(event: MouseEvent): void {
   text-decoration: none;
   background: none;
   border: none;
-  font-size: inherit;
-  font-family: inherit;
 }
 
 .highlightTab {

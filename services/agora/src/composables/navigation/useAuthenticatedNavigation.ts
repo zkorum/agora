@@ -35,7 +35,6 @@ export function useAuthenticatedNavigation() {
   }
 
   return {
-    isGuestOrLoggedIn,
     requiresAuth,
     isRouteVisible,
   };

@@ -92,14 +92,10 @@ import {
   sideDrawerTranslations,
 } from "./SideDrawer.i18n";
 
-const { isGuestOrLoggedIn: authIsGuestOrLoggedIn, isRouteVisible } =
-  useAuthenticatedNavigation();
-const { isGuest } = storeToRefs(useAuthenticationStore());
+const { isRouteVisible } = useAuthenticatedNavigation();
+const { isGuest, isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
 const { drawerBehavior, showMobileDrawer } = storeToRefs(useNavigationStore());
-
-// Create local ref for template usage
-const isGuestOrLoggedIn = authIsGuestOrLoggedIn;
 
 const route = useRoute();
 
