@@ -80,12 +80,12 @@ const mathUpdaterConfigSchema = sharedConfigSchema.extend({
     //
     AWS_AI_LABEL_SUMMARY_ENABLE: z
         .string()
+        .default("true")
         .transform((val) => {
             const normalized = val.toLowerCase();
             return normalized !== "false" && normalized !== "0";
         })
-        .pipe(z.boolean())
-        .default("true"),
+        .pipe(z.boolean()),
     AWS_AI_LABEL_SUMMARY_REGION: z.string().default("eu-west-1"),
     AWS_AI_LABEL_SUMMARY_MODEL_ID: z
         .string()

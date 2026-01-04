@@ -10,7 +10,6 @@ import {
     SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager";
 import type pino from "pino";
-import type { FastifyBaseLogger } from "fastify";
 import { readFile } from "fs/promises";
 
 export interface GoogleCloudConfig {
@@ -115,7 +114,7 @@ export async function initializeGoogleCloudCredentials({
     googleApplicationCredentialsPath?: string;
     googleCloudTranslationLocation: string;
     googleCloudTranslationEndpoint?: string;
-    log: pino.Logger | FastifyBaseLogger;
+    log: Pick<pino.BaseLogger, "info">;
 }): Promise<GoogleCloudCredentials> {
     let serviceAccount: ServiceAccountCredentials;
 

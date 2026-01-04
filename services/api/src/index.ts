@@ -12,7 +12,7 @@ import fastifySSE from "@fastify/sse";
 import fastifySwagger from "@fastify/swagger";
 import * as ucans from "@ucans/ucans";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { type FastifyRequest } from "fastify";
+import { type FastifyRequest, type FastifyError } from "fastify";
 import {
     jsonSchemaTransform,
     serializerCompiler,
@@ -285,7 +285,7 @@ server.register(fastifySwagger, {
 });
 
 // Custom error handler
-server.setErrorHandler((error, _request, reply) => {
+server.setErrorHandler((error: FastifyError, _request, reply) => {
     // Check if the error has a status code of 500
     if (error.statusCode === undefined || error.statusCode >= 500) {
         // Modify the response message for status code 500

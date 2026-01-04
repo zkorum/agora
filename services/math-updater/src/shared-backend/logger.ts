@@ -1,11 +1,10 @@
 /** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
 import { type Logger } from "drizzle-orm";
-import { type FastifyBaseLogger } from "fastify";
-import pino from "pino";
+import type { BaseLogger } from "pino";
 
 export class DrizzleFastifyLogger implements Logger {
-    logger: pino.Logger | FastifyBaseLogger;
-    constructor(fastifyLogger: pino.Logger | FastifyBaseLogger) {
+    logger: Pick<BaseLogger, "info" | "error">;
+    constructor(fastifyLogger: Pick<BaseLogger, "info" | "error">) {
         this.logger = fastifyLogger;
     }
     logQuery(query: string, params: unknown[]): void {

@@ -398,8 +398,8 @@ export async function deletePostBySlugId({
     } catch (error: unknown) {
         // Log error but don't throw - conversation deletion should succeed even if export deletion fails
         log.error(
-            `Error deleting exports for conversation ${conversationId.toString()}:`,
             error,
+            `Error deleting exports for conversation ${conversationId.toString()}:`,
         );
     }
 }

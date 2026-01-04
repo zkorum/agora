@@ -228,8 +228,8 @@ export async function processConversationExport({
         } catch (uploadError: unknown) {
             // Rollback: delete all successfully uploaded S3 files
             log.error(
-                `Error during export generation for ${exportSlugId}, rolling back ${uploadedS3Keys.length.toString()} uploaded files`,
                 uploadError,
+                `Error during export generation for ${exportSlugId}, rolling back ${uploadedS3Keys.length.toString()} uploaded files`,
             );
 
             for (const s3Key of uploadedS3Keys) {
@@ -242,8 +242,8 @@ export async function processConversationExport({
                 } catch (deleteError: unknown) {
                     // Log but don't fail the rollback if individual deletes fail
                     log.error(
-                        `Failed to rollback S3 file ${s3Key}:`,
                         deleteError,
+                        `Failed to rollback S3 file ${s3Key}:`,
                     );
                 }
             }
@@ -299,8 +299,8 @@ export async function processConversationExport({
             );
 
         log.error(
-            `Failed to process export for conversation ${String(conversationId)}, user ${userId}:`,
             error,
+            `Failed to process export for conversation ${String(conversationId)}, user ${userId}:`,
         );
 
         // Find the failed export ID to create notification
@@ -337,8 +337,8 @@ export async function processConversationExport({
         } catch (notificationError: unknown) {
             // Log but don't fail if notification creation fails
             log.error(
-                "Failed to create failure notification:",
                 notificationError,
+                "Failed to create failure notification:",
             );
         }
     }
@@ -686,7 +686,7 @@ export async function deleteConversationExport({
 
         log.info(`Manually deleted export ${exportSlugId}`);
     } catch (error: unknown) {
-        log.error(`Error deleting export ${exportSlugId}:`, error);
+        log.error(error, `Error deleting export ${exportSlugId}:`);
         throw error;
     }
 }
@@ -858,8 +858,8 @@ export async function cleanupExpiredExports({
             log.info(`Cleaned up expired export ${exportRecord.id.toString()}`);
         } catch (error: unknown) {
             log.error(
-                `Error cleaning up export ${exportRecord.id.toString()}:`,
                 error,
+                `Error cleaning up export ${exportRecord.id.toString()}:`,
             );
         }
     }
@@ -934,8 +934,8 @@ export async function deleteAllConversationExports({
                             });
                         } catch (s3Error: unknown) {
                             log.error(
-                                `Error deleting S3 file ${file.s3Key}:`,
                                 s3Error,
+                                `Error deleting S3 file ${file.s3Key}:`,
                             );
                             // Continue with other files even if one fails
                         }
@@ -962,8 +962,8 @@ export async function deleteAllConversationExports({
                 );
             } catch (error: unknown) {
                 log.error(
-                    `Error deleting export ${exportRecord.id.toString()}:`,
                     error,
+                    `Error deleting export ${exportRecord.id.toString()}:`,
                 );
                 // Continue with other exports even if one fails
             }
@@ -972,8 +972,8 @@ export async function deleteAllConversationExports({
         return deletedCount;
     } catch (error: unknown) {
         log.error(
-            `Error in deleteAllConversationExports for conversation ${conversationId.toString()}:`,
             error,
+            `Error in deleteAllConversationExports for conversation ${conversationId.toString()}:`,
         );
         return 0;
     }
