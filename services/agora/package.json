@@ -100,6 +100,7 @@
     "eslint-plugin-vue": "^10.4.0",
     "globals": "^16.4.0",
     "prettier": "^3.4.2",
+    "rollup-plugin-visualizer": "^5.14.0",
     "serve": "^14.2.5",
     "typescript": "5.9.3",
     "unplugin-vue-router": "^0.19.2",
