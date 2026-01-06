@@ -1,10 +1,13 @@
 import {
-  type ApiV1ConversationGetForEditPost200Response,
-  type ApiV1ConversationUpdatePost200Response,
   type ApiV1ConversationUpdatePostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
+import {
+  Dto,
+  type GetConversationForEditResponse,
+  type UpdateConversationResponse,
+} from "src/shared/types/dto";
 
 import { api } from "../client";
 import { useCommonApi } from "../common";
@@ -17,7 +20,7 @@ export function useBackendPostEditApi() {
    */
   async function getConversationForEdit(
     conversationSlugId: string
-  ): Promise<ApiV1ConversationGetForEditPost200Response> {
+  ): Promise<GetConversationForEditResponse> {
     const params = { conversationSlugId };
     const { url, options } =
       await DefaultApiAxiosParamCreator().apiV1ConversationGetForEditPost(
@@ -34,7 +37,7 @@ export function useBackendPostEditApi() {
       createRawAxiosRequestConfig({ encodedUcan })
     );
 
-    return response.data;
+    return Dto.getConversationForEditResponse.parse(response.data);
   }
 
   /**
@@ -42,7 +45,7 @@ export function useBackendPostEditApi() {
    */
   async function updateConversation(
     data: ApiV1ConversationUpdatePostRequest
-  ): Promise<ApiV1ConversationUpdatePost200Response> {
+  ): Promise<UpdateConversationResponse> {
     const { url, options } =
       await DefaultApiAxiosParamCreator().apiV1ConversationUpdatePost(data);
     const encodedUcan = await buildEncodedUcan(url, options);
@@ -56,7 +59,7 @@ export function useBackendPostEditApi() {
       createRawAxiosRequestConfig({ encodedUcan })
     );
 
-    return response.data;
+    return Dto.updateConversationResponse.parse(response.data);
   }
 
   return {

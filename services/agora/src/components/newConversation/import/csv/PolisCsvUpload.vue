@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { type AxiosError } from "axios";
+import axios, { type AxiosError } from "axios";
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
@@ -114,7 +114,7 @@ const votesFile = useCsvFile("votes");
  * Captures all available error information in a readable format.
  */
 function formatErrorDetails(error: unknown): string {
-  if (axiosInstance.isAxiosError(error)) {
+  if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError;
     const parts: string[] = [];
 
