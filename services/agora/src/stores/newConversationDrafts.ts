@@ -1,11 +1,13 @@
 import { type RemovableRef, useStorage } from "@vueuse/core";
 import { defineStore } from "pinia";
 import {
-  type ConversationDraft,
-  type ConversationImportType,
   type SerializableConversationDraft,
   zodSerializableConversationDraft,
-} from "src/composables/conversation/draft";
+} from "src/composables/conversation/draft/conversationDraft.schema";
+import type {
+  ConversationDraft,
+  ConversationImportType,
+} from "src/composables/conversation/draft/conversationDraft.types";
 import type { OrganizationProperties } from "src/shared/types/zod";
 import { processEnv } from "src/utils/processEnv";
 import { watch } from "vue";
