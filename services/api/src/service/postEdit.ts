@@ -1,18 +1,19 @@
 // Edit conversation functionality
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import {
-    opinionTable,
     pollTable,
     conversationContentTable,
     conversationProofTable,
     conversationTable,
+    conversationModerationTable,
 } from "@/shared-backend/schema.js";
-import { eq, sql, and } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
 import type { EventSlug } from "@/shared/types/zod.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
+import { isValidPublicConversationAccess } from "./common.js";
 import type {
     GetConversationForEditResponse,
     UpdateConversationRequest,
@@ -32,7 +33,6 @@ export async function getConversationForEdit({
 }: GetConversationForEditProps): Promise<GetConversationForEditResponse> {
     const results = await db
         .select({
-            conversationId: conversationTable.id,
             conversationSlugId: conversationTable.slugId,
             authorId: conversationTable.authorId,
             conversationTitle: conversationContentTable.title,
@@ -50,6 +50,7 @@ export async function getConversationForEdit({
             option4: pollTable.option4,
             option5: pollTable.option5,
             option6: pollTable.option6,
+            moderationAction: conversationModerationTable.moderationAction,
         })
         .from(conversationTable)
         .innerJoin(
@@ -59,6 +60,13 @@ export async function getConversationForEdit({
         .leftJoin(
             pollTable,
             eq(pollTable.conversationContentId, conversationContentTable.id),
+        )
+        .leftJoin(
+            conversationModerationTable,
+            eq(
+                conversationModerationTable.conversationId,
+                conversationTable.id,
+            ),
         )
         .where(eq(conversationTable.slugId, conversationSlugId));
 
@@ -73,18 +81,8 @@ export async function getConversationForEdit({
         return { success: false, reason: "not_author" };
     }
 
-    // Get seed opinion count
-    const seedOpinionCountResult = await db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(opinionTable)
-        .where(
-            and(
-                eq(opinionTable.conversationId, conversation.conversationId),
-                eq(opinionTable.isSeed, true),
-            ),
-        );
-
-    const seedOpinionCount = seedOpinionCountResult[0]?.count ?? 0;
+    // Check if conversation is locked
+    const isLocked = conversation.moderationAction === "lock";
 
     // Build poll options list
     let pollingOptionList: string[] | undefined = undefined;
@@ -116,7 +114,7 @@ export async function getConversationForEdit({
         createdAt: conversation.createdAt,
         updatedAt: conversation.updatedAt,
         hasPoll,
-        seedOpinionCount,
+        isLocked,
     };
 }
 
@@ -148,6 +146,17 @@ export async function updateConversation({
         indexConversationAt,
         removePoll,
     } = data;
+
+    // Validate public conversation access rules
+    if (
+        !isValidPublicConversationAccess({
+            isIndexed,
+            isLoginRequired,
+            requiresEventTicket,
+        })
+    ) {
+        return { success: false, reason: "invalid_access_settings" };
+    }
 
     // Sanitize HTML body if provided (backend security layer)
     let sanitizedBody = conversationBody;
@@ -246,32 +255,21 @@ export async function updateConversation({
 
             // Handle poll creation if needed
             if (shouldCreatePoll && !shouldRemovePoll) {
-                const newPollResult = await tx
-                    .insert(pollTable)
-                    .values({
-                        conversationContentId: newContentId,
-                        option1: pollingOptionList[0],
-                        option2: pollingOptionList[1],
-                        option3: pollingOptionList[2] ?? null,
-                        option4: pollingOptionList[3] ?? null,
-                        option5: pollingOptionList[4] ?? null,
-                        option6: pollingOptionList[5] ?? null,
-                        option1Response: 0,
-                        option2Response: 0,
-                        option3Response: pollingOptionList[2] ? 0 : null,
-                        option4Response: pollingOptionList[3] ? 0 : null,
-                        option5Response: pollingOptionList[4] ? 0 : null,
-                        option6Response: pollingOptionList[5] ? 0 : null,
-                    })
-                    .returning({ pollId: pollTable.id });
-
-                const newPollId = newPollResult[0].pollId;
-
-                // Update conversation content with poll ID
-                await tx
-                    .update(conversationContentTable)
-                    .set({ pollId: newPollId })
-                    .where(eq(conversationContentTable.id, newContentId));
+                await tx.insert(pollTable).values({
+                    conversationContentId: newContentId,
+                    option1: pollingOptionList[0],
+                    option2: pollingOptionList[1],
+                    option3: pollingOptionList[2] ?? null,
+                    option4: pollingOptionList[3] ?? null,
+                    option5: pollingOptionList[4] ?? null,
+                    option6: pollingOptionList[5] ?? null,
+                    option1Response: 0,
+                    option2Response: 0,
+                    option3Response: pollingOptionList[2] ? 0 : null,
+                    option4Response: pollingOptionList[3] ? 0 : null,
+                    option5Response: pollingOptionList[4] ? 0 : null,
+                    option6Response: pollingOptionList[5] ? 0 : null,
+                });
             }
 
             // Update conversation with new content and settings
@@ -304,7 +302,7 @@ export async function updateConversation({
                 return { success: false, reason: "conversation_locked" };
             }
         }
-        log.error("Error updating conversation:", error);
+        log.error(error, "Error updating conversation");
         throw httpErrors.internalServerError("Failed to update conversation");
     }
 }
