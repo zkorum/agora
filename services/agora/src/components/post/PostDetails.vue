@@ -69,7 +69,6 @@
     <FloatingBottomContainer v-if="!compactMode">
       <CommentComposer
         :post-slug-id="conversationData.metadata.conversationSlugId"
-        :is-post-locked="isPostLocked"
         :login-required-to-participate="
           conversationData.metadata.isLoginRequired
         "
@@ -176,25 +175,6 @@ const hiddenCommentsQuery = useHiddenCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   voteCount: props.conversationData.metadata.voteCount,
   enabled: !props.compactMode && isModerator.value,
-});
-
-const { verifiedEventTickets } = storeToRefs(userStore);
-
-const isPostLocked = computed((): boolean => {
-  const isModeratedAndLocked =
-    props.conversationData.metadata.moderation.status === "moderated" &&
-    props.conversationData.metadata.moderation.action === "lock";
-
-  const requiresEventTicket =
-    props.conversationData.metadata.requiresEventTicket;
-
-  // Convert Set to Array for better reactivity tracking
-  const verifiedTicketsArray = Array.from(verifiedEventTickets.value);
-  const requiresTicketButNotVerified =
-    requiresEventTicket !== undefined &&
-    !verifiedTicketsArray.includes(requiresEventTicket);
-
-  return isModeratedAndLocked || requiresTicketButNotVerified;
 });
 
 // Track loading states from child components

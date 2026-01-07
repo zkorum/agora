@@ -8,7 +8,6 @@
         :show-toolbar="innerFocus"
         :single-line="false"
         :max-length="MAX_LENGTH_OPINION"
-        :disabled="isPostLocked"
         @update:model-value="checkWordCount()"
         @manually-focused="editorFocused()"
       />
@@ -93,7 +92,6 @@ const props = defineProps<{
   postSlugId: string;
   loginRequiredToParticipate: boolean;
   requiresEventTicket?: EventSlug;
-  isPostLocked: boolean;
 }>();
 
 const emit = defineEmits<{
