@@ -95,7 +95,7 @@ EXPORT_CONVOS_S3_PRESIGNED_URL_EXPIRY_SECONDS=3600         # Presigned URL valid
 EXPORT_CONVOS_ENABLED=true                                 # Enable/disable export feature (default: true)
 
 # Optional: Valkey for export queue persistence across instances
-VALKEY_URL=redis://localhost:6379                          # If not set, uses in-memory storage (lost on restart)
+QUEUE_VALKEY_URL=redis://localhost:6379                          # If not set, uses in-memory storage (lost on restart)
 ```
 
 **Export Queue System:**
