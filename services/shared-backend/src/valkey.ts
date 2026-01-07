@@ -7,6 +7,7 @@ export type Valkey = GlideClient;
 interface InitializeValkeyParams {
     valkeyUrl: string | undefined;
     log: Pick<BaseLogger, "info" | "error">;
+    type: "Queue" | "Cache";
 }
 
 interface ParsedValkeyUrl {
@@ -31,15 +32,18 @@ interface ParsedValkeyUrl {
 function parseValkeyUrl(urlString: string): ParsedValkeyUrl {
     const url = new URL(urlString);
 
-    const useTLS =
-        url.protocol === "valkeys:" || url.protocol === "rediss:";
+    const useTLS = url.protocol === "valkeys:" || url.protocol === "rediss:";
 
     const host = url.hostname;
     const port = url.port ? parseInt(url.port, 10) : 6379;
 
     // Decode username and password (they may be URL-encoded)
-    const username = url.username ? decodeURIComponent(url.username) : undefined;
-    const password = url.password ? decodeURIComponent(url.password) : undefined;
+    const username = url.username
+        ? decodeURIComponent(url.username)
+        : undefined;
+    const password = url.password
+        ? decodeURIComponent(url.password)
+        : undefined;
 
     return { host, port, username, password, useTLS };
 }
@@ -62,17 +66,18 @@ function parseValkeyUrl(urlString: string): ParsedValkeyUrl {
 export async function initializeValkey({
     valkeyUrl,
     log,
+    type,
 }: InitializeValkeyParams): Promise<Valkey | undefined> {
     if (valkeyUrl === undefined) {
         log.info(
-            "[Valkey] Not configured - services will use in-memory storage only",
+            `[${type}Valkey] Not configured - services will use in-memory storage only`,
         );
         return undefined;
     }
 
     try {
         log.info(
-            `[Valkey] Initializing connection to ${valkeyUrl.replace(/:[^:@]+@/, ":***@")}`,
+            `[${type}Valkey] Initializing connection to ${valkeyUrl.replace(/:[^:@]+@/, ":***@")}`,
         );
 
         const { host, port, username, password, useTLS } =
@@ -80,9 +85,7 @@ export async function initializeValkey({
 
         // Build credentials only if password is provided (required by valkey-glide)
         const credentials =
-            password !== undefined
-                ? { username, password }
-                : undefined;
+            password !== undefined ? { username, password } : undefined;
 
         const valkey = await GlideClient.createClient({
             addresses: [{ host, port }],
@@ -108,15 +111,14 @@ export async function initializeValkey({
             defaultDecoder: Decoder.String,
         });
 
-        log.info("[Valkey] Connected successfully");
+        log.info(`[${type}Valkey] Connected successfully`);
 
         return valkey;
     } catch (error) {
         log.error(
             error,
-            "[Valkey] Failed to initialize - services will fall back to in-memory storage only",
+            `[${type}Valkey] Failed to initialize - services will fall back to in-memory storage only`,
         );
         return undefined;
     }
 }
-

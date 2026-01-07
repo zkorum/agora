@@ -376,7 +376,11 @@ if (
 }
 
 // Initialize Valkey (optional - for vote buffer persistence)
-const queueValkey = await initializeValkey({ valkeyUrl: config.QUEUE_VALKEY_URL, log });
+const queueValkey = await initializeValkey({
+    valkeyUrl: config.QUEUE_VALKEY_URL,
+    log,
+    type: "Queue",
+});
 
 // Initialize VoteBuffer (batches votes to reduce DB contention)
 const voteBuffer = createVoteBuffer({
@@ -3050,9 +3054,9 @@ if (
             await notificationSSEManager.shutdown();
 
             // Close Valkey connection
-            if (valkey !== undefined) {
-                valkey.close();
-                log.info("[Valkey] Connection closed");
+            if (queueValkey !== undefined) {
+                queueValkey.close();
+                log.info("[QueueValkey] Connection closed");
             }
 
             // Close server
