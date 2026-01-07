@@ -61,9 +61,10 @@
         <div class="add-button-container">
           <ConversationControlButton
             :label="t('addOpinion')"
+            icon="pi pi-plus"
             :show-border="false"
-            variant="filled"
-            @mousedown.prevent="addNewOpinion"
+            icon-position="left"
+            @click="addNewOpinion"
           />
         </div>
       </div>
@@ -414,34 +415,8 @@ async function onSubmit() {
 }
 
 .add-button-container {
-  position: sticky;
-  bottom: 0;
   display: flex;
-  padding: 1rem;
-  margin: 1rem -1rem 0; // Negative margin to extend to container edges
-  z-index: 10;
-
-  // Border for visual separation when overlapping with opinion cards
-  border-top: 1px solid #e0e0e0;
-
-  // Subtle background with gradient fade for visual separation
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.9) 15%,
-    rgba(255, 255, 255, 1) 30%
-  );
-
-  // Padding to account for the gradient transparency
-  padding-top: 1.5rem;
-
-  // For devices with notches/home indicators
-  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
-
-  // Make button span full width
-  > * {
-    width: 100%;
-  }
+  justify-content: flex-start;
 }
 
 .opinions-list {
