@@ -1,5 +1,5 @@
 <template>
-  <div @click="handleCardClick">
+  <div class="seed-opinion-item-wrapper" @click="handleCardClick">
     <PrimeCard
       class="opinion-card"
       :class="{
@@ -19,7 +19,7 @@
               :model-value="modelValue"
               class="textarea-border-style"
               :placeholder="t('inputTextPlaceholder')"
-              :show-toolbar="isActive"
+              :show-toolbar="true"
               :single-line="false"
               :max-length="MAX_LENGTH_OPINION"
               :disabled="false"
@@ -28,21 +28,20 @@
               @manually-focused="$emit('focus')"
               @blur="$emit('blur')"
             />
-
-            <!-- Delete button - visible when active -->
-            <PrimeButton
-              v-if="isActive"
-              :label="t('deleteOpinion')"
-              icon="pi pi-trash"
-              severity="danger"
-              text
-              class="delete-button"
-              @mousedown="$emit('remove')"
-            />
           </div>
         </div>
       </template>
     </PrimeCard>
+
+    <PrimeButton
+      icon="pi pi-trash"
+      text
+      rounded
+      severity="secondary"
+      class="delete-button"
+      @click.stop="$emit('remove')"
+      @mousedown.stop
+    />
   </div>
 </template>
 
@@ -93,6 +92,12 @@ defineExpose({
 </script>
 
 <style scoped lang="scss">
+.seed-opinion-item-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .opinion-card-content-wrapper {
   display: flex;
   align-items: flex-start;
@@ -100,6 +105,7 @@ defineExpose({
 }
 
 .opinion-card {
+  flex: 1;
   &:deep(.p-card-body) {
     padding-top: 1rem;
     padding-left: 0rem;
@@ -116,7 +122,7 @@ defineExpose({
 }
 
 .textarea-border-style {
-  padding: 1rem;
+  padding: 0 1rem 1rem 1rem;
   background-color: transparent;
 
   // Remove border as the parent card now handles it
@@ -144,13 +150,6 @@ defineExpose({
 }
 
 .delete-button {
-  width: 100%;
-  justify-content: center;
-  padding: 0.75rem 1rem;
-  margin-top: 0.5rem;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  // Ensure delete button stays below the Editor's bubble menu
-  position: relative;
+  flex-shrink: 0;
 }
 </style>
