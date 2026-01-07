@@ -59,7 +59,6 @@
             :single-line="true"
             :max-length="MAX_LENGTH_TITLE"
             min-height="auto"
-            :disabled="false"
             class="title-editor"
             @update:model-value="updateTitle"
           />
@@ -78,7 +77,6 @@
               :show-toolbar="true"
               :single-line="false"
               :max-length="MAX_LENGTH_BODY"
-              :disabled="false"
               @update:model-value="updateContent"
             />
 
