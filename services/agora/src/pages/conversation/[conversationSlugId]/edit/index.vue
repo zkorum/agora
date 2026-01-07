@@ -341,6 +341,8 @@ async function performSave(): Promise<void> {
         errorMsg = t("notAuthorError");
       } else if (response.reason === "conversation_locked") {
         errorMsg = t("conversationLockedError");
+      } else if (response.reason === "invalid_access_settings") {
+        errorMsg = t("invalidAccessSettingsError");
       }
 
       showNotifyMessage(errorMsg);
@@ -415,6 +417,14 @@ onMounted(async () => {
         errorTitle.value = t("notAuthorError");
         errorMessage.value = t("notAuthorError");
       }
+      return;
+    }
+
+    // Check if conversation is locked
+    if (response.isLocked) {
+      loadError.value = true;
+      errorTitle.value = t("conversationLockedError");
+      errorMessage.value = t("conversationLockedError");
       return;
     }
 

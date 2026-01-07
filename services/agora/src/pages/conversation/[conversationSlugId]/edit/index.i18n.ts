@@ -9,6 +9,7 @@ export interface EditConversationTranslations {
   notFoundError: string;
   notAuthorError: string;
   conversationLockedError: string;
+  invalidAccessSettingsError: string;
   loadingError: string;
   pollChangeWarningMessage: string;
   removePollWarningMessage: string;
@@ -29,6 +30,8 @@ export const editConversationTranslations: Record<
     notFoundError: "Conversation not found",
     notAuthorError: "You are not the author of this conversation",
     conversationLockedError: "This conversation is locked and cannot be edited",
+    invalidAccessSettingsError:
+      "Invalid access settings. Login cannot be required for private conversations.",
     loadingError: "Failed to load conversation",
     pollChangeWarningMessage:
       "Changing poll options will reset all existing votes. Are you sure you want to continue?",
@@ -47,6 +50,8 @@ export const editConversationTranslations: Record<
     notAuthorError: "Vous n'êtes pas l'auteur de cette conversation",
     conversationLockedError:
       "Cette conversation est verrouillée et ne peut pas être modifiée",
+    invalidAccessSettingsError:
+      "Paramètres d'accès invalides. La connexion ne peut pas être requise pour les conversations privées.",
     loadingError: "Échec du chargement de la conversation",
     pollChangeWarningMessage:
       "Modifier les options du sondage réinitialisera tous les votes existants. Êtes-vous sûr de vouloir continuer ?",
@@ -65,6 +70,8 @@ export const editConversationTranslations: Record<
     notAuthorError: "No eres el autor de esta conversación",
     conversationLockedError:
       "Esta conversación está bloqueada y no se puede editar",
+    invalidAccessSettingsError:
+      "Configuración de acceso inválida. No se puede requerir inicio de sesión para conversaciones privadas.",
     loadingError: "Error al cargar la conversación",
     pollChangeWarningMessage:
       "Cambiar las opciones de la encuesta restablecerá todos los votos existentes. ¿Estás seguro de que quieres continuar?",
@@ -82,6 +89,7 @@ export const editConversationTranslations: Record<
     notFoundError: "未找到对话",
     notAuthorError: "你不是此对话的作者",
     conversationLockedError: "此对话已锁定，无法编辑",
+    invalidAccessSettingsError: "访问设置无效。私人对话不能要求登录。",
     loadingError: "加载对话失败",
     pollChangeWarningMessage:
       "更改投票选项将重置所有现有投票。您确定要继续吗？",
@@ -98,6 +106,7 @@ export const editConversationTranslations: Record<
     notFoundError: "未找到對話",
     notAuthorError: "你不是此對話的作者",
     conversationLockedError: "此對話已鎖定，無法編輯",
+    invalidAccessSettingsError: "存取設定無效。私人對話不能要求登入。",
     loadingError: "載入對話失敗",
     pollChangeWarningMessage:
       "更改投票選項將重置所有現有投票。您確定要繼續嗎？",
@@ -114,6 +123,8 @@ export const editConversationTranslations: Record<
     notFoundError: "会話が見つかりません",
     notAuthorError: "あなたはこの会話の作成者ではありません",
     conversationLockedError: "この会話はロックされており、編集できません",
+    invalidAccessSettingsError:
+      "アクセス設定が無効です。プライベートな会話ではログインを要求できません。",
     loadingError: "会話の読み込みに失敗しました",
     pollChangeWarningMessage:
       "投票オプションを変更すると、既存の投票がすべてリセットされます。続行してもよろしいですか？",
@@ -131,6 +142,8 @@ export const editConversationTranslations: Record<
     notFoundError: "لم يتم العثور على المحادثة",
     notAuthorError: "أنت لست مؤلف هذه المحادثة",
     conversationLockedError: "هذه المحادثة مقفلة ولا يمكن تعديلها",
+    invalidAccessSettingsError:
+      "إعدادات الوصول غير صالحة. لا يمكن طلب تسجيل الدخول للمحادثات الخاصة.",
     loadingError: "فشل تحميل المحادثة",
     pollChangeWarningMessage:
       "سيؤدي تغيير خيارات الاستطلاع إلى إعادة تعيين جميع الأصوات الموجودة. هل أنت متأكد أنك تريد المتابعة؟",
