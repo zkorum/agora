@@ -159,6 +159,7 @@ import NewConversationLayout from "src/components/newConversation/NewConversatio
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import PollComponent from "src/components/newConversation/poll/PollComponent.vue";
 import {
+  createEmptyDraft,
   useConversationDraft,
   type ValidationErrorField,
 } from "src/composables/conversation/draft";
@@ -241,8 +242,7 @@ const polisUrlInputRef = ref<InstanceType<typeof PolisUrlInput> | null>(null);
 const polisCsvUploadRef = ref<InstanceType<typeof PolisCsvUpload> | null>(null);
 const titleInputRef = ref<HTMLDivElement | null>(null);
 
-const { createEmptyDraft, validateSelectedOrganization } =
-  useNewPostDraftsStore();
+const { validateSelectedOrganization } = useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const { createNewConversationIntention } = useLoginIntentionStore();

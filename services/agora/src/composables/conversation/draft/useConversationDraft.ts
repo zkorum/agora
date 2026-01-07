@@ -35,6 +35,7 @@ import type {
   ValidationResult,
   ValidationState,
 } from "./conversationDraft.types";
+import { createEmptyDraft } from "./conversationDraft.utils";
 import { useConversationDraftTranslations } from "./useConversationDraft.i18n";
 
 // ============================================================================
@@ -112,42 +113,6 @@ export function useConversationDraft(
   // State Management (Always Refs)
   // ============================================================================
 
-  // Create empty draft template
-  function createEmptyDraft(): ConversationDraft {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    return {
-      title: "",
-      content: "",
-      seedOpinions: [],
-      poll: {
-        enabled: false,
-        options: ["", ""],
-      },
-      postAs: {
-        postAsOrganization: false,
-        organizationName: "",
-      },
-      isPrivate: false,
-      requiresLogin: true,
-      privateConversationSettings: {
-        hasScheduledConversion: false,
-        conversionDate: tomorrow,
-      },
-      requiresEventTicket: undefined,
-      importSettings: {
-        importType: null,
-        polisUrl: "",
-        csvFileMetadata: {
-          summary: null,
-          comments: null,
-          votes: null,
-        },
-      },
-    };
-  }
-
   // Initialize refs from store or empty draft
   const initialDraft = config.syncToStore
     ? store!.conversationDraft
@@ -180,71 +145,42 @@ export function useConversationDraft(
   });
 
   // ============================================================================
-  // Store Synchronization (Watchers)
+  // Store Synchronization (Single Batched Watcher)
   // ============================================================================
 
   if (config.syncToStore && store) {
-    // Watch all draft fields and sync to store
-    watch(title, (newValue) => {
-      store.conversationDraft.title = newValue;
-    });
+    // Create a computed object containing all draft state for efficient watching
+    const draftSnapshot = computed(() => ({
+      title: title.value,
+      content: content.value,
+      pollEnabled: pollEnabled.value,
+      pollOptions: [...pollOptions.value],
+      seedOpinions: [...seedOpinions.value],
+      isPrivate: isPrivate.value,
+      requiresLogin: requiresLogin.value,
+      requiresEventTicket: requiresEventTicket.value,
+      privateConversationSettings: { ...privateConversationSettings.value },
+      postAs: { ...postAs.value },
+      importSettings: { ...importSettings.value },
+    }));
 
-    watch(content, (newValue) => {
-      store.conversationDraft.content = newValue;
-    });
-
-    watch(pollEnabled, (newValue) => {
-      store.conversationDraft.poll.enabled = newValue;
-    });
-
+    // Single deep watcher syncs all changes to store
     watch(
-      pollOptions,
-      (newValue) => {
-        store.conversationDraft.poll.options = [...newValue];
-      },
-      { deep: true }
-    );
-
-    watch(
-      seedOpinions,
-      (newValue) => {
-        store.conversationDraft.seedOpinions = [...newValue];
-      },
-      { deep: true }
-    );
-
-    watch(isPrivate, (newValue) => {
-      store.conversationDraft.isPrivate = newValue;
-    });
-
-    watch(requiresLogin, (newValue) => {
-      store.conversationDraft.requiresLogin = newValue;
-    });
-
-    watch(requiresEventTicket, (newValue) => {
-      store.conversationDraft.requiresEventTicket = newValue;
-    });
-
-    watch(
-      privateConversationSettings,
-      (newValue) => {
-        store.conversationDraft.privateConversationSettings = { ...newValue };
-      },
-      { deep: true }
-    );
-
-    watch(
-      postAs,
-      (newValue) => {
-        store.conversationDraft.postAs = { ...newValue };
-      },
-      { deep: true }
-    );
-
-    watch(
-      importSettings,
-      (newValue) => {
-        store.conversationDraft.importSettings = { ...newValue };
+      draftSnapshot,
+      (newSnapshot) => {
+        store.conversationDraft.title = newSnapshot.title;
+        store.conversationDraft.content = newSnapshot.content;
+        store.conversationDraft.poll.enabled = newSnapshot.pollEnabled;
+        store.conversationDraft.poll.options = newSnapshot.pollOptions;
+        store.conversationDraft.seedOpinions = newSnapshot.seedOpinions;
+        store.conversationDraft.isPrivate = newSnapshot.isPrivate;
+        store.conversationDraft.requiresLogin = newSnapshot.requiresLogin;
+        store.conversationDraft.requiresEventTicket =
+          newSnapshot.requiresEventTicket;
+        store.conversationDraft.privateConversationSettings =
+          newSnapshot.privateConversationSettings;
+        store.conversationDraft.postAs = newSnapshot.postAs;
+        store.conversationDraft.importSettings = newSnapshot.importSettings;
       },
       { deep: true }
     );
