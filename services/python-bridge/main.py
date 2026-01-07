@@ -301,6 +301,7 @@ def should_scale_based_on_distribution(member_counts, total_members):
 def get_maths(
     votes,
     min_user_vote_threshold,
+    conversation_slug_id,
     max_group_count=6,
     force_group_count=None,
     just_scaled_down=False,
@@ -308,7 +309,7 @@ def get_maths(
     previous_result=None,  # Store previous attempt for comparison
 ) -> MathResult:
     logger.info(
-        f"Using min_user_vote_threshold='{min_user_vote_threshold}' and max_group_count={max_group_count}"
+        f"[{conversation_slug_id}] Using min_user_vote_threshold='{min_user_vote_threshold}' and max_group_count={max_group_count}"
     )
 
     try:
@@ -427,6 +428,7 @@ def get_maths(
             return get_maths(
                 votes=votes,
                 min_user_vote_threshold=min_user_vote_threshold,
+                conversation_slug_id=conversation_slug_id,
                 force_group_count=new_force_group_count,
                 just_scaled_down=True,
                 previous_result={
@@ -444,6 +446,7 @@ def get_maths(
             return get_maths(
                 votes=votes,
                 min_user_vote_threshold=min_user_vote_threshold,
+                conversation_slug_id=conversation_slug_id,
                 force_group_count=new_force_group_count,
                 just_scaled_up=True,
                 previous_result={
@@ -492,10 +495,28 @@ def get_math_results():
         votes = [vote.model_dump() for vote in payload.votes]
         min_user_vote_threshold = 7  # same value as polis
 
+        if not votes:
+            logger.info(
+                f"No votes for conversation '{payload.conversation_slug_id}', returning empty results."
+            )
+            return jsonify(
+                {
+                    "statements_df": [],
+                    "participants_df": [],
+                    "repness": {},
+                    "group_comment_stats": {},
+                    "consensus": {"agree": [], "disagree": []},
+                }
+            )
+
         logger.info(
-            f"Starting math calculation with min_user_vote_threshold={min_user_vote_threshold}"
+            f"Starting math calculation for conversation '{payload.conversation_slug_id}' with min_user_vote_threshold={min_user_vote_threshold}"
         )
-        result = get_maths(votes=votes, min_user_vote_threshold=min_user_vote_threshold)
+        result = get_maths(
+            votes=votes,
+            min_user_vote_threshold=min_user_vote_threshold,
+            conversation_slug_id=payload.conversation_slug_id,
+        )
 
         elapsed = (datetime.now() - start_time).total_seconds()
         logger.info(f"Successfully completed math calculation in {elapsed:.2f}s")
