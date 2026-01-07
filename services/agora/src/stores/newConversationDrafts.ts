@@ -8,71 +8,12 @@ import type {
   ConversationDraft,
   ConversationImportType,
 } from "src/composables/conversation/draft/conversationDraft.types";
+import { createEmptyDraft } from "src/composables/conversation/draft/conversationDraft.utils";
 import type { OrganizationProperties } from "src/shared/types/zod";
 import { processEnv } from "src/utils/processEnv";
 import { watch } from "vue";
 
-import { useLanguageStore } from "./language";
-import { newConversationDraftsTranslations } from "./newConversationDrafts.i18n";
-
 export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
-  /**
-   * Helper function to get translations based on current display language
-   */
-  function getTranslations() {
-    const languageStore = useLanguageStore();
-    return newConversationDraftsTranslations[languageStore.displayLanguage];
-  }
-
-  /**
-   * Creates a new empty conversation draft with sensible defaults
-   */
-  function createEmptyDraft(): ConversationDraft {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    return {
-      // Basic Content
-      title: "",
-      content: "",
-      seedOpinions: [],
-
-      // Polling Configuration
-      poll: {
-        enabled: false,
-        options: ["", ""], // Start with two empty options
-      },
-
-      // Publishing Options
-      postAs: {
-        postAsOrganization: false,
-        organizationName: "",
-      },
-
-      // Privacy and Advanced Settings
-      isPrivate: false,
-      requiresLogin: true,
-      privateConversationSettings: {
-        hasScheduledConversion: false,
-        conversionDate: tomorrow,
-      },
-
-      // Event Ticket Verification
-      requiresEventTicket: undefined,
-
-      // Creation Settings
-      importSettings: {
-        importType: null,
-        polisUrl: "",
-        csvFileMetadata: {
-          summary: null,
-          comments: null,
-          votes: null,
-        },
-      },
-    };
-  }
-
   /**
    * Parses and validates stored draft data using zod schema
    * Returns parsed draft if valid, null otherwise
@@ -475,8 +416,5 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     setImportType,
     setImportTypeWithClearing,
     clearContentFields,
-
-    // Legacy exports for backward compatibility (to be removed after migration)
-    getTranslations,
   };
 });

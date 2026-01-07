@@ -74,10 +74,11 @@ import MakePublicTimerDialog from "src/components/newConversation/dialog/MakePub
 import ModeChangeConfirmationDialog from "src/components/newConversation/dialog/ModeChangeConfirmationDialog.vue";
 import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
 import VisibilityOptionsDialog from "src/components/newConversation/dialog/VisibilityOptionsDialog.vue";
-import type {
-  ConversationImportSettings,
-  PostAsSettings,
-  PrivateConversationSettings,
+import {
+  type ConversationImportSettings,
+  hasContentThatWouldBeCleared,
+  type PostAsSettings,
+  type PrivateConversationSettings,
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { EventSlug } from "src/shared/types/zod";
@@ -180,9 +181,15 @@ const hasPoll = computed(
 
 /**
  * Checks if switching import type would clear content
+ * Uses shared utility function with current form values
  */
-function hasContentThatWouldBeCleared(): boolean {
-  return hasTitle.value || hasBody.value || hasPoll.value;
+function checkHasContentThatWouldBeCleared(): boolean {
+  return hasContentThatWouldBeCleared(
+    title.value,
+    content.value,
+    pollEnabled.value,
+    pollOptions.value
+  );
 }
 
 const handleImportModeChangeRequest = (
@@ -194,7 +201,7 @@ const handleImportModeChangeRequest = (
   if (
     currentType === null &&
     newImportType !== null &&
-    hasContentThatWouldBeCleared()
+    checkHasContentThatWouldBeCleared()
   ) {
     hasPendingImportModeChange.value = newImportType;
     showImportModeChangeConfirmation.value = true;

@@ -23,11 +23,14 @@ export type {
   ValidationState,
 } from "./conversationDraft.types";
 
+// Utility functions
+export {
+  createEmptyDraft,
+  hasContentThatWouldBeCleared,
+} from "./conversationDraft.utils";
+
 // Schemas and validation
-export type {
-  ConversationImportType as SchemaConversationImportType,
-  SerializableConversationDraft,
-} from "./conversationDraft.schema";
+export type { SerializableConversationDraft } from "./conversationDraft.schema";
 export {
   VALIDATION_CONSTANTS,
   zodConversationImportSettings,
