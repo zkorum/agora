@@ -376,17 +376,17 @@ if (
 }
 
 // Initialize Valkey (optional - for vote buffer persistence)
-const valkey = await initializeValkey({ valkeyUrl: config.VALKEY_URL, log });
+const queueValkey = await initializeValkey({ valkeyUrl: config.QUEUE_VALKEY_URL, log });
 
 // Initialize VoteBuffer (batches votes to reduce DB contention)
 const voteBuffer = createVoteBuffer({
     db,
-    valkey,
+    valkey: queueValkey,
     flushIntervalMs: config.VOTE_BUFFER_FLUSH_INTERVAL_MS,
     valkeyBatchLimit: config.VOTE_BUFFER_VALKEY_BATCH_LIMIT,
 });
 log.info(
-    `[API] Vote buffer initialized (flush interval: ${String(config.VOTE_BUFFER_FLUSH_INTERVAL_MS)}ms, batch limit: ${String(config.VOTE_BUFFER_VALKEY_BATCH_LIMIT)}, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
+    `[API] Vote buffer initialized (flush interval: ${String(config.VOTE_BUFFER_FLUSH_INTERVAL_MS)}ms, batch limit: ${String(config.VOTE_BUFFER_VALKEY_BATCH_LIMIT)}, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
 // Initialize Notification SSE Manager for real-time notifications
@@ -396,7 +396,7 @@ notificationSSEManager.initialize();
 // Initialize ExportBuffer (batches export requests to reduce system load)
 const exportBuffer = createExportBuffer({
     db,
-    valkey,
+    valkey: queueValkey,
     notificationSSEManager,
     flushIntervalMs: 1000,
     maxBatchSize: config.EXPORT_CONVOS_BUFFER_MAX_BATCH_SIZE,
@@ -408,13 +408,13 @@ const exportBuffer = createExportBuffer({
         config.EXPORT_CONVOS_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES,
 });
 log.info(
-    `[API] Export buffer initialized (flush interval: 1s, max batch: ${String(config.EXPORT_CONVOS_BUFFER_MAX_BATCH_SIZE)}, cooldown: ${String(config.EXPORT_CONVOS_COOLDOWN_SECONDS)}s, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
+    `[API] Export buffer initialized (flush interval: 1s, max batch: ${String(config.EXPORT_CONVOS_BUFFER_MAX_BATCH_SIZE)}, cooldown: ${String(config.EXPORT_CONVOS_COOLDOWN_SECONDS)}s, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
 // Initialize ImportBuffer (batches import requests to reduce system load)
 const importBuffer = createImportBuffer({
     db,
-    valkey,
+    valkey: queueValkey,
     notificationSSEManager,
     voteBuffer,
     axiosPolis,
@@ -426,7 +426,7 @@ const importBuffer = createImportBuffer({
         config.IMPORT_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES,
 });
 log.info(
-    `[API] Import buffer initialized (flush interval: ${String(config.IMPORT_BUFFER_FLUSH_INTERVAL_MS)}ms, max batch: ${String(config.IMPORT_BUFFER_MAX_BATCH_SIZE)}, max concurrency: ${String(config.IMPORT_BUFFER_MAX_CONCURRENCY)}, persistence: ${valkey !== undefined ? "Valkey" : "in-memory only"})`,
+    `[API] Import buffer initialized (flush interval: ${String(config.IMPORT_BUFFER_FLUSH_INTERVAL_MS)}ms, max batch: ${String(config.IMPORT_BUFFER_MAX_BATCH_SIZE)}, max concurrency: ${String(config.IMPORT_BUFFER_MAX_CONCURRENCY)}, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
 // Cleanup stuck imports/exports from previous server session

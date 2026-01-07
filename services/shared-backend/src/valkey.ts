@@ -52,7 +52,7 @@ function parseValkeyUrl(urlString: string): ParsedValkeyUrl {
  * - Export buffer queue management
  * - Future: Distributed locks, rate limiting, etc.
  *
- * If VALKEY_URL is not provided, returns undefined and services fall back to in-memory only.
+ * If QUEUE_VALKEY_URL is not provided, returns undefined and services fall back to in-memory only.
  *
  * Configuration:
  * - Local: valkey://localhost:6379

@@ -30,7 +30,7 @@ export const sharedConfigSchema = z.object({
     GOOGLE_APPLICATION_CREDENTIALS: z.string().optional(),
     // Valkey (optional - for vote buffer persistence across instances)
     // Empty strings are treated as undefined to prevent connection attempts
-    VALKEY_URL: z
+    QUEUE_VALKEY_URL: z
         .string()
         .optional()
         .transform((val) => (val === "" ? undefined : val)),
