@@ -1034,12 +1034,12 @@ const zodGenLabelSummaryOutputClusterKey = z.enum([
     "5",
 ]);
 
-export const zodGenLabelSummaryOutputClusterStrict = z.record(
+export const zodGenLabelSummaryOutputClusterStrict = z.partialRecord(
     zodGenLabelSummaryOutputClusterKey,
     zodGenLabelSummaryOutputClusterValue,
 );
 
-export const zodGenLabelSummaryOutputClusterLoose = z.record(
+export const zodGenLabelSummaryOutputClusterLoose = z.partialRecord(
     zodGenLabelSummaryOutputClusterKey,
     z.object({
         label: z.string(),
