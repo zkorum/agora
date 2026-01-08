@@ -22,6 +22,7 @@
               :show-toolbar="true"
               :single-line="false"
               :max-length="MAX_LENGTH_OPINION"
+              :disabled="false"
               min-height="3rem"
               @update:model-value="(val) => $emit('update:modelValue', val)"
               @manually-focused="$emit('focus')"
