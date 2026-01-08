@@ -38,7 +38,6 @@
               dense
               :error="showError"
               :error-message="errorMessage"
-              @update:model-value="handleInput"
             >
             </q-input>
             <div class="legal-notice">
@@ -87,10 +86,8 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -107,31 +104,24 @@ const { t } = useComponentI18n<PolisUrlInputTranslations>(
 );
 
 const model = defineModel<string>({ required: true });
+const validationError = defineModel<string>("validationError", {
+  required: false,
+  default: "",
+});
+const showValidationError = defineModel<boolean>("showValidationError", {
+  required: false,
+  default: false,
+});
 
-const { updatePolisUrl, validatePolisUrlField } = useNewPostDraftsStore();
-const { validationState } = storeToRefs(useNewPostDraftsStore());
+const errorMessage = computed(() => validationError.value);
+const showError = computed(() => showValidationError.value);
 
-const errorMessage = computed(() => validationState.value.polisUrl.error);
-const showError = computed(() => validationState.value.polisUrl.showError);
-
-function validate(): boolean {
-  const result = validatePolisUrlField();
-  return result.success;
-}
-
-function clearError() {
-  // This will be handled automatically by the centralized mutation function
-}
-
-// Watch for model changes and update through centralized mutation
-function handleInput(value: string) {
-  updatePolisUrl(value);
-}
-
-// Expose methods to parent component
+// Expose methods to parent component (for backward compatibility if needed)
 defineExpose({
-  validate,
-  clearError,
+  validate: () => !showError.value && model.value !== "",
+  clearError: () => {
+    showValidationError.value = false;
+  },
 });
 </script>
 

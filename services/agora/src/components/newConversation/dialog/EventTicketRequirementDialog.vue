@@ -4,7 +4,7 @@
       <ZKDialogOptionsList
         :options="eventTicketRequirementOptions"
         :selected-value="
-          conversationDraft.requiresEventTicket !== undefined
+          requiresEventTicket !== undefined
             ? 'requiresEventTicket'
             : 'noVerification'
         "
@@ -15,16 +15,16 @@
 
   <EventTicketSelectionDialog
     v-model:show-dialog="showEventSelectionDialog"
+    v-model:requires-event-ticket="requiresEventTicket"
     @go-back="handleGoBack"
   />
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import type { EventSlug } from "src/shared/types/zod";
 import { useNotify } from "src/utils/ui/notify";
 import { ref } from "vue";
 
@@ -35,8 +35,12 @@ import {
 import EventTicketSelectionDialog from "./EventTicketSelectionDialog.vue";
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
-
-const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
+const requiresEventTicket = defineModel<EventSlug | undefined>(
+  "requiresEventTicket",
+  { required: true }
+);
+const requiresLogin = defineModel<boolean>("requiresLogin", { required: true });
+const isPrivate = defineModel<boolean>("isPrivate", { required: true });
 
 const { t } = useComponentI18n<EventTicketRequirementDialogTranslations>(
   eventTicketRequirementDialogTranslations
@@ -63,15 +67,16 @@ function handleOptionSelected(option: {
   title: string;
   description: string;
   value: string;
-}) {
+}): void {
   if (option.value === "noVerification") {
-    const wasGuestParticipationEnabled = !conversationDraft.value.requiresLogin;
-    const isPublic = !conversationDraft.value.isPrivate;
+    const wasGuestParticipationEnabled = !requiresLogin.value;
+    const isPublic = !isPrivate.value;
 
-    conversationDraft.value.requiresEventTicket = undefined;
+    requiresEventTicket.value = undefined;
 
+    // Cross-cutting validation: public + guest requires event ticket
     if (isPublic && wasGuestParticipationEnabled) {
-      conversationDraft.value.requiresLogin = true;
+      requiresLogin.value = true;
       showNotifyMessage(t("guestParticipationDisabledNotification"));
     }
 

@@ -95,8 +95,7 @@ export const zodOrganization = z
     .object({
         name: z.string(),
         imageUrl: z.string(),
-        websiteUrl: z
-            .url({ message: "Invalid organization website url" }),
+        websiteUrl: z.url({ message: "Invalid organization website url" }),
         description: z.string(),
     })
     .strict();
@@ -141,7 +140,9 @@ export const zodConversationTitle = z.string().max(MAX_LENGTH_TITLE).min(1);
 export const zodConversationBodyInput = z
     .string()
     .max(MAX_LENGTH_BODY_HTML, {
-        message: `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_BODY_HTML)} characters`,
+        message: `Raw HTML content exceeds maximum length of ${String(
+            MAX_LENGTH_BODY_HTML,
+        )} characters`,
     })
     .refine(
         (val: string) => {
@@ -149,7 +150,9 @@ export const zodConversationBodyInput = z
                 .isValid;
         },
         {
-            message: `Plain text content exceeds maximum length of ${String(MAX_LENGTH_BODY)} characters`,
+            message: `Plain text content exceeds maximum length of ${String(
+                MAX_LENGTH_BODY,
+            )} characters`,
         },
     )
     .optional();
@@ -158,10 +161,38 @@ export const zodConversationBodyInput = z
 export const zodConversationBodyOutput = z
     .string()
     .max(MAX_LENGTH_BODY_HTML, {
-        message: `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_BODY_HTML)} characters`,
+        message: `Raw HTML content exceeds maximum length of ${String(
+            MAX_LENGTH_BODY_HTML,
+        )} characters`,
     })
     .optional();
 export const zodPollOptionTitle = z.string().max(MAX_LENGTH_OPTION).min(1);
+
+// Poll action for conversation edit - explicit actions for clarity
+export const zodPollAction = z.discriminatedUnion("action", [
+    z
+        .object({
+            action: z.literal("none"),
+        })
+        .strict(),
+    z
+        .object({
+            action: z.literal("keep"),
+        })
+        .strict(),
+    z
+        .object({
+            action: z.literal("remove"),
+        })
+        .strict(),
+    z
+        .object({
+            action: z.literal("create"),
+            options: z.array(zodPollOptionTitle).min(2).max(6),
+        })
+        .strict(),
+]);
+
 export const zodPollOptionWithResult = z
     .object({
         optionNumber: z.number().int().min(1).max(6),
@@ -476,14 +507,18 @@ export const zodOpinionContentInput = z
     .string()
     .min(1)
     .max(MAX_LENGTH_OPINION_HTML, {
-        message: `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_OPINION_HTML)} characters`,
+        message: `Raw HTML content exceeds maximum length of ${String(
+            MAX_LENGTH_OPINION_HTML,
+        )} characters`,
     })
     .refine(
         (val: string) => {
             return validateHtmlStringCharacterCount(val, "opinion").isValid;
         },
         {
-            message: `Plain text content exceeds maximum length of ${String(MAX_LENGTH_OPINION)} characters`,
+            message: `Plain text content exceeds maximum length of ${String(
+                MAX_LENGTH_OPINION,
+            )} characters`,
         },
     );
 
@@ -492,7 +527,9 @@ export const zodOpinionContentOutput = z
     .string()
     .min(1)
     .max(MAX_LENGTH_OPINION_HTML, {
-        message: `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_OPINION_HTML)} characters`,
+        message: `Raw HTML content exceeds maximum length of ${String(
+            MAX_LENGTH_OPINION_HTML,
+        )} characters`,
     });
 export const zodAgreementType = z.enum(["agree", "disagree"]);
 export const zodVotingOption = z.enum(["agree", "disagree", "pass"]);
