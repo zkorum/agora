@@ -16,6 +16,9 @@ export interface EditConversationTranslations {
   conversationLockedErrorTitle: string;
   conversationLockedErrorMessage: string;
   invalidAccessSettingsError: string;
+  pollAlreadyExistsError: string;
+  noPollToRemoveError: string;
+  noPollToKeepError: string;
   loadingErrorTitle: string;
   loadingErrorMessage: string;
   pollChangeWarningMessage: string;
@@ -48,6 +51,12 @@ export const editConversationTranslations: Record<
       "Please contact a moderator if you need this conversation to be unlocked",
     invalidAccessSettingsError:
       "Invalid access settings. Login cannot be required for private conversations.",
+    pollAlreadyExistsError:
+      "Cannot create poll: this conversation already has a poll",
+    noPollToRemoveError:
+      "Cannot remove poll: this conversation does not have a poll",
+    noPollToKeepError:
+      "Cannot keep poll: this conversation does not have a poll",
     loadingErrorTitle: "Failed to load conversation",
     loadingErrorMessage: "An error occurred while loading the conversation",
     pollChangeWarningMessage:
@@ -78,6 +87,12 @@ export const editConversationTranslations: Record<
       "Veuillez contacter un modérateur si vous avez besoin de déverrouiller cette conversation",
     invalidAccessSettingsError:
       "Paramètres d'accès invalides. La connexion ne peut pas être requise pour les conversations privées.",
+    pollAlreadyExistsError:
+      "Impossible de créer un sondage : cette conversation a déjà un sondage",
+    noPollToRemoveError:
+      "Impossible de supprimer le sondage : cette conversation n'a pas de sondage",
+    noPollToKeepError:
+      "Impossible de conserver le sondage : cette conversation n'a pas de sondage",
     loadingErrorTitle: "Échec du chargement de la conversation",
     loadingErrorMessage:
       "Une erreur s'est produite lors du chargement de la conversation",
@@ -109,6 +124,12 @@ export const editConversationTranslations: Record<
       "Por favor contacta a un moderador si necesitas desbloquear esta conversación",
     invalidAccessSettingsError:
       "Configuración de acceso inválida. No se puede requerir inicio de sesión para conversaciones privadas.",
+    pollAlreadyExistsError:
+      "No se puede crear encuesta: esta conversación ya tiene una encuesta",
+    noPollToRemoveError:
+      "No se puede eliminar encuesta: esta conversación no tiene una encuesta",
+    noPollToKeepError:
+      "No se puede mantener encuesta: esta conversación no tiene una encuesta",
     loadingErrorTitle: "Error al cargar la conversación",
     loadingErrorMessage: "Ocurrió un error al cargar la conversación",
     pollChangeWarningMessage:
@@ -134,6 +155,9 @@ export const editConversationTranslations: Record<
     conversationLockedErrorTitle: "此对话已锁定，无法编辑",
     conversationLockedErrorMessage: "如需解锁此对话，请联系管理员",
     invalidAccessSettingsError: "访问设置无效。私人对话不能要求登录。",
+    pollAlreadyExistsError: "无法创建投票：此对话已有投票",
+    noPollToRemoveError: "无法删除投票：此对话没有投票",
+    noPollToKeepError: "无法保留投票：此对话没有投票",
     loadingErrorTitle: "加载对话失败",
     loadingErrorMessage: "加载对话时发生错误",
     pollChangeWarningMessage:
@@ -158,6 +182,9 @@ export const editConversationTranslations: Record<
     conversationLockedErrorTitle: "此對話已鎖定，無法編輯",
     conversationLockedErrorMessage: "如需解鎖此對話，請聯絡管理員",
     invalidAccessSettingsError: "存取設定無效。私人對話不能要求登入。",
+    pollAlreadyExistsError: "無法建立投票：此對話已有投票",
+    noPollToRemoveError: "無法刪除投票：此對話沒有投票",
+    noPollToKeepError: "無法保留投票：此對話沒有投票",
     loadingErrorTitle: "載入對話失敗",
     loadingErrorMessage: "載入對話時發生錯誤",
     pollChangeWarningMessage:
@@ -184,6 +211,10 @@ export const editConversationTranslations: Record<
       "この会話のロックを解除する必要がある場合は、モデレーターにお問い合わせください",
     invalidAccessSettingsError:
       "アクセス設定が無効です。プライベートな会話ではログインを要求できません。",
+    pollAlreadyExistsError:
+      "投票を作成できません：この会話には既に投票があります",
+    noPollToRemoveError: "投票を削除できません：この会話には投票がありません",
+    noPollToKeepError: "投票を保持できません：この会話には投票がありません",
     loadingErrorTitle: "会話の読み込みに失敗しました",
     loadingErrorMessage: "会話の読み込み中にエラーが発生しました",
     pollChangeWarningMessage:
@@ -211,6 +242,12 @@ export const editConversationTranslations: Record<
       "يرجى الاتصال بمشرف إذا كنت بحاجة إلى إلغاء قفل هذه المحادثة",
     invalidAccessSettingsError:
       "إعدادات الوصول غير صالحة. لا يمكن طلب تسجيل الدخول للمحادثات الخاصة.",
+    pollAlreadyExistsError:
+      "لا يمكن إنشاء استطلاع: تحتوي هذه المحادثة بالفعل على استطلاع",
+    noPollToRemoveError:
+      "لا يمكن إزالة الاستطلاع: لا تحتوي هذه المحادثة على استطلاع",
+    noPollToKeepError:
+      "لا يمكن الاحتفاظ بالاستطلاع: لا تحتوي هذه المحادثة على استطلاع",
     loadingErrorTitle: "فشل تحميل المحادثة",
     loadingErrorMessage: "حدث خطأ أثناء تحميل المحادثة",
     pollChangeWarningMessage:

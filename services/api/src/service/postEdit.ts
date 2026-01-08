@@ -139,12 +139,11 @@ export async function updateConversation({
         conversationSlugId,
         conversationTitle,
         conversationBody,
-        pollingOptionList,
+        pollAction,
         isIndexed,
         isLoginRequired,
         requiresEventTicket,
         indexConversationAt,
-        removePoll,
     } = data;
 
     // Validate public conversation access rules
@@ -218,6 +217,32 @@ export async function updateConversation({
 
             const conversationId = conversation.conversationId;
 
+            // Get current poll status
+            const currentContentResults = await tx
+                .select({
+                    pollId: conversationContentTable.pollId,
+                })
+                .from(conversationContentTable)
+                .where(
+                    eq(
+                        conversationContentTable.id,
+                        conversation.currentContentId,
+                    ),
+                );
+
+            const hasPoll = currentContentResults[0]?.pollId !== null;
+
+            // Validate poll action against current state
+            if (pollAction.action === "create" && hasPoll) {
+                throw new Error("poll_already_exists");
+            }
+            if (pollAction.action === "remove" && !hasPoll) {
+                throw new Error("no_poll_to_remove");
+            }
+            if (pollAction.action === "keep" && !hasPoll) {
+                throw new Error("no_poll_to_keep");
+            }
+
             // Create edit proof
             const editProofResult = await tx
                 .insert(conversationProofTable)
@@ -231,11 +256,6 @@ export async function updateConversation({
                 .returning({ proofId: conversationProofTable.id });
 
             const editProofId = editProofResult[0].proofId;
-
-            // Determine poll handling
-            const shouldRemovePoll = removePoll === true;
-            const shouldCreatePoll =
-                pollingOptionList != null && pollingOptionList.length >= 2;
 
             // Create new conversation content
             const newContentResult = await tx
@@ -253,31 +273,48 @@ export async function updateConversation({
 
             const newContentId = newContentResult[0].conversationContentId;
 
-            // Handle poll creation if needed
-            if (shouldCreatePoll && !shouldRemovePoll) {
-                const newPollResult = await tx
-                    .insert(pollTable)
-                    .values({
-                        conversationContentId: newContentId,
-                        option1: pollingOptionList[0],
-                        option2: pollingOptionList[1],
-                        option3: pollingOptionList[2] ?? null,
-                        option4: pollingOptionList[3] ?? null,
-                        option5: pollingOptionList[4] ?? null,
-                        option6: pollingOptionList[5] ?? null,
-                        option1Response: 0,
-                        option2Response: 0,
-                        option3Response: pollingOptionList[2] ? 0 : null,
-                        option4Response: pollingOptionList[3] ? 0 : null,
-                        option5Response: pollingOptionList[4] ? 0 : null,
-                        option6Response: pollingOptionList[5] ? 0 : null,
-                    })
-                    .returning({ pollId: pollTable.id });
+            // Handle poll action
+            switch (pollAction.action) {
+                case "create": {
+                    const options = pollAction.options;
+                    const newPollResult = await tx
+                        .insert(pollTable)
+                        .values({
+                            conversationContentId: newContentId,
+                            option1: options[0],
+                            option2: options[1],
+                            option3: options[2] ?? null,
+                            option4: options[3] ?? null,
+                            option5: options[4] ?? null,
+                            option6: options[5] ?? null,
+                            option1Response: 0,
+                            option2Response: 0,
+                            option3Response: options[2] ? 0 : null,
+                            option4Response: options[3] ? 0 : null,
+                            option5Response: options[4] ? 0 : null,
+                            option6Response: options[5] ? 0 : null,
+                        })
+                        .returning({ pollId: pollTable.id });
 
-                await tx
-                    .update(conversationContentTable)
-                    .set({ pollId: newPollResult[0].pollId })
-                    .where(eq(conversationContentTable.id, newContentId));
+                    await tx
+                        .update(conversationContentTable)
+                        .set({ pollId: newPollResult[0].pollId })
+                        .where(eq(conversationContentTable.id, newContentId));
+                    break;
+                }
+                case "keep": {
+                    // Copy the existing poll ID to the new content
+                    const existingPollId = currentContentResults[0].pollId;
+                    await tx
+                        .update(conversationContentTable)
+                        .set({ pollId: existingPollId })
+                        .where(eq(conversationContentTable.id, newContentId));
+                    break;
+                }
+                case "remove": {
+                    // pollId is already null in new content, no action needed
+                    break;
+                }
             }
 
             // Update conversation with new content and settings
@@ -308,6 +345,15 @@ export async function updateConversation({
             }
             if (error.message === "conversation_locked") {
                 return { success: false, reason: "conversation_locked" };
+            }
+            if (error.message === "poll_already_exists") {
+                return { success: false, reason: "poll_already_exists" };
+            }
+            if (error.message === "no_poll_to_remove") {
+                return { success: false, reason: "no_poll_to_remove" };
+            }
+            if (error.message === "no_poll_to_keep") {
+                return { success: false, reason: "no_poll_to_keep" };
             }
         }
         log.error(error, "Error updating conversation");

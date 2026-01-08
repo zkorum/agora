@@ -311,12 +311,47 @@ async function performSave(): Promise<void> {
   }
 
   try {
+    // Determine poll action based on current and original state
+    let pollAction:
+      | { action: "keep" }
+      | { action: "remove" }
+      | { action: "create"; options: string[] };
+
+    if (pollEnabled.value) {
+      if (originalPollState.value.enabled) {
+        // Poll was enabled before and still enabled - check if changed
+        const hasOptionsChanged =
+          pollOptions.value.length !== originalPollState.value.options.length ||
+          pollOptions.value.some(
+            (opt, idx) => opt !== originalPollState.value.options[idx]
+          );
+
+        if (hasOptionsChanged) {
+          // Options changed - create new poll
+          pollAction = { action: "create", options: pollOptions.value };
+        } else {
+          // Options unchanged - keep existing
+          pollAction = { action: "keep" };
+        }
+      } else {
+        // Poll is newly enabled - create
+        pollAction = { action: "create", options: pollOptions.value };
+      }
+    } else {
+      if (originalPollState.value.enabled) {
+        // Poll was enabled before but now disabled - remove
+        pollAction = { action: "remove" };
+      } else {
+        // Poll was never enabled - keep (no poll)
+        pollAction = { action: "keep" };
+      }
+    }
+
     const response = await updateConversation({
       conversationSlugId: conversationSlugId,
       conversationTitle: title.value,
       conversationBody: content.value,
-      pollingOptionList: pollEnabled.value ? pollOptions.value : undefined,
-      removePoll: !pollEnabled.value && originalPollState.value.enabled,
+      pollAction: pollAction,
       isIndexed: !isPrivate.value,
       isLoginRequired: requiresLogin.value,
       requiresEventTicket: requiresEventTicket.value,
@@ -345,6 +380,12 @@ async function performSave(): Promise<void> {
         errorMsg = t("conversationLockedError");
       } else if (response.reason === "invalid_access_settings") {
         errorMsg = t("invalidAccessSettingsError");
+      } else if (response.reason === "poll_already_exists") {
+        errorMsg = t("pollAlreadyExistsError");
+      } else if (response.reason === "no_poll_to_remove") {
+        errorMsg = t("noPollToRemoveError");
+      } else if (response.reason === "no_poll_to_keep") {
+        errorMsg = t("noPollToKeepError");
       }
 
       showNotifyMessage(errorMsg);

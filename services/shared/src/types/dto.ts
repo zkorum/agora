@@ -5,6 +5,7 @@ import {
     zodOpinionItem,
     zodAnalysisOpinionItem,
     zodPollOptionTitle,
+    zodPollAction,
     zodConversationTitle,
     zodConversationBodyInput,
     zodConversationBodyOutput,
@@ -311,12 +312,11 @@ export class Dto {
             conversationSlugId: zodSlugId,
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBodyInput,
-            pollingOptionList: z.array(zodPollOptionTitle).optional(),
+            pollAction: zodPollAction,
             isIndexed: z.boolean(),
             isLoginRequired: z.boolean(),
             requiresEventTicket: zodEventSlug.optional(),
             indexConversationAt: z.string().datetime().optional(),
-            removePoll: z.boolean().optional(),
         })
         .strict();
     static updateConversationResponse = z.discriminatedUnion("success", [
@@ -333,6 +333,9 @@ export class Dto {
                     "not_author",
                     "conversation_locked",
                     "invalid_access_settings",
+                    "poll_already_exists",
+                    "no_poll_to_remove",
+                    "no_poll_to_keep",
                 ]),
             })
             .strict(),
