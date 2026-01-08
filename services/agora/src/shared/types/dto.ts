@@ -335,6 +335,7 @@ export class Dto {
                     "conversation_locked",
                     "invalid_access_settings",
                     "poll_already_exists",
+                    "poll_exists_use_keep_or_remove",
                     "no_poll_to_remove",
                     "no_poll_to_keep",
                 ]),

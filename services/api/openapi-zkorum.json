@@ -4519,6 +4519,21 @@
                                                     "action": {
                                                         "type": "string",
                                                         "enum": [
+                                                            "none"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "action"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "action": {
+                                                        "type": "string",
+                                                        "enum": [
                                                             "keep"
                                                         ]
                                                     }
@@ -4641,6 +4656,7 @@
                                                         "conversation_locked",
                                                         "invalid_access_settings",
                                                         "poll_already_exists",
+                                                        "poll_exists_use_keep_or_remove",
                                                         "no_poll_to_remove",
                                                         "no_poll_to_keep"
                                                     ]

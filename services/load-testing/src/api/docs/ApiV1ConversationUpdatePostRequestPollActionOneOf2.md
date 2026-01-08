@@ -6,7 +6,6 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **action** | **string** |  | [default to undefined]
-**_options** | **Array&lt;string&gt;** |  | [default to undefined]
 
 ## Example
 
@@ -15,7 +14,6 @@ import { ApiV1ConversationUpdatePostRequestPollActionOneOf2 } from './api';
 
 const instance: ApiV1ConversationUpdatePostRequestPollActionOneOf2 = {
     action,
-    _options,
 };
 ```
 

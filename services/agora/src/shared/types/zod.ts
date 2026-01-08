@@ -160,6 +160,11 @@ export const zodPollOptionTitle = z.string().max(MAX_LENGTH_OPTION).min(1);
 export const zodPollAction = z.discriminatedUnion("action", [
     z
         .object({
+            action: z.literal("none"),
+        })
+        .strict(),
+    z
+        .object({
             action: z.literal("keep"),
         })
         .strict(),

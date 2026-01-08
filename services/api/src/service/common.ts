@@ -202,10 +202,7 @@ export function useCommonPost() {
             )
             .leftJoin(
                 pollTable,
-                eq(
-                    conversationContentTable.id,
-                    pollTable.conversationContentId,
-                ),
+                eq(conversationContentTable.pollId, pollTable.id),
             )
             .leftJoin(
                 organizationTable,

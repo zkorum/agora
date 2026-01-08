@@ -36,10 +36,12 @@
               :maxlength="MAX_LENGTH_OPTION"
               class="option-input"
               type="text"
+              :readonly="props.readonly"
+              :disabled="props.readonly"
               @input="handleOptionInput(index, $event)"
             />
             <div
-              v-if="pollOptions.length > 2"
+              v-if="pollOptions.length > 2 && !props.readonly"
               class="delete-option-icon"
               @click="removeOption(index)"
             >
@@ -48,7 +50,7 @@
           </div>
         </div>
 
-        <div class="add-option-container">
+        <div v-if="!props.readonly" class="add-option-container">
           <PrimeButton
             :label="t('addOption')"
             icon="pi pi-plus"
@@ -72,6 +74,11 @@ import {
   type PollComponentTranslations,
   pollComponentTranslations,
 } from "./PollComponent.i18n";
+
+// Define props
+const props = defineProps<{
+  readonly?: boolean; // When true, poll options cannot be edited (but poll can still be removed)
+}>();
 
 const { t } = useComponentI18n<PollComponentTranslations>(
   pollComponentTranslations
@@ -224,15 +231,20 @@ function removeOption(index: number): void {
     color: #adb5bd;
   }
 
-  &:hover {
+  &:hover:not(:disabled) {
     border-color: #d0d0d0;
     background-color: #f0f1f2;
   }
 
-  &:focus {
+  &:focus:not(:disabled) {
     border-color: #007bff;
     background-color: $color-background-default;
     outline: none;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
   }
 }
 
