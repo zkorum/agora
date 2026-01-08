@@ -9,8 +9,15 @@ export interface EditConversationTranslations {
   notFoundError: string;
   notAuthorError: string;
   conversationLockedError: string;
+  notFoundErrorTitle: string;
+  notFoundErrorMessage: string;
+  notAuthorErrorTitle: string;
+  notAuthorErrorMessage: string;
+  conversationLockedErrorTitle: string;
+  conversationLockedErrorMessage: string;
   invalidAccessSettingsError: string;
-  loadingError: string;
+  loadingErrorTitle: string;
+  loadingErrorMessage: string;
   pollChangeWarningMessage: string;
   removePollWarningMessage: string;
   pollChangeWarningConfirm: string;
@@ -30,9 +37,19 @@ export const editConversationTranslations: Record<
     notFoundError: "Conversation not found",
     notAuthorError: "You are not the author of this conversation",
     conversationLockedError: "This conversation is locked and cannot be edited",
+    notFoundErrorTitle: "Conversation not found",
+    notFoundErrorMessage: "Failed to load conversation",
+    notAuthorErrorTitle: "You are not the author of this conversation",
+    notAuthorErrorMessage:
+      "Only the original author can edit this conversation",
+    conversationLockedErrorTitle:
+      "This conversation is locked and cannot be edited",
+    conversationLockedErrorMessage:
+      "Please contact a moderator if you need this conversation to be unlocked",
     invalidAccessSettingsError:
       "Invalid access settings. Login cannot be required for private conversations.",
-    loadingError: "Failed to load conversation",
+    loadingErrorTitle: "Failed to load conversation",
+    loadingErrorMessage: "An error occurred while loading the conversation",
     pollChangeWarningMessage:
       "Changing poll options will reset all existing votes. Are you sure you want to continue?",
     removePollWarningMessage:
@@ -50,9 +67,20 @@ export const editConversationTranslations: Record<
     notAuthorError: "Vous n'êtes pas l'auteur de cette conversation",
     conversationLockedError:
       "Cette conversation est verrouillée et ne peut pas être modifiée",
+    notFoundErrorTitle: "Conversation introuvable",
+    notFoundErrorMessage: "Échec du chargement de la conversation",
+    notAuthorErrorTitle: "Vous n'êtes pas l'auteur de cette conversation",
+    notAuthorErrorMessage:
+      "Seul l'auteur original peut modifier cette conversation",
+    conversationLockedErrorTitle:
+      "Cette conversation est verrouillée et ne peut pas être modifiée",
+    conversationLockedErrorMessage:
+      "Veuillez contacter un modérateur si vous avez besoin de déverrouiller cette conversation",
     invalidAccessSettingsError:
       "Paramètres d'accès invalides. La connexion ne peut pas être requise pour les conversations privées.",
-    loadingError: "Échec du chargement de la conversation",
+    loadingErrorTitle: "Échec du chargement de la conversation",
+    loadingErrorMessage:
+      "Une erreur s'est produite lors du chargement de la conversation",
     pollChangeWarningMessage:
       "Modifier les options du sondage réinitialisera tous les votes existants. Êtes-vous sûr de vouloir continuer ?",
     removePollWarningMessage:
@@ -70,9 +98,19 @@ export const editConversationTranslations: Record<
     notAuthorError: "No eres el autor de esta conversación",
     conversationLockedError:
       "Esta conversación está bloqueada y no se puede editar",
+    notFoundErrorTitle: "Conversación no encontrada",
+    notFoundErrorMessage: "Error al cargar la conversación",
+    notAuthorErrorTitle: "No eres el autor de esta conversación",
+    notAuthorErrorMessage:
+      "Solo el autor original puede editar esta conversación",
+    conversationLockedErrorTitle:
+      "Esta conversación está bloqueada y no se puede editar",
+    conversationLockedErrorMessage:
+      "Por favor contacta a un moderador si necesitas desbloquear esta conversación",
     invalidAccessSettingsError:
       "Configuración de acceso inválida. No se puede requerir inicio de sesión para conversaciones privadas.",
-    loadingError: "Error al cargar la conversación",
+    loadingErrorTitle: "Error al cargar la conversación",
+    loadingErrorMessage: "Ocurrió un error al cargar la conversación",
     pollChangeWarningMessage:
       "Cambiar las opciones de la encuesta restablecerá todos los votos existentes. ¿Estás seguro de que quieres continuar?",
     removePollWarningMessage:
@@ -89,8 +127,15 @@ export const editConversationTranslations: Record<
     notFoundError: "未找到对话",
     notAuthorError: "你不是此对话的作者",
     conversationLockedError: "此对话已锁定，无法编辑",
+    notFoundErrorTitle: "未找到对话",
+    notFoundErrorMessage: "加载对话失败",
+    notAuthorErrorTitle: "你不是此对话的作者",
+    notAuthorErrorMessage: "只有原作者可以编辑此对话",
+    conversationLockedErrorTitle: "此对话已锁定，无法编辑",
+    conversationLockedErrorMessage: "如需解锁此对话，请联系管理员",
     invalidAccessSettingsError: "访问设置无效。私人对话不能要求登录。",
-    loadingError: "加载对话失败",
+    loadingErrorTitle: "加载对话失败",
+    loadingErrorMessage: "加载对话时发生错误",
     pollChangeWarningMessage:
       "更改投票选项将重置所有现有投票。您确定要继续吗？",
     removePollWarningMessage: "删除投票将删除所有现有投票。您确定要继续吗？",
@@ -106,8 +151,15 @@ export const editConversationTranslations: Record<
     notFoundError: "未找到對話",
     notAuthorError: "你不是此對話的作者",
     conversationLockedError: "此對話已鎖定，無法編輯",
+    notFoundErrorTitle: "未找到對話",
+    notFoundErrorMessage: "載入對話失敗",
+    notAuthorErrorTitle: "你不是此對話的作者",
+    notAuthorErrorMessage: "只有原作者可以編輯此對話",
+    conversationLockedErrorTitle: "此對話已鎖定，無法編輯",
+    conversationLockedErrorMessage: "如需解鎖此對話，請聯絡管理員",
     invalidAccessSettingsError: "存取設定無效。私人對話不能要求登入。",
-    loadingError: "載入對話失敗",
+    loadingErrorTitle: "載入對話失敗",
+    loadingErrorMessage: "載入對話時發生錯誤",
     pollChangeWarningMessage:
       "更改投票選項將重置所有現有投票。您確定要繼續嗎？",
     removePollWarningMessage: "刪除投票將刪除所有現有投票。您確定要繼續嗎？",
@@ -123,9 +175,17 @@ export const editConversationTranslations: Record<
     notFoundError: "会話が見つかりません",
     notAuthorError: "あなたはこの会話の作成者ではありません",
     conversationLockedError: "この会話はロックされており、編集できません",
+    notFoundErrorTitle: "会話が見つかりません",
+    notFoundErrorMessage: "会話の読み込みに失敗しました",
+    notAuthorErrorTitle: "あなたはこの会話の作成者ではありません",
+    notAuthorErrorMessage: "元の作成者のみがこの会話を編集できます",
+    conversationLockedErrorTitle: "この会話はロックされており、編集できません",
+    conversationLockedErrorMessage:
+      "この会話のロックを解除する必要がある場合は、モデレーターにお問い合わせください",
     invalidAccessSettingsError:
       "アクセス設定が無効です。プライベートな会話ではログインを要求できません。",
-    loadingError: "会話の読み込みに失敗しました",
+    loadingErrorTitle: "会話の読み込みに失敗しました",
+    loadingErrorMessage: "会話の読み込み中にエラーが発生しました",
     pollChangeWarningMessage:
       "投票オプションを変更すると、既存の投票がすべてリセットされます。続行してもよろしいですか？",
     removePollWarningMessage:
@@ -142,9 +202,17 @@ export const editConversationTranslations: Record<
     notFoundError: "لم يتم العثور على المحادثة",
     notAuthorError: "أنت لست مؤلف هذه المحادثة",
     conversationLockedError: "هذه المحادثة مقفلة ولا يمكن تعديلها",
+    notFoundErrorTitle: "لم يتم العثور على المحادثة",
+    notFoundErrorMessage: "فشل تحميل المحادثة",
+    notAuthorErrorTitle: "أنت لست مؤلف هذه المحادثة",
+    notAuthorErrorMessage: "يمكن للمؤلف الأصلي فقط تعديل هذه المحادثة",
+    conversationLockedErrorTitle: "هذه المحادثة مقفلة ولا يمكن تعديلها",
+    conversationLockedErrorMessage:
+      "يرجى الاتصال بمشرف إذا كنت بحاجة إلى إلغاء قفل هذه المحادثة",
     invalidAccessSettingsError:
       "إعدادات الوصول غير صالحة. لا يمكن طلب تسجيل الدخول للمحادثات الخاصة.",
-    loadingError: "فشل تحميل المحادثة",
+    loadingErrorTitle: "فشل تحميل المحادثة",
+    loadingErrorMessage: "حدث خطأ أثناء تحميل المحادثة",
     pollChangeWarningMessage:
       "سيؤدي تغيير خيارات الاستطلاع إلى إعادة تعيين جميع الأصوات الموجودة. هل أنت متأكد أنك تريد المتابعة؟",
     removePollWarningMessage:
