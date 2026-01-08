@@ -2,6 +2,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface CommentComposerTranslations {
   placeholder: string;
+  conversationLockedPlaceholder: string;
   postButton: string;
   conversationLockedError: string;
   createOpinionError: string;
@@ -17,6 +18,7 @@ export const commentComposerTranslations: Record<
 > = {
   en: {
     placeholder: "Add your own opinion",
+    conversationLockedPlaceholder: "This conversation is locked",
     postButton: "Post",
     conversationLockedError:
       "Cannot create opinion because the conversation is locked",
@@ -29,6 +31,7 @@ export const commentComposerTranslations: Record<
   },
   ar: {
     placeholder: "أضف رأيك الخاص",
+    conversationLockedPlaceholder: "هذه المحادثة مقفلة",
     postButton: "نشر",
     conversationLockedError: "لا يمكن إنشاء رأي لأن المحادثة مقفلة",
     createOpinionError: "خطأ أثناء محاولة إنشاء رأي جديد",
@@ -40,6 +43,7 @@ export const commentComposerTranslations: Record<
   },
   es: {
     placeholder: "Añade tu propia opinión",
+    conversationLockedPlaceholder: "Esta conversación está bloqueada",
     postButton: "Publicar",
     conversationLockedError:
       "No se puede crear una opinión porque la conversación está bloqueada",
@@ -52,6 +56,7 @@ export const commentComposerTranslations: Record<
   },
   fr: {
     placeholder: "Ajoutez votre propre opinion",
+    conversationLockedPlaceholder: "Cette conversation est verrouillée",
     postButton: "Publier",
     conversationLockedError:
       "Impossible de créer une opinion car la conversation est verrouillée",
@@ -65,6 +70,7 @@ export const commentComposerTranslations: Record<
   },
   "zh-Hans": {
     placeholder: "添加您自己的意见",
+    conversationLockedPlaceholder: "此对话已锁定",
     postButton: "发布",
     conversationLockedError: "无法创建意见，因为对话已锁定",
     createOpinionError: "尝试创建新意见时出错",
@@ -76,6 +82,7 @@ export const commentComposerTranslations: Record<
   },
   "zh-Hant": {
     placeholder: "添加您自己的意見",
+    conversationLockedPlaceholder: "此對話已鎖定",
     postButton: "發布",
     conversationLockedError: "無法創建意見，因為對話已鎖定",
     createOpinionError: "嘗試創建新意見時出錯",
@@ -87,6 +94,7 @@ export const commentComposerTranslations: Record<
   },
   ja: {
     placeholder: "あなた自身の意見を追加",
+    conversationLockedPlaceholder: "この会話はロックされています",
     postButton: "投稿",
     conversationLockedError: "会話がロックされているため、意見を作成できません",
     createOpinionError: "新しい意見を作成しようとした際にエラーが発生しました",

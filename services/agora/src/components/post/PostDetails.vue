@@ -73,6 +73,7 @@
           conversationData.metadata.isLoginRequired
         "
         :requires-event-ticket="conversationData.metadata.requiresEventTicket"
+        :moderation-status="conversationData.metadata.moderation"
         @submitted-comment="submittedComment"
         @ticket-verified="(payload) => handleTicketVerified(payload)"
       />

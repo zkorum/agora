@@ -3,11 +3,16 @@
     <div class="container borderStyle" :class="{ focused: innerFocus }">
       <Editor
         v-model="opinionBody"
-        :placeholder="t('placeholder')"
+        :placeholder="
+          isConversationLocked
+            ? t('conversationLockedPlaceholder')
+            : t('placeholder')
+        "
         :min-height="innerFocus ? '6rem' : '2rem'"
         :show-toolbar="innerFocus"
         :single-line="false"
         :max-length="MAX_LENGTH_OPINION"
+        :disabled="isConversationLocked"
         @update:model-value="checkWordCount()"
         @manually-focused="editorFocused()"
       />
@@ -72,7 +77,10 @@ import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import type { EventSlug } from "src/shared/types/zod";
+import type {
+  ConversationModerationProperties,
+  EventSlug,
+} from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
@@ -92,6 +100,7 @@ const props = defineProps<{
   postSlugId: string;
   loginRequiredToParticipate: boolean;
   requiresEventTicket?: EventSlug;
+  moderationStatus: ConversationModerationProperties;
 }>();
 
 const emit = defineEmits<{
@@ -128,6 +137,11 @@ const { showNotifyMessage } = useNotify();
 // Zupass verification
 const { verifyTicket } = useTicketVerificationFlow();
 const { isVerifying: isVerifyingZupass } = useZupassVerification();
+
+// Check if conversation is locked by moderation
+const isConversationLocked = computed(() => {
+  return props.moderationStatus.status === "moderated";
+});
 
 // Check if opinion submission is locked due to missing event ticket
 const isOpinionLocked = computed(() => {

@@ -124,6 +124,7 @@ const props = defineProps<{
   minHeight: string;
   singleLine: boolean;
   maxLength: number;
+  disabled: boolean;
 }>();
 const emit = defineEmits<{
   manuallyFocused: [];
@@ -220,6 +221,7 @@ const createCharacterLimitExtension = (maxLength: number) =>
 
 const editor = useEditor({
   content: modelText.value,
+  editable: !props.disabled,
   extensions: [
     StarterKit.configure({
       // Disable features we don't need
@@ -236,6 +238,7 @@ const editor = useEditor({
     Underline,
     Placeholder.configure({
       placeholder: props.placeholder,
+      showOnlyWhenEditable: false,
     }),
     CharacterCount,
     // Add character limit enforcement
@@ -321,6 +324,16 @@ watch(
       if (newValue !== currentContent) {
         editor.value.commands.setContent(newValue);
       }
+    }
+  }
+);
+
+// Watch for changes to disabled prop and update editor
+watch(
+  () => props.disabled,
+  (newDisabled) => {
+    if (editor.value) {
+      editor.value.setEditable(!newDisabled);
     }
   }
 );
