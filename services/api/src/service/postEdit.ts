@@ -86,7 +86,7 @@ export async function getConversationForEdit({
 
     // Build poll options list
     let pollingOptionList: string[] | undefined = undefined;
-    const hasPoll = conversation.pollId !== null;
+    const hasPoll = conversation.option1 !== null;
 
     if (hasPoll) {
         pollingOptionList = [
@@ -255,21 +255,29 @@ export async function updateConversation({
 
             // Handle poll creation if needed
             if (shouldCreatePoll && !shouldRemovePoll) {
-                await tx.insert(pollTable).values({
-                    conversationContentId: newContentId,
-                    option1: pollingOptionList[0],
-                    option2: pollingOptionList[1],
-                    option3: pollingOptionList[2] ?? null,
-                    option4: pollingOptionList[3] ?? null,
-                    option5: pollingOptionList[4] ?? null,
-                    option6: pollingOptionList[5] ?? null,
-                    option1Response: 0,
-                    option2Response: 0,
-                    option3Response: pollingOptionList[2] ? 0 : null,
-                    option4Response: pollingOptionList[3] ? 0 : null,
-                    option5Response: pollingOptionList[4] ? 0 : null,
-                    option6Response: pollingOptionList[5] ? 0 : null,
-                });
+                const newPollResult = await tx
+                    .insert(pollTable)
+                    .values({
+                        conversationContentId: newContentId,
+                        option1: pollingOptionList[0],
+                        option2: pollingOptionList[1],
+                        option3: pollingOptionList[2] ?? null,
+                        option4: pollingOptionList[3] ?? null,
+                        option5: pollingOptionList[4] ?? null,
+                        option6: pollingOptionList[5] ?? null,
+                        option1Response: 0,
+                        option2Response: 0,
+                        option3Response: pollingOptionList[2] ? 0 : null,
+                        option4Response: pollingOptionList[3] ? 0 : null,
+                        option5Response: pollingOptionList[4] ? 0 : null,
+                        option6Response: pollingOptionList[5] ? 0 : null,
+                    })
+                    .returning({ pollId: pollTable.id });
+
+                await tx
+                    .update(conversationContentTable)
+                    .set({ pollId: newPollResult[0].pollId })
+                    .where(eq(conversationContentTable.id, newContentId));
             }
 
             // Update conversation with new content and settings

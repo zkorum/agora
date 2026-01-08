@@ -183,21 +183,34 @@ export async function createNewPost({
                 .where(eq(conversationTable.id, insertedConversationId));
 
             if (pollingOptionList != null) {
-                await tx.insert(pollTable).values({
-                    conversationContentId: insertedConversationContentId,
-                    option1: pollingOptionList[0],
-                    option2: pollingOptionList[1],
-                    option3: pollingOptionList[2] ?? null,
-                    option4: pollingOptionList[3] ?? null,
-                    option5: pollingOptionList[4] ?? null,
-                    option6: pollingOptionList[5] ?? null,
-                    option1Response: 0,
-                    option2Response: 0,
-                    option3Response: pollingOptionList[2] ? 0 : null,
-                    option4Response: pollingOptionList[3] ? 0 : null,
-                    option5Response: pollingOptionList[4] ? 0 : null,
-                    option6Response: pollingOptionList[5] ? 0 : null,
-                });
+                const newPollResult = await tx
+                    .insert(pollTable)
+                    .values({
+                        conversationContentId: insertedConversationContentId,
+                        option1: pollingOptionList[0],
+                        option2: pollingOptionList[1],
+                        option3: pollingOptionList[2] ?? null,
+                        option4: pollingOptionList[3] ?? null,
+                        option5: pollingOptionList[4] ?? null,
+                        option6: pollingOptionList[5] ?? null,
+                        option1Response: 0,
+                        option2Response: 0,
+                        option3Response: pollingOptionList[2] ? 0 : null,
+                        option4Response: pollingOptionList[3] ? 0 : null,
+                        option5Response: pollingOptionList[4] ? 0 : null,
+                        option6Response: pollingOptionList[5] ? 0 : null,
+                    })
+                    .returning({ pollId: pollTable.id });
+
+                await tx
+                    .update(conversationContentTable)
+                    .set({ pollId: newPollResult[0].pollId })
+                    .where(
+                        eq(
+                            conversationContentTable.id,
+                            insertedConversationContentId,
+                        ),
+                    );
             }
 
             // Update the user profile's conversation count
