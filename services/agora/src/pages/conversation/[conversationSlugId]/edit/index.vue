@@ -279,28 +279,52 @@ function validateSubmission(): {
 }
 
 function hasPollChanged(): boolean {
-  const current = { enabled: pollEnabled.value, options: pollOptions.value };
-  const original = originalPollState.value;
-
   // Check if poll was added or removed
-  if (current.enabled !== original.enabled) {
+  if (pollEnabled.value !== originalPollState.value.enabled) {
     return true;
   }
 
-  // If poll is enabled, check if options changed
-  if (current.enabled) {
-    if (current.options.length !== original.options.length) {
-      return true;
-    }
-
-    for (let i = 0; i < current.options.length; i++) {
-      if (current.options[i] !== original.options[i]) {
-        return true;
-      }
-    }
+  // If poll is enabled, check if options changed using JSON comparison
+  if (pollEnabled.value) {
+    return (
+      JSON.stringify(pollOptions.value) !==
+      JSON.stringify(originalPollState.value.options)
+    );
   }
 
   return false;
+}
+
+/**
+ * Determines the appropriate poll action based on current and original poll state
+ */
+function determinePollAction():
+  | { action: "keep" }
+  | { action: "remove" }
+  | { action: "create"; options: string[] } {
+  // No poll now, no poll before → keep (no-op)
+  if (!pollEnabled.value && !originalPollState.value.enabled) {
+    return { action: "keep" };
+  }
+
+  // No poll now, had poll before → remove
+  if (!pollEnabled.value && originalPollState.value.enabled) {
+    return { action: "remove" };
+  }
+
+  // Has poll now, no poll before → create
+  if (pollEnabled.value && !originalPollState.value.enabled) {
+    return { action: "create", options: pollOptions.value };
+  }
+
+  // Has poll now, had poll before → check if options changed
+  const optionsChanged =
+    JSON.stringify(pollOptions.value) !==
+    JSON.stringify(originalPollState.value.options);
+
+  return optionsChanged
+    ? { action: "create", options: pollOptions.value }
+    : { action: "keep" };
 }
 
 async function performSave(): Promise<void> {
@@ -311,41 +335,7 @@ async function performSave(): Promise<void> {
   }
 
   try {
-    // Determine poll action based on current and original state
-    let pollAction:
-      | { action: "keep" }
-      | { action: "remove" }
-      | { action: "create"; options: string[] };
-
-    if (pollEnabled.value) {
-      if (originalPollState.value.enabled) {
-        // Poll was enabled before and still enabled - check if changed
-        const hasOptionsChanged =
-          pollOptions.value.length !== originalPollState.value.options.length ||
-          pollOptions.value.some(
-            (opt, idx) => opt !== originalPollState.value.options[idx]
-          );
-
-        if (hasOptionsChanged) {
-          // Options changed - create new poll
-          pollAction = { action: "create", options: pollOptions.value };
-        } else {
-          // Options unchanged - keep existing
-          pollAction = { action: "keep" };
-        }
-      } else {
-        // Poll is newly enabled - create
-        pollAction = { action: "create", options: pollOptions.value };
-      }
-    } else {
-      if (originalPollState.value.enabled) {
-        // Poll was enabled before but now disabled - remove
-        pollAction = { action: "remove" };
-      } else {
-        // Poll was never enabled - keep (no poll)
-        pollAction = { action: "keep" };
-      }
-    }
+    const pollAction = determinePollAction();
 
     const response = await updateConversation({
       conversationSlugId: conversationSlugId,
@@ -371,22 +361,20 @@ async function performSave(): Promise<void> {
         params: { postSlugId: conversationSlugId },
       });
     } else {
-      let errorMsg = t("updateError");
-      if (response.reason === "not_found") {
-        errorMsg = t("notFoundError");
-      } else if (response.reason === "not_author") {
-        errorMsg = t("notAuthorError");
-      } else if (response.reason === "conversation_locked") {
-        errorMsg = t("conversationLockedError");
-      } else if (response.reason === "invalid_access_settings") {
-        errorMsg = t("invalidAccessSettingsError");
-      } else if (response.reason === "poll_already_exists") {
-        errorMsg = t("pollAlreadyExistsError");
-      } else if (response.reason === "no_poll_to_remove") {
-        errorMsg = t("noPollToRemoveError");
-      } else if (response.reason === "no_poll_to_keep") {
-        errorMsg = t("noPollToKeepError");
-      }
+      // Map error reasons to localized messages
+      const errorMessages: Record<string, string> = {
+        not_found: t("notFoundError"),
+        not_author: t("notAuthorError"),
+        conversation_locked: t("conversationLockedError"),
+        invalid_access_settings: t("invalidAccessSettingsError"),
+        poll_already_exists: t("pollAlreadyExistsError"),
+        no_poll_to_remove: t("noPollToRemoveError"),
+        no_poll_to_keep: t("noPollToKeepError"),
+      };
+
+      const errorMsg = response.reason
+        ? (errorMessages[response.reason] ?? t("updateError"))
+        : t("updateError");
 
       showNotifyMessage(errorMsg);
     }
