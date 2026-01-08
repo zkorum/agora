@@ -1,11 +1,8 @@
-import {
-  type ApiV1ConversationUpdatePostRequest,
-  DefaultApiAxiosParamCreator,
-  DefaultApiFactory,
-} from "src/api";
+import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import {
   Dto,
   type GetConversationForEditResponse,
+  type UpdateConversationRequest,
   type UpdateConversationResponse,
 } from "src/shared/types/dto";
 
@@ -44,7 +41,7 @@ export function useBackendPostEditApi() {
    * Update an existing conversation
    */
   async function updateConversation(
-    data: ApiV1ConversationUpdatePostRequest
+    data: UpdateConversationRequest
   ): Promise<UpdateConversationResponse> {
     const { url, options } =
       await DefaultApiAxiosParamCreator().apiV1ConversationUpdatePost(data);

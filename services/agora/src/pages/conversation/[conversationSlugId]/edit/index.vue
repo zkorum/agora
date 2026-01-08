@@ -401,8 +401,8 @@ onMounted(async () => {
   try {
     if (!conversationSlugId) {
       loadError.value = true;
-      errorTitle.value = t("notFoundError");
-      errorMessage.value = t("loadingError");
+      errorTitle.value = t("notFoundErrorTitle");
+      errorMessage.value = t("notFoundErrorMessage");
       return;
     }
 
@@ -411,11 +411,11 @@ onMounted(async () => {
     if (!response.success) {
       loadError.value = true;
       if (response.reason === "not_found") {
-        errorTitle.value = t("notFoundError");
-        errorMessage.value = t("loadingError");
+        errorTitle.value = t("notFoundErrorTitle");
+        errorMessage.value = t("notFoundErrorMessage");
       } else if (response.reason === "not_author") {
-        errorTitle.value = t("notAuthorError");
-        errorMessage.value = t("notAuthorError");
+        errorTitle.value = t("notAuthorErrorTitle");
+        errorMessage.value = t("notAuthorErrorMessage");
       }
       return;
     }
@@ -423,8 +423,8 @@ onMounted(async () => {
     // Check if conversation is locked
     if (response.isLocked) {
       loadError.value = true;
-      errorTitle.value = t("conversationLockedError");
-      errorMessage.value = t("conversationLockedError");
+      errorTitle.value = t("conversationLockedErrorTitle");
+      errorMessage.value = t("conversationLockedErrorMessage");
       return;
     }
 
@@ -465,8 +465,8 @@ onMounted(async () => {
   } catch (error) {
     console.error("Error loading conversation for edit:", error);
     loadError.value = true;
-    errorTitle.value = t("loadingError");
-    errorMessage.value = t("loadingError");
+    errorTitle.value = t("loadingErrorTitle");
+    errorMessage.value = t("loadingErrorMessage");
   }
 });
 </script>
