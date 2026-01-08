@@ -3,6 +3,7 @@ import {
     pollResponseProofTable,
     pollResponseTable,
     pollTable,
+    conversationContentTable,
 } from "@/shared-backend/schema.js";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
@@ -158,7 +159,17 @@ export async function submitPollResponse({
         const option5CountDiff = voteOptionChoice == 5 ? 1 : 0;
         const option6CountDiff = voteOptionChoice == 6 ? 1 : 0;
 
-        // Update vote counter
+        // Get the poll ID from the current content
+        const pollIdResult = await tx
+            .select({ pollId: conversationContentTable.pollId })
+            .from(conversationContentTable)
+            .where(eq(conversationContentTable.id, postContentId));
+
+        if (!pollIdResult[0]?.pollId) {
+            throw httpErrors.notFound("Poll not found for this conversation");
+        }
+
+        // Update vote counter using the poll ID
         await tx
             .update(pollTable)
             .set({
@@ -181,7 +192,7 @@ export async function submitPollResponse({
                     option6Response: sql`${pollTable.option6Response} + ${option6CountDiff}`,
                 }),
             })
-            .where(eq(pollTable.conversationContentId, postContentId));
+            .where(eq(pollTable.id, pollIdResult[0].pollId));
 
         await tx
             .update(pollResponseTable)

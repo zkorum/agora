@@ -57,10 +57,7 @@ export async function getConversationForEdit({
             conversationContentTable,
             eq(conversationContentTable.id, conversationTable.currentContentId),
         )
-        .leftJoin(
-            pollTable,
-            eq(pollTable.conversationContentId, conversationContentTable.id),
-        )
+        .leftJoin(pollTable, eq(conversationContentTable.pollId, pollTable.id))
         .leftJoin(
             conversationModerationTable,
             eq(
@@ -233,6 +230,9 @@ export async function updateConversation({
             const hasPoll = currentContentResults[0]?.pollId !== null;
 
             // Validate poll action against current state
+            if (pollAction.action === "none" && hasPoll) {
+                throw new Error("poll_exists_use_keep_or_remove");
+            }
             if (pollAction.action === "create" && hasPoll) {
                 throw new Error("poll_already_exists");
             }
@@ -275,6 +275,11 @@ export async function updateConversation({
 
             // Handle poll action
             switch (pollAction.action) {
+                case "none": {
+                    // No poll exists and don't create one - no action needed
+                    // pollId is already null in new content
+                    break;
+                }
                 case "create": {
                     const options = pollAction.options;
                     const newPollResult = await tx
@@ -348,6 +353,12 @@ export async function updateConversation({
             }
             if (error.message === "poll_already_exists") {
                 return { success: false, reason: "poll_already_exists" };
+            }
+            if (error.message === "poll_exists_use_keep_or_remove") {
+                return {
+                    success: false,
+                    reason: "poll_exists_use_keep_or_remove",
+                };
             }
             if (error.message === "no_poll_to_remove") {
                 return { success: false, reason: "no_poll_to_remove" };

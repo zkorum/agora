@@ -107,6 +107,7 @@
               v-model:poll-enabled="pollEnabled"
               v-model:poll-options="pollOptions"
               v-model:validation-error="pollValidationError"
+              :readonly="isCurrentPollOriginal"
             />
           </div>
         </div>
@@ -147,7 +148,7 @@ import {
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import {
@@ -189,6 +190,10 @@ const originalPollState = ref<{
   enabled: false,
   options: [],
 });
+
+// Track if the currently displayed poll is the original poll
+// This determines if the poll should be readonly
+const isCurrentPollOriginal = ref(false);
 
 // Use conversation draft composable (no store sync for edit page)
 const {
@@ -278,33 +283,18 @@ function validateSubmission(): {
   return { isValid: true };
 }
 
-function hasPollChanged(): boolean {
-  // Check if poll was added or removed
-  if (pollEnabled.value !== originalPollState.value.enabled) {
-    return true;
-  }
-
-  // If poll is enabled, check if options changed using JSON comparison
-  if (pollEnabled.value) {
-    return (
-      JSON.stringify(pollOptions.value) !==
-      JSON.stringify(originalPollState.value.options)
-    );
-  }
-
-  return false;
-}
-
 /**
  * Determines the appropriate poll action based on current and original poll state
+ * Note: Poll options are immutable - they cannot be modified once created
  */
 function determinePollAction():
+  | { action: "none" }
   | { action: "keep" }
   | { action: "remove" }
   | { action: "create"; options: string[] } {
-  // No poll now, no poll before → keep (no-op)
+  // No poll now, no poll before → none (no-op)
   if (!pollEnabled.value && !originalPollState.value.enabled) {
-    return { action: "keep" };
+    return { action: "none" };
   }
 
   // No poll now, had poll before → remove
@@ -317,14 +307,9 @@ function determinePollAction():
     return { action: "create", options: pollOptions.value };
   }
 
-  // Has poll now, had poll before → check if options changed
-  const optionsChanged =
-    JSON.stringify(pollOptions.value) !==
-    JSON.stringify(originalPollState.value.options);
-
-  return optionsChanged
-    ? { action: "create", options: pollOptions.value }
-    : { action: "keep" };
+  // Has poll now, had poll before → keep
+  // Poll options are read-only in edit mode, so they remain unchanged
+  return { action: "keep" };
 }
 
 async function performSave(): Promise<void> {
@@ -397,25 +382,19 @@ async function onSave(): Promise<void> {
 
   isSaveButtonLoading.value = true;
 
-  // Check if poll changed
-  if (hasPollChanged()) {
-    // Show warning dialog
-    if (pollEnabled.value) {
-      pollWarningMessage.value = t("pollChangeWarningMessage");
-    } else {
-      pollWarningMessage.value = t("removePollWarningMessage");
-    }
-
-    pendingSaveAction.value = performSave;
-    showPollWarning.value = true;
-    isSaveButtonLoading.value = false;
-  } else {
-    await performSave();
-  }
+  // Poll removal warnings are now handled immediately by the watcher
+  // when the user clicks the X button on the poll component
+  await performSave();
 }
 
 async function handlePollWarningConfirm(): Promise<void> {
   showPollWarning.value = false;
+
+  // Mark that we no longer have the original poll
+  if (isCurrentPollOriginal.value) {
+    isCurrentPollOriginal.value = false;
+  }
+
   if (pendingSaveAction.value) {
     isSaveButtonLoading.value = true;
     await pendingSaveAction.value();
@@ -425,8 +404,27 @@ async function handlePollWarningConfirm(): Promise<void> {
 
 function handlePollWarningCancel(): void {
   showPollWarning.value = false;
+
+  // Restore poll to its previous state
+  if (!pendingSaveAction.value) {
+    // This was triggered by the watcher, restore the poll
+    pollEnabled.value = true;
+    pollOptions.value = [...originalPollState.value.options];
+  }
+
   pendingSaveAction.value = null;
 }
+
+// Watch for poll changes to show immediate warning when removing original poll
+watch(pollEnabled, (newValue, oldValue) => {
+  // Only trigger when poll is disabled (removed)
+  if (oldValue && !newValue && isCurrentPollOriginal.value) {
+    // Show warning immediately when removing the original poll
+    pollWarningMessage.value = t("removePollWarningMessage");
+    pendingSaveAction.value = null; // No save action, just confirming removal
+    showPollWarning.value = true;
+  }
+});
 
 onMounted(async () => {
   try {
@@ -485,11 +483,15 @@ onMounted(async () => {
         enabled: true,
         options: [...response.pollingOptionList],
       };
+      // Mark that the current poll is the original poll
+      isCurrentPollOriginal.value = true;
     } else {
       originalPollState.value = {
         enabled: false,
         options: [],
       };
+      // No original poll, so any new poll will be editable
+      isCurrentPollOriginal.value = false;
     }
 
     isDataLoaded.value = true;

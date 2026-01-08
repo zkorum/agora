@@ -1,4 +1,4 @@
-# ApiV1ConversationUpdatePostRequestPollActionOneOf2
+# ApiV1ConversationUpdatePostRequestPollActionOneOf3
 
 
 ## Properties
@@ -6,14 +6,16 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **action** | **string** |  | [default to undefined]
+**_options** | **Array&lt;string&gt;** |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { ApiV1ConversationUpdatePostRequestPollActionOneOf2 } from './api';
+import { ApiV1ConversationUpdatePostRequestPollActionOneOf3 } from './api';
 
-const instance: ApiV1ConversationUpdatePostRequestPollActionOneOf2 = {
+const instance: ApiV1ConversationUpdatePostRequestPollActionOneOf3 = {
     action,
+    _options,
 };
 ```
 
