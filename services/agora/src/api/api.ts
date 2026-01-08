@@ -1055,7 +1055,10 @@ export const ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum = {
     NotFound: 'not_found',
     NotAuthor: 'not_author',
     ConversationLocked: 'conversation_locked',
-    InvalidAccessSettings: 'invalid_access_settings'
+    InvalidAccessSettings: 'invalid_access_settings',
+    PollAlreadyExists: 'poll_already_exists',
+    NoPollToRemove: 'no_poll_to_remove',
+    NoPollToKeep: 'no_poll_to_keep'
 } as const;
 
 export type ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum = typeof ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum[keyof typeof ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum];
@@ -1064,12 +1067,11 @@ export interface ApiV1ConversationUpdatePostRequest {
     'conversationSlugId': string;
     'conversationTitle': string;
     'conversationBody'?: string;
-    'pollingOptionList'?: Array<string>;
+    'pollAction': ApiV1ConversationUpdatePostRequestPollAction;
     'isIndexed': boolean;
     'isLoginRequired': boolean;
     'requiresEventTicket'?: ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum;
     'indexConversationAt'?: string;
-    'removePoll'?: boolean;
 }
 
 export const ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = {
@@ -1077,6 +1079,42 @@ export const ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = {
 } as const;
 
 export type ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = typeof ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum[keyof typeof ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum];
+
+/**
+ * @type ApiV1ConversationUpdatePostRequestPollAction
+ */
+export type ApiV1ConversationUpdatePostRequestPollAction = ApiV1ConversationUpdatePostRequestPollActionOneOf | ApiV1ConversationUpdatePostRequestPollActionOneOf1 | ApiV1ConversationUpdatePostRequestPollActionOneOf2;
+
+export interface ApiV1ConversationUpdatePostRequestPollActionOneOf {
+    'action': ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum;
+}
+
+export const ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum = {
+    Keep: 'keep'
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum];
+
+export interface ApiV1ConversationUpdatePostRequestPollActionOneOf1 {
+    'action': ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum;
+}
+
+export const ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum = {
+    Remove: 'remove'
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum];
+
+export interface ApiV1ConversationUpdatePostRequestPollActionOneOf2 {
+    'action': ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum;
+    'options': Array<string>;
+}
+
+export const ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum = {
+    Create: 'create'
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum];
 
 export interface ApiV1ConversationValidateCsvPost200Response {
     'summaryFile'?: ApiV1ConversationValidateCsvPost200ResponseSummaryFile;

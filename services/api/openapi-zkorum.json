@@ -4511,13 +4511,65 @@
                                         "type": "string",
                                         "maxLength": 3000
                                     },
-                                    "pollingOptionList": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string",
-                                            "minLength": 1,
-                                            "maxLength": 30
-                                        }
+                                    "pollAction": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "action": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "keep"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "action"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "action": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "remove"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "action"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "action": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "create"
+                                                        ]
+                                                    },
+                                                    "options": {
+                                                        "minItems": 2,
+                                                        "maxItems": 6,
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 30
+                                                        }
+                                                    }
+                                                },
+                                                "required": [
+                                                    "action",
+                                                    "options"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        ]
                                     },
                                     "isIndexed": {
                                         "type": "boolean"
@@ -4535,14 +4587,12 @@
                                         "type": "string",
                                         "format": "date-time",
                                         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-                                    },
-                                    "removePoll": {
-                                        "type": "boolean"
                                     }
                                 },
                                 "required": [
                                     "conversationSlugId",
                                     "conversationTitle",
+                                    "pollAction",
                                     "isIndexed",
                                     "isLoginRequired"
                                 ],
@@ -4589,7 +4639,10 @@
                                                         "not_found",
                                                         "not_author",
                                                         "conversation_locked",
-                                                        "invalid_access_settings"
+                                                        "invalid_access_settings",
+                                                        "poll_already_exists",
+                                                        "no_poll_to_remove",
+                                                        "no_poll_to_keep"
                                                     ]
                                                 }
                                             },
