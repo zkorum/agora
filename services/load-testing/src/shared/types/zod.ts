@@ -13,7 +13,6 @@ import {
     MAX_LENGTH_USER_REPORT_EXPLANATION,
     validateHtmlStringCharacterCount,
 } from "../shared.js";
-import { isValidPhoneNumber } from "libphonenumber-js/max";
 import { isValidPolisUrl } from "../utils/polis.js";
 import {
     ZodSupportedSpokenLanguageCodes,
@@ -80,17 +79,6 @@ export const zodExportFileInfo = z
         urlExpiresAt: zodDateTimeFlexible,
     })
     .strict();
-export const zodPhoneNumber = z
-    .string()
-    .describe("Phone number")
-    .refine(
-        (val: string) => {
-            return isValidPhoneNumber(val);
-        },
-        {
-            message: "Please use valid mobile phone number",
-        },
-    );
 export const zodOrganization = z
     .object({
         name: z.string(),

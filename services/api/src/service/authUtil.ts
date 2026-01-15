@@ -10,7 +10,7 @@ import {
 } from "@/shared-backend/schema.js";
 import { and, eq, gt } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import type { IsLoggedInResponse } from "@/shared/types/dto.js";
+import type { IsLoggedInResponse } from "@/shared/types/dto-auth.js";
 import { nowZeroMs } from "@/shared/util.js";
 import { httpErrors } from "@fastify/sensible";
 import type { DeviceLoginStatusExtended } from "@/shared/types/zod.js";

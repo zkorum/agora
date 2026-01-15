@@ -121,8 +121,35 @@ function sanitizeRichTextContent(
 ): string {
     const allowedTags =
         mode === "input"
-            ? ["b", "strong", "i", "em", "strike", "s", "u", "p", "br"] // TipTap only
-            : ["b", "strong", "i", "em", "strike", "s", "u", "br", "div", "p"]; // Legacy + TipTap
+            ? [
+                  "b",
+                  "strong",
+                  "i",
+                  "em",
+                  "strike",
+                  "s",
+                  "u",
+                  "p",
+                  "br",
+                  "ul",
+                  "ol",
+                  "li",
+              ] // TipTap only
+            : [
+                  "b",
+                  "strong",
+                  "i",
+                  "em",
+                  "strike",
+                  "s",
+                  "u",
+                  "br",
+                  "div",
+                  "p",
+                  "ul",
+                  "ol",
+                  "li",
+              ]; // Legacy + TipTap
 
     const options: sanitizeHtml.IOptions = {
         allowedTags,

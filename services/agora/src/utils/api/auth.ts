@@ -1,19 +1,11 @@
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import {
-  type ApiV1AuthAuthenticatePostRequest,
-  type ApiV1AuthPhoneVerifyOtpPostRequest,
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
-import {
-  type AuthenticateResponse,
-  Dto,
-  type VerifyOtp200,
-} from "src/shared/types/dto";
 import type {
   DeviceLoginStatus,
-  SupportedCountryCallingCode,
 } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
@@ -22,36 +14,20 @@ import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useNotificationStore } from "src/stores/notification";
 import { useTopicStore } from "src/stores/topic";
 import { useUserStore } from "src/stores/user";
-import { processEnv } from "src/utils/processEnv";
 import { useRoute } from "vue-router";
 
+import { resetZupassModuleState } from "../../composables/zupass/useZupassVerification";
 import { useNewPostDraftsStore } from "../../stores/newConversationDrafts";
 import { getPlatform } from "../common";
 import { buildAuthorizationHeader, deleteDid } from "../crypto/ucan/operation";
 import { queryClient } from "../query/client";
 import { useRouterGuard } from "../router/guard";
 import { api } from "./client";
-import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
-import { type KeyAction,useCommonApi } from "./common";
-
-interface SendSmsCodeProps {
-  phoneNumber: string;
-  defaultCallingCode: SupportedCountryCallingCode;
-  isRequestingNewCode: boolean;
-  keyAction?: KeyAction;
-}
-
-interface VerifyPhoneOtpProps {
-  code: number;
-  phoneNumber: string;
-  defaultCallingCode: SupportedCountryCallingCode;
-}
+import { useCommonApi } from "./common";
 
 export function useBackendAuthApi() {
   const {
     buildEncodedUcan,
-    createAxiosErrorResponse,
-    createRawAxiosRequestConfig,
   } = useCommonApi();
   const authStore = useAuthenticationStore();
   const { isAuthInitialized } = storeToRefs(authStore);
@@ -70,85 +46,6 @@ export function useBackendAuthApi() {
   const { firstLoadGuard } = useRouterGuard();
 
   const $q = useQuasar();
-
-  type SendSmsCodeSuccessResponse =
-    AxiosSuccessResponse<AuthenticateResponse>;
-
-  type SendSmsCodeResponse = SendSmsCodeSuccessResponse | AxiosErrorResponse;
-
-  async function sendSmsCode({
-    phoneNumber,
-    defaultCallingCode,
-    isRequestingNewCode,
-    keyAction,
-  }: SendSmsCodeProps): Promise<SendSmsCodeResponse> {
-    try {
-      const params: ApiV1AuthAuthenticatePostRequest = {
-        phoneNumber: phoneNumber,
-        defaultCallingCode: defaultCallingCode,
-        isRequestingNewCode: isRequestingNewCode,
-      };
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AuthAuthenticatePost(params);
-      const encodedUcan = await buildEncodedUcan(url, options, keyAction);
-      const otpDetails = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1AuthAuthenticatePost(
-        params,
-        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
-      );
-      return {
-        status: "success",
-        data: Dto.authenticate200.parse(otpDetails.data),
-      };
-    } catch (error) {
-      return createAxiosErrorResponse(error);
-    }
-  }
-
-  type VerifyPhoneOtpSuccessResponse =
-    AxiosSuccessResponse<VerifyOtp200>;
-
-  type VerifyPhoneOtpResponse =
-    | VerifyPhoneOtpSuccessResponse
-    | AxiosErrorResponse;
-
-  async function verifyPhoneOtp({
-    code,
-    phoneNumber,
-    defaultCallingCode,
-  }: VerifyPhoneOtpProps): Promise<VerifyPhoneOtpResponse> {
-    if (processEnv.VITE_DEV_AUTHORIZED_PHONES) {
-      code = 0;
-    }
-
-    try {
-      const params: ApiV1AuthPhoneVerifyOtpPostRequest = {
-        code: code,
-        phoneNumber: phoneNumber,
-        defaultCallingCode: defaultCallingCode,
-      };
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1AuthPhoneVerifyOtpPost(params);
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1AuthPhoneVerifyOtpPost(
-        params,
-        createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
-      );
-      return {
-        status: "success",
-        data: Dto.verifyOtp200.parse(response.data),
-      };
-    } catch (error) {
-      return createAxiosErrorResponse(error);
-    }
-  }
 
   async function getDeviceLoginStatus(): Promise<DeviceLoginStatus> {
     const { url, options } =
@@ -302,14 +199,14 @@ export function useBackendAuthApi() {
 
     clearTopicsData();
 
+    resetZupassModuleState();
+
     if (shouldClearLanguagePreferences) {
       await clearLanguagePreferences();
     }
   }
 
   return {
-    sendSmsCode,
-    verifyPhoneOtp,
     logoutFromServer,
     getDeviceLoginStatus,
     updateAuthState,

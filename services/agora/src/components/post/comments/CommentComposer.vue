@@ -65,7 +65,6 @@
 import { onClickOutside, useWindowScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
-import Editor from "src/components/editor/Editor.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
@@ -82,7 +81,7 @@ import { useUserStore } from "src/stores/user";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
+import { computed, defineAsyncComponent, onMounted, ref, useTemplateRef, watch } from "vue";
 import type { RouteLocationNormalized } from "vue-router";
 
 import {
@@ -109,6 +108,8 @@ const emit = defineEmits<{
     payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
   ];
 }>();
+
+const Editor = defineAsyncComponent(() => import("src/components/editor/Editor.vue"));
 
 const dummyInput = ref<HTMLInputElement>();
 
@@ -370,9 +371,7 @@ async function submitPostClicked() {
 <style scoped lang="scss">
 .container {
   width: 100%;
-  background-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background-color: #ffffff;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
 }
 

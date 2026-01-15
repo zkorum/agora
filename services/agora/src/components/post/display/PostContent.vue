@@ -20,6 +20,7 @@
         />
 
         <EventTicketRequirementBanner
+          v-if="extendedPostData.metadata.requiresEventTicket"
           :requires-event-ticket="extendedPostData.metadata.requiresEventTicket"
           :read-only="compactMode"
           @verified="(payload) => $emit('verified', payload)"
@@ -67,11 +68,11 @@
 
 <script setup lang="ts">
 import type { ExtendedConversation } from "src/shared/types/zod";
+import { defineAsyncComponent } from "vue";
 
 import ConversationTitleWithPrivacyLabel from "../../features/conversation/ConversationTitleWithPrivacyLabel.vue";
 import ZKCard from "../../ui-library/ZKCard.vue";
 import ZKHtmlContent from "../../ui-library/ZKHtmlContent.vue";
-import EventTicketRequirementBanner from "../EventTicketRequirementBanner.vue";
 import PollWrapper from "./poll/PollWrapper.vue";
 import PostLockedMessage from "./PostLockedMessage.vue";
 import PostMetadata from "./PostMetadata.vue";
@@ -88,6 +89,9 @@ defineEmits<{
   ];
 }>();
 
+const EventTicketRequirementBanner = defineAsyncComponent(() =>
+  import("../EventTicketRequirementBanner.vue")
+);
 </script>
 
 <style scoped lang="scss">

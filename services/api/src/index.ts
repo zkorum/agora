@@ -1,9 +1,16 @@
 import {
     Dto,
-    type AuthenticateResponse,
     type GetConversationResponse,
-    type VerifyOtp200,
 } from "@/shared/types/dto.js";
+import {
+    authenticateRequestBody,
+    verifyOtpReqBody,
+    authenticate200,
+    verifyOtp200,
+    checkLoginStatusResponse,
+    type AuthenticateResponse,
+    type VerifyOtp200,
+} from "@/shared/types/dto-auth.js";
 import fastifyAuth from "@fastify/auth";
 import fastifyCors from "@fastify/cors";
 import fastifyMultipart from "@fastify/multipart";
@@ -754,7 +761,7 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/auth/check-login-status`,
         schema: {
-            response: { 200: Dto.checkLoginStatusResponse },
+            response: { 200: checkLoginStatusResponse },
         },
         handler: async (request) => {
             const { deviceStatus } = await verifyUcanAndDeviceStatus(
@@ -790,8 +797,8 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/auth/authenticate`,
         schema: {
-            body: Dto.authenticateRequestBody,
-            response: { 200: Dto.authenticate200 },
+            body: authenticateRequestBody,
+            response: { 200: authenticate200 },
         },
         handler: async (request) => {
             // This endpoint is accessible without being logged in
@@ -846,9 +853,9 @@ server.after(() => {
         method: "POST",
         url: `/api/${apiVersion}/auth/phone/verify-otp`,
         schema: {
-            body: Dto.verifyOtpReqBody,
+            body: verifyOtpReqBody,
             response: {
-                200: Dto.verifyOtp200,
+                200: verifyOtp200,
             },
         },
         handler: async (request) => {

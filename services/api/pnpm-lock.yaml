@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@zk-kit/eddsa-poseidon@1.1.0':
+    hash: 4049661c2e98ec863141b2f2eea762769fa54e06da58a7cfe63080b1ac7a19ec
+    path: patches/@zk-kit__eddsa-poseidon@1.1.0.patch
+
 importers:
 
   .:
@@ -6626,7 +6631,7 @@ snapshots:
   '@pcd/pod@0.5.1':
     dependencies:
       '@zk-kit/baby-jubjub': 1.0.3
-      '@zk-kit/eddsa-poseidon': 1.1.0
+      '@zk-kit/eddsa-poseidon': 1.1.0(patch_hash=4049661c2e98ec863141b2f2eea762769fa54e06da58a7cfe63080b1ac7a19ec)
       '@zk-kit/lean-imt': 2.2.4
       '@zk-kit/utils': 1.4.1
       buffer: 6.0.3
@@ -7770,7 +7775,7 @@ snapshots:
       buffer: 6.0.3
       poseidon-lite: 0.3.0
 
-  '@zk-kit/eddsa-poseidon@1.1.0':
+  '@zk-kit/eddsa-poseidon@1.1.0(patch_hash=4049661c2e98ec863141b2f2eea762769fa54e06da58a7cfe63080b1ac7a19ec)':
     dependencies:
       '@zk-kit/baby-jubjub': 1.0.3
       '@zk-kit/utils': 1.2.1

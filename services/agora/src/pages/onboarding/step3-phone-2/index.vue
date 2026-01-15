@@ -82,7 +82,6 @@
 </template>
 
 <script setup lang="ts">
-import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
@@ -91,17 +90,21 @@ import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
-import type { AuthenticateResponse } from "src/shared/types/dto";
-import { Dto } from "src/shared/types/dto";
+import {
+  authenticate200,
+  type AuthenticateResponse,
+  verifyOtp200,
+} from "src/shared/types/dto-auth";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import { useBackendAuthApi } from "src/utils/api/auth";
+import { useAuthPhoneApi } from "src/utils/api/auth-phone";
 import type { KeyAction } from "src/utils/api/common";
 import { getPlatform } from "src/utils/common";
 import { createDidOverwriteIfAlreadyExists } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, onMounted, ref } from "vue";
+import { onMounted, ref, watchEffect } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -130,7 +133,7 @@ const router = useRouter();
 
 const { updateAuthState } = useBackendAuthApi();
 
-const { sendSmsCode, verifyPhoneOtp } = useBackendAuthApi();
+const { sendSmsCode, verifyPhoneOtp } = useAuthPhoneApi();
 
 const { onboardingMode } = onboardingFlowStore();
 
@@ -140,16 +143,30 @@ const { routeUserAfterLogin } = useLoginIntentionStore();
 
 const isSubmitButtonLoading = ref(false);
 
-const formattedPhoneNumber = computed(() => {
-  if (!verificationPhoneNumber.value.internationalPhoneNumber) return "";
+const formattedPhoneNumber = ref("");
 
-  const parsed = parsePhoneNumberFromString(
-    verificationPhoneNumber.value.internationalPhoneNumber
-  );
-  return (
-    parsed?.formatInternational() ||
-    verificationPhoneNumber.value.internationalPhoneNumber
-  );
+watchEffect(() => {
+  const phoneNumber = verificationPhoneNumber.value.internationalPhoneNumber;
+  if (!phoneNumber) {
+    formattedPhoneNumber.value = "";
+    return;
+  }
+
+  // Set initial value as fallback
+  formattedPhoneNumber.value = phoneNumber;
+
+  void (async () => {
+    try {
+      const { parsePhoneNumberFromString } = await import(
+        "libphonenumber-js/max"
+      );
+      const parsed = parsePhoneNumberFromString(phoneNumber);
+      formattedPhoneNumber.value =
+        parsed?.formatInternational() || phoneNumber;
+    } catch (e) {
+      console.warn("Failed to load phone formatter", e);
+    }
+  })();
 });
 
 function validateAndParseOtpCode(code: string): number | null {
@@ -202,7 +219,7 @@ async function nextButtonClicked() {
   isSubmitButtonLoading.value = false;
 
   if (response.status == "success") {
-    const data = Dto.verifyOtp200.parse(response.data);
+    const data = verifyOtp200.parse(response.data);
     if (data.success) {
       // Show appropriate message based on account state
       if (data.accountMerged) {
@@ -275,7 +292,7 @@ async function requestCodeClicked(
     keyAction: keyAction,
   });
   if (response.status == "success") {
-    const data = Dto.authenticate200.parse(response.data);
+    const data = authenticate200.parse(response.data);
     if (data.success) {
       processRequestCodeResponse(data);
     } else {

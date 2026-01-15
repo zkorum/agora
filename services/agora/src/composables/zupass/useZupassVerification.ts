@@ -1,12 +1,4 @@
-import type { ParcnetAPI } from "@parcnet-js/app-connector";
-import {
-  doConnect,
-  init,
-  UserCancelledConnectionError,
-  UserClosedDialogError,
-  type Zapp,
-} from "@parcnet-js/app-connector";
-import { ticketProofRequest } from "@parcnet-js/ticket-spec";
+import type { ParcnetAPI, Zapp } from "@parcnet-js/app-connector";
 import type { EventSlug } from "src/shared/types/zod";
 import {
   getZupassCollectionName,
@@ -42,10 +34,25 @@ const error = ref<string | null>(null);
 const zupassIframeContainer = ref<HTMLElement | null>(null);
 const parcnetAPI = shallowRef<ParcnetAPI | null>(null);
 const connectionState = ref<ConnectionState>("disconnected");
-const initContext = shallowRef<Awaited<ReturnType<typeof init>> | null>(null);
+// We can't type this precisely without the static import, so use unknown for the internal context
+const initContext = shallowRef<unknown>(null);
 
 // Callback fired when Zupass iframe/dialog becomes visible
 let onIframeReadyCallback: (() => void) | null = null;
+
+/**
+ * Reset module-level state to ensure fresh initialization.
+ * Use this when logging out or switching contexts.
+ */
+export function resetZupassModuleState() {
+  isVerifying.value = false;
+  error.value = null;
+  // Do not reset zupassIframeContainer - it is managed by Vue lifecycle and bound to App.vue
+  parcnetAPI.value = null;
+  connectionState.value = "disconnected";
+  initContext.value = null;
+  onIframeReadyCallback = null;
+}
 
 /**
  * Composable for Zupass event ticket verification using Parcnet
@@ -77,10 +84,17 @@ export function useZupassVerification() {
       throw new Error("Zupass iframe container not mounted");
     }
 
-    // Step 1: Initialize iframe and dialog
-    // This creates the <dialog> element that will show permissions UI
-    const ctx = await init(zupassIframeContainer.value, "https://zupass.org");
-    initContext.value = ctx;
+    try {
+      const { init } = await import("@parcnet-js/app-connector");
+
+      // Step 1: Initialize iframe and dialog
+      // This creates the <dialog> element that will show permissions UI
+      const ctx = await init(zupassIframeContainer.value, "https://zupass.org");
+      initContext.value = ctx;
+    } catch (err) {
+      console.error("[Zupass] Failed to load @parcnet-js/app-connector:", err);
+      // Don't crash, just log. The connection attempt will fail gracefully later if this failed.
+    }
   }
 
   /**
@@ -97,6 +111,19 @@ export function useZupassVerification() {
 
     connectionState.value = "connecting";
 
+    // Dynamic import to avoid loading library at app startup
+    let appConnector;
+    try {
+      appConnector = await import("@parcnet-js/app-connector");
+    } catch (err) {
+      console.error("[Zupass] Failed to load @parcnet-js/app-connector:", err);
+      error.value = "Failed to load Zupass library";
+      connectionState.value = "error";
+      return;
+    }
+
+    const { init, doConnect, UserCancelledConnectionError, UserClosedDialogError } = appConnector;
+
     try {
       // Step 1 Fix: Call init() and doConnect() in sequence, no caching
       if (!zupassIframeContainer.value) {
@@ -104,6 +131,9 @@ export function useZupassVerification() {
       }
 
       // Initialize iframe
+      // We explicitly cast initContext.value as any to pass it if needed, 
+      // but the logic below ignores existing initContext based on "Step 1 fix" comments.
+      
       const ctx = await init(zupassIframeContainer.value, "https://zupass.org");
 
       // Immediately connect using fresh context (no caching!)
@@ -154,6 +184,17 @@ export function useZupassVerification() {
     // Don't set isVerifying here - it should be managed by caller (useTicketVerificationFlow)
     // to cover the entire verification flow including backend verification
     error.value = null;
+
+    // Dynamic import for ticket spec
+    let ticketProofRequest;
+    try {
+      const mod = await import("@parcnet-js/ticket-spec");
+      ticketProofRequest = mod.ticketProofRequest;
+    } catch (err) {
+      console.error("[Zupass] Failed to load @parcnet-js/ticket-spec:", err);
+      error.value = "Failed to load Zupass ticket specification library";
+      return { success: false, error: "library_load_failed" };
+    }
 
     try {
       // Get user's DID to bind proof (prevents proof stealing)
@@ -222,21 +263,24 @@ export function useZupassVerification() {
         let podStats = null;
         try {
           const podspec = await import("@parcnet-js/podspec");
-          const allPods = await parcnetAPI.value.pod
-            .collection(collectionName)
-            .query(podspec.pod({ entries: {} }));
+          // Use current parcnetAPI value
+          if (parcnetAPI.value) {
+            const allPods = await parcnetAPI.value.pod
+              .collection(collectionName)
+              .query(podspec.pod({ entries: {} }));
 
-          podStats = {
-            totalPods: allPods.length,
-            podsWithOwner: allPods.filter((p) => p.entries.owner).length,
-            podsWithEventId: allPods.filter((p) => p.entries.eventId).length,
-            addOnTickets: allPods.filter(
-              (p) => p.entries.isAddOn?.value === BigInt(1)
-            ).length,
-            podsMatchingEventId: allPods.filter(
-              (p) => p.entries.eventId?.value === config.zupassEventId
-            ).length,
-          };
+            podStats = {
+              totalPods: allPods.length,
+              podsWithOwner: allPods.filter((p) => p.entries.owner).length,
+              podsWithEventId: allPods.filter((p) => p.entries.eventId).length,
+              addOnTickets: allPods.filter(
+                (p) => p.entries.isAddOn?.value === BigInt(1)
+              ).length,
+              podsMatchingEventId: allPods.filter(
+                (p) => p.entries.eventId?.value === config.zupassEventId
+              ).length,
+            };
+          }
         } catch (e) {
           podStats = { error: e instanceof Error ? e.message : String(e) };
         }
@@ -266,8 +310,17 @@ export function useZupassVerification() {
     } catch (err) {
       console.error("[Zupass] Error during proof request:", err);
 
+      // Load error class to check instance
+      let UserCancelledConnectionError;
+      try {
+        const mod = await import("@parcnet-js/app-connector");
+        UserCancelledConnectionError = mod.UserCancelledConnectionError;
+      } catch (e) {
+        console.warn("[Zupass] Could not load UserCancelledConnectionError for error checking:", e);
+      }
+
       // Handle user cancellation gracefully
-      if (err instanceof UserCancelledConnectionError) {
+      if (UserCancelledConnectionError && err instanceof UserCancelledConnectionError) {
         error.value = "Proof request cancelled by user";
         return {
           success: false,
