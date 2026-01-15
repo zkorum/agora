@@ -131,7 +131,6 @@
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ActiveImportBanner from "src/components/conversation/import/ActiveImportBanner.vue";
-import Editor from "src/components/editor/Editor.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import PolisCsvUpload from "src/components/newConversation/import/csv/PolisCsvUpload.vue";
@@ -155,13 +154,15 @@ import {
 import { type AxiosErrorCode, useCommonApi } from "src/utils/api/common";
 import { useActiveImportQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
 import { useBackendPostApi } from "src/utils/api/post/post";
-import { computed, ref, watch } from "vue";
+import { computed, defineAsyncComponent, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import {
   type CreateConversationTranslations,
   createConversationTranslations,
 } from "./index.i18n";
+
+const Editor = defineAsyncComponent(() => import("src/components/editor/Editor.vue"));
 
 const { t } = useComponentI18n<CreateConversationTranslations>(
   createConversationTranslations

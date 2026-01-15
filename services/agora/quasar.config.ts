@@ -71,7 +71,7 @@ export default defineConfig((ctx) => {
       // 'line-awesome',
       // 'roboto-font-latin-ext', // this or either 'roboto-font', NEVER both!
 
-      "roboto-font", // optional, you are not bound to it
+      // "roboto-font", // optional, you are not bound to it
       "mdi-v7", // optional, you are not bound to it
       "material-icons",
     ],
@@ -186,20 +186,34 @@ export default defineConfig((ctx) => {
             return "quasar";
           }
 
-          // Maz UI
-          if (id.includes("node_modules/maz-ui/")) {
-            return "maz-ui";
-          }
-
           // Sentry
           if (id.includes("node_modules/@sentry/")) {
             return "sentry";
           }
 
-          // UI utilities
-          if (id.includes("node_modules/@dicebear/")) {
-            return "ui-utils";
+          // Tiptap (Editor)
+          if (
+            id.includes("node_modules/@tiptap/") ||
+            id.includes("node_modules/prosemirror-")
+          ) {
+            return "editor";
           }
+
+          // Crypto & IPFS
+          if (
+            id.includes("node_modules/@ucans/") ||
+            id.includes("node_modules/cborg/") ||
+            id.includes("node_modules/multiformats/") ||
+            id.includes("node_modules/tweetnacl/") ||
+            id.includes("node_modules/uint8arrays/")
+          ) {
+            return "crypto";
+          }
+
+          // UI utilities
+          // if (id.includes("node_modules/@dicebear/")) {
+          //   return "ui-utils";
+          // }
 
           // Data & API utilities
           if (
@@ -314,7 +328,7 @@ export default defineConfig((ctx) => {
       // directives: [],
 
       // Quasar plugins
-      plugins: ["BottomSheet", "Dialog", "Notify", "Loading"],
+      plugins: ["Dialog", "Notify"],
     },
 
     animations: [], // --- includes all animations

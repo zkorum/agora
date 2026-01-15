@@ -46,10 +46,9 @@
 </template>
 
 <script setup lang="ts">
-import Editor from "src/components/editor/Editor.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_OPINION } from "src/shared/shared";
-import { ref } from "vue";
+import { defineAsyncComponent, ref } from "vue";
 
 import {
   type SeedOpinionItemTranslations,
@@ -68,6 +67,8 @@ defineEmits<{
   (e: "focus"): void;
   (e: "blur"): void;
 }>();
+
+const Editor = defineAsyncComponent(() => import("src/components/editor/Editor.vue"));
 
 const { t } = useComponentI18n<SeedOpinionItemTranslations>(
   seedOpinionItemTranslations

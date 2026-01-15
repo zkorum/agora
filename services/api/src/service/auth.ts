@@ -18,7 +18,7 @@ import type {
     AuthenticateRequestBody,
     AuthenticateResponse,
     VerifyOtp200,
-} from "@/shared/types/dto.js";
+} from "@/shared/types/dto-auth.js";
 import type { DeviceLoginStatusExtended } from "@/shared/types/zod.js";
 import { eq, and, TransactionRollbackError, gt } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";

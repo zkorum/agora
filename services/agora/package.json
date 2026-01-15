@@ -16,6 +16,7 @@
     "dev": "quasar dev",
     "dev:android": "quasar dev -m capacitor -T android",
     "start": "serve dist/spa",
+    "build:dev": "env-cmd -f .env.dev.build quasar build",
     "build:staging": "env-cmd -f .env.staging quasar build",
     "build:production": "env-cmd -f .env.production quasar build",
     "build:ios": "quasar build -m capacitor -T ios --skip-pkg",

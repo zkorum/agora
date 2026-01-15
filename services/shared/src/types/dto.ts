@@ -1,8 +1,6 @@
 import { z } from "zod";
 import {
     zodExtendedConversationData,
-    zodCode,
-    zodUserId,
     zodSlugId,
     zodOpinionItem,
     zodAnalysisOpinionItem,
@@ -14,7 +12,6 @@ import {
     zodVotingAction,
     zodUsername,
     zodPollResponse,
-    zodPhoneNumber,
     zodExtendedOpinionData,
     zodModerationReason,
     zodModerationExplanation,
@@ -30,9 +27,7 @@ import {
     zodUserMuteItem,
     zodNotificationItem,
     zodPolisKey,
-    zodSupportedCountryCallingCode,
     zodOrganization,
-    zodDeviceLoginStatus,
     zodTopicObject,
     zodFeedSortAlgorithm,
     zodLinkType,
@@ -54,72 +49,6 @@ import {
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
-    static checkLoginStatusResponse = z
-        .object({
-            loggedInStatus: zodDeviceLoginStatus,
-        })
-        .strict();
-    static authenticateRequestBody = z
-        .object({
-            phoneNumber: zodPhoneNumber,
-            defaultCallingCode: zodSupportedCountryCallingCode,
-            isRequestingNewCode: z.boolean(),
-        })
-        .strict();
-    static verifyOtpReqBody = z.object({
-        code: zodCode,
-        phoneNumber: zodPhoneNumber,
-        defaultCallingCode: zodSupportedCountryCallingCode,
-    });
-    static authenticate200 = z.discriminatedUnion("success", [
-        z
-            .object({
-                success: z.literal(true),
-                codeExpiry: zodDateTimeFlexible,
-                nextCodeSoonestTime: zodDateTimeFlexible,
-            })
-            .strict(),
-        z.object({
-            success: z.literal(false),
-            reason: z.enum([
-                "already_logged_in",
-                "associated_with_another_user",
-                "throttled",
-                "invalid_phone_number",
-                "restricted_phone_type",
-            ]),
-        }),
-    ]);
-    static verifyOtp200 = z.discriminatedUnion("success", [
-        z
-            .object({
-                success: z.literal(true),
-                accountMerged: z.boolean(), // true when guest merged into verified, false otherwise
-                userId: z.string(), // User ID (for tracking account merges in frontend)
-            })
-            .strict(),
-        z
-            .object({
-                success: z.literal(false),
-                reason: z.enum([
-                    "expired_code",
-                    "wrong_guess",
-                    "too_many_wrong_guess",
-                    "already_logged_in",
-                    "associated_with_another_user",
-                    "auth_state_changed", // Added: auth type changed during OTP flow
-                ]),
-            })
-            .strict(),
-    ]);
-    static isLoggedInResponse = z.discriminatedUnion("isLoggedIn", [
-        z.object({ isLoggedIn: z.literal(true), userId: zodUserId }).strict(),
-        z
-            .object({
-                isLoggedIn: z.literal(false),
-            })
-            .strict(),
-    ]);
     static fetchFeedRequest = z
         .object({
             sortAlgorithm: zodFeedSortAlgorithm,
@@ -856,13 +785,6 @@ export class Dto {
         .strict();
 }
 
-export type AuthenticateRequestBody = z.infer<
-    typeof Dto.authenticateRequestBody
->;
-export type AuthenticateResponse = z.infer<typeof Dto.authenticate200>;
-export type VerifyOtp200 = z.infer<typeof Dto.verifyOtp200>;
-export type VerifyOtpReqBody = z.infer<typeof Dto.verifyOtpReqBody>;
-export type IsLoggedInResponse = z.infer<typeof Dto.isLoggedInResponse>;
 export type PostFetch200 = z.infer<typeof Dto.postFetch200>;
 export type CreateNewConversationRequest = z.infer<
     typeof Dto.createNewConversationRequest

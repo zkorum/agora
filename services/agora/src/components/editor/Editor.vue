@@ -27,6 +27,17 @@
         @click="editor.chain().focus().toggleUnderline().run()"
       />
       <PrimeDivider layout="vertical" class="toolbar-divider" />
+      <EditorToolbarButton
+        icon="mdi:format-list-bulleted"
+        :is-active="editor.isActive('bulletList')"
+        @click="editor.chain().focus().toggleBulletList().run()"
+      />
+      <EditorToolbarButton
+        icon="mdi:format-list-numbered"
+        :is-active="editor.isActive('orderedList')"
+        @click="editor.chain().focus().toggleOrderedList().run()"
+      />
+      <PrimeDivider layout="vertical" class="toolbar-divider" />
       <div class="button-group">
         <EditorToolbarButton
           icon="mdi:undo"
@@ -71,6 +82,16 @@
           icon="mdi:format-underline"
           :is-active="editor.isActive('underline')"
           @click="editor.chain().focus().toggleUnderline().run()"
+        />
+        <EditorToolbarButton
+          icon="mdi:format-list-bulleted"
+          :is-active="editor.isActive('bulletList')"
+          @click="editor.chain().focus().toggleBulletList().run()"
+        />
+        <EditorToolbarButton
+          icon="mdi:format-list-numbered"
+          :is-active="editor.isActive('orderedList')"
+          @click="editor.chain().focus().toggleOrderedList().run()"
         />
       </div>
     </BubbleMenu>
@@ -149,6 +170,18 @@ const ClearStoredMarksOnSelectionChange = Extension.create({
   },
 });
 
+// Custom extension for list indentation using Tab/Shift+Tab
+const ListKeymap = Extension.create({
+  name: "listKeymap",
+  priority: 100, // High priority to ensure it captures Tab before others
+  addKeyboardShortcuts() {
+    return {
+      Tab: () => this.editor.commands.sinkListItem("listItem"),
+      "Shift-Tab": () => this.editor.commands.liftListItem("listItem"),
+    };
+  },
+});
+
 // Custom extension factory to enforce character limits using transaction filtering
 const createCharacterLimitExtension = (maxLength: number) =>
   Extension.create({
@@ -196,9 +229,9 @@ const editor = useEditor({
       blockquote: false,
       codeBlock: false,
       horizontalRule: false,
-      bulletList: false,
-      orderedList: false,
-      listItem: false,
+      bulletList: props.singleLine ? false : {},
+      orderedList: props.singleLine ? false : {},
+      listItem: props.singleLine ? false : {},
       // Disable hard breaks in single-line mode
       hardBreak: props.singleLine ? false : {},
     }),
@@ -211,6 +244,8 @@ const editor = useEditor({
     createCharacterLimitExtension(props.maxLength),
     // Add Enter key blocker for single-line mode
     ...(props.singleLine ? [BlockEnterExtension] : []),
+    // Add List keymap for indentation
+    ListKeymap,
     // Clear storedMarks on selection change for mobile (bubble menu UX)
     ...($q.platform.is.mobile ? [ClearStoredMarksOnSelectionChange] : []),
   ],
@@ -220,9 +255,22 @@ const editor = useEditor({
     },
     // Handle paste to preserve only TipTap-enabled formatting
     transformPastedHTML(html) {
-      // Only allow tags that TipTap supports: b, strong, i, em, strike, s, u, p, br
+      // Only allow tags that TipTap supports: b, strong, i, em, strike, s, u, p, br, ul, ol, li
       const options: sanitizeHtml.IOptions = {
-        allowedTags: ["b", "strong", "i", "em", "strike", "s", "u", "p", "br"],
+        allowedTags: [
+          "b",
+          "strong",
+          "i",
+          "em",
+          "strike",
+          "s",
+          "u",
+          "p",
+          "br",
+          "ul",
+          "ol",
+          "li",
+        ],
         allowedAttributes: {},
       };
       return sanitizeHtml(html, options);
@@ -334,6 +382,21 @@ watch(
 
 .editor :deep(.ProseMirror p:empty) {
   min-height: 1.2em;
+}
+
+.editor :deep(.ProseMirror ul),
+.editor :deep(.ProseMirror ol) {
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.editor :deep(.ProseMirror ul) {
+  list-style-type: disc;
+}
+
+.editor :deep(.ProseMirror ol) {
+  list-style-type: decimal;
+  padding-left: 1.75rem;
 }
 
 .toolbar-divider {

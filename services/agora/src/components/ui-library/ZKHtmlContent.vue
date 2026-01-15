@@ -69,6 +69,21 @@ const handleClick = (event: Event) => {
   min-height: 1.2em;
 }
 
+:deep(ul),
+:deep(ol) {
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+:deep(ul) {
+  list-style-type: disc;
+}
+
+:deep(ol) {
+  list-style-type: decimal;
+  padding-left: 1.75rem;
+}
+
 :deep(div) {
   margin-bottom: 0.5rem;
 }
