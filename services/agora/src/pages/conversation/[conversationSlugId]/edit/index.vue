@@ -148,7 +148,7 @@ import {
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import {
@@ -176,24 +176,29 @@ const errorMessage = ref("");
 
 const showPollWarning = ref(false);
 const pollWarningMessage = ref("");
-const pendingSaveAction = ref<(() => Promise<void>) | null>(null);
+const pendingSaveAction = ref<(() => Promise<void>) | undefined>(undefined);
 
-// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-const pollComponentRef = ref<InstanceType<typeof PollComponent> | null>(null);
-const titleInputRef = ref<HTMLDivElement | null>(null);
+const pollComponentRef = ref<InstanceType<typeof PollComponent>>();
+const titleInputRef = ref<HTMLDivElement>();
 
 // Store original poll state to detect changes
-const originalPollState = ref<{
-  enabled: boolean;
-  options: string[];
+// Combines both the original poll data and whether current poll matches it
+const pollState = ref<{
+  original: {
+    enabled: boolean;
+    options: string[];
+  };
+  isCurrentOriginal: boolean;
 }>({
-  enabled: false,
-  options: [],
+  original: {
+    enabled: false,
+    options: [],
+  },
+  isCurrentOriginal: false,
 });
 
-// Track if the currently displayed poll is the original poll
-// This determines if the poll should be readonly
-const isCurrentPollOriginal = ref(false);
+// Computed property to access whether current poll is the original
+const isCurrentPollOriginal = computed(() => pollState.value.isCurrentOriginal);
 
 // Use conversation draft composable (no store sync for edit page)
 const {
@@ -217,40 +222,40 @@ const {
 } = useConversationDraft({ syncToStore: false });
 
 // Extract poll validation error for passing to PollComponent
-const pollValidationError = computed({
+const pollValidationError = computed<string>({
   get: () => validationState.value.poll.error,
-  set: (value) => {
+  set: (value: string) => {
     validationState.value.poll.error = value;
   },
 });
 
-function scrollToTitleInput() {
-  setTimeout(function () {
-    titleInputRef.value?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  }, 100);
+async function scrollToTitleInput() {
+  await nextTick();
+  titleInputRef.value?.scrollIntoView({
+    behavior: "smooth",
+    block: "center",
+  });
 }
 
-function scrollToPollComponent() {
-  setTimeout(function () {
-    pollComponentRef.value?.$el?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  }, 100);
+async function scrollToPollComponent() {
+  await nextTick();
+  pollComponentRef.value?.$el?.scrollIntoView({
+    behavior: "smooth",
+    block: "center",
+  });
 }
 
-function handleValidationError(errorField: ValidationErrorField): void {
+async function handleValidationError(
+  errorField: ValidationErrorField
+): Promise<void> {
   switch (errorField) {
     case "title":
       validateTitle();
-      scrollToTitleInput();
+      await scrollToTitleInput();
       break;
     case "poll":
       validatePoll();
-      scrollToPollComponent();
+      await scrollToPollComponent();
       break;
     case "body":
       validateBody();
@@ -293,23 +298,25 @@ function determinePollAction():
   | { action: "remove" }
   | { action: "replace"; options: string[] }
   | { action: "create"; options: string[] } {
+  const originalPollEnabled = pollState.value.original.enabled;
+
   // No poll now, no poll before → none (no-op)
-  if (!pollEnabled.value && !originalPollState.value.enabled) {
+  if (!pollEnabled.value && !originalPollEnabled) {
     return { action: "none" };
   }
 
   // No poll now, had poll before → remove
-  if (!pollEnabled.value && originalPollState.value.enabled) {
+  if (!pollEnabled.value && originalPollEnabled) {
     return { action: "remove" };
   }
 
   // Has poll now, no poll before → create
-  if (pollEnabled.value && !originalPollState.value.enabled) {
+  if (pollEnabled.value && !originalPollEnabled) {
     return { action: "create", options: pollOptions.value };
   }
 
   // Has poll now, had poll before
-  if (pollEnabled.value && originalPollState.value.enabled) {
+  if (pollEnabled.value && originalPollEnabled) {
     // If current poll is the original poll → keep
     if (isCurrentPollOriginal.value) {
       return { action: "keep" };
@@ -324,12 +331,6 @@ function determinePollAction():
 }
 
 async function performSave(): Promise<void> {
-  if (!conversationSlugId) {
-    showNotifyMessage(t("updateError"));
-    isSaveButtonLoading.value = false;
-    return;
-  }
-
   try {
     const pollAction = determinePollAction();
 
@@ -357,21 +358,54 @@ async function performSave(): Promise<void> {
         params: { postSlugId: conversationSlugId },
       });
     } else {
-      // Map error reasons to localized messages
-      const errorMessages: Record<string, string> = {
-        not_found: t("notFoundError"),
-        not_author: t("notAuthorError"),
-        conversation_locked: t("conversationLockedError"),
-        invalid_access_settings: t("invalidAccessSettingsError"),
-        poll_already_exists: t("pollAlreadyExistsError"),
-        no_poll_to_remove: t("noPollToRemoveError"),
-        no_poll_to_keep: t("noPollToKeepError"),
-        no_poll_to_replace: t("noPollToReplaceError"),
-      };
+      // Map the error using discriminated union for type safety
+      // Declare errorMsg outside switch to avoid lexical declaration error
+      let errorMsg: string;
 
-      const errorMsg = response.reason
-        ? (errorMessages[response.reason] ?? t("updateError"))
-        : t("updateError");
+      switch (response.reason) {
+        case "not_found": {
+          errorMsg = t("notFoundError");
+          break;
+        }
+        case "not_author": {
+          errorMsg = t("notAuthorError");
+          break;
+        }
+        case "conversation_locked": {
+          errorMsg = t("conversationLockedError");
+          break;
+        }
+        case "invalid_access_settings": {
+          errorMsg = t("invalidAccessSettingsError");
+          break;
+        }
+        case "poll_already_exists": {
+          errorMsg = t("pollAlreadyExistsError");
+          break;
+        }
+        case "poll_exists_use_keep_or_remove": {
+          errorMsg = t("updateError"); // Generic fallback for internal error
+          break;
+        }
+        case "no_poll_to_remove": {
+          errorMsg = t("noPollToRemoveError");
+          break;
+        }
+        case "no_poll_to_keep": {
+          errorMsg = t("noPollToKeepError");
+          break;
+        }
+        case "no_poll_to_replace": {
+          errorMsg = t("noPollToReplaceError");
+          break;
+        }
+        default: {
+          // TypeScript exhaustiveness check - this should never be reached
+          const _exhaustiveCheck: never = response.reason;
+          errorMsg = t("updateError");
+          break;
+        }
+      }
 
       showNotifyMessage(errorMsg);
     }
@@ -387,7 +421,7 @@ async function onSave(): Promise<void> {
   const validation = validateSubmission();
   if (!validation.isValid) {
     if (validation.errorField) {
-      handleValidationError(validation.errorField);
+      await handleValidationError(validation.errorField);
     }
     return;
   }
@@ -404,13 +438,13 @@ async function handlePollWarningConfirm(): Promise<void> {
 
   // Mark that we no longer have the original poll
   if (isCurrentPollOriginal.value) {
-    isCurrentPollOriginal.value = false;
+    pollState.value.isCurrentOriginal = false;
   }
 
-  if (pendingSaveAction.value) {
+  if (pendingSaveAction.value !== undefined) {
     isSaveButtonLoading.value = true;
     await pendingSaveAction.value();
-    pendingSaveAction.value = null;
+    pendingSaveAction.value = undefined;
   }
 }
 
@@ -418,13 +452,13 @@ function handlePollWarningCancel(): void {
   showPollWarning.value = false;
 
   // Restore poll to its previous state
-  if (!pendingSaveAction.value) {
+  if (pendingSaveAction.value === undefined) {
     // This was triggered by the watcher, restore the poll
     pollEnabled.value = true;
-    pollOptions.value = [...originalPollState.value.options];
+    pollOptions.value = [...pollState.value.original.options];
   }
 
-  pendingSaveAction.value = null;
+  pendingSaveAction.value = undefined;
 }
 
 // Watch for poll changes to show immediate warning when removing original poll
@@ -433,7 +467,7 @@ watch(pollEnabled, (newValue, oldValue) => {
   if (oldValue && !newValue && isCurrentPollOriginal.value) {
     // Show warning immediately when removing the original poll
     pollWarningMessage.value = t("removePollWarningMessage");
-    pendingSaveAction.value = null; // No save action, just confirming removal
+    pendingSaveAction.value = undefined; // No save action, just confirming removal
     showPollWarning.value = true;
   }
 });
@@ -491,19 +525,21 @@ onMounted(async () => {
 
     // Store original poll state for change detection
     if (response.hasPoll && response.pollingOptionList) {
-      originalPollState.value = {
-        enabled: true,
-        options: [...response.pollingOptionList],
+      pollState.value = {
+        original: {
+          enabled: true,
+          options: [...response.pollingOptionList],
+        },
+        isCurrentOriginal: true,
       };
-      // Mark that the current poll is the original poll
-      isCurrentPollOriginal.value = true;
     } else {
-      originalPollState.value = {
-        enabled: false,
-        options: [],
+      pollState.value = {
+        original: {
+          enabled: false,
+          options: [],
+        },
+        isCurrentOriginal: false,
       };
-      // No original poll, so any new poll will be editable
-      isCurrentPollOriginal.value = false;
     }
 
     isDataLoaded.value = true;
