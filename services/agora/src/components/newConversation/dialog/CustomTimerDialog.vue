@@ -39,6 +39,7 @@
 </template>
 
 <script setup lang="ts">
+import DatePicker from "primevue/datepicker";
 import { storeToRefs } from "pinia";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -49,6 +50,12 @@ import {
   type CustomTimerDialogTranslations,
   customTimerDialogTranslations,
 } from "./CustomTimerDialog.i18n";
+
+defineOptions({
+  components: {
+    PrimeDatePicker: DatePicker,
+  },
+});
 
 const emit = defineEmits<{
   goBack: [];

@@ -64,6 +64,7 @@
 </template>
 
 <script setup lang="ts">
+import Button from "primevue/button";
 import { storeToRefs } from "pinia";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -74,6 +75,12 @@ import {
   type PollComponentTranslations,
   pollComponentTranslations,
 } from "./PollComponent.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
 
 const { t } = useComponentI18n<PollComponentTranslations>(
   pollComponentTranslations

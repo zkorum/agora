@@ -58,6 +58,7 @@
 
 <script setup lang="ts">
 import { useClipboard } from "@vueuse/core";
+import Button from "primevue/button";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { processEnv } from "src/utils/processEnv";
@@ -68,11 +69,17 @@ import {
   csvErrorDetailsDialogTranslations,
 } from "./CsvErrorDetailsDialog.i18n";
 
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
+
+const props = defineProps<Props>();
+
 interface Props {
   errorMessage: string;
 }
-
-const props = defineProps<Props>();
 
 const showDialog = defineModel<boolean>({ required: true });
 

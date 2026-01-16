@@ -182,14 +182,25 @@
 
 <script setup lang="ts">
 import type { UseQueryReturnType } from "@tanstack/vue-query";
+import Button from "primevue/button";
+import Card from "primevue/card";
+import Tag from "primevue/tag";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { computed,ref } from "vue";
+import { computed, ref } from "vue";
 
 import {
   type AsyncStateHandlerTestTranslations,
   asyncStateHandlerTestTranslations,
 } from "./AsyncStateHandlerTest.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+    PrimeCard: Card,
+    PrimeTag: Tag,
+  },
+});
 
 const { t } = useComponentI18n<AsyncStateHandlerTestTranslations>(
   asyncStateHandlerTestTranslations
