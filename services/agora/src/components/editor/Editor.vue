@@ -110,12 +110,19 @@ import { Plugin, PluginKey } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { BubbleMenu } from "@tiptap/vue-3/menus";
+import Divider from "primevue/divider";
 import { useQuasar } from "quasar";
 import sanitizeHtml from "sanitize-html";
 import { htmlToCountedText } from "src/shared/shared";
 import { computed, onUnmounted, watch } from "vue";
 
 import EditorToolbarButton from "./EditorToolbarButton.vue";
+
+defineOptions({
+  components: {
+    PrimeDivider: Divider,
+  },
+});
 
 const props = defineProps<{
   showToolbar: boolean;

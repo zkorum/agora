@@ -48,16 +48,25 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import Button from "primevue/button";
+import Chip from "primevue/chip";
 import DialogStepLayout from "src/components/onboarding/layouts/DialogStepLayout.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTopicStore } from "src/stores/topic";
-import { computed,onMounted } from "vue";
+import { computed, onMounted } from "vue";
 
 import {
   type TopicSelectionStepTranslations,
   topicSelectionStepTranslations,
 } from "./TopicSelectionStep.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+    PrimeChip: Chip,
+  },
+});
 
 const emit = defineEmits<{
   (e: "close"): void;

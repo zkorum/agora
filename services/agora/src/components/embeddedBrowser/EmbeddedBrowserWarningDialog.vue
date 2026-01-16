@@ -115,6 +115,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import Button from "primevue/button";
 import { Platform } from "quasar";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useEmbeddedBrowserWarningStore } from "src/stores/embeddedBrowserWarning";
@@ -122,6 +123,12 @@ import { useNotify } from "src/utils/ui/notify";
 import { computed, ref } from "vue";
 
 import { embeddedBrowserWarningTranslations } from "./EmbeddedBrowserWarningDialog.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
 
 const { t } = useComponentI18n(embeddedBrowserWarningTranslations);
 const { showNotifyMessage } = useNotify();

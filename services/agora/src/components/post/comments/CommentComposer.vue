@@ -2,6 +2,7 @@
   <div ref="target">
     <div class="container borderStyle" :class="{ focused: innerFocus }">
       <Editor
+        v-if="isEditorMounted"
         ref="editorRef"
         v-model="opinionBody"
         :placeholder="innerFocus ? t('placeholderExpanded') : t('placeholder')"
@@ -85,11 +86,13 @@
 <script setup lang="ts">
 import { onClickOutside, useWindowScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
+import Button from "primevue/button";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useIdleMount } from "src/composables/ui/useIdleMount";
 import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
 import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
 import {
@@ -124,6 +127,12 @@ import {
 } from "./CommentComposer.i18n";
 import OpinionWritingGuidelinesDialog from "./OpinionWritingGuidelinesDialog.vue";
 
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
+
 const props = defineProps<{
   postSlugId: string;
   loginRequiredToParticipate: boolean;
@@ -146,6 +155,9 @@ const emit = defineEmits<{
 const Editor = defineAsyncComponent(
   () => import("src/components/editor/Editor.vue")
 );
+
+// Defer Editor mounting until browser is idle to improve initial page load performance
+const { isMounted: isEditorMounted } = useIdleMount({});
 
 const dummyInput = ref<HTMLInputElement>();
 

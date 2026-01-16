@@ -219,10 +219,26 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import Button from "primevue/button";
+import ProgressSpinner from "primevue/progressspinner";
 import { useQuasar } from "quasar";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+
+import {
+  type ExportStatusViewTranslations,
+  exportStatusViewTranslations,
+} from "./ExportStatusView.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+    PrimeProgressSpinner: ProgressSpinner,
+  },
+});
+
+const props = defineProps<Props>();
 import type { ExportFailureReason } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
@@ -235,16 +251,9 @@ import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
-import {
-  type ExportStatusViewTranslations,
-  exportStatusViewTranslations,
-} from "./ExportStatusView.i18n";
-
 interface Props {
   exportSlugId: string;
 }
-
-const props = defineProps<Props>();
 
 const { t } = useComponentI18n<ExportStatusViewTranslations>(
   exportStatusViewTranslations

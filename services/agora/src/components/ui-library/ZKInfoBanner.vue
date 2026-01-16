@@ -19,18 +19,26 @@
 </template>
 
 <script setup lang="ts">
+import Button from "primevue/button";
+
 import ZKIcon from "./ZKIcon.vue";
 
-export interface Props {
-  message: string;
-  actionLabel?: string;
-}
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
 
 defineProps<Props>();
 
 const emit = defineEmits<{
   action: [];
 }>();
+
+export interface Props {
+  message: string;
+  actionLabel?: string;
+}
 </script>
 
 <style scoped lang="scss">

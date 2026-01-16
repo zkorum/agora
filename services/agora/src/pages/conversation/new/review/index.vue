@@ -87,7 +87,20 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import Button from "primevue/button";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+
+import {
+  type ConversationReviewTranslations,
+  conversationReviewTranslations,
+} from "./index.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
+
 import ConversationTitleWithPrivacyLabel from "src/components/features/conversation/ConversationTitleWithPrivacyLabel.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
@@ -110,11 +123,6 @@ import { useCommonApi } from "src/utils/api/common";
 import { useBackendPostApi } from "src/utils/api/post/post";
 import { type ComponentPublicInstance, nextTick, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-
-import {
-  type ConversationReviewTranslations,
-  conversationReviewTranslations,
-} from "./index.i18n";
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const router = useRouter();

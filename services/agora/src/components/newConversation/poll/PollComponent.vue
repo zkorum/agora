@@ -78,6 +78,7 @@
 </template>
 
 <script setup lang="ts">
+import Button from "primevue/button";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -88,7 +89,11 @@ import {
   pollComponentTranslations,
 } from "./PollComponent.i18n";
 
-// Define props
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
 const props = defineProps<{
   readonly?: boolean; // When true, poll options cannot be edited (but poll can still be removed)
 }>();
