@@ -174,42 +174,49 @@ export async function updateConversation({
         }
     }
 
-    try {
-        await db.transaction(async (tx) => {
+    const result = await db
+        .transaction(async (tx) => {
             // Get conversation and check authorization
             const conversationResults = await tx
                 .select({
                     conversationId: conversationTable.id,
                     authorId: conversationTable.authorId,
                     currentContentId: conversationTable.currentContentId,
-                    moderationAction: sql<string | null>`(
-                        SELECT moderation_action 
-                        FROM conversation_moderation 
-                        WHERE conversation_id = ${conversationTable.id}
-                    )`,
+                    moderationAction:
+                        conversationModerationTable.moderationAction,
                 })
                 .from(conversationTable)
+                .leftJoin(
+                    conversationModerationTable,
+                    eq(
+                        conversationModerationTable.conversationId,
+                        conversationTable.id,
+                    ),
+                )
                 .where(eq(conversationTable.slugId, conversationSlugId));
 
             if (conversationResults.length === 0) {
-                throw new Error("not_found");
+                return { success: false, reason: "not_found" } as const;
             }
 
             const conversation = conversationResults[0];
 
             // Check if user is the author
             if (conversation.authorId !== userId) {
-                throw new Error("not_author");
+                return { success: false, reason: "not_author" } as const;
             }
 
             // Check if conversation is locked
             if (conversation.moderationAction === "lock") {
-                throw new Error("conversation_locked");
+                return {
+                    success: false,
+                    reason: "conversation_locked",
+                } as const;
             }
 
             // Check if conversation was deleted
             if (conversation.currentContentId === null) {
-                throw new Error("not_found");
+                return { success: false, reason: "not_found" } as const;
             }
 
             const conversationId = conversation.conversationId;
@@ -231,19 +238,31 @@ export async function updateConversation({
 
             // Validate poll action against current state
             if (pollAction.action === "none" && hasPoll) {
-                throw new Error("poll_exists_use_keep_or_remove");
+                return {
+                    success: false,
+                    reason: "poll_exists_use_keep_or_remove",
+                } as const;
             }
             if (pollAction.action === "create" && hasPoll) {
-                throw new Error("poll_already_exists");
+                return {
+                    success: false,
+                    reason: "poll_already_exists",
+                } as const;
             }
             if (pollAction.action === "remove" && !hasPoll) {
-                throw new Error("no_poll_to_remove");
+                return {
+                    success: false,
+                    reason: "no_poll_to_remove",
+                } as const;
             }
             if (pollAction.action === "keep" && !hasPoll) {
-                throw new Error("no_poll_to_keep");
+                return { success: false, reason: "no_poll_to_keep" } as const;
             }
             if (pollAction.action === "replace" && !hasPoll) {
-                throw new Error("no_poll_to_replace");
+                return {
+                    success: false,
+                    reason: "no_poll_to_replace",
+                } as const;
             }
 
             // Create edit proof
@@ -368,40 +387,15 @@ export async function updateConversation({
                     updatedAt: new Date(),
                 })
                 .where(eq(conversationTable.id, conversationId));
+
+            return { success: true } as const;
+        })
+        .catch((error) => {
+            log.error(error, "Unexpected error updating conversation");
+            throw httpErrors.internalServerError(
+                "Failed to update conversation",
+            );
         });
 
-        return { success: true };
-    } catch (error) {
-        if (error instanceof Error) {
-            if (error.message === "not_found") {
-                return { success: false, reason: "not_found" };
-            }
-            if (error.message === "not_author") {
-                return { success: false, reason: "not_author" };
-            }
-            if (error.message === "conversation_locked") {
-                return { success: false, reason: "conversation_locked" };
-            }
-            if (error.message === "poll_already_exists") {
-                return { success: false, reason: "poll_already_exists" };
-            }
-            if (error.message === "poll_exists_use_keep_or_remove") {
-                return {
-                    success: false,
-                    reason: "poll_exists_use_keep_or_remove",
-                };
-            }
-            if (error.message === "no_poll_to_remove") {
-                return { success: false, reason: "no_poll_to_remove" };
-            }
-            if (error.message === "no_poll_to_keep") {
-                return { success: false, reason: "no_poll_to_keep" };
-            }
-            if (error.message === "no_poll_to_replace") {
-                return { success: false, reason: "no_poll_to_replace" };
-            }
-        }
-        log.error(error, "Error updating conversation");
-        throw httpErrors.internalServerError("Failed to update conversation");
-    }
+    return result;
 }

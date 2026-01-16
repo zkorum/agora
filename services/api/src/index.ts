@@ -1,7 +1,4 @@
-import {
-    Dto,
-    type GetConversationResponse,
-} from "@/shared/types/dto.js";
+import { Dto, type GetConversationResponse } from "@/shared/types/dto.js";
 import {
     authenticateRequestBody,
     verifyOtpReqBody,
@@ -1393,7 +1390,6 @@ server.after(() => {
                 db: db,
                 proof: encodedUcan,
                 didWrite: didWrite,
-                httpErrors: server.httpErrors,
                 postSlugId: request.body.conversationSlugId,
                 voteOptionChoice: request.body.voteOptionChoice,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
@@ -1443,7 +1439,6 @@ server.after(() => {
                 db: db,
                 postSlugIdList: request.body,
                 authorId: deviceStatus.userId,
-                httpErrors: server.httpErrors,
             });
         },
     });
