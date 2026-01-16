@@ -178,6 +178,12 @@ export const zodPollAction = z.discriminatedUnion("action", [
             options: z.array(zodPollOptionTitle).min(2).max(6),
         })
         .strict(),
+    z
+        .object({
+            action: z.literal("replace"),
+            options: z.array(zodPollOptionTitle).min(2).max(6),
+        })
+        .strict(),
 ]);
 
 export const zodPollOptionWithResult = z

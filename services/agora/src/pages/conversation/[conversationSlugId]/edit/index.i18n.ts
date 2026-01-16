@@ -19,6 +19,7 @@ export interface EditConversationTranslations {
   pollAlreadyExistsError: string;
   noPollToRemoveError: string;
   noPollToKeepError: string;
+  noPollToReplaceError: string;
   loadingErrorTitle: string;
   loadingErrorMessage: string;
   pollChangeWarningMessage: string;
@@ -57,6 +58,8 @@ export const editConversationTranslations: Record<
       "Cannot remove poll: this conversation does not have a poll",
     noPollToKeepError:
       "Cannot keep poll: this conversation does not have a poll",
+    noPollToReplaceError:
+      "Cannot replace poll: this conversation does not have a poll",
     loadingErrorTitle: "Failed to load conversation",
     loadingErrorMessage: "An error occurred while loading the conversation",
     pollChangeWarningMessage:
@@ -93,6 +96,8 @@ export const editConversationTranslations: Record<
       "Impossible de supprimer le sondage : cette conversation n'a pas de sondage",
     noPollToKeepError:
       "Impossible de conserver le sondage : cette conversation n'a pas de sondage",
+    noPollToReplaceError:
+      "Impossible de remplacer le sondage : cette conversation n'a pas de sondage",
     loadingErrorTitle: "Échec du chargement de la conversation",
     loadingErrorMessage:
       "Une erreur s'est produite lors du chargement de la conversation",
@@ -130,6 +135,8 @@ export const editConversationTranslations: Record<
       "No se puede eliminar encuesta: esta conversación no tiene una encuesta",
     noPollToKeepError:
       "No se puede mantener encuesta: esta conversación no tiene una encuesta",
+    noPollToReplaceError:
+      "No se puede reemplazar encuesta: esta conversación no tiene una encuesta",
     loadingErrorTitle: "Error al cargar la conversación",
     loadingErrorMessage: "Ocurrió un error al cargar la conversación",
     pollChangeWarningMessage:
@@ -158,6 +165,7 @@ export const editConversationTranslations: Record<
     pollAlreadyExistsError: "无法创建投票：此对话已有投票",
     noPollToRemoveError: "无法删除投票：此对话没有投票",
     noPollToKeepError: "无法保留投票：此对话没有投票",
+    noPollToReplaceError: "无法替换投票：此对话没有投票",
     loadingErrorTitle: "加载对话失败",
     loadingErrorMessage: "加载对话时发生错误",
     pollChangeWarningMessage:
@@ -185,6 +193,7 @@ export const editConversationTranslations: Record<
     pollAlreadyExistsError: "無法建立投票：此對話已有投票",
     noPollToRemoveError: "無法刪除投票：此對話沒有投票",
     noPollToKeepError: "無法保留投票：此對話沒有投票",
+    noPollToReplaceError: "無法替換投票：此對話沒有投票",
     loadingErrorTitle: "載入對話失敗",
     loadingErrorMessage: "載入對話時發生錯誤",
     pollChangeWarningMessage:
@@ -215,6 +224,8 @@ export const editConversationTranslations: Record<
       "投票を作成できません：この会話には既に投票があります",
     noPollToRemoveError: "投票を削除できません：この会話には投票がありません",
     noPollToKeepError: "投票を保持できません：この会話には投票がありません",
+    noPollToReplaceError:
+      "投票を置き換えできません：この会話には投票がありません",
     loadingErrorTitle: "会話の読み込みに失敗しました",
     loadingErrorMessage: "会話の読み込み中にエラーが発生しました",
     pollChangeWarningMessage:
@@ -248,6 +259,8 @@ export const editConversationTranslations: Record<
       "لا يمكن إزالة الاستطلاع: لا تحتوي هذه المحادثة على استطلاع",
     noPollToKeepError:
       "لا يمكن الاحتفاظ بالاستطلاع: لا تحتوي هذه المحادثة على استطلاع",
+    noPollToReplaceError:
+      "لا يمكن استبدال الاستطلاع: لا تحتوي هذه المحادثة على استطلاع",
     loadingErrorTitle: "فشل تحميل المحادثة",
     loadingErrorMessage: "حدث خطأ أثناء تحميل المحادثة",
     pollChangeWarningMessage:

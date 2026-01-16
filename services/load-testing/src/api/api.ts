@@ -18,7 +18,7 @@ import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
-import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from './common';
+import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction, replaceWithSerializableTypeIfNeeded } from './common';
 import type { RequestArgs } from './base';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerMap } from './base';
@@ -1059,7 +1059,8 @@ export const ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum = {
     PollAlreadyExists: 'poll_already_exists',
     PollExistsUseKeepOrRemove: 'poll_exists_use_keep_or_remove',
     NoPollToRemove: 'no_poll_to_remove',
-    NoPollToKeep: 'no_poll_to_keep'
+    NoPollToKeep: 'no_poll_to_keep',
+    NoPollToReplace: 'no_poll_to_replace'
 } as const;
 
 export type ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum = typeof ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum[keyof typeof ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum];
@@ -1084,7 +1085,7 @@ export type ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = typeof A
 /**
  * @type ApiV1ConversationUpdatePostRequestPollAction
  */
-export type ApiV1ConversationUpdatePostRequestPollAction = ApiV1ConversationUpdatePostRequestPollActionOneOf | ApiV1ConversationUpdatePostRequestPollActionOneOf1 | ApiV1ConversationUpdatePostRequestPollActionOneOf2 | ApiV1ConversationUpdatePostRequestPollActionOneOf3;
+export type ApiV1ConversationUpdatePostRequestPollAction = ApiV1ConversationUpdatePostRequestPollActionOneOf | ApiV1ConversationUpdatePostRequestPollActionOneOf1 | ApiV1ConversationUpdatePostRequestPollActionOneOf2 | ApiV1ConversationUpdatePostRequestPollActionOneOf3 | ApiV1ConversationUpdatePostRequestPollActionOneOf4;
 
 export interface ApiV1ConversationUpdatePostRequestPollActionOneOf {
     'action': ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum;
@@ -1126,6 +1127,17 @@ export const ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum = {
 } as const;
 
 export type ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum];
+
+export interface ApiV1ConversationUpdatePostRequestPollActionOneOf4 {
+    'action': ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum;
+    'options': Array<string>;
+}
+
+export const ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum = {
+    Replace: 'replace'
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum];
 
 export interface ApiV1ConversationValidateCsvPost200Response {
     'summaryFile'?: ApiV1ConversationValidateCsvPost200ResponseSummaryFile;

@@ -242,6 +242,9 @@ export async function updateConversation({
             if (pollAction.action === "keep" && !hasPoll) {
                 throw new Error("no_poll_to_keep");
             }
+            if (pollAction.action === "replace" && !hasPoll) {
+                throw new Error("no_poll_to_replace");
+            }
 
             // Create edit proof
             const editProofResult = await tx
@@ -316,6 +319,34 @@ export async function updateConversation({
                         .where(eq(conversationContentTable.id, newContentId));
                     break;
                 }
+                case "replace": {
+                    // Create a brand new poll (orphaning the old one with its responses)
+                    const options = pollAction.options;
+                    const newPollResult = await tx
+                        .insert(pollTable)
+                        .values({
+                            conversationContentId: newContentId,
+                            option1: options[0],
+                            option2: options[1],
+                            option3: options[2] ?? null,
+                            option4: options[3] ?? null,
+                            option5: options[4] ?? null,
+                            option6: options[5] ?? null,
+                            option1Response: 0,
+                            option2Response: 0,
+                            option3Response: options[2] ? 0 : null,
+                            option4Response: options[3] ? 0 : null,
+                            option5Response: options[4] ? 0 : null,
+                            option6Response: options[5] ? 0 : null,
+                        })
+                        .returning({ pollId: pollTable.id });
+
+                    await tx
+                        .update(conversationContentTable)
+                        .set({ pollId: newPollResult[0].pollId })
+                        .where(eq(conversationContentTable.id, newContentId));
+                    break;
+                }
                 case "remove": {
                     // pollId is already null in new content, no action needed
                     break;
@@ -365,6 +396,9 @@ export async function updateConversation({
             }
             if (error.message === "no_poll_to_keep") {
                 return { success: false, reason: "no_poll_to_keep" };
+            }
+            if (error.message === "no_poll_to_replace") {
+                return { success: false, reason: "no_poll_to_replace" };
             }
         }
         log.error(error, "Error updating conversation");

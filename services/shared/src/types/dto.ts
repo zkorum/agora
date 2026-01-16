@@ -337,6 +337,7 @@ export class Dto {
                     "poll_exists_use_keep_or_remove",
                     "no_poll_to_remove",
                     "no_poll_to_keep",
+                    "no_poll_to_replace",
                 ]),
             })
             .strict(),

@@ -39,9 +39,20 @@ export async function getUserPollResponse({
             );
         }
 
+        // Get the current poll ID from conversation content
+        const pollIdResult = await db
+            .select({ pollId: conversationContentTable.pollId })
+            .from(conversationContentTable)
+            .where(eq(conversationContentTable.id, postDetails.contentId));
+
+        if (!pollIdResult[0]?.pollId) {
+            // No poll in this conversation, skip
+            continue;
+        }
+
         const selectStatementResponse = await db
             .select({
-                postId: pollResponseTable.conversationId,
+                pollId: pollResponseTable.pollId,
                 authorId: pollResponseTable.authorId,
                 optionChosen: pollResponseContentTable.optionChosen,
             })
@@ -56,7 +67,7 @@ export async function getUserPollResponse({
             .where(
                 and(
                     eq(pollResponseTable.authorId, authorId),
-                    eq(pollResponseTable.conversationId, postDetails.id),
+                    eq(pollResponseTable.pollId, pollIdResult[0].pollId),
                 ),
             );
 
@@ -116,11 +127,23 @@ export async function submitPollResponse({
     });
 
     await db.transaction(async (tx) => {
+        // Get the poll ID from the current content first
+        const pollIdResult = await tx
+            .select({ pollId: conversationContentTable.pollId })
+            .from(conversationContentTable)
+            .where(eq(conversationContentTable.id, postContentId));
+
+        if (!pollIdResult[0]?.pollId) {
+            throw httpErrors.notFound("Poll not found for this conversation");
+        }
+
+        const pollId = pollIdResult[0].pollId;
+
         const insertPollResponseTableResponse = await tx
             .insert(pollResponseTable)
             .values({
                 authorId: authorId,
-                conversationId: postId,
+                pollId: pollId,
             })
             .returning({ id: pollResponseTable.id });
 
@@ -158,16 +181,6 @@ export async function submitPollResponse({
         const option4CountDiff = voteOptionChoice == 4 ? 1 : 0;
         const option5CountDiff = voteOptionChoice == 5 ? 1 : 0;
         const option6CountDiff = voteOptionChoice == 6 ? 1 : 0;
-
-        // Get the poll ID from the current content
-        const pollIdResult = await tx
-            .select({ pollId: conversationContentTable.pollId })
-            .from(conversationContentTable)
-            .where(eq(conversationContentTable.id, postContentId));
-
-        if (!pollIdResult[0]?.pollId) {
-            throw httpErrors.notFound("Poll not found for this conversation");
-        }
 
         // Update vote counter using the poll ID
         await tx
