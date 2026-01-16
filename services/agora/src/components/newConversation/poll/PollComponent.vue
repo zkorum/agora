@@ -7,7 +7,9 @@
     <div class="poll-container">
       <div class="poll-header">
         <div class="poll-title">
-          <span class="poll-title-text">{{ t("addPoll") }}</span>
+          <span class="poll-title-text">{{
+            props.readonly ? t("existingPoll") : t("addPoll")
+          }}</span>
         </div>
         <PrimeButton
           icon="pi pi-times"
@@ -15,6 +17,16 @@
           class="close-button"
           @click="handleClosePoll"
         />
+      </div>
+
+      <div v-if="props.readonly" class="readonly-info-banner">
+        <ZKIcon
+          name="mdi-information"
+          size="1.25rem"
+          color="#007AFF"
+          class="info-icon"
+        />
+        <span class="info-text">{{ t("readonlyExplanation") }}</span>
       </div>
 
       <div v-if="validationError" class="pollErrorMessage">
@@ -67,6 +79,7 @@
 
 <script setup lang="ts">
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_OPTION } from "src/shared/shared";
 
@@ -188,6 +201,24 @@ function removeOption(index: number): void {
   font-size: 0.9rem;
   color: $color-text-weak;
   line-height: 1.4;
+}
+
+.readonly-info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background-color: #e3f2fd;
+  border-radius: 12px;
+}
+
+.info-icon {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.info-text {
+  line-height: 1.5;
 }
 
 .polling-options-container {
