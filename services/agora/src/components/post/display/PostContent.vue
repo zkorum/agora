@@ -3,6 +3,7 @@
     <PostMetadata
       :poster-user-name="extendedPostData.metadata.authorUsername"
       :created-at="new Date(extendedPostData.metadata.createdAt)"
+      :updated-at="new Date(extendedPostData.metadata.updatedAt)"
       :post-slug-id="extendedPostData.metadata.conversationSlugId"
       :author-verified="false"
       :organization-url="extendedPostData.metadata.organization?.imageUrl || ''"
@@ -43,7 +44,9 @@
 
       <div v-if="extendedPostData.payload.poll" class="pollContainer">
         <PollWrapper
-          :login-required-to-participate="extendedPostData.metadata.isLoginRequired"
+          :login-required-to-participate="
+            extendedPostData.metadata.isLoginRequired
+          "
           :poll-options="extendedPostData.payload.poll"
           :post-slug-id="extendedPostData.metadata.conversationSlugId"
           :user-response="extendedPostData.interaction"
@@ -84,13 +87,11 @@ defineProps<{
 
 defineEmits<{
   openModerationHistory: [];
-  verified: [
-    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
-  ];
+  verified: [payload: { userIdChanged: boolean; needsCacheRefresh: boolean }];
 }>();
 
-const EventTicketRequirementBanner = defineAsyncComponent(() =>
-  import("../EventTicketRequirementBanner.vue")
+const EventTicketRequirementBanner = defineAsyncComponent(
+  () => import("../EventTicketRequirementBanner.vue")
 );
 </script>
 
