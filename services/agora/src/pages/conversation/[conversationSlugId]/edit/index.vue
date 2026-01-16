@@ -9,7 +9,7 @@
         :label="t('saveButton')"
         size="0.8rem"
         :loading="isSaveButtonLoading"
-        :disabled="isSaveButtonLoading || !isDataLoaded"
+        :disabled="isSaveButtonLoading || !isDataLoaded || !hasUnsavedChanges"
         @click="onSave()"
       />
     </TopMenuWrapper>
@@ -181,24 +181,115 @@ const pendingSaveAction = ref<(() => Promise<void>) | undefined>(undefined);
 const pollComponentRef = ref<InstanceType<typeof PollComponent>>();
 const titleInputRef = ref<HTMLDivElement>();
 
-// Store original poll state to detect changes
-// Combines both the original poll data and whether current poll matches it
-const pollState = ref<{
-  original: {
+// Store original state to detect changes
+const originalState = ref<{
+  title: string;
+  content: string;
+  isPrivate: boolean;
+  requiresLogin: boolean;
+  requiresEventTicket: string | undefined;
+  privateConversationSettings: {
+    hasScheduledConversion: boolean;
+    conversionDate: Date;
+  };
+  poll: {
     enabled: boolean;
     options: string[];
   };
-  isCurrentOriginal: boolean;
 }>({
-  original: {
+  title: "",
+  content: "",
+  isPrivate: false,
+  requiresLogin: false,
+  requiresEventTicket: undefined,
+  privateConversationSettings: {
+    hasScheduledConversion: false,
+    conversionDate: new Date(),
+  },
+  poll: {
     enabled: false,
     options: [],
   },
-  isCurrentOriginal: false,
 });
 
-// Computed property to access whether current poll is the original
-const isCurrentPollOriginal = computed(() => pollState.value.isCurrentOriginal);
+// Track whether current poll is the original (for poll warnings)
+const isCurrentPollOriginal = ref(false);
+
+// Computed property to detect if any changes have been made
+const hasUnsavedChanges = computed(() => {
+  // Normalize whitespace for comparison (trim and collapse multiple spaces)
+  const normalizeText = (text: string): string =>
+    text.trim().replace(/\s+/g, " ");
+
+  // Compare title (normalized)
+  if (normalizeText(title.value) !== normalizeText(originalState.value.title)) {
+    return true;
+  }
+
+  // Compare content (normalized)
+  if (
+    normalizeText(content.value) !== normalizeText(originalState.value.content)
+  ) {
+    return true;
+  }
+
+  // Compare privacy settings
+  if (
+    isPrivate.value !== originalState.value.isPrivate ||
+    requiresLogin.value !== originalState.value.requiresLogin
+  ) {
+    return true;
+  }
+
+  // Compare event ticket requirement (string | undefined)
+  if (requiresEventTicket.value !== originalState.value.requiresEventTicket) {
+    return true;
+  }
+
+  // Compare scheduled conversion settings
+  if (
+    privateConversationSettings.value.hasScheduledConversion !==
+    originalState.value.privateConversationSettings.hasScheduledConversion
+  ) {
+    return true;
+  }
+
+  if (
+    privateConversationSettings.value.hasScheduledConversion &&
+    originalState.value.privateConversationSettings.hasScheduledConversion
+  ) {
+    // Compare dates (ignore milliseconds)
+    const currentDate =
+      privateConversationSettings.value.conversionDate.getTime();
+    const originalDate =
+      originalState.value.privateConversationSettings.conversionDate.getTime();
+    if (Math.abs(currentDate - originalDate) > 1000) {
+      return true;
+    }
+  }
+
+  // Compare poll state (both should be boolean after initialization)
+  if (pollEnabled.value !== originalState.value.poll.enabled) {
+    return true;
+  }
+
+  // If both have polls, compare options
+  if (pollEnabled.value && originalState.value.poll.enabled) {
+    if (pollOptions.value.length !== originalState.value.poll.options.length) {
+      return true;
+    }
+    for (let i = 0; i < pollOptions.value.length; i++) {
+      if (
+        normalizeText(pollOptions.value[i]) !==
+        normalizeText(originalState.value.poll.options[i])
+      ) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+});
 
 // Use conversation draft composable (no store sync for edit page)
 const {
@@ -298,7 +389,7 @@ function determinePollAction():
   | { action: "remove" }
   | { action: "replace"; options: string[] }
   | { action: "create"; options: string[] } {
-  const originalPollEnabled = pollState.value.original.enabled;
+  const originalPollEnabled = originalState.value.poll.enabled;
 
   // No poll now, no poll before → none (no-op)
   if (!pollEnabled.value && !originalPollEnabled) {
@@ -438,7 +529,7 @@ async function handlePollWarningConfirm(): Promise<void> {
 
   // Mark that we no longer have the original poll
   if (isCurrentPollOriginal.value) {
-    pollState.value.isCurrentOriginal = false;
+    isCurrentPollOriginal.value = false;
   }
 
   if (pendingSaveAction.value !== undefined) {
@@ -455,7 +546,7 @@ function handlePollWarningCancel(): void {
   if (pendingSaveAction.value === undefined) {
     // This was triggered by the watcher, restore the poll
     pollEnabled.value = true;
-    pollOptions.value = [...pollState.value.original.options];
+    pollOptions.value = [...originalState.value.poll.options];
   }
 
   pendingSaveAction.value = undefined;
@@ -523,24 +614,32 @@ onMounted(async () => {
       },
     });
 
-    // Store original poll state for change detection
-    if (response.hasPoll && response.pollingOptionList) {
-      pollState.value = {
-        original: {
-          enabled: true,
-          options: [...response.pollingOptionList],
-        },
-        isCurrentOriginal: true,
-      };
-    } else {
-      pollState.value = {
-        original: {
-          enabled: false,
-          options: [],
-        },
-        isCurrentOriginal: false,
-      };
-    }
+    // Store original state for change detection
+    originalState.value = {
+      title: response.conversationTitle,
+      content: response.conversationBody ?? "",
+      isPrivate: !response.isIndexed,
+      requiresLogin: response.isLoginRequired,
+      requiresEventTicket: response.requiresEventTicket,
+      privateConversationSettings: {
+        hasScheduledConversion: !!response.indexConversationAt,
+        conversionDate: response.indexConversationAt
+          ? new Date(response.indexConversationAt)
+          : tomorrow,
+      },
+      poll: {
+        enabled: response.hasPoll ?? false,
+        options: response.pollingOptionList
+          ? [...response.pollingOptionList]
+          : [],
+      },
+    };
+
+    // Track if current poll is the original
+    // Only set to true if poll actually exists
+    isCurrentPollOriginal.value =
+      (response.hasPoll ?? false) &&
+      (response.pollingOptionList?.length ?? 0) > 0;
 
     isDataLoaded.value = true;
   } catch (error) {
