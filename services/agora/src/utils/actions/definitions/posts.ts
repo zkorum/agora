@@ -14,6 +14,7 @@ interface PostActionTranslations {
   report: string;
   muteUser: string;
   delete: string;
+  edit: string;
   moderationHistory: string;
   embedLink: string;
   moderate: string;
@@ -32,6 +33,7 @@ export function getPostActions(
   moderationHistoryCallback: () => void | Promise<void>,
   copyEmbedLinkCallback: () => void | Promise<void>,
   deletePostCallback: () => void | Promise<void>,
+  editConversationCallback: () => void | Promise<void>,
   exportConversationCallback: () => void | Promise<void>,
   translations: PostActionTranslations
 ): ContentAction[] {
@@ -59,6 +61,14 @@ export function getPostActions(
       icon: "mdi-delete",
       variant: "destructive",
       handler: deletePostCallback,
+      isVisible: (context: ContentActionContext) =>
+        context.isOwner && !context.isEmbeddedMode,
+    },
+    {
+      id: "edit",
+      label: translations.edit,
+      icon: "mdi-pencil",
+      handler: editConversationCallback,
       isVisible: (context: ContentActionContext) =>
         context.isOwner && !context.isEmbeddedMode,
     },
@@ -120,6 +130,7 @@ export function getAvailablePostActions(
   moderationHistoryCallback: () => void | Promise<void>,
   copyEmbedLinkCallback: () => void | Promise<void>,
   deletePostCallback: () => void | Promise<void>,
+  editConversationCallback: () => void | Promise<void>,
   exportConversationCallback: () => void | Promise<void>,
   translations: PostActionTranslations
 ): ContentAction[] {
@@ -131,6 +142,7 @@ export function getAvailablePostActions(
     moderationHistoryCallback,
     copyEmbedLinkCallback,
     deletePostCallback,
+    editConversationCallback,
     exportConversationCallback,
     translations
   );

@@ -109,12 +109,12 @@ import Underline from "@tiptap/extension-underline";
 import { DOMSerializer } from "@tiptap/pm/model";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
-import { EditorContent,useEditor } from "@tiptap/vue-3";
+import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { BubbleMenu } from "@tiptap/vue-3/menus";
 import { useQuasar } from "quasar";
 import sanitizeHtml from "sanitize-html";
 import { htmlToCountedText } from "src/shared/shared";
-import { onBeforeUnmount,watch } from "vue";
+import { onBeforeUnmount, watch } from "vue";
 
 import EditorToolbarButton from "./EditorToolbarButton.vue";
 
@@ -122,9 +122,9 @@ const props = defineProps<{
   showToolbar: boolean;
   placeholder: string;
   minHeight: string;
-  disabled: boolean;
   singleLine: boolean;
   maxLength: number;
+  disabled: boolean;
 }>();
 const emit = defineEmits<{
   manuallyFocused: [];
@@ -238,6 +238,7 @@ const editor = useEditor({
     Underline,
     Placeholder.configure({
       placeholder: props.placeholder,
+      showOnlyWhenEditable: false,
     }),
     CharacterCount,
     // Add character limit enforcement
@@ -327,7 +328,7 @@ watch(
   }
 );
 
-// Watch for disabled prop changes to update editor
+// Watch for changes to disabled prop and update editor
 watch(
   () => props.disabled,
   (newDisabled) => {

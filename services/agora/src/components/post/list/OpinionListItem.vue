@@ -32,6 +32,7 @@
         <UserIdentityCard
           :author-verified="false"
           :created-at="opinionItem.createdAt"
+          :updated-at="opinionItem.updatedAt"
           :user-identity="opinionItem.username"
           :show-verified-text="false"
           organization-image-url=""

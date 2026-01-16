@@ -182,7 +182,7 @@ export async function mergeGuestIntoVerifiedUser({
             .onConflictDoNothing();
     }
 
-    // 14. Transfer poll responses (uses authorId, unique constraint: authorId + conversationId)
+    // 14. Transfer poll responses (uses authorId, unique constraint: authorId + pollId)
     const guestPollResponses = await db
         .select()
         .from(pollResponseTable)
@@ -193,7 +193,7 @@ export async function mergeGuestIntoVerifiedUser({
             .insert(pollResponseTable)
             .values({
                 authorId: verifiedUserId,
-                conversationId: response.conversationId,
+                pollId: response.pollId,
                 currentContentId: response.currentContentId,
                 createdAt: response.createdAt,
                 updatedAt: response.updatedAt,

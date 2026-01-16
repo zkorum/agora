@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 import PostDetails from "src/components/post/PostDetails.vue";
-import { useConversationData } from "src/composables/conversation/useConversationData";
+import { useConversationData } from "src/composables/conversation/data";
 import EmbedLayout from "src/layouts/EmbedLayout.vue";
 
 const { conversationData, hasConversationData } = useConversationData();
