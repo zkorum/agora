@@ -377,7 +377,6 @@ export function useCommonPost() {
                 const pollResponses = await getUserPollResponse({
                     db: db,
                     authorId: personalizedUserId,
-                    httpErrors: httpErrors,
                     postSlugIdList: postSlugIdList,
                 });
 
