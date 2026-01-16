@@ -291,6 +291,7 @@ function determinePollAction():
   | { action: "none" }
   | { action: "keep" }
   | { action: "remove" }
+  | { action: "replace"; options: string[] }
   | { action: "create"; options: string[] } {
   // No poll now, no poll before → none (no-op)
   if (!pollEnabled.value && !originalPollState.value.enabled) {
@@ -307,9 +308,19 @@ function determinePollAction():
     return { action: "create", options: pollOptions.value };
   }
 
-  // Has poll now, had poll before → keep
-  // Poll options are read-only in edit mode, so they remain unchanged
-  return { action: "keep" };
+  // Has poll now, had poll before
+  if (pollEnabled.value && originalPollState.value.enabled) {
+    // If current poll is the original poll → keep
+    if (isCurrentPollOriginal.value) {
+      return { action: "keep" };
+    }
+    // If current poll is NOT the original (user removed and re-added) → replace
+    // This creates a brand new poll, orphaning the old one
+    return { action: "replace", options: pollOptions.value };
+  }
+
+  // Fallback (should never reach here)
+  return { action: "none" };
 }
 
 async function performSave(): Promise<void> {
@@ -355,6 +366,7 @@ async function performSave(): Promise<void> {
         poll_already_exists: t("pollAlreadyExistsError"),
         no_poll_to_remove: t("noPollToRemoveError"),
         no_poll_to_keep: t("noPollToKeepError"),
+        no_poll_to_replace: t("noPollToReplaceError"),
       };
 
       const errorMsg = response.reason

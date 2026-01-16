@@ -4759,6 +4759,32 @@
                                                     "options"
                                                 ],
                                                 "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "action": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "replace"
+                                                        ]
+                                                    },
+                                                    "options": {
+                                                        "minItems": 2,
+                                                        "maxItems": 6,
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 30
+                                                        }
+                                                    }
+                                                },
+                                                "required": [
+                                                    "action",
+                                                    "options"
+                                                ],
+                                                "additionalProperties": false
                                             }
                                         ]
                                     },
@@ -4834,7 +4860,8 @@
                                                         "poll_already_exists",
                                                         "poll_exists_use_keep_or_remove",
                                                         "no_poll_to_remove",
-                                                        "no_poll_to_keep"
+                                                        "no_poll_to_keep",
+                                                        "no_poll_to_replace"
                                                     ]
                                                 }
                                             },
