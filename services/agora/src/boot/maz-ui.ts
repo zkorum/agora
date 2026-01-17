@@ -1,1 +1,3 @@
-import "maz-ui/css/main.css";
+export default async function boot() {
+  await import("maz-ui/css/main.css");
+}
