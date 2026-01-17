@@ -95,6 +95,8 @@
 </template>
 
 <script setup lang="ts">
+import "maz-ui/css/main.css";
+
 import {
   type CountryCode,
   parsePhoneNumberFromString,
