@@ -56,7 +56,6 @@ import { useConversationUrl } from "src/utils/url/conversationUrl";
 import ZKActionDialog from "../../ui-library/ZKActionDialog.vue";
 import ZKButton from "../../ui-library/ZKButton.vue";
 import ZKIcon from "../../ui-library/ZKIcon.vue";
-import ShareDialog from "../ShareDialog.vue";
 import InteractionTab from "./InteractionTab.vue";
 import {
   type PostActionBarTranslations,
@@ -107,7 +106,7 @@ function shareClicked(): void {
     },
     openQrCodeCallback: () => {
       $q.dialog({
-        component: ShareDialog,
+        component: () => import("../ShareDialog.vue"),
         componentProps: {
           url: sharePostUrl,
           title: shareTitle,
