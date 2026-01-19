@@ -297,15 +297,15 @@ Standard AT Protocol prioritizes usability but doesn't guarantee walkaway. DDS a
 ┌────────────────────────────────────────────────┐
 │ L1: AT PROTOCOL (Hot Path - Usability)         │
 │ ┌──────────────┐  ┌──────────────┐            │
-│ │ PDS (Storage)│→ │Firehose (Pub)│  ↖         │
-│ │ - did:plc    │  │ - Permissionless  ↖       │
-│ │ - Encrypted  │  │   indexing         (login) │
-│ │   Vault      │  │ - Real-time         ↖     │
-│ │ - OAuth      │  │   distribution       ↖    │
-│ └──────────────┘  └──────────────┘        ↖   │
-│          ↓                ↓                 ↖  │
-│    ┌──────────────────────────┐             ↖ │
-│    │ AppViews (Discovery)     │              ↖│
+│ │ PDS (Storage)│→ │Firehose (Pub)│            │
+│ │ - did:plc    │  │ - Permissionless          │
+│ │ - Encrypted  │  │   indexing                │
+│ │   Vault      │  │ - Real-time               │
+│ │ - OAuth      │  │   distribution            │
+│ └──────────────┘  └──────────────┘            │
+│          ↓                ↓                    │
+│    ┌──────────────────────────┐               │
+│    │ AppViews (Discovery)     │               │
 │    │ - Instant search (SQL)   │               │
 │    │ - Real-time notifications│               │
 │    │ - Filter/sort            │               │
@@ -329,7 +329,7 @@ Standard AT Protocol prioritizes usability but doesn't guarantee walkaway. DDS a
          ↓ (recovery)           ↓ (verification)
 ┌────────────────────────────────────────────────┐
 │ L3: ETHEREUM (Truth - Verification)            │
-│ - Wallet Master Key (see hierarchy below) ─────┘
+│ - Wallet Master Key (see hierarchies below)    │
 │ - Hash(Result) commitments (fraud proving)     │
 │ - Token-gating (permission control)            │
 │ - Prover staking/slashing (economic security)  │
