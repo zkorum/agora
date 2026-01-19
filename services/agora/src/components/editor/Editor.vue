@@ -54,7 +54,7 @@
 
     <!-- Bubble menu for mobile -->
     <BubbleMenu
-      v-if="editor && $q.platform.is.mobile"
+      v-if="isEditorReady && $q.platform.is.mobile"
       v-show="showToolbar"
       :editor="editor"
       :options="{
@@ -114,7 +114,7 @@ import { BubbleMenu } from "@tiptap/vue-3/menus";
 import { useQuasar } from "quasar";
 import sanitizeHtml from "sanitize-html";
 import { htmlToCountedText } from "src/shared/shared";
-import { onBeforeUnmount,watch } from "vue";
+import { computed, onBeforeUnmount, watch } from "vue";
 
 import EditorToolbarButton from "./EditorToolbarButton.vue";
 
@@ -298,6 +298,13 @@ const editor = useEditor({
   onBlur: () => {
     emit("blur");
   },
+});
+
+// Safety check to ensure editor view is fully initialized before rendering BubbleMenu
+// Prevents race condition where BubbleMenu tries to access editor.view.docView before it's ready
+// Fixes: TypeError: null is not an object (evaluating 't.docView.domFromPos')
+const isEditorReady = computed(() => {
+  return editor.value !== undefined && editor.value.view !== null;
 });
 
 onBeforeUnmount(() => {
