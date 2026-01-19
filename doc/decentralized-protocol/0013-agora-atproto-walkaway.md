@@ -10,7 +10,7 @@
 
 ## Abstract
 
-This RFC defines the **Decentralized Deliberation Standard (DDS)**, a vendor-neutral protocol for secure, censorship-resistant public consultation.
+This RFC defines the **Decentralized Deliberation Standard (DDS)**, a vendor-neutral protocol for secure, censorship-resistant and highly interoperable public consultation.
 
 DDS leverages the **AT Protocol** for transport, standardizing on the **Personal Data Server (PDS)** as the fundamental unit of participation. It unifies all users (Guest, Email, Wallet, ZKPass) under a standard PDS model using OAuth for authentication and PDS-managed signing for interaction.
 
