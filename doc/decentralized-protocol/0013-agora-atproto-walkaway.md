@@ -14,7 +14,7 @@ This RFC defines the **Decentralized Deliberation Standard (DDS)**, a vendor-neu
 
 DDS leverages the **AT Protocol** for transport, standardizing on the **Personal Data Server (PDS)** as the fundamental unit of participation. It unifies all users (Guest, Email, Wallet, ZKPass) under a standard PDS model using OAuth for authentication and PDS-managed signing for interaction.
 
-To ensure sovereignty for users on managed infrastructure, DDS introduces the **Encrypted Key Vault**: a cryptographic pattern that guarantees users can retrieve their `did:plc` Rotation Keys and "walk away" to a self-hosted provider at any time, effectively passing the "Walkaway Test" without burdening the user with client-side signing complexity.
+To ensure sovereignty for users on managed infrastructure, DDS introduces the **Encrypted Key Vault**: a cryptographic pattern that guarantees users can retrieve their `did:plc` Rotation Keys and "walk away" to a self-hosted provider at any time, effectively passing the "Walkaway Test" without burdening the user with client-side signing complexity (wallet management) or self-hosting the PDS.
 
 ## 1. Core Philosophy
 
