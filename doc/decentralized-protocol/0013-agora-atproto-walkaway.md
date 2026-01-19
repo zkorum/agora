@@ -21,16 +21,15 @@ To ensure sovereignty for users on managed infrastructure, DDS introduces the **
 1.  **Identity is Sovereign**: Every user has a portable `did:plc`. The cryptographic root of control (Rotation Key) belongs to the user, not the provider.
 2.  **Infrastructure is Commoditized**: The PDS is a utility. If a provider acts maliciously, the user can rotate their DID to a new provider without losing their social graph or history.
 3.  **Math is Verifiable**: We do not trust the server to count votes. We trust the **Prover**. Analysis Agents publish results with cryptographic proofs that can be challenged on-chain.
-4.  **Privacy is Client-Side**: Private conversations are encrypted on the client. The network sees only opaque blobs.
 
 ## 2. Architecture: The Unified PDS Model
 
-DDS standardizes on the **Personal Data Server (PDS)** for all participants. There are no "Second Class" guests.
+DDS standardizes on the **Personal Data Server (PDS)** for all participants.
 
 ### 2.1 The Hosting Tiers
 To balance **Ease of Access** with **Sovereignty**, we support a spectrum of account types. Note that a single Managed PDS instance is designed to be multi-tenant, capable of hosting thousands of Guest accounts efficiently (similar to standard Bluesky PDS architecture).
 
-1.  **Self-Hosted (Tier 2)**: The user brings their own PDS (e.g., standard Bluesky account). They authenticate directly.
+1.  **Self-Hosted (Tier 2)**: The user brings their own PDS (e.g., standard Bluesky account or self-hosted one). They authenticate directly.
 2.  **Managed (Tier 1)**: The user authenticates via a Web2/Web3 method (Email, Phone, Wallet, ZKPass), and the application **auto-provisions** a PDS account for them.
 3.  **Anonymous (Tier 0)**: A "Guest" user who has not yet verified an identifier. They are provisioned a lightweight PDS account authenticated by a local `did:key` (acting as a session token).
 
@@ -59,8 +58,8 @@ For users logging in with an Ethereum Wallet, we implement the **"Sign-to-Derive
 
 ### 3.3 Type B: The Device Vault (Email/Phone/Guest)
 For users without a global key (Wallet):
-1.  **Mechanism**: We use a **Device Graph**. Each device has a local `did:key` (Exchange Key).
-2.  **The Master Secret**: A random Symmetric Key ($K_{account}$) encrypts the Recovery Key.
+1.  **Mechanism**: We use a **Device Graph**. Each device has a local `did:key` (Exchange Key used for encryption)
+2.  **The Master Secret**: A random Symmetric Key ($K_{account}$) that will encrypt the user's PDS's Recovery Key.
 3.  **The Lockbox**: $K_{account}$ is encrypted for each device's Exchange Key and stored in the Repository.
 4.  **Device Sync (Detailed)**:
     *   **Device B (New)**: Generates a local `did:key` and displays its Public Key via QR Code.
@@ -87,6 +86,10 @@ DDS supports any deliberation type via pluggable modules.
 ### 4.1 `org.dds.module.polis` (Agora)
 *   **Opinion**: `{ text: string }`
 *   **Vote**: `{ targetCid: string, value: -1|0|1 }`
+
+### 4.2 other lexicons specific to different product features related to the deliberation process
+
+TODO
 
 ## 5. Verifiable Analysis (The Prover)
 
