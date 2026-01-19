@@ -297,15 +297,15 @@ Standard AT Protocol prioritizes usability but doesn't guarantee walkaway. DDS a
 ┌────────────────────────────────────────────────┐
 │ L1: AT PROTOCOL (Hot Path - Usability)         │
 │ ┌──────────────┐  ┌──────────────┐            │
-│ │ PDS (Storage)│→ │Firehose (Pub)│            │
-│ │ - did:plc    │  │ - Permissionless          │
-│ │ - Encrypted  │  │   indexing                │
-│ │   Vault      │  │ - Real-time               │
-│ │ - OAuth      │  │   distribution            │
-│ └──────────────┘  └──────────────┘            │
-│          ↓                ↓                    │
-│    ┌──────────────────────────┐               │
-│    │ AppViews (Discovery)     │               │
+│ │ PDS (Storage)│→ │Firehose (Pub)│  ↖         │
+│ │ - did:plc    │  │ - Permissionless  ↖       │
+│ │ - Encrypted  │  │   indexing         (login) │
+│ │   Vault      │  │ - Real-time         ↖     │
+│ │ - OAuth      │  │   distribution       ↖    │
+│ └──────────────┘  └──────────────┘        ↖   │
+│          ↓                ↓                 ↖  │
+│    ┌──────────────────────────┐             ↖ │
+│    │ AppViews (Discovery)     │              ↖│
 │    │ - Instant search (SQL)   │               │
 │    │ - Real-time notifications│               │
 │    │ - Filter/sort            │               │
@@ -329,12 +329,79 @@ Standard AT Protocol prioritizes usability but doesn't guarantee walkaway. DDS a
          ↓ (recovery)           ↓ (verification)
 ┌────────────────────────────────────────────────┐
 │ L3: ETHEREUM (Truth - Verification)            │
-│ - did:plc ↔ Wallet binding (Type A Vault)     │
+│ - Wallet Master Key (see hierarchy below) ─────┘
 │ - Hash(Result) commitments (fraud proving)     │
 │ - Token-gating (permission control)            │
 │ - Prover staking/slashing (economic security)  │
 │ ➜ Provides: Verifiability, Sovereignty        │
 └────────────────────────────────────────────────┘
+
+ETHEREUM WALLET MASTER KEY HIERARCHY (Type A Users)
+═══════════════════════════════════════════════════
+
+              Ethereum Wallet Signature
+                        │
+                        ├─────────────────────┐
+                        ↓                     ↓
+            HKDF-SHA256 derivation    Sign OAuth challenge
+                        ↓                     ↓
+                  AES-GCM Key          PDS Login (OAuth)
+                        ↓                     ↓
+         Decrypt org.dds.key.wrapped    Access to L1 PDS ──┐
+                        ↓                                   │
+              did:plc Rotation Key                          │
+                        ↓                                   │
+    ┌───────────────────┴────────────────┐                 │
+    ↓                                    ↓                 │
+Control DID document              Walkaway scenario:       │
+(rotate to new PDS)               Recover from any device  │
+                                  with just wallet         │
+                                                            │
+Result: Ethereum wallet = Master key for BOTH ─────────────┘
+        - Identity sovereignty (did:plc)
+        - Infrastructure access (PDS OAuth)
+
+
+WEB2/NON-WALLET AUTH WALKAWAY & SELF-HOSTED PATH
+═════════════════════════════════════════════════
+
+┌─────────────────────────────────┬──────────────────────────────────┐
+│ WEB2 AUTH (Email/Phone/Guest)   │ SELF-HOSTED PDS (Tier 2)         │
+│ Managed PDS (Tier 1/0)          │                                  │
+├─────────────────────────────────┼──────────────────────────────────┤
+│ Setup Phase:                    │ No setup needed:                 │
+│  Master Secret (K_account)      │  User runs own PDS               │
+│        ↓                        │        ↓                         │
+│  Encrypts did:plc Rotation Key  │  Direct access to Rotation Keys  │
+│        ↓                        │        ↓                         │
+│  Vault: org.dds.key.wrapped     │  Stored in own infrastructure    │
+│        ↓                        │                                  │
+│  K_account encrypted per-device │                                  │
+│  → Lockbox files in PDS         │                                  │
+│                                 │                                  │
+│ Walkaway Options:               │ Walkaway Scenario:               │
+│                                 │                                  │
+│  Option 1: Existing Device      │  No walkaway needed -            │
+│   Has K_account locally         │  already sovereign!              │
+│         ↓                       │                                  │
+│   Decrypt Vault → Rotation Key  │  User controls:                  │
+│         ↓                       │  ✓ PDS infrastructure            │
+│   Rotate did:plc to new PDS     │  ✓ Signing keys                  │
+│                                 │  ✓ Rotation keys                 │
+│  Option 2: Recovery Code        │  ✓ All data                      │
+│   User saved K_account at signup│                                  │
+│         ↓                       │  Participates in DDS with        │
+│   Retrieve Vault from IPFS      │  full sovereignty from day one   │
+│         ↓                       │                                  │
+│   Decrypt → Rotation Key        │                                  │
+│         ↓                       │                                  │
+│   Rotate did:plc to new PDS     │                                  │
+│                                 │                                  │
+│ CRITICAL:                       │ TRADE-OFF:                       │
+│ ⚠ Recovery Code MUST be saved   │ ⚠ Requires technical expertise   │
+│ ⚠ Without device or code,       │ ✓ Maximum privacy & control      │
+│   account is lost               │ ✓ No encrypted vault complexity  │
+└─────────────────────────────────┴──────────────────────────────────┘
 ```
 
 **Mapping DDS Features to Layers:**
