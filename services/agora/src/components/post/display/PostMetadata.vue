@@ -17,9 +17,9 @@
       </div>
 
       <div class="actions-container">
-        <!-- Close/Open button (author only) -->
+        <!-- Close/Open button (author or org member) -->
         <ZKButton
-          v-if="!compactMode && isAuthor"
+          v-if="!compactMode && canCloseReopen"
           button-type="icon"
           flat
           :text-color="isClosed ? 'positive' : 'negative'"
@@ -170,9 +170,22 @@ const { setReportIntention } = useConversationLoginIntentions();
 const webShare = useWebShare();
 const { getEmbedUrl } = useConversationUrl();
 
-// Check if current user is the author
-const isAuthor = computed(() => {
-  return profileData.userName === props.authorUsername;
+// Check if current user can close/reopen this post
+// (post author OR member of the post's organization)
+const canCloseReopen = computed(() => {
+  // Post author can always close/reopen
+  if (profileData.userName === props.authorUsername) {
+    return true;
+  }
+
+  // Organization members can close/reopen organization posts
+  if (props.organizationName) {
+    return profileData.organizationList.some(
+      (org) => org.name === props.organizationName
+    );
+  }
+
+  return false;
 });
 
 function onLoginConfirmationOk() {
