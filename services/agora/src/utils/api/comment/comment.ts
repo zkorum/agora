@@ -23,11 +23,11 @@ import { useBackendAuthApi } from "../auth";
 import { api } from "../client";
 import { useCommonApi } from "../common";
 
-export type CommentTabFilters = "new" | "moderated" | "discover" | "hidden";
+export type CommentTabFilters = "new" | "moderated" | "discover" | "hidden" | "my_votes";
 
 export function useBackendCommentApi() {
   const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
-  const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
+  const { isGuestOrLoggedIn, isAuthInitialized } = storeToRefs(useAuthenticationStore());
   const { updateAuthState } = useBackendAuthApi();
 
   function createLocalCommentObject(
@@ -83,7 +83,8 @@ export function useBackendCommentApi() {
       clusterKey: clusterKey,
     };
 
-    if (isGuestOrLoggedIn.value) {
+    // Use authenticated endpoint only if auth is initialized AND user is logged in/guest
+    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1OpinionFetchByConversationPost(
           params
@@ -147,10 +148,8 @@ export function useBackendCommentApi() {
 
     if (data.success) {
       // TODO: properly manage errors in backend and return login status to update to
-      // Update auth state but defer cache operations to avoid clearing cache before opinion refresh
       const { authStateChanged, needsCacheRefresh } = await updateAuthState({
         partialLoginStatus: { isKnown: true },
-        deferCacheOperations: true,
       });
       return {
         success: true,
@@ -215,7 +214,8 @@ export function useBackendCommentApi() {
     polisClusters: Partial<PolisClusters>;
   }> {
     let data: ApiV1OpinionFetchAnalysisByConversationPost200Response;
-    if (isGuestOrLoggedIn.value) {
+    // Use authenticated endpoint only if auth is initialized AND user is logged in/guest
+    if (isAuthInitialized.value && isGuestOrLoggedIn.value) {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisByConversationPost(
           params

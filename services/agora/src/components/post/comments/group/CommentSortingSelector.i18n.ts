@@ -6,6 +6,7 @@ export interface CommentSortingSelectorTranslations {
   new: string;
   moderationHistory: string;
   hidden: string;
+  myVotes: string;
 }
 
 export const commentSortingSelectorTranslations: Record<
@@ -18,6 +19,7 @@ export const commentSortingSelectorTranslations: Record<
     new: "New",
     moderationHistory: "Moderation History",
     hidden: "Hidden",
+    myVotes: "My Votes",
   },
   ar: {
     filterTitle: "تصفية الردود حسب:",
@@ -25,6 +27,7 @@ export const commentSortingSelectorTranslations: Record<
     new: "جديد",
     moderationHistory: "تاريخ الإشراف",
     hidden: "مخفي",
+    myVotes: "أصواتي",
   },
   es: {
     filterTitle: "Filtrar respuestas por:",
@@ -32,6 +35,7 @@ export const commentSortingSelectorTranslations: Record<
     new: "Nuevo",
     moderationHistory: "Historial de moderación",
     hidden: "Oculto",
+    myVotes: "Mis Votos",
   },
   fr: {
     filterTitle: "Filtrer les réponses par :",
@@ -39,6 +43,7 @@ export const commentSortingSelectorTranslations: Record<
     new: "Nouveau",
     moderationHistory: "Historique de modération",
     hidden: "Masqué",
+    myVotes: "Mes Votes",
   },
   "zh-Hans": {
     filterTitle: "按以下方式筛选回复：",
@@ -46,6 +51,7 @@ export const commentSortingSelectorTranslations: Record<
     new: "最新",
     moderationHistory: "审核历史",
     hidden: "已隐藏",
+    myVotes: "我的投票",
   },
   "zh-Hant": {
     filterTitle: "按以下方式篩選回覆：",
@@ -53,6 +59,7 @@ export const commentSortingSelectorTranslations: Record<
     new: "最新",
     moderationHistory: "審核歷史",
     hidden: "已隱藏",
+    myVotes: "我的投票",
   },
   ja: {
     filterTitle: "回答を以下でフィルター：",
@@ -60,5 +67,6 @@ export const commentSortingSelectorTranslations: Record<
     new: "新着",
     moderationHistory: "モデレーション履歴",
     hidden: "非表示",
+    myVotes: "自分の投票",
   },
 };

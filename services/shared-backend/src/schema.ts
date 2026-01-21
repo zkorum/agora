@@ -25,8 +25,8 @@ const MAX_LENGTH_OPTION = 30;
 const MAX_LENGTH_TITLE = 140;
 const MAX_LENGTH_BODY = 1000;
 const MAX_LENGTH_BODY_HTML = 3000; // Reserve extra space for HTML tags
-// const MAX_LENGTH_OPINION = 1000;
-const MAX_LENGTH_OPINION_HTML = 3000; // Reserve extra space for HTML tags
+// const MAX_LENGTH_OPINION = 280;
+const MAX_LENGTH_OPINION_HTML = 840; // Reserve extra space for HTML tags
 const MAX_LENGTH_NAME_CREATOR = 65;
 const MAX_LENGTH_DESCRIPTION_CREATOR = 280;
 const MAX_LENGTH_USERNAME = 20;
@@ -1214,6 +1214,7 @@ export const conversationTable = pgTable(
         isIndexed: boolean("is_indexed").notNull().default(true), // if true, the conversation can be fetched in the feed and search engine, else it is hidden, unless users have the link
         isLoginRequired: boolean("is_login_required").notNull().default(true), // if true, the conversation requires users to sign up to participate -- this field is ignored if the conversation is indexed; in this case, sign-up is always required
         isImporting: boolean("is_importing").notNull().default(false), // if true, the conversation is being imported from CSV and should not be visible in feed until import completes
+        isClosed: boolean("is_closed").notNull().default(false), // if true, the conversation was closed by owner and users cannot post opinions or vote
         requiresEventTicket: eventSlugEnum("requires_event_ticket"), // if set, only users with verified ticket for this event can participate (vote/post opinions)
         opinionCount: integer("opinion_count").notNull().default(0),
         voteCount: integer("vote_count").notNull().default(0),
@@ -1814,26 +1815,29 @@ export const notificationTable = pgTable(
 );
 
 // content changes over time as much as the conversation receives opinions and votes
-export const polisContentTable = pgTable("polis_content", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    conversationId: integer("conversation_id")
-        .references(() => conversationTable.id)
-        .notNull(), // not unique, there will be multiple rows over the life of the conversation
-    rawData: jsonb("raw_data").notNull(), // from external polis system
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        // aiSummary may be set at a later data
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const polisContentTable = pgTable(
+    "polis_content",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .notNull(), // not unique, there will be multiple rows over the life of the conversation
+        rawData: jsonb("raw_data").notNull(), // from external polis system
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            // aiSummary may be set at a later data
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+);
 
 // one polisContent has many polisClusters
 export const polisClusterTable = pgTable("polis_cluster", {

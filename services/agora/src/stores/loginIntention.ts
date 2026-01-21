@@ -184,7 +184,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         break;
       case "newOpinion":
         await router.push({
-          name: "/conversation/[postSlugId]",
+          name: "/conversation/[postSlugId]/",
           params: { postSlugId: newOpinionIntention.conversationSlugId },
         });
         break;

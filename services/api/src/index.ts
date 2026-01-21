@@ -1355,6 +1355,7 @@ server.after(() => {
                 votingAction: request.body.chosenOption,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: now,
+                returnIsUserClustered: request.body.returnIsUserClustered,
             });
             reply.send(castVoteResponse);
             const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
@@ -1737,6 +1738,50 @@ server.after(() => {
                     log.error(e);
                 }
             }
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/close`,
+        schema: {
+            body: Dto.closeConversationRequest,
+            response: {
+                200: Dto.closeConversationResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: { isLoggedIn: true },
+                });
+            return await postService.closeConversation({
+                db: db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/conversation/open`,
+        schema: {
+            body: Dto.openConversationRequest,
+            response: {
+                200: Dto.openConversationResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: { isLoggedIn: true },
+                });
+            return await postService.openConversation({
+                db: db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
+            });
         },
     });
 

@@ -16,7 +16,19 @@
         />
       </div>
 
-      <div>
+      <div class="actions-container">
+        <!-- Close/Open button (author only) -->
+        <ZKButton
+          v-if="!compactMode && isAuthor"
+          button-type="icon"
+          flat
+          :text-color="isClosed ? 'positive' : 'negative'"
+          :icon="isClosed ? 'mdi-play-circle' : 'mdi-stop-circle'"
+          size="0.656rem"
+          @click.stop.prevent="handleCloseOpenClick()"
+        />
+
+        <!-- Three-dot menu -->
         <ZKButton
           button-type="icon"
           flat
@@ -61,6 +73,26 @@
     @confirm="postActions.handleConfirmation"
     @cancel="postActions.handleConfirmationCancel"
   />
+
+  <!-- Close Conversation Confirmation Dialog -->
+  <ZKConfirmDialog
+    v-model="showCloseDialog"
+    :message="t('closeConfirmMessage')"
+    :confirm-text="t('closeConfirmButton')"
+    :cancel-text="t('cancelButton')"
+    variant="default"
+    @confirm="handleCloseConfirm"
+  />
+
+  <!-- Reopen Conversation Confirmation Dialog -->
+  <ZKConfirmDialog
+    v-model="showReopenDialog"
+    :message="t('reopenConfirmMessage')"
+    :confirm-text="t('reopenConfirmButton')"
+    :cancel-text="t('cancelButton')"
+    variant="default"
+    @confirm="handleReopenConfirm"
+  />
 </template>
 
 <script setup lang="ts">
@@ -72,24 +104,38 @@ import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
+import { useUserStore } from "src/stores/user";
 import type { ContentAction } from "src/utils/actions/core/types";
 import { useContentActions } from "src/utils/actions/definitions/content-actions";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
+import {
+  useCloseConversationMutation,
+  useOpenConversationMutation,
+} from "src/utils/api/post/useConversationMutations";
 import { useWebShare } from "src/utils/share/WebShare";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+
+import {
+  type PostMetadataTranslations,
+  postMetadataTranslations,
+} from "./PostMetadata.i18n";
 
 const props = defineProps<{
   authorVerified: boolean;
   posterUserName: string;
+  authorUsername: string;
   createdAt: Date;
   postSlugId: string;
   organizationUrl: string;
   organizationName: string;
   isLoginRequired: boolean;
+  isClosed: boolean;
+  compactMode: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -103,18 +149,31 @@ const route = useRoute();
 const postActions = useContentActions();
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+const { profileData } = useUserStore();
 
 const { muteUser } = useBackendUserMuteApi();
 const { loadPostData } = useHomeFeedStore();
 
-const showReportDialog = ref(false);
+const closeConversationMutation = useCloseConversationMutation();
+const openConversationMutation = useOpenConversationMutation();
+const { t } = useComponentI18n<PostMetadataTranslations>(
+  postMetadataTranslations
+);
 
+const showReportDialog = ref(false);
 const showLoginDialog = ref(false);
+const showCloseDialog = ref(false);
+const showReopenDialog = ref(false);
 
 const { setReportIntention } = useConversationLoginIntentions();
 
 const webShare = useWebShare();
 const { getEmbedUrl } = useConversationUrl();
+
+// Check if current user is the author
+const isAuthor = computed(() => {
+  return profileData.userName === props.authorUsername;
+});
 
 function onLoginConfirmationOk() {
   setReportIntention("");
@@ -154,13 +213,13 @@ async function moderatePostCallback() {
 
 async function moderationHistoryCallback() {
   if (
-    route.name == "/conversation/[postSlugId]" ||
+    route.name == "/conversation/[postSlugId]/" ||
     route.name == "/conversation/[postSlugId].embed"
   ) {
     emit("openModerationHistory");
   } else {
     await router.push({
-      name: "/conversation/[postSlugId]",
+      name: "/conversation/[postSlugId]/",
       params: { postSlugId: props.postSlugId },
       query: { filter: "moderated" },
     });
@@ -196,7 +255,6 @@ function clickedMoreIcon() {
  * Handle action selection
  */
 async function handleActionSelected(action: ContentAction) {
-  console.log("Action selected:", action.id);
   await postActions.executeAction(action);
 }
 
@@ -205,6 +263,39 @@ async function handleActionSelected(action: ContentAction) {
  */
 function handleDialogClosed() {
   postActions.closeDialog();
+}
+
+/**
+ * Handle close/open button click
+ */
+function handleCloseOpenClick() {
+  if (props.isClosed) {
+    // Show confirmation dialog before reopening
+    showReopenDialog.value = true;
+  } else {
+    // Show confirmation dialog before closing
+    showCloseDialog.value = true;
+  }
+}
+
+/**
+ * Handle close confirmation
+ */
+function handleCloseConfirm() {
+  // TanStack Query mutation handles all success/error states and cache updates
+  closeConversationMutation.mutate({
+    conversationSlugId: props.postSlugId,
+  });
+}
+
+/**
+ * Handle reopen confirmation
+ */
+function handleReopenConfirm() {
+  // TanStack Query mutation handles all success/error states and cache updates
+  openConversationMutation.mutate({
+    conversationSlugId: props.postSlugId,
+  });
 }
 </script>
 
@@ -228,6 +319,12 @@ function handleDialogClosed() {
 .identityFlex {
   display: flex;
   gap: 1rem;
+  align-items: center;
+}
+
+.actions-container {
+  display: flex;
+  gap: 0.5rem;
   align-items: center;
 }
 </style>

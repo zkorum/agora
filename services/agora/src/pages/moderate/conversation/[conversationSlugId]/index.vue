@@ -205,7 +205,7 @@ async function clickedSubmit() {
 async function redirectToPost() {
   if (postSlugId) {
     await router.push({
-      name: "/conversation/[postSlugId]",
+      name: "/conversation/[postSlugId]/",
       params: { postSlugId: postSlugId },
     });
   }

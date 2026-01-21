@@ -1,6 +1,6 @@
 import type { PolisKey } from "src/shared/types/zod";
 
-export type CommentFilterOptions = "new" | "moderated" | "hidden" | "discover";
+export type CommentFilterOptions = "new" | "moderated" | "hidden" | "discover" | "my_votes";
 
 export function formatClusterLabel(
   index: PolisKey,

@@ -14,13 +14,42 @@
 
     <q-pull-to-refresh @refresh="handleRefresh">
       <WidthWrapper :enable="true">
-        <PostDetails
-          v-if="hasConversationData"
-          ref="postDetailsRef"
-          :conversation-data="conversationData"
-          :compact-mode="false"
-          @ticket-verified="handleTicketVerifiedInPage"
-        />
+        <div v-if="hasConversationData">
+          <ZKHoverEffect :enable-hover="false">
+            <div class="container standardStyle">
+              <PostContent
+                :extended-post-data="loadedConversationData"
+                :compact-mode="false"
+                @open-moderation-history="openModerationHistory()"
+                @verified="(payload) => handleTicketVerified(payload)"
+              />
+
+              <PostActionBar
+                v-model="currentTab"
+                :compact-mode="false"
+                :opinion-count="
+                  loadedConversationData.metadata.opinionCount + opinionCountOffset
+                "
+                :participant-count="participantCountLocal"
+                :vote-count="loadedConversationData.metadata.voteCount"
+                :is-loading="isCurrentTabLoading"
+                :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
+                :conversation-title="loadedConversationData.payload.title"
+                :author-username="loadedConversationData.metadata.authorUsername"
+              />
+
+              <!-- Child routes: only tab-specific content -->
+              <router-view v-slot="{ Component }">
+                <component
+                  :is="Component"
+                  :key="route.fullPath"
+                  :conversation-data="loadedConversationData"
+                  :has-conversation-data="hasConversationData"
+                />
+              </router-view>
+            </div>
+          </ZKHoverEffect>
+        </div>
       </WidthWrapper>
     </q-pull-to-refresh>
   </DrawerLayout>
@@ -30,90 +59,190 @@
 import { storeToRefs } from "pinia";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
-import PostDetails from "src/components/post/PostDetails.vue";
-import { useConversationData } from "src/composables/conversation/useConversationData";
+import PostContent from "src/components/post/display/PostContent.vue";
+import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
+import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import { useBackendAuthApi } from "src/utils/api/auth";
+import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
+import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { useInvalidateVoteQueries } from "src/utils/api/vote/useVoteQueries";
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
-const postDetailsRef = ref<InstanceType<typeof PostDetails>>();
-const { conversationData, hasConversationData, refreshConversation } =
-  useConversationData();
+const route = useRoute();
+const router = useRouter();
 const navigationStore = useNavigationStore();
 const { resetDraft } = useNewPostDraftsStore();
 
 const authStore = useAuthenticationStore();
-const { userId } = storeToRefs(authStore);
+const { userId, isAuthInitialized } = storeToRefs(authStore);
+
+// Clear login intentions immediately (before query setup)
+const loginIntentionStore = useLoginIntentionStore();
+loginIntentionStore.clearVotingIntention();
+loginIntentionStore.clearOpinionAgreementIntention();
+loginIntentionStore.clearReportUserContentIntention();
+
+// Use TanStack Query for conversation data
+const conversationQuery = useConversationQuery({
+  conversationSlugId: computed(() => (route.params as { postSlugId: string }).postSlugId),
+  enabled: computed(() => isAuthInitialized.value),
+});
+
+const conversationData = computed(() => {
+  const data = conversationQuery.data.value;
+  if (!data || data.metadata.conversationSlugId === "") {
+    return undefined;
+  }
+  return data;
+});
+
+const hasConversationData = computed(() => conversationData.value !== undefined);
+
+// Type-safe version for template use (guaranteed non-undefined)
+const loadedConversationData = computed(() => {
+  const data = conversationData.value;
+  if (!data) {
+    // This should never happen inside v-if="hasConversationData" block
+    throw new Error("[ConversationPage] Accessed conversation data before loaded");
+  }
+  return data;
+});
 
 const { invalidateUserVotes } = useInvalidateVoteQueries();
+const { invalidateAnalysis: invalidateAnalysisQuery, invalidateAll, invalidateComments } = useInvalidateCommentQueries();
 
-function handleRefresh(done: () => void): void {
-  refreshConversation(() => {
-    // After conversation data is refreshed, also refresh all tab data
-    if (postDetailsRef.value) {
-      postDetailsRef.value.refreshAllData();
-    }
-    done();
-  });
+// Shared state for children
+const opinionCountOffset = ref(0);
+const participantCountOffset = ref(0);
+const currentTab = ref<"comment" | "analysis">("comment");
+const isCurrentTabLoading = ref(false);
+
+// Computed: base participant count + offset
+const participantCountLocal = computed(
+  () =>
+    (conversationData.value?.metadata.participantCount ?? 0) +
+    participantCountOffset.value
+);
+
+// Provide state and functions to child routes
+provide("refreshConversation", async () => {
+  await conversationQuery.refetch();
+});
+provide("opinionCountOffset", opinionCountOffset);
+provide("participantCountOffset", participantCountOffset);
+provide("setCurrentTabLoading", (loading: boolean) => {
+  isCurrentTabLoading.value = loading;
+});
+provide("decrementOpinionCount", () => {
+  opinionCountOffset.value -= 1;
+});
+
+// Navigation functions for banner actions
+function navigateToAnalysis() {
+  const data = conversationData.value;
+  if (data === undefined) return;
+
+  // Invalidate analysis cache to ensure fresh data when user navigates
+  // This is important when user reaches threshold and clicks "View analysis"
+  void invalidateAnalysisQuery(data.metadata.conversationSlugId);
+
+  void router.push(
+    `/conversation/${data.metadata.conversationSlugId}/analysis`
+  );
 }
 
-function reloadConversationWithUserInteractions(): void {
-  console.log('[ConversationPage] Reloading conversation with user interactions');
-  // Reload conversation data to fetch user interactions (poll responses, votes, comments)
-  refreshConversation(() => {
-    console.log('[ConversationPage] Conversation refreshed, now refreshing all tab data');
-    // After conversation data is refreshed, also refresh comments/votes
-    if (postDetailsRef.value) {
-      postDetailsRef.value.refreshAllData();
-    }
-  });
+function navigateToCommentTab() {
+  const data = conversationData.value;
+  if (data === undefined) return;
+
+  // Invalidate comments cache to ensure fresh data when user navigates
+  // This is important when user clicks "Vote more" from analysis page
+  void invalidateComments(data.metadata.conversationSlugId);
+
+  void router.push(
+    `/conversation/${data.metadata.conversationSlugId}/`
+  );
 }
 
-function handleTicketVerifiedInPage(payload: {
+provide("navigateToAnalysis", navigateToAnalysis);
+provide("navigateToCommentTab", navigateToCommentTab);
+
+// Sync currentTab with route
+watch(
+  () => route.name,
+  (newRouteName) => {
+    if (newRouteName === "/conversation/[postSlugId]/analysis") {
+      currentTab.value = "analysis";
+    } else if (
+      newRouteName === "/conversation/[postSlugId]/" ||
+      newRouteName === "/conversation/[postSlugId]"
+    ) {
+      currentTab.value = "comment";
+    }
+  },
+  { immediate: true }
+);
+
+function openModerationHistory(): void {
+  // Will be handled by child component
+  console.warn("Moderation history should be opened by child component");
+}
+
+const { loadAuthenticatedModules } = useBackendAuthApi();
+
+async function handleTicketVerified(payload: {
   userIdChanged: boolean;
   needsCacheRefresh: boolean;
-}): void {
-  // Only refresh if userId didn't change (otherwise userId watcher will handle it)
-  if (!payload.userIdChanged) {
-    console.log('[ConversationPage] Ticket verified, userId unchanged - refreshing data');
-    // When userId doesn't change (currentUserId === newUserId), the user just verified a ticket
-    // We need to manually refresh conversation data and all tab data to show updated state
-    // (conversation no longer locked, user can now participate)
-    reloadConversationWithUserInteractions();
-  } else {
-    console.log('[ConversationPage] Ticket verified, userId changed - letting watcher handle refresh');
-    // When userId changes, the userId watcher will detect it and call reloadConversationWithUserInteractions()
-    // We don't need to do anything here to avoid duplicate refreshes
+}): Promise<void> {
+  if (payload.needsCacheRefresh) {
+    await loadAuthenticatedModules();
   }
+
+  // Refresh conversation data after ticket verification
+  await conversationQuery.refetch();
 }
 
-// Clear draft only after successfully navigating from conversation creation
+async function handleRefresh(done: () => void): Promise<void> {
+  if (!conversationData.value) {
+    done();
+    return;
+  }
+
+  const slugId = conversationData.value.metadata.conversationSlugId;
+
+  // Invalidate all queries to force refresh (uses default refetchType: "active")
+  // Active queries refetch immediately, inactive queries marked stale
+  invalidateUserVotes(slugId);
+  invalidateAll(slugId); // Invalidates comments + analysis
+
+  // Refetch conversation metadata
+  await conversationQuery.refetch();
+
+  done();
+}
+
+// Handle conversation creation navigation
 onMounted(() => {
   if (navigationStore.cameFromConversationCreation) {
     resetDraft();
   }
 });
 
-// Watch for userId changes to detect account merges:
-// - userId1 -> userId2: Account merge (guest->verified, guest->guest)
-// Note: We do NOT reload on undefined -> userId (new guest creation via opinion/vote/Zupass)
-// because those are handled by their respective component handlers (submittedComment, ticket verification, etc.)
-// Reloading here would race with those handlers and cause the UI to not update properly
-watch(userId, (newUserId, oldUserId) => {
-  // Only reload if userId changed from one defined value to another (account merge)
-  // Do NOT reload on undefined -> userId to avoid race conditions with opinion/vote/Zupass handlers
+// Watch for userId changes to detect account merges
+watch(userId, async (newUserId, oldUserId) => {
   if (
     oldUserId !== undefined && newUserId !== undefined && oldUserId !== newUserId
   ) {
-    console.log('[ConversationPage] Account merge detected (userId changed) - reloading data');
-    // Invalidate vote queries to force refetch (they have 5-minute cache)
     if (conversationData.value) {
       invalidateUserVotes(conversationData.value.metadata.conversationSlugId);
     }
-    reloadConversationWithUserInteractions();
+    await conversationQuery.refetch();
   }
 });
 
@@ -123,4 +252,17 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.container {
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+}
+
+.standardStyle {
+  padding-top: 1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-bottom: 1rem;
+}
+</style>

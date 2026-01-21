@@ -225,6 +225,13 @@
       "when": 1767272596325,
       "tag": "0031_chunky_slyde",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1768683632236,
+      "tag": "0032_wild_magneto",
+      "breakpoints": true
     }
   ]
 }

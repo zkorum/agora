@@ -10,6 +10,10 @@ import PgBoss from "pg-boss";
 
 export const SCAN_CONVERSATIONS_SINGLETON_KEY = "scan-conversations-loop";
 
+// Threshold for detecting stale jobs
+// If a job is in CREATED state (queued) for longer than this, it's considered stuck
+const STALE_QUEUED_JOB_THRESHOLD_MS = 10000; // 10 seconds
+
 export interface ScanConversationsJobData {
     minTimeBetweenUpdatesMs: number;
     scanIntervalMs: number;
@@ -111,14 +115,12 @@ export async function scanConversationsJob(
             // Prevents duplicate jobs while conversation is processing
             const voteCount = entry.voteCount || 0;
             let singletonSeconds: number;
-            if (voteCount < 100) {
-                singletonSeconds = 15; // Small conversations: 15s
-            } else if (voteCount < 10000) {
-                singletonSeconds = 30; // Medium conversations: 30s
-            } else if (voteCount < 100000) {
-                singletonSeconds = 60; // Large conversations: 60s
+            if (voteCount < 1000) {
+                singletonSeconds = 2; // Small conversations (< 1K votes): 2s
+            } else if (voteCount < 1000000) {
+                singletonSeconds = 8; // Medium conversations (1K-1M votes): 8s
             } else {
-                singletonSeconds = 120; // Huge conversations: 120s
+                singletonSeconds = 28; // Huge conversations (1M+ votes): 28s
             }
 
             // Send job with singletonKey to prevent duplicates
@@ -136,7 +138,7 @@ export async function scanConversationsJob(
                     // Multiple different conversations can still be processed in parallel
                     singletonKey: `update-math-${entry.conversationId}`,
                     // Dynamic singletonSeconds: how long to keep rejecting duplicate job submissions
-                    // 15s-120s based on conversation size (prevents overwhelming Python service)
+                    // 2s-28s based on conversation size (prevents overwhelming Python service)
                     singletonSeconds: singletonSeconds,
                 },
             );
@@ -147,8 +149,6 @@ export async function scanConversationsJob(
                     `[Scan] Enqueued conversation ${conversationSlugId} (id: ${entry.conversationId}, votes: ${voteCount}, singleton: ${singletonSeconds}s, job: ${jobId})`,
                 );
             } else {
-                rejectedConversations.push(conversationSlugId);
-
                 // When jobId is null, it means pg-boss rejected due to singleton constraint
                 // Query the existing job to understand its state
                 const singletonKey = `update-math-${entry.conversationId}`;
@@ -156,13 +156,14 @@ export async function scanConversationsJob(
                 try {
                     // Query pg-boss tables directly to find the blocking job
                     const result = await db.execute<{
+                        id: string;
                         state: string;
                         created_on: string;
                         started_on: string | null;
                         completed_on: string | null;
                         keep_until: string;
                     }>(sql`
-                        SELECT state, created_on, started_on, completed_on, keep_until
+                        SELECT id, state, created_on, started_on, completed_on, keep_until
                         FROM pgboss.job
                         WHERE name = 'update-conversation-math'
                         AND singleton_key = ${singletonKey}
@@ -179,6 +180,7 @@ export async function scanConversationsJob(
 
                         let reason = "";
                         let timing = "";
+                        let isStale = false;
 
                         if (job.state === "active") {
                             if (job.started_on) {
@@ -193,6 +195,74 @@ export async function scanConversationsJob(
                         } else if (job.state === "created") {
                             timing = `queued for ${ageSeconds}s`;
                             reason = `job QUEUED (${timing}, waiting to start)`;
+
+                            // Check if job is stale (queued too long)
+                            if (ageMs > STALE_QUEUED_JOB_THRESHOLD_MS) {
+                                // Check if any jobs are actively processing
+                                const activeCountResult = await db.execute<{
+                                    count: string;
+                                }>(sql`
+                                    SELECT COUNT(*) as count
+                                    FROM pgboss.job
+                                    WHERE name = 'update-conversation-math'
+                                    AND state = 'active'
+                                `);
+
+                                const activeCount = parseInt(
+                                    activeCountResult[0]?.count || "0",
+                                );
+
+                                if (activeCount === 0) {
+                                    // No jobs processing + job stuck = worker problem
+                                    isStale = true;
+                                    log.warn(
+                                        `[Scan] Detected stuck job for ${conversationSlugId} (age: ${ageSeconds}s, state: ${job.state}, active jobs: 0)`,
+                                    );
+
+                                    // Delete stale job
+                                    await db.execute(sql`
+                                        DELETE FROM pgboss.job
+                                        WHERE id = ${job.id}
+                                    `);
+
+                                    log.warn(
+                                        `[Scan] Deleted stuck job ${job.id} for ${conversationSlugId}`,
+                                    );
+
+                                    // Retry enqueuing immediately
+                                    const retryJobId = await boss.send(
+                                        "update-conversation-math",
+                                        {
+                                            conversationId:
+                                                entry.conversationId,
+                                            conversationSlugId:
+                                                conversationSlugId,
+                                            requestedAt: entry.requestedAt,
+                                        },
+                                        {
+                                            singletonKey: `update-math-${entry.conversationId}`,
+                                            singletonSeconds: singletonSeconds,
+                                        },
+                                    );
+
+                                    if (retryJobId) {
+                                        enqueuedConversations.push(
+                                            conversationSlugId,
+                                        );
+                                        log.info(
+                                            `[Scan] Re-enqueued ${conversationSlugId} after cleanup (new job: ${retryJobId})`,
+                                        );
+                                    } else {
+                                        log.error(
+                                            `[Scan] Failed to re-enqueue ${conversationSlugId} after cleanup`,
+                                        );
+                                    }
+                                } else {
+                                    log.info(
+                                        `[Scan] Skipped ${conversationSlugId} - job queued but ${activeCount} job(s) actively processing (healthy)`,
+                                    );
+                                }
+                            }
                         } else if (job.state === "completed") {
                             if (job.completed_on) {
                                 const completedAt = new Date(job.completed_on);
@@ -207,16 +277,21 @@ export async function scanConversationsJob(
                             reason = `job in state '${job.state}' (age: ${ageSeconds}s)`;
                         }
 
-                        log.info(
-                            `[Scan] Skipped ${conversationSlugId} - ${reason}`,
-                        );
+                        if (!isStale) {
+                            rejectedConversations.push(conversationSlugId);
+                            log.info(
+                                `[Scan] Skipped ${conversationSlugId} - ${reason}`,
+                            );
+                        }
                     } else {
                         // This shouldn't happen but log it if it does
+                        rejectedConversations.push(conversationSlugId);
                         log.warn(
                             `[Scan] Skipped ${conversationSlugId} - singleton rejected but no matching job found in pgboss.job (singletonKey: ${singletonKey})`,
                         );
                     }
                 } catch (queryError) {
+                    rejectedConversations.push(conversationSlugId);
                     log.error(
                         { error: queryError },
                         `[Scan] Skipped ${conversationSlugId} - singleton rejected but failed to query job state`,

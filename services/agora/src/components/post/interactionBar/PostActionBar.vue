@@ -6,6 +6,7 @@
         :compact-mode="props.compactMode"
         :opinion-count="opinionCount"
         :is-loading="isLoading"
+        :conversation-slug-id="conversationSlugId"
       />
     </div>
 

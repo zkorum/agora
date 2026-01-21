@@ -260,7 +260,7 @@ function getRouteFromTarget(
   switch (routeTarget.type) {
     case "opinion":
       return {
-        name: "/conversation/[postSlugId]",
+        name: "/conversation/[postSlugId]/",
         params: { postSlugId: routeTarget.conversationSlugId },
         query: { opinion: routeTarget.opinionSlugId },
       };
@@ -279,7 +279,7 @@ function getRouteFromTarget(
       // Otherwise go to import status page
       if (routeTarget.conversationSlugId) {
         return {
-          name: "/conversation/[postSlugId]",
+          name: "/conversation/[postSlugId]/",
           params: { postSlugId: routeTarget.conversationSlugId },
         };
       } else {

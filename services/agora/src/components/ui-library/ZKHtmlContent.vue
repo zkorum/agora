@@ -73,15 +73,50 @@ const handleClick = (event: Event) => {
 :deep(ol) {
   padding-left: 1.5rem;
   margin-bottom: 0.5rem;
+  margin-top: 0;
 }
 
+:deep(li) {
+  margin-bottom: 0.25rem;
+}
+
+:deep(li > p) {
+  margin-bottom: 0;
+}
+
+/* Nested lists should have minimal spacing */
+:deep(li ul),
+:deep(li ol) {
+  margin-top: 0.125rem;
+  margin-bottom: 0;
+}
+
+/* Top-level unordered list uses disc */
 :deep(ul) {
   list-style-type: disc;
+}
+
+/* Nested unordered lists use circle, then square */
+:deep(ul ul) {
+  list-style-type: circle;
+}
+
+:deep(ul ul ul) {
+  list-style-type: square;
 }
 
 :deep(ol) {
   list-style-type: decimal;
   padding-left: 1.75rem;
+}
+
+/* Nested ordered lists use different numbering styles */
+:deep(ol ol) {
+  list-style-type: lower-alpha;
+}
+
+:deep(ol ol ol) {
+  list-style-type: lower-roman;
 }
 
 :deep(div) {

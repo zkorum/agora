@@ -7,17 +7,10 @@
           :title="t('groupsTitle')"
         >
           <template #action-button>
-            <ZKButton
-              button-type="icon"
-              aria-label="Information about opinion groups"
-              @click="showClusterInformation = true"
-            >
-              <ZKIcon
-                color="#6d6a74"
-                name="mdi-information-outline"
-                size="1.2rem"
-              />
-            </ZKButton>
+            <AnalysisActionButton
+              type="informationIcon"
+              @action-click="showClusterInformation = true"
+            />
           </template>
         </AnalysisTitleHeader>
       </template>
@@ -65,13 +58,12 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import { useNavigationStore } from "src/stores/navigation";
 import { computed, ref } from "vue";
 
+import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import EmptyStateMessage from "../common/EmptyStateMessage.vue";

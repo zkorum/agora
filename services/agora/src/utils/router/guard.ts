@@ -21,6 +21,8 @@ export function useRouterGuard() {
       "/",
       "/welcome/",
       "/conversation/[postSlugId]",
+      "/conversation/[postSlugId]/",
+      "/conversation/[postSlugId]/analysis",
       "/conversation/[postSlugId].embed",
       "/conversation/new/create/",
       "/conversation/new/review/",

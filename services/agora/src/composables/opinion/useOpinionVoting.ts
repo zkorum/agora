@@ -1,7 +1,5 @@
-import { storeToRefs } from "pinia";
 import type { CastVoteResponse } from "src/shared/types/dto";
 import type { OpinionItem,VotingAction } from "src/shared/types/zod";
-import { useAuthenticationStore } from "src/stores/authentication";
 import {
   useUserVotesQuery,
   useVoteMutation,
@@ -13,7 +11,6 @@ import type { UserVote } from "./types";
 export interface UseOpinionVotingParams {
   postSlugId: string;
   visibleOpinions: Ref<OpinionItem[]>;
-  onVoteCast?: () => void;
 }
 
 export interface UseOpinionVotingReturn {
@@ -27,11 +24,7 @@ export interface UseOpinionVotingReturn {
 
 export function useOpinionVoting({
   postSlugId,
-  onVoteCast,
 }: UseOpinionVotingParams): UseOpinionVotingReturn {
-  // Get authentication status
-  const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
-
   // Use TanStack Query for vote data
   const userVotesQuery = useUserVotesQuery({
     postSlugId,
@@ -54,19 +47,13 @@ export function useOpinionVoting({
       voteAction,
     });
 
-    // Call the callback after successful vote
-    if (result.success && onVoteCast) {
-      onVoteCast();
-    }
-
     return result;
   }
 
   async function fetchUserVotingData(): Promise<void> {
-    // Only fetch user voting data if user is authenticated
-    if (isGuestOrLoggedIn.value) {
-      await userVotesQuery.refetch();
-    }
+    // Refetch user voting data
+    // TanStack Query's `enabled` condition will prevent this from running until auth is ready
+    await userVotesQuery.refetch();
   }
 
   return {

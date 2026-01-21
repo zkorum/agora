@@ -1,7 +1,7 @@
 <template>
   <RouterLink
     :to="{
-      name: '/conversation/[postSlugId]',
+      name: '/conversation/[postSlugId]/',
       params: { postSlugId: conversationSlugId },
       query: { opinion: opinionSlugId },
     }"

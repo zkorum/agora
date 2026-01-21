@@ -202,7 +202,7 @@ async function clickedSubmit() {
 async function redirectToComment() {
   if (postSlugId && commentSlugId) {
     await router.push({
-      name: "/conversation/[postSlugId]",
+      name: "/conversation/[postSlugId]/",
       params: { postSlugId: postSlugId },
       query: { opinion: commentSlugId },
     });

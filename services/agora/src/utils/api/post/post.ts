@@ -497,6 +497,64 @@ export function useBackendPostApi() {
     return Dto.getActiveImportResponse.parse(response.data);
   }
 
+  async function closeConversation(params: {
+    conversationSlugId: string;
+  }): Promise<{
+    success: boolean;
+    reason?: "not_allowed" | "already_closed";
+  }> {
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1ConversationClosePost({
+        conversationSlugId: params.conversationSlugId,
+      });
+    const encodedUcan = await buildEncodedUcan(url, options);
+
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1ConversationClosePost(
+      { conversationSlugId: params.conversationSlugId },
+      {
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      }
+    );
+
+    const data = Dto.closeConversationResponse.parse(response.data);
+    return data;
+  }
+
+  async function openConversation(params: {
+    conversationSlugId: string;
+  }): Promise<{
+    success: boolean;
+    reason?: "not_allowed" | "already_open";
+  }> {
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1ConversationOpenPost({
+        conversationSlugId: params.conversationSlugId,
+      });
+    const encodedUcan = await buildEncodedUcan(url, options);
+
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1ConversationOpenPost(
+      { conversationSlugId: params.conversationSlugId },
+      {
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      }
+    );
+
+    const data = Dto.openConversationResponse.parse(response.data);
+    return data;
+  }
+
   return {
     createNewPost,
     fetchRecentPost,
@@ -508,5 +566,7 @@ export function useBackendPostApi() {
     validateCsvFiles,
     getConversationImportStatus,
     getActiveImport,
+    closeConversation,
+    openConversation,
   };
 }

@@ -45,9 +45,10 @@ import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogCon
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, ref } from "vue";
 
 import {
   type CommentSortingSelectorTranslations,
@@ -63,6 +64,7 @@ const emit = defineEmits<{
 }>();
 
 const { profileData } = storeToRefs(useUserStore());
+const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const showDialog = ref(false);
 
@@ -75,24 +77,31 @@ interface OptionItem {
   value: CommentFilterOptions;
 }
 
-const baseOptions = computed((): OptionItem[] => [
-  { name: t("discover"), value: "discover" },
-  { name: t("new"), value: "new" },
-  { name: t("moderationHistory"), value: "moderated" },
-]);
+const baseOptions = computed((): OptionItem[] => {
+  const options: OptionItem[] = [
+    { name: t("discover"), value: "discover" },
+    { name: t("new"), value: "new" },
+    { name: t("moderationHistory"), value: "moderated" },
+  ];
+
+  // Add "My Votes" option only for logged in users
+  if (isGuestOrLoggedIn.value) {
+    options.push({ name: t("myVotes"), value: "my_votes" });
+  }
+
+  return options;
+});
 
 const extendedOptions = computed((): OptionItem[] =>
   baseOptions.value.concat([{ name: t("hidden"), value: "hidden" }])
 );
 
-const currentOptionList = ref<OptionItem[]>([]);
-
-onMounted(() => {
-  initializeOptionList();
-});
-
-watch(profileData, () => {
-  initializeOptionList();
+const currentOptionList = computed((): OptionItem[] => {
+  if (profileData.value.isModerator) {
+    return extendedOptions.value;
+  } else {
+    return baseOptions.value;
+  }
 });
 
 const currentFilterAlgorithm = computed(() => {
@@ -104,14 +113,6 @@ const currentFilterAlgorithm = computed(() => {
 
   return "UNKNOWN";
 });
-
-function initializeOptionList() {
-  if (profileData.value.isModerator) {
-    currentOptionList.value = extendedOptions.value;
-  } else {
-    currentOptionList.value = baseOptions.value;
-  }
-}
 
 function selectedAlgorithm(filterValue: CommentFilterOptions) {
   showDialog.value = false;

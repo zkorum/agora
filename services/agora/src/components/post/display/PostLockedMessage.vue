@@ -1,7 +1,8 @@
 <template>
   <div>
+    <!-- Moderation lock message -->
     <div
-      v-if="moderationProperty.status == 'moderated'"
+      v-if="moderationProperty.status == 'moderated' && !isClosed"
       class="container moderationFont"
     >
       <div class="coreMessage">
@@ -36,6 +37,20 @@
         />
       </div>
     </div>
+
+    <!-- Closed by owner message -->
+    <div v-if="isClosed" class="container moderationFont">
+      <div class="coreMessage">
+        <div class="title">
+          <div>
+            <q-icon name="mdi-lock" class="lockIcon" size="1rem" />
+          </div>
+          <div>
+            {{ t("closedMessage") }}
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -57,6 +72,7 @@ import {
 const props = defineProps<{
   moderationProperty: ConversationModerationProperties;
   postSlugId: string;
+  isClosed: boolean;
 }>();
 
 const { t } = useComponentI18n<PostLockedMessageTranslations>(

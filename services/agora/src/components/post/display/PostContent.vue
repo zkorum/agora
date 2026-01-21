@@ -2,12 +2,15 @@
   <div class="innerContainer">
     <PostMetadata
       :poster-user-name="extendedPostData.metadata.authorUsername"
+      :author-username="extendedPostData.metadata.authorUsername"
       :created-at="new Date(extendedPostData.metadata.createdAt)"
       :post-slug-id="extendedPostData.metadata.conversationSlugId"
       :author-verified="false"
       :organization-url="extendedPostData.metadata.organization?.imageUrl || ''"
       :organization-name="extendedPostData.metadata.organization?.name || ''"
       :is-login-required="extendedPostData.metadata.isLoginRequired"
+      :is-closed="extendedPostData.metadata.isClosed"
+      :compact-mode="compactMode"
       @open-moderation-history="$emit('openModerationHistory')"
     />
 
@@ -53,13 +56,17 @@
       </div>
 
       <ZKCard
-        v-if="extendedPostData.metadata.moderation.status == 'moderated'"
+        v-if="
+          extendedPostData.metadata.moderation.status == 'moderated' ||
+          extendedPostData.metadata.isClosed
+        "
         padding="1rem"
         class="lockCardStyle"
       >
         <PostLockedMessage
           :moderation-property="extendedPostData.metadata.moderation"
           :post-slug-id="extendedPostData.metadata.conversationSlugId"
+          :is-closed="extendedPostData.metadata.isClosed"
         />
       </ZKCard>
     </div>

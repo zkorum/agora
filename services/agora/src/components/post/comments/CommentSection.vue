@@ -57,7 +57,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { OpinionItem } from "src/shared/types/zod";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
-import { computed,onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 import {
   type CommentSectionTranslations,
@@ -76,13 +76,13 @@ const props = defineProps<{
     commentsNewQuery: UseQueryReturnType<OpinionItem[], Error>;
     commentsModeratedQuery: UseQueryReturnType<OpinionItem[], Error>;
     hiddenCommentsQuery: UseQueryReturnType<OpinionItem[], Error>;
+    commentsMyVotesQuery: UseQueryReturnType<OpinionItem[], Error>;
   };
 }>();
 
 const emit = defineEmits<{
   deleted: [];
   participantCountDelta: [delta: number];
-  voteCast: [];
   ticketVerified: [
     payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
   ];
@@ -136,7 +136,6 @@ const { visibleOpinions, hasMore, onLoad, triggerLoadMore } =
 const { userVotes, castVote, fetchUserVotingData } = useOpinionVoting({
   postSlugId: props.postSlugId,
   visibleOpinions,
-  onVoteCast: () => emit("voteCast"),
 });
 
 // AsyncStateHandler configuration
@@ -165,6 +164,21 @@ onMounted(async (): Promise<void> => {
   await clearRouteQueryParameters();
   isComponentMounted.value = true;
 });
+
+// Watch for postSlugId changes to refetch user votes when navigating between conversations
+watch(
+  () => props.postSlugId,
+  async (newSlugId, oldSlugId) => {
+    if (newSlugId && newSlugId !== oldSlugId) {
+      // Reset component state for new conversation
+      isComponentMounted.value = false;
+      await fetchUserVotingData();
+      await setupHighlightFromRoute();
+      await clearRouteQueryParameters();
+      isComponentMounted.value = true;
+    }
+  }
+);
 
 function openModerationHistory(): void {
   currentFilter.value = "moderated";

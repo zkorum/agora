@@ -55,6 +55,7 @@
               commentsNewQuery,
               commentsModeratedQuery,
               hiddenCommentsQuery,
+              commentsMyVotesQuery,
             }"
             @deleted="decrementOpinionCount()"
             @participant-count-delta="
@@ -69,7 +70,6 @@
     <FloatingBottomContainer v-if="!compactMode">
       <CommentComposer
         :post-slug-id="conversationData.metadata.conversationSlugId"
-        :is-post-locked="isPostLocked"
         :login-required-to-participate="
           conversationData.metadata.isLoginRequired
         "
@@ -92,7 +92,7 @@ import {
   useHiddenCommentsQuery,
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, provide, ref, watch } from "vue";
 
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
@@ -112,6 +112,9 @@ const emit = defineEmits<{
     payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
   ];
 }>();
+
+// Provide conversation data to all descendants (reactive)
+provide("conversationData", computed(() => props.conversationData));
 
 const currentTab = ref<"comment" | "analysis">("comment");
 
@@ -172,29 +175,17 @@ const commentsModeratedQuery = useCommentsQuery({
   enabled: !props.compactMode,
 });
 
+const commentsMyVotesQuery = useCommentsQuery({
+  conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  filter: "my_votes",
+  voteCount: props.conversationData.metadata.voteCount,
+  enabled: !props.compactMode,
+});
+
 const hiddenCommentsQuery = useHiddenCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   voteCount: props.conversationData.metadata.voteCount,
   enabled: !props.compactMode && isModerator.value,
-});
-
-const { verifiedEventTickets } = storeToRefs(userStore);
-
-const isPostLocked = computed((): boolean => {
-  const isModeratedAndLocked =
-    props.conversationData.metadata.moderation.status === "moderated" &&
-    props.conversationData.metadata.moderation.action === "lock";
-
-  const requiresEventTicket =
-    props.conversationData.metadata.requiresEventTicket;
-
-  // Convert Set to Array for better reactivity tracking
-  const verifiedTicketsArray = Array.from(verifiedEventTickets.value);
-  const requiresTicketButNotVerified =
-    requiresEventTicket !== undefined &&
-    !verifiedTicketsArray.includes(requiresEventTicket);
-
-  return isModeratedAndLocked || requiresTicketButNotVerified;
 });
 
 // Track loading states from child components
@@ -291,6 +282,7 @@ watch(currentTab, async (newTab) => {
         commentsDiscoverQuery,
         commentsNewQuery,
         commentsModeratedQuery,
+        commentsMyVotesQuery,
       ];
 
       // Only include hiddenCommentsQuery if user is a moderator

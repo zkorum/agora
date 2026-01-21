@@ -6,12 +6,17 @@
           :show-star-in-title="false"
           :title="t('divisiveTitle')"
         >
-          <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
-          <!-- Tab switching should be keyboard accessible for users with motor disabilities -->
           <template #action-button>
-            <div @click="switchTab()">
-              <AnalysisActionButton :type="compactMode ? 'viewMore' : 'none'" />
-            </div>
+            <AnalysisActionButton
+              v-if="compactMode"
+              type="viewMore"
+              @action-click="switchTab()"
+            />
+            <AnalysisActionButton
+              v-else
+              type="informationIcon"
+              @action-click="showDivisiveInfo = true"
+            />
           </template>
         </AnalysisTitleHeader>
       </template>
@@ -34,6 +39,8 @@
         />
       </template>
     </AnalysisSectionWrapper>
+
+    <DivisiveInformationDialog v-model="showDivisiveInfo" />
   </div>
 </template>
 
@@ -45,12 +52,14 @@ import type {
   PolisKey,
 } from "src/shared/types/zod";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
+import { ref } from "vue";
 
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import EmptyStateMessage from "../common/EmptyStateMessage.vue";
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
+import DivisiveInformationDialog from "./DivisiveInformationDialog.vue";
 import {
   type DivisiveTabTranslations,
   divisiveTabTranslations,
@@ -69,6 +78,8 @@ const currentTab = defineModel<ShortcutItem>({ required: true });
 const { t } = useComponentI18n<DivisiveTabTranslations>(
   divisiveTabTranslations
 );
+
+const showDivisiveInfo = ref(false);
 
 function switchTab() {
   currentTab.value = "Divisive";

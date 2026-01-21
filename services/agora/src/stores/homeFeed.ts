@@ -41,6 +41,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       isIndexed: true,
       conversationSlugId: "",
       updatedAt: new Date(),
+      isClosed: false,
       moderation: {
         status: "unmoderated",
       },
