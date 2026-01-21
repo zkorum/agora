@@ -12,6 +12,7 @@ import {
     MAX_LENGTH_OPINION_HTML,
     MAX_LENGTH_USER_REPORT_EXPLANATION,
     validateHtmlStringCharacterCount,
+    MAX_LENGTH_OPINION_HTML_OUTPUT,
 } from "../shared.js";
 import { isValidPolisUrl } from "../utils/polis.js";
 import {
@@ -83,8 +84,7 @@ export const zodOrganization = z
     .object({
         name: z.string(),
         imageUrl: z.string(),
-        websiteUrl: z
-            .url({ message: "Invalid organization website url" }),
+        websiteUrl: z.url({ message: "Invalid organization website url" }),
         description: z.string(),
     })
     .strict();
@@ -482,8 +482,8 @@ export const zodOpinionContentInput = z
 export const zodOpinionContentOutput = z
     .string()
     .min(1)
-    .max(MAX_LENGTH_OPINION_HTML, {
-        message: `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_OPINION_HTML)} characters`,
+    .max(MAX_LENGTH_OPINION_HTML_OUTPUT, {
+        message: `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_OPINION_HTML_OUTPUT)} characters`,
     });
 export const zodAgreementType = z.enum(["agree", "disagree"]);
 export const zodVotingOption = z.enum(["agree", "disagree", "pass"]);

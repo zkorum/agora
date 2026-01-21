@@ -85,4 +85,3 @@ export type VerifyOtpReqBody = z.infer<typeof verifyOtpReqBody>;
 export type AuthenticateResponse = z.infer<typeof authenticate200>;
 export type VerifyOtp200 = z.infer<typeof verifyOtp200>;
 export type IsLoggedInResponse = z.infer<typeof isLoggedInResponse>;
-

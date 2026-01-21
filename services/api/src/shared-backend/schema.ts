@@ -27,7 +27,7 @@ const MAX_LENGTH_TITLE = 140;
 const MAX_LENGTH_BODY = 1000;
 const MAX_LENGTH_BODY_HTML = 3000; // Reserve extra space for HTML tags
 // const MAX_LENGTH_OPINION = 280;
-const MAX_LENGTH_OPINION_HTML = 840; // Reserve extra space for HTML tags
+const MAX_LENGTH_OPINION_HTML = 3000; // is lower now, kept this value For retro-compatibility
 const MAX_LENGTH_NAME_CREATOR = 65;
 const MAX_LENGTH_DESCRIPTION_CREATOR = 280;
 const MAX_LENGTH_USERNAME = 20;
@@ -1816,29 +1816,26 @@ export const notificationTable = pgTable(
 );
 
 // content changes over time as much as the conversation receives opinions and votes
-export const polisContentTable = pgTable(
-    "polis_content",
-    {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        conversationId: integer("conversation_id")
-            .references(() => conversationTable.id)
-            .notNull(), // not unique, there will be multiple rows over the life of the conversation
-        rawData: jsonb("raw_data").notNull(), // from external polis system
-        createdAt: timestamp("created_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-        updatedAt: timestamp("updated_at", {
-            // aiSummary may be set at a later data
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-);
+export const polisContentTable = pgTable("polis_content", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    conversationId: integer("conversation_id")
+        .references(() => conversationTable.id)
+        .notNull(), // not unique, there will be multiple rows over the life of the conversation
+    rawData: jsonb("raw_data").notNull(), // from external polis system
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+    updatedAt: timestamp("updated_at", {
+        // aiSummary may be set at a later data
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
 
 // one polisContent has many polisClusters
 export const polisClusterTable = pgTable("polis_cluster", {
