@@ -134,14 +134,13 @@ const conversationSlugId = computed(() => {
 if (processEnv.VITE_EXPORT_CONVOS_ENABLED === "false") {
   showNotifyMessage(t("exportFeatureDisabled"));
   void router.replace({
-    name: "/conversation/[postSlugId]",
+    name: "/conversation/[postSlugId]/",
     params: { postSlugId: conversationSlugId.value },
   });
 }
 
 const conversationQuery = useConversationQuery({
   conversationSlugId: conversationSlugId,
-  loadUserPollResponse: false,
   enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
 });
 
@@ -159,7 +158,7 @@ const requestExportMutation = useRequestExportMutation();
 
 async function navigateToConversation(): Promise<void> {
   await router.push({
-    name: "/conversation/[postSlugId]",
+    name: "/conversation/[postSlugId]/",
     params: { postSlugId: conversationSlugId.value },
   });
 }

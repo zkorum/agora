@@ -177,6 +177,7 @@ export const zodCommentFeedFilter = z.enum([
     "moderated",
     "new",
     "discover",
+    "my_votes",
 ]);
 export const usernameRegex = new RegExp(
     `^[a-z0-9_]*$`, // {${MIN_LENGTH_USERNAME.toString()},${MAX_LENGTH_USERNAME.toString()}
@@ -433,6 +434,7 @@ export const zodConversationMetadata = z
         authorUsername: z.string(),
         isLoginRequired: z.boolean(),
         isIndexed: z.boolean(),
+        isClosed: z.boolean(),
         organization: zodOrganization.optional(),
         moderation: zodConversationModerationProperties,
         requiresEventTicket: zodEventSlug.optional(),
@@ -451,6 +453,7 @@ export const zodConversationMetadataWithId = z
         authorUsername: z.string(),
         isLoginRequired: z.boolean(),
         isIndexed: z.boolean(),
+        isClosed: z.boolean(),
         organization: zodOrganization.optional(),
         moderation: zodConversationModerationProperties,
         requiresEventTicket: zodEventSlug.optional(),

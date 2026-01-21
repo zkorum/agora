@@ -64,7 +64,7 @@ const exportSlugId = computed(() => {
 if (processEnv.VITE_EXPORT_CONVOS_ENABLED === "false") {
   showNotifyMessage(t("exportFeatureDisabled"));
   void router.replace({
-    name: "/conversation/[postSlugId]",
+    name: "/conversation/[postSlugId]/",
     params: { postSlugId: conversationSlugId.value },
   });
 }

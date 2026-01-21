@@ -1,5 +1,6 @@
 import * as authUtilService from "@/service/authUtil.js";
 import * as zupassService from "@/service/zupass.js";
+import { getClusterIdByUserAndConv } from "@/service/polis.js";
 import {
     conversationTable,
     opinionTable,
@@ -76,6 +77,7 @@ interface CastVoteForOpinionSlugIdProps {
     votingAction: VotingAction;
     userAgent: string;
     now: Date;
+    returnIsUserClustered?: boolean;
 }
 
 interface CastVoteForOpinionSlugIdFromUserIdProps {
@@ -444,6 +446,51 @@ export async function bulkInsertVotesFromExternalPolisConvo({
     await doImportVotes(db);
 }
 
+interface CheckUserIsClusteredProps {
+    db: PostgresJsDatabase;
+    userId: string;
+    conversationId: number;
+}
+
+/**
+ * Check if user has been assigned to a cluster for this conversation.
+ *
+ * Uses two-step indexed lookup approach for optimal performance:
+ * 1. Get polisContentId from conversation (PK lookup)
+ * 2. Check cluster membership (unique index on polis_content_id, user_id)
+ *
+ * This is 5-50x faster than joining tables, as it uses existing indexes optimally.
+ */
+async function checkUserIsClustered({
+    db,
+    userId,
+    conversationId,
+}: CheckUserIsClusteredProps): Promise<boolean> {
+    // Step 1: Get polisContentId from conversation (fast PK lookup)
+    const conversation = await db
+        .select({ currentPolisContentId: conversationTable.currentPolisContentId })
+        .from(conversationTable)
+        .where(eq(conversationTable.id, conversationId))
+        .limit(1);
+
+    if (conversation.length === 0 || conversation[0].currentPolisContentId === null) {
+        // No clustering exists yet for this conversation
+        return false;
+    }
+
+    const polisContentId = conversation[0].currentPolisContentId;
+
+    // Step 2: Check if user is in a cluster (fast unique index lookup)
+    // Reuses optimized function from polis.ts that uses the unique constraint index
+    const clusterId = await getClusterIdByUserAndConv({
+        db,
+        userId,
+        polisContentId,
+    });
+
+    return clusterId !== undefined;
+}
+
 /**
  * Cast vote using buffered processing (batched writes)
  *
@@ -462,6 +509,7 @@ export async function castVoteForOpinionSlugId({
     votingAction,
     userAgent,
     now,
+    returnIsUserClustered,
 }: CastVoteForOpinionSlugIdProps): Promise<CastVoteResponse> {
     const { conversationSlugId, conversationId } =
         await useCommonComment().getOpinionMetadataFromOpinionSlugId({
@@ -471,11 +519,33 @@ export async function castVoteForOpinionSlugId({
     const {
         isLoginRequired: conversationIsLoginRequired,
         contentId: conversationContentId,
+        isClosed: conversationIsClosed,
         requiresEventTicket,
     } = await useCommonPost().getPostMetadataFromSlugId({
         db: db,
         conversationSlugId: conversationSlugId,
     });
+
+    // Check if conversation is locked
+    const isLocked = await useCommonPost().isPostSlugIdLocked({
+        db: db,
+        postSlugId: conversationSlugId,
+    });
+    if (isLocked) {
+        return {
+            success: false,
+            reason: "conversation_locked",
+        };
+    }
+
+    // Check if conversation is closed
+    if (conversationIsClosed) {
+        return {
+            success: false,
+            reason: "conversation_closed",
+        };
+    }
+
     const userId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
         db,
         didWrite,
@@ -513,5 +583,15 @@ export async function castVoteForOpinionSlugId({
         optionalConversationContentId: conversationContentId,
     });
 
-    return { success: true };
+    // Only run clustering check if frontend requests it
+    let userIsClustered: boolean | undefined;
+    if (returnIsUserClustered) {
+        userIsClustered = await checkUserIsClustered({
+            db,
+            userId,
+            conversationId,
+        });
+    }
+
+    return { success: true, userIsClustered };
 }

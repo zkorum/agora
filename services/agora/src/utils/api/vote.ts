@@ -6,6 +6,7 @@ import {
 } from "src/api";
 import { type CastVoteResponse, Dto, type FetchUserVotesForPostSlugIdsResponse } from "src/shared/types/dto";
 import { type VotingAction } from "src/shared/types/zod";
+import { useAuthenticationStore } from "src/stores/authentication";
 
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { api } from "./client";
@@ -13,19 +14,24 @@ import { useCommonApi } from "./common";
 
 export function useBackendVoteApi() {
   const { buildEncodedUcan } = useCommonApi();
+  const authStore = useAuthenticationStore();
 
   async function castVoteForComment(
     commentSlugId: string,
-    votingAction: VotingAction
+    votingAction: VotingAction,
+    options?: {
+      returnIsUserClustered?: boolean;
+    }
   ): Promise<CastVoteResponse> {
     const params: ApiV1VoteCastPostRequest = {
       opinionSlugId: commentSlugId,
       chosenOption: votingAction,
+      returnIsUserClustered: options?.returnIsUserClustered,
     };
 
-    const { url, options } =
+    const { url, options: requestOptions } =
       await DefaultApiAxiosParamCreator().apiV1VoteCastPost(params);
-    const encodedUcan = await buildEncodedUcan(url, options);
+    const encodedUcan = await buildEncodedUcan(url, requestOptions);
     const response = await DefaultApiFactory(
       undefined,
       undefined,
@@ -43,6 +49,11 @@ export function useBackendVoteApi() {
   async function fetchUserVotesForPostSlugIds(
     postSlugIdList: string[]
   ): Promise<FetchUserVotesForPostSlugIdsResponse> {
+    // Guard: Never fetch votes for unauthenticated users
+    if (!authStore.isGuestOrLoggedIn) {
+      return []; // Return empty array for unauthenticated users
+    }
+
     const params: ApiV1UserVoteGetByConversationsPostRequest = {
       conversationSlugIdList: postSlugIdList,
     };

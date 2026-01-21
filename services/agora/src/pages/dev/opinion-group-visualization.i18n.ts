@@ -14,7 +14,7 @@ export const opinionGroupVisualizationTranslations: Record<
   en: {
     opinionGroupVisualization: "Opinion Group Visualization",
     visualizationControls: "Visualization Controls",
-    clusterCountLabel: "Number of Clusters",
+    clusterCountLabel: "Number of Groups",
     componentPreview: "Component Preview",
   },
   ar: {

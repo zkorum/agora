@@ -687,6 +687,9 @@
                                                             "isIndexed": {
                                                                 "type": "boolean"
                                                             },
+                                                            "isClosed": {
+                                                                "type": "boolean"
+                                                            },
                                                             "organization": {
                                                                 "type": "object",
                                                                 "properties": {
@@ -798,6 +801,7 @@
                                                             "authorUsername",
                                                             "isLoginRequired",
                                                             "isIndexed",
+                                                            "isClosed",
                                                             "moderation"
                                                         ],
                                                         "additionalProperties": false
@@ -1497,6 +1501,9 @@
                                                     "isIndexed": {
                                                         "type": "boolean"
                                                     },
+                                                    "isClosed": {
+                                                        "type": "boolean"
+                                                    },
                                                     "organization": {
                                                         "type": "object",
                                                         "properties": {
@@ -1608,6 +1615,7 @@
                                                     "authorUsername",
                                                     "isLoginRequired",
                                                     "isIndexed",
+                                                    "isClosed",
                                                     "moderation"
                                                 ],
                                                 "additionalProperties": false
@@ -1766,6 +1774,9 @@
                                                             "isIndexed": {
                                                                 "type": "boolean"
                                                             },
+                                                            "isClosed": {
+                                                                "type": "boolean"
+                                                            },
                                                             "organization": {
                                                                 "type": "object",
                                                                 "properties": {
@@ -1877,6 +1888,7 @@
                                                             "authorUsername",
                                                             "isLoginRequired",
                                                             "isIndexed",
+                                                            "isClosed",
                                                             "moderation"
                                                         ],
                                                         "additionalProperties": false
@@ -1972,7 +1984,7 @@
                                                     "opinion": {
                                                         "type": "string",
                                                         "minLength": 1,
-                                                        "maxLength": 3000
+                                                        "maxLength": 840
                                                     },
                                                     "numParticipants": {
                                                         "type": "integer",
@@ -2177,6 +2189,9 @@
                                             "pass",
                                             "cancel"
                                         ]
+                                    },
+                                    "returnIsUserClustered": {
+                                        "type": "boolean"
                                     }
                                 },
                                 "required": [
@@ -2204,6 +2219,9 @@
                                                     "enum": [
                                                         true
                                                     ]
+                                                },
+                                                "userIsClustered": {
+                                                    "type": "boolean"
                                                 }
                                             },
                                             "required": [
@@ -2223,6 +2241,8 @@
                                                 "reason": {
                                                     "type": "string",
                                                     "enum": [
+                                                        "conversation_locked",
+                                                        "conversation_closed",
                                                         "event_ticket_required"
                                                     ]
                                                 }
@@ -2361,7 +2381,7 @@
                                     "opinionBody": {
                                         "type": "string",
                                         "minLength": 1,
-                                        "maxLength": 3000
+                                        "maxLength": 840
                                     }
                                 },
                                 "required": [
@@ -2413,6 +2433,7 @@
                                                     "type": "string",
                                                     "enum": [
                                                         "conversation_locked",
+                                                        "conversation_closed",
                                                         "event_ticket_required"
                                                     ]
                                                 }
@@ -2449,7 +2470,8 @@
                                             "hidden",
                                             "moderated",
                                             "new",
-                                            "discover"
+                                            "discover",
+                                            "my_votes"
                                         ]
                                     },
                                     "clusterKey": {
@@ -2499,7 +2521,7 @@
                                             "opinion": {
                                                 "type": "string",
                                                 "minLength": 1,
-                                                "maxLength": 3000
+                                                "maxLength": 840
                                             },
                                             "numParticipants": {
                                                 "type": "integer",
@@ -2674,7 +2696,7 @@
                                                     "opinion": {
                                                         "type": "string",
                                                         "minLength": 1,
-                                                        "maxLength": 3000
+                                                        "maxLength": 840
                                                     },
                                                     "numParticipants": {
                                                         "type": "integer",
@@ -2860,7 +2882,7 @@
                                                     "opinion": {
                                                         "type": "string",
                                                         "minLength": 1,
-                                                        "maxLength": 3000
+                                                        "maxLength": 840
                                                     },
                                                     "numParticipants": {
                                                         "type": "integer",
@@ -3076,7 +3098,7 @@
                                                                 "opinion": {
                                                                     "type": "string",
                                                                     "minLength": 1,
-                                                                    "maxLength": 3000
+                                                                    "maxLength": 840
                                                                 },
                                                                 "numParticipants": {
                                                                     "type": "integer",
@@ -3316,7 +3338,7 @@
                                             "opinion": {
                                                 "type": "string",
                                                 "minLength": 1,
-                                                "maxLength": 3000
+                                                "maxLength": 840
                                             },
                                             "numParticipants": {
                                                 "type": "integer",
@@ -3488,7 +3510,7 @@
                                             "opinion": {
                                                 "type": "string",
                                                 "minLength": 1,
-                                                "maxLength": 3000
+                                                "maxLength": 840
                                             },
                                             "numParticipants": {
                                                 "type": "integer",
@@ -3637,6 +3659,156 @@
                 }
             }
         },
+        "/api/v1/conversation/close": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "not_allowed",
+                                                        "already_closed"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/conversation/open": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "not_allowed",
+                                                        "already_open"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/conversation/create": {
             "post": {
                 "requestBody": {
@@ -3681,7 +3853,7 @@
                                         "items": {
                                             "type": "string",
                                             "minLength": 1,
-                                            "maxLength": 3000
+                                            "maxLength": 840
                                         }
                                     },
                                     "requiresEventTicket": {
@@ -4156,6 +4328,9 @@
                                                         "isIndexed": {
                                                             "type": "boolean"
                                                         },
+                                                        "isClosed": {
+                                                            "type": "boolean"
+                                                        },
                                                         "organization": {
                                                             "type": "object",
                                                             "properties": {
@@ -4267,6 +4442,7 @@
                                                         "authorUsername",
                                                         "isLoginRequired",
                                                         "isIndexed",
+                                                        "isClosed",
                                                         "moderation"
                                                     ],
                                                     "additionalProperties": false

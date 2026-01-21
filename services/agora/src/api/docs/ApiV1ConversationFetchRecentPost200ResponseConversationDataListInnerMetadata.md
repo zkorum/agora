@@ -15,6 +15,7 @@ Name | Type | Description | Notes
 **authorUsername** | **string** |  | [default to undefined]
 **isLoginRequired** | **boolean** |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
+**isClosed** | **boolean** |  | [default to undefined]
 **organization** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization.md) |  | [optional] [default to undefined]
 **moderation** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration.md) |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
@@ -35,6 +36,7 @@ const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListI
     authorUsername,
     isLoginRequired,
     isIndexed,
+    isClosed,
     organization,
     moderation,
     requiresEventTicket,

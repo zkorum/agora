@@ -54,7 +54,7 @@
 
     <!-- Bubble menu for mobile -->
     <BubbleMenu
-      v-if="isEditorReady && $q.platform.is.mobile"
+      v-if="editor && isEditorReady && $q.platform.is.mobile"
       v-show="showToolbar"
       :editor="editor"
       :options="{
@@ -105,7 +105,6 @@
 import { Extension } from "@tiptap/core";
 import CharacterCount from "@tiptap/extension-character-count";
 import Placeholder from "@tiptap/extension-placeholder";
-import Underline from "@tiptap/extension-underline";
 import { DOMSerializer } from "@tiptap/pm/model";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
@@ -170,10 +169,13 @@ const ClearStoredMarksOnSelectionChange = Extension.create({
   },
 });
 
-// Custom extension for list indentation using Tab/Shift+Tab
-const ListKeymap = Extension.create({
-  name: "listKeymap",
-  priority: 100, // High priority to ensure it captures Tab before others
+// Custom extension to capture Tab/Shift-Tab for list indentation
+// This prevents the default browser behavior of moving focus to the next UI element
+// Note: StarterKit v3 includes a ListKeymap extension, but we use higher priority
+// to ensure Tab is captured for lists and doesn't change focus
+const CustomListTabKeymap = Extension.create({
+  name: "customListTabKeymap",
+  priority: 1000, // Very high priority to ensure it captures Tab before default behavior
   addKeyboardShortcuts() {
     return {
       Tab: () => this.editor.commands.sinkListItem("listItem"),
@@ -235,17 +237,16 @@ const editor = useEditor({
       // Disable hard breaks in single-line mode
       hardBreak: props.singleLine ? false : {},
     }),
-    Underline,
     Placeholder.configure({
-      placeholder: props.placeholder,
+      placeholder: () => props.placeholder,
     }),
     CharacterCount,
     // Add character limit enforcement
     createCharacterLimitExtension(props.maxLength),
     // Add Enter key blocker for single-line mode
     ...(props.singleLine ? [BlockEnterExtension] : []),
-    // Add List keymap for indentation
-    ListKeymap,
+    // Add custom Tab/Shift-Tab handler for list indentation (prevents focus change)
+    CustomListTabKeymap,
     // Clear storedMarks on selection change for mobile (bubble menu UX)
     ...($q.platform.is.mobile ? [ClearStoredMarksOnSelectionChange] : []),
   ],
@@ -343,6 +344,17 @@ watch(
     }
   }
 );
+
+// Watch for placeholder prop changes to trigger decoration recalculation
+watch(
+  () => props.placeholder,
+  () => {
+    if (editor.value) {
+      // Dispatch an empty transaction to force decorations (placeholder) to be recalculated
+      editor.value.view.dispatch(editor.value.state.tr);
+    }
+  }
+);
 </script>
 
 <style lang="scss" scoped>
@@ -395,15 +407,50 @@ watch(
 .editor :deep(.ProseMirror ol) {
   padding-left: 1.5rem;
   margin-bottom: 0.5rem;
+  margin-top: 0;
 }
 
+.editor :deep(.ProseMirror li) {
+  margin-bottom: 0.25rem;
+}
+
+.editor :deep(.ProseMirror li > p) {
+  margin-bottom: 0;
+}
+
+/* Nested lists should have minimal spacing */
+.editor :deep(.ProseMirror li ul),
+.editor :deep(.ProseMirror li ol) {
+  margin-top: 0.125rem;
+  margin-bottom: 0;
+}
+
+/* Top-level unordered list uses disc */
 .editor :deep(.ProseMirror ul) {
   list-style-type: disc;
+}
+
+/* Nested unordered lists use circle, then square */
+.editor :deep(.ProseMirror ul ul) {
+  list-style-type: circle;
+}
+
+.editor :deep(.ProseMirror ul ul ul) {
+  list-style-type: square;
 }
 
 .editor :deep(.ProseMirror ol) {
   list-style-type: decimal;
   padding-left: 1.75rem;
+}
+
+/* Nested ordered lists use different numbering styles */
+.editor :deep(.ProseMirror ol ol) {
+  list-style-type: lower-alpha;
+}
+
+.editor :deep(.ProseMirror ol ol ol) {
+  list-style-type: lower-roman;
 }
 
 .toolbar-divider {

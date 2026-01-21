@@ -19,6 +19,7 @@ All URIs are relative to *http://localhost*
 |[**apiV1AuthTicketVerifyPost**](#apiv1authticketverifypost) | **POST** /api/v1/auth/ticket/verify | |
 |[**apiV1AuthZkpGenerateVerificationLinkPost**](#apiv1authzkpgenerateverificationlinkpost) | **POST** /api/v1/auth/zkp/generate-verification-link | |
 |[**apiV1AuthZkpVerifyUserStatusAndAuthenticatePost**](#apiv1authzkpverifyuserstatusandauthenticatepost) | **POST** /api/v1/auth/zkp/verify-user-status-and-authenticate | |
+|[**apiV1ConversationClosePost**](#apiv1conversationclosepost) | **POST** /api/v1/conversation/close | |
 |[**apiV1ConversationCreatePost**](#apiv1conversationcreatepost) | **POST** /api/v1/conversation/create | |
 |[**apiV1ConversationDeletePost**](#apiv1conversationdeletepost) | **POST** /api/v1/conversation/delete | |
 |[**apiV1ConversationExportDeletePost**](#apiv1conversationexportdeletepost) | **POST** /api/v1/conversation/export/delete | |
@@ -32,6 +33,7 @@ All URIs are relative to *http://localhost*
 |[**apiV1ConversationImportCsvPost**](#apiv1conversationimportcsvpost) | **POST** /api/v1/conversation/import-csv | |
 |[**apiV1ConversationImportPost**](#apiv1conversationimportpost) | **POST** /api/v1/conversation/import | |
 |[**apiV1ConversationImportStatusPost**](#apiv1conversationimportstatuspost) | **POST** /api/v1/conversation/import/status | |
+|[**apiV1ConversationOpenPost**](#apiv1conversationopenpost) | **POST** /api/v1/conversation/open | |
 |[**apiV1ConversationValidateCsvPost**](#apiv1conversationvalidatecsvpost) | **POST** /api/v1/conversation/validate-csv | |
 |[**apiV1ModerationConversationCreatePost**](#apiv1moderationconversationcreatepost) | **POST** /api/v1/moderation/conversation/create | |
 |[**apiV1ModerationConversationGetPost**](#apiv1moderationconversationgetpost) | **POST** /api/v1/moderation/conversation/get | |
@@ -795,6 +797,57 @@ This endpoint does not have any parameters.
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **apiV1ConversationClosePost**
+> ApiV1ConversationClosePost200Response apiV1ConversationClosePost(apiV1ModerationConversationWithdrawPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ModerationConversationWithdrawPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest; //
+
+const { status, data } = await apiInstance.apiV1ConversationClosePost(
+    apiV1ModerationConversationWithdrawPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ModerationConversationWithdrawPostRequest** | **ApiV1ModerationConversationWithdrawPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1ConversationClosePost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **apiV1ConversationCreatePost**
 > ApiV1ConversationCreatePost200Response apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest)
 
@@ -1424,6 +1477,57 @@ const { status, data } = await apiInstance.apiV1ConversationImportStatusPost(
 ### Return type
 
 **ApiV1ConversationImportStatusPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1ConversationOpenPost**
+> ApiV1ConversationOpenPost200Response apiV1ConversationOpenPost(apiV1ModerationConversationWithdrawPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ModerationConversationWithdrawPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest; //
+
+const { status, data } = await apiInstance.apiV1ConversationOpenPost(
+    apiV1ModerationConversationWithdrawPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ModerationConversationWithdrawPostRequest** | **ApiV1ModerationConversationWithdrawPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1ConversationOpenPost200Response**
 
 ### Authorization
 

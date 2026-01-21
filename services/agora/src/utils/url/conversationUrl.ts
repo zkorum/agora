@@ -1,7 +1,7 @@
 export function useConversationUrl() {
   function getConversationUrl(conversationSlugId: string): string {
     return new URL(
-      `/conversation/${conversationSlugId}`,
+      `/conversation/${conversationSlugId}/`,
       window.location.origin
     ).href;
   }

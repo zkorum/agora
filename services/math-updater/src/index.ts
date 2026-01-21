@@ -17,49 +17,64 @@ import {
     type GoogleCloudCredentials,
 } from "./shared-backend/googleCloudAuth.js";
 import pLimit from "p-limit";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
 /**
- * Delete old jobs using SQL
- * pg-boss doesn't provide a direct API to clear all jobs in a queue,
- * so we use raw SQL through Drizzle
+ * Creates a reusable worker handler for processing math update jobs.
+ * Extracted to avoid code duplication between main registration and watchdog restart.
  */
-// async function deleteOldJobs(db: PostgresJsDatabase): Promise<void> {
-//     try {
-//         // Delete ALL scan-conversations jobs regardless of singleton_key
-//         // This catches jobs with the singleton key, NULL, or any other value
-//         const scanResult = await db.execute(
-//             sql`DELETE FROM pgboss.job WHERE name = 'scan-conversations'`,
-//         );
-//
-//         log.info(
-//             `[Math Updater] Deleted ${scanResult.count} old scan-conversations job(s)`,
-//         );
-//
-//         // Delete ALL update-conversation-math jobs to clear stuck singletonKey jobs
-//         const updateResult = await db.execute(
-//             sql`DELETE FROM pgboss.job WHERE name = 'update-conversation-math'`,
-//         );
-//
-//         log.info(
-//             `[Math Updater] Deleted ${updateResult.count} old update-conversation-math job(s)`,
-//         );
-//
-//         // Clear singleton tracking for update-conversation-math jobs
-//         // This ensures singletonKey can be reused immediately
-//         const singletonResult = await db.execute(
-//             sql`DELETE FROM pgboss.schedule WHERE name LIKE 'update-math-%'`,
-//         );
-//
-//         log.info(
-//             `[Math Updater] Cleared ${singletonResult.count} singleton schedule entries`,
-//         );
-//     } catch (error) {
-//         log.warn(
-//             { error },
-//             "[Math Updater] Failed to delete old jobs, continuing anyway",
-//         );
-//     }
-// }
+function createMathWorkerHandler({
+    db,
+    axiosPolis,
+    googleCloudCredentials,
+    onWorkerCalled,
+}: {
+    db: PostgresJsDatabase;
+    axiosPolis: AxiosInstance;
+    googleCloudCredentials: GoogleCloudCredentials | undefined;
+    onWorkerCalled: () => void;
+}) {
+    return async (jobs: PgBoss.Job<UpdateConversationMathData>[]) => {
+        onWorkerCalled();
+
+        // Filter out test jobs (conversationId = -1)
+        const realJobs = jobs.filter((j) => j.data.conversationId !== -1);
+        const testJobs = jobs.filter((j) => j.data.conversationId === -1);
+
+        if (testJobs.length > 0) {
+            log.info(
+                `[Math Updater] Processed ${testJobs.length} test job(s) - worker is healthy`,
+            );
+        }
+
+        if (realJobs.length > 0) {
+            log.info(
+                `[Math Updater] Processing ${realJobs.length} job(s)...`,
+            );
+            const limit = pLimit(config.MATH_UPDATER_JOB_CONCURRENCY);
+
+            try {
+                await Promise.all(
+                    realJobs.map((job) =>
+                        limit(() =>
+                            updateConversationMathHandler(
+                                job,
+                                db,
+                                axiosPolis,
+                                googleCloudCredentials,
+                            ),
+                        ),
+                    ),
+                );
+                log.info(
+                    `[Math Updater] Completed ${realJobs.length} job(s)`,
+                );
+            } catch (error) {
+                log.error({ error }, "[Math Updater] Error processing jobs");
+            }
+        }
+    };
+}
 
 async function main() {
     log.info(
@@ -178,22 +193,6 @@ async function main() {
     await boss.start();
     log.info("[Math Updater] pg-boss started");
 
-    // Clean up any old/stale jobs before starting new loop
-    // await deleteOldJobs(db);
-
-    // Delete and recreate update-conversation-math queue with proper policy
-    // Policy cannot be changed once set, so we delete and recreate
-    // try {
-    //     await boss.deleteQueue("update-conversation-math");
-    //     log.info(
-    //         "[Math Updater] Deleted existing update-conversation-math queue",
-    //     );
-    // } catch (error) {
-    //     log.info(
-    //         "[Math Updater] No existing update-conversation-math queue to delete",
-    //     );
-    // }
-
     // Create queues with proper policies
     // 'singleton' policy: only allows 1 job per singletonKey (created OR active)
     // This prevents concurrent execution and duplicate jobs for the same conversation
@@ -207,33 +206,29 @@ async function main() {
     await boss.createQueue("scan-conversations");
     log.info("[Math Updater] Created/verified scan-conversations queue");
 
-    // Register single worker with batch processing and controlled concurrency
-    // Uses pLimit to process multiple conversations concurrently while protecting the database
-    // singletonKey in scanner ensures one job per conversation
-    await boss.work(
+    // Track last time worker was called for watchdog
+    let lastWorkerCallTime = Date.now();
+    let workerId: string;
+
+    // Create reusable worker handler
+    const workerHandler = createMathWorkerHandler({
+        db,
+        axiosPolis,
+        googleCloudCredentials,
+        onWorkerCalled: () => {
+            lastWorkerCallTime = Date.now();
+        },
+    });
+
+    // Register worker
+    workerId = await boss.work(
         "update-conversation-math",
-        {
-            batchSize: config.MATH_UPDATER_BATCH_SIZE,
-        },
-        async (jobs: PgBoss.Job<UpdateConversationMathData>[]) => {
-            // Process jobs with controlled concurrency to protect the database
-            const limit = pLimit(config.MATH_UPDATER_JOB_CONCURRENCY);
-            await Promise.all(
-                jobs.map((job) =>
-                    limit(() =>
-                        updateConversationMathHandler(
-                            job,
-                            db,
-                            axiosPolis,
-                            googleCloudCredentials,
-                        ),
-                    ),
-                ),
-            );
-        },
+        { batchSize: config.MATH_UPDATER_BATCH_SIZE },
+        workerHandler,
     );
+
     log.info(
-        `[Math Updater] Registered update-conversation-math worker (batch size: ${config.MATH_UPDATER_BATCH_SIZE}, concurrency: ${config.MATH_UPDATER_JOB_CONCURRENCY})`,
+        `[Math Updater] Registered update-conversation-math worker (batch: ${config.MATH_UPDATER_BATCH_SIZE}, concurrency: ${config.MATH_UPDATER_JOB_CONCURRENCY})`,
     );
 
     // Register scan-conversations worker
@@ -265,15 +260,95 @@ async function main() {
         `[Math Updater] Started scan-conversations loop (scan interval: ${config.MATH_UPDATER_SCAN_INTERVAL_MS}ms, min time between updates: ${config.MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS}ms)`,
     );
 
+    // Send a test job to verify worker picks up jobs
+    // This helps detect if worker registration failed
+    const testJobId = await boss.send(
+        "update-conversation-math",
+        {
+            conversationId: -1, // Special test ID
+            conversationSlugId: "startup-test",
+            requestedAt: new Date(),
+        },
+        {
+            singletonKey: "startup-test",
+            singletonSeconds: 10,
+        },
+    );
+
+    if (testJobId) {
+        log.info(
+            `[Math Updater] Sent startup test job (${testJobId}) - worker should process within 5s`,
+        );
+    } else {
+        log.error(
+            "[Math Updater] Failed to send startup test job - queue may have issues!",
+        );
+    }
+
     log.info("[Math Updater] Service is ready and running");
+
+    // Watchdog: Monitor worker health and detect polling stalls
+    // If worker hasn't been called in 30s AND there are pending jobs, something is wrong
+    const WATCHDOG_INTERVAL_MS = 15000; // Check every 15 seconds
+    const WATCHDOG_TIMEOUT_MS = 30000; // Worker should be called at least every 30s if jobs exist
+
+    const watchdogIntervalId = setInterval(async () => {
+        try {
+            const queues = await boss.getQueues();
+            const ourQueue = queues.find(
+                (q) => q.name === "update-conversation-math",
+            );
+            if (!ourQueue) {
+                log.error(
+                    "[Math Updater] Watchdog: queue not found!",
+                );
+                return;
+            }
+
+            const timeSinceLastCall = Date.now() - lastWorkerCallTime;
+            // createdCount exists at runtime but not in pg-boss types
+            const pendingCount = Number(
+                "createdCount" in ourQueue ? ourQueue.createdCount : 0,
+            );
+            const hasPendingJobs = pendingCount > 0;
+
+            // Detect polling stall: worker not called in timeout period + pending jobs exist
+            if (timeSinceLastCall > WATCHDOG_TIMEOUT_MS && hasPendingJobs) {
+                log.error(
+                    `[Math Updater] Watchdog: Worker stalled for ${(timeSinceLastCall / 1000).toFixed(1)}s with ${pendingCount} pending job(s). Restarting...`,
+                );
+
+                try {
+                    await boss.offWork(workerId);
+                    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+                    // Re-register worker using the same handler
+                    workerId = await boss.work(
+                        "update-conversation-math",
+                        { batchSize: config.MATH_UPDATER_BATCH_SIZE },
+                        workerHandler,
+                    );
+
+                    log.info(
+                        `[Math Updater] Watchdog: Worker restarted (ID: ${workerId})`,
+                    );
+                } catch (restartError) {
+                    log.error(
+                        { error: restartError },
+                        "[Math Updater] Watchdog: Failed to restart worker!",
+                    );
+                }
+            }
+        } catch (error) {
+            log.error({ error }, "[Math Updater] Watchdog error");
+        }
+    }, WATCHDOG_INTERVAL_MS);
 
     // Graceful shutdown
     const shutdown = async () => {
         log.info("[Math Updater] Shutting down gracefully...");
 
-        // Delete any pending jobs before stopping
-        // await deleteOldJobs(db);
-
+        clearInterval(watchdogIntervalId);
         await boss.stop();
         log.info("[Math Updater] pg-boss stopped");
         process.exit(0);

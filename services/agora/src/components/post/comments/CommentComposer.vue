@@ -2,19 +2,37 @@
   <div ref="target">
     <div class="container borderStyle" :class="{ focused: innerFocus }">
       <Editor
+        ref="editorRef"
         v-model="opinionBody"
-        :placeholder="t('placeholder')"
+        :placeholder="innerFocus ? t('placeholderExpanded') : t('placeholder')"
         :min-height="innerFocus ? '6rem' : '2rem'"
         :show-toolbar="innerFocus"
         :single-line="false"
         :max-length="MAX_LENGTH_OPINION"
-        :disabled="isPostLocked"
+        :disabled="false"
         @update:model-value="checkWordCount()"
         @manually-focused="editorFocused()"
       />
 
+      <div v-if="validationWarning" class="validation-warning">
+        <q-icon name="mdi-alert-circle" class="warning-icon" />
+        {{ validationWarning }}
+      </div>
+
       <div v-if="innerFocus" class="actionButtonCluster">
         <input ref="dummyInput" type="button" class="dummyInputStyle" />
+
+        <ZKButton
+          button-type="icon"
+          aria-label="Opinion writing guidelines"
+          @click="showGuidelinesDialog = true"
+        >
+          <ZKIcon
+            color="#6d6a74"
+            name="mdi-information-outline"
+            size="1.2rem"
+          />
+        </ZKButton>
 
         <div v-if="characterProgress > 100">
           {{ MAX_LENGTH_OPINION - characterCount }}
@@ -35,7 +53,8 @@
             characterProgress > 100 ||
             characterProgress == 0 ||
             isSubmissionLoading ||
-            isVerifyingZupass
+            isVerifyingZupass ||
+            isComposerDisabled
           "
           :loading="isSubmissionLoading || isVerifyingZupass"
           @click="submitPostClicked()"
@@ -58,6 +77,8 @@
       :requires-zupass-event-slug="props.requiresEventTicket"
       :login-required-to-participate="props.loginRequiredToParticipate"
     />
+
+    <OpinionWritingGuidelinesDialog v-model="showGuidelinesDialog" />
   </div>
 </template>
 
@@ -66,6 +87,8 @@ import { onClickOutside, useWindowScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
 import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
@@ -73,27 +96,28 @@ import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import type { EventSlug } from "src/shared/types/zod";
+import type { EventSlug, ExtendedConversation } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useUserStore } from "src/stores/user";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
+import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, defineAsyncComponent, onMounted, ref, useTemplateRef, watch } from "vue";
+import { computed, defineAsyncComponent, inject, nextTick, onMounted, type Ref, ref, useTemplateRef, watch } from "vue";
 import type { RouteLocationNormalized } from "vue-router";
 
 import {
   type CommentComposerTranslations,
   commentComposerTranslations,
 } from "./CommentComposer.i18n";
+import OpinionWritingGuidelinesDialog from "./OpinionWritingGuidelinesDialog.vue";
 
 const props = defineProps<{
   postSlugId: string;
   loginRequiredToParticipate: boolean;
   requiresEventTicket?: EventSlug;
-  isPostLocked: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -120,12 +144,31 @@ const { isLoggedIn } = storeToRefs(authStore);
 const userStore = useUserStore();
 const { verifiedEventTickets } = storeToRefs(userStore);
 
+// Inject reactive conversation data from parent
+const conversationData = inject<Ref<ExtendedConversation> | undefined>("conversationData");
+
+// Compute if composer should be disabled (closed OR locked by moderator)
+const isComposerDisabled = computed(() => {
+  const data = conversationData?.value;
+  if (!data) return false;
+
+  const isModeratedAndLocked =
+    data.metadata.moderation.status === "moderated" &&
+    data.metadata.moderation.action === "lock";
+
+  const isClosed = data.metadata.isClosed;
+
+  return isModeratedAndLocked || isClosed;
+});
+
 const { createNewOpinionIntention, clearNewOpinionIntention } =
   useLoginIntentionStore();
 
 const { createNewComment } = useBackendCommentApi();
 
 const { showNotifyMessage } = useNotify();
+
+const { invalidateConversation } = useInvalidateConversationQuery();
 
 // Zupass verification
 const { verifyTicket } = useTicketVerificationFlow();
@@ -157,6 +200,73 @@ if (newOpinionIntention.enabled) {
 const opinionBody = ref(newOpinionIntention.opinionBody);
 
 const showLoginDialog = ref(false);
+const showGuidelinesDialog = ref(false);
+
+// Template ref for Editor component
+const editorRef = ref<{ focus: () => void }>();
+
+// Handle guidelines dialog close - restore focus to editor
+function handleGuidelinesDialogClose() {
+  void nextTick(() => {
+    editorRef.value?.focus();
+  });
+}
+
+// Watch for guidelines dialog close to restore focus
+watch(showGuidelinesDialog, (isOpen, wasOpen) => {
+  if (wasOpen && !isOpen) {
+    handleGuidelinesDialogClose();
+  }
+});
+
+// Validation warning for multiple ideas
+const validationWarning = computed(() => {
+  const htmlContent = opinionBody.value;
+
+  // Check 1: HTML lists (bullet points or numbered lists)
+  const hasLists = /<[uo]l>/i.test(htmlContent) || /<li>/i.test(htmlContent);
+  if (hasLists) {
+    return t("validationWarningMultipleIdeas");
+  }
+
+  // Convert HTML to plain text for further checks
+  const plainText = htmlContent
+    .replace(/<[^>]*>/g, " ") // Remove HTML tags
+    .replace(/\s+/g, " ") // Normalize whitespace
+    .trim();
+
+  // Too short to analyze meaningfully
+  if (plainText.length < 20) {
+    return null;
+  }
+
+  // Check 2: Multiple sentences (high confidence indicator of multiple ideas)
+  const sentenceEndings = plainText.match(/[.!?]+\s+[A-Z]/g);
+  if (sentenceEndings && sentenceEndings.length >= 1) {
+    return t("validationWarningMultipleIdeas");
+  }
+
+  // Check 3: Multiple coordinating conjunctions (suggests compound ideas)
+  const coordinatingConjunctions = plainText
+    .toLowerCase()
+    .match(/\b(and|but|or|yet|nor)\b/g);
+
+  if (coordinatingConjunctions && coordinatingConjunctions.length >= 2 && plainText.length > 50) {
+    return t("validationWarningMultipleIdeas");
+  }
+
+  // Check 4: Complexity indicators (many clauses or transition words)
+  const commaCount = (plainText.match(/,/g) || []).length;
+  const clauseIndicators = plainText
+    .toLowerCase()
+    .match(/\b(however|moreover|furthermore|therefore|thus|consequently|although|whereas|while|because|since)\b/g);
+
+  if (commaCount >= 3 || (clauseIndicators && clauseIndicators.length >= 2)) {
+    return t("validationWarningMultipleIdeas");
+  }
+
+  return null;
+});
 
 const {
   lockRoute,
@@ -197,7 +307,7 @@ onMounted(() => {
 });
 
 watch(yScroll, () => {
-  if (disableAutocollapse == false) {
+  if (disableAutocollapse === false) {
     innerFocus.value = false;
     dummyInput.value?.focus();
   }
@@ -227,19 +337,11 @@ async function onLoginCallback() {
   const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
   const hasZupassRequirement = props.requiresEventTicket !== undefined;
 
-  console.log("[CommentComposer] onLoginCallback", {
-    needsLogin,
-    hasZupassRequirement,
-    isLoggedIn: isLoggedIn.value,
-  });
-
   // If user just needs Zupass verification (no login required), trigger it inline
   if (!needsLogin && hasZupassRequirement) {
-    console.log("[CommentComposer] Triggering inline Zupass verification");
     await handleZupassVerification();
   } else {
     // Otherwise, unlock route so user can navigate to login
-    console.log("[CommentComposer] Unlocking route for login navigation");
     unlockRoute();
   }
 }
@@ -253,7 +355,7 @@ function onBeforeRouteLeaveCallback(_to: RouteLocationNormalized): boolean {
 }
 
 function editorFocused() {
-  // Disable the auto collapge for a few seconds for mobile
+  // Disable the auto collapse for a few seconds for mobile
   // because mobile keyboard will trigger it
   disableAutocollapse = true;
   innerFocus.value = true;
@@ -271,16 +373,10 @@ function checkWordCount() {
 }
 
 async function handleZupassVerification() {
-  console.log("[CommentComposer] handleZupassVerification called", {
-    requiresEventTicket: props.requiresEventTicket,
-  });
-
   if (props.requiresEventTicket === undefined) {
-    console.log("[CommentComposer] No event ticket required, returning");
     return;
   }
 
-  console.log("[CommentComposer] Starting verifyTicket call");
   // Dialog will close when Zupass iframe is ready (via callback)
   const result = await verifyTicket({
     eventSlug: props.requiresEventTicket,
@@ -292,10 +388,6 @@ async function handleZupassVerification() {
 
   if (result.success) {
     // Emit to parent so banner gets refreshed
-    console.log("[CommentComposer] Emitting ticketVerified event", {
-      userIdChanged: result.userIdChanged,
-      needsCacheRefresh: result.needsCacheRefresh,
-    });
     emit("ticketVerified", {
       userIdChanged: result.userIdChanged,
       needsCacheRefresh: result.needsCacheRefresh,
@@ -349,6 +441,13 @@ async function submitPostClicked() {
           switch (response.reason) {
             case "conversation_locked":
               showNotifyMessage(t("conversationLockedError"));
+              break;
+            case "conversation_closed":
+              // Show error message but keep text so user can copy it
+              showNotifyMessage(t("conversationClosedError"));
+              // Invalidate conversation to refresh UI and show disabled state
+              invalidateConversation(props.postSlugId);
+              // Don't clear opinionBody or unlock route - preserve the text
               break;
             case "event_ticket_required":
               // Backend says ticket required, but our local state might be stale
@@ -413,5 +512,23 @@ async function submitPostClicked() {
   background-color: transparent;
   width: 1px;
   height: 1px;
+}
+
+.validation-warning {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  background-color: #fff9e6;
+  border-left: 3px solid #f59e0b;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #92400e;
+}
+
+.warning-icon {
+  color: #f59e0b;
+  font-size: 1.1rem;
+  margin-right: 0.5rem;
 }
 </style>

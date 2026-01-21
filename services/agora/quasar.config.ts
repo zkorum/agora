@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { visualizer } from "rollup-plugin-visualizer";
 import type { Plugin } from "vite";
+import viteCompression from "vite-plugin-compression";
 
 import { defineConfig } from "#q-app/wrappers";
 
@@ -17,8 +18,6 @@ import { envSchema, validateEnv } from "./src/utils/processEnv";
 // import basicSsl from "@vitejs/plugin-basic-ssl";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
-import basicSsl from "@vitejs/plugin-basic-ssl";
 
 export default defineConfig((ctx) => {
   // Build the boot files array
@@ -30,6 +29,7 @@ export default defineConfig((ctx) => {
   }
   boot.push(
     ...[
+      "polyfills",
       "i18n",
       "axios",
       "primevue",
@@ -79,8 +79,9 @@ export default defineConfig((ctx) => {
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
     build: {
       sourcemap: true, // should be just boolean true, see https://github.com/quasarframework/quasar/issues/14589
+      minify: "terser",
       target: {
-        browser: ["es2022", "firefox115", "chrome115", "safari14"],
+        browser: ["es2020", "firefox115", "chrome115", "safari14", "chrome86"],
         node: "node20",
       },
 
@@ -282,6 +283,10 @@ export default defineConfig((ctx) => {
             validateEnv(process.env);
           },
         } satisfies Plugin,
+        viteCompression({
+          algorithm: "gzip",
+          ext: ".gz",
+        }),
         [
           "vite-plugin-checker",
           {

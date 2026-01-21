@@ -14,6 +14,10 @@ import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import type { ExtendedConversation, EventSlug } from "@/shared/types/zod.js";
+import type {
+    CloseConversationResponse,
+    OpenConversationResponse,
+} from "@/shared/types/dto.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import { postNewOpinion } from "./comment.js";
 import { nowZeroMs } from "@/shared/util.js";
@@ -254,6 +258,7 @@ export async function createNewPost({
                     conversationAuthorId: authorId,
                     conversationIsIndexed: isIndexed,
                     conversationIsLoginRequired: isLoginRequired,
+                    conversationIsClosed: false,
                     requiresEventTicket: requiresEventTicket ?? null,
                 },
             });
@@ -402,6 +407,98 @@ export async function deletePostBySlugId({
             `Error deleting exports for conversation ${conversationId.toString()}:`,
         );
     }
+}
+
+interface CloseConversationProps {
+    db: PostgresDatabase;
+    conversationSlugId: string;
+    userId: string;
+}
+
+export async function closeConversation({
+    db,
+    conversationSlugId,
+    userId,
+}: CloseConversationProps): Promise<CloseConversationResponse> {
+    // First, get the conversation to check ownership and current state
+    const conversation = await db
+        .select({
+            conversationId: conversationTable.id,
+            authorId: conversationTable.authorId,
+            isClosed: conversationTable.isClosed,
+        })
+        .from(conversationTable)
+        .where(eq(conversationTable.slugId, conversationSlugId))
+        .limit(1);
+
+    if (conversation.length === 0) {
+        // Conversation doesn't exist - throw 404
+        throw httpErrors.notFound("Conversation not found");
+    }
+
+    // Check ownership in-memory
+    if (conversation[0].authorId !== userId) {
+        return { success: false, reason: "not_allowed" };
+    }
+
+    // Check if already closed
+    if (conversation[0].isClosed) {
+        return { success: false, reason: "already_closed" };
+    }
+
+    // Update to closed
+    await db
+        .update(conversationTable)
+        .set({ isClosed: true })
+        .where(eq(conversationTable.id, conversation[0].conversationId));
+
+    return { success: true };
+}
+
+interface OpenConversationProps {
+    db: PostgresDatabase;
+    conversationSlugId: string;
+    userId: string;
+}
+
+export async function openConversation({
+    db,
+    conversationSlugId,
+    userId,
+}: OpenConversationProps): Promise<OpenConversationResponse> {
+    // First, get the conversation to check ownership and current state
+    const conversation = await db
+        .select({
+            conversationId: conversationTable.id,
+            authorId: conversationTable.authorId,
+            isClosed: conversationTable.isClosed,
+        })
+        .from(conversationTable)
+        .where(eq(conversationTable.slugId, conversationSlugId))
+        .limit(1);
+
+    if (conversation.length === 0) {
+        // Conversation doesn't exist - throw 404
+        throw httpErrors.notFound("Conversation not found");
+    }
+
+    // Check ownership in-memory
+    if (conversation[0].authorId !== userId) {
+        return { success: false, reason: "not_allowed" };
+    }
+
+    // Check if already open
+    if (!conversation[0].isClosed) {
+        return { success: false, reason: "already_open" };
+    }
+
+    // Update to open
+    await db
+        .update(conversationTable)
+        .set({ isClosed: false })
+        .where(eq(conversationTable.id, conversation[0].conversationId));
+
+    return { success: true };
 }
 
 // interface CreateConversationFromPolisProps {

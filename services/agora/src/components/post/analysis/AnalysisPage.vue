@@ -3,6 +3,19 @@
     <div class="container flexStyle">
       <ShortcutBar v-model="currentTab" />
 
+      <!-- Me tab: Show at top in Summary and Me tab -->
+      <div
+        v-if="currentTab === 'Summary' || currentTab === 'Me'"
+        class="tabComponent"
+      >
+        <MeTab
+          v-model="currentTab"
+          :cluster-key="userClusterData.clusterKey"
+          :ai-label="userClusterData.aiLabel"
+          :ai-summary="userClusterData.aiSummary"
+        />
+      </div>
+
       <div
         v-if="currentTab === 'Summary' || currentTab === 'Common ground'"
         class="tabComponent"
@@ -31,8 +44,9 @@
         />
       </div>
 
+      <!-- Opinion groups: Show in Summary, Groups and Me tabs -->
       <div
-        v-if="currentTab === 'Summary' || currentTab === 'Groups'"
+        v-if="currentTab === 'Summary' || currentTab === 'Groups' || currentTab === 'Me'"
         class="tabComponent"
       >
         <OpinionGroupTab
@@ -63,6 +77,7 @@ import {
 } from "./AnalysisPage.i18n";
 import ConsensusTab from "./consensusTab/ConsensusTab.vue";
 import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
+import MeTab from "./meTab/MeTab.vue";
 import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 
@@ -98,6 +113,26 @@ const clusterLabels = computed(() => {
     }
   }
   return labels;
+});
+
+
+// Find the cluster the user belongs to
+const userClusterData = computed(() => {
+  if (!analysisQuery.data.value?.polisClusters) {
+    return { clusterKey: undefined, aiLabel: undefined, aiSummary: undefined };
+  }
+
+  for (const [key, cluster] of Object.entries(analysisQuery.data.value.polisClusters)) {
+    if (cluster?.isUserInCluster) {
+      return {
+        clusterKey: key as PolisKey,
+        aiLabel: cluster.aiLabel,
+        aiSummary: cluster.aiSummary,
+      };
+    }
+  }
+
+  return { clusterKey: undefined, aiLabel: undefined, aiSummary: undefined };
 });
 
 const asyncStateConfig = {

@@ -3,7 +3,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisKey } from "src/shared/types/zod";
 import type { OpinionItem } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
-import type { Ref } from "vue";
+import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 import { useNotify } from "../../ui/notify";
 import type { AxiosErrorResponse } from "../common";
@@ -22,19 +22,29 @@ export function useCommentsQuery({
   voteCount,
   enabled = true,
 }: {
-  conversationSlugId: string;
+  conversationSlugId: MaybeRefOrGetter<string>;
   filter: CommentTabFilters;
   clusterKey?: PolisKey;
-  voteCount?: number;
-  enabled?: boolean | Ref<boolean>;
+  voteCount?: MaybeRefOrGetter<number | undefined>;
+  enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchCommentsForPost } = useBackendCommentApi();
 
   return useQuery({
-    queryKey: ["comments", conversationSlugId, filter, clusterKey],
-    queryFn: () => fetchCommentsForPost(conversationSlugId, filter, clusterKey),
-    enabled: enabled,
-    staleTime: getAnalysisStaleTime(voteCount), // Dynamic cache based on conversation size
+    queryKey: [
+      "comments",
+      computed(() => toValue(conversationSlugId)),
+      filter,
+      clusterKey,
+    ],
+    queryFn: () =>
+      fetchCommentsForPost(
+        toValue(conversationSlugId),
+        filter,
+        clusterKey
+      ),
+    enabled: computed(() => toValue(enabled) && toValue(conversationSlugId) !== ""),
+    staleTime: getAnalysisStaleTime(toValue(voteCount)), // Dynamic cache based on conversation size
     // Note: bypassed by manual invalidation on tab changes
     retry: false, // Disable auto-retry
   });
@@ -45,17 +55,17 @@ export function useHiddenCommentsQuery({
   voteCount,
   enabled = true,
 }: {
-  conversationSlugId: string;
-  voteCount?: number;
-  enabled?: boolean | Ref<boolean>;
+  conversationSlugId: MaybeRefOrGetter<string>;
+  voteCount?: MaybeRefOrGetter<number | undefined>;
+  enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchHiddenCommentsForPost } = useBackendCommentApi();
 
   return useQuery({
-    queryKey: ["hiddenComments", conversationSlugId],
-    queryFn: () => fetchHiddenCommentsForPost(conversationSlugId),
-    enabled: enabled && conversationSlugId.length > 0,
-    staleTime: getAnalysisStaleTime(voteCount), // Dynamic cache based on conversation size
+    queryKey: ["hiddenComments", computed(() => toValue(conversationSlugId))],
+    queryFn: () => fetchHiddenCommentsForPost(toValue(conversationSlugId)),
+    enabled: computed(() => toValue(enabled) && toValue(conversationSlugId) !== ""),
+    staleTime: getAnalysisStaleTime(toValue(voteCount)), // Dynamic cache based on conversation size
     // Note: bypassed by manual invalidation on tab changes
     retry: false, // Disable auto-retry
   });
@@ -67,30 +77,27 @@ export function useHiddenCommentsQuery({
  *
  * Backend constraints:
  * - Math-updater scans every 2s (MATH_UPDATER_SCAN_INTERVAL_MS)
- * - Minimum 20s between updates per conversation (MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS)
- * - Singleton deduplication windows: 15s, 30s, 60s, 120s (based on vote count)
- * - Network processing time: ~2-5s
+ * - Minimum 2s between updates per conversation (MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS)
+ * - Singleton deduplication windows: 2s, 8s, 28s (based on vote count)
+ * - Network processing time: ~2s
  *
- * Buffer calculation: singleton window + 2s scan + 5s network + 5s safety = 12s buffer
+ * Buffer calculation: singleton window + 2s buffer for scan + network
  */
 function getAnalysisStaleTime(voteCount?: number): number {
-  if (!voteCount) return 1000 * 60 * 2; // Default 2 minutes if unknown
+  if (!voteCount) return 30000; // Default 30s if unknown (huge conversation default)
 
-  // Buffer for scan interval (2s) + network processing (5s) + safety margin (5s)
-  const BUFFER_MS = 12000; // 12 seconds buffer
+  // Buffer for scan interval (2s) + network processing + safety margin
+  const BUFFER_MS = 2000; // 2 seconds buffer
 
-  if (voteCount < 100) {
-    // Small conversations: 15s singleton + 12s buffer = 27s
-    return 15000 + BUFFER_MS;
-  } else if (voteCount < 10000) {
-    // Medium conversations: 30s singleton + 12s buffer = 42s
-    return 30000 + BUFFER_MS;
-  } else if (voteCount < 100000) {
-    // Large conversations: 60s singleton + 12s buffer = 72s
-    return 60000 + BUFFER_MS;
+  if (voteCount < 1000) {
+    // Small conversations (< 1K votes): 2s singleton + 2s buffer = 4s
+    return 2000 + BUFFER_MS;
+  } else if (voteCount < 1000000) {
+    // Medium conversations (1K-1M votes): 8s singleton + 2s buffer = 10s
+    return 8000 + BUFFER_MS;
   } else {
-    // Huge conversations (100K+ votes): 120s singleton + 12s buffer = 132s
-    return 120000 + BUFFER_MS;
+    // Huge conversations (1M+ votes): 28s singleton + 2s buffer = 30s
+    return 28000 + BUFFER_MS;
   }
 }
 
@@ -99,17 +106,18 @@ export function useAnalysisQuery({
   voteCount,
   enabled = true,
 }: {
-  conversationSlugId: string;
-  voteCount?: number;
-  enabled?: boolean | Ref<boolean>;
+  conversationSlugId: MaybeRefOrGetter<string>;
+  voteCount?: MaybeRefOrGetter<number | undefined>;
+  enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchAnalysisData } = useBackendCommentApi();
 
   return useQuery({
-    queryKey: ["analysis", conversationSlugId],
-    queryFn: () => fetchAnalysisData({ conversationSlugId }),
-    enabled: enabled,
-    staleTime: getAnalysisStaleTime(voteCount), // Dynamic cache based on conversation size
+    queryKey: ["analysis", computed(() => toValue(conversationSlugId))],
+    queryFn: () =>
+      fetchAnalysisData({ conversationSlugId: toValue(conversationSlugId) }),
+    enabled: computed(() => toValue(enabled) && toValue(conversationSlugId) !== ""),
+    staleTime: getAnalysisStaleTime(toValue(voteCount)), // Dynamic cache based on conversation size
     // Note: When votes/comments happen, markAnalysisAsStale() is called
     // This marks data as stale immediately, so next access will refetch
     retry: false, // Disable auto-retry

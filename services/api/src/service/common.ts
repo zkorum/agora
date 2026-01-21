@@ -156,6 +156,7 @@ export function useCommonPost() {
                 organizationDescription: organizationTable.description,
                 isIndexed: conversationTable.isIndexed,
                 isLoginRequired: conversationTable.isLoginRequired,
+                isClosed: conversationTable.isClosed,
                 requiresEventTicket: conversationTable.requiresEventTicket,
                 // moderation
                 moderationAction: conversationModerationTable.moderationAction,
@@ -253,6 +254,7 @@ export function useCommonPost() {
                 authorUsername: postItem.authorName,
                 isIndexed: postItem.isIndexed,
                 isLoginRequired: postItem.isLoginRequired,
+                isClosed: postItem.isClosed,
                 requiresEventTicket: postItem.requiresEventTicket ?? undefined,
                 organization:
                     postItem.organizationName !== null &&
@@ -915,6 +917,7 @@ export function useCommonPost() {
         voteCount: number;
         isIndexed: boolean;
         isLoginRequired: boolean;
+        isClosed: boolean;
         requiresEventTicket: EventSlug | null;
     }
 
@@ -938,6 +941,7 @@ export function useCommonPost() {
                 opinionCount: conversationTable.opinionCount,
                 isIndexed: conversationTable.isIndexed,
                 isLoginRequired: conversationTable.isLoginRequired,
+                isClosed: conversationTable.isClosed,
                 requiresEventTicket: conversationTable.requiresEventTicket,
             })
             .from(conversationTable)
@@ -954,6 +958,7 @@ export function useCommonPost() {
             opinionCount: postTableResponse[0].opinionCount,
             isIndexed: postTableResponse[0].isIndexed,
             isLoginRequired: postTableResponse[0].isLoginRequired,
+            isClosed: postTableResponse[0].isClosed,
             requiresEventTicket: postTableResponse[0].requiresEventTicket,
         };
     }

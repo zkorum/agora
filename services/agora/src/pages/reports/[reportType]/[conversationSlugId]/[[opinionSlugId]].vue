@@ -111,7 +111,7 @@ async function openPage() {
 
     if (route.params.reportType == "conversation") {
       await router.push({
-        name: "/conversation/[postSlugId]",
+        name: "/conversation/[postSlugId]/",
         params: { postSlugId: conversationSlugId },
       });
     } else if (route.params.reportType == "opinion") {
@@ -120,7 +120,7 @@ async function openPage() {
         : route.params.opinionSlugId;
 
       await router.push({
-        name: "/conversation/[postSlugId]",
+        name: "/conversation/[postSlugId]/",
         params: { postSlugId: conversationSlugId },
         query: { opinion: opinionSlugId },
       });

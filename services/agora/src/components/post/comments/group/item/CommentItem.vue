@@ -38,6 +38,7 @@
         <div>
           <CommentActionBar
             :comment-item="commentItem"
+            :post-slug-id="postSlugId"
             :voting-utilities="votingUtilities"
             :login-required-to-participate="loginRequiredToParticipate"
             :requires-event-ticket="props.requiresEventTicket"

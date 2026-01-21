@@ -7,6 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **opinionSlugId** | **string** |  | [default to undefined]
 **chosenOption** | **string** |  | [default to undefined]
+**returnIsUserClustered** | **boolean** |  | [optional] [default to undefined]
 
 ## Example
 
@@ -16,6 +17,7 @@ import { ApiV1VoteCastPostRequest } from './api';
 const instance: ApiV1VoteCastPostRequest = {
     opinionSlugId,
     chosenOption,
+    returnIsUserClustered,
 };
 ```
 

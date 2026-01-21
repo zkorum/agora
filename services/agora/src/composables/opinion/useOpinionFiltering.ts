@@ -11,6 +11,7 @@ export interface UseOpinionFilteringParams {
     commentsNewQuery: UseQueryReturnType<OpinionItem[], Error>;
     commentsModeratedQuery: UseQueryReturnType<OpinionItem[], Error>;
     hiddenCommentsQuery: UseQueryReturnType<OpinionItem[], Error>;
+    commentsMyVotesQuery: UseQueryReturnType<OpinionItem[], Error>;
   };
 }
 
@@ -21,6 +22,7 @@ export interface UseOpinionFilteringReturn {
   opinionsDiscover: ComputedRef<OpinionItem[]>;
   opinionsModerated: ComputedRef<OpinionItem[]>;
   opinionsHidden: ComputedRef<OpinionItem[]>;
+  opinionsMyVotes: ComputedRef<OpinionItem[]>;
   currentOpinionData: ComputedRef<OpinionItem[]>;
   customIsEmpty: ComputedRef<boolean>;
   handleUserFilterChange: (filterValue: CommentFilterOptions) => void;
@@ -42,6 +44,7 @@ export function useOpinionFiltering({
   const commentsDiscoverQuery = preloadedQueries.commentsDiscoverQuery;
   const commentsModeratedQuery = preloadedQueries.commentsModeratedQuery;
   const hiddenCommentsQuery = preloadedQueries.hiddenCommentsQuery;
+  const commentsMyVotesQuery = preloadedQueries.commentsMyVotesQuery;
 
   // Active query based on current filter
   const activeQuery = computed(() => {
@@ -54,6 +57,8 @@ export function useOpinionFiltering({
         return commentsModeratedQuery;
       case "hidden":
         return hiddenCommentsQuery;
+      case "my_votes":
+        return commentsMyVotesQuery;
       default:
         return commentsDiscoverQuery;
     }
@@ -71,6 +76,9 @@ export function useOpinionFiltering({
   );
   const opinionsHidden = computed(
     (): OpinionItem[] => hiddenCommentsQuery.data.value ?? []
+  );
+  const opinionsMyVotes = computed(
+    (): OpinionItem[] => commentsMyVotesQuery.data.value ?? []
   );
 
   // Computed data source based on current filter
@@ -106,6 +114,8 @@ export function useOpinionFiltering({
         return opinionsHidden.value;
       case "moderated":
         return opinionsModerated.value;
+      case "my_votes":
+        return opinionsMyVotes.value;
       default:
         return opinionsDiscover.value;
     }
@@ -113,6 +123,34 @@ export function useOpinionFiltering({
 
   function handleUserFilterChange(filterValue: CommentFilterOptions): void {
     currentFilter.value = filterValue;
+
+    // Always refetch "My Votes" when switching to it
+    // This ensures users see their most recent voting state immediately
+    // (especially important after cancelling votes)
+    if (filterValue === "my_votes") {
+      const targetQuery = getQueryForFilter(filterValue);
+      void targetQuery.refetch();
+    }
+  }
+
+  // Helper function to get query object for a given filter
+  function getQueryForFilter(
+    filter: CommentFilterOptions
+  ): UseQueryReturnType<OpinionItem[], Error> {
+    switch (filter) {
+      case "discover":
+        return commentsDiscoverQuery;
+      case "new":
+        return commentsNewQuery;
+      case "moderated":
+        return commentsModeratedQuery;
+      case "hidden":
+        return hiddenCommentsQuery;
+      case "my_votes":
+        return commentsMyVotesQuery;
+      default:
+        return commentsDiscoverQuery;
+    }
   }
 
   // Handle manual retry for failed API calls
@@ -130,6 +168,9 @@ export function useOpinionFiltering({
       case "hidden":
         void hiddenCommentsQuery.refetch();
         break;
+      case "my_votes":
+        void commentsMyVotesQuery.refetch();
+        break;
       default:
         void commentsDiscoverQuery.refetch();
         break;
@@ -143,6 +184,7 @@ export function useOpinionFiltering({
     opinionsDiscover,
     opinionsModerated,
     opinionsHidden,
+    opinionsMyVotes,
     currentOpinionData,
     customIsEmpty,
     handleUserFilterChange,
@@ -159,6 +201,7 @@ const CommentFilterOptionsSchema = z.enum([
   "moderated",
   "hidden",
   "discover",
+  "my_votes",
 ]);
 
 /**

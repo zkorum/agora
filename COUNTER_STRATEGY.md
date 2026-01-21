@@ -119,14 +119,13 @@ LIMIT 20;
 
 **Dynamic Rate Limiting** (based on vote count):
 ```typescript
-// Smaller conversations: 15s minimum
-// Medium: 30s
-// Large: 60s
-// Huge (100K+ votes): 120s
+// Current implementation (as of 2026-01-21):
+// Small conversations (< 1K votes): 2s singleton
+// Medium conversations (1K-1M votes): 8s singleton
+// Huge conversations (1M+ votes): 28s singleton
 const singletonSeconds =
-  voteCount > 50000 ? 120 :
-  voteCount > 10000 ? 60 :
-  voteCount > 1000 ? 30 : 15;
+  voteCount >= 1000000 ? 28 :
+  voteCount >= 1000 ? 8 : 2;
 ```
 
 ---

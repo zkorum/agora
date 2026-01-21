@@ -370,7 +370,7 @@ async function onSubmit() {
       routeGuard.value?.unlockRoute();
 
       await router.replace({
-        name: "/conversation/[postSlugId]",
+        name: "/conversation/[postSlugId]/",
         params: { postSlugId: response.data.conversationSlugId },
       });
 

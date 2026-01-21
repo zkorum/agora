@@ -61,7 +61,7 @@
             <ButtonLink
               v-if="statusData.conversationSlugId"
               :to="{
-                name: '/conversation/[postSlugId]',
+                name: '/conversation/[postSlugId]/',
                 params: {
                   postSlugId: statusData.conversationSlugId,
                 },

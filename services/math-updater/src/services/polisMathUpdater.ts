@@ -103,16 +103,12 @@ async function getMathResults({
             "Content-Type": "application/json",
         },
     });
-    // Log raw response for debugging before parsing
-    log.info(
-        `[Math] Raw response from Python bridge for conversation ${conversationSlugId}:\n${JSON.stringify(response.data, null, 2)}`,
-    );
 
     try {
         return zodMathResults.parse(response.data);
     } catch (e) {
-        log.warn(
-            `[Math] Received invalid/incomplete data from Python bridge for conversation ${conversationSlugId}. This usually means insufficient votes/opinions for clustering.`,
+        log.info(
+            `[Math] Python bridge returned incomplete data for conversation ${conversationSlugId}. This is expected when there are insufficient votes/opinions for clustering. Will retry later.`,
         );
         throw e;
     }
@@ -759,10 +755,6 @@ export async function getAndUpdatePolisMath({
     } catch (e) {
         log.warn(
             `[Math] Failed to get valid math results for conversation ${conversationSlugId} (insufficient data for clustering). Will retry when more votes/opinions are added.`,
-        );
-        log.error(
-            e,
-            "[Math] Detailed error from Python bridge (usually Zod validation or PCA dimensionality error):",
         );
         return; // Exit gracefully - will retry later with more data
     }

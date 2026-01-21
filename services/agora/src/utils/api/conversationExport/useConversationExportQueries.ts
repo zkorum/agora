@@ -15,7 +15,7 @@ export function useExportHistoryQuery({
   return useQuery({
     queryKey: ["exportHistory", conversationSlugId],
     queryFn: () => fetchExportHistory(conversationSlugId),
-    enabled: computed(() => toValue(enabled) && conversationSlugId.length > 0),
+    enabled: computed(() => toValue(enabled)),
     staleTime: 0, // Always stale - exports can change frequently
     retry: false,
   });
@@ -97,7 +97,7 @@ export function useExportReadinessQuery({
   return useQuery({
     queryKey: ["exportReadiness", conversationSlugId],
     queryFn: () => fetchExportReadiness(conversationSlugId),
-    enabled: computed(() => toValue(enabled) && conversationSlugId.length > 0),
+    enabled: computed(() => toValue(enabled)),
     staleTime: 0, // Always stale
     refetchInterval: (query) => {
       // Poll every 3 seconds when:

@@ -24,8 +24,8 @@ The service consists of two main job types:
 - Runs on a self-scheduling loop (default: every 2 seconds)
 - Scans `conversation_update_queue` table for pending math updates
 - Queues `update-conversation-math` jobs for eligible conversations
-- **Rate limiting**: Respects 20-second minimum between updates per conversation
-- **Singleton protection**: Uses pg-boss singleton keys to prevent duplicate jobs per conversation
+- **Rate limiting**: Respects 2-second minimum between updates per conversation
+- **Singleton protection**: Uses pg-boss singleton keys to prevent duplicate jobs per conversation (2s-28s windows based on conversation size)
 - Uses self-scheduling pattern: each job schedules the next run after completion
 - Error-resilient: continues scheduling even if scan encounters errors
 
@@ -74,7 +74,7 @@ Configuration is managed via environment variables. See `env.example` for requir
 - **Business logic queries (via `db` object) use read replica for SELECTs when configured**
   - `getPolisVotes()` reads from replica (acceptable ~1s staleness)
   - All writes (updates, inserts) automatically route to primary via `withReplicas()`
-- **Replication lag**: Typically <1 second, acceptable for math updates (20s minimum rate limit)
+- **Replication lag**: Typically <1 second, acceptable for math updates (2s minimum rate limit)
 
 ### Polis Service
 
@@ -83,9 +83,10 @@ Configuration is managed via environment variables. See `env.example` for requir
 ### Math Updater Settings
 
 - `MATH_UPDATER_SCAN_INTERVAL_MS`: How often to scan for conversations needing updates (default: 2000ms = 2 seconds, min: 2000ms)
-- `MATH_UPDATER_BATCH_SIZE`: Number of jobs to fetch per batch from the queue. Also determines database connection pool size (batch size + 5) (default: 10, max: 50)
-- `MATH_UPDATER_JOB_CONCURRENCY`: Number of jobs that execute concurrently within each batch. Limits concurrent heavy database operations to protect the database server (default: 3, max: 10)
-- `MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS`: Minimum time between updates for a single conversation (default: 20000ms = 20 seconds, min: 5000ms)
+- `MATH_UPDATER_BATCH_SIZE`: Number of jobs to fetch per batch from the queue. Also determines database connection pool size (batch size + 5) (default: auto-calculated as 2x concurrency)
+- `MATH_UPDATER_JOB_CONCURRENCY`: Number of jobs that execute concurrently within each batch. Limits concurrent heavy database operations to protect the database server (default: auto-calculated from TOTAL_VCPUS)
+- `MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS`: Minimum time between updates for a single conversation (default: 2000ms = 2 seconds, min: 2000ms)
+- `TOTAL_VCPUS`: Total vCPUs available (used to auto-calculate concurrency settings) (default: 2)
 
 ### AWS Configuration (for AI labels/summaries)
 
@@ -164,13 +165,13 @@ pnpm format:write
 
 3. **Conversation Scanning**: Scan job queries `conversation_update_queue` table for pending updates
    - Reads conversations where `processed_at IS NULL`
-   - Respects rate limiting via `last_math_update_at` (20s minimum between updates)
+   - Respects rate limiting via `last_math_update_at` (2s minimum between updates)
    - Orders by `last_math_update_at ASC NULLS FIRST` (prioritizes never-updated and oldest)
 
 4. **Job Queueing**: Eligible conversations are queued as `update-conversation-math` jobs
    - Each job includes captured `requestedAt` timestamp for race-condition detection
    - Uses `singletonKey: update-math-${conversationId}` per conversation
-   - Dynamic `singletonSeconds` based on conversation size (15s-120s)
+   - Dynamic `singletonSeconds` based on conversation size (2s-28s)
 
 5. **Self-Scheduling**: After each scan, the job schedules itself to run again after `MATH_UPDATER_SCAN_INTERVAL_MS`
    - Uses `singletonKey` to prevent duplicate loops
@@ -211,7 +212,7 @@ The service interacts with several database tables:
   - `conversation_id` (PRIMARY KEY): Deduplicates queue entries
   - `requested_at`: When update was requested (used for race-condition detection)
   - `processed_at`: NULL = pending, NOT NULL = processed
-  - `last_math_update_at`: Tracks actual processing time (enables 20s rate limiting)
+  - `last_math_update_at`: Tracks actual processing time (enables 2s rate limiting)
 
 ### Core Data
 - `conversation`: Stores conversation metadata, counters, and current math content reference
@@ -246,7 +247,7 @@ The service logs important events:
 
 **Key Metrics to Watch**:
 - Counter drift frequency (should be occasional, not every update)
-- Large conversations processing time (>60s indicates heavy load)
+- Large conversations processing time (>30s indicates heavy load)
 - Singleton job rejections (normal behavior, prevents duplicate work)
 - Queue depth (pending updates in `conversation_update_queue`)
 

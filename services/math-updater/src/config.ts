@@ -65,15 +65,15 @@ const mathUpdaterConfigSchema = sharedConfigSchema.extend({
      * Minimum time between math updates for a single conversation (in milliseconds)
      * Rate limiting prevents overwhelming the Python polis math service
      * Updates requested more frequently are queued until this interval passes
-     * Default: 20000ms (20 seconds)
-     * Minimum: 5000ms (5 seconds)
+     * Default: 2000ms (2 seconds) - aggressive for real-time updates
+     * Minimum: 2000ms (2 seconds)
      * Note: Large conversations (100K+ votes) take 50-85 seconds to process
      */
     MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS: z.coerce
         .number()
         .int()
-        .min(5000)
-        .default(20000),
+        .min(2000)
+        .default(2000),
     // for production
     AWS_SECRET_ID: z.string().optional(),
     AWS_SECRET_REGION: z.string().optional(),

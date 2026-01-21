@@ -11,6 +11,7 @@ import {
     polisClusterOpinionTable,
     polisClusterUserTable,
     polisContentTable,
+    voteTable,
 } from "@/shared-backend/schema.js";
 import type { NotificationSSEManager } from "./notificationSSE.js";
 import { createOpinionNotification } from "./notification.js";
@@ -105,7 +106,7 @@ interface FetchOpinionsProps {
     db: PostgresJsDatabase;
     postSlugId: SlugId;
     personalizationUserId?: string;
-    filterTarget: "new" | "moderated" | "hidden" | "discover";
+    filterTarget: "new" | "moderated" | "hidden" | "discover" | "my_votes";
     limit: number;
 }
 
@@ -113,7 +114,7 @@ interface FetchOpinionsByPostIdProps {
     db: PostgresJsDatabase;
     postId: number;
     personalizationUserId?: string;
-    filterTarget: "new" | "moderated" | "hidden" | "discover";
+    filterTarget: "new" | "moderated" | "hidden" | "discover" | "my_votes";
     limit: number;
 }
 
@@ -124,9 +125,18 @@ export async function fetchOpinionsByPostId({
     filterTarget,
     limit,
 }: FetchOpinionsByPostIdProps): Promise<OpinionItemPerSlugId> {
+    // Require authentication early for my_votes filter (prevent spam)
+    if (filterTarget === "my_votes" && !personalizationUserId) {
+        throw httpErrors.unauthorized(
+            "Authentication required for my_votes filter",
+        );
+    }
+
     let whereClause: SQL | undefined = eq(opinionTable.conversationId, postId);
     // isNotNull(opinionTable.currentContentId), // filtering out deleted opinions, this is unecessary because of the use of innerJoin
     let orderByClause = [desc(opinionTable.createdAt)]; // default value, shouldn't be needed but ts doesn't understand how to terminate nested switch
+    let shouldJoinVoteTable = false;
+
     switch (filterTarget) {
         case "moderated": {
             whereClause = and(
@@ -150,11 +160,33 @@ export async function fetchOpinionsByPostId({
         }
         case "discover": {
             whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            orderByClause = isSqlOrderByPolisPriority();
+            // For authenticated users, sort unvoted opinions first, then by Polis priority
+            if (personalizationUserId) {
+                shouldJoinVoteTable = true;
+                // Sort by: unvoted first (voteTable.id IS NULL), then voted, with Polis priority as secondary sort
+                orderByClause = [
+                    sql`CASE WHEN ${voteTable.id} IS NOT NULL THEN 1 ELSE 0 END ASC`,
+                    ...isSqlOrderByPolisPriority(),
+                ];
+            } else {
+                // Unauthenticated users get default Polis priority sort
+                orderByClause = isSqlOrderByPolisPriority();
+            }
+            break;
+        }
+        case "my_votes": {
+            // TypeScript knows personalizationUserId is defined here due to early check
+            shouldJoinVoteTable = true;
+            // Show only voted opinions (regardless of moderation status)
+            // Filter by currentContentId to exclude cancelled votes (currentContentId = NULL when cancelled)
+            whereClause = and(whereClause, isNotNull(voteTable.currentContentId));
+            // Sort by most recent votes first
+            orderByClause = [desc(voteTable.updatedAt)];
             break;
         }
     }
-    const results = await db
+    // Build query with conditional vote table join
+    let query = db
         .select({
             // comment payload
             commentSlugId: opinionTable.slugId,
@@ -184,7 +216,20 @@ export async function fetchOpinionsByPostId({
         .leftJoin(
             opinionModerationTable,
             eq(opinionModerationTable.opinionId, opinionTable.id),
-        )
+        );
+
+    // Add vote table join for discover (authenticated) and my_votes filters
+    if (shouldJoinVoteTable && personalizationUserId) {
+        query = query.leftJoin(
+            voteTable,
+            and(
+                eq(voteTable.opinionId, opinionTable.id),
+                eq(voteTable.authorId, personalizationUserId),
+            ),
+        );
+    }
+
+    const results = await query
         .orderBy(...orderByClause)
         .where(and(whereClause, eq(userTable.isDeleted, false)))
         .limit(limit); // TODO: infinite virtual scrolling instead
@@ -1019,6 +1064,7 @@ interface PostNewOpinionProps {
         conversationAuthorId: string;
         conversationIsIndexed: boolean;
         conversationIsLoginRequired: boolean;
+        conversationIsClosed: boolean;
         requiresEventTicket: EventSlug | null;
     };
 }
@@ -1041,6 +1087,7 @@ export async function postNewOpinion({
     let conversationContentId: number | null;
     let conversationAuthorId: string;
     let conversationIsLoginRequired: boolean;
+    let conversationIsClosed: boolean;
     let requiresEventTicket: EventSlug | null;
 
     if (conversationMetadata) {
@@ -1049,6 +1096,7 @@ export async function postNewOpinion({
         conversationAuthorId = conversationMetadata.conversationAuthorId;
         conversationIsLoginRequired =
             conversationMetadata.conversationIsLoginRequired;
+        conversationIsClosed = conversationMetadata.conversationIsClosed;
         requiresEventTicket = conversationMetadata.requiresEventTicket;
     } else {
         const { getPostMetadataFromSlugId } = useCommonPost();
@@ -1060,6 +1108,7 @@ export async function postNewOpinion({
         conversationContentId = metadata.contentId;
         conversationAuthorId = metadata.authorId;
         conversationIsLoginRequired = metadata.isLoginRequired;
+        conversationIsClosed = metadata.isClosed;
         requiresEventTicket = metadata.requiresEventTicket;
     }
 
@@ -1079,6 +1128,14 @@ export async function postNewOpinion({
                 reason: "conversation_locked",
             };
         }
+    }
+
+    // Check if conversation is closed (skip for seed opinions on just-created conversations)
+    if (!conversationMetadata && conversationIsClosed) {
+        return {
+            success: false,
+            reason: "conversation_closed",
+        };
     }
 
     try {

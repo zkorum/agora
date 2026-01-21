@@ -93,13 +93,17 @@ export async function updateConversationMathHandler(
 ): Promise<void> {
     const { conversationId, conversationSlugId, requestedAt } = job.data;
 
+    log.info(
+        `[Update Math] ✓ Handler invoked for conversation ${conversationSlugId} (id: ${conversationId}, job: ${job.id})`,
+    );
+
     // Convert requestedAt from ISO string to Date if needed
     // (pg-boss serializes Date objects to strings)
     const requestedAtDate =
         typeof requestedAt === "string" ? new Date(requestedAt) : requestedAt;
 
     log.info(
-        `[Math Updater] Starting math update for conversation ${conversationSlugId} (id: ${conversationId})`,
+        `[Update Math] Starting math update for conversation ${conversationSlugId}`,
     );
 
     try {
@@ -191,12 +195,12 @@ export async function updateConversationMathHandler(
         }
 
         log.info(
-            `[Math Updater] Successfully updated math for conversation ${conversationSlugId}`,
+            `[Update Math] ✓ Successfully completed math update for conversation ${conversationSlugId}`,
         );
     } catch (error) {
         log.error(
             error,
-            `[Math Updater] Error updating math for conversation ${conversationSlugId}`,
+            `[Update Math] ✗ Error updating math for conversation ${conversationSlugId}`,
         );
 
         // Check if there's a newer update request waiting

@@ -1,14 +1,25 @@
 <template>
   <button
-    v-if="props.type != 'none'"
+    v-if="props.type === 'learnMore' || props.type === 'viewMore'"
     class="choice-button"
     @click="handleClick"
   >
     {{ buttonText }}
   </button>
+
+  <ZKButton
+    v-else-if="props.type === 'informationIcon'"
+    button-type="icon"
+    :aria-label="t('informationIconAriaLabel')"
+    @click="handleClick"
+  >
+    <ZKIcon color="#6d6a74" name="mdi-information-outline" size="1.2rem" />
+  </ZKButton>
 </template>
 
 <script setup lang="ts">
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { computed } from "vue";
 
@@ -18,7 +29,7 @@ import {
 } from "./AnalysisActionButton.i18n";
 
 const props = defineProps<{
-  type: "learnMore" | "viewMore" | "none";
+  type: "learnMore" | "viewMore" | "informationIcon" | "none";
 }>();
 
 const emit = defineEmits<{

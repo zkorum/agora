@@ -293,6 +293,7 @@ export class Dto {
                 success: z.literal(false),
                 reason: z.enum([
                     "conversation_locked",
+                    "conversation_closed",
                     "event_ticket_required",
                 ]),
             })
@@ -324,18 +325,24 @@ export class Dto {
         .object({
             opinionSlugId: z.string(),
             chosenOption: zodVotingAction,
+            returnIsUserClustered: z.boolean().optional(),
         })
         .strict();
     static castVoteResponse = z.discriminatedUnion("success", [
         z
             .object({
                 success: z.literal(true),
+                userIsClustered: z.boolean().optional(),
             })
             .strict(),
         z
             .object({
                 success: z.literal(false),
-                reason: z.enum(["event_ticket_required"]),
+                reason: z.enum([
+                    "conversation_locked",
+                    "conversation_closed",
+                    "event_ticket_required",
+                ]),
             })
             .strict(),
     ]);
@@ -368,6 +375,42 @@ export class Dto {
             conversationSlugId: zodSlugId,
         })
         .strict();
+    static closeConversationRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static closeConversationResponse = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+            })
+            .strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: z.enum(["not_allowed", "already_closed"]),
+            })
+            .strict(),
+    ]);
+    static openConversationRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static openConversationResponse = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+            })
+            .strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: z.enum(["not_allowed", "already_open"]),
+            })
+            .strict(),
+    ]);
     static deleteOpinionRequest = z
         .object({
             opinionSlugId: zodSlugId,
@@ -877,6 +920,12 @@ export type UpdateLanguagePreferencesRequest = z.infer<
 >;
 export type ConversationAnalysis = z.infer<typeof Dto.fetchAnalysisResponse>;
 export type CastVoteResponse = z.infer<typeof Dto.castVoteResponse>;
+export type CloseConversationResponse = z.infer<
+    typeof Dto.closeConversationResponse
+>;
+export type OpenConversationResponse = z.infer<
+    typeof Dto.openConversationResponse
+>;
 export type ValidateCsvResponse = z.infer<typeof Dto.validateCsvResponse>;
 export type GetActiveImportResponse = z.infer<
     typeof Dto.getActiveImportResponse

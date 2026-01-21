@@ -7,11 +7,16 @@
           :title="t('commonGroundTitle')"
         >
           <template #action-button>
-            <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
-            <!-- Tab switching should be keyboard accessible for users with motor disabilities -->
-            <div @click="switchTab()">
-              <AnalysisActionButton :type="compactMode ? 'viewMore' : 'none'" />
-            </div>
+            <AnalysisActionButton
+              v-if="compactMode"
+              type="viewMore"
+              @action-click="switchTab()"
+            />
+            <AnalysisActionButton
+              v-else
+              type="informationIcon"
+              @action-click="showCommonGroundInfo = true"
+            />
           </template>
         </AnalysisTitleHeader>
       </template>
@@ -34,6 +39,8 @@
         />
       </template>
     </AnalysisSectionWrapper>
+
+    <CommonGroundInformationDialog v-model="showCommonGroundInfo" />
   </div>
 </template>
 
@@ -45,11 +52,13 @@ import type {
   PolisKey,
 } from "src/shared/types/zod";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
+import { ref } from "vue";
 
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import EmptyStateMessage from "../common/EmptyStateMessage.vue";
+import CommonGroundInformationDialog from "./CommonGroundInformationDialog.vue";
 import ConsensusItem from "./ConsensusItem.vue";
 import {
   type ConsensusTabTranslations,
@@ -69,6 +78,8 @@ const currentTab = defineModel<ShortcutItem>({ required: true });
 const { t } = useComponentI18n<ConsensusTabTranslations>(
   consensusTabTranslations
 );
+
+const showCommonGroundInfo = ref(false);
 
 function switchTab() {
   currentTab.value = "Common ground";

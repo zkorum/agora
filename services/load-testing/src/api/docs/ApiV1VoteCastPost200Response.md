@@ -6,6 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **boolean** |  | [default to undefined]
+**userIsClustered** | **boolean** |  | [optional] [default to undefined]
 **reason** | **string** |  | [default to undefined]
 
 ## Example
@@ -15,6 +16,7 @@ import { ApiV1VoteCastPost200Response } from './api';
 
 const instance: ApiV1VoteCastPost200Response = {
     success,
+    userIsClustered,
     reason,
 };
 ```
