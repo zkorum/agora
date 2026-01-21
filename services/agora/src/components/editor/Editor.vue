@@ -56,7 +56,7 @@
     <BubbleMenu
       v-if="editor && isEditorReady && $q.platform.is.mobile"
       v-show="showToolbar"
-      :editor="editor"
+      :editor="editorNonNull"
       :options="{
         placement: $q.platform.is.android ? 'bottom' : 'top',
         offset: $q.platform.is.mobile ? 20 : 15,
@@ -65,33 +65,33 @@
       <div class="bubble-menu-content" @mousedown.prevent>
         <EditorToolbarButton
           icon="mdi:format-bold"
-          :is-active="editor.isActive('bold')"
-          @click="editor.chain().focus().toggleBold().run()"
+          :is-active="editorNonNull.isActive('bold')"
+          @click="editorNonNull.chain().focus().toggleBold().run()"
         />
         <EditorToolbarButton
           icon="mdi:format-italic"
-          :is-active="editor.isActive('italic')"
-          @click="editor.chain().focus().toggleItalic().run()"
+          :is-active="editorNonNull.isActive('italic')"
+          @click="editorNonNull.chain().focus().toggleItalic().run()"
         />
         <EditorToolbarButton
           icon="mdi:format-strikethrough"
-          :is-active="editor.isActive('strike')"
-          @click="editor.chain().focus().toggleStrike().run()"
+          :is-active="editorNonNull.isActive('strike')"
+          @click="editorNonNull.chain().focus().toggleStrike().run()"
         />
         <EditorToolbarButton
           icon="mdi:format-underline"
-          :is-active="editor.isActive('underline')"
-          @click="editor.chain().focus().toggleUnderline().run()"
+          :is-active="editorNonNull.isActive('underline')"
+          @click="editorNonNull.chain().focus().toggleUnderline().run()"
         />
         <EditorToolbarButton
           icon="mdi:format-list-bulleted"
-          :is-active="editor.isActive('bulletList')"
-          @click="editor.chain().focus().toggleBulletList().run()"
+          :is-active="editorNonNull.isActive('bulletList')"
+          @click="editorNonNull.chain().focus().toggleBulletList().run()"
         />
         <EditorToolbarButton
           icon="mdi:format-list-numbered"
-          :is-active="editor.isActive('orderedList')"
-          @click="editor.chain().focus().toggleOrderedList().run()"
+          :is-active="editorNonNull.isActive('orderedList')"
+          @click="editorNonNull.chain().focus().toggleOrderedList().run()"
         />
       </div>
     </BubbleMenu>
@@ -306,6 +306,14 @@ const editor = useEditor({
 // Fixes: TypeError: null is not an object (evaluating 't.docView.domFromPos')
 const isEditorReady = computed(() => {
   return editor.value !== undefined && editor.value.view !== null;
+});
+
+// Non-null editor for template usage (safe because it's guarded by v-if="isEditorReady")
+const editorNonNull = computed(() => {
+  if (!editor.value) {
+    throw new Error("Editor not initialized");
+  }
+  return editor.value;
 });
 
 onBeforeUnmount(() => {
