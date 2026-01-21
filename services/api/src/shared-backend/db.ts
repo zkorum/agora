@@ -15,21 +15,26 @@ async function createPostgresClient(
     log: Pick<pino.BaseLogger, "info" | "error">,
     useReadReplica = false,
 ) {
-    const awsSecretId = useReadReplica && config.AWS_SECRET_ID_READ
-        ? config.AWS_SECRET_ID_READ
-        : config.AWS_SECRET_ID;
-    const awsSecretRegion = useReadReplica && config.AWS_SECRET_REGION_READ
-        ? config.AWS_SECRET_REGION_READ
-        : config.AWS_SECRET_REGION;
-    const dbHost = useReadReplica && config.DB_HOST_READ
-        ? config.DB_HOST_READ
-        : config.DB_HOST;
-    const dbPort = useReadReplica && config.DB_HOST_READ
-        ? config.DB_PORT_READ
-        : config.DB_PORT;
-    const connectionString = useReadReplica && config.CONNECTION_STRING_READ
-        ? config.CONNECTION_STRING_READ
-        : config.CONNECTION_STRING;
+    const awsSecretId =
+        useReadReplica && config.AWS_SECRET_ID_READ
+            ? config.AWS_SECRET_ID_READ
+            : config.AWS_SECRET_ID;
+    const awsSecretRegion =
+        useReadReplica && config.AWS_SECRET_REGION_READ
+            ? config.AWS_SECRET_REGION_READ
+            : config.AWS_SECRET_REGION;
+    const dbHost =
+        useReadReplica && config.DB_HOST_READ
+            ? config.DB_HOST_READ
+            : config.DB_HOST;
+    const dbPort =
+        useReadReplica && config.DB_HOST_READ
+            ? config.DB_PORT_READ
+            : config.DB_PORT;
+    const connectionString =
+        useReadReplica && config.CONNECTION_STRING_READ
+            ? config.CONNECTION_STRING_READ
+            : config.CONNECTION_STRING;
 
     if (
         config.NODE_ENV === "production" &&
@@ -109,7 +114,9 @@ async function createPostgresClient(
                 ssl: config.NODE_ENV === "production" ? "require" : undefined,
             });
         } catch (e) {
-            log.error(`Unable to connect to the database (${useReadReplica ? 'read replica' : 'primary'})`);
+            log.error(
+                `Unable to connect to the database (${useReadReplica ? "read replica" : "primary"})`,
+            );
             log.error(e);
             process.exit(1);
         }
@@ -133,7 +140,9 @@ export async function createDb(
     // Check if read replica config exists
     const hasReadReplica = !!(
         config.CONNECTION_STRING_READ ??
-        (config.AWS_SECRET_ID_READ && config.AWS_SECRET_REGION_READ && config.DB_HOST_READ)
+        (config.AWS_SECRET_ID_READ &&
+            config.AWS_SECRET_REGION_READ &&
+            config.DB_HOST_READ)
     );
 
     if (hasReadReplica) {
@@ -142,13 +151,17 @@ export async function createDb(
             logger: new DrizzleFastifyLogger(log),
         });
 
-        log.info("Connected to read replica - SELECTs will use replica, writes use primary");
+        log.info(
+            "Connected to read replica - SELECTs will use replica, writes use primary",
+        );
 
         // Use Drizzle's built-in withReplicas
         // Automatically routes SELECT queries to replica, writes to primary
         return withReplicas(primaryDb, [readDb]);
     } else {
-        log.info("No read replica configured, using primary for all operations");
+        log.info(
+            "No read replica configured, using primary for all operations",
+        );
         return primaryDb;
     }
 }

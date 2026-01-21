@@ -1984,7 +1984,7 @@
                                                     "opinion": {
                                                         "type": "string",
                                                         "minLength": 1,
-                                                        "maxLength": 840
+                                                        "maxLength": 3000
                                                     },
                                                     "numParticipants": {
                                                         "type": "integer",
@@ -2521,7 +2521,7 @@
                                             "opinion": {
                                                 "type": "string",
                                                 "minLength": 1,
-                                                "maxLength": 840
+                                                "maxLength": 3000
                                             },
                                             "numParticipants": {
                                                 "type": "integer",
@@ -2696,7 +2696,7 @@
                                                     "opinion": {
                                                         "type": "string",
                                                         "minLength": 1,
-                                                        "maxLength": 840
+                                                        "maxLength": 3000
                                                     },
                                                     "numParticipants": {
                                                         "type": "integer",
@@ -2882,7 +2882,7 @@
                                                     "opinion": {
                                                         "type": "string",
                                                         "minLength": 1,
-                                                        "maxLength": 840
+                                                        "maxLength": 3000
                                                     },
                                                     "numParticipants": {
                                                         "type": "integer",
@@ -3098,7 +3098,7 @@
                                                                 "opinion": {
                                                                     "type": "string",
                                                                     "minLength": 1,
-                                                                    "maxLength": 840
+                                                                    "maxLength": 3000
                                                                 },
                                                                 "numParticipants": {
                                                                     "type": "integer",
@@ -3338,7 +3338,7 @@
                                             "opinion": {
                                                 "type": "string",
                                                 "minLength": 1,
-                                                "maxLength": 840
+                                                "maxLength": 3000
                                             },
                                             "numParticipants": {
                                                 "type": "integer",
@@ -3510,7 +3510,7 @@
                                             "opinion": {
                                                 "type": "string",
                                                 "minLength": 1,
-                                                "maxLength": 840
+                                                "maxLength": 3000
                                             },
                                             "numParticipants": {
                                                 "type": "integer",

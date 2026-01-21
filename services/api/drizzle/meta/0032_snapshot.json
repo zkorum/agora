@@ -1,5 +1,5 @@
 {
-  "id": "4592fd0f-527d-4174-ad14-437c0f466d5d",
+  "id": "7e0b4440-6a3b-4896-8583-1634d659ab5d",
   "prevId": "2c5c93d9-85d4-4baf-869c-94d2a37f3f7b",
   "version": "7",
   "dialect": "postgresql",
@@ -2627,7 +2627,7 @@
         },
         "content": {
           "name": "content",
-          "type": "varchar(840)",
+          "type": "varchar(3000)",
           "primaryKey": false,
           "notNull": true
         },
