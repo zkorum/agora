@@ -362,6 +362,12 @@ watch(
   padding-bottom: 0rem;
 }
 
+.editor-wrapper {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .toolbar {
   display: flex;
   gap: 0.25rem;
@@ -393,6 +399,8 @@ watch(
   outline: none;
   font-size: 1rem;
   line-height: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .editor :deep(.ProseMirror p) {
