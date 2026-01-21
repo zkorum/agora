@@ -157,6 +157,30 @@ export async function isUserPartOfOrganization({
     return result[0].organizationId;
 }
 
+interface IsUserPartOfOrganizationByIdProps {
+    db: PostgresDatabase;
+    userId: string;
+    organizationId: number;
+}
+
+export async function isUserPartOfOrganizationById({
+    db,
+    userId,
+    organizationId,
+}: IsUserPartOfOrganizationByIdProps): Promise<boolean> {
+    const result = await db
+        .select({ id: userOrganizationMappingTable.id })
+        .from(userOrganizationMappingTable)
+        .where(
+            and(
+                eq(userOrganizationMappingTable.userId, userId),
+                eq(userOrganizationMappingTable.organizationId, organizationId),
+            ),
+        )
+        .limit(1);
+    return result.length > 0;
+}
+
 interface GetDeviceStatusParams {
     db: PostgresDatabase;
     didWrite: string;

@@ -426,6 +426,7 @@ export async function closeConversation({
             conversationId: conversationTable.id,
             authorId: conversationTable.authorId,
             isClosed: conversationTable.isClosed,
+            organizationId: conversationTable.organizationId,
         })
         .from(conversationTable)
         .where(eq(conversationTable.slugId, conversationSlugId))
@@ -436,8 +437,19 @@ export async function closeConversation({
         throw httpErrors.notFound("Conversation not found");
     }
 
-    // Check ownership in-memory
-    if (conversation[0].authorId !== userId) {
+    // Check authorization: user must be author OR member of the conversation's organization
+    const isAuthor = conversation[0].authorId === userId;
+    let isAuthorized = isAuthor;
+
+    if (!isAuthorized && conversation[0].organizationId !== null) {
+        isAuthorized = await authUtilService.isUserPartOfOrganizationById({
+            db,
+            userId,
+            organizationId: conversation[0].organizationId,
+        });
+    }
+
+    if (!isAuthorized) {
         return { success: false, reason: "not_allowed" };
     }
 
@@ -472,6 +484,7 @@ export async function openConversation({
             conversationId: conversationTable.id,
             authorId: conversationTable.authorId,
             isClosed: conversationTable.isClosed,
+            organizationId: conversationTable.organizationId,
         })
         .from(conversationTable)
         .where(eq(conversationTable.slugId, conversationSlugId))
@@ -482,8 +495,19 @@ export async function openConversation({
         throw httpErrors.notFound("Conversation not found");
     }
 
-    // Check ownership in-memory
-    if (conversation[0].authorId !== userId) {
+    // Check authorization: user must be author OR member of the conversation's organization
+    const isAuthor = conversation[0].authorId === userId;
+    let isAuthorized = isAuthor;
+
+    if (!isAuthorized && conversation[0].organizationId !== null) {
+        isAuthorized = await authUtilService.isUserPartOfOrganizationById({
+            db,
+            userId,
+            organizationId: conversation[0].organizationId,
+        });
+    }
+
+    if (!isAuthorized) {
         return { success: false, reason: "not_allowed" };
     }
 
