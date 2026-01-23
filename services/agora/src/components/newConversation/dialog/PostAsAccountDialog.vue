@@ -91,6 +91,8 @@ function setPostAs(isOrganization: boolean, name: string): void {
 }
 
 function isAccountSelected(isOrganization: boolean, name: string): boolean {
+  if (!postAs.value) return false;
+
   if (isOrganization) {
     return (
       postAs.value.postAsOrganization && postAs.value.organizationName === name
