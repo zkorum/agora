@@ -147,6 +147,7 @@ import {
 } from "src/shared/shared";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
+import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -164,6 +165,7 @@ const route = useRoute("/conversation/[conversationSlugId]/edit/");
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
 const { getConversationForEdit, updateConversation } = useBackendPostEditApi();
+const { invalidateConversation } = useInvalidateConversationQuery();
 const { resetPostData } = useHomeFeedStore();
 
 const conversationSlugId = route.params.conversationSlugId;
@@ -443,6 +445,8 @@ async function performSave(): Promise<void> {
       showNotifyMessage(t("updateSuccess"));
       // Invalidate home feed cache to ensure fresh data
       await resetPostData();
+      // Invalidate conversation cache to ensure fresh data on conversation page
+      invalidateConversation(conversationSlugId);
       // Navigate back to conversation view
       await router.push({
         name: "/conversation/[postSlugId]",
