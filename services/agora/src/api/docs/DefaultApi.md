@@ -28,12 +28,14 @@ All URIs are relative to *http://localhost*
 |[**apiV1ConversationExportRequestPost**](#apiv1conversationexportrequestpost) | **POST** /api/v1/conversation/export/request | |
 |[**apiV1ConversationExportStatusPost**](#apiv1conversationexportstatuspost) | **POST** /api/v1/conversation/export/status | |
 |[**apiV1ConversationFetchRecentPost**](#apiv1conversationfetchrecentpost) | **POST** /api/v1/conversation/fetch-recent | |
+|[**apiV1ConversationGetForEditPost**](#apiv1conversationgetforeditpost) | **POST** /api/v1/conversation/get-for-edit | |
 |[**apiV1ConversationGetPost**](#apiv1conversationgetpost) | **POST** /api/v1/conversation/get | |
 |[**apiV1ConversationImportActivePost**](#apiv1conversationimportactivepost) | **POST** /api/v1/conversation/import/active | |
 |[**apiV1ConversationImportCsvPost**](#apiv1conversationimportcsvpost) | **POST** /api/v1/conversation/import-csv | |
 |[**apiV1ConversationImportPost**](#apiv1conversationimportpost) | **POST** /api/v1/conversation/import | |
 |[**apiV1ConversationImportStatusPost**](#apiv1conversationimportstatuspost) | **POST** /api/v1/conversation/import/status | |
 |[**apiV1ConversationOpenPost**](#apiv1conversationopenpost) | **POST** /api/v1/conversation/open | |
+|[**apiV1ConversationUpdatePost**](#apiv1conversationupdatepost) | **POST** /api/v1/conversation/update | |
 |[**apiV1ConversationValidateCsvPost**](#apiv1conversationvalidatecsvpost) | **POST** /api/v1/conversation/validate-csv | |
 |[**apiV1ModerationConversationCreatePost**](#apiv1moderationconversationcreatepost) | **POST** /api/v1/moderation/conversation/create | |
 |[**apiV1ModerationConversationGetPost**](#apiv1moderationconversationgetpost) | **POST** /api/v1/moderation/conversation/get | |
@@ -1256,6 +1258,57 @@ const { status, data } = await apiInstance.apiV1ConversationFetchRecentPost(
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **apiV1ConversationGetForEditPost**
+> ApiV1ConversationGetForEditPost200Response apiV1ConversationGetForEditPost(apiV1ModerationConversationWithdrawPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ModerationConversationWithdrawPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest; //
+
+const { status, data } = await apiInstance.apiV1ConversationGetForEditPost(
+    apiV1ModerationConversationWithdrawPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ModerationConversationWithdrawPostRequest** | **ApiV1ModerationConversationWithdrawPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1ConversationGetForEditPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **apiV1ConversationGetPost**
 > ApiV1ConversationGetPost200Response apiV1ConversationGetPost(apiV1ModerationConversationWithdrawPostRequest)
 
@@ -1528,6 +1581,57 @@ const { status, data } = await apiInstance.apiV1ConversationOpenPost(
 ### Return type
 
 **ApiV1ConversationOpenPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1ConversationUpdatePost**
+> ApiV1ConversationUpdatePost200Response apiV1ConversationUpdatePost(apiV1ConversationUpdatePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ConversationUpdatePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ConversationUpdatePostRequest: ApiV1ConversationUpdatePostRequest; //
+
+const { status, data } = await apiInstance.apiV1ConversationUpdatePost(
+    apiV1ConversationUpdatePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ConversationUpdatePostRequest** | **ApiV1ConversationUpdatePostRequest**|  | |
+
+
+### Return type
+
+**ApiV1ConversationUpdatePost200Response**
 
 ### Authorization
 
