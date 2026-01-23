@@ -11,7 +11,7 @@ import {
 import { eq, sql, and } from "drizzle-orm";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
-import { useCommonPost } from "./common.js";
+import { useCommonPost, isValidPublicConversationAccess } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import type { ExtendedConversation, EventSlug } from "@/shared/types/zod.js";
 import type {
@@ -26,25 +26,6 @@ import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import { deleteAllConversationExports } from "@/service/conversationExport/index.js";
 import * as authUtilService from "@/service/authUtil.js";
-
-/**
- * Validates that public conversations have either login requirement or event ticket verification.
- * Returns false if validation fails (public conversation without login or ticket requirement).
- */
-function isValidPublicConversationAccess({
-    isIndexed,
-    isLoginRequired,
-    requiresEventTicket,
-}: {
-    isIndexed: boolean;
-    isLoginRequired: boolean;
-    requiresEventTicket?: EventSlug;
-}): boolean {
-    if (isIndexed && !isLoginRequired && !requiresEventTicket) {
-        return false;
-    }
-    return true;
-}
 
 interface CreateNewPostProps {
     db: PostgresDatabase;
@@ -206,21 +187,34 @@ export async function createNewPost({
                 .where(eq(conversationTable.id, insertedConversationId));
 
             if (pollingOptionList != null) {
-                await tx.insert(pollTable).values({
-                    conversationContentId: insertedConversationContentId,
-                    option1: pollingOptionList[0],
-                    option2: pollingOptionList[1],
-                    option3: pollingOptionList[2] ?? null,
-                    option4: pollingOptionList[3] ?? null,
-                    option5: pollingOptionList[4] ?? null,
-                    option6: pollingOptionList[5] ?? null,
-                    option1Response: 0,
-                    option2Response: 0,
-                    option3Response: pollingOptionList[2] ? 0 : null,
-                    option4Response: pollingOptionList[3] ? 0 : null,
-                    option5Response: pollingOptionList[4] ? 0 : null,
-                    option6Response: pollingOptionList[5] ? 0 : null,
-                });
+                const newPollResult = await tx
+                    .insert(pollTable)
+                    .values({
+                        conversationContentId: insertedConversationContentId,
+                        option1: pollingOptionList[0],
+                        option2: pollingOptionList[1],
+                        option3: pollingOptionList[2] ?? null,
+                        option4: pollingOptionList[3] ?? null,
+                        option5: pollingOptionList[4] ?? null,
+                        option6: pollingOptionList[5] ?? null,
+                        option1Response: 0,
+                        option2Response: 0,
+                        option3Response: pollingOptionList[2] ? 0 : null,
+                        option4Response: pollingOptionList[3] ? 0 : null,
+                        option5Response: pollingOptionList[4] ? 0 : null,
+                        option6Response: pollingOptionList[5] ? 0 : null,
+                    })
+                    .returning({ pollId: pollTable.id });
+
+                await tx
+                    .update(conversationContentTable)
+                    .set({ pollId: newPollResult[0].pollId })
+                    .where(
+                        eq(
+                            conversationContentTable.id,
+                            insertedConversationContentId,
+                        ),
+                    );
             }
 
             // Update the user profile's conversation count

@@ -51,7 +51,7 @@
 import { storeToRefs } from "pinia";
 import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import type { PostAsSettings } from "src/composables/conversation/draft";
 import { useUserStore } from "src/stores/user";
 import { computed } from "vue";
 
@@ -67,32 +67,38 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const { profileData } = storeToRefs(useUserStore());
-const { setPostAsOrganization, disablePostAsOrganization } =
-  useNewPostDraftsStore();
-const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
+
+const postAs = defineModel<PostAsSettings>("postAs", { required: true });
 
 const showDialog = computed({
   get: () => props.modelValue,
   set: (value: boolean) => emit("update:modelValue", value),
 });
 
-function setPostAs(isOrganization: boolean, name: string) {
+function setPostAs(isOrganization: boolean, name: string): void {
   if (isOrganization) {
-    setPostAsOrganization(name);
+    postAs.value = {
+      postAsOrganization: true,
+      organizationName: name,
+    };
   } else {
-    disablePostAsOrganization();
+    postAs.value = {
+      postAsOrganization: false,
+      organizationName: "",
+    };
   }
   showDialog.value = false;
 }
 
 function isAccountSelected(isOrganization: boolean, name: string): boolean {
+  if (!postAs.value) return false;
+
   if (isOrganization) {
     return (
-      conversationDraft.value.postAs.postAsOrganization &&
-      conversationDraft.value.postAs.organizationName === name
+      postAs.value.postAsOrganization && postAs.value.organizationName === name
     );
   } else {
-    return !conversationDraft.value.postAs.postAsOrganization;
+    return !postAs.value.postAsOrganization;
   }
 }
 </script>

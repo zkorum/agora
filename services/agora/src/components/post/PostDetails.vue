@@ -114,7 +114,10 @@ const emit = defineEmits<{
 }>();
 
 // Provide conversation data to all descendants (reactive)
-provide("conversationData", computed(() => props.conversationData));
+provide(
+  "conversationData",
+  computed(() => props.conversationData)
+);
 
 const currentTab = ref<"comment" | "analysis">("comment");
 

@@ -1,5 +1,5 @@
 {
-  "id": "7e0b4440-6a3b-4896-8583-1634d659ab5d",
+  "id": "cee85ca0-1843-4cc1-bdb4-4309933416f6",
   "prevId": "2c5c93d9-85d4-4baf-869c-94d2a37f3f7b",
   "version": "7",
   "dialect": "postgresql",
@@ -4480,8 +4480,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "conversation_id": {
-          "name": "conversation_id",
+        "poll_id": {
+          "name": "poll_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -4522,12 +4522,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "poll_response_conversation_id_conversation_id_fk": {
-          "name": "poll_response_conversation_id_conversation_id_fk",
+        "poll_response_poll_id_poll_id_fk": {
+          "name": "poll_response_poll_id_poll_id_fk",
           "tableFrom": "poll_response",
-          "tableTo": "conversation",
+          "tableTo": "poll",
           "columnsFrom": [
-            "conversation_id"
+            "poll_id"
           ],
           "columnsTo": [
             "id"
@@ -4558,12 +4558,12 @@
             "current_content_id"
           ]
         },
-        "poll_response_author_id_conversation_id_unique": {
-          "name": "poll_response_author_id_conversation_id_unique",
+        "poll_response_author_id_poll_id_unique": {
+          "name": "poll_response_author_id_poll_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "author_id",
-            "conversation_id"
+            "poll_id"
           ]
         }
       },
