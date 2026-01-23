@@ -130,6 +130,7 @@
 <script setup lang="ts">
 import { useDropZone } from "@vueuse/core";
 import Badge from "primevue/badge";
+import Button from "primevue/button";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { computed, ref } from "vue";
@@ -140,6 +141,12 @@ import {
   csvDropZoneTranslations,
 } from "./CsvDropZone.i18n";
 import CsvErrorDetailsDialog from "./CsvErrorDetailsDialog.vue";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
 
 const props = defineProps<Props>();
 

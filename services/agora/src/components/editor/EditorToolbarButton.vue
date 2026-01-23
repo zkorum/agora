@@ -22,12 +22,13 @@
 
 <script setup lang="ts">
 import { Icon } from "@iconify/vue";
+import Button from "primevue/button";
 
-interface Props {
-  icon: string;
-  isActive?: boolean;
-  disabled?: boolean;
-}
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
 
 withDefaults(defineProps<Props>(), {
   isActive: false,
@@ -38,6 +39,12 @@ withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   click: [];
 }>();
+
+interface Props {
+  icon: string;
+  isActive?: boolean;
+  disabled?: boolean;
+}
 
 function handleClick() {
   emit("click");

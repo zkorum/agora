@@ -92,15 +92,7 @@ function selectDisplayLanguage(
     return; // Already selected
   }
 
-  try {
-    changeDisplayLanguage({ newLanguage: languageCode });
-  } catch (err: unknown) {
-    console.error("Failed to change language:", err);
-    // Type guard for error handling
-    if (err instanceof Error) {
-      console.error("Error message:", err.message);
-    }
-  }
+  void changeDisplayLanguage({ newLanguage: languageCode });
 }
 
 // Load user's language preferences on page mount
