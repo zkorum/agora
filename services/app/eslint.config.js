@@ -10,6 +10,7 @@ export default tseslint.config(
   {
     ignores: [
       ".svelte-kit/",
+      ".netlify/",
       "build/",
       "node_modules/",
       "dist/",
