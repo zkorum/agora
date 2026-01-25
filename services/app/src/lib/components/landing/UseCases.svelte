@@ -236,26 +236,39 @@
 
     <div
       class="
-        grid grid-cols-1 gap-x-5 gap-y-10
-        md:grid-cols-2
+        grid grid-cols-1 justify-items-center gap-x-5 gap-y-10
+        md:grid-cols-2 md:justify-items-start
       "
     >
       {#each useCases as useCase, i (i)}
-        <div class="flex gap-6">
+        <div
+          class="
+            flex flex-col items-center gap-4
+            sm:flex-row sm:items-start sm:gap-6
+          "
+        >
           <div
             class="
-              size-[192px] shrink-0 overflow-hidden rounded-2xl
+              size-[160px] shrink-0 overflow-hidden rounded-2xl
               bg-[linear-gradient(115deg,var(--color-gradient-light-purple)_46%,var(--color-gradient-light-blue)_100%)]
+              sm:size-[192px]
             "
           >
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- SVG is static developer-controlled content -->
             {@html useCase.svg}
           </div>
-          <div class="flex min-w-[323px] flex-col gap-[6px] pt-6">
+          <div
+            class="
+              flex min-w-0 flex-col gap-[6px]
+              sm:pt-6
+              md:min-w-[323px]
+            "
+          >
             <span
               class="
-                inline-flex w-fit rounded-[9px] bg-surface-hover px-2 py-[7px]
-                text-base/4 tracking-[-0.16px]
+                inline-flex w-fit self-center rounded-[9px] bg-surface-hover
+                px-2 py-[7px] text-base/4 tracking-[-0.16px]
+                sm:self-start
               "
             >
               <GradientText angle={154}>{useCase.chip()}</GradientText>
@@ -270,7 +283,7 @@
             </p>
             <ul
               class="
-                list-disc pl-4 text-base leading-[1.4] tracking-[-0.16px]
+                list-disc pl-6 text-base leading-[1.4] tracking-[-0.16px]
                 text-text-secondary
               "
             >
