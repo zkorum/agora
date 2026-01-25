@@ -2,15 +2,25 @@ import { sentrySvelteKit } from "@sentry/sveltekit";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import { sveltekit } from "@sveltejs/kit/vite";
 import tailwindcss from "@tailwindcss/vite";
-import legacy from "@vitejs/plugin-legacy";
 import Icons from "unplugin-icons/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  build: {
+    target: ["es2020", "chrome86", "safari14", "firefox91"],
+    sourcemap: true,
+  },
   plugins: [
     sentrySvelteKit({
       org: "zkorum",
       project: "agora-app-v2",
+      adapter: "other",
+      sourceMapsUploadOptions: {
+        sourcemaps: {
+          assets: [".netlify/**/*", "build/**/*"],
+          filesToDeleteAfterUpload: ["**/*.map"],
+        },
+      },
     }),
     paraglideVitePlugin({
       project: "./project.inlang",
@@ -21,10 +31,6 @@ export default defineConfig({
     sveltekit(),
     Icons({
       compiler: "svelte",
-    }),
-    legacy({
-      targets: ["defaults", "chrome >= 86", "safari >= 14"],
-      modernPolyfills: true,
     }),
   ],
   test: {

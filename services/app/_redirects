@@ -1,0 +1,2 @@
+# Redirect feed requests to the main app
+/feed/*  https://www.agoracitizen.app/:splat  301!
