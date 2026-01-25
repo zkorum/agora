@@ -58,6 +58,11 @@
       alt: "GCC",
       href: "https://www.gccofficial.org/",
     },
+    {
+      src: "/images/partners/devconnect.jpg",
+      alt: "Devconnect",
+      href: "https://devconnect.org/",
+    },
   ];
 </script>
 
@@ -69,8 +74,9 @@
   <div class="relative">
     <div
       class="
-        flex w-max animate-[marquee-scroll_30s_linear_infinite] items-center
-        gap-12
+        flex w-max animate-[marquee-scroll_20s_linear_infinite] items-center
+        gap-8
+        sm:gap-12
       "
     >
       {#each partners as partner (partner.src)}
@@ -83,8 +89,9 @@
             src={partner.src}
             alt={partner.alt}
             class="
-              h-10 w-auto object-contain opacity-70 grayscale transition-all
+              h-12 w-auto object-contain opacity-70 grayscale transition-all
               hover:opacity-100 hover:grayscale-0
+              sm:h-10
             "
           />
         </a>
@@ -99,8 +106,9 @@
             src={partner.src}
             alt={partner.alt}
             class="
-              h-10 w-auto object-contain opacity-70 grayscale transition-all
+              h-12 w-auto object-contain opacity-70 grayscale transition-all
               hover:opacity-100 hover:grayscale-0
+              sm:h-10
             "
           />
         </a>

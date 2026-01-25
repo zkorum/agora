@@ -5,7 +5,12 @@
   import { localizeHref } from "$lib/paraglide/runtime";
 </script>
 
-<footer class="px-8 pb-8">
+<footer
+  class="
+    px-4 pb-8
+    sm:px-8
+  "
+>
   <div
     class="relative mx-auto max-w-[1376px] overflow-hidden rounded-3xl"
     style="min-height: 236px;"
@@ -26,7 +31,12 @@
         class="size-full object-cover"
       />
     </div>
-    <div class="relative z-10 flex flex-col p-8">
+    <div
+      class="
+        relative z-10 flex flex-col p-4
+        sm:p-8
+      "
+    >
       <!-- Logo -->
       <a href={localizeHref("/")} class="flex shrink-0 items-center gap-3">
         <img src="/images/agora-icon.svg" alt="" class="h-[29px] w-auto" />
@@ -41,8 +51,9 @@
       <!-- Copyright -->
       <p
         class="
-          mt-4 text-base leading-[1.3] font-medium tracking-[-0.16px]
+          mt-4 text-sm leading-[1.3] font-medium tracking-[-0.16px]
           text-text-dark
+          sm:text-base
         "
       >
         {m.footer_copyright()}
@@ -54,14 +65,20 @@
         target="_blank"
         rel="noopener noreferrer"
         class="
-          mt-2 text-base leading-[1.3] font-medium tracking-[-0.16px] underline
+          mt-2 text-sm leading-[1.3] font-medium tracking-[-0.16px] underline
+          sm:text-base
         "
       >
         <GradientText angle={82}>{m.footer_legal()}</GradientText>
       </a>
 
       <!-- EU Funding Acknowledgement -->
-      <p class="mt-4 max-w-md text-xs/relaxed text-text-muted">
+      <p
+        class="
+          mt-4 max-w-md text-[10px]/relaxed text-text-muted
+          sm:text-xs/relaxed
+        "
+      >
         {m.footer_eu_funding_1()}
         <a
           href="https://trustchain.ngi.eu/"
