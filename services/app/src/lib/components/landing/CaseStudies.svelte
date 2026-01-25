@@ -4,7 +4,13 @@
   import { localizeHref } from "$lib/paraglide/runtime";
 </script>
 
-<section id="casestudies" class="px-8 py-20">
+<section
+  id="casestudies"
+  class="
+    px-4 py-20
+    sm:px-8
+  "
+>
   <div class="mx-auto max-w-[1120px]">
     <p class="mb-8 text-center text-base font-bold tracking-[-0.16px]">
       <GradientText>{m.casestudies_label()}</GradientText>
@@ -42,9 +48,8 @@
         <div class="relative z-10 flex flex-col gap-2">
           <h3
             class="
-              bg-[linear-gradient(167deg,var(--color-gradient-light-purple)_46%,var(--color-gradient-light-blue)_100%)]
-              bg-clip-text text-2xl leading-[1.1] font-semibold
-              tracking-[-0.24px] text-transparent
+              text-xl leading-[1.2] font-semibold tracking-[-0.24px] text-white
+              sm:text-2xl sm:leading-[1.1]
             "
           >
             {m.casestudy_bloquonstout_title()}
@@ -94,9 +99,8 @@
         <div class="relative z-10 flex flex-col gap-2">
           <h3
             class="
-              bg-[linear-gradient(167deg,var(--color-gradient-light-purple)_46%,var(--color-gradient-light-blue)_100%)]
-              bg-clip-text text-2xl leading-[1.1] font-semibold
-              tracking-[-0.24px] text-transparent
+              text-xl leading-[1.2] font-semibold tracking-[-0.24px] text-white
+              sm:text-2xl sm:leading-[1.1]
             "
           >
             {m.casestudy_tech4nature_title()}

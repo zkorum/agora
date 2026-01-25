@@ -21,7 +21,13 @@
   ];
 </script>
 
-<section id="testimonials" class="px-8 py-20">
+<section
+  id="testimonials"
+  class="
+    px-4 py-20
+    sm:px-8
+  "
+>
   <div
     class="
       relative mx-auto max-w-[1376px] overflow-hidden rounded-3xl bg-white
@@ -39,7 +45,12 @@
         src="/images/testimonials-bg-new.png"
       />
     </div>
-    <div class="relative z-10 flex flex-col gap-6 p-12">
+    <div
+      class="
+        relative z-10 flex flex-col gap-6 p-6
+        sm:p-12
+      "
+    >
       <p class="mb-4 text-center text-base font-bold tracking-[-0.16px]">
         <GradientText>{m.testimonials_label()}</GradientText>
       </p>
@@ -53,7 +64,10 @@
       >
         {#each topRow as testimonial (testimonial.name)}
           <div
-            class="flex flex-col gap-4 rounded-2xl bg-white p-10 shadow-card"
+            class="
+              flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-card
+              sm:p-10
+            "
           >
             <p class="text-lg/6 font-medium tracking-[-0.18px]">
               <GradientText>"{testimonial.quote()}"</GradientText>

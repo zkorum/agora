@@ -12,9 +12,9 @@
   let { href, target, rel, variant = "primary", children }: Props = $props();
 
   const baseClasses =
-    "inline-flex items-center justify-center w-[192px] h-10 rounded-button px-4 text-base font-medium leading-[1.4] tracking-[-0.16px] whitespace-nowrap no-underline cursor-pointer border-none";
-  const primaryClasses = `${baseClasses} bg-gradient-to-b from-brand-purple to-brand-blue text-white`;
-  const secondaryClasses = `${baseClasses} bg-white`;
+    "inline-flex items-center justify-center h-10 rounded-button px-6 text-base font-medium leading-[1.4] tracking-[-0.16px] whitespace-nowrap no-underline cursor-pointer";
+  const primaryClasses = `${baseClasses} border-none bg-gradient-to-b from-brand-purple to-brand-blue text-white`;
+  const secondaryClasses = `${baseClasses} border border-brand-purple/30 bg-white`;
 
   // Compute rel attribute: add "external" for external URLs and fragment links
   const isExternalOrFragment = $derived(

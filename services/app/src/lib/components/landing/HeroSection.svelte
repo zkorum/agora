@@ -27,7 +27,7 @@
     </div>
     <div
       class="
-        relative z-10 flex flex-col gap-8 px-6 py-12
+        relative z-10 flex flex-col gap-8 px-4 py-12
         sm:px-12 sm:py-16
         md:max-w-[550px] md:px-20 md:py-24
       "
