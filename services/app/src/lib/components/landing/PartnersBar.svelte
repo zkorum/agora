@@ -58,6 +58,11 @@
       alt: "GCC",
       href: "https://www.gccofficial.org/",
     },
+    {
+      src: "/images/partners/devconnect.jpg",
+      alt: "Devconnect",
+      href: "https://devconnect.org/",
+    },
   ];
 </script>
 
