@@ -36,7 +36,10 @@ dev-generate:
 	watchman-make -p 'services/api/openapi-zkorum.json' -t generate
 
 dev-app:
-	cd services/agora && pnpm dev 
+	cd services/agora && pnpm dev
+
+dev-app-new:
+	cd services/app && pnpm dev
 
 dev-api:
 	cd services/api && pnpm start:dev

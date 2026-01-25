@@ -29,7 +29,26 @@ Exception: Only omit the `AGENTS_` prefix and folder when the user explicitly re
 
 ## Project Overview
 
-Agora Citizen Network is a privacy-preserving social platform using zero-knowledge proofs and bridging-based ranking algorithms. The monorepo contains a Vue.js/Quasar frontend, Fastify backend, background worker, and Python clustering service.
+Agora Citizen Network is a privacy-preserving social platform using zero-knowledge proofs and bridging-based ranking algorithms. The monorepo contains:
+
+- **`services/app`** (SvelteKit) - New frontend, progressively replacing agora
+- **`services/agora`** (Vue/Quasar) - Legacy frontend, being phased out
+- **`services/api`** (Fastify) - Backend API
+- **`services/math-updater`** - Background worker for clustering
+- **`services/python-bridge`** - Python clustering service
+
+### Why SvelteKit for the New Frontend?
+
+`services/app` is replacing `services/agora` for these reasons:
+
+- **Better first paint**: SSR + CSR hydration for faster initial load
+- **Per-route flexibility**: Configure prerendering, SSR, or CSR per route
+- **Smaller bundles**: Svelte compiles away - no runtime framework overhead
+- **Clean slate**: Tailwind CSS v4 + Bits UI (headless components)
+- **Future-ready**: Easy path to native apps via Tauri if needed
+- **Agent-friendly**: Simple file-based routing, explicit data flow - easy for AI coding agents
+
+The landing page is embedded in the app (not a separate static site) because features like "Explore Conversations" will need database access via SSR.
 
 ## Environment Variables (Frontend)
 
@@ -61,8 +80,11 @@ For details, see [services/agora/README.md](services/agora/README.md#environment
 ### Running Services
 
 ```bash
-# Frontend (Vue/Quasar)
+# Frontend (Vue/Quasar) - legacy
 make dev-app
+
+# Frontend (SvelteKit) - new
+make dev-app-new
 
 # Backend API (Fastify)
 make dev-api
@@ -93,8 +115,15 @@ make dev-generate
 ### Testing & Linting
 
 ```bash
-# Frontend
+# Frontend (Vue/Quasar) - legacy
 cd services/agora && pnpm lint && pnpm test
+
+# Frontend (SvelteKit) - new
+cd services/app && pnpm lint           # ESLint (strictTypeChecked) + Prettier
+cd services/app && pnpm lint:fix       # Auto-fix lint + format issues
+cd services/app && pnpm check          # Type checking
+cd services/app && pnpm test:unit      # Vitest (logic tests)
+cd services/app && pnpm test:e2e       # Playwright (E2E tests)
 
 # Backend API
 cd services/api && pnpm lint && pnpm test
@@ -164,7 +193,7 @@ Deploy: math-updater"
 - Reference issue numbers, design decisions, or related PRs in the body or footer
 - **ALWAYS include a deployment footer** listing which services need to be redeployed:
   - Format: `Deploy: <service1>, <service2>, ...`
-  - Services: `agora` (frontend), `api` (backend), `math-updater` (worker), `python-bridge` (clustering)
+  - Services: `app` (new frontend), `agora` (legacy frontend), `api` (backend), `math-updater` (worker), `python-bridge` (clustering)
   - Example: `Deploy: agora, api` or `Deploy: none` (for docs-only changes)
 - Do NOT mention AI assistants or tools in commit messages (e.g., "Claude", "AI-generated", "with assistance from")
   - This restriction applies ONLY to commit messages - code comments can mention tools/AI if helpful for context
@@ -220,7 +249,8 @@ Python-bridge (Flask/reddwarf clustering)
 
 ### Services
 
-- **agora** (`services/agora/`): Vue 3 + Quasar frontend with Pinia state management
+- **app** (`services/app/`): SvelteKit frontend (Svelte 5, Bits UI, Tailwind CSS v4) — replacing agora
+- **agora** (`services/agora/`): Vue 3 + Quasar frontend with Pinia state management (legacy, being replaced by app)
 - **api** (`services/api/`): Fastify backend with Drizzle ORM, handles auth/conversations/voting
 - **math-updater** (`services/math-updater/`): Background worker using pg-boss for clustering updates and AI label generation
 - **python-bridge** (`services/python-bridge/`): Flask service wrapping reddwarf clustering algorithms
@@ -335,11 +365,16 @@ Authorization headers built via `buildAuthorizationHeader(encodedUcan)` in front
 
 ## Key Files
 
+- `services/app/src/routes/`: SvelteKit pages and layouts (new frontend)
+- `services/app/src/lib/logic/`: Pure TypeScript functions with colocated tests
+- `services/app/src/lib/components/`: Reusable Svelte components
+- `services/app/vite.config.ts`: Vite plugins (Tailwind, SvelteKit, Tidewave)
+- `services/app/svelte.config.js`: SvelteKit adapter configuration
 - `services/api/src/index.ts`: Main backend entry point, route registration
 - `services/shared-backend/src/schema.ts`: Database schema (all tables)
 - `services/shared-backend/src/db.ts`: Database connection with read replica routing
-- `services/agora/src/stores/`: Pinia state management
-- `services/agora/src/utils/api/`: Frontend API wrapper layer
+- `services/agora/src/stores/`: Pinia state management (legacy)
+- `services/agora/src/utils/api/`: Frontend API wrapper layer (legacy)
 - `services/math-updater/src/index.ts`: Background job worker
 - `Makefile`: Build orchestration and dev commands
 
@@ -626,11 +661,116 @@ Key variables:
 - `MATH_UPDATER_BATCH_SIZE` - Concurrent conversation processing
 - Translation API keys for AI label generation
 
+## SvelteKit Frontend (`services/app`)
+
+### Tech Stack
+
+- **Framework**: SvelteKit with Svelte 5 (runes: `$state`, `$derived`, `$effect`, `$props`)
+- **UI Library**: Bits UI (headless, unstyled compound components)
+- **Styling**: Tailwind CSS v4 (CSS-first config via `@import "tailwindcss"`, no `tailwind.config.js`)
+- **Rendering**: SSG for landing page (`export const prerender = true`), SSR+CSR for dynamic pages
+- **Adapter**: `@sveltejs/adapter-node` (SSR production deployment)
+- **Dev Tools**: Tidewave (Vite plugin for AI-assisted development)
+- **Unit Tests**: Vitest (colocated `.test.ts` files in `src/`)
+- **E2E Tests**: Playwright (in `tests/` directory)
+
+### Project Structure
+
+```
+services/app/
+  src/
+    app.html              # HTML shell
+    app.css               # Tailwind CSS v4 entry (@import "tailwindcss")
+    app.d.ts              # SvelteKit type declarations
+    lib/
+      assets/             # Static assets imported by components (favicon, etc.)
+      components/         # Reusable Svelte components
+        ui/               # Base UI primitives (Bits UI wrappers with Tailwind)
+      logic/              # Pure TS functions + colocated Vitest tests
+        greeting.ts       # Example: exports function + its interface
+        greeting.test.ts  # Example: colocated unit test
+      server/             # Server-only code (SvelteKit enforces no client import)
+    routes/
+      +layout.svelte      # Root layout (imports app.css)
+      +page.svelte        # Landing page
+      +page.ts            # SSG config (prerender = true)
+  tests/                  # Playwright E2E tests
+  static/                 # Static files served as-is (robots.txt, etc.)
+```
+
+### Key Conventions
+
+**Svelte 5 Runes** (NOT legacy `let`/`$:` syntax):
+```svelte
+<script lang="ts">
+  let count = $state(0);
+  let doubled = $derived(count * 2);
+  let { children } = $props();
+</script>
+```
+
+**Bits UI** (headless compound components, styled with Tailwind):
+```svelte
+<script lang="ts">
+  import { Button } from 'bits-ui';
+</script>
+
+<Button.Root class="rounded-lg bg-zinc-900 px-6 py-3 text-white">
+  Click me
+</Button.Root>
+```
+
+**Tailwind CSS v4** (CSS-first, full import including Preflight):
+- Entry point: `src/app.css` with `@import "tailwindcss"`
+- No `tailwind.config.js` — use CSS `@theme` directive for customization
+- Preflight included (all elements reset, style everything explicitly)
+
+**Pure Logic** (in `$lib/logic/`, object params, colocated tests):
+```typescript
+interface GetGreetingParams { count: number; }
+export function getGreeting({ count }: GetGreetingParams): string { ... }
+```
+
+**Rendering Strategy**:
+- Landing page (`/`): Currently SSG, but embedded in app to allow SSR when "Explore Conversations" needs database access
+- Blog posts (`/blog/[slug]`): Prerendered at build time from markdown
+- Dynamic pages: SvelteKit default (SSR + CSR hydration)
+- Per-route configuration allows mixing SSG/SSR/CSR as needed
+
+### Development
+
+```bash
+# Start dev server
+make dev-app-new
+# or: cd services/app && pnpm dev
+
+# Lint (ESLint strictTypeChecked + Prettier)
+cd services/app && pnpm lint
+
+# Auto-fix lint + format
+cd services/app && pnpm lint:fix
+
+# Type check
+cd services/app && pnpm check
+
+# Unit tests (Vitest)
+cd services/app && pnpm test:unit
+
+# E2E tests (Playwright)
+cd services/app && pnpm test:e2e
+
+# Production build
+cd services/app && pnpm build
+
+# Preview production build
+cd services/app && pnpm preview
+```
+
 ## Prerequisites
 
 - Node.js 20+ (frontend uses 22/24)
-- pnpm (backend services)
-- yarn (frontend)
+- pnpm (all services including new frontend)
+- yarn (legacy frontend only — services/agora)
 - Python 3.11+ (python-bridge)
 - Docker (for Flyway migrations and production builds)
 - watchman (for file watching during development)

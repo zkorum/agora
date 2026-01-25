@@ -113,7 +113,7 @@ import { BubbleMenu } from "@tiptap/vue-3/menus";
 import { useQuasar } from "quasar";
 import sanitizeHtml from "sanitize-html";
 import { htmlToCountedText } from "src/shared/shared";
-import { computed, onBeforeUnmount, watch } from "vue";
+import { computed, onUnmounted, watch } from "vue";
 
 import EditorToolbarButton from "./EditorToolbarButton.vue";
 
@@ -308,7 +308,7 @@ const isEditorReady = computed(() => {
   return editor.value !== undefined && editor.value.view !== null;
 });
 
-onBeforeUnmount(() => {
+onUnmounted(() => {
   editor.value?.destroy();
 });
 
