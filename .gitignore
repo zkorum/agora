@@ -79,3 +79,5 @@ CLAUDE_*.md
 AGENTS_*.md
 .aider*
 agents_tmp_doc/
+
+.playwright-mcp/

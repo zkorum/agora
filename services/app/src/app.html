@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="%lang%" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Plausible Analytics (production only) -->
+    <script>
+      if (
+        location.hostname === "agoracitizen.network" ||
+        location.hostname.endsWith(".agoracitizen.network")
+      ) {
+        var s = document.createElement("script");
+        s.defer = true;
+        s.dataset.domain = "agoracitizen.network";
+        s.src = "https://plausible.io/js/script.outbound-links.js";
+        document.head.appendChild(s);
+      }
+      window.plausible =
+        window.plausible ||
+        function () {
+          (window.plausible.q = window.plausible.q || []).push(arguments);
+        };
+    </script>
+    <script>
+      (function () {
+        var SUPPORTED_LOCALES = [
+          "en",
+          "fr",
+          "es",
+          "ar",
+          "ja",
+          "zh-hans",
+          "zh-hant",
+        ];
+        var DEFAULT_LOCALE = "en";
+        var STORAGE_KEY = "displayLanguage";
+
+        function detectBrowserLocale() {
+          var languages = navigator.languages || [navigator.language || ""];
+          for (var i = 0; i < languages.length; i++) {
+            var lang = languages[i].toLowerCase();
+            // Chinese variants
+            if (
+              lang === "zh-tw" ||
+              lang === "zh-hk" ||
+              lang.startsWith("zh-hant")
+            ) {
+              return "zh-hant";
+            }
+            if (lang.startsWith("zh")) {
+              return "zh-hans";
+            }
+            // Other supported languages
+            var primary = lang.split("-")[0];
+            if (SUPPORTED_LOCALES.indexOf(primary) !== -1) {
+              return primary;
+            }
+          }
+          return DEFAULT_LOCALE;
+        }
+
+        function getPreferredLocale() {
+          var saved = localStorage.getItem(STORAGE_KEY);
+          if (saved && SUPPORTED_LOCALES.indexOf(saved) !== -1) {
+            return saved;
+          }
+          return detectBrowserLocale();
+        }
+
+        function getCurrentLocaleFromPath() {
+          var segments = location.pathname.split("/").filter(Boolean);
+          var first = segments[0];
+          if (first && SUPPORTED_LOCALES.indexOf(first) !== -1) {
+            return first;
+          }
+          return DEFAULT_LOCALE;
+        }
+
+        function buildPathForLocale(locale) {
+          var segments = location.pathname.split("/").filter(Boolean);
+          var currentLocale = getCurrentLocaleFromPath();
+          // Remove current locale prefix if present
+          if (
+            segments[0] === currentLocale &&
+            currentLocale !== DEFAULT_LOCALE
+          ) {
+            segments.shift();
+          }
+          // Add new locale prefix (except for default)
+          if (locale !== DEFAULT_LOCALE) {
+            segments.unshift(locale);
+          }
+          return "/" + segments.join("/") + (segments.length ? "/" : "");
+        }
+
+        function handleLanguageRedirect() {
+          var currentLocale = getCurrentLocaleFromPath();
+          var preferredLocale = getPreferredLocale();
+
+          // Save the current locale if none was saved (user visited a locale URL directly)
+          if (!localStorage.getItem(STORAGE_KEY)) {
+            localStorage.setItem(STORAGE_KEY, currentLocale);
+          }
+
+          // Redirect if current locale doesn't match preference
+          if (currentLocale !== preferredLocale) {
+            var targetPath = buildPathForLocale(preferredLocale);
+            if (targetPath !== location.pathname) {
+              location.replace(targetPath + location.search + location.hash);
+            }
+          }
+        }
+
+        handleLanguageRedirect();
+      })();
+    </script>
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div style="display: contents">%sveltekit.body%</div>
+  </body>
+</html>

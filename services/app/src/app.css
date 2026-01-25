@@ -1,0 +1,50 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  /* Typography */
+  --font-sans: "Albert Sans Variable", sans-serif;
+
+  /* Brand colors */
+  --color-brand-purple: #6b4eff;
+  --color-brand-blue: #4f92f6;
+
+  /* Gradient colors */
+  --color-gradient-light-purple: #f1eeff;
+  --color-gradient-light-blue: #e8f1ff;
+  --color-overlay-dark: #2b1f6c;
+
+  /* Background & Surface */
+  --color-bg: #fbfbfe;
+  --color-surface-hover: #f6f5f8;
+
+  /* Text colors */
+  --color-text-muted: #9a97a4;
+  --color-text-secondary: #6d6a74;
+  --color-text-primary: #434149;
+  --color-text-dark: #333238;
+
+  /* Border colors */
+  --color-border: #e2e1e7;
+  --color-border-accent: #a391ff;
+
+  /* Shadows */
+  --shadow-card: 0 8px 12px 0 rgba(0, 0, 0, 0.15);
+  --shadow-elevated: 0 1px 24px 8px rgba(20, 20, 20, 0.08);
+
+  /* Border radius */
+  --radius-chip: 0.5625rem;
+  --radius-button: 0.8125rem;
+
+  /* Font sizes */
+  --font-size-quote: 2rem; /* 32px - used in hero and mission quote */
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
