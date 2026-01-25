@@ -63,7 +63,12 @@
             </p>
           </div>
           {#if index === 0}
-            <div class="mt-16 flex justify-center">
+            <div
+              class="
+                mt-16 hidden justify-center
+                md:flex
+              "
+            >
               <GradientArrow />
             </div>
           {/if}

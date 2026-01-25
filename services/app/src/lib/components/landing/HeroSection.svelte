@@ -27,8 +27,9 @@
     </div>
     <div
       class="
-        relative z-10 flex flex-col gap-8 px-20 py-24
-        md:max-w-[550px]
+        relative z-10 flex flex-col gap-8 px-6 py-12
+        sm:px-12 sm:py-16
+        md:max-w-[550px] md:px-20 md:py-24
       "
     >
       <p
@@ -39,7 +40,12 @@
         <GradientText>{m.hero_tagline()}</GradientText>
       </p>
 
-      <div class="flex gap-3">
+      <div
+        class="
+          flex flex-col gap-3
+          sm:flex-row
+        "
+      >
         <GradientButton href="#facilitators" variant="primary">
           {m.hero_cta_primary()}
         </GradientButton>

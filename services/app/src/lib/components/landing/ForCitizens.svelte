@@ -16,8 +16,9 @@
     />
     <div
       class="
-        relative z-10 grid grid-cols-1 items-center gap-12 px-20 py-24
-        md:grid-cols-2
+        relative z-10 grid grid-cols-1 items-center gap-12 px-6 py-12
+        sm:px-12 sm:py-16
+        md:grid-cols-2 md:px-20 md:py-24
       "
     >
       <div class="flex flex-col gap-2">
@@ -27,7 +28,12 @@
         <p class="text-2xl leading-[1.3] tracking-[-0.24px] text-text-primary">
           {m.citizens_description()}
         </p>
-        <div class="mt-6">
+        <div
+          class="
+            mt-6 flex justify-center
+            md:justify-start
+          "
+        >
           <GradientButton
             href="https://www.agoracitizen.app/"
             variant="primary"

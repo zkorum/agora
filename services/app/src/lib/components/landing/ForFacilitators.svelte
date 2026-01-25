@@ -9,24 +9,28 @@
       chip: () => m.facilitators_chip_polis(),
       text: () => m.facilitators_feature_polis(),
       source: () => m.facilitators_feature_polis_source(),
+      sourceUrl: "https://pol.is/",
     },
     {
       img: "/images/screenshot-sensemaker.png",
       chip: () => m.facilitators_chip_sensemaker(),
       text: () => m.facilitators_feature_sensemaker(),
       source: () => m.facilitators_feature_sensemaker_source(),
+      sourceUrl: "https://jigsaw-code.github.io/sensemaking-tools/",
     },
     {
       img: "/images/screenshot-auth.png",
       chip: () => m.facilitators_chip_auth(),
       text: () => m.facilitators_feature_auth(),
       source: null,
+      sourceUrl: null,
     },
     {
       img: "/images/screenshot-demographics.png",
       chip: () => m.facilitators_chip_demographics(),
       text: () => m.facilitators_feature_demographics(),
       source: null,
+      sourceUrl: null,
     },
   ];
 </script>
@@ -39,7 +43,7 @@
       </p>
       <p
         class="
-          mt-2 text-base leading-[1.4] tracking-[-0.16px] text-text-secondary
+          mt-2 text-2xl leading-[1.3] tracking-[-0.24px] text-text-primary
         "
       >
         {m.facilitators_description()}
@@ -48,8 +52,8 @@
 
     <div
       class="
-        mb-8 flex flex-col gap-[13px]
-        md:flex-row
+        mb-8 flex flex-col items-center gap-[13px]
+        md:flex-row md:items-start
       "
     >
       {#each features as feature (feature.img)}
@@ -72,18 +76,30 @@
           </span>
           <p
             class="
-              text-base leading-[1.4] tracking-[-0.16px] text-text-secondary
+              pl-2 text-base leading-[1.4] tracking-[-0.16px]
+              text-text-secondary
             "
           >
-            {feature.text()}{#if feature.source}<GradientText angle={81}
-                >{feature.source()}</GradientText
-              >{/if}
+            {feature.text()}{#if feature.source}{#if feature.sourceUrl}<a
+                  href={feature.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="hover:underline"
+                  ><GradientText angle={81}>{feature.source()}</GradientText></a
+                >{:else}<GradientText angle={81}
+                  >{feature.source()}</GradientText
+                >{/if}{/if}
           </p>
         </div>
       {/each}
     </div>
 
-    <div class="flex justify-end">
+    <div
+      class="
+        flex justify-center
+        md:justify-end
+      "
+    >
       <GradientButton
         href="https://www.agoracitizen.app/conversation/new/create"
         variant="primary"
