@@ -15,6 +15,7 @@
     { label: m.nav_casestudies(), href: localizeHref("/#casestudies") },
     { label: m.nav_blog(), href: localizeHref("/blog") },
     { label: m.nav_pricing(), href: localizeHref("/#pricing") },
+    { label: m.nav_team(), href: localizeHref("/#team") },
   ]);
 
   function openMenu() {
