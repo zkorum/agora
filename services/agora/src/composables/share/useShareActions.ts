@@ -18,7 +18,7 @@ import {
   shareActionsTranslations,
 } from "src/utils/actions/definitions/share-actions.i18n";
 import { useEmbedMode } from "src/utils/ui/embedMode";
-import { type Ref,ref } from "vue";
+import { type Ref, ref } from "vue";
 
 export interface ShareActionsComposable {
   dialogState: Ref<ContentActionDialogState>;

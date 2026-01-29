@@ -1,5 +1,4 @@
 /* eslint-disable no-case-declarations */
-import * as ucans from "@ucans/ucans";
 import { SecureSigning } from "@zkorum/capacitor-secure-signing";
 import { publicKeyToDid } from "src/shared/did/util";
 import { base64Decode, base64Encode } from "src/shared-app-api/base64";
@@ -135,6 +134,8 @@ async function buildWebUcan({
   method,
   lifetimeInSeconds = DEFAULT_UCAN_LIFETIME_SECONDS,
 }: CreateUcanProps): Promise<string> {
+  const ucans = await import("@ucans/ucans");
+
   const webCryptoStore = await getWebCryptoStore();
   const u = await ucans.Builder.create()
     .issuedBy({
@@ -163,6 +164,8 @@ async function buildMobileUcan({
   method,
   lifetimeInSeconds = DEFAULT_UCAN_LIFETIME_SECONDS,
 }: CreateUcanProps): Promise<string> {
+  const ucans = await import("@ucans/ucans");
+
   const u = await ucans.Builder.create()
     .issuedBy({
       did: () => did,

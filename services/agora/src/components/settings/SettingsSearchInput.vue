@@ -23,13 +23,30 @@
 </template>
 
 <script setup lang="ts">
+import IconField from "primevue/iconfield";
+import InputIcon from "primevue/inputicon";
+import InputText from "primevue/inputtext";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { computed,ref } from "vue";
+import { computed, ref } from "vue";
 
 import {
   type SettingsSearchInputTranslations,
   settingsSearchInputTranslations,
 } from "./SettingsSearchInput.i18n";
+
+defineOptions({
+  components: {
+    PrimeIconField: IconField,
+    PrimeInputIcon: InputIcon,
+    PrimeInputText: InputText,
+  },
+});
+
+const props = withDefaults(defineProps<Props>(), {
+  placeholder: undefined,
+});
+
+const emit = defineEmits<Emits>();
 
 interface Props {
   modelValue: string;
@@ -39,12 +56,6 @@ interface Props {
 interface Emits {
   (e: "update:modelValue", value: string): void;
 }
-
-const props = withDefaults(defineProps<Props>(), {
-  placeholder: undefined,
-});
-
-const emit = defineEmits<Emits>();
 
 const { t } = useComponentI18n<SettingsSearchInputTranslations>(
   settingsSearchInputTranslations
