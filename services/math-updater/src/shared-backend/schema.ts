@@ -1263,9 +1263,9 @@ export const pollResponseTable = pgTable(
         authorId: uuid("author_id")
             .notNull()
             .references(() => userTable.id),
-        conversationId: integer("conversation_id") // poll is bound to the conversation
+        pollId: integer("poll_id") // poll response belongs to a specific poll
             .notNull()
-            .references(() => conversationTable.id),
+            .references(() => pollTable.id),
         currentContentId: integer("current_content_id")
             .references((): AnyPgColumn => pollResponseContentTable.id)
             .unique(),
@@ -1282,7 +1282,7 @@ export const pollResponseTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => [unique().on(t.authorId, t.conversationId)],
+    (t) => [unique().on(t.authorId, t.pollId)],
 );
 
 export const pollResponseProofTable = pgTable("poll_response_proof", {

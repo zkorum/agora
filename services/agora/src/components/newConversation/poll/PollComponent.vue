@@ -7,24 +7,36 @@
     <div class="poll-container">
       <div class="poll-header">
         <div class="poll-title">
-          <span class="poll-title-text">{{ t("addPoll") }}</span>
+          <span class="poll-title-text">{{
+            props.readonly ? t("existingPoll") : t("addPoll")
+          }}</span>
         </div>
         <PrimeButton
           icon="pi pi-times"
           text
           class="close-button"
-          @click="resetPoll"
+          @click="handleClosePoll"
         />
       </div>
 
-      <div v-if="validationState.poll.showError" class="pollErrorMessage">
+      <div v-if="props.readonly" class="readonly-info-banner">
+        <ZKIcon
+          name="mdi-information"
+          size="1.25rem"
+          color="#007AFF"
+          class="info-icon"
+        />
+        <span class="info-text">{{ t("readonlyExplanation") }}</span>
+      </div>
+
+      <div v-if="validationError" class="pollErrorMessage">
         <q-icon name="mdi-alert-circle" class="pollErrorIcon" />
-        {{ validationState.poll.error }}
+        {{ validationError }}
       </div>
 
       <div class="polling-options-container">
         <div
-          v-for="(option, index) in conversationDraft.poll.options"
+          v-for="(option, index) in pollOptions"
           :key="index"
           class="polling-option-item"
         >
@@ -36,10 +48,12 @@
               :maxlength="MAX_LENGTH_OPTION"
               class="option-input"
               type="text"
+              :readonly="props.readonly"
+              :disabled="props.readonly"
               @input="handleOptionInput(index, $event)"
             />
             <div
-              v-if="conversationDraft.poll.options.length > 2"
+              v-if="pollOptions.length > 2 && !props.readonly"
               class="delete-option-icon"
               @click="removeOption(index)"
             >
@@ -48,12 +62,12 @@
           </div>
         </div>
 
-        <div class="add-option-container">
+        <div v-if="!props.readonly" class="add-option-container">
           <PrimeButton
             :label="t('addOption')"
             icon="pi pi-plus"
             outlined
-            :disabled="conversationDraft.poll.options.length >= 6"
+            :disabled="pollOptions.length >= 6"
             class="add-option-button"
             @click="addOption()"
           />
@@ -64,44 +78,88 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_OPTION } from "src/shared/shared";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 
 import {
   type PollComponentTranslations,
   pollComponentTranslations,
 } from "./PollComponent.i18n";
 
+// Define props
+const props = defineProps<{
+  readonly?: boolean; // When true, poll options cannot be edited (but poll can still be removed)
+}>();
+
 const { t } = useComponentI18n<PollComponentTranslations>(
   pollComponentTranslations
 );
 
-const { resetPoll, updatePollOption, addPollOption, removePollOption } =
-  useNewPostDraftsStore();
-const { conversationDraft, validationState } = storeToRefs(
-  useNewPostDraftsStore()
-);
+// Define v-model props
+const pollEnabled = defineModel<boolean>("pollEnabled", { required: true });
+const pollOptions = defineModel<string[]>("pollOptions", { required: true });
+const validationError = defineModel<string>("validationError", {
+  required: false,
+  default: "",
+});
 
-function handleOptionInput(index: number, event: Event) {
+function handleClosePoll(): void {
+  pollEnabled.value = false;
+  // Reset poll options to default when closing
+  pollOptions.value = ["", ""];
+}
+
+function handleOptionInput(index: number, event: Event): void {
   if (event.target && event.target instanceof HTMLInputElement) {
     const value = event.target.value;
     updateOption(index, value);
   }
 }
 
-function updateOption(index: number, value: string) {
-  updatePollOption(index, value);
+function updateOption(index: number, value: string): void {
+  if (index < 0 || index >= pollOptions.value.length) {
+    return;
+  }
+
+  // Validate poll option length
+  if (value.length > MAX_LENGTH_OPTION) {
+    console.warn(
+      `Poll option exceeds max length (${value.length}/${MAX_LENGTH_OPTION}), keeping old value`
+    );
+    return;
+  }
+
+  // Create a new array with the updated option
+  const newOptions = [...pollOptions.value];
+  newOptions[index] = value;
+  pollOptions.value = newOptions;
 }
 
-function addOption() {
-  addPollOption();
+function addOption(): void {
+  const maxOptions = 6;
+  if (pollOptions.value.length >= maxOptions) {
+    return;
+  }
+
+  pollOptions.value = [...pollOptions.value, ""];
 }
 
-function removeOption(index: number) {
-  removePollOption(index);
+function removeOption(index: number): void {
+  const minOptions = 2;
+
+  if (pollOptions.value.length <= minOptions) {
+    return;
+  }
+
+  if (index < 0 || index >= pollOptions.value.length) {
+    return;
+  }
+
+  const newOptions = [...pollOptions.value];
+  newOptions.splice(index, 1);
+  pollOptions.value = newOptions;
 }
 </script>
 
@@ -145,6 +203,24 @@ function removeOption(index: number) {
   line-height: 1.4;
 }
 
+.readonly-info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background-color: #e3f2fd;
+  border-radius: 12px;
+}
+
+.info-icon {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.info-text {
+  line-height: 1.5;
+}
+
 .polling-options-container {
   display: flex;
   flex-direction: column;
@@ -186,15 +262,20 @@ function removeOption(index: number) {
     color: #adb5bd;
   }
 
-  &:hover {
+  &:hover:not(:disabled) {
     border-color: #d0d0d0;
     background-color: #f0f1f2;
   }
 
-  &:focus {
+  &:focus:not(:disabled) {
     border-color: #007bff;
     background-color: $color-background-default;
     outline: none;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
   }
 }
 
