@@ -1,7 +1,7 @@
 <script lang="ts">
-  import GradientArrow from "$lib/components/shared/GradientArrow.svelte";
-  import GradientText from "$lib/components/shared/GradientText.svelte";
   import * as m from "$lib/paraglide/messages.js";
+  import GradientArrow from "$ui/shared/gradient-arrow.svelte";
+  import GradientText from "$ui/shared/gradient-text.svelte";
 
   const members = [
     {

@@ -3,8 +3,8 @@
   import "../app.css";
 
   import { page } from "$app/state";
-  import Footer from "$lib/components/landing/Footer.svelte";
-  import Header from "$lib/components/landing/Header.svelte";
+  import Footer from "$components/landing/footer.svelte";
+  import Header from "$components/landing/header.svelte";
   import * as m from "$lib/paraglide/messages.js";
   import { locales, localizeHref } from "$lib/paraglide/runtime";
 

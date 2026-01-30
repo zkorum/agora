@@ -1,7 +1,7 @@
 <script lang="ts">
-  import GradientButton from "$lib/components/shared/GradientButton.svelte";
-  import GradientText from "$lib/components/shared/GradientText.svelte";
   import * as m from "$lib/paraglide/messages.js";
+  import GradientButton from "$ui/shared/gradient-button.svelte";
+  import GradientText from "$ui/shared/gradient-text.svelte";
 </script>
 
 <section class="w-full px-8 pt-24 pb-16">
@@ -15,9 +15,7 @@
       class="absolute inset-0 size-full rounded-3xl object-cover"
     />
     <div
-      class="
-        absolute top-0 left-0 h-[1159px] w-[1739px] scale-y-[-1] rotate-180
-      "
+      class="absolute top-0 left-0 h-289.75 w-434.75 scale-y-[-1] rotate-180"
     >
       <img
         src="/images/hero-overlay.png"
@@ -29,7 +27,7 @@
       class="
         relative z-10 flex flex-col gap-8 px-4 py-12
         sm:px-12 sm:py-16
-        md:max-w-[550px] md:px-20 md:py-24
+        md:max-w-137.5 md:px-20 md:py-24
       "
     >
       <p

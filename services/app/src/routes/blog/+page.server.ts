@@ -1,5 +1,5 @@
 import { getLocale } from "$lib/paraglide/runtime";
-import { getBlogPosts } from "$lib/server/blog";
+import { getBlogPosts } from "$server/landing/blog";
 
 import type { PageServerLoad } from "./$types";
 

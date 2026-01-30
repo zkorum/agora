@@ -1,8 +1,8 @@
 <script lang="ts">
-  import GradientText from "$lib/components/shared/GradientText.svelte";
-  import SocialIcons from "$lib/components/shared/SocialIcons.svelte";
   import * as m from "$lib/paraglide/messages.js";
   import { localizeHref } from "$lib/paraglide/runtime";
+  import GradientText from "$ui/shared/gradient-text.svelte";
+  import SocialIcons from "$ui/shared/social-icons.svelte";
 </script>
 
 <footer

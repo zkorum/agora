@@ -1,7 +1,7 @@
 <script lang="ts">
-  import GradientButton from "$lib/components/shared/GradientButton.svelte";
-  import GradientText from "$lib/components/shared/GradientText.svelte";
   import * as m from "$lib/paraglide/messages.js";
+  import GradientButton from "$ui/shared/gradient-button.svelte";
+  import GradientText from "$ui/shared/gradient-text.svelte";
 </script>
 
 <section id="pricing" class="px-8 py-20">

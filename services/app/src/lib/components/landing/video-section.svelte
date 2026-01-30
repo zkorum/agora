@@ -1,5 +1,5 @@
 <script lang="ts">
-  import LiteYoutube from "$lib/components/shared/LiteYoutube.svelte";
+  import LiteYoutube from "$components/shared/lite-youtube.svelte";
   import * as m from "$lib/paraglide/messages.js";
 </script>
 

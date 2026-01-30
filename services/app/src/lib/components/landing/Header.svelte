@@ -1,9 +1,9 @@
 <script lang="ts">
   import { browser } from "$app/environment";
-  import GradientText from "$lib/components/shared/GradientText.svelte";
-  import LanguageSwitcher from "$lib/components/shared/LanguageSwitcher.svelte";
+  import LanguageSwitcher from "$components/shared/language-switcher.svelte";
   import * as m from "$lib/paraglide/messages.js";
   import { localizeHref } from "$lib/paraglide/runtime";
+  import GradientText from "$ui/shared/gradient-text.svelte";
 
   let mobileMenuOpen = $state(false);
 

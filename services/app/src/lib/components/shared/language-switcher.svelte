@@ -3,8 +3,8 @@
 
   import { browser } from "$app/environment";
   import { page } from "$app/state";
-  import GradientText from "$lib/components/shared/GradientText.svelte";
   import { locales, localizeHref } from "$lib/paraglide/runtime";
+  import GradientText from "$ui/shared/gradient-text.svelte";
 
   const localeLabels: Record<string, string> = {
     en: "EN",

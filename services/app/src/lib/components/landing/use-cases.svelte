@@ -1,6 +1,6 @@
 <script lang="ts">
-  import GradientText from "$lib/components/shared/GradientText.svelte";
   import * as m from "$lib/paraglide/messages.js";
+  import GradientText from "$ui/shared/gradient-text.svelte";
 
   // Civic Participation: Ballot box with checkmark and raised hands
   const svgCivic = `<svg viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">

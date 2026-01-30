@@ -1,6 +1,6 @@
 <script lang="ts">
-  import GradientText from "$lib/components/shared/GradientText.svelte";
   import * as m from "$lib/paraglide/messages.js";
+  import GradientText from "$ui/shared/gradient-text.svelte";
 </script>
 
 <section class="px-8 pt-8 pb-20">
