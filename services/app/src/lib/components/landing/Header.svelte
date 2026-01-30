@@ -35,9 +35,9 @@
   }
 </script>
 
-<header class="fixed inset-x-0 top-0 z-50 bg-white/80 backdrop-blur-sm">
+<header class="fixed inset-x-0 top-0 z-50">
   <div
-    class="mx-auto flex max-w-[1440px] items-center justify-between px-8 py-3"
+    class="mx-auto flex max-w-[1440px] items-center justify-between px-8 py-6"
   >
     <!-- Logo -->
     <a href={localizeHref("/")} class="flex shrink-0 items-center gap-3">
