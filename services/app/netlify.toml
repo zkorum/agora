@@ -1,6 +1,7 @@
 [build]
 command = "pnpm build"
 publish = "build"
+ignore = "bash -c '[[ $BRANCH == dependabot/* ]]'"
 
 [build.environment]
 NODE_VERSION = "24"
