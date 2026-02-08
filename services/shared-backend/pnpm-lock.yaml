@@ -37,8 +37,8 @@ importers:
         version: 4.3.5
     devDependencies:
       '@types/node':
-        specifier: ^20.17.47
-        version: 20.19.19
+        specifier: ^25.2.2
+        version: 25.2.2
       pino:
         specifier: ^9.6.0
         version: 9.6.0
@@ -632,8 +632,8 @@ packages:
     resolution: {integrity: sha512-XCuKFP5PS55gnMVu3dty8KPatLqUoy/ZYzDzAGCQ8JNFCkLXzmI7vNHCR+XpbZaMWQK/vQubr7PkYq8g470J/A==}
     engines: {node: '>= 10'}
 
-  '@types/node@20.19.19':
-    resolution: {integrity: sha512-pb1Uqj5WJP7wrcbLU7Ru4QtA0+3kAXrkutGiD26wUKzSMgNNaPARTUDQmElUXp64kh3cWdou3Q0C7qwwxqSFmg==}
+  '@types/node@25.2.2':
+    resolution: {integrity: sha512-BkmoP5/FhRYek5izySdkOneRyXYN35I860MFAGupTdebyE66uZaR+bXLHq8k4DirE5DwQi3NuhvRU1jqTVwUrQ==}
 
   '@valkey/valkey-glide-darwin-arm64@2.2.1':
     resolution: {integrity: sha512-4peyagRot9TOyYn1Iogt5lbQo8jd/aqAAn99iCbPCz8c4iUXeBT57KcDDql3lJinzw/YEJF35xJU2FO5XP7pyg==}
@@ -1150,8 +1150,8 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  undici-types@6.21.0:
-    resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+  undici-types@7.16.0:
+    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
@@ -2447,9 +2447,9 @@ snapshots:
 
   '@tootallnate/once@2.0.0': {}
 
-  '@types/node@20.19.19':
+  '@types/node@25.2.2':
     dependencies:
-      undici-types: 6.21.0
+      undici-types: 7.16.0
 
   '@valkey/valkey-glide-darwin-arm64@2.2.1':
     optional: true
@@ -2821,7 +2821,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
-      '@types/node': 20.19.19
+      '@types/node': 25.2.2
       long: 5.3.2
 
   quick-format-unescaped@4.0.4: {}
@@ -2914,7 +2914,7 @@ snapshots:
 
   typescript@5.9.3: {}
 
-  undici-types@6.21.0: {}
+  undici-types@7.16.0: {}
 
   util-deprecate@1.0.2: {}
 
