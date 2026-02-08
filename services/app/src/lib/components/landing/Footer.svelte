@@ -1,8 +1,11 @@
 <script lang="ts">
-  import GradientText from "$lib/components/shared/GradientText.svelte";
-  import SocialIcons from "$lib/components/shared/SocialIcons.svelte";
+  import agoraIcon from "$lib/assets/agora-icon.svg";
+  import agoraText from "$lib/assets/agora-text.svg";
   import * as m from "$lib/paraglide/messages.js";
   import { localizeHref } from "$lib/paraglide/runtime";
+  import GradientLink from "$ui/shared/gradient-link.svelte";
+  import SocialIcons from "$ui/shared/social-icons.svelte";
+  import Text from "$ui/shared/text.svelte";
 </script>
 
 <footer
@@ -12,12 +15,14 @@
   "
 >
   <div
-    class="relative mx-auto max-w-[1376px] overflow-hidden rounded-3xl"
-    style="min-height: 236px;"
+    class="
+      relative mx-auto min-h-[236px] max-w-[1376px] overflow-hidden rounded-3xl
+    "
   >
-    <img
-      src="/images/hero-bg-base.png"
+    <enhanced:img
+      src="$lib/assets/hero-bg-base.png"
       alt=""
+      sizes="min(1376px, 100vw)"
       class="absolute inset-0 size-full rounded-3xl object-cover"
     />
     <div
@@ -25,8 +30,8 @@
         absolute top-0 left-0 h-[1159px] w-[1739px] scale-y-[-1] rotate-180
       "
     >
-      <img
-        src="/images/hero-overlay.png"
+      <enhanced:img
+        src="$lib/assets/hero-overlay.png"
         alt=""
         class="size-full object-cover"
       />
@@ -39,8 +44,8 @@
     >
       <!-- Logo -->
       <a href={localizeHref("/")} class="flex shrink-0 items-center gap-3">
-        <img src="/images/agora-icon.svg" alt="" class="h-[29px] w-auto" />
-        <img src="/images/agora-text.svg" alt="Agora" class="h-[25px] w-auto" />
+        <img src={agoraIcon} alt="" class="h-[29px] w-auto" />
+        <img src={agoraText} alt="Agora" class="h-[25px] w-auto" />
       </a>
 
       <!-- Social icons -->
@@ -49,33 +54,24 @@
       </div>
 
       <!-- Copyright -->
-      <p
-        class="
-          mt-4 text-sm leading-[1.3] font-medium tracking-[-0.16px]
-          text-text-dark
-          sm:text-base
-        "
-      >
+      <Text size="sm" weight="medium" class="mt-4">
         {m.footer_copyright()}
-      </p>
+      </Text>
 
       <!-- Legal Notice -->
-      <a
-        href="https://www.agoracitizen.app/legal/terms/"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="
-          mt-2 text-sm leading-[1.3] font-medium tracking-[-0.16px] underline
-          sm:text-base
-        "
-      >
-        <GradientText angle={82}>{m.footer_legal()}</GradientText>
-      </a>
+      <Text size="sm" weight="medium" element="span" class="mt-2">
+        <GradientLink
+          href="https://www.agoracitizen.app/legal/terms/"
+          underline
+        >
+          {m.footer_legal()}
+        </GradientLink>
+      </Text>
 
       <!-- EU Funding Acknowledgement -->
       <p
         class="
-          mt-4 max-w-md text-[10px]/relaxed text-text-muted
+          mt-4 max-w-md text-[10px]/relaxed text-muted-foreground
           sm:text-xs/relaxed
         "
       >
@@ -84,7 +80,10 @@
           href="https://trustchain.ngi.eu/"
           target="_blank"
           rel="noopener noreferrer"
-          class="underline"
+          class="
+            underline transition-opacity
+            hover:opacity-70
+          "
         >
           NGI TRUSTCHAIN
         </a>
@@ -93,7 +92,10 @@
           href="https://ngisargasso.eu/"
           target="_blank"
           rel="noopener noreferrer"
-          class="underline"
+          class="
+            underline transition-opacity
+            hover:opacity-70
+          "
         >
           NGI SARGASSO
         </a>

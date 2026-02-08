@@ -3,6 +3,7 @@ import eslintPluginBetterTailwindcss from "eslint-plugin-better-tailwindcss";
 import eslintConfigPrettier from "eslint-config-prettier";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import sveltePlugin from "eslint-plugin-svelte";
+import globals from "globals";
 import tseslint from "typescript-eslint";
 import svelteParser from "svelte-eslint-parser";
 
@@ -15,6 +16,7 @@ export default tseslint.config(
       "node_modules/",
       "dist/",
       "static/",
+      "src/lib/paraglide/",
       "vite.config.ts.timestamp-*",
       "postcss.config.js",
     ],
@@ -24,6 +26,10 @@ export default tseslint.config(
   ...tseslint.configs.stylisticTypeChecked,
   {
     languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
       parserOptions: {
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
@@ -51,6 +57,7 @@ export default tseslint.config(
         entryPoint: "src/app.css",
       },
     },
+    rules: {},
   },
   {
     files: [

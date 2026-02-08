@@ -18,6 +18,7 @@ import {
 } from "./shared-backend/googleCloudAuth.js";
 import pLimit from "p-limit";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { sql } from "drizzle-orm";
 
 /**
  * Creates a reusable worker handler for processing math update jobs.
@@ -35,6 +36,7 @@ function createMathWorkerHandler({
     onWorkerCalled: () => void;
 }) {
     return async (jobs: PgBoss.Job<UpdateConversationMathData>[]) => {
+        log.info(`[Math Updater] Worker called with ${jobs.length} job(s)`);
         onWorkerCalled();
 
         // Filter out test jobs (conversationId = -1)
@@ -74,6 +76,37 @@ function createMathWorkerHandler({
             }
         }
     };
+}
+
+/**
+ * Clean up stuck jobs from previous runs.
+ * Only clears pg-boss jobs - the scan logic will re-enqueue conversations
+ * that still need updates based on requested_at > last_math_update_at.
+ */
+async function cleanupStuckJobs({
+    db,
+}: {
+    db: PostgresJsDatabase;
+}): Promise<void> {
+    log.info("[Math Updater] Cleaning up stuck jobs from previous runs...");
+
+    const mathJobsResult = await db.execute(sql`
+        DELETE FROM pgboss.job
+        WHERE name = 'update-conversation-math'
+        RETURNING id
+    `);
+    log.info(
+        `[Math Updater] Deleted ${mathJobsResult.length} stuck update-conversation-math jobs`,
+    );
+
+    const scanJobsResult = await db.execute(sql`
+        DELETE FROM pgboss.job
+        WHERE name = 'scan-conversations'
+        RETURNING id
+    `);
+    log.info(
+        `[Math Updater] Deleted ${scanJobsResult.length} stuck scan-conversations jobs`,
+    );
 }
 
 async function main() {
@@ -193,6 +226,9 @@ async function main() {
     await boss.start();
     log.info("[Math Updater] pg-boss started");
 
+    // Clean up stuck jobs from previous runs
+    await cleanupStuckJobs({ db });
+
     // Create queues with proper policies
     // 'singleton' policy: only allows 1 job per singletonKey (created OR active)
     // This prevents concurrent execution and duplicate jobs for the same conversation
@@ -228,7 +264,7 @@ async function main() {
     );
 
     log.info(
-        `[Math Updater] Registered update-conversation-math worker (batch: ${config.MATH_UPDATER_BATCH_SIZE}, concurrency: ${config.MATH_UPDATER_JOB_CONCURRENCY})`,
+        `[Math Updater] Registered update-conversation-math worker (id: ${workerId}, batch: ${config.MATH_UPDATER_BATCH_SIZE}, concurrency: ${config.MATH_UPDATER_JOB_CONCURRENCY})`,
     );
 
     // Register scan-conversations worker
@@ -299,10 +335,48 @@ async function main() {
                 (q) => q.name === "update-conversation-math",
             );
             if (!ourQueue) {
-                log.error(
-                    "[Math Updater] Watchdog: queue not found!",
-                );
+                log.error("[Math Updater] Watchdog: queue not found!");
                 return;
+            }
+
+            // Auto-correct: detect and delete jobs stuck in 'created' state for >10s
+            const stuckJobs = await db.execute<{ id: string; singleton_key: string }>(sql`
+                SELECT id, singleton_key
+                FROM pgboss.job
+                WHERE name = 'update-conversation-math'
+                AND state = 'created'
+                AND created_on < NOW() - INTERVAL '10 seconds'
+            `);
+            if (stuckJobs.length > 0) {
+                log.warn(
+                    `[Math Updater] Watchdog: Found ${stuckJobs.length} jobs stuck in 'created' state >10s, deleting...`,
+                );
+                for (const job of stuckJobs) {
+                    await db.execute(sql`DELETE FROM pgboss.job WHERE id = ${job.id}`);
+                    log.warn(
+                        `[Math Updater] Watchdog: Deleted stuck job ${job.id.slice(0, 8)}... (key: ${job.singleton_key})`,
+                    );
+                }
+            }
+
+            // Auto-correct: detect and delete jobs stuck in 'active' state for >5 minutes (handler should have logged by now)
+            const stuckActiveJobs = await db.execute<{ id: string; singleton_key: string; started_on: string }>(sql`
+                SELECT id, singleton_key, started_on
+                FROM pgboss.job
+                WHERE name = 'update-conversation-math'
+                AND state = 'active'
+                AND started_on < NOW() - INTERVAL '5 minutes'
+            `);
+            if (stuckActiveJobs.length > 0) {
+                log.warn(
+                    `[Math Updater] Watchdog: Found ${stuckActiveJobs.length} jobs stuck in 'active' state >5min, deleting...`,
+                );
+                for (const job of stuckActiveJobs) {
+                    await db.execute(sql`DELETE FROM pgboss.job WHERE id = ${job.id}`);
+                    log.warn(
+                        `[Math Updater] Watchdog: Deleted stuck active job ${job.id.slice(0, 8)}... (key: ${job.singleton_key}, started: ${job.started_on})`,
+                    );
+                }
             }
 
             const timeSinceLastCall = Date.now() - lastWorkerCallTime;

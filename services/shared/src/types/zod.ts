@@ -1007,44 +1007,6 @@ export const zodSupportedCountryCallingCode = z.enum([
     "242",
 ]);
 
-const zodGenLabelSummaryOutputClusterValue = z.object({
-    label: z
-        .string()
-        .max(100)
-        .regex(/^\S+(?:\s\S+)?$/, "Label must be exactly 1 or 2 words"),
-    summary: z.string().max(1000),
-});
-
-const zodGenLabelSummaryOutputClusterKey = z.enum([
-    "0",
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-]);
-
-export const zodGenLabelSummaryOutputClusterStrict = z.partialRecord(
-    zodGenLabelSummaryOutputClusterKey,
-    zodGenLabelSummaryOutputClusterValue,
-);
-
-export const zodGenLabelSummaryOutputClusterLoose = z.partialRecord(
-    zodGenLabelSummaryOutputClusterKey,
-    z.object({
-        label: z.string(),
-        summary: z.string(),
-    }),
-);
-
-export const zodGenLabelSummaryOutputStrict = z.object({
-    clusters: zodGenLabelSummaryOutputClusterStrict,
-});
-
-export const zodGenLabelSummaryOutputLoose = z.object({
-    clusters: zodGenLabelSummaryOutputClusterLoose,
-});
-
 const zodIsKnownTrueLoginStatus = z
     .object({
         isKnown: z.literal(true),
@@ -1149,18 +1111,6 @@ export type ClusterStats = z.infer<typeof zodClusterStats>;
 export type PolisKey = z.infer<typeof zodPolisKey>;
 export type SupportedCountryCallingCode = z.infer<
     typeof zodSupportedCountryCallingCode
->;
-export type GenLabelSummaryOutputStrict = z.infer<
-    typeof zodGenLabelSummaryOutputStrict
->;
-export type GenLabelSummaryOutputLoose = z.infer<
-    typeof zodGenLabelSummaryOutputLoose
->;
-export type GenLabelSummaryOutputClusterStrict = z.infer<
-    typeof zodGenLabelSummaryOutputClusterStrict
->;
-export type GenLabelSummaryOutputClusterLoose = z.infer<
-    typeof zodGenLabelSummaryOutputClusterLoose
 >;
 export type OrganizationProperties = z.infer<typeof zodOrganization>;
 export type DeviceLoginStatus = z.infer<typeof zodDeviceLoginStatus>;

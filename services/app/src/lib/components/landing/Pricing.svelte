@@ -1,17 +1,18 @@
 <script lang="ts">
-  import GradientButton from "$lib/components/shared/GradientButton.svelte";
-  import GradientText from "$lib/components/shared/GradientText.svelte";
   import * as m from "$lib/paraglide/messages.js";
+  import GradientButton from "$ui/shared/gradient-button.svelte";
+  import GradientText from "$ui/shared/gradient-text.svelte";
+  import Text from "$ui/shared/text.svelte";
 </script>
 
 <section id="pricing" class="px-8 py-20">
   <div class="mx-auto max-w-[1120px]">
-    <p class="mb-2 text-center text-base font-bold tracking-tight">
+    <Text size="base" weight="bold" class="mb-2 text-center">
       <GradientText angle={174}>{m.pricing_label()}</GradientText>
-    </p>
-    <p class="mb-12 text-center text-base tracking-tight text-text-secondary">
+    </Text>
+    <Text size="base" class="mb-12 text-center text-secondary-foreground">
       {m.pricing_subtitle()}
-    </p>
+    </Text>
 
     <div
       class="
@@ -21,100 +22,124 @@
     >
       <!-- Tier 1: Agora Lite -->
       <div class="flex flex-1 flex-col rounded-2xl border border-border p-6">
-        <p class="text-2xl/tight font-bold tracking-tight text-text-primary">
-          {m.pricing_lite_name()}
-        </p>
-        <p class="mt-1 text-sm/4 tracking-tight text-text-primary">
+        <Text size="xl" weight="bold">
+          <GradientText>{m.pricing_lite_name()}</GradientText>
+        </Text>
+        <Text size="sm" leading="tight" class="mt-1">
           {m.pricing_lite_desc()}
-        </p>
+        </Text>
         <div class="mt-4 flex flex-col pb-10">
           <div class="flex items-center gap-2">
-            <GradientText angle={107} class="text-[22px] leading-relaxed"
-              >✓</GradientText
+            <GradientText angle={107} class="text-xl">✓</GradientText>
+            <Text
+              size="sm"
+              leading="tight"
+              element="span"
+              class="text-secondary-foreground"
             >
-            <span class="text-sm/4 tracking-tight text-text-secondary">
               {m.pricing_lite_feature_1()}
-            </span>
+            </Text>
           </div>
           <div class="flex items-center gap-2">
-            <GradientText angle={107} class="text-[22px] leading-relaxed"
-              >✓</GradientText
+            <GradientText angle={107} class="text-xl">✓</GradientText>
+            <Text
+              size="sm"
+              leading="tight"
+              element="span"
+              class="text-secondary-foreground"
             >
-            <span class="text-sm/4 tracking-tight text-text-secondary">
               {m.pricing_lite_feature_2()}
-            </span>
+            </Text>
           </div>
         </div>
       </div>
 
       <!-- Tier 2: Agora Pro -->
       <div class="flex flex-1 flex-col rounded-2xl border border-border p-6">
-        <p class="text-2xl/tight font-bold tracking-tight text-text-primary">
-          {m.pricing_pro_name()}
-        </p>
-        <p class="mt-1 text-sm/4 tracking-tight text-text-primary">
+        <Text size="xl" weight="bold">
+          <GradientText>{m.pricing_pro_name()}</GradientText>
+        </Text>
+        <Text size="sm" leading="tight" class="mt-1">
           {m.pricing_pro_desc()}
-        </p>
+        </Text>
         <div class="mt-4 flex flex-col pb-10">
           <div class="flex items-center gap-2">
-            <GradientText angle={107} class="text-[22px] leading-relaxed"
-              >✓</GradientText
+            <GradientText angle={107} class="text-xl">✓</GradientText>
+            <Text
+              size="sm"
+              leading="tight"
+              element="span"
+              class="text-secondary-foreground"
             >
-            <span class="text-sm/4 tracking-tight text-text-secondary">
               {m.pricing_pro_feature_1()}
-            </span>
+            </Text>
           </div>
           <div class="flex items-center gap-2">
-            <GradientText angle={107} class="text-[22px] leading-relaxed"
-              >✓</GradientText
+            <GradientText angle={107} class="text-xl">✓</GradientText>
+            <Text
+              size="sm"
+              leading="tight"
+              element="span"
+              class="text-secondary-foreground"
             >
-            <span class="text-sm/4 tracking-tight text-text-secondary">
               {m.pricing_pro_feature_2()}
-            </span>
+            </Text>
           </div>
           <div class="flex items-center gap-2">
-            <GradientText angle={107} class="text-[22px] leading-relaxed"
-              >✓</GradientText
+            <GradientText angle={107} class="text-xl">✓</GradientText>
+            <Text
+              size="sm"
+              leading="tight"
+              element="span"
+              class="text-secondary-foreground"
             >
-            <span class="text-sm/4 tracking-tight text-text-secondary">
               {m.pricing_pro_feature_3()}
-            </span>
+            </Text>
           </div>
         </div>
       </div>
 
       <!-- Tier 3: Facilitation & Consulting -->
       <div class="flex flex-1 flex-col rounded-2xl border border-border p-6">
-        <p class="text-2xl/tight font-bold tracking-tight text-text-primary">
-          {m.pricing_consulting_name()}
-        </p>
-        <p class="mt-1 text-sm/4 tracking-tight text-text-primary">
+        <Text size="xl" weight="bold">
+          <GradientText>{m.pricing_consulting_name()}</GradientText>
+        </Text>
+        <Text size="sm" leading="tight" class="mt-1">
           {m.pricing_consulting_desc()}
-        </p>
+        </Text>
         <div class="mt-4 flex flex-col pb-10">
           <div class="flex items-center gap-2">
-            <GradientText angle={107} class="text-[22px] leading-relaxed"
-              >✓</GradientText
+            <GradientText angle={107} class="text-xl">✓</GradientText>
+            <Text
+              size="sm"
+              leading="tight"
+              element="span"
+              class="text-secondary-foreground"
             >
-            <span class="text-sm/4 tracking-tight text-text-secondary">
               {m.pricing_consulting_feature_1()}
-            </span>
+            </Text>
           </div>
           <div class="flex items-center gap-2">
-            <GradientText angle={107} class="text-[22px] leading-relaxed"
-              >✓</GradientText
+            <GradientText angle={107} class="text-xl">✓</GradientText>
+            <Text
+              size="sm"
+              leading="tight"
+              element="span"
+              class="text-secondary-foreground"
             >
-            <span class="text-sm/4 tracking-tight text-text-secondary">
               {m.pricing_consulting_feature_2()}
-            </span>
+            </Text>
           </div>
           <div class="flex items-center gap-2">
-            <GradientText angle={107} class="text-[22px] leading-relaxed"
-              >✓</GradientText
+            <GradientText angle={107} class="text-xl">✓</GradientText>
+            <Text
+              size="sm"
+              leading="tight"
+              element="span"
+              class="text-secondary-foreground"
             >
-            <span class="text-sm/4 tracking-tight text-text-secondary">
               {m.pricing_consulting_feature_3()}
-            </span>
+            </Text>
           </div>
         </div>
       </div>

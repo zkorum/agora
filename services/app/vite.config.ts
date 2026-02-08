@@ -1,9 +1,9 @@
 import { sentrySvelteKit } from "@sentry/sveltekit";
+import { enhancedImages } from "@sveltejs/enhanced-img";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import { sveltekit } from "@sveltejs/kit/vite";
 import tailwindcss from "@tailwindcss/vite";
-import Icons from "unplugin-icons/vite";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   build: {
@@ -28,10 +28,8 @@ export default defineConfig({
       strategy: ["url", "localStorage", "baseLocale"],
     }),
     tailwindcss(),
+    enhancedImages(),
     sveltekit(),
-    Icons({
-      compiler: "svelte",
-    }),
   ],
   test: {
     include: ["src/**/*.{test,spec}.{js,ts}"],

@@ -10,9 +10,9 @@ import { batchTranslateTexts } from "@/shared-backend/translate.js";
 import { ZodSupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import { log } from "@/app.js";
 import {
-    GenLabelSummaryOutputClusterLoose,
-    GenLabelSummaryOutputClusterStrict,
-} from "@/shared/types/zod.js";
+    type GenLabelSummaryOutputClusterLoose,
+    type GenLabelSummaryOutputClusterStrict,
+} from "@/shared-backend/llmSchemas.js";
 
 // Get all supported display languages except English (source language)
 const SUPPORTED_LANGUAGES = ZodSupportedDisplayLanguageCodes.options.filter(
