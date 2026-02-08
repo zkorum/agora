@@ -11,7 +11,7 @@ import {
     type GenLabelSummaryOutputClusterStrict,
     type GenLabelSummaryOutputLoose,
     type GenLabelSummaryOutputStrict,
-} from "@/shared/types/zod.js";
+} from "@/shared-backend/llmSchemas.js";
 import { parseLlmOutputJson } from "@/utils/llmParse.js";
 import {
     BedrockRuntimeClient,
