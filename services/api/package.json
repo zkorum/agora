@@ -54,7 +54,7 @@
         "@aws-sdk/s3-request-presigner": "^3.906.0",
         "@date-fns/tz": "^1.4.1",
         "@fastify/auth": "^5.0.2",
-        "@fastify/cors": "^10.1.0",
+        "@fastify/cors": "^11.2.0",
         "@fastify/multipart": "^9.3.0",
         "@fastify/sensible": "^6.0.3",
         "@fastify/sse": "^0.4.0",
