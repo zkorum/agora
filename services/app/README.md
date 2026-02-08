@@ -49,6 +49,10 @@ pnpm test:unit    # Run Vitest unit tests
 pnpm test:e2e     # Run Playwright E2E tests
 ```
 
+## Known Dependency Constraints
+
+- **ESLint 10**: Blocked. `typescript-eslint` v8 (latest as of Feb 2025) declares peer dep `eslint: ^8.57.0 || ^9.0.0`. ESLint 10 removed `context.parserOptions`, causing `typescript-eslint` rules (e.g. `no-deprecated`) to crash at runtime. `eslint-plugin-svelte` and `eslint-plugin-better-tailwindcss` also don't declare ESLint 10 support. Revisit when `typescript-eslint` v9 ships with ESLint 10 compatibility.
+
 ## Project Structure
 
 ```
@@ -81,7 +85,7 @@ src/
       facilitator/      # Facilitator data fetching
       participant/      # Participant data fetching
     paraglide/          # Generated i18n runtime
-    assets/             # Static assets (favicon, etc.)
+    assets/             # Vite-processed images (enhanced:img, cache-busted)
   routes/
     +layout.svelte      # Root layout
     +page.svelte        # Landing page (/)
@@ -91,7 +95,7 @@ src/
   content/
     blog/               # Markdown blog posts by locale
 messages/               # Paraglide translation files
-static/                 # Static files (images, robots.txt)
+static/                 # Unprocessed static files (favicons, OG images, blog images)
 tests/                  # Playwright E2E tests
 ```
 
@@ -455,17 +459,77 @@ test("handles network failure", async () => {
 
 ### Images
 
-Use `<enhanced:img>` from `@sveltejs/enhanced-img` for all images (except SVGs):
+This project uses two directories for images, each with distinct behavior:
+
+| Directory         | Behavior                                                                                                                       | Use for                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `src/lib/assets/` | Processed by Vite at build time — generates WebP/AVIF formats, responsive `srcset`, content-hashed filenames for cache-busting | Images referenced in `.svelte` component templates                                                  |
+| `static/images/`  | Served as-is at `/images/...`, no processing                                                                                   | Favicons, Open Graph/meta images, blog markdown images — anything needing a stable, predictable URL |
+
+**Why two directories?** `@sveltejs/enhanced-img` can only optimize images that are imported through Vite's module system. HTML `<link>` tags (favicons), `<meta>` tags (Open Graph), and markdown `<img>` tags are outside Vite's scope and need plain URLs from `static/`.
+
+#### `src/lib/assets/` — Vite-processed images
+
+Use `<enhanced:img>` for images in Svelte component templates. At build time, it generates a `<picture>` element with multiple formats (WebP, AVIF) and sizes.
+
+**Static src (single image in template):**
 
 ```svelte
 <enhanced:img
   src="$lib/assets/hero.png"
   alt="Hero"
-  sizes="min(1280px, 100vw)"
+  sizes="min(1376px, 100vw)"
 />
 ```
 
-Images must be in `$lib/` or use relative path for build-time processing. SVGs use regular `<img>` tags.
+**Dynamic src (images in arrays/loops) — use `?enhanced` imports:**
+
+```svelte
+<script lang="ts">
+  import heroImg from "$lib/assets/hero.png?enhanced";
+  import featureImg from "$lib/assets/feature.png?enhanced";
+
+  const items = [
+    { img: heroImg, label: "Hero" },
+    { img: featureImg, label: "Feature" },
+  ];
+</script>
+
+{#each items as item (item.label)}
+  <enhanced:img src={item.img} alt={item.label} sizes="270px" />
+{/each}
+```
+
+**SVGs — use standard Vite imports (not `enhanced:img`):**
+
+```svelte
+<script lang="ts">
+  import logo from "$lib/assets/logo.svg";
+</script>
+
+<img src={logo} alt="Logo" />
+```
+
+SVGs get content-hashed filenames for cache-busting but don't need format conversion.
+
+**`sizes` attribute guidelines:**
+
+| Image type                 | `sizes` value                    | Why                                 |
+| -------------------------- | -------------------------------- | ----------------------------------- |
+| Full-width hero/background | `min(1376px, 100vw)`             | Capped at max container width       |
+| Half-width (2-column grid) | `(min-width: 768px) 50vw, 100vw` | Full on mobile, half on desktop     |
+| Fixed-width element        | `350px` or `270px`               | Match the CSS width                 |
+| Small logos/icons          | Omit                             | Not worth generating multiple sizes |
+
+**LCP image:** Set `fetchpriority="high"` on the largest contentful paint image (typically the hero background) so the browser prioritizes loading it.
+
+#### `static/images/` — unprocessed files
+
+Files here are served directly at `/images/...` with no build-time processing. Use for:
+
+- **Favicons** — `<link rel="icon">` tags need stable paths
+- **Open Graph / Twitter Card images** — social crawlers need absolute URLs
+- **Blog images** — referenced from markdown via raw `<img>` HTML, outside Vite's module system
 
 ## Rendering Strategy
 
