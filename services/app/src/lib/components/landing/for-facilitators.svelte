@@ -6,6 +6,7 @@
   import * as m from "$lib/paraglide/messages.js";
   import Chip from "$ui/shared/chip.svelte";
   import GradientButton from "$ui/shared/gradient-button.svelte";
+  import GradientLink from "$ui/shared/gradient-link.svelte";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
 
@@ -100,12 +101,8 @@
           </div>
           <Chip>{feature.chip()}</Chip>
           <Text size="base" class="pl-2 text-secondary-foreground">
-            {feature.text()}{#if feature.source}{#if feature.sourceUrl}<a
-                  href={feature.sourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="hover:underline"
-                  ><GradientText angle={81}>{feature.source()}</GradientText></a
+            {feature.text()}{#if feature.source}{#if feature.sourceUrl}<GradientLink
+                  href={feature.sourceUrl}>{feature.source()}</GradientLink
                 >{:else}<GradientText angle={81}
                   >{feature.source()}</GradientText
                 >{/if}{/if}

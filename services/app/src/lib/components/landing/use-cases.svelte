@@ -239,13 +239,13 @@
     <div
       class="
         grid grid-cols-1 justify-items-center gap-x-5 gap-y-10
-        md:grid-cols-2 md:justify-items-start
+        xl:grid-cols-2 xl:justify-items-start
       "
     >
       {#each useCases as useCase, i (i)}
         <div
           class="
-            flex flex-col items-center gap-4
+            flex w-full max-w-[560px] flex-col items-center gap-4
             sm:flex-row sm:items-start sm:gap-6
           "
         >
@@ -262,9 +262,9 @@
           </div>
           <div
             class="
-              flex min-w-0 flex-col gap-[6px]
+              flex min-w-0 self-stretch flex-col gap-[6px]
               sm:pt-6
-              md:min-w-[323px]
+              xl:min-w-[323px]
             "
           >
             <Chip
