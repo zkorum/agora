@@ -29,7 +29,7 @@ export interface BlogPostMeta {
 }
 
 const markdownFiles: Record<string, string> = import.meta.glob(
-  "/src/content/blog/**/*.md",
+  ["/src/lib/posts/**/*.md", "!/src/lib/posts/README.md"],
   {
     query: "?raw",
     import: "default",
@@ -38,7 +38,7 @@ const markdownFiles: Record<string, string> = import.meta.glob(
 );
 
 function getLocaleFromPath(path: string): string {
-  const match = /\/src\/content\/blog\/([^/]+)\//.exec(path);
+  const match = /\/src\/lib\/posts\/([^/]+)\//.exec(path);
   return match?.[1] ?? "en";
 }
 
@@ -76,7 +76,7 @@ export async function getBlogPost({
   slug: string;
   locale: string;
 }): Promise<BlogPost | null> {
-  const path = `/src/content/blog/${locale}/${slug}.md`;
+  const path = `/src/lib/posts/${locale}/${slug}.md`;
   const raw = markdownFiles[path];
 
   if (!raw) return null;
