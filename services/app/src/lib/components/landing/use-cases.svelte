@@ -1,6 +1,8 @@
 <script lang="ts">
   import * as m from "$lib/paraglide/messages.js";
+  import Chip from "$ui/shared/chip.svelte";
   import GradientText from "$ui/shared/gradient-text.svelte";
+  import Text from "$ui/shared/text.svelte";
 
   // Civic Participation: Ballot box with checkmark and raised hands
   const svgCivic = `<svg viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -230,9 +232,9 @@
 
 <section id="usecases" class="px-8 py-20">
   <div class="mx-auto max-w-[1120px]">
-    <p class="mb-8 text-base leading-[1.3] font-bold tracking-[-0.16px]">
+    <Text size="base" weight="bold" class="mb-8">
       <GradientText>{m.usecases_label()}</GradientText>
-    </p>
+    </Text>
 
     <div
       class="
@@ -250,7 +252,8 @@
           <div
             class="
               size-[160px] shrink-0 overflow-hidden rounded-2xl
-              bg-[linear-gradient(115deg,var(--color-gradient-light-purple)_46%,var(--color-gradient-light-blue)_100%)]
+              bg-linear-[115deg] from-gradient-light-purple from-46%
+              to-gradient-light-blue
               sm:size-[192px]
             "
           >
@@ -264,27 +267,18 @@
               md:min-w-[323px]
             "
           >
-            <span
+            <Chip
               class="
-                inline-flex w-fit self-center rounded-[9px] bg-surface-hover
-                px-2 py-[7px] text-base/4 tracking-[-0.16px]
+                self-center
                 sm:self-start
-              "
+              ">{useCase.chip()}</Chip
             >
-              <GradientText angle={154}>{useCase.chip()}</GradientText>
-            </span>
-            <p
-              class="
-                text-base leading-[1.4] font-semibold tracking-[-0.16px]
-                text-text-primary
-              "
-            >
+            <Text size="base" weight="semibold">
               {useCase.tagline()}
-            </p>
+            </Text>
             <ul
               class="
-                list-disc pl-6 text-base leading-[1.4] tracking-[-0.16px]
-                text-text-secondary
+                list-disc pl-6 text-base tracking-base text-secondary-foreground
               "
             >
               {#each useCase.examples().split("|") as example, j (j)}

@@ -1,32 +1,43 @@
 <script lang="ts">
+  import photoGeorge from "$lib/assets/team/george.png?enhanced";
+  import photoNicolas from "$lib/assets/team/nicolas.png?enhanced";
+  import photoYuting from "$lib/assets/team/yuting.png?enhanced";
   import * as m from "$lib/paraglide/messages.js";
   import GradientArrow from "$ui/shared/gradient-arrow.svelte";
+  import GradientLink from "$ui/shared/gradient-link.svelte";
   import GradientText from "$ui/shared/gradient-text.svelte";
+  import Text from "$ui/shared/text.svelte";
 
   const members = [
     {
-      photo: "/images/team/yuting.png",
+      id: "yuting",
+      photo: photoYuting,
       name: () => m.team_yuting_name(),
       role: () => m.team_yuting_role(),
+      profileUrl: "https://www.linkedin.com/in/yuting-jiang-zkorum/",
     },
     {
-      photo: "/images/team/nicolas.png",
+      id: "nicolas",
+      photo: photoNicolas,
       name: () => m.team_nicolas_name(),
       role: () => m.team_nicolas_role(),
+      profileUrl: "https://bsky.app/profile/nicobao.dev",
     },
     {
-      photo: "/images/team/george.png",
+      id: "george",
+      photo: photoGeorge,
       name: () => m.team_george_name(),
       role: () => m.team_george_role(),
+      profileUrl: "https://www.georgecharnley.com/",
     },
   ];
 </script>
 
 <section id="team" class="px-8 py-20">
   <div class="mx-auto max-w-[1120px]">
-    <p class="mb-12 text-center text-base font-bold tracking-[-0.16px]">
+    <Text size="base" weight="bold" class="mb-12 text-center">
       <GradientText>{m.team_label()}</GradientText>
-    </p>
+    </Text>
 
     <div
       class="
@@ -34,12 +45,13 @@
         md:flex-row md:items-start
       "
     >
-      {#each members as member, index (member.photo)}
+      {#each members as member, index (member.id)}
         <div class="flex w-[320px] flex-col">
           <div class="relative">
-            <img
+            <enhanced:img
               src={member.photo}
               alt={member.name()}
+              sizes="320px"
               class="size-[320px] rounded-2xl object-cover"
             />
             <div
@@ -50,17 +62,14 @@
             ></div>
           </div>
           <div class="mt-6 px-6">
-            <h3 class="text-lg/6 font-medium tracking-tight">
-              <GradientText>{member.name()}</GradientText>
-            </h3>
-            <p
-              class="
-                mt-1 text-base leading-[1.4] tracking-[-0.16px]
-                text-text-secondary
-              "
-            >
+            <Text size="lg" weight="medium" element="h3">
+              <GradientLink href={member.profileUrl}
+                >{member.name()}</GradientLink
+              >
+            </Text>
+            <Text size="base" class="mt-1 text-secondary-foreground">
               {member.role()}
-            </p>
+            </Text>
           </div>
           {#if index === 0}
             <div

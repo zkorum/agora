@@ -2,6 +2,7 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import { localizeHref } from "$lib/paraglide/runtime";
+  import Text from "$ui/shared/text.svelte";
 
   // Redirect 404s to root
   $effect(() => {
@@ -14,8 +15,10 @@
 {#if page.status !== 404}
   <div class="flex min-h-[50vh] items-center justify-center">
     <div class="text-center">
-      <h1 class="text-2xl font-bold">{page.status}</h1>
-      <p class="mt-2 text-text-secondary">{page.error?.message}</p>
+      <Text size="2xl" weight="bold" element="h1">{page.status}</Text>
+      <Text size="base" class="mt-2 text-secondary-foreground"
+        >{page.error?.message}</Text
+      >
     </div>
   </div>
 {/if}

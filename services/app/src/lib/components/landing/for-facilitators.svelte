@@ -1,32 +1,42 @@
 <script lang="ts">
+  import screenshotAuth from "$lib/assets/screenshot-auth.png?enhanced";
+  import screenshotDemographics from "$lib/assets/screenshot-demographics.png?enhanced";
+  import screenshotPolis from "$lib/assets/screenshot-polis.png?enhanced";
+  import screenshotSensemaker from "$lib/assets/screenshot-sensemaker.png?enhanced";
   import * as m from "$lib/paraglide/messages.js";
+  import Chip from "$ui/shared/chip.svelte";
   import GradientButton from "$ui/shared/gradient-button.svelte";
   import GradientText from "$ui/shared/gradient-text.svelte";
+  import Text from "$ui/shared/text.svelte";
 
   const features = [
     {
-      img: "/images/screenshot-polis.png",
+      id: "polis",
+      img: screenshotPolis,
       chip: () => m.facilitators_chip_polis(),
       text: () => m.facilitators_feature_polis(),
       source: () => m.facilitators_feature_polis_source(),
       sourceUrl: "https://pol.is/",
     },
     {
-      img: "/images/screenshot-sensemaker.png",
+      id: "sensemaker",
+      img: screenshotSensemaker,
       chip: () => m.facilitators_chip_sensemaker(),
       text: () => m.facilitators_feature_sensemaker(),
       source: () => m.facilitators_feature_sensemaker_source(),
       sourceUrl: "https://jigsaw-code.github.io/sensemaking-tools/",
     },
     {
-      img: "/images/screenshot-auth.png",
+      id: "auth",
+      img: screenshotAuth,
       chip: () => m.facilitators_chip_auth(),
       text: () => m.facilitators_feature_auth(),
       source: null,
       sourceUrl: null,
     },
     {
-      img: "/images/screenshot-demographics.png",
+      id: "demographics",
+      img: screenshotDemographics,
       chip: () => m.facilitators_chip_demographics(),
       text: () => m.facilitators_feature_demographics(),
       source: null,
@@ -37,17 +47,33 @@
 
 <section id="facilitators" class="px-8 py-20">
   <div class="mx-auto max-w-[1120px]">
-    <div class="mb-8 max-w-[492px]">
-      <p class="text-base leading-[1.3] font-bold tracking-[-0.16px]">
-        <GradientText angle={81}>{m.facilitators_label()}</GradientText>
-      </p>
-      <p
+    <div
+      class="
+        mb-8 flex flex-col
+        md:flex-row md:items-end md:justify-between
+      "
+    >
+      <div class="max-w-[492px]">
+        <Text size="base" weight="bold">
+          <GradientText angle={81}>{m.facilitators_label()}</GradientText>
+        </Text>
+        <Text size="xl" class="mt-2">
+          <GradientText>{m.facilitators_description()}</GradientText>
+        </Text>
+      </div>
+      <div
         class="
-          mt-2 text-2xl leading-[1.3] tracking-[-0.24px] text-text-primary
+          hidden
+          md:block
         "
       >
-        {m.facilitators_description()}
-      </p>
+        <GradientButton
+          href="https://www.agoracitizen.app/conversation/new/create"
+          variant="primary"
+        >
+          {m.facilitators_cta()}
+        </GradientButton>
+      </div>
     </div>
 
     <div
@@ -56,30 +82,24 @@
         md:flex-row md:items-start
       "
     >
-      {#each features as feature (feature.img)}
+      {#each features as feature (feature.id)}
         <div class="flex w-[270px] flex-col gap-[10px]">
           <div
             class="
               flex h-[250px] items-center justify-center overflow-hidden
-              bg-[linear-gradient(117deg,var(--color-gradient-light-purple)_46%,var(--color-gradient-light-blue)_100%)]
+              bg-linear-[117deg] from-gradient-light-purple from-46%
+              to-gradient-light-blue
             "
           >
-            <img src={feature.img} alt="" class="size-full object-cover" />
+            <enhanced:img
+              src={feature.img}
+              alt=""
+              sizes="270px"
+              class="size-full object-cover"
+            />
           </div>
-          <span
-            class="
-              inline-flex w-fit items-center rounded-chip px-2 py-[7px]
-              text-base/4 tracking-[-0.16px]
-            "
-          >
-            <GradientText angle={154}>{feature.chip()}</GradientText>
-          </span>
-          <p
-            class="
-              pl-2 text-base leading-[1.4] tracking-[-0.16px]
-              text-text-secondary
-            "
-          >
+          <Chip>{feature.chip()}</Chip>
+          <Text size="base" class="pl-2 text-secondary-foreground">
             {feature.text()}{#if feature.source}{#if feature.sourceUrl}<a
                   href={feature.sourceUrl}
                   target="_blank"
@@ -89,7 +109,7 @@
                 >{:else}<GradientText angle={81}
                   >{feature.source()}</GradientText
                 >{/if}{/if}
-          </p>
+          </Text>
         </div>
       {/each}
     </div>
@@ -97,7 +117,7 @@
     <div
       class="
         flex justify-center
-        md:justify-end
+        md:hidden
       "
     >
       <GradientButton

@@ -72,9 +72,9 @@
   <link rel="alternate" hreflang="x-default" href={page.url.pathname} />
 </svelte:head>
 
-<div class="flex min-h-screen flex-col bg-bg font-sans text-text-primary">
-  <Header />
-  <main class="flex-1">
+<div class="flex min-h-screen flex-col bg-background font-sans text-foreground">
+  <Header hideOnScroll={true} />
+  <main class="flex-1 pt-24">
     {@render children()}
   </main>
   <Footer />

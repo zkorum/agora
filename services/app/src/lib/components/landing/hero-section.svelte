@@ -2,23 +2,27 @@
   import * as m from "$lib/paraglide/messages.js";
   import GradientButton from "$ui/shared/gradient-button.svelte";
   import GradientText from "$ui/shared/gradient-text.svelte";
+  import Text from "$ui/shared/text.svelte";
 </script>
 
-<section class="w-full px-8 pt-24 pb-16">
+<section class="w-full px-8 pb-16">
   <div
-    class="relative mx-auto max-w-[1376px] overflow-hidden rounded-3xl"
-    style="min-height: 706px;"
+    class="
+      relative mx-auto min-h-[706px] max-w-[1376px] overflow-hidden rounded-3xl
+    "
   >
-    <img
-      src="/images/hero-bg-base.png"
+    <enhanced:img
+      src="$lib/assets/hero-bg-base.png"
       alt=""
+      sizes="min(1376px, 100vw)"
+      fetchpriority="high"
       class="absolute inset-0 size-full rounded-3xl object-cover"
     />
     <div
       class="absolute top-0 left-0 h-289.75 w-434.75 scale-y-[-1] rotate-180"
     >
-      <img
-        src="/images/hero-overlay.png"
+      <enhanced:img
+        src="$lib/assets/hero-overlay.png"
         alt=""
         class="size-full object-cover"
       />
@@ -30,13 +34,9 @@
         md:max-w-137.5 md:px-20 md:py-24
       "
     >
-      <p
-        class="
-          text-(length:--font-size-quote) leading-[1.1] tracking-[-0.32px]
-        "
-      >
+      <Text size="2xl">
         <GradientText>{m.hero_tagline()}</GradientText>
-      </p>
+      </Text>
 
       <div
         class="

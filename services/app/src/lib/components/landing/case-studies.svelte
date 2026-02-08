@@ -1,7 +1,9 @@
 <script lang="ts">
   import * as m from "$lib/paraglide/messages.js";
   import { localizeHref } from "$lib/paraglide/runtime";
+  import GradientButton from "$ui/shared/gradient-button.svelte";
   import GradientText from "$ui/shared/gradient-text.svelte";
+  import Text from "$ui/shared/text.svelte";
 </script>
 
 <section
@@ -12,9 +14,9 @@
   "
 >
   <div class="mx-auto max-w-[1120px]">
-    <p class="mb-8 text-center text-base font-bold tracking-[-0.16px]">
+    <Text size="base" weight="bold" class="mb-8 text-center">
       <GradientText>{m.casestudies_label()}</GradientText>
-    </p>
+    </Text>
 
     <div
       class="
@@ -25,14 +27,14 @@
       <a
         href={localizeHref("/blog/bloquonstout")}
         class="
-          group relative flex flex-1 flex-col justify-end overflow-hidden
-          rounded-2xl p-8
+          group relative flex aspect-544/305 flex-1 flex-col justify-end
+          overflow-hidden rounded-2xl p-8
         "
-        style="aspect-ratio: 544/305;"
       >
-        <img
-          src="/images/casestudy-bloquonstout.png"
+        <enhanced:img
+          src="$lib/assets/casestudy-bloquonstout.png"
           alt=""
+          sizes="(min-width: 768px) 50vw, 100vw"
           class="
             absolute inset-0 size-full object-cover transition-transform
             duration-300
@@ -46,18 +48,13 @@
           "
         ></div>
         <div class="relative z-10 flex flex-col gap-2">
-          <h3
-            class="
-              text-xl leading-[1.2] font-semibold tracking-[-0.24px] text-white
-              sm:text-2xl sm:leading-[1.1]
-            "
-          >
+          <Text size="xl" weight="semibold" element="h3" class="text-white">
             {m.casestudy_bloquonstout_title()}
-          </h3>
+          </Text>
           <div class="flex items-center justify-between">
-            <p class="text-base leading-[1.4] tracking-[-0.16px] text-white">
+            <Text size="base" element="span" class="text-white">
               September 2025
-            </p>
+            </Text>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -76,14 +73,14 @@
       <a
         href={localizeHref("/blog/tech4nature")}
         class="
-          group relative flex flex-1 flex-col justify-end overflow-hidden
-          rounded-2xl p-8
+          group relative flex aspect-544/305 flex-1 flex-col justify-end
+          overflow-hidden rounded-2xl p-8
         "
-        style="aspect-ratio: 544/305;"
       >
-        <img
-          src="/images/casestudy-tech4nature.png"
+        <enhanced:img
+          src="$lib/assets/casestudy-tech4nature.png"
           alt=""
+          sizes="(min-width: 768px) 50vw, 100vw"
           class="
             absolute inset-0 size-full object-cover transition-transform
             duration-300
@@ -97,18 +94,13 @@
           "
         ></div>
         <div class="relative z-10 flex flex-col gap-2">
-          <h3
-            class="
-              text-xl leading-[1.2] font-semibold tracking-[-0.24px] text-white
-              sm:text-2xl sm:leading-[1.1]
-            "
-          >
+          <Text size="xl" weight="semibold" element="h3" class="text-white">
             {m.casestudy_tech4nature_title()}
-          </h3>
+          </Text>
           <div class="flex items-center justify-between">
-            <p class="text-base leading-[1.4] tracking-[-0.16px] text-white">
+            <Text size="base" element="span" class="text-white">
               September 2025
-            </p>
+            </Text>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -126,16 +118,9 @@
     </div>
 
     <div class="flex justify-center">
-      <a
-        href={localizeHref("/blog")}
-        class="
-          inline-flex h-10 items-center rounded-button bg-linear-to-b
-          from-brand-purple to-brand-blue px-4 py-3 text-base font-medium
-          tracking-[-0.16px] text-white
-        "
-      >
+      <GradientButton href={localizeHref("/blog")} variant="primary">
         {m.casestudies_cta()}
-      </a>
+      </GradientButton>
     </div>
   </div>
 </section>
