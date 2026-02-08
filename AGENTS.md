@@ -17,16 +17,6 @@ When the user mentions needing to understand an external library or repository, 
 
 **Example**: If analyzing how `vite-plugin-validate-env` works from within `services/agora/`, check `../../external/vite-plugin-validate-env/` first.
 
-## Documentation Convention
-
-When creating investigation documents, technical analysis files, reference documentation, or any temporary files, place them in the `agents_tmp_doc` folder and use the `AGENTS_` prefix for all filenames (e.g., `agents_tmp_doc/AGENTS_TIMEOUT_CONFIGURATION.md`, `agents_tmp_doc/AGENTS_DATABASE_OPTIMIZATION.md`).
-
-**Important**: The `agents_tmp_doc/` directory already exists at the repository root. Do NOT attempt to create it with `mkdir` commands.
-
-**When in doubt, use the `AGENTS_` prefix and place in `agents_tmp_doc`.**
-
-Exception: Only omit the `AGENTS_` prefix and folder when the user explicitly requests a specific filename/location or when creating files that should be integrated into the main documentation (e.g., user-requested README updates, official project documentation).
-
 ## Project Overview
 
 Agora Citizen Network is a privacy-preserving social platform using zero-knowledge proofs and bridging-based ranking algorithms. The monorepo contains:
