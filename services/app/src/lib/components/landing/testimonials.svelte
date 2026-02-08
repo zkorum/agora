@@ -37,8 +37,8 @@
     <div class="relative overflow-hidden rounded-3xl bg-white">
       <div
         class="
-          pointer-events-none absolute -top-[40px] -left-[148px] h-[1150px]
-          w-[1484px] overflow-hidden opacity-60
+          pointer-events-none absolute -top-10 -left-37 h-[1150px] w-[1484px]
+          overflow-hidden opacity-60
         "
       >
         <enhanced:img

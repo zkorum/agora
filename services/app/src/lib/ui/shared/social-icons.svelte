@@ -1,13 +1,11 @@
 <script lang="ts">
-  import {
-    IconLinkBluesky,
-    IconLinkDiscord,
-    IconLinkEmail,
-    IconLinkGithub,
-    IconLinkLinkedin,
-    IconLinkTelegram,
-    IconLinkX,
-  } from "./icons";
+  import IconLinkBluesky from "./icons/icon-link-bluesky.svelte";
+  import IconLinkDiscord from "./icons/icon-link-discord.svelte";
+  import IconLinkEmail from "./icons/icon-link-email.svelte";
+  import IconLinkGithub from "./icons/icon-link-github.svelte";
+  import IconLinkLinkedin from "./icons/icon-link-linkedin.svelte";
+  import IconLinkTelegram from "./icons/icon-link-telegram.svelte";
+  import IconLinkX from "./icons/icon-link-x.svelte";
 
   interface Props {
     class?: string;

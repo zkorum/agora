@@ -1,6 +1,7 @@
 import eslint from "@eslint/js";
 import eslintPluginBetterTailwindcss from "eslint-plugin-better-tailwindcss";
 import eslintConfigPrettier from "eslint-config-prettier";
+import importX from "eslint-plugin-import-x";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import sveltePlugin from "eslint-plugin-svelte";
 import globals from "globals";
@@ -72,8 +73,28 @@ export default tseslint.config(
     files: ["src/**/*.ts", "src/**/*.svelte", "src/**/*.svelte.ts"],
     plugins: {
       "simple-import-sort": simpleImportSort,
+      "import-x": importX,
+    },
+    settings: {
+      "import-x/resolver": {
+        typescript: {
+          project: "./tsconfig.json",
+        },
+      },
     },
     rules: {
+      "import-x/no-unresolved": [
+        "error",
+        {
+          caseSensitive: true,
+          ignore: [
+            "^\\$app/",
+            "^\\$env/",
+            "^\\$service-worker$",
+            "^unplugin-icons/",
+          ],
+        },
+      ],
       "@typescript-eslint/switch-exhaustiveness-check": "error",
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-unused-vars": [
