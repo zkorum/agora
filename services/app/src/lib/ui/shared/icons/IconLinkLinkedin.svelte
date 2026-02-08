@@ -1,6 +1,4 @@
 <script lang="ts">
-  import IconLinkedin from "~icons/simple-icons/linkedin";
-
   interface Props {
     class?: string;
   }
@@ -14,10 +12,13 @@
   rel="noopener noreferrer"
   aria-label="LinkedIn"
   class="
-    transition-opacity duration-200
+    text-icon-linkedin transition-opacity duration-200
     hover:opacity-70
   "
-  style="color: #0A66C2;"
 >
-  <IconLinkedin class={className} />
+  <span
+    class="
+      icon-[simple-icons--linkedin] inline-block
+      {className}"
+  ></span>
 </a>

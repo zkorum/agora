@@ -1,6 +1,4 @@
 <script lang="ts">
-  import IconDiscord from "~icons/simple-icons/discord";
-
   interface Props {
     class?: string;
   }
@@ -14,10 +12,13 @@
   rel="noopener noreferrer"
   aria-label="Discord"
   class="
-    transition-opacity duration-200
+    text-icon-discord transition-opacity duration-200
     hover:opacity-70
   "
-  style="color: #5865F2;"
 >
-  <IconDiscord class={className} />
+  <span
+    class="
+      icon-[simple-icons--discord] inline-block
+      {className}"
+  ></span>
 </a>

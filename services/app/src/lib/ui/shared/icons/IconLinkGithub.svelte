@@ -1,11 +1,10 @@
 <script lang="ts">
-  import IconGithub from "~icons/simple-icons/github";
-
   interface Props {
     class?: string;
+    colorMode?: "brand" | "light";
   }
 
-  let { class: className = "h-6 w-6" }: Props = $props();
+  let { class: className = "h-6 w-6", colorMode = "brand" }: Props = $props();
 </script>
 
 <a
@@ -13,11 +12,16 @@
   target="_blank"
   rel="noopener noreferrer"
   aria-label="GitHub"
-  class="
+  class="{colorMode === 'light'
+    ? 'text-inverse-foreground'
+    : 'text-icon-github'}
     transition-opacity duration-200
     hover:opacity-70
   "
-  style="color: #181717;"
 >
-  <IconGithub class={className} />
+  <span
+    class="
+      icon-[simple-icons--github] inline-block
+      {className}"
+  ></span>
 </a>

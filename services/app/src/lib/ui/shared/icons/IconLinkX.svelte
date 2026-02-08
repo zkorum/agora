@@ -1,11 +1,10 @@
 <script lang="ts">
-  import IconX from "~icons/simple-icons/x";
-
   interface Props {
     class?: string;
+    colorMode?: "brand" | "light";
   }
 
-  let { class: className = "h-6 w-6" }: Props = $props();
+  let { class: className = "h-6 w-6", colorMode = "brand" }: Props = $props();
 </script>
 
 <a
@@ -13,11 +12,14 @@
   target="_blank"
   rel="noopener noreferrer"
   aria-label="X"
-  class="
+  class="{colorMode === 'light' ? 'text-inverse-foreground' : 'text-icon-x'}
     transition-opacity duration-200
     hover:opacity-70
   "
-  style="color: #000000;"
 >
-  <IconX class={className} />
+  <span
+    class="
+      icon-[simple-icons--x] inline-block
+      {className}"
+  ></span>
 </a>

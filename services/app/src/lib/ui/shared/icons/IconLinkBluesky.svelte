@@ -1,6 +1,4 @@
 <script lang="ts">
-  import IconBluesky from "~icons/simple-icons/bluesky";
-
   interface Props {
     class?: string;
   }
@@ -14,10 +12,13 @@
   rel="noopener noreferrer"
   aria-label="Bluesky"
   class="
-    transition-opacity duration-200
+    text-icon-bluesky transition-opacity duration-200
     hover:opacity-70
   "
-  style="color: #0085FF;"
 >
-  <IconBluesky class={className} />
+  <span
+    class="
+      icon-[simple-icons--bluesky] inline-block
+      {className}"
+  ></span>
 </a>

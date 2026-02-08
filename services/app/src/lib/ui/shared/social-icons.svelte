@@ -11,9 +11,13 @@
 
   interface Props {
     class?: string;
+    colorMode?: "brand" | "light";
   }
 
-  let { class: className = "h-6 w-6 sm:h-8 sm:w-8" }: Props = $props();
+  let {
+    class: className = "h-5 w-5 sm:h-6 sm:w-6",
+    colorMode = "brand",
+  }: Props = $props();
 </script>
 
 <div
@@ -24,9 +28,9 @@
 >
   <IconLinkDiscord class={className} />
   <IconLinkTelegram class={className} />
-  <IconLinkEmail class={className} />
-  <IconLinkGithub class={className} />
+  <IconLinkEmail class={className} {colorMode} />
+  <IconLinkGithub class={className} {colorMode} />
   <IconLinkBluesky class={className} />
-  <IconLinkX class={className} />
+  <IconLinkX class={className} {colorMode} />
   <IconLinkLinkedin class={className} />
 </div>

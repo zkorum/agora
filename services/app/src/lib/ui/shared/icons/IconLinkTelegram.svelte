@@ -1,6 +1,4 @@
 <script lang="ts">
-  import IconTelegram from "~icons/simple-icons/telegram";
-
   interface Props {
     class?: string;
   }
@@ -14,10 +12,13 @@
   rel="noopener noreferrer"
   aria-label="Telegram"
   class="
-    transition-opacity duration-200
+    text-icon-telegram transition-opacity duration-200
     hover:opacity-70
   "
-  style="color: #26A5E4;"
 >
-  <IconTelegram class={className} />
+  <span
+    class="
+      icon-[simple-icons--telegram] inline-block
+      {className}"
+  ></span>
 </a>
