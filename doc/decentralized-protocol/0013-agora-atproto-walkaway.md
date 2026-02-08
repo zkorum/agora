@@ -24,13 +24,15 @@ DDS is organized around **four design tensions**:
 
 The protocol leverages **AT Protocol** for transport, **IPFS/Arweave** for archival, and **Ethereum** for verification.
 
+> **Draft Notice**: The cryptographic mechanisms (Encrypted Key Vault, Sign-to-Derive, Device Graph, Recovery Key) and Ethereum-based proposals (on-chain verification, staking, token-gating, ZK proofs) described in this RFC are **preliminary designs requiring further investigation**. They represent the directional intent, not finalized specifications. Specific primitives, key derivation schemes, and on-chain architectures are subject to change after security review and prototyping.
+
 ## 1. Design Philosophy
 
 ### 1.1 The Walkaway Test
 
 > **Definition**: If all providers vanish, users retain sovereign control of their cryptographic identity and can recover their data from decentralized archives.
 
-This is the foundational guarantee of DDS. Every architectural decision is evaluated against this test. It requires:
+We're leaning towards this as a core design goal for DDS. It requires:
 - Users control their `did:plc` Rotation Keys (not just Signing Keys)
 - Data is archived to censorship-resistant storage (IPFS/Arweave)
 - Recovery is possible from any device with the right credentials
@@ -99,6 +101,8 @@ A single Managed PDS instance is multi-tenant, capable of hosting thousands of a
 ### 3.2 The Encrypted Key Vault
 
 While the PDS manages _posting_ (Signing Keys), the user must retain control over _identity_ (Rotation Keys). In a Managed model, if the PDS disappears or turns malicious, the user could be locked out without their Recovery Key.
+
+> **Draft**: The vault design below (Type A and Type B) is a first proposal. The specific cryptographic primitives (HKDF-SHA256, AES-GCM, did:key exchange keys), key derivation flows, and Lockbox protocol need formal security review before implementation.
 
 #### Core Concepts
 
@@ -174,7 +178,7 @@ flowchart TD
     style GetRotationKey fill:#9f9,stroke:#333
 ```
 
-> **Critical**: Users MUST save a Recovery Code (raw $K_{account}$) at signup. Without this or a device, the account is mathematically lost.
+> **Critical**: Users MUST save a Recovery Code (raw $K_{account}$) at signup. Without this or a device, the Rotation Key is irrecoverable — the user loses walkaway capability (cannot migrate to a new PDS) but retains normal PDS access via Email/Phone.
 
 ### 3.3 Authentication
 
@@ -220,6 +224,8 @@ We respect Waku and IPFS—their work on censorship-resistant infrastructure is 
 ## 5. Provable vs Economical Computation
 
 > Verifiable analysis is expensive to run yourself. Prover Agents provide provable results economically—cryptographic guarantees without the compute costs.
+
+> **Draft**: The Prover Protocol and trust levels below are conceptual. The on-chain verification layer (hash commits, ZK proof verification, staking) requires significant research into feasibility, gas costs, and proof system selection.
 
 ### 5.1 The Cost Problem
 
@@ -392,10 +398,10 @@ Any app can **read** another app's product lexicons via the Firehose. The `org.d
 - **Risk**: Encrypted keys are public on the Firehose.
 - **Mitigation**: Mandate high-entropy keys. Weak passwords forbidden. Wallet signatures provide mathematical entropy.
 
-### 7.3 Lost Devices
+### 7.3 Lost Rotation Key
 
-- **Risk**: Type B users lose all devices.
-- **Mitigation**: Users MUST save Recovery Code at signup. Without this or a device, account is lost.
+- **Risk**: Type B users lose all devices and have no Recovery Code. They can still authenticate to the PDS (via Email/Phone) and use the account normally, but the Rotation Key is irrecoverable — they lose walkaway capability and cannot migrate if the PDS fails or turns malicious.
+- **Mitigation**: Users MUST save Recovery Code at signup. The UI should clearly communicate that this code protects their ability to leave the PDS, not just account access.
 
 ### 7.4 Privacy Trade-off
 
@@ -406,6 +412,8 @@ Managed PDS hosts can technically access user data (signing keys, posts). Users 
 ### A.1 Fraud Proving Mechanism
 
 > **Status**: Unresolved
+>
+> **Draft**: Approaches listed below are speculative. ZK-ML is an active research area with no production-ready solution for PCA-scale computation as of this writing.
 
 "Fraud Proving" via on-chain re-execution is infeasible for heavy clustering algorithms (PCA) on standard EVM chains. Possible approaches:
 - **ZK-ML**: Zero-Knowledge Machine Learning proofs
