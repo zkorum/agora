@@ -11,7 +11,7 @@
 
 ## Abstract
 
-This RFC defines the **Decentralized Deliberation Standard (DDS)**, a vendor-neutral protocol for secure, censorship-resistant public consultation.
+This RFC defines the **Decentralized Deliberation Standard (DDS)**, a vendor-neutral protocol for secure, censorship-resistant public deliberation.
 
 DDS is organized around **four design tensions**:
 
@@ -258,23 +258,25 @@ Because inputs (votes on the Firehose) and algorithm (open-source) are public, *
 
 DDS organizes deliberation into three phases, each potentially handled by different applications:
 
+This lifecycle is intentionally general. It serves formal governance (a city running participatory budgeting, a DAO voting on treasury allocation), community self-organization (an open-source project shaping its roadmap, a co-op making collective decisions), and bottom-up movements that channel protest energy into concrete proposals—going from "revolution" to "constitution." The process can be a single open discussion or a multi-step pipeline with eligibility rules, multiple rounds, and binding votes.
+
 | Phase | Purpose | Example Apps |
 |-------|---------|--------------|
-| **Plan** | Design the consultation: define questions, set eligibility, import context | Governance tools, consultation planners |
+| **Plan** | Design the deliberation process: define steps (e.g., open discussion, consultation, vote), set eligibility, import context | Community platforms, grassroots organizers, governance tools |
 | **Collect** | Gather participant input: opinions, votes, comments | Deliberation platforms, voting apps |
 | **Analyze** | Process data and derive insights: clustering, summaries, consensus | Prover Agents, analysis dashboards |
 
-Applications specialize in one or more phases, but **interoperate via shared lexicons**. A governance tool can orchestrate a full cycle: plan with its own UI, collect via a deliberation platform, analyze via a Prover, then execute based on results.
+Applications specialize in one or more phases, but **interoperate via shared lexicons**. Any organizing app—a community platform, a DAO, a grassroots coalition—can orchestrate a full cycle: plan with its own UI, collect via a deliberation platform, analyze via a Prover, then act on results.
 
 ```mermaid
 sequenceDiagram
-    participant Gov as Governance Tool
+    participant Org as Organizer
     participant Delib as Deliberation Platform
     participant Prover as Prover Agent
     participant Vote as Voting App
 
-    Note over Gov: PLAN PHASE
-    Gov->>Delib: Create consultation<br/>(org.dds.consultation)
+    Note over Org: PLAN PHASE
+    Org->>Delib: Create deliberation process<br/>(org.dds.process)
 
     Note over Delib: COLLECT PHASE
     Delib->>Delib: Gather opinions<br/>(org.dds.module.polis.opinion)
@@ -290,9 +292,9 @@ sequenceDiagram
     Vote->>Vote: Configure options from<br/>cluster consensus
     Vote->>Vote: Run token vote<br/>(org.dds.module.vote)
 
-    Note over Gov: DECISION
-    Gov->>Vote: Read vote result
-    Gov->>Gov: Execute on-chain action
+    Note over Org: DECISION
+    Org->>Vote: Read vote result
+    Org->>Org: Act on results
 ```
 
 ### 6.2 Layered Lexicons
@@ -376,7 +378,7 @@ Any app can **read** another app's product lexicons via the Firehose. The `org.d
 |---------|-------------|
 | **Sequential Handoff** | Deliberation → Analysis → Voting → Execution |
 | **Parallel Collection** | Multiple collection apps feed the same analysis |
-| **Context Import** | New consultation imports conclusions from a previous one |
+| **Context Import** | New process imports conclusions from a previous one |
 
 ## 7. Security Considerations
 
