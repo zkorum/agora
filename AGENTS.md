@@ -670,6 +670,23 @@ Key variables:
 - **Component Hierarchy**: Routes → Components → UI (keep routes simple)
 - **SSR Safety**: Don't use module-level `$state()` for user data
 
+### Icons
+
+Icons use **Iconify via Tailwind CSS v4** (`@iconify/tailwind4` plugin). Never use inline SVGs for standard icons — use the `icon-[collection--name]` class pattern instead.
+
+**Available collections**: `lucide` (UI icons), `simple-icons` (brand logos)
+
+**Usage**: `<span class="icon-[lucide--menu] h-6 w-6"></span>`
+
+**Applying the brand gradient to icons**: Use the `gradient-primary` Tailwind utility class alongside the icon class. The iconify plugin renders icons as CSS masks, so the gradient background shows through the icon shape:
+```svelte
+<span class="icon-[lucide--menu] h-6 w-6 gradient-primary"></span>
+```
+
+**Gradient utilities** (defined in `app.css`): `gradient-primary` (purple→blue with hover), `gradient-secondary` (light purple→blue), `gradient-chip` (nav chip style), `gradient-border` / `gradient-border-light`
+
+**Icon wrapper components** are in `$ui/shared/icons/` for social/external link icons (e.g., `icon-link-github.svelte`).
+
 ### Development
 
 ```bash

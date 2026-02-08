@@ -54,7 +54,7 @@
 
   <!-- Nav links using Chip -->
   <nav
-    class="flex flex-1 flex-col gap-3 overflow-y-auto px-5 py-2"
+    class="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-2"
     aria-label="Mobile navigation"
   >
     {#each links as link (link.href)}

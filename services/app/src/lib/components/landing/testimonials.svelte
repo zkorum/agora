@@ -52,14 +52,16 @@
       <div
         class="
           relative z-10 flex flex-col gap-6 p-6
-          sm:p-[128px]
+          sm:p-12
+          lg:p-16
+          xl:p-[128px]
         "
       >
         <!-- Top row: 3 cards -->
         <div
           class="
             grid grid-cols-1 gap-6
-            md:grid-cols-3
+            lg:grid-cols-3
           "
         >
           {#each topRow as testimonial (testimonial.name)}
