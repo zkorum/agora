@@ -19,11 +19,9 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { EventSlug } from "src/shared/types/zod";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 
 import {
   type EventTicketSelectionDialogTranslations,
@@ -39,8 +37,10 @@ const { t } = useComponentI18n<EventTicketSelectionDialogTranslations>(
 );
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
-
-const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
+const requiresEventTicket = defineModel<EventSlug | undefined>(
+  "requiresEventTicket",
+  { required: true }
+);
 
 interface EventOption {
   value: EventSlug;
@@ -60,11 +60,11 @@ function getEventTitle(value: EventSlug): string {
 }
 
 function isSelected(option: EventOption): boolean {
-  return conversationDraft.value.requiresEventTicket === option.value;
+  return requiresEventTicket.value === option.value;
 }
 
 function selectOption(option: EventOption): void {
-  conversationDraft.value.requiresEventTicket = option.value;
+  requiresEventTicket.value = option.value;
   showDialog.value = false;
 }
 </script>

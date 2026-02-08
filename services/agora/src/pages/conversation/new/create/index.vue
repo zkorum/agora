@@ -21,7 +21,18 @@
     </TopMenuWrapper>
 
     <div class="container">
-      <NewConversationControlBar />
+      <NewConversationControlBar
+        v-model:poll-enabled="pollEnabled"
+        v-model:is-private="isPrivate"
+        v-model:requires-login="requiresLogin"
+        v-model:requires-event-ticket="requiresEventTicket"
+        v-model:private-conversation-settings="privateConversationSettings"
+        v-model:post-as="postAs"
+        v-model:import-settings="importSettings"
+        v-model:title="title"
+        v-model:content="content"
+        v-model:poll-options="pollOptions"
+      />
 
       <!-- Active Import Banner -->
       <ActiveImportBanner
@@ -44,19 +55,19 @@
           </div>
 
           <Editor
-            v-model="conversationDraft.title"
+            v-model="title"
             :placeholder="t('titlePlaceholder')"
             :show-toolbar="false"
             :single-line="true"
             :max-length="MAX_LENGTH_TITLE"
-            min-height="auto"
             :disabled="false"
+            min-height="auto"
             class="title-editor"
             @update:model-value="updateTitle"
           />
 
           <div class="wordCountDiv" :style="{ paddingLeft: '0.5rem' }">
-            {{ conversationDraft.title.length }} / {{ MAX_LENGTH_TITLE }}
+            {{ title.length }} / {{ MAX_LENGTH_TITLE }}
           </div>
         </div>
         <div v-else class="import-section">
@@ -64,19 +75,24 @@
             v-if="conversationDraft.importSettings.importType === 'polis-url'"
             ref="polisUrlInputRef"
             v-model="conversationDraft.importSettings.polisUrl"
+            v-model:validation-error="validationState.polisUrl.error"
+            v-model:show-validation-error="validationState.polisUrl.showError"
           />
           <PolisCsvUpload
             v-else-if="
               conversationDraft.importSettings.importType === 'csv-import'
             "
             ref="polisCsvUploadRef"
+            v-model:csv-file-metadata="
+              conversationDraft.importSettings.csvFileMetadata
+            "
           />
         </div>
 
         <div v-if="conversationDraft.importSettings.importType === null">
           <div class="editor-style">
             <Editor
-              v-model="conversationDraft.content"
+              v-model="content"
               :placeholder="t('bodyPlaceholder')"
               min-height="5rem"
               :show-toolbar="true"
@@ -97,18 +113,21 @@
                   wordCountWarning: validationState.body.showError,
                 }"
                 >{{
-                  validateHtmlStringCharacterCount(
-                    conversationDraft.content,
-                    "conversation"
-                  ).characterCount
+                  validateHtmlStringCharacterCount(content, "conversation")
+                    .characterCount
                 }}
               </span>
               &nbsp; / {{ MAX_LENGTH_BODY }}
             </div>
           </div>
 
-          <div v-if="conversationDraft.poll.enabled">
-            <PollComponent ref="pollComponentRef" />
+          <div v-if="pollEnabled">
+            <PollComponent
+              ref="pollComponentRef"
+              v-model:poll-enabled="pollEnabled"
+              v-model:poll-options="pollOptions"
+              v-model:validation-error="pollValidationError"
+            />
           </div>
         </div>
       </div>
@@ -117,6 +136,8 @@
     <NewConversationRouteGuard
       ref="routeGuardRef"
       :allowed-routes="['/conversation/new/review/']"
+      :has-unsaved-changes="isDraftModified"
+      :reset-draft="resetDraft"
     />
 
     <PreLoginIntentionDialog
@@ -139,6 +160,11 @@ import NewConversationControlBar from "src/components/newConversation/NewConvers
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import PollComponent from "src/components/newConversation/poll/PollComponent.vue";
+import {
+  createEmptyDraft,
+  useConversationDraft,
+  type ValidationErrorField,
+} from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   MAX_LENGTH_BODY,
@@ -147,14 +173,12 @@ import {
 } from "src/shared/shared";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
-import {
-  useNewPostDraftsStore,
-  type ValidationErrorField,
-} from "src/stores/newConversationDrafts";
+import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import { useUserStore } from "src/stores/user";
 import { type AxiosErrorCode, useCommonApi } from "src/utils/api/common";
 import { useActiveImportQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
 import { useBackendPostApi } from "src/utils/api/post/post";
-import { computed, defineAsyncComponent, ref, watch } from "vue";
+import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -167,6 +191,38 @@ const Editor = defineAsyncComponent(() => import("src/components/editor/Editor.v
 const { t } = useComponentI18n<CreateConversationTranslations>(
   createConversationTranslations
 );
+
+// Use the conversation draft composable with store sync enabled
+const {
+  title,
+  content,
+  pollEnabled,
+  pollOptions,
+  isPrivate,
+  requiresLogin,
+  requiresEventTicket,
+  privateConversationSettings,
+  postAs,
+  importSettings,
+  validationState,
+  validatePolisUrl,
+  validatePoll,
+  validateTitle: validateTitleField,
+  validateBody: validateBodyField,
+  validateForReview,
+  updateTitle,
+  updateContent,
+  isDraftModified,
+  resetDraft,
+} = useConversationDraft({ syncToStore: true });
+
+// Extract poll validation error for passing to PollComponent
+const pollValidationError = computed({
+  get: () => validationState.value.poll.error,
+  set: (value) => {
+    validationState.value.poll.error = value;
+  },
+});
 
 const isSubmitButtonLoading = ref(false);
 
@@ -188,17 +244,7 @@ const polisUrlInputRef = ref<InstanceType<typeof PolisUrlInput> | null>(null);
 const polisCsvUploadRef = ref<InstanceType<typeof PolisCsvUpload> | null>(null);
 const titleInputRef = ref<HTMLDivElement | null>(null);
 
-const {
-  createEmptyDraft,
-  validatePolisUrlField,
-  validatePollField,
-  validateTitleField,
-  validateBodyField,
-  validateForReview,
-  updateTitle,
-  updateContent,
-  validationState,
-} = useNewPostDraftsStore();
+const { validateSelectedOrganization } = useNewPostDraftsStore();
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const { createNewConversationIntention } = useLoginIntentionStore();
@@ -227,8 +273,8 @@ function onLoginCallback() {
   createNewConversationIntention();
 }
 
-function scrollToPollingRef() {
-  if (conversationDraft.value.poll.enabled) {
+function scrollToPollingRef(): void {
+  if (pollEnabled.value) {
     setTimeout(function () {
       pollComponentRef.value?.$el?.scrollIntoView({
         behavior: "smooth",
@@ -236,7 +282,8 @@ function scrollToPollingRef() {
       });
     }, 100);
   } else {
-    conversationDraft.value.poll.options = createEmptyDraft().poll.options;
+    const emptyDraft = createEmptyDraft();
+    pollOptions.value = [...emptyDraft.poll.options];
   }
 }
 
@@ -263,7 +310,7 @@ function validateSubmission(): {
   errorField?: ValidationErrorField;
 } {
   if (conversationDraft.value.importSettings.importType === "polis-url") {
-    const polisValidation = validatePolisUrlField();
+    const polisValidation = validatePolisUrl();
     if (!polisValidation.success) {
       return { isValid: false, errorField: "polisUrl" };
     }
@@ -293,7 +340,7 @@ function handleValidationError(errorField: ValidationErrorField): void {
       scrollToTitleInput();
       break;
     case "poll":
-      validatePollField();
+      validatePoll();
       scrollToPollComponent();
       break;
     case "body":
@@ -301,7 +348,7 @@ function handleValidationError(errorField: ValidationErrorField): void {
       // Body validation errors are handled inline in the editor
       break;
     case "polisUrl":
-      validatePolisUrlField();
+      validatePolisUrl();
       scrollToPolisUrlInput();
       break;
   }
@@ -352,7 +399,7 @@ async function handleImportSubmission(): Promise<void> {
         requiresEventTicket: conversationDraft.value.requiresEventTicket,
       });
 
-      conversationDraft.value = createEmptyDraft();
+      resetDraft();
       // CSV import is async - redirect to import status page to poll for completion
       await router.replace({
         name: "/conversation/import/[importSlugId]",
@@ -382,7 +429,7 @@ async function handleImportSubmission(): Promise<void> {
     });
 
     if (response.status === "success") {
-      conversationDraft.value = createEmptyDraft();
+      resetDraft();
       // URL import is now async - redirect to import status page to poll for completion
       await router.replace({
         name: "/conversation/import/[importSlugId]",
@@ -433,14 +480,17 @@ async function onSubmit(): Promise<void> {
   }
 }
 
-watch(
-  () => conversationDraft.value.poll.enabled,
-  (enablePolling) => {
-    if (enablePolling === true) {
-      scrollToPollingRef();
-    }
+// Validate organization on mount
+onMounted(() => {
+  const { profileData } = storeToRefs(useUserStore());
+  validateSelectedOrganization(profileData.value.organizationList);
+});
+
+watch(pollEnabled, (enablePolling) => {
+  if (enablePolling === true) {
+    scrollToPollingRef();
   }
-);
+});
 </script>
 
 <style scoped lang="scss">

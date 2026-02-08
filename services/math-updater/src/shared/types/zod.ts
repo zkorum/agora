@@ -150,6 +150,35 @@ export const zodConversationBodyOutput = z
     })
     .optional();
 export const zodPollOptionTitle = z.string().max(MAX_LENGTH_OPTION).min(1);
+export const zodPollAction = z.discriminatedUnion("action", [
+    z
+        .object({
+            action: z.literal("none"),
+        })
+        .strict(),
+    z
+        .object({
+            action: z.literal("keep"),
+        })
+        .strict(),
+    z
+        .object({
+            action: z.literal("remove"),
+        })
+        .strict(),
+    z
+        .object({
+            action: z.literal("create"),
+            options: z.array(zodPollOptionTitle).min(2).max(6),
+        })
+        .strict(),
+    z
+        .object({
+            action: z.literal("replace"),
+            options: z.array(zodPollOptionTitle).min(2).max(6),
+        })
+        .strict(),
+]);
 export const zodPollOptionWithResult = z
     .object({
         optionNumber: z.number().int().min(1).max(6),

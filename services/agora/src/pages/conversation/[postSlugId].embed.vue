@@ -30,7 +30,9 @@ loginIntentionStore.clearReportUserContentIntention();
 
 // Use TanStack Query for conversation data
 const conversationQuery = useConversationQuery({
-  conversationSlugId: computed(() => (route.params as { postSlugId: string }).postSlugId),
+  conversationSlugId: computed(
+    () => (route.params as { postSlugId: string }).postSlugId
+  ),
   enabled: computed(() => isAuthInitialized.value),
 });
 
@@ -42,7 +44,9 @@ const conversationData = computed(() => {
   return data;
 });
 
-const hasConversationData = computed(() => conversationData.value !== undefined);
+const hasConversationData = computed(
+  () => conversationData.value !== undefined
+);
 
 // Type-safe version for template use (guaranteed non-undefined)
 const loadedConversationData = computed(() => {

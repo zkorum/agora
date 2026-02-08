@@ -28,6 +28,10 @@
 
       <div :style="{ fontSize: '0.75rem' }" class="timestamp-container">
         {{ useTimeAgo(new Date(createdAt)) }}
+        <template v-if="isEdited">
+          <span class="bullet">•</span>
+          <span>{{ t("edited") }}</span>
+        </template>
         <template v-if="isGuestParticipationAllowed === true">
           <span class="bullet">•</span>
           <i
@@ -46,20 +50,29 @@ import OrganizationImage from "src/components/account/OrganizationImage.vue";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import UserMetadata from "src/components/features/user/UserMetadata.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { computed } from "vue";
 
 import {
   type UserIdentityCardTranslations,
   userIdentityCardTranslations,
 } from "./UserIdentityCard.i18n";
 
-defineProps<{
+const props = defineProps<{
   userIdentity: string;
   authorVerified: boolean;
   createdAt: Date;
+  updatedAt: Date;
   showVerifiedText: boolean;
   organizationImageUrl: string;
   isGuestParticipationAllowed?: boolean;
 }>();
+
+// Consider content edited if updatedAt is more than 1 second after createdAt
+const isEdited = computed(() => {
+  const diffInSeconds =
+    (props.updatedAt.getTime() - props.createdAt.getTime()) / 1000;
+  return diffInSeconds > 1;
+});
 
 const { t } = useComponentI18n<UserIdentityCardTranslations>(
   userIdentityCardTranslations

@@ -17,27 +17,50 @@
     />
   </div>
 
-  <PostAsAccountDialog v-model="showPostAsDialogVisible" />
+  <PostAsAccountDialog
+    v-model="showPostAsDialogVisible"
+    v-model:post-as="postAs"
+  />
 
   <PostTypeDialog
     v-model="showPostTypeDialog"
+    v-model:import-settings="importSettings"
     @mode-change-requested="handleImportModeChangeRequest"
   />
 
   <ModeChangeConfirmationDialog
     v-model="showImportModeChangeConfirmation"
+    :has-title="hasTitle"
+    :has-body="hasBody"
+    :has-poll="hasPoll"
     @confirm="handleModeChangeConfirm"
     @cancel="handleModeChangeCancel"
   />
 
-  <VisibilityOptionsDialog v-model:show-dialog="showVisibilityDialog" />
+  <VisibilityOptionsDialog
+    v-model:show-dialog="showVisibilityDialog"
+    v-model:is-private="isPrivate"
+    v-model:requires-login="requiresLogin"
+    v-model:requires-event-ticket="requiresEventTicket"
+  />
 
-  <LoginRequirementDialog v-model:show-dialog="showLoginRequirementDialog" />
+  <LoginRequirementDialog
+    v-model:show-dialog="showLoginRequirementDialog"
+    v-model:requires-login="requiresLogin"
+    v-model:is-private="isPrivate"
+    v-model:requires-event-ticket="requiresEventTicket"
+  />
 
-  <MakePublicTimerDialog v-model:show-dialog="showMakePublicDialog" />
+  <MakePublicTimerDialog
+    v-model:show-dialog="showMakePublicDialog"
+    v-model:private-conversation-settings="privateConversationSettings"
+  />
 
   <EventTicketRequirementDialog
     v-model:show-dialog="showEventTicketRequirementDialog"
+    v-model:requires-event-ticket="requiresEventTicket"
+    v-model:requires-login="requiresLogin"
+    v-model:is-private="isPrivate"
   />
 </template>
 
@@ -51,12 +74,18 @@ import MakePublicTimerDialog from "src/components/newConversation/dialog/MakePub
 import ModeChangeConfirmationDialog from "src/components/newConversation/dialog/ModeChangeConfirmationDialog.vue";
 import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
 import VisibilityOptionsDialog from "src/components/newConversation/dialog/VisibilityOptionsDialog.vue";
+import {
+  type ConversationImportSettings,
+  hasContentThatWouldBeCleared,
+  type PostAsSettings,
+  type PrivateConversationSettings,
+} from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { EventSlug } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useUserStore } from "src/stores/user";
 import { processEnv } from "src/utils/processEnv";
-import { computed,ref } from "vue";
+import { computed, ref } from "vue";
 
 import PostTypeDialog from "./dialog/PostTypeDialog.vue";
 import {
@@ -73,28 +102,56 @@ interface ControlButton {
   clickable: boolean;
 }
 
+interface Props {
+  isEditMode?: boolean;
+}
+
+const props = defineProps<Props>();
+
 const { t } = useComponentI18n<NewConversationControlBarTranslations>(
   newConversationControlBarTranslations
 );
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
-const { togglePoll, setImportType, setImportTypeWithClearing } =
-  useNewPostDraftsStore();
-const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
+
+// Define models for two-way binding
+const pollEnabled = defineModel<boolean>("pollEnabled", { required: true });
+const isPrivate = defineModel<boolean>("isPrivate", { required: true });
+const requiresLogin = defineModel<boolean>("requiresLogin", { required: true });
+const requiresEventTicket = defineModel<EventSlug | undefined>(
+  "requiresEventTicket",
+  { required: true }
+);
+const privateConversationSettings = defineModel<PrivateConversationSettings>(
+  "privateConversationSettings",
+  {
+    required: true,
+  }
+);
+const postAs = defineModel<PostAsSettings>("postAs", { required: true });
+const importSettings = defineModel<ConversationImportSettings>(
+  "importSettings",
+  { required: true }
+);
+
+// For checking if there's content that would be cleared (parent needs to provide these)
+const title = defineModel<string>("title", { required: true });
+const content = defineModel<string>("content", { required: true });
+const pollOptions = defineModel<string[]>("pollOptions", { required: true });
 
 const postAsDisplayName = computed(() => {
-  if (conversationDraft.value.postAs.postAsOrganization) {
-    return conversationDraft.value.postAs.organizationName;
+  if (postAs.value.postAsOrganization) {
+    return postAs.value.organizationName;
   } else {
     return profileData.value.userName;
   }
 });
 
 const selectedOrganizationImageUrl = computed(() => {
-  if (conversationDraft.value.postAs.postAsOrganization) {
+  if (postAs.value.postAsOrganization) {
     const selectedOrg = profileData.value.organizationList.find(
-      (org) => org.name === conversationDraft.value.postAs.organizationName
+      (org) => org.name === postAs.value.organizationName
     );
     return selectedOrg?.imageUrl || "";
   }
@@ -111,65 +168,109 @@ const showEventTicketRequirementDialog = ref(false);
 const showImportModeChangeConfirmation = ref(false);
 const hasPendingImportModeChange = ref<"polis-url" | "csv-import" | null>(null);
 
-const showAsDialog = () => {
+const showAsDialog = (): void => {
   showPostAsDialogVisible.value = true;
 };
 
-const handleImportModeChangeRequest = (
-  importType: "polis-url" | "csv-import" | null
-) => {
-  const result = setImportType(importType);
+// Computed properties to determine what content would be cleared
+const hasTitle = computed(() => title.value.trim() !== "");
+const hasBody = computed(() => content.value.trim() !== "");
+const hasPoll = computed(
+  () => pollEnabled.value && pollOptions.value.some((opt) => opt.trim() !== "")
+);
 
-  if (result.needsConfirmation) {
-    // Store the pending change and show confirmation dialog
-    hasPendingImportModeChange.value = importType;
+/**
+ * Checks if switching import type would clear content
+ * Uses shared utility function with current form values
+ */
+function checkHasContentThatWouldBeCleared(): boolean {
+  return hasContentThatWouldBeCleared(
+    title.value,
+    content.value,
+    pollEnabled.value,
+    pollOptions.value
+  );
+}
+
+const handleImportModeChangeRequest = (
+  newImportType: "polis-url" | "csv-import" | null
+): void => {
+  const currentType = importSettings.value.importType;
+
+  // If switching from manual to import type and might have content, show confirmation
+  if (
+    currentType === null &&
+    newImportType !== null &&
+    checkHasContentThatWouldBeCleared()
+  ) {
+    hasPendingImportModeChange.value = newImportType;
     showImportModeChangeConfirmation.value = true;
+  } else {
+    // Directly apply the change
+    setImportTypeWithClearing(newImportType);
   }
-  // If no confirmation needed, the mode change has already been applied
 };
 
-const handleModeChangeConfirm = () => {
+const handleModeChangeConfirm = (): void => {
   setImportTypeWithClearing(hasPendingImportModeChange.value);
   showImportModeChangeConfirmation.value = false;
 };
 
-const handleModeChangeCancel = () => {
+const handleModeChangeCancel = (): void => {
   showImportModeChangeConfirmation.value = false;
 };
 
-const togglePostTypeDialog = () => {
+/**
+ * Sets import type and clears relevant data
+ */
+function setImportTypeWithClearing(
+  newType: "polis-url" | "csv-import" | null
+): void {
+  importSettings.value = {
+    ...importSettings.value,
+    importType: newType,
+    polisUrl: newType === "polis-url" ? importSettings.value.polisUrl : "",
+    csvFileMetadata:
+      newType === "csv-import"
+        ? importSettings.value.csvFileMetadata
+        : {
+            summary: null,
+            comments: null,
+            votes: null,
+          },
+  };
+}
+
+const togglePostTypeDialog = (): void => {
   showPostTypeDialog.value = !showPostTypeDialog.value;
 };
 
-const togglePolling = () => {
-  togglePoll(!conversationDraft.value.poll.enabled);
+const togglePolling = (): void => {
+  pollEnabled.value = !pollEnabled.value;
 };
 
-const toggleVisibility = () => {
+const toggleVisibility = (): void => {
   showVisibilityDialog.value = true;
 };
 
-const toggleLoginRequirement = () => {
+const toggleLoginRequirement = (): void => {
   showLoginRequirementDialog.value = true;
 };
 
-const toggleMakePublicTimer = () => {
+const toggleMakePublicTimer = (): void => {
   showMakePublicDialog.value = true;
 };
 
-const toggleEventTicketRequirement = () => {
+const toggleEventTicketRequirement = (): void => {
   showEventTicketRequirementDialog.value = true;
 };
 
-const getMakePublicLabel = () => {
-  if (
-    !conversationDraft.value.privateConversationSettings.hasScheduledConversion
-  ) {
+const getMakePublicLabel = (): string => {
+  if (!privateConversationSettings.value.hasScheduledConversion) {
     return t("makePublicNever");
   }
 
-  const targetDate =
-    conversationDraft.value.privateConversationSettings.conversionDate;
+  const targetDate = privateConversationSettings.value.conversionDate;
 
   const formatter = new Intl.DateTimeFormat("en-US", {
     month: "long",
@@ -185,8 +286,8 @@ const getMakePublicLabel = () => {
   return t("makePublic").replace("{date}", formattedDate);
 };
 
-const getEventTicketLabel = () => {
-  const eventSlug = conversationDraft.value.requiresEventTicket;
+const getEventTicketLabel = (): string => {
+  const eventSlug = requiresEventTicket.value;
 
   if (eventSlug === undefined) {
     return t("noVerification");
@@ -205,29 +306,30 @@ const controlButtons = computed((): ControlButton[] => [
     icon: showPostAsDialogVisible.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
-    isVisible: isLoggedIn.value,
+    isVisible: isLoggedIn.value && !props.isEditMode,
     clickHandler: showAsDialog,
     clickable: true,
   },
   {
     id: "post-type",
     label:
-      conversationDraft.value.importSettings.importType === "polis-url"
+      importSettings.value.importType === "polis-url"
         ? t("importFromPolisUrl")
-        : conversationDraft.value.importSettings.importType === "csv-import"
-        ? t("importFromCsv")
-        : t("newConversation"),
+        : importSettings.value.importType === "csv-import"
+          ? t("importFromCsv")
+          : t("newConversation"),
     icon: showPostTypeDialog.value ? "pi pi-chevron-up" : "pi pi-chevron-down",
     isVisible:
-      processEnv.VITE_IS_ORG_IMPORT_ONLY === "true"
-        ? conversationDraft.value.postAs.postAsOrganization
-        : true,
+      !props.isEditMode &&
+      (processEnv.VITE_IS_ORG_IMPORT_ONLY === "true"
+        ? postAs.value.postAsOrganization
+        : true),
     clickHandler: togglePostTypeDialog,
     clickable: true,
   },
   {
     id: "visibility",
-    label: conversationDraft.value.isPrivate ? t("private") : t("public"),
+    label: isPrivate.value ? t("private") : t("public"),
     icon: showVisibilityDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
@@ -237,9 +339,7 @@ const controlButtons = computed((): ControlButton[] => [
   },
   {
     id: "login-requirement",
-    label: conversationDraft.value.requiresLogin
-      ? t("requiresLogin")
-      : t("guestParticipation"),
+    label: requiresLogin.value ? t("requiresLogin") : t("guestParticipation"),
     icon: showLoginRequirementDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
@@ -253,7 +353,7 @@ const controlButtons = computed((): ControlButton[] => [
     icon: showMakePublicDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
-    isVisible: conversationDraft.value.isPrivate,
+    isVisible: isPrivate.value,
     clickHandler: toggleMakePublicTimer,
     clickable: true,
   },
@@ -269,11 +369,9 @@ const controlButtons = computed((): ControlButton[] => [
   },
   {
     id: "polling",
-    label: conversationDraft.value.poll.enabled
-      ? t("removePoll")
-      : t("addPoll"),
-    icon: conversationDraft.value.poll.enabled ? "pi pi-minus" : "pi pi-plus",
-    isVisible: conversationDraft.value.importSettings.importType === null,
+    label: pollEnabled.value ? t("removePoll") : t("addPoll"),
+    icon: pollEnabled.value ? "pi pi-minus" : "pi pi-plus",
+    isVisible: importSettings.value.importType === null,
     clickHandler: togglePolling,
     clickable: true,
   },

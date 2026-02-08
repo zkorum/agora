@@ -3,9 +3,7 @@
     <ZKBottomDialogContainer>
       <ZKDialogOptionsList
         :options="loginRequirementOptions"
-        :selected-value="
-          conversationDraft.requiresLogin ? 'requiresLogin' : 'guestParticipation'
-        "
+        :selected-value="requiresLogin ? 'requiresLogin' : 'guestParticipation'"
         @option-selected="handleOptionSelected"
       />
     </ZKBottomDialogContainer>
@@ -13,11 +11,10 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import type { EventSlug } from "src/shared/types/zod";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
 
@@ -27,8 +24,12 @@ import {
 } from "./LoginRequirementDialog.i18n";
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
-
-const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
+const requiresLogin = defineModel<boolean>("requiresLogin", { required: true });
+const isPrivate = defineModel<boolean>("isPrivate", { required: true });
+const requiresEventTicket = defineModel<EventSlug | undefined>(
+  "requiresEventTicket",
+  { required: true }
+);
 
 const { t } = useComponentI18n<LoginRequirementDialogTranslations>(
   loginRequirementDialogTranslations
@@ -53,18 +54,18 @@ function handleOptionSelected(option: {
   title: string;
   description: string;
   value: string;
-}) {
+}): void {
   const isSelectingGuest = option.value === "guestParticipation";
-  const isPublic = !conversationDraft.value.isPrivate;
-  const hasTicketVerification =
-    conversationDraft.value.requiresEventTicket !== undefined;
+  const isPublic = !isPrivate.value;
+  const hasTicketVerification = requiresEventTicket.value !== undefined;
 
+  // Cross-cutting validation: guest + public requires event ticket
   if (isSelectingGuest && isPublic && !hasTicketVerification) {
-    conversationDraft.value.isPrivate = true;
+    isPrivate.value = true;
     showNotifyMessage(t("conversationSwitchedToPrivate"));
   }
 
+  requiresLogin.value = option.value === "requiresLogin";
   showDialog.value = false;
-  conversationDraft.value.requiresLogin = option.value === "requiresLogin";
 }
 </script>
