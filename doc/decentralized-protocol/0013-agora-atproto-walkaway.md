@@ -32,7 +32,7 @@ The protocol leverages **AT Protocol** for transport, **IPFS/Arweave** for archi
 
 > **Definition**: If all providers vanish, users retain sovereign control of their cryptographic identity and can recover their data from decentralized archives.
 
-We're leaning towards this as a core design goal for DDS. It requires:
+DDS is designed to pass this test. It requires:
 - Users control their `did:plc` Rotation Keys (not just Signing Keys)
 - Data is archived to censorship-resistant storage (IPFS/Arweave)
 - Recovery is possible from any device with the right credentials
