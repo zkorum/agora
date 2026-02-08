@@ -30,7 +30,7 @@
         "@google-cloud/translate": "^9.2.1",
         "@valkey/valkey-glide": "^2.2.1",
         "axios": "^1.9.0",
-        "dotenv": "^16.5.0",
+        "dotenv": "^17.2.4",
         "drizzle-orm": "^0.39.3",
         "extract-first-json": "^2.0.2",
         "libphonenumber-js": "^1.12.23",
