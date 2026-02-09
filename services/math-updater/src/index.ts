@@ -1,11 +1,7 @@
 import { log } from "./app.js";
 import { config } from "./config.js";
 import PgBoss from "pg-boss";
-import {
-    scanConversationsJob,
-    ScanConversationsJobData,
-    SCAN_CONVERSATIONS_SINGLETON_KEY,
-} from "./jobs/scanConversations.js";
+import { scanConversations } from "./jobs/scanConversations.js";
 import {
     UpdateConversationMathData,
     updateConversationMathHandler,
@@ -99,14 +95,18 @@ async function cleanupStuckJobs({
         `[Math Updater] Deleted ${mathJobsResult.length} stuck update-conversation-math jobs`,
     );
 
+    // Also clean up any leftover scan-conversations jobs from before
+    // the switch to setInterval (safe to keep for one release cycle)
     const scanJobsResult = await db.execute(sql`
         DELETE FROM pgboss.job
         WHERE name = 'scan-conversations'
         RETURNING id
     `);
-    log.info(
-        `[Math Updater] Deleted ${scanJobsResult.length} stuck scan-conversations jobs`,
-    );
+    if (scanJobsResult.length > 0) {
+        log.info(
+            `[Math Updater] Deleted ${scanJobsResult.length} leftover scan-conversations jobs`,
+        );
+    }
 }
 
 async function main() {
@@ -239,11 +239,11 @@ async function main() {
         "[Math Updater] Created update-conversation-math queue (singleton policy)",
     );
 
-    await boss.createQueue("scan-conversations");
-    log.info("[Math Updater] Created/verified scan-conversations queue");
-
     // Track last time worker was called for watchdog
     let lastWorkerCallTime = Date.now();
+    // Track scan loop health for watchdog
+    let lastSuccessfulScanTime = Date.now();
+    let scanInProgress = false;
     let workerId: string;
 
     // Create reusable worker handler
@@ -267,33 +267,54 @@ async function main() {
         `[Math Updater] Registered update-conversation-math worker (id: ${workerId}, batch: ${config.MATH_UPDATER_BATCH_SIZE}, concurrency: ${config.MATH_UPDATER_JOB_CONCURRENCY})`,
     );
 
-    // Register scan-conversations worker
-    await boss.work(
-        "scan-conversations",
-        { includeMetadata: true },
-        async (jobs: PgBoss.JobWithMetadata<ScanConversationsJobData>[]) => {
-            for (const job of jobs) {
-                await scanConversationsJob(job, db, boss);
-            }
-        },
-    );
-    log.info("[Math Updater] Registered scan-conversations worker");
+    // Start scan loop using setInterval (resilient — cannot silently break)
+    // Previously used a self-scheduling pg-boss job, but the self-scheduling
+    // could silently fail (boss.send returning null), killing the loop permanently.
+    const scanIntervalId = setInterval(async () => {
+        if (scanInProgress) {
+            log.info(
+                "[Scan] Previous scan still in progress, skipping this interval",
+            );
+            return;
+        }
+        scanInProgress = true;
+        try {
+            await scanConversations({
+                db,
+                boss,
+                minTimeBetweenUpdatesMs:
+                    config.MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS,
+            });
+            lastSuccessfulScanTime = Date.now();
+        } catch (error) {
+            log.error(
+                { error },
+                "[Scan] Unhandled error in scan loop - will retry on next interval",
+            );
+        } finally {
+            scanInProgress = false;
+        }
+    }, config.MATH_UPDATER_SCAN_INTERVAL_MS);
 
-    // Kick off the self-scheduling scan loop
-    // The job will reschedule itself after each run
-    await boss.send(
-        "scan-conversations",
-        {
-            minTimeBetweenUpdatesMs:
-                config.MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS,
-            scanIntervalMs: config.MATH_UPDATER_SCAN_INTERVAL_MS,
-        },
-        {
-            singletonKey: SCAN_CONVERSATIONS_SINGLETON_KEY, // Prevent duplicate loops
-        },
-    );
+    // Run initial scan immediately (don't wait for first interval)
+    scanConversations({
+        db,
+        boss,
+        minTimeBetweenUpdatesMs:
+            config.MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS,
+    })
+        .then(() => {
+            lastSuccessfulScanTime = Date.now();
+        })
+        .catch((error) => {
+            log.error(
+                { error },
+                "[Scan] Error during initial scan - will retry on next interval",
+            );
+        });
+
     log.info(
-        `[Math Updater] Started scan-conversations loop (scan interval: ${config.MATH_UPDATER_SCAN_INTERVAL_MS}ms, min time between updates: ${config.MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS}ms)`,
+        `[Math Updater] Started scan loop (interval: ${config.MATH_UPDATER_SCAN_INTERVAL_MS}ms, min time between updates: ${config.MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS}ms)`,
     );
 
     // Send a test job to verify worker picks up jobs
@@ -379,6 +400,20 @@ async function main() {
                 }
             }
 
+            // Monitor scan loop health
+            const timeSinceLastScan = Date.now() - lastSuccessfulScanTime;
+            const scanHealthThresholdMs =
+                config.MATH_UPDATER_SCAN_INTERVAL_MS * 5;
+            if (timeSinceLastScan > scanHealthThresholdMs) {
+                log.error(
+                    `[Math Updater] Watchdog: Scan loop hasn't completed successfully in ${(timeSinceLastScan / 1000).toFixed(1)}s (threshold: ${(scanHealthThresholdMs / 1000).toFixed(1)}s, scanInProgress: ${scanInProgress})`,
+                );
+            } else {
+                log.info(
+                    `[Math Updater] Watchdog: Scan loop healthy - last successful scan ${(timeSinceLastScan / 1000).toFixed(1)}s ago`,
+                );
+            }
+
             const timeSinceLastCall = Date.now() - lastWorkerCallTime;
             // createdCount exists at runtime but not in pg-boss types
             const pendingCount = Number(
@@ -422,6 +457,7 @@ async function main() {
     const shutdown = async () => {
         log.info("[Math Updater] Shutting down gracefully...");
 
+        clearInterval(scanIntervalId);
         clearInterval(watchdogIntervalId);
         await boss.stop();
         log.info("[Math Updater] pg-boss stopped");
