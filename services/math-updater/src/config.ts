@@ -21,14 +21,14 @@ const mathUpdaterConfigSchema = sharedConfigSchema.extend({
 
     /**
      * How often to scan conversation_update_queue for pending updates (in milliseconds)
-     * Default: 2000ms (2 seconds)
-     * Minimum: 2000ms
+     * Default: 1000ms (1 second)
+     * Minimum: 1000ms
      */
     MATH_UPDATER_SCAN_INTERVAL_MS: z.coerce
         .number()
         .int()
-        .min(2000)
-        .default(2000),
+        .min(1000)
+        .default(1000),
 
     /**
      * Maximum number of jobs to fetch per batch from pg-boss queue
