@@ -32,7 +32,7 @@ dependencies = [
 	"cycler==0.12.1",
 	"fake-useragent==1.5.1",
 	"Flask==3.1.1",
-	"fonttools==4.58.5",
+	"fonttools==4.60.2",
 	"idna==3.10",
 	"itsdangerous==2.2.0",
 	"Jinja2==3.1.6",
