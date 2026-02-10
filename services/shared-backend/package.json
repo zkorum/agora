@@ -28,7 +28,7 @@
     },
     "devDependencies": {
         "@types/node": "^20.17.47",
-        "pino": "^9.6.0",
+        "pino": "^10.3.0",
         "prettier": "^3.5.3",
         "typescript": "^5.8.3"
     }
