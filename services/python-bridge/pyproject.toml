@@ -22,7 +22,7 @@ dependencies = [
 	"annoy==1.17.3",
 	"attrs==25.3.0",
 	"blinker==1.9.0",
-	"build==1.2.2.post1",
+	"build==1.4.0",
 	"cattrs==25.1.1",
 	"certifi==2025.7.9",
 	"charset-normalizer==3.4.2",
