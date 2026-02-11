@@ -24,6 +24,8 @@
 </template>
 
 <script setup lang="ts">
+import Button from "primevue/button";
+import Card from "primevue/card";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useOnboardingPreferencesStore } from "src/stores/onboarding/preferences";
 
@@ -31,6 +33,13 @@ import {
   type PreferencesDialogTestTranslations,
   preferencesDialogTestTranslations,
 } from "./PreferencesDialogTest.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+    PrimeCard: Card,
+  },
+});
 
 const { t } = useComponentI18n<PreferencesDialogTestTranslations>(
   preferencesDialogTestTranslations

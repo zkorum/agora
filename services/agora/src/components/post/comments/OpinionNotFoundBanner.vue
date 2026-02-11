@@ -35,6 +35,7 @@
 </template>
 
 <script setup lang="ts">
+import Button from "primevue/button";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 
@@ -42,6 +43,12 @@ import {
   type OpinionNotFoundBannerTranslations,
   opinionNotFoundBannerTranslations,
 } from "./OpinionNotFoundBanner.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
 
 defineProps<{
   isVisible: boolean;

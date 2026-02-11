@@ -129,6 +129,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import Button from "primevue/button";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ActiveImportBanner from "src/components/conversation/import/ActiveImportBanner.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
@@ -162,7 +163,15 @@ import {
   createConversationTranslations,
 } from "./index.i18n";
 
-const Editor = defineAsyncComponent(() => import("src/components/editor/Editor.vue"));
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
+
+const Editor = defineAsyncComponent(
+  () => import("src/components/editor/Editor.vue")
+);
 
 const { t } = useComponentI18n<CreateConversationTranslations>(
   createConversationTranslations

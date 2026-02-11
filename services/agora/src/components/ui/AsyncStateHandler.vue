@@ -103,6 +103,7 @@
 
 <script setup lang="ts">
 import type { UseQueryReturnType } from "@tanstack/vue-query";
+import Button from "primevue/button";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { computed, ref } from "vue";
 
@@ -110,6 +111,12 @@ import {
   type AsyncStateHandlerTranslations,
   asyncStateHandlerTranslations,
 } from "./AsyncStateHandler.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
 
 const props = withDefaults(defineProps<Props>(), {
   config: () => ({}),

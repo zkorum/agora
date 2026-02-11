@@ -10,6 +10,7 @@
 </template>
 
 <script setup lang="ts">
+import Button from "primevue/button";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 
 import {
@@ -17,9 +18,11 @@ import {
   requestExportButtonTranslations,
 } from "./RequestExportButton.i18n";
 
-interface Props {
-  disabled?: boolean;
-}
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
 
 withDefaults(defineProps<Props>(), {
   disabled: false,
@@ -28,6 +31,10 @@ withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   request: [];
 }>();
+
+interface Props {
+  disabled?: boolean;
+}
 
 const { t } = useComponentI18n<RequestExportButtonTranslations>(
   requestExportButtonTranslations
