@@ -1,12 +1,12 @@
-# RFC 0013 — Implementation Addendum
+# DDS — Implementation Addendum
 
 | Metadata       | Value                                                    |
 | :------------- | :------------------------------------------------------- |
-| **Parent RFC** | [RFC 0013](./0013-agora-atproto-walkaway.md)             |
+| **Parent**     | [DDS Spec](./0013-agora-atproto-walkaway.md)             |
 | **Status**     | Draft                                                    |
 | **Created**    | 2026-01-13                                               |
 
-This addendum contains implementation-level details for RFC 0013 (DDS). These are preliminary designs requiring further investigation — they represent directional intent, not finalized specifications.
+This addendum contains implementation-level details for DDS. These are preliminary designs requiring further investigation — they represent directional intent, not finalized specifications.
 
 ## 1. Encrypted Key Vault — Cryptographic Design
 
@@ -88,30 +88,54 @@ flowchart TD
 
 > **Critical**: Users MUST save a Recovery Code (raw $K_{account}$) at signup. Without this or a device, the Rotation Key is irrecoverable — the user loses walkaway capability (cannot migrate to a new PDS) but retains normal PDS access via Email/Phone.
 
-## 2. Security Considerations
+## 2. PDS Hosting & Authentication
 
-### 2.1 MITM on Device Sync
+### 2.1 Hosting Tiers
+
+| Tier | Name | Description |
+|------|------|-------------|
+| **2** | Self-Hosted | User brings their own PDS (e.g., standard Bluesky or self-hosted). Direct authentication. |
+| **1** | Managed | User authenticates via any accepted credential (email, phone, wallet, ZK passport, etc.). Application auto-provisions a PDS account. |
+| **0** | Anonymous | Guest user with no verified identifier. Lightweight PDS authenticated by local `did:key`. |
+
+A single Managed PDS instance is multi-tenant, capable of hosting thousands of accounts (similar to Bluesky PDS architecture).
+
+### 2.2 Authentication
+
+All tiers use standard **AT Protocol OAuth**.
+
+- **Signing**: The PDS manages the Signing Key and signs posts/votes on behalf of the user.
+- **Benefit**: Simplified client architecture, compatibility with standard AT Proto clients.
+- **Trade-off**: OAuth may be "heavy" for ephemeral Guests, but we retain it for a unified auth path.
+
+### 2.3 The 72h Safety Net
+
+We rely on the **did:plc 72-hour Grace Period**. If a malicious PDS or compromised device rotates keys, the user has 72 hours to undo using their Wallet or Backup Code.
+
+## 3. Security Considerations
+
+### 3.1 MITM on Device Sync
 
 - **Risk**: During Type B sync, a malicious PDS could present its own key instead of the new device's key.
 - **Mitigation**: User MUST verify QR Code containing the new device's DID fingerprint. This bypasses server trust.
 
-### 2.2 Public Exposure of Keys
+### 3.2 Public Exposure of Keys
 
 - **Risk**: Encrypted keys are public on the Firehose.
 - **Mitigation**: Mandate high-entropy keys. Weak passwords forbidden. Wallet signatures provide mathematical entropy.
 
-### 2.3 Lost Rotation Key
+### 3.3 Lost Rotation Key
 
 - **Risk**: Type B users lose all devices and have no Recovery Code. They can still authenticate to the PDS (via Email/Phone) and use the account normally, but the Rotation Key is irrecoverable — they lose walkaway capability and cannot migrate if the PDS fails or turns malicious.
 - **Mitigation**: Users MUST save Recovery Code at signup. The UI should clearly communicate that this code protects their ability to leave the PDS, not just account access.
 
-### 2.4 Privacy Trade-off
+### 3.4 Privacy Trade-off
 
 Managed PDS hosts can technically access user data (signing keys, posts). Users requiring full data privacy should self-host their PDS. DDS provides the _capability_ to walk away and self-host, making it a credible choice when needed. Note that data privacy (keeping content secret) is distinct from participant anonymity (hiding who said what) — the latter does not require self-hosting. See [Privacy Addendum](./0013-privacy-addendum.md) for deeper analysis.
 
-## 3. Open Issues
+## 4. Open Issues
 
-### 3.1 Fraud Proving Mechanism
+### 4.1 Fraud Proving Mechanism
 
 > **Status**: Unresolved
 >
@@ -121,7 +145,7 @@ Managed PDS hosts can technically access user data (signing keys, posts). Users 
 - **ZK-ML**: Zero-Knowledge Machine Learning proofs
 - **Optimistic Dispute**: Committee of human arbiters run code off-chain to resolve disputes
 
-### 3.2 Data Availability Attack
+### 4.2 Data Availability Attack
 
 > **Status**: Requires client mitigation
 

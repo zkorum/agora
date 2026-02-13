@@ -1,6 +1,6 @@
 # Addendum: Privacy Considerations for Decentralized Deliberation
 
-**Related RFC:** [RFC 0013 - DDS: Verifiable Deliberation on AT Protocol](./0013-agora-atproto-walkaway.md)
+**Related:** [DDS: Verifiable Deliberation on AT Protocol](./0013-agora-atproto-walkaway.md)
 **Date:** 2026-02-05
 **Status:** Discussion notes
 
