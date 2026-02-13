@@ -96,9 +96,11 @@ flowchart TD
 |------|------|-------------|
 | **2** | Self-Hosted | User brings their own PDS (e.g., standard Bluesky or self-hosted). Direct authentication. |
 | **1** | Managed | User authenticates via any accepted credential (email, phone, wallet, ZK passport, etc.). Application auto-provisions a PDS account. |
-| **0** | Anonymous | Guest user with no verified identifier. Lightweight PDS authenticated by local `did:key`. |
+| **0** | Guest | Guest user with no verified identifier. Identity may be managed `did:plc` (for persistent pseudonymous participation) or `did:key` (for per-conversation anonymity, external data imports). See §5 for design exploration. |
 
 A single Managed PDS instance is multi-tenant, capable of hosting thousands of accounts (similar to Bluesky PDS architecture).
+
+> **Note**: The Tier 0 design is an open question — see §5 (Guest Identity and Account Upgrade) for detailed analysis of the trade-offs between managed `did:plc` and `did:key` for guest participation.
 
 ### 2.2 Authentication
 
@@ -152,3 +154,239 @@ Managed PDS hosts can technically access user data (signing keys, posts). Users 
 **Risk**: A malicious PDS could accept the User's Vault commit and report success, but refuse to publish it to the Firehose. Archive Agents never see the data. If PDS deletes account, user is lost.
 
 **Mitigation**: Clients may need to poll independent Archive Agents to confirm their Vault has been indexed before considering setup "safe."
+
+## 5. Guest Identity and Account Upgrade
+
+> **Status**: Open design question — first priority to resolve
+>
+> This is a problem worth solving at the AT Protocol level, not just for DDS. A standardized Guest Mode pattern — potentially as a Lexicon — would be reusable by any AT Protocol application that needs to support lightweight participation with upgrade to persistent accounts.
+
+### 5.1 The Problem
+
+Agora currently provisions guest accounts as UUID + device-bound `did:key`. When a guest upgrades (adds phone, ZK passport), `mergeGuestIntoVerifiedUser()` transfers all their data to the verified account. This works in a centralized database because records aren't cryptographically bound to the guest's identity.
+
+On AT Protocol, records are signed by the originating DID. This makes the equivalent merge operation fundamentally harder.
+
+Three factors complicate the design:
+
+```
+1. INFRASTRUCTURE OVERHEAD:
+   AT Protocol requires: PLC directory entry + PDS account + repository
+   Nostr requires:       Generate keypair (client-side only)
+   Logos Messaging requires: Nothing (P2P, no identity infrastructure)
+
+   For a conference attendee who votes once via Zupass ticket,
+   did:plc is overengineered. Rotation keys, recovery vaults,
+   PDS provisioning — none of this matters for a one-off interaction.
+
+2. PER-CONVERSATION ANONYMITY:
+   Ticket-gated conversations use ZK nullifiers scoped per event/conversation
+   (e.g., externalNullifier = "agora-${eventSlug}-v1").
+   Design: 1 ticket = 1 person for THIS conversation, unlinkable across conversations.
+   A single did:plc is linkable across conversations — it defeats the purpose.
+   Per-conversation anonymity requires per-conversation identifiers (did:key).
+
+3. EXTERNAL DATA:
+   Data arrives from other tools (deliberation platforms, voting apps, social media APIs)
+   via SDK integration. These participants don't have AT Protocol accounts.
+   Their contributions need representation in the lexicon data
+   without requiring PDS provisioning.
+```
+
+### 5.2 Design Approaches
+
+```
+APPROACH A: Managed did:plc for guests
+  • AppView manages a multi-tenant PDS, auto-provisions did:plc for every participant
+  • Full AT Protocol compatibility (Labelers, Firehose, moderation)
+  • Records properly attributed from day one
+  ✅ If guest adds credentials to SAME account: trivial upgrade (no merge)
+  ❌ If guest later creates SEPARATE verified account: merge still needed
+     (guest did:plc:A proved ticket → email account did:plc:B can't re-prove
+      same ticket → nullifier collision → two accounts, same person, stuck)
+  ❌ PLC directory overhead, rotation keys unnecessary for ephemeral use
+  ❌ Single did:plc is linkable across conversations — breaks per-conversation anonymity
+  ❌ Doesn't work for external data imports (participants without PDS)
+
+APPROACH B: did:key "soft accounts" within lexicon data
+  • Guests use client-generated did:key (or app-generated on their behalf)
+  • Records stored in app's PDS, attributed to guest's did:key in the data
+  • Per-conversation did:key enables unlinkable ticket-gated participation
+  • Works for external data imports (assign did:key to external participants)
+  ✅ Lightweight — no PDS provisioning, no PLC directory
+  ✅ Supports per-conversation anonymity (different did:key per context)
+  ✅ Works for external data (Twitter/X users, other app SDK data)
+  ❌ did:key is second-class in AT Protocol ecosystem
+  ❌ Moderation tools (Labelers) need adaptation for did:key actors
+  ❌ Upgrade to did:plc requires attestation or re-publication of records
+  ❌ Records signed with did:key cannot be re-signed with did:plc
+  ❌ Different auth mechanism than standard AT Protocol OAuth
+
+APPROACH C: Hybrid (likely direction)
+  • did:key for guest/ephemeral/ticket-gated/external participation
+  • did:plc for committed users
+  • AppView manages guest did:key records in its own PDS
+  • Standardized attestation/merge to link did:key history to did:plc on upgrade
+  ✅ Right tool for each use case
+  ❌ Two identity formats in the system
+  ❌ Attestation/merge protocol needs careful design
+```
+
+### 5.3 The Merge Problem
+
+The merge problem exists regardless of approach. It's inherent to any system where a user may interact before creating a persistent identity.
+
+```
+SCENARIO: Guest proves ticket, later creates real account
+
+WITH did:plc (Approach A):
+  1. Guest proves Zupass ticket → did:plc:guest created
+  2. Later, same person logs in with email → did:plc:email created
+  3. Tries to prove same ticket on email account
+  4. Nullifier already used by did:plc:guest → REJECTED
+  5. Need: merge did:plc:guest INTO did:plc:email
+  6. Problem: Records in guest's repository signed by did:plc:guest
+     Cannot be moved to email's repository (different DID)
+  7. Options:
+     a. Application-level merge (AppView treats both DIDs as same user)
+     b. AT Protocol account merge (not natively supported)
+     c. Re-publish records from new DID (lose original signatures/CIDs)
+
+WITH did:key (Approach B):
+  1. Guest proves ticket → did:key:guest (ephemeral)
+  2. Later, same person creates account → did:plc:email
+  3. Tries to prove same ticket on real account
+  4. Nullifier already used → REJECTED
+  5. Need: link did:key:guest to did:plc:email
+  6. Problem: Records attributed to did:key:guest in app's PDS
+  7. Options:
+     a. Signed attestation: did:plc:email claims did:key:guest history
+     b. App-level linkage (simpler but less verifiable)
+     c. Re-publish under did:plc:email (lose original attribution)
+
+BOTH APPROACHES require merge/link design.
+Neither eliminates it entirely.
+```
+
+### 5.4 Current Assessment
+
+This is an open design question requiring prototyping. Current thinking:
+
+**Per-conversation ticket-gated participation → `did:key`.**
+A single `did:plc` is linkable across conversations and defeats the purpose of per-conversation anonymity. The ZK nullifier model aligns with ephemeral `did:key` identifiers.
+
+**External data imports → `did:key` (or reference identifiers).**
+Participants from other tools and SDK integrations don't have AT Protocol accounts. Their contributions must be representable without PDS provisioning.
+
+**Persistent accounts → `did:plc`.**
+Full moderation compatibility, walkaway capability, Firehose integration.
+
+**Upgrade path → needs design work regardless.**
+- `did:plc` approach: needs application-level or AT Protocol-level account merge
+- `did:key` approach: needs attestation protocol for linking ephemeral to persistent identity
+- Trade-off: `did:plc` merge preserves more AT Protocol compatibility; `did:key` attestation may be simpler but requires moderation tool adaptation
+
+**Guest Mode as AT Protocol pattern:**
+The likely solution is a "Guest Mode" managed by an AppView — a standardized Lexicon pattern where:
+- The AppView manages guest identities (whether `did:plc` or `did:key`)
+- Guest records are properly represented and discoverable on the Firehose
+- Upgrade to a full account follows a standardized attestation/merge protocol
+- Moderation tools can operate on guest records
+
+This is a contribution to the AT Protocol ecosystem, not just a DDS implementation detail.
+
+### 5.5 Relationship to Tier 0
+
+The Tier 0 definition in §2.1 ("Guest user with no verified identifier. Lightweight PDS authenticated by local `did:key`") is a starting point. The analysis above shows that Tier 0 may need to be a richer concept:
+
+```
+TIER 0 (REVISED — WORK IN PROGRESS):
+  • Guest identity may be did:key (for per-conversation anonymity, external data)
+    OR managed did:plc (for persistent pseudonymous guest participation)
+  • AppView manages guest records in its PDS
+  • Standardized Lexicon for guest identity lifecycle:
+    - Guest creation
+    - Credential attachment
+    - Upgrade to Tier 1 (merge/attestation)
+  • Per-conversation identifiers coexist with persistent guest identity
+```
+
+### 5.6 Connection to Privacy Model
+
+This connects to the [Privacy Addendum](./0013-privacy-addendum.md):
+
+- **Pseudonymous (Level 1)**: One `did:plc`, full history — best for committed users
+- **Per-conversation anonymous**: Ephemeral `did:key` per context — needed for ticket-gated events and external imports
+- These are NOT competing models — they serve different use cases. DDS needs both, with a bridge between them.
+
+The pseudonymous model remains the right **default**. But per-conversation anonymity via `did:key` is not just a future "hardcore mode" — it's a practical need for ticket-gated events and external data integration today.
+
+## 6. Result Commitment Protocol
+
+> **Status**: Draft design — needs smart contract specification
+>
+> Inspired by [Vocdoni](https://vocdoni.io/)'s model of notarizing election results on Ethereum. Adapted for DDS where AT Protocol serves as the data layer.
+
+### 6.1 Motivation
+
+DDS publishes deliberation results (`org.dds.result.pca`) to the AT Protocol Firehose. But Firehose records can be updated or deleted by the originating PDS. For finished consultations, results should be **permanent and tamper-evident** — anchored to a commitment that no single operator can modify.
+
+This is distinct from the fraud proving problem (§4.1). Fraud proving asks: "was the computation correct?" Result commitment asks: "has the result been modified since publication?" The former requires ZK proofs or re-execution. The latter requires only a hash.
+
+### 6.2 Protocol
+
+```
+WHEN: After Analyze phase completes
+
+ANALYZER AGENT:
+  1. Publishes org.dds.result.pca to AT Protocol (Firehose)
+  2. Constructs commitment record:
+     - conversation_uri: AT Protocol URI of the deliberation process
+     - scope: { start_time, end_time } — time window of analysis
+     - input_hash: Merkle root of all org.dds.module.polis.vote
+       and org.dds.module.polis.opinion records in scope
+     - algorithm: "reddwarf@2.1.0" (identifier + version)
+     - output_hash: SHA-256 of the org.dds.result.pca record
+     - analyzer_did: Analyzer Agent's DID
+  3. Submits commitment hash to Ethereum smart contract
+
+  Note: The commitment transaction can be submitted by the Analyzer,
+  the Organizer, or any party — the data is public on the Firehose.
+
+VERIFIER (any party):
+  1. Downloads all input records from AT Protocol Firehose for the scope
+  2. Computes input Merkle root, verifies against on-chain input_hash
+  3. Runs algorithm (open-source) on the inputs
+  4. Hashes the output, compares against on-chain output_hash
+  5. If mismatch → Analyzer either computed incorrectly or results were modified
+```
+
+### 6.3 Comparison with Vocdoni
+
+```
+VOCDONI:
+  L2 (Vochain): Raw votes as blockchain transactions
+  L1 (Ethereum): Oracle notarizes final results
+  Verification: Anyone re-tallies from Vochain data
+
+DDS:
+  L2 (AT Protocol): Raw votes as Firehose records (org.dds.module.polis.vote)
+  L1 (Ethereum): Analyzer's result hash committed on-chain
+  Verification: Anyone re-runs clustering on public Firehose data
+
+KEY DIFFERENCE:
+  Vocdoni built a custom L2 blockchain (Vochain/Tendermint)
+  DDS reuses AT Protocol as the data layer — no custom chain needed
+  AT Protocol's Firehose provides the same guarantee:
+  complete, ordered, publicly observable data stream
+```
+
+### 6.4 Open Questions
+
+- **Chain selection**: Ethereum L1 vs L2 (Optimism, Base, etc.) — trade-off between cost and security guarantees
+- **Smart contract design**: Minimal contract that stores commitment hashes, indexed by conversation URI
+- **Input hash construction**: Exact Merkle tree specification for deterministic input hashing (ordering, canonicalization)
+- **Timing**: When exactly is a consultation "finished"? Who triggers the commitment? Can multiple Analyzers' results be committed? How are competing results handled?
+- **Who commits?**: The Analyzer, the Organizer, or any party? This is a governance question — the protocol should define the commitment format but leave the committer open.
+- **Cost**: Gas optimization — batching multiple consultation commitments, or using blob transactions (EIP-4844)
+- **Relationship to archival**: Archive Agents (Arweave/Filecoin) store full data; Ethereum stores only hashes. Both serve durability but at different layers.

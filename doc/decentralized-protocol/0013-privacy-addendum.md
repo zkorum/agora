@@ -177,6 +177,9 @@ Given the constraints above, here are the achievable privacy levels:
 • Trust-minimized: Can walkaway from any operator
 • Appropriate for: Most deliberation use cases
 • Threat model: Protects against casual deanonymization
+• Note: Guest accounts may operate at Level 1 (managed did:plc) or use
+  per-conversation did:key for ticket-gated anonymity.
+  See Implementation Addendum §5 for design exploration.
 ```
 
 ### Level 2: Crowd Anonymity
