@@ -167,7 +167,11 @@ Because inputs (votes on the Firehose) and algorithm (open-source) are public, *
 
 > **Why AT Protocol here**: Nostr's event kinds and Logos Messaging's content types enable interoperability, but through convention rather than enforceable schemas. AT Protocol's Lexicons are machine-readable and PDS-enforced — data that doesn't match the schema is rejected, not silently malformed. Combined with the Firehose, this means any team can read any other team's records with confidence in data shape, enabling true separation of concerns across the Plan → Collect → Analyze → Execute lifecycle.
 >
-> **On data privacy**: AT Protocol is actively working on private data support via end-to-end encryption (Signal model), but this is still work in progress. For DDS, data privacy (keeping deliberation content secret) is a niche use case — the standard is designed for **public** deliberation, where transparency and verifiability are the point. Participant anonymity is a separate concern not tied to data encryption. See [Privacy Addendum](./0013-privacy-addendum.md) for deeper analysis.
+> **Public by default**: DDS is designed for **public** deliberation. All `org.dds.*` records are published to the Firehose in plaintext. This is by design — transparency, verifiability, and interoperability require open data. The goal is not just interoperability between Polis-like tools, but across **all** governance and collective intelligence solutions — voting apps, DAO governance, participatory budgeting, and tools that don't exist yet. Open data on a shared transport enables an ecosystem that siloed, self-hosted systems cannot.
+>
+> **On self-hosting**: DDS preserves walkaway capability — any user _can_ self-host their PDS. But self-hosting is not on the roadmap as a deployment priority. The protocol's value comes from interoperability across a shared network. Ironically, self-hosting also hurts privacy (see [Privacy Addendum §5](./0013-privacy-addendum.md#5-self-hosted-pds-sovereignty--privacy)).
+>
+> **On private conversations**: AT Protocol is actively working on private data support via end-to-end encryption (Signal model). When available, DDS could support private or restricted deliberations — but this is a long-term goal, not the initial focus. Most deliberation is public and benefits from transparency. Participant anonymity (hiding _who_ said what) is a separate concern not tied to data encryption. See [Privacy Addendum](./0013-privacy-addendum.md) for deeper analysis.
 
 ### 6.1 The Deliberation Lifecycle
 
