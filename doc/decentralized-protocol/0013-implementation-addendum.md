@@ -173,7 +173,7 @@ Three factors complicate the design:
 1. INFRASTRUCTURE OVERHEAD:
    AT Protocol requires: PLC directory entry + PDS account + repository
    Nostr requires:       Generate keypair (client-side only)
-   Waku requires:        Nothing (P2P, no identity infrastructure)
+   Logos Messaging requires: Nothing (P2P, no identity infrastructure)
 
    For a conference attendee who votes once via Zupass ticket,
    did:plc is overengineered. Rotation keys, recovery vaults,
@@ -320,3 +320,73 @@ This connects to the [Privacy Addendum](./0013-privacy-addendum.md):
 - These are NOT competing models — they serve different use cases. DDS needs both, with a bridge between them.
 
 The pseudonymous model remains the right **default**. But per-conversation anonymity via `did:key` is not just a future "hardcore mode" — it's a practical need for ticket-gated events and external data integration today.
+
+## 6. Result Commitment Protocol
+
+> **Status**: Draft design — needs smart contract specification
+>
+> Inspired by [Vocdoni](https://vocdoni.io/)'s model of notarizing election results on Ethereum. Adapted for DDS where AT Protocol serves as the data layer.
+
+### 6.1 Motivation
+
+DDS publishes deliberation results (`org.dds.result.pca`) to the AT Protocol Firehose. But Firehose records can be updated or deleted by the originating PDS. For finished consultations, results should be **permanent and tamper-evident** — anchored to a commitment that no single operator can modify.
+
+This is distinct from the fraud proving problem (§4.1). Fraud proving asks: "was the computation correct?" Result commitment asks: "has the result been modified since publication?" The former requires ZK proofs or re-execution. The latter requires only a hash.
+
+### 6.2 Protocol
+
+```
+WHEN: After Analyze phase completes
+
+ANALYZER AGENT:
+  1. Publishes org.dds.result.pca to AT Protocol (Firehose)
+  2. Constructs commitment record:
+     - conversation_uri: AT Protocol URI of the deliberation process
+     - scope: { start_time, end_time } — time window of analysis
+     - input_hash: Merkle root of all org.dds.module.polis.vote
+       and org.dds.module.polis.opinion records in scope
+     - algorithm: "reddwarf@2.1.0" (identifier + version)
+     - output_hash: SHA-256 of the org.dds.result.pca record
+     - analyzer_did: Analyzer Agent's DID
+  3. Submits commitment hash to Ethereum smart contract
+
+  Note: The commitment transaction can be submitted by the Analyzer,
+  the Organizer, or any party — the data is public on the Firehose.
+
+VERIFIER (any party):
+  1. Downloads all input records from AT Protocol Firehose for the scope
+  2. Computes input Merkle root, verifies against on-chain input_hash
+  3. Runs algorithm (open-source) on the inputs
+  4. Hashes the output, compares against on-chain output_hash
+  5. If mismatch → Analyzer either computed incorrectly or results were modified
+```
+
+### 6.3 Comparison with Vocdoni
+
+```
+VOCDONI:
+  L2 (Vochain): Raw votes as blockchain transactions
+  L1 (Ethereum): Oracle notarizes final results
+  Verification: Anyone re-tallies from Vochain data
+
+DDS:
+  L2 (AT Protocol): Raw votes as Firehose records (org.dds.module.polis.vote)
+  L1 (Ethereum): Analyzer's result hash committed on-chain
+  Verification: Anyone re-runs clustering on public Firehose data
+
+KEY DIFFERENCE:
+  Vocdoni built a custom L2 blockchain (Vochain/Tendermint)
+  DDS reuses AT Protocol as the data layer — no custom chain needed
+  AT Protocol's Firehose provides the same guarantee:
+  complete, ordered, publicly observable data stream
+```
+
+### 6.4 Open Questions
+
+- **Chain selection**: Ethereum L1 vs L2 (Optimism, Base, etc.) — trade-off between cost and security guarantees
+- **Smart contract design**: Minimal contract that stores commitment hashes, indexed by conversation URI
+- **Input hash construction**: Exact Merkle tree specification for deterministic input hashing (ordering, canonicalization)
+- **Timing**: When exactly is a consultation "finished"? Who triggers the commitment? Can multiple Analyzers' results be committed? How are competing results handled?
+- **Who commits?**: The Analyzer, the Organizer, or any party? This is a governance question — the protocol should define the commitment format but leave the committer open.
+- **Cost**: Gas optimization — batching multiple consultation commitments, or using blob transactions (EIP-4844)
+- **Relationship to archival**: Archive Agents (Arweave/Filecoin) store full data; Ethereum stores only hashes. Both serve durability but at different layers.

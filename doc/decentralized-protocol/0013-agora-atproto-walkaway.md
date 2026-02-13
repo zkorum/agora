@@ -47,14 +47,14 @@ flowchart TB
         Truth["Verification<br/>On-chain proofs • Dispute resolution"]
     end
 
-    subgraph Prover["Prover Agents"]
+    subgraph Analyzer["Analyzer Agents"]
         Compute["Read Firehose → Run clustering → Publish results"]
     end
 
     User --> Transport
     Firehose -->|archival| Archive
-    Firehose -->|analysis| Prover
-    Prover -->|commit hash| Verification
+    Firehose -->|analysis| Analyzer
+    Analyzer -->|commit hash| Verification
     Archive -->|recovery| PDS
 ```
 
@@ -116,11 +116,11 @@ We respect Logos Messaging and Nostr — their work on censorship-resistant infr
 
 These protocols solve real problems — Nostr's ecosystem of relays and third-party services is a genuine innovation, and Logos Messaging's cryptographic spam protection is technically impressive. But for deliberation at scale, the pattern is consistent: AT Protocol provides each capability as protocol-level infrastructure with standardized APIs and a complete data stream, while alternatives solve them through emergent, application-level mechanisms where each service sees a partial view and each client integrates differently. Building a multi-app deliberation ecosystem on these patterns would require reinventing much of what AT Protocol already provides.
 
-Where Nostr and Logos Messaging genuinely excel is **anonymity-first applications**. Nostr's client-relay architecture enables routing through Tor and mixnets. Logos Messaging's P2P gossip means no server ever knows a user's identity. For applications requiring deep anonymity — ZK-anonymous voting, whistleblower platforms, censorship-resistant communication under authoritarian regimes — these protocols are the right foundation. Privacy _can_ be implemented on AT Protocol, but the PDS pattern is an anti-pattern for strong ZK-anonymity: the server inherently knows the user's identity, so anonymity requires workarounds rather than flowing naturally from the architecture. On Nostr and Logos Messaging, anonymity feels native. DDS does not optimize for this. Our earlier work on [Racine](https://github.com/zkorum/racine) (a ZK-first meta-protocol compatible with Waku, Nostr, and AT Protocol) taught us that while ZK anonymous identity is technically superior for privacy, it doesn't match how users actually adopt products — they want familiar identifiers (email, phone, social login), not cryptographic key management. DDS is designed for **public** deliberation, where transparency and verifiability are the point. Participant anonymity where needed is handled at the identity layer (ZK proofs for eligibility without revealing identity), not at the transport layer.
+Where Nostr and Logos Messaging genuinely excel is **anonymity-first applications**. Nostr's client-relay architecture enables routing through Tor and mixnets. Logos Messaging's P2P gossip means no server ever knows a user's identity. For applications requiring deep anonymity — ZK-anonymous voting, whistleblower platforms, censorship-resistant communication under authoritarian regimes — these protocols are the right foundation. Privacy _can_ be implemented on AT Protocol, but the PDS pattern is an anti-pattern for strong ZK-anonymity: the server inherently knows the user's identity, so anonymity requires workarounds rather than flowing naturally from the architecture. On Nostr and Logos Messaging, anonymity feels native. DDS does not optimize for this. Our earlier work on [Racine](https://github.com/zkorum/racine) (a ZK-first meta-protocol compatible with Logos Messaging (then called Waku), Nostr, and AT Protocol) taught us that while ZK anonymous identity is technically superior for privacy, it doesn't match how users actually adopt products — they want familiar identifiers (email, phone, social login), not cryptographic key management. DDS is designed for **public** deliberation, where transparency and verifiability are the point. Participant anonymity where needed is handled at the identity layer (ZK proofs for eligibility without revealing identity), not at the transport layer.
 
 A related trade-off is **ephemeral identity**. On Nostr, a guest generates a keypair and participates — no server infrastructure required. On Logos Messaging, messages are P2P with no identity overhead. On AT Protocol, even a managed guest account involves PLC directory registration and PDS provisioning. For ticket-gated deliberations where participants need per-conversation unlinkability (ZK nullifiers ensure one-person-one-vote per context), a persistent `did:plc` is fundamentally the wrong identifier — it's linkable across conversations by design. This is the most significant practical trade-off of building on AT Protocol: the same PDS infrastructure that provides moderation, schema enforcement, and a complete Firehose also makes throwaway identities more expensive. DDS needs a "Guest Mode" that works within AT Protocol's architecture while supporting both persistent pseudonymous accounts and per-conversation ephemeral identities. See [Implementation Addendum §5](./0013-implementation-addendum.md#5-guest-identity-and-account-upgrade) for the design exploration.
 
-**Our Hybrid**: AT Protocol for the hot path (discovery, search, real-time), Arweave/Filecoin/Logos Storage for the cold path (archival, walkaway), Ethereum for the verification layer (hash commits, sovereignty).
+**Our Hybrid**: AT Protocol for the hot path (discovery, search, real-time interaction), Arweave/Filecoin/Logos Storage for the cold path (archival, walkaway recovery), Ethereum for the commitment layer (result hashes for tamper-evidence, and future verification proofs for computation correctness). Each layer uses the protocol best suited to its role — no single system needs to do everything.
 
 ### 4.2 Network Archival
 
@@ -136,7 +136,7 @@ A related trade-off is **ephemeral identity**. On Nostr, a guest generates a key
 
 ## 5. Provable vs Economical Computation
 
-> **Draft**: The Prover Protocol and trust levels below are conceptual. The on-chain verification layer requires significant research into feasibility, gas costs, and proof system selection. This tension is protocol-agnostic — verifiable computation works regardless of the underlying transport layer.
+> **Draft**: The Analyzer Protocol and trust levels below are conceptual. The on-chain verification layer requires significant research into feasibility, gas costs, and proof system selection. This tension is protocol-agnostic — verifiable computation works regardless of the underlying transport layer.
 
 ### 5.1 The Cost Problem
 
@@ -148,7 +148,7 @@ Running clustering analysis (PCA, Reddwarf) requires:
 
 For a single user to verify results independently, they'd need to replicate this entire pipeline. This is impractical at scale — most users lack both the infrastructure and the expertise.
 
-### 5.2 The Prover Protocol
+### 5.2 The Analyzer Protocol
 
 DDS solves this by separating **computation** from **verification**:
 
@@ -159,21 +159,50 @@ DDS solves this by separating **computation** from **verification**:
 3. **Compute**: Runs PCA/Clustering (e.g., Reddwarf).
 4. **Output**: Publishes `org.dds.result.pca`.
 
-Because inputs (votes on the Firehose) and algorithm (open-source) are public, **anyone can re-run the computation to verify a Prover's results**. This makes the system auditable without requiring every user to run their own prover.
+Because inputs (votes on the Firehose) and algorithm (open-source) are public, **anyone can re-run the computation to verify an Analyzer's results**. This makes the system auditable without requiring every user to run their own analyzer.
 
 ### 5.3 Trust Levels
 
 | Level          | Mechanism                                                                           | Cost                     | Guarantee                                                                                                                                  |
 | -------------- | ----------------------------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Reputation** | Prover publishes results to Firehose                                                | Free for users           | Trust the Prover's reputation                                                                                                              |
+| **Reputation** | Analyzer publishes results to Firehose                                               | Free for users           | Trust the Analyzer's reputation                                                                                                            |
 | **Spot check** | Any party re-runs computation independently                                         | Moderate (compute costs) | Deterministic verification                                                                                                                 |
-| **Trustless**  | Prover submits proof on-chain; clients verify cheaply (e.g., ZK proof verification) | Gas fees                 | Cryptographic proof — no trust required (see [Implementation Addendum §4.1](./0013-implementation-addendum.md#41-fraud-proving-mechanism)) |
+| **Trustless**  | Analyzer submits proof on-chain; clients verify cheaply (e.g., ZK proof verification) | Gas fees               | Cryptographic proof — no trust required (see [Implementation Addendum §4.1](./0013-implementation-addendum.md#41-fraud-proving-mechanism)) |
+
+### 5.4 Result Commitment
+
+> **Draft**: The result commitment protocol below is a first proposal. Smart contract design, chain selection (L1 vs L2), and gas optimization need further specification.
+
+The trust levels above address **computation correctness** — is the Analyzer's output honest? A separate concern is **result permanence** — can an Analyzer silently modify or retract published results after the fact?
+
+DDS addresses this with **on-chain result commitment**: when a consultation finishes, a cryptographic hash of the result is committed to Ethereum (or an L2). This makes results tamper-evident and permanently anchored, independent of any single operator. The commitment can be made by the Analyzer that computed the result, the Organizer that created the consultation, or any other party — the protocol defines the commitment format, not who commits.
+
+**What gets committed:**
+
+| Field            | Content                                                |
+| ---------------- | ------------------------------------------------------ |
+| Conversation URI | AT Protocol reference to the deliberation process      |
+| Scope            | Time window of the analysis                            |
+| Input hash       | Merkle root of all votes/opinions included             |
+| Algorithm        | Identifier + version (e.g., `reddwarf@2.1.0`)         |
+| Output hash      | Hash of the published `org.dds.result.pca` record      |
+| Analyzer DID     | Identity of the computing agent                        |
+
+**Verification**: Anyone downloads the inputs from the Firehose (public), re-runs the algorithm (open-source), and compares the result hash against the on-chain commitment. No ZK proofs required — just deterministic re-execution.
+
+**Relationship to trust levels:**
+- Result commitment **enhances Spot Check**: the on-chain hash makes tampering detectable without requiring re-computation upfront — you only re-run if the hash doesn't match.
+- The **Trustless** level (ZK proof of computation correctness without re-execution) remains future work.
+
+**Analogy**: This mirrors [Vocdoni](https://vocdoni.io/)'s architecture, where raw votes live on the Vochain (their custom L2) and final results are notarized on Ethereum. In DDS, AT Protocol is the data layer (analogous to Vochain) and Ethereum is the commitment layer. The key difference: DDS doesn't need a custom blockchain — AT Protocol's Firehose already provides a complete, ordered data stream.
+
+See [Implementation Addendum §6](./0013-implementation-addendum.md#6-result-commitment-protocol) for protocol details.
 
 ## 6. Autonomy vs Interoperability
 
 > **Why AT Protocol here**: Nostr's event kinds and Logos Messaging's content types enable interoperability, but through convention rather than enforceable schemas. AT Protocol's Lexicons are machine-readable and PDS-enforced — data that doesn't match the schema is rejected, not silently malformed. Combined with the Firehose, this means any team can read any other team's records with confidence in data shape, enabling true separation of concerns across the Plan → Collect → Analyze → Execute lifecycle.
 >
-> **Public by default**: DDS is designed for **public** deliberation. All `org.dds.*` records are published to the Firehose in plaintext. This is by design — transparency, verifiability, and interoperability require open data. The goal is not just interoperability between Polis-like tools, but across **all** governance and collective intelligence solutions — voting apps, DAO governance, participatory budgeting, and tools that don't exist yet. Open data on a shared transport enables an ecosystem that siloed, self-hosted systems cannot.
+> **Public by default**: DDS is designed for **public** deliberation. All `org.dds.*` records are published to the Firehose in plaintext. This is by design — transparency, verifiability, and interoperability require open data. The goal is not just interoperability between Polis-like tools, but across **all** governance and collective intelligence solutions — voting apps, DAO governance, participatory budgeting, and tools that don't exist yet. Open data on a shared transport enables an ecosystem that siloed, self-hosted systems cannot. Moreover, AT Protocol's existing social graph — with public figures maintaining official Bluesky accounts — means that their public posts can be imported as deliberation inputs. "How do public personalities think about X?" becomes a query over AT Protocol data, giving deliberation platforms access to a live stream of attributed public discourse.
 >
 > **On self-hosting**: DDS preserves walkaway capability — any user _can_ self-host their PDS. But self-hosting is not on the roadmap as a deployment priority. The protocol's value comes from interoperability across a shared network. Ironically, self-hosting also hurts privacy (see [Privacy Addendum §5](./0013-privacy-addendum.md#5-self-hosted-pds-sovereignty--privacy)).
 >
@@ -189,16 +218,16 @@ This lifecycle is intentionally general. It serves formal governance (a city run
 | ----------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | **Plan**    | Design the deliberation process: define steps (e.g., open discussion, consultation, vote), set eligibility, import context | Community platforms, grassroots organizers, governance tools |
 | **Collect** | Gather participant input: opinions, votes, comments                                                                        | Deliberation platforms, voting apps                          |
-| **Analyze** | Process data and derive insights: clustering, summaries, consensus                                                         | Prover Agents, analysis dashboards                           |
+| **Analyze** | Process data and derive insights: clustering, summaries, consensus                                                         | Analyzer Agents, analysis dashboards                         |
 | **Execute** | Act on analysis: run binding votes, implement decisions                                                                    | Voting apps, governance tools, DAOs                          |
 
-Applications specialize in one or more phases, but **interoperate via shared lexicons**. Any organizing app—a community platform, a DAO, a grassroots coalition—can orchestrate a full cycle: plan with its own UI, collect via a deliberation platform, analyze via a Prover, then act on results.
+Applications specialize in one or more phases, but **interoperate via shared lexicons**. Any organizing app—a community platform, a DAO, a grassroots coalition—can orchestrate a full cycle: plan with its own UI, collect via a deliberation platform, analyze via an Analyzer, then act on results.
 
 ```mermaid
 sequenceDiagram
     participant Org as Organizer
     participant Delib as Deliberation Platform
-    participant Prover as Prover Agent
+    participant Analyzer as Analyzer Agent
     participant Vote as Voting App
 
     Note over Org: PLAN PHASE
@@ -208,13 +237,13 @@ sequenceDiagram
     Delib->>Delib: Gather opinions<br/>(org.dds.module.polis.opinion)
     Delib->>Delib: Record reactions<br/>(org.dds.module.polis.vote)
 
-    Note over Prover: ANALYZE PHASE
-    Prover->>Delib: Read via Firehose
-    Prover->>Prover: Run clustering
-    Prover->>Prover: Publish result<br/>(org.dds.result.pca)
+    Note over Analyzer: ANALYZE PHASE
+    Analyzer->>Delib: Read via Firehose
+    Analyzer->>Analyzer: Run clustering
+    Analyzer->>Analyzer: Publish result<br/>(org.dds.result.pca)
 
     Note over Vote: EXECUTE PHASE
-    Vote->>Prover: Reference analysis<br/>(org.dds.ref.analysis)
+    Vote->>Analyzer: Reference analysis<br/>(org.dds.ref.analysis)
     Vote->>Vote: Configure options from<br/>cluster consensus
     Vote->>Vote: Run token vote<br/>(org.dds.module.vote)
 
