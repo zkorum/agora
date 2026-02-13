@@ -1,24 +1,22 @@
-# RFC 0013: Decentralized Deliberation Standard (DDS)
+# Decentralized Deliberation Standard (DDS)
 
 | Metadata       | Value                                          |
 | :------------- | :--------------------------------------------- |
-| **RFC ID**     | 0013                                           |
 | **Title**      | DDS: Verifiable Deliberation on AT Protocol    |
 | **Status**     | Draft                                          |
 | **Created**    | 2026-01-13                                     |
-| **Supersedes** | RFC-0012, RFC-0005                             |
 | **Related**    | [Privacy Addendum](./0013-privacy-addendum.md), [Implementation Addendum](./0013-implementation-addendum.md) |
 
 ## 1. Design Philosophy
 
-This RFC defines the **Decentralized Deliberation Standard (DDS)**, a vendor-neutral protocol for secure, censorship-resistant public deliberation. The protocol leverages **AT Protocol** for transport, **IPFS/Arweave** for archival, and **Ethereum** for verification.
+The **Decentralized Deliberation Standard (DDS)** is a vendor-neutral protocol for secure, censorship-resistant public deliberation. The protocol leverages **AT Protocol** for transport, **Arweave/Filecoin/Logos Storage** for archival, and **Ethereum** for verification.
 
 DDS is organized around **four design tensions**:
 
 | Tension | Why |
 |---------|-----|
 | **Ownership vs Convenience** | Sovereignty requires users to control their cryptographic keys — but requiring hardware wallets or self-hosted infrastructure creates friction that prevents adoption. We need real ownership with a familiar login experience. |
-| **Discoverability vs Durability** | Pure P2P protocols (Logos Messaging (formerly Waku), IPFS, Nostr) provide censorship-resistant storage and messaging, but struggle at scale with: real-time performance, message ordering and conflict resolution, complex queries and search, moderation, and mobile/resource-constrained devices. Federated protocols solve these but introduce provider dependency. We need the UX of federation with the durability guarantees of P2P. |
+| **Discoverability vs Durability** | Pure P2P protocols (Logos Messaging (formerly Waku), Nostr) provide censorship-resistant storage and messaging, but struggle at scale with: real-time performance, message ordering and conflict resolution, complex queries and search, moderation, and mobile/resource-constrained devices. Federated protocols solve these but introduce provider dependency. We need the UX of federation with the durability guarantees of P2P. |
 | **Provable vs Economical Computation** | Running clustering analysis (PCA, Reddwarf) requires significant data access, compute, and infrastructure. Asking every user to replicate this pipeline is impractical — but trusting a single provider's results without verification undermines the system. |
 | **Autonomy vs Interoperability** | Self-hosted systems give full autonomy but are siloed — you can define any data model, but you can't leverage other teams' distributed components. Standardized schemas over a shared transport enable separation of concerns: distinct building blocks (Plan, Collect, Analyze) built by different teams that compose permissionlessly. This solves hard problems of data communication at scale that pure self-hosted models cannot. Data privacy (secret content) is niche for a public deliberation standard; participant anonymity is a separate concern. |
 
@@ -41,7 +39,7 @@ flowchart TB
         PDS --> Firehose --> AppView
     end
 
-    subgraph Archive["Archive Layer (cold path) — IPFS/Arweave"]
+    subgraph Archive["Archive Layer (cold path) — Arweave/Filecoin/Logos Storage"]
         ArchiveAgents["Archive Agents<br/>Pin org.dds.* records"]
     end
 
@@ -66,48 +64,28 @@ flowchart TB
 >
 > **Why AT Protocol here**: `did:plc` provides portable identity with separate Signing Keys (convenience — PDS manages posting) and Rotation Keys (ownership — user controls migration). Nostr ties identity to a single keypair with no recovery or migration. Logos Messaging has no identity layer. This separation lets us build the Encrypted Key Vault: sovereignty without requiring users to manage keys directly.
 
-### 3.1 PDS Hosting Tiers
+### 3.1 Flexible Authentication
 
-| Tier | Name | Description |
-|------|------|-------------|
-| **2** | Self-Hosted | User brings their own PDS (e.g., standard Bluesky or self-hosted). Direct authentication. |
-| **1** | Managed | User authenticates via Email/Phone/Wallet/ZKPass. Application auto-provisions a PDS account. |
-| **0** | Anonymous | Guest user with no verified identifier. Lightweight PDS authenticated by local `did:key`. |
+DDS defines a shared authentication interface, not a fixed set of identity methods. Any app can accept any credential type — the protocol standardizes how credentials are represented and shared across tools, not which credentials are valid.
 
-A single Managed PDS instance is multi-tenant, capable of hosting thousands of accounts (similar to Bluesky PDS architecture).
+The spectrum ranges from simple auth to cryptographic proofs:
 
-### 3.2 The Encrypted Key Vault
+- **Simple authentication** — Email, phone, social login. A way to connect to the PDS. No cryptographic binding to a real-world attribute.
+- **Cryptographic proofs** — ZK passport, ZKPass, Zupass event tickets, W3C Verifiable Credentials, eIDAS eWallets, wallet signatures. Two-way binding with verifiable properties (e.g., "is a citizen," "holds an event ticket," "is over 18").
 
-While the PDS manages _posting_ (Signing Keys), the user must retain control over _identity_ (Rotation Keys). In a Managed model, if the PDS disappears or turns malicious, the user could be locked out without their Recovery Key.
+Apps choose which credential types to accept for each deliberation. Users range from self-hosted (own PDS) to lightweight guests (ephemeral `did:key`). What matters is that every participant has a DID and can attach credentials from any accepted method.
 
-The **Encrypted Key Vault** solves this: the user's Rotation Key is encrypted and stored in their Repository. Since Repositories are archived to IPFS (Section 4.2), the vault is recoverable even if the PDS vanishes.
+### 3.2 Shared Organizations
 
-| Concept | Purpose |
-|---------|---------|
-| **Encrypted Vault** | Rotation Key encrypted at rest in the user's Repository — recoverable from any archive |
-| **Lockbox** | Mechanism for adding new devices to an account without exposing the Rotation Key |
-| **Migration (Walkaway)** | Decrypt the Rotation Key → update `did:plc` document → point to a new PDS |
+Organizations — teams, DAOs, communities, coalitions — are defined at the protocol level via base lexicons (`org.dds.org.*`). Membership, roles, and permissions are readable by any tool on the Firehose. An org created in one app is visible to every other app — no bilateral integration needed.
 
-Two vault designs are proposed:
+This enables cross-tool workflows: a community platform manages membership, a deliberation tool checks eligibility, a voting app enforces access rights — all reading the same org records.
 
-- **Type A (Wallet-Derived)**: Users with an Ethereum wallet derive an encryption key from a deterministic wallet signature. Recovery requires only the wallet — no backup codes needed.
-- **Type B (Device Graph)**: Users without a wallet (Email/Phone/Guest) use a random master secret distributed across devices via encrypted lockboxes. Recovery requires an existing device or a backup code saved at signup.
+### 3.3 The Encrypted Key Vault
 
-> **Critical**: Type B users MUST save a Recovery Code at signup. Without this or an existing device, the Rotation Key is irrecoverable — the user loses walkaway capability but retains normal PDS access.
+While the PDS manages _posting_ (Signing Keys), the user must retain control over _identity_ (Rotation Keys). If the PDS disappears or turns malicious, the user could be locked out without their Recovery Key.
 
-The cryptographic details (key derivation, encryption schemes, device sync protocol) are specified in the [Implementation Addendum](./0013-implementation-addendum.md).
-
-### 3.3 Authentication
-
-All tiers use standard **AT Protocol OAuth**.
-
-- **Signing**: The PDS manages the Signing Key and signs posts/votes on behalf of the user.
-- **Benefit**: Simplified client architecture, compatibility with standard AT Proto clients.
-- **Trade-off**: OAuth may be "heavy" for ephemeral Guests, but we retain it for a unified auth path.
-
-### 3.4 The 72h Safety Net
-
-We rely on the **did:plc 72-hour Grace Period**. If a malicious PDS or compromised device rotates keys, the user has 72 hours to undo using their Wallet or Backup Code.
+The **Encrypted Key Vault** solves this: the user's Rotation Key is encrypted and stored in their Repository. Since Repositories are archived to decentralized storage (Section 4.2), the vault is recoverable even if the PDS vanishes. Two vault designs are proposed — one wallet-derived, one device-based — detailed in the [Implementation Addendum](./0013-implementation-addendum.md).
 
 ## 4. Discoverability vs Durability
 
@@ -119,7 +97,7 @@ We considered three protocol families for the transport layer:
 - **Logos Messaging** (Status, formerly Waku): P2P gossip messaging. Censorship-resistant relay network, strong privacy properties via P2P gossip, ephemeral by design, no guaranteed ordering.
 - **Nostr**: Relay-based pubsub. Simple keypair identity, privacy-friendly via Tor-compatible relay architecture, informal event-kind taxonomy, no formal schema system, no identity migration.
 
-We respect Logos Messaging, Nostr, and IPFS — their work on censorship-resistant infrastructure is foundational. However, for **public deliberation at scale**, pure P2P and relay-based protocols face fundamental challenges:
+We respect Logos Messaging and Nostr — their work on censorship-resistant infrastructure is foundational. However, for **public deliberation at scale**, pure P2P and relay-based protocols face fundamental challenges:
 
 | Challenge | Nostr / Logos Messaging | AT Protocol |
 |-----------|------------------------|-------------|
@@ -138,14 +116,14 @@ These protocols solve real problems — Nostr's ecosystem of relays and third-pa
 
 Where Nostr and Logos Messaging genuinely excel is **anonymity-first applications**. Nostr's client-relay architecture enables routing through Tor and mixnets. Logos Messaging's P2P gossip means no server ever knows a user's identity. For applications requiring deep anonymity — ZK-anonymous voting, whistleblower platforms, censorship-resistant communication under authoritarian regimes — these protocols are the right foundation. Privacy _can_ be implemented on AT Protocol, but the PDS pattern is an anti-pattern for strong ZK-anonymity: the server inherently knows the user's identity, so anonymity requires workarounds rather than flowing naturally from the architecture. On Nostr and Logos Messaging, anonymity feels native. DDS does not optimize for this. Our earlier work on [Racine](https://github.com/zkorum/racine) (a ZK-first meta-protocol compatible with Waku, Nostr, and AT Protocol) taught us that while ZK anonymous identity is technically superior for privacy, it doesn't match how users actually adopt products — they want familiar identifiers (email, phone, social login), not cryptographic key management. DDS is designed for **public** deliberation, where transparency and verifiability are the point. Participant anonymity where needed is handled at the identity layer (ZK proofs for eligibility without revealing identity), not at the transport layer.
 
-**Our Hybrid**: AT Protocol for the hot path (discovery, search, real-time), IPFS/Arweave for the cold path (archival, walkaway), Ethereum for the verification layer (hash commits, sovereignty).
+**Our Hybrid**: AT Protocol for the hot path (discovery, search, real-time), Arweave/Filecoin/Logos Storage for the cold path (archival, walkaway), Ethereum for the verification layer (hash commits, sovereignty).
 
 ### 4.2 Network Archival
 
 - **Role**: Archive Agents listen to the Firehose for `org.dds.*` commits.
-- **Action**: Pin Repository updates to IPFS/Arweave.
+- **Action**: Pin Repository updates to Arweave/Filecoin/Logos Storage.
 - **Keys in Repo**: Since `org.dds.key.wrapped` is in the Repository, it's automatically archived.
-- **Result**: Even if Agora vanishes, User's Identity (PLC Directory) and Vault (IPFS) are recoverable.
+- **Result**: Even if Agora vanishes, User's Identity (PLC Directory) and Vault (decentralized storage) are recoverable.
 
 ### 4.3 Local Resilience
 
@@ -183,7 +161,7 @@ Because inputs (votes on the Firehose) and algorithm (open-source) are public, *
 |-------|-----------|------|-----------|
 | **Reputation** | Prover publishes results to Firehose | Free for users | Trust the Prover's reputation |
 | **Spot check** | Any party re-runs computation independently | Moderate (compute costs) | Deterministic verification |
-| **Trustless** | Prover submits proof on-chain; clients verify cheaply (e.g., ZK proof verification) | Gas fees | Cryptographic proof — no trust required (see [Implementation Addendum §3.1](./0013-implementation-addendum.md#31-fraud-proving-mechanism)) |
+| **Trustless** | Prover submits proof on-chain; clients verify cheaply (e.g., ZK proof verification) | Gas fees | Cryptographic proof — no trust required (see [Implementation Addendum §4.1](./0013-implementation-addendum.md#41-fraud-proving-mechanism)) |
 
 ## 6. Autonomy vs Interoperability
 
