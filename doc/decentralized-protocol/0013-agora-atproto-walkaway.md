@@ -5,7 +5,7 @@
 | **Title**      | DDS: Verifiable Deliberation on AT Protocol    |
 | **Status**     | Draft                                          |
 | **Created**    | 2026-01-13                                     |
-| **Related**    | [Privacy Addendum](./0013-privacy-addendum.md), [Implementation Addendum](./0013-implementation-addendum.md) |
+| **Related**    | [Privacy Addendum](./0013-privacy-addendum.md), [Implementation Addendum](./0013-implementation-addendum.md), [Background: From ZK-first to AT Protocol](https://whtwnd.com/agoracitizen.network/3meq2b36rw42s) |
 
 ## 1. Design Philosophy
 
