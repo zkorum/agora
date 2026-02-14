@@ -1,4 +1,4 @@
-# Addendum: Privacy Considerations for Decentralized Deliberation
+# Addendum: Anonymity Considerations for Decentralized Deliberation
 
 **Related:** [DDS: Verifiable Deliberation on AT Protocol](./0013-agora-atproto-walkaway.md)
 **Date:** 2026-02-05
@@ -8,7 +8,9 @@
 
 ## Executive Summary
 
-This addendum explores the privacy challenges inherent in any decentralized deliberation system. The key finding is that **achieving strong cross-conversation unlinkability is fundamentally difficult**, regardless of which underlying protocol (AT Protocol, custom federation, pure P2P) is chosen.
+This addendum explores the anonymity challenges inherent in any decentralized deliberation system. The key finding is that **achieving strong cross-conversation unlinkability is fundamentally difficult**, regardless of which underlying protocol (AT Protocol, custom federation, pure P2P) is chosen.
+
+> **Scope**: This addendum covers **participant anonymity** — pseudonymity, cross-conversation unlinkability, correlation resistance, and metadata leakage. Conversation privacy (restricting who can participate) is a separate concern addressed in the [main spec §6](./0013-agora-atproto-walkaway.md) and [Implementation Addendum §7](./0013-implementation-addendum.md#7-conversation-privacy).
 
 This is not a limitation of AT Protocol specifically — it's a property of any system that:
 
@@ -341,8 +343,8 @@ Requires: ZK credential issuance infrastructure
 ### 10.2 Encrypted Vote Aggregation
 ```
 Votes encrypted, only aggregation revealed
-Approach: Homomorphic encryption or MPC for clustering
-Challenge: PCA/clustering is complex computation
+Approach: Homomorphic encryption or MPC for analysis
+Challenge: PCA/clustering and LLM inference are complex computation
 ```
 
 ### 10.3 Mixnet Integration

@@ -108,7 +108,7 @@ All tiers use standard **AT Protocol OAuth**.
 
 - **Signing**: The PDS manages the Signing Key and signs posts/votes on behalf of the user.
 - **Benefit**: Simplified client architecture, compatibility with standard AT Proto clients.
-- **Trade-off**: OAuth may be "heavy" for ephemeral Guests, but we retain it for a unified auth path.
+- **Trade-off**: OAuth may be "heavy" for ephemeral Guests. Whether to retain it for a unified auth path or use a lighter mechanism for Guests is TBD.
 
 ### 2.3 The 72h Safety Net
 
@@ -133,7 +133,7 @@ We rely on the **did:plc 72-hour Grace Period**. If a malicious PDS or compromis
 
 ### 3.4 Privacy Trade-off
 
-Managed PDS hosts can technically access user data (signing keys, posts). Users requiring full data privacy should self-host their PDS. DDS provides the _capability_ to walk away and self-host, making it a credible choice when needed. Note that data privacy (keeping content secret) is distinct from participant anonymity (hiding who said what) — the latter does not require self-hosting. See [Privacy Addendum](./0013-privacy-addendum.md) for deeper analysis.
+Managed PDS hosts can technically access user data (signing keys, posts). Users requiring full data privacy should self-host their PDS. DDS provides the _capability_ to walk away and self-host, making it a credible choice when needed. Note that data privacy (keeping content secret) is distinct from participant anonymity (hiding who said what) — the latter does not require self-hosting. See [Anonymity Addendum](./0013-anonymity-addendum.md) for deeper analysis.
 
 ## 4. Open Issues
 
@@ -141,9 +141,9 @@ Managed PDS hosts can technically access user data (signing keys, posts). Users 
 
 > **Status**: Unresolved
 >
-> **Draft**: Approaches listed below are speculative. ZK-ML is an active research area with no production-ready solution for PCA-scale computation as of this writing.
+> **Draft**: Approaches listed below are speculative. ZK-ML is an active research area with no production-ready solution for analysis-scale computation as of this writing.
 
-"Fraud Proving" via on-chain re-execution is infeasible for heavy clustering algorithms (PCA) on standard EVM chains. Possible approaches:
+"Fraud Proving" via on-chain re-execution is infeasible for heavy analysis algorithms (PCA, LLM inference) on standard EVM chains. Possible approaches:
 - **ZK-ML**: Zero-Knowledge Machine Learning proofs
 - **Optimistic Dispute**: Committee of human arbiters run code off-chain to resolve disputes
 
@@ -172,8 +172,12 @@ Three factors complicate the design:
 ```
 1. INFRASTRUCTURE OVERHEAD:
    AT Protocol requires: PLC directory entry + PDS account + repository
-   Nostr requires:       Generate keypair (client-side only)
-   Logos Messaging requires: Nothing (P2P, no identity infrastructure)
+   Nostr requires:       Generate secp256k1 keypair (client-side only,
+                          but secp256k1 not in Web Crypto API — private
+                          key unavoidably exposed to JS for guests)
+   Logos Messaging requires: Nothing (P2P, no identity infrastructure,
+                          but ecosystem uses secp256k1 — same Web Crypto
+                          limitation as Nostr)
 
    For a conference attendee who votes once via Zupass ticket,
    did:plc is overengineered. Rotation keys, recovery vaults,
@@ -313,7 +317,7 @@ TIER 0 (REVISED — WORK IN PROGRESS):
 
 ### 5.6 Connection to Privacy Model
 
-This connects to the [Privacy Addendum](./0013-privacy-addendum.md):
+This connects to the [Anonymity Addendum](./0013-anonymity-addendum.md):
 
 - **Pseudonymous (Level 1)**: One `did:plc`, full history — best for committed users
 - **Per-conversation anonymous**: Ephemeral `did:key` per context — needed for ticket-gated events and external imports
@@ -325,11 +329,11 @@ The pseudonymous model remains the right **default**. But per-conversation anony
 
 > **Status**: Draft design — needs smart contract specification
 >
-> Inspired by [Vocdoni](https://vocdoni.io/)'s model of notarizing election results on Ethereum. Adapted for DDS where AT Protocol serves as the data layer.
+> Inspired by [Vocdoni](https://vocdoni.io/)'s DAVINCI architecture for notarizing election results on Ethereum. Adapted for DDS where AT Protocol serves as the data layer.
 
 ### 6.1 Motivation
 
-DDS publishes deliberation results (`org.dds.result.pca`) to the AT Protocol Firehose. But Firehose records can be updated or deleted by the originating PDS. For finished consultations, results should be **permanent and tamper-evident** — anchored to a commitment that no single operator can modify.
+DDS publishes deliberation results (`org.dds.result.*` — e.g., PCA clustering, LLM summaries) to the AT Protocol Firehose. But Firehose records can be updated or deleted by the originating PDS. For finished consultations, results should be **permanent and tamper-evident** — anchored to a commitment that no single operator can modify.
 
 This is distinct from the fraud proving problem (§4.1). Fraud proving asks: "was the computation correct?" Result commitment asks: "has the result been modified since publication?" The former requires ZK proofs or re-execution. The latter requires only a hash.
 
@@ -339,14 +343,14 @@ This is distinct from the fraud proving problem (§4.1). Fraud proving asks: "wa
 WHEN: After Analyze phase completes
 
 ANALYZER AGENT:
-  1. Publishes org.dds.result.pca to AT Protocol (Firehose)
+  1. Publishes result record to AT Protocol (e.g., org.dds.result.pca, org.dds.result.summary)
   2. Constructs commitment record:
      - conversation_uri: AT Protocol URI of the deliberation process
      - scope: { start_time, end_time } — time window of analysis
-     - input_hash: Merkle root of all org.dds.module.polis.vote
-       and org.dds.module.polis.opinion records in scope
-     - algorithm: "reddwarf@2.1.0" (identifier + version)
-     - output_hash: SHA-256 of the org.dds.result.pca record
+     - input_hash: Merkle root of all input records in scope
+       (e.g., org.dds.module.polis.vote + opinion, or any module's records)
+     - algorithm: identifier + version (e.g., "reddwarf@2.1.0", "summarizer@1.0.0")
+     - output_hash: SHA-256 of the result record
      - analyzer_did: Analyzer Agent's DID
   3. Submits commitment hash to Ethereum smart contract
 
@@ -361,27 +365,55 @@ VERIFIER (any party):
   5. If mismatch → Analyzer either computed incorrectly or results were modified
 ```
 
-### 6.3 Comparison with Vocdoni
+### 6.3 Comparison with Vocdoni (DAVINCI)
 
 ```
-VOCDONI:
-  L2 (Vochain): Raw votes as blockchain transactions
-  L1 (Ethereum): Oracle notarizes final results
-  Verification: Anyone re-tallies from Vochain data
+VOCDONI (DAVINCI):
+  Data: Raw votes in Ethereum data blobs (EIP-4844) or IPFS
+  Coordination: Ethereum smart contracts
+  Processing: Off-chain sequencers submit ZK proofs on-chain
+  Verification: ZK-SNARKs prove vote validity + state transitions
 
 DDS:
-  L2 (AT Protocol): Raw votes as Firehose records (org.dds.module.polis.vote)
-  L1 (Ethereum): Analyzer's result hash committed on-chain
-  Verification: Anyone re-runs clustering on public Firehose data
+  Data: Participant input as AT Protocol Firehose records (any org.dds.module.*)
+  Coordination: Ethereum smart contract (commitment hash)
+  Processing: Analyzer Agents run analysis off-chain (clustering, LLM, etc.)
+  Verification: Deterministic re-execution on public Firehose data
+
+SIMILARITY:
+  Both use Ethereum as coordination/commitment layer
+  Both store raw data off-chain (blobs/IPFS vs AT Protocol)
+  Both enable public verification without trusting operators
 
 KEY DIFFERENCE:
-  Vocdoni built a custom L2 blockchain (Vochain/Tendermint)
-  DDS reuses AT Protocol as the data layer — no custom chain needed
-  AT Protocol's Firehose provides the same guarantee:
-  complete, ordered, publicly observable data stream
+  Vocdoni uses ZK proofs for computation correctness (trustless)
+  DDS uses deterministic re-execution (spot-check, ZK future work)
+  Vocdoni is purpose-built for voting
+  DDS reuses AT Protocol — a general-purpose social data layer
 ```
 
-### 6.4 Open Questions
+### 6.4 Potential Collaboration
+
+DDS and DAVINCI address different phases of governance: DDS handles deliberation (surfacing opinions, clustering, sensemaking), DAVINCI handles voting (secure, anonymous, verifiable decisions). They're complementary — and the most natural collaboration point is shared semantic data on AT Protocol.
+
+```
+DATA INTEROPERABILITY:
+  • DDS publishes consultation results as AT Protocol records (lexicons)
+  • DAVINCI could publish election configs, census criteria, and results
+    as AT Protocol records — shared data lake, voting-specific infra
+  • DDS analysis results inform ballot design (what gets voted on)
+  • Vote results flow back as records that DDS apps can reference
+
+SHARED INFRASTRUCTURE:
+  • Ethereum: Both use it as coordination/commitment layer
+    — DDS for result hashes, DAVINCI for election settlement
+  • AT Protocol identity: DDS credentials (Zupass, ZK passport, DIDs)
+    could feed DAVINCI voter eligibility / census
+```
+
+Voting has requirements that deliberation doesn't — ballot secrecy, coercion resistance, exact tallying with ZK proofs. DAVINCI's architecture is purpose-built for these constraints. The collaboration pattern is at the data layer (shared lexicons, shared identity), not infrastructure merging — and it generalizes beyond Vocdoni to any voting protocol that could publish metadata and results as AT Protocol records.
+
+### 6.5 Open Questions
 
 - **Chain selection**: Ethereum L1 vs L2 (Optimism, Base, etc.) — trade-off between cost and security guarantees
 - **Smart contract design**: Minimal contract that stores commitment hashes, indexed by conversation URI
@@ -390,3 +422,83 @@ KEY DIFFERENCE:
 - **Who commits?**: The Analyzer, the Organizer, or any party? This is a governance question — the protocol should define the commitment format but leave the committer open.
 - **Cost**: Gas optimization — batching multiple consultation commitments, or using blob transactions (EIP-4844)
 - **Relationship to archival**: Archive Agents (Arweave/Filecoin) store full data; Ethereum stores only hashes. Both serve durability but at different layers.
+
+## 7. Conversation Privacy
+
+> **Status**: Open design question
+>
+> Distinct from participant anonymity ([Anonymity Addendum](./0013-anonymity-addendum.md)). Conversation privacy restricts who can participate in or access a deliberation.
+
+### 7.1 The Problem
+
+Organizers often need frictionless conversations (no login required) restricted to a select group of invited people. The link to participate shouldn't leak to unintended participants.
+
+On AT Protocol, records are published to the Firehose. A cleartext password/token in the data would be visible to any Firehose consumer.
+
+### 7.2 Two Modes
+
+#### Participation-gated (common need)
+
+The conversation is publicly viewable — viewing is fine. Only people with the link can submit opinions and votes.
+
+```
+MECHANISM:
+  • Organizer generates a signing keypair
+  • Private key embedded in share link (URL fragment after #,
+    never sent to server)
+  • Public key published in conversation metadata (not secret)
+  • Participants sign their submissions with the private key
+  • Analyzer/AppView only accepts records with valid signatures
+  • Signing key never appears in AT Protocol records —
+    only signatures do
+
+PROPERTIES:
+  ✅ Conversation content remains public and verifiable
+  ✅ No encryption complexity
+  ✅ Signing key never leaves the client (URL fragment)
+  ✅ Anyone can verify signatures against the public key
+  ❌ If the link leaks, anyone with it can participate
+  ❌ Revoking access requires new keypair + new link
+```
+
+#### Restricted (rare, not a current need)
+
+The conversation can't even be viewed by outsiders.
+
+```
+MECHANISM:
+  • Organizer generates a symmetric encryption key K
+  • K embedded in share link (URL fragment after #)
+  • All records encrypted with K before writing to PDS
+  • Firehose sees ciphertext only
+  • Having K = having access (no gatekeeper)
+
+PROPERTIES:
+  ✅ Trust-minimized — PDS/Firehose see nothing
+  ❌ Analyzer Agent needs K (organizer must share explicitly)
+  ❌ Revoking access is impossible (key is symmetric,
+     already distributed)
+  ❌ Not a current need — no use case observed yet
+```
+
+### 7.3 Link Structure
+
+```
+Participation-gated:
+  https://app.example.com/conversation/slug-id#key=<base64url(signingPrivateKey)>
+
+Restricted:
+  https://app.example.com/conversation/slug-id#secret=<base64url(encryptionKey)>
+
+URL fragment (after #) is:
+  • Never sent to the server in HTTP requests
+  • Available to client-side JavaScript only
+```
+
+### 7.4 Open Questions
+
+- **Key format**: Which signing algorithm for the participation-gated key? Ed25519 (Web Crypto compatible, non-exportable storage possible) or P-256?
+- **Revocation**: If the link leaks, the conversation is compromised. Acceptable for many use cases (same as password-protected links), but not all.
+- **Analyzer key distribution** (restricted mode only): How does the Analyzer Agent get K? Options: organizer sends it out-of-band, or K is encrypted for the Analyzer's public key in conversation metadata.
+- **Record format**: How are signed/encrypted records structured in the Lexicon?
+- **Partial restriction**: Can some records be public (conversation title, metadata) while submissions require signing?
