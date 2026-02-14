@@ -5,7 +5,7 @@
 | **Title**   | DDS: Verifiable Deliberation on AT Protocol                                                                                                                                                                     |
 | **Status**  | Draft                                                                                                                                                                                                           |
 | **Created** | 2026-01-13                                                                                                                                                                                                      |
-| **Related** | [Privacy Addendum](./0013-privacy-addendum.md), [Implementation Addendum](./0013-implementation-addendum.md), [Background: From ZK-first to AT Protocol](https://whtwnd.com/agoracitizen.network/3meq2b36rw42s) |
+| **Related** | [Anonymity Addendum](./0013-anonymity-addendum.md), [Implementation Addendum](./0013-implementation-addendum.md), [Background: From ZK-first to AT Protocol](https://whtwnd.com/agoracitizen.network/3meq2b36rw42s) |
 
 ## 1. Design Philosophy
 
@@ -17,10 +17,12 @@ DDS is organized around **four design tensions**:
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Ownership vs Convenience**           | Sovereignty requires users to control their cryptographic keys — but requiring hardware wallets or self-hosted infrastructure creates friction that prevents adoption. We need real ownership with a familiar login experience.                                                                                                                                                                                                                                                                                                                                |
 | **Discoverability vs Durability**      | Pure P2P protocols (Logos Messaging (formerly Waku), Nostr) provide censorship-resistant storage and messaging, but struggle at scale with: real-time performance, message ordering and conflict resolution, complex queries and search, moderation, and mobile/resource-constrained devices. Federated protocols solve these but introduce provider dependency. We need the UX of federation with the durability guarantees of P2P.                                                                                                                           |
-| **Provable vs Economical Computation** | Running clustering analysis (PCA, Reddwarf) requires significant data access, compute, and infrastructure. Asking every user to replicate this pipeline is impractical — but trusting a single provider's results without verification undermines the system.                                                                                                                                                                                                                                                                                                  |
-| **Autonomy vs Interoperability**       | Self-hosted systems give full autonomy but are siloed — you can define any data model, but you can't leverage other teams' distributed components. Standardized schemas over a shared transport enable separation of concerns: distinct building blocks (Plan, Collect, Analyze) built by different teams that compose permissionlessly. This solves hard problems of data communication at scale that pure self-hosted models cannot. Data privacy (secret content) is niche for a public deliberation standard; participant anonymity is a separate concern. |
+| **Provable vs Economical Computation** | Running analysis — clustering (PCA, Reddwarf), LLM sensemaking, or other methods — requires significant data access, compute, and infrastructure. Asking every user to replicate this pipeline is impractical — but trusting a single provider's results without verification undermines the system.                                                                                                                                                                                                                                                                                                  |
+| **Autonomy vs Interoperability**       | Self-hosted systems give full autonomy but are siloed — you can define any data model, but you can't leverage other teams' distributed components. Standardized schemas over a shared transport enable separation of concerns: distinct building blocks (Plan, Collect, Analyze) built by different teams that compose permissionlessly. This solves hard problems of data communication at scale that pure self-hosted models cannot. Conversation privacy (restricting who can access a deliberation) is a practical need — e.g., frictionless guest conversations open only to invited participants; participant anonymity (hiding who said what) is a separate, orthogonal concern. |
 
 When in doubt, we optimize for **usability without sacrificing walkaway capability** — the guarantee that if all providers vanish, users retain sovereign control of their cryptographic identity and can recover their data from decentralized archives.
+
+> **Two distinct privacy concerns**: DDS distinguishes between **participant anonymity** (hiding _who_ said what — addressed by per-conversation DIDs, ZK proofs, and the [Anonymity Addendum](./0013-anonymity-addendum.md)) and **conversation privacy** (restricting _who_ can see and participate — addressed by access control and encryption). These are orthogonal: a public conversation can have anonymous participants, and a private conversation can have identified participants. Both are valid requirements. DDS prioritizes public deliberation but must support private/restricted conversations for practical use cases (event-only discussions, private group deliberations). See §6 for conversation privacy and the [Anonymity Addendum](./0013-anonymity-addendum.md) for participant anonymity.
 
 ## 2. Architecture Overview
 
@@ -48,7 +50,7 @@ flowchart TB
     end
 
     subgraph Analyzer["Analyzer Agents"]
-        Compute["Read Firehose → Run clustering → Publish results"]
+        Compute["Read Firehose → Run analysis → Publish results"]
     end
 
     User --> Transport
@@ -118,7 +120,7 @@ These protocols solve real problems — Nostr's ecosystem of relays and third-pa
 
 Where Nostr and Logos Messaging genuinely excel is **anonymity-first applications**. Nostr's client-relay architecture enables routing through Tor and mixnets. Logos Messaging's P2P gossip means no server ever knows a user's identity. For applications requiring deep anonymity — ZK-anonymous voting, whistleblower platforms, censorship-resistant communication under authoritarian regimes — these protocols are the right foundation. Privacy _can_ be implemented on AT Protocol, but the PDS pattern is an anti-pattern for strong ZK-anonymity: the server inherently knows the user's identity, so anonymity requires workarounds rather than flowing naturally from the architecture. On Nostr and Logos Messaging, anonymity feels native. DDS does not optimize for this. Our earlier work on [Racine](https://github.com/zkorum/racine) (a ZK-first meta-protocol compatible with Logos Messaging (then called Waku), Nostr, and AT Protocol) taught us that while ZK anonymous identity is technically superior for privacy, it doesn't match how users actually adopt products — they want familiar identifiers (email, phone, social login), not cryptographic key management. DDS is designed for **public** deliberation, where transparency and verifiability are the point. Participant anonymity where needed is handled at the identity layer (ZK proofs for eligibility without revealing identity), not at the transport layer.
 
-A related trade-off is **ephemeral identity**. On Nostr, a guest generates a keypair and participates — no server infrastructure required. On Logos Messaging, messages are P2P with no identity overhead. On AT Protocol, even a managed guest account involves PLC directory registration and PDS provisioning. For ticket-gated deliberations where participants need per-conversation unlinkability (ZK nullifiers ensure one-person-one-vote per context), a persistent `did:plc` is fundamentally the wrong identifier — it's linkable across conversations by design. This is the most significant practical trade-off of building on AT Protocol: the same PDS infrastructure that provides moderation, schema enforcement, and a complete Firehose also makes throwaway identities more expensive. DDS needs a "Guest Mode" that works within AT Protocol's architecture while supporting both persistent pseudonymous accounts and per-conversation ephemeral identities. See [Implementation Addendum §5](./0013-implementation-addendum.md#5-guest-identity-and-account-upgrade) for the design exploration.
+A related trade-off is **ephemeral identity**. On Nostr, a guest generates a keypair and participates — no server infrastructure required. On Logos Messaging, messages are P2P with no identity overhead. However, both protocols use secp256k1, which is not in the Web Crypto API — for guest participation, this means private keys are unavoidably exposed to JavaScript, since non-exportable key storage is only available for Web Crypto-supported curves (P-256, Ed25519). On AT Protocol, even a managed guest account involves PLC directory registration and PDS provisioning. For ticket-gated deliberations where participants need per-conversation unlinkability (ZK nullifiers ensure one-person-one-vote per context), a persistent `did:plc` is fundamentally the wrong identifier — it's linkable across conversations by design. This is the most significant practical trade-off of building on AT Protocol: the same PDS infrastructure that provides moderation, schema enforcement, and a complete Firehose also makes throwaway identities more expensive. DDS needs a "Guest Mode" that works within AT Protocol's architecture while supporting both persistent pseudonymous accounts and per-conversation ephemeral identities. See [Implementation Addendum §5](./0013-implementation-addendum.md#5-guest-identity-and-account-upgrade) for the design exploration.
 
 **Our Hybrid**: AT Protocol for the hot path (discovery, search, real-time interaction), Arweave/Filecoin/Logos Storage for the cold path (archival, walkaway recovery), Ethereum for the commitment layer (result hashes for tamper-evidence, and future verification proofs for computation correctness). Each layer uses the protocol best suited to its role — no single system needs to do everything.
 
@@ -140,10 +142,10 @@ A related trade-off is **ephemeral identity**. On Nostr, a guest generates a key
 
 ### 5.1 The Cost Problem
 
-Running clustering analysis (PCA, Reddwarf) requires:
+Running analysis — clustering (PCA, Reddwarf), LLM sensemaking, or other methods — requires:
 
-- **Data access**: Reading all votes/opinions from the Firehose for a given conversation
-- **Compute**: Running matrix decomposition and clustering algorithms
+- **Data access**: Reading all participant input from the Firehose for a given consultation
+- **Compute**: Running analysis algorithms (clustering, summarization, etc.)
 - **Infrastructure**: Maintaining servers to process conversations continuously
 
 For a single user to verify results independently, they'd need to replicate this entire pipeline. This is impractical at scale — most users lack both the infrastructure and the expertise.
@@ -156,10 +158,10 @@ DDS solves this by separating **computation** from **verification**:
 
 1. **Input**: Agent defines a "Scope" (Conversation ID + Time Window).
 2. **Process**: Agent reads all Repositories from the Firehose matching the Scope.
-3. **Compute**: Runs PCA/Clustering (e.g., Reddwarf).
-4. **Output**: Publishes `org.dds.result.pca`.
+3. **Compute**: Runs analysis (e.g., Reddwarf clustering, LLM summarization).
+4. **Output**: Publishes result (e.g., `org.dds.result.pca`, `org.dds.result.summary`).
 
-Because inputs (votes on the Firehose) and algorithm (open-source) are public, **anyone can re-run the computation to verify an Analyzer's results**. This makes the system auditable without requiring every user to run their own analyzer.
+Because inputs (data on the Firehose) and algorithm (open-source) are public, **anyone can re-run the computation to verify an Analyzer's results**. This makes the system auditable without requiring every user to run their own analyzer.
 
 ### 5.3 Trust Levels
 
@@ -183,9 +185,9 @@ DDS addresses this with **on-chain result commitment**: when a consultation fini
 | ---------------- | ------------------------------------------------------ |
 | Conversation URI | AT Protocol reference to the deliberation process      |
 | Scope            | Time window of the analysis                            |
-| Input hash       | Merkle root of all votes/opinions included             |
-| Algorithm        | Identifier + version (e.g., `reddwarf@2.1.0`)         |
-| Output hash      | Hash of the published `org.dds.result.pca` record      |
+| Input hash       | Merkle root of all input records in scope              |
+| Algorithm        | Identifier + version (e.g., `reddwarf@2.1.0`, `summarizer@1.0.0`) |
+| Output hash      | Hash of the published result record                    |
 | Analyzer DID     | Identity of the computing agent                        |
 
 **Verification**: Anyone downloads the inputs from the Firehose (public), re-runs the algorithm (open-source), and compares the result hash against the on-chain commitment. No ZK proofs required — just deterministic re-execution.
@@ -194,62 +196,72 @@ DDS addresses this with **on-chain result commitment**: when a consultation fini
 - Result commitment **enhances Spot Check**: the on-chain hash makes tampering detectable without requiring re-computation upfront — you only re-run if the hash doesn't match.
 - The **Trustless** level (ZK proof of computation correctness without re-execution) remains future work.
 
-**Analogy**: This mirrors [Vocdoni](https://vocdoni.io/)'s architecture, where raw votes live on the Vochain (their custom L2) and final results are notarized on Ethereum. In DDS, AT Protocol is the data layer (analogous to Vochain) and Ethereum is the commitment layer. The key difference: DDS doesn't need a custom blockchain — AT Protocol's Firehose already provides a complete, ordered data stream.
+**Analogy**: This is inspired by [Vocdoni](https://vocdoni.io/)'s approach to notarizing election results on Ethereum. In their latest architecture (DAVINCI), raw votes are stored in Ethereum data blobs or IPFS, sequencers process votes off-chain and submit ZK proofs on-chain, and Ethereum smart contracts serve as the coordination layer — no custom blockchain needed. DDS follows a similar pattern: AT Protocol is the data layer, Ethereum is the commitment layer, and verification is by deterministic re-execution on public data.
+
+More broadly, DDS is designed to complement voting protocols — DAVINCI being one example. DDS consultation results published as AT Protocol records could inform ballot design, and voting protocols could publish election metadata and results back into the shared data lake via AT Protocol lexicons — each system keeping its own infrastructure while sharing semantic data.
 
 See [Implementation Addendum §6](./0013-implementation-addendum.md#6-result-commitment-protocol) for protocol details.
 
 ## 6. Autonomy vs Interoperability
 
-> **Why AT Protocol here**: Nostr's event kinds and Logos Messaging's content types enable interoperability, but through convention rather than enforceable schemas. AT Protocol's Lexicons are machine-readable and PDS-enforced — data that doesn't match the schema is rejected, not silently malformed. Combined with the Firehose, this means any team can read any other team's records with confidence in data shape, enabling true separation of concerns across the Plan → Collect → Analyze → Execute lifecycle.
+> **Why AT Protocol here**: Nostr's event kinds and Logos Messaging's content types enable interoperability, but through convention rather than enforceable schemas. AT Protocol's Lexicons are machine-readable and PDS-enforced — data that doesn't match the schema is rejected, not silently malformed. Combined with the Firehose, this means any team can read any other team's records with confidence in data shape, enabling true separation of concerns across the Plan → Collect → Analyze lifecycle.
 >
 > **Public by default**: DDS is designed for **public** deliberation. All `org.dds.*` records are published to the Firehose in plaintext. This is by design — transparency, verifiability, and interoperability require open data. The goal is not just interoperability between Polis-like tools, but across **all** governance and collective intelligence solutions — voting apps, DAO governance, participatory budgeting, and tools that don't exist yet. Open data on a shared transport enables an ecosystem that siloed, self-hosted systems cannot. Moreover, AT Protocol's existing social graph — with public figures maintaining official Bluesky accounts — means that their public posts can be imported as deliberation inputs. "How do public personalities think about X?" becomes a query over AT Protocol data, giving deliberation platforms access to a live stream of attributed public discourse.
 >
-> **On self-hosting**: DDS preserves walkaway capability — any user _can_ self-host their PDS. But self-hosting is not on the roadmap as a deployment priority. The protocol's value comes from interoperability across a shared network. Ironically, self-hosting also hurts privacy (see [Privacy Addendum §5](./0013-privacy-addendum.md#5-self-hosted-pds-sovereignty--privacy)).
+> **On self-hosting**: On AT Protocol, self-hosting means running the full decentralized stack (PDS, Relay, AppView) — not just a data server. All DDS components are open source and every user's data lives in their PDS, so self-hosting is always possible. But siloed instances don't interoperate: the real value comes from sharing semantically structured data across a common network — not just between Polis-like tools, but across all governance and collective intelligence solutions, including tools that don't exist yet. Open data means it's not just organizations running infrastructure for their own benefit — the entire community can run whichever components make sense for them, while the shared data lake stays alive. DDS preserves walkaway capability (anyone _can_ self-host everything), but the protocol optimizes for interoperability, not isolation.
 >
-> **On private conversations**: AT Protocol is actively working on private data support via end-to-end encryption (Signal model). When available, DDS could support private or restricted deliberations — but this is a long-term goal, not the initial focus. Most deliberation is public and benefits from transparency. Participant anonymity (hiding _who_ said what) is a separate concern not tied to data encryption. See [Privacy Addendum](./0013-privacy-addendum.md) for deeper analysis.
+> **On conversation privacy** (distinct from participant anonymity): Conversation privacy restricts _who_ can participate in a deliberation. This is orthogonal to participant anonymity (hiding _who_ said what). A private conversation can have identified participants; a public conversation can have anonymous participants. Organizers often need frictionless conversations (no login required) restricted to a select group of invited people. Two modes: **participation-gated** (the common case — conversation is publicly viewable, but only invited people can submit, via a secret embedded in the share link) and **restricted** (rare — conversation can't even be viewed by outsiders, via encryption). For restricted conversations, AT Protocol currently only handles public data; long-term, end-to-end encryption (Signal model) is the priority, and research in this direction is already underway in the AT Protocol community. That said, this use case is marginal — most deliberation is public. See [Implementation Addendum §7](./0013-implementation-addendum.md#7-conversation-privacy) for design exploration.
+>
+> **On participant anonymity**: Participant anonymity — hiding _who_ said what — is often important even outside hard-anonymity scenarios. Many participants want to share opinions without them being permanently tied to their identity. DDS supports this at multiple levels: pseudonymity (one DID, not linked to real name) as the default, per-conversation unlinkability (ephemeral `did:key`) for credential-gated or sensitive contexts, and hard anonymity (Tor, mixnets) as future work for high-threat users. See [Anonymity Addendum](./0013-anonymity-addendum.md) for detailed analysis.
 
 ### 6.1 The Deliberation Lifecycle
 
-DDS organizes deliberation into four phases, each potentially handled by different applications:
+DDS organizes deliberation as an iterative cycle of three phases, each potentially handled by different applications:
 
-This lifecycle is intentionally general. It serves formal governance (a city running participatory budgeting, a DAO voting on treasury allocation), community self-organization (an open-source project shaping its roadmap, a co-op making collective decisions), and bottom-up movements that channel protest energy into concrete proposals—going from "revolution" to "constitution." The process can be a single open discussion or a multi-step pipeline with eligibility rules, multiple rounds, and binding votes.
+This lifecycle is intentionally general. It serves formal governance (a city running participatory budgeting, a DAO voting on treasury allocation), community self-organization (an open-source project shaping its roadmap, a co-op making collective decisions), and bottom-up movements that channel protest energy into concrete proposals—going from "revolution" to "constitution." The process can be a single open discussion or a multi-step pipeline with eligibility rules, multiple rounds, and different modules.
 
 | Phase       | Purpose                                                                                                                    | Example Apps                                                 |
 | ----------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| **Plan**    | Design the deliberation process: define steps (e.g., open discussion, consultation, vote), set eligibility, import context | Community platforms, grassroots organizers, governance tools |
-| **Collect** | Gather participant input: opinions, votes, comments                                                                        | Deliberation platforms, voting apps                          |
+| **Plan**    | Design the consultation: define rounds, modules, eligibility, transition rules, how analysis informs the next round         | Community platforms, grassroots organizers, governance tools |
+| **Collect** | Gather participant input (opinions, votes, comments) and import external data (social media, other tools)                  | Deliberation platforms, data importers                       |
 | **Analyze** | Process data and derive insights: clustering, summaries, consensus                                                         | Analyzer Agents, analysis dashboards                         |
-| **Execute** | Act on analysis: run binding votes, implement decisions                                                                    | Voting apps, governance tools, DAOs                          |
 
-Applications specialize in one or more phases, but **interoperate via shared lexicons**. Any organizing app—a community platform, a DAO, a grassroots coalition—can orchestrate a full cycle: plan with its own UI, collect via a deliberation platform, analyze via an Analyzer, then act on results.
+The lifecycle is iterative: Plan defines a sequence of Collect → Analyze rounds. Analysis from one round can trigger the next — new questions, refined topics, deeper dives. The relationship between Collect and Analyze is many-to-many: multiple competing Analyzers can process the same collected data (different algorithms, different perspectives), and multiple Collect streams can feed a single analysis. All are loosely coupled via the Firehose.
+
+What happens with the final results — a binding vote via an external voting protocol, a DAO proposal, a published report — is outside DDS scope. DDS produces structured, verifiable outputs; execution systems consume them via the Firehose.
+
+Applications specialize in one or more phases, but **interoperate via shared lexicons**. Any organizing app—a community platform, a DAO, a grassroots coalition—can orchestrate a deliberation: plan with its own UI, collect via a deliberation platform, analyze via an Analyzer. External systems (voting protocols, DAOs, governance tools) can then consume the results.
+
+The following example shows a two-round consultation — Polis-style clustering followed by a survey — with an external consumer picking up the results:
 
 ```mermaid
 sequenceDiagram
     participant Org as Organizer
     participant Delib as Deliberation Platform
     participant Analyzer as Analyzer Agent
-    participant Vote as Voting App
+    participant Ext as External Consumer
 
-    Note over Org: PLAN PHASE
-    Org->>Delib: Create deliberation process<br/>(org.dds.process)
+    Note over Org: PLAN
+    Org->>Delib: Create consultation<br/>(org.dds.process)
 
-    Note over Delib: COLLECT PHASE
+    rect rgb(240, 240, 255)
+    Note over Delib,Analyzer: ROUND 1 (Collect → Analyze)
     Delib->>Delib: Gather opinions<br/>(org.dds.module.polis.opinion)
     Delib->>Delib: Record reactions<br/>(org.dds.module.polis.vote)
-
-    Note over Analyzer: ANALYZE PHASE
     Analyzer->>Delib: Read via Firehose
     Analyzer->>Analyzer: Run clustering
     Analyzer->>Analyzer: Publish result<br/>(org.dds.result.pca)
+    end
 
-    Note over Vote: EXECUTE PHASE
-    Vote->>Analyzer: Reference analysis<br/>(org.dds.ref.analysis)
-    Vote->>Vote: Configure options from<br/>cluster consensus
-    Vote->>Vote: Run token vote<br/>(org.dds.module.vote)
+    rect rgb(240, 255, 240)
+    Note over Delib,Analyzer: ROUND 2 (Collect → Analyze)
+    Delib->>Delib: Survey on cluster topics<br/>(org.dds.module.survey)
+    Analyzer->>Analyzer: Summarize responses<br/>(org.dds.result.summary)
+    end
 
-    Note over Org: DECISION
-    Org->>Vote: Read vote result
-    Org->>Org: Act on results
+    Note over Ext: EXTERNAL CONSUMER
+    Ext->>Analyzer: Read results via Firehose
+    Ext->>Ext: Create ballot from consensus<br/>(external voting protocol)
 ```
 
 ### 6.2 Layered Lexicons
@@ -261,7 +273,9 @@ DDS uses a layered lexicon design enabling permissionless interoperability:
 │                   PRODUCT LEXICONS                      │
 │  (Domain-specific, owned by each app)                  │
 │                                                        │
-│  org.dds.module.polis  - Deliberation (opinions, votes)│
+│  org.dds.module.polis  - Polis-style (opinions, votes) │
+│  org.dds.module.sense  - LLM sensemaking               │
+│  org.dds.module.survey - Surveys, questionnaires       │
 │  org.dds.module.vote   - Voting (token, quadratic)     │
 │  org.dds.result.pca    - Clustering analysis           │
 │  org.dds.result.*      - Other analysis outputs        │
@@ -294,20 +308,23 @@ DDS uses a layered lexicon design enabling permissionless interoperability:
 
 **Product Lexicons** (owned by each app):
 
-- `org.dds.module.polis` — Deliberation format (opinions, votes)
-- `org.dds.module.vote` — Generic voting (token-weighted, quadratic, etc.)
+- `org.dds.module.polis` — Polis-style deliberation (opinions, agree/disagree votes)
+- `org.dds.module.sense` — LLM-based sensemaking (Talk to the City, Jigsaw Sensemaker)
+- `org.dds.module.survey` — Surveys, questionnaires, structured data collection
+- `org.dds.module.vote` — Generic voting (token-weighted, quadratic, ranked-choice, etc.)
 - `org.dds.result.pca` — Clustering analysis outputs
+- `org.dds.result.summary` — LLM-generated summaries, sensemaking outputs
 
 ### 6.3 Modular Inputs
 
-DDS supports any deliberation type via pluggable modules.
+DDS supports any consultation type via pluggable modules. Each module defines its own record types:
 
 **`org.dds.module.polis` (Agora)**:
 
 - **Opinion**: `{ text: string }`
 - **Vote**: `{ targetCid: string, value: -1|0|1 }`
 
-Other product lexicons follow the same pattern, each defining their own record types.
+Other product lexicons follow the same pattern — a sensemaking module, a survey module, or any future consultation format. Data from external sources — social media APIs, LLM-based listening platforms (e.g., [Dembrane](https://www.dembrane.com/)), existing pol.is exports — is translated into the appropriate module's lexicons during the Collect phase (e.g., tweets become `org.dds.module.polis` opinions, conversation transcripts become `org.dds.module.sense` records). The exact mappings are TBD.
 
 ### 6.4 Cross-App Interoperability
 
@@ -334,7 +351,7 @@ Any app can **read** another app's product lexicons via the Firehose. The `org.d
 
 | Pattern                 | Description                                         |
 | ----------------------- | --------------------------------------------------- |
-| **Sequential Handoff**  | Deliberation → Analysis → Voting → Execution        |
+| **Sequential Handoff**  | Deliberation → Analysis → External consumer (voting, governance) |
 | **Parallel Collection** | Multiple collection apps feed the same analysis     |
 | **Context Import**      | New process imports conclusions from a previous one |
 
