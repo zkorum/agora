@@ -19,14 +19,14 @@
         "eslint": "^9.27.0",
         "eslint-config-prettier": "^9.1.0",
         "globals": "^15.15.0",
-        "prettier": "^3.5.3",
+        "prettier": "^3.8.1",
         "typescript": "^5.8.3",
-        "typescript-eslint": "^8.32.1",
-        "vite": "^7.3.0"
+        "typescript-eslint": "^8.55.0",
+        "vite": "^7.3.1"
     },
     "dependencies": {
         "@ucans/ucans": "^0.12.0",
-        "@zkorum/keystore-idb": "^0.17.1",
+        "@zkorum/keystore-idb": "^0.18.1",
         "fast-text-encoding": "^1.0.6",
         "tweetnacl": "^1.0.3",
         "uint8arrays": "^5.1.0"
