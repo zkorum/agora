@@ -16,20 +16,20 @@
     "author": "ZKorum SAS <hello@zkorum.com>",
     "license": "AGPL-3.0",
     "dependencies": {
-        "@aws-sdk/client-secrets-manager": "^3.906.0",
-        "@aws-sdk/client-translate": "^3.906.0",
-        "@google-cloud/translate": "^9.2.1",
-        "@valkey/valkey-glide": "^2.2.1",
-        "drizzle-orm": "^0.39.3",
-        "fastify": "^5.7.3",
-        "p-limit": "^7.1.1",
-        "postgres": "^3.4.5",
-        "zod": "^4.3.5"
+        "@aws-sdk/client-secrets-manager": "^3.992.0",
+        "@aws-sdk/client-translate": "^3.992.0",
+        "@google-cloud/translate": "^9.3.0",
+        "@valkey/valkey-glide": "^2.2.7",
+        "drizzle-orm": "^0.45.1",
+        "fastify": "^5.7.4",
+        "p-limit": "^7.3.0",
+        "postgres": "^3.4.8",
+        "zod": "^4.3.6"
     },
     "devDependencies": {
         "@types/node": "^20.17.47",
         "pino": "^9.6.0",
-        "prettier": "^3.5.3",
+        "prettier": "^3.8.1",
         "typescript": "^5.8.3"
     }
 }
