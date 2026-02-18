@@ -114,7 +114,7 @@
         "eslint-config-prettier": "^9.1.0",
         "esm-module-alias": "^2.2.1",
         "globals": "^17.3.0",
-        "pino": "9.6.0",
+        "pino": "10.3.1",
         "pino-pretty": "^10.3.1",
         "prettier": "^3.5.3",
         "testcontainers": "^11.10.0",
