@@ -6,7 +6,7 @@ import {
 import { and, eq, or, isNull, lt, gt, sql } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { nowZeroMs } from "@/shared/util.js";
-import PgBoss from "pg-boss";
+import { PgBoss } from "pg-boss";
 
 // Threshold for detecting stale jobs
 // If a job is in CREATED state (queued) for longer than this, it's considered stuck

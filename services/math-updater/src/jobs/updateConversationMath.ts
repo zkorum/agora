@@ -15,7 +15,7 @@ import { nowZeroMs } from "@/shared/util.js";
 import { AxiosInstance } from "axios";
 import { and, eq } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import type PgBoss from "pg-boss";
+import type { PgBoss } from "pg-boss";
 
 export interface UpdateConversationMathData {
     conversationId: number;
