@@ -1,7 +1,7 @@
 import { error } from "@sveltejs/kit";
 
 import { getLocale } from "$lib/paraglide/runtime";
-import { getAllSlugs, getBlogPost } from "$lib/server/blog";
+import { getAllSlugs, getBlogPost } from "$server/landing/blog";
 
 import type { EntryGenerator, PageServerLoad } from "./$types";
 

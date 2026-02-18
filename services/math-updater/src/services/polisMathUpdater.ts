@@ -4,11 +4,11 @@
  * Contains only functions needed for math-updater service
  */
 
+import type { PolisKey } from "@/shared/types/zod.js";
 import type {
-    PolisKey,
     GenLabelSummaryOutputClusterStrict,
     GenLabelSummaryOutputClusterLoose,
-} from "@/shared/types/zod.js";
+} from "@/shared-backend/llmSchemas.js";
 import type { AxiosInstance } from "axios";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {

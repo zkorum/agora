@@ -46,6 +46,8 @@
 </template>
 
 <script setup lang="ts">
+import Button from "primevue/button";
+import Card from "primevue/card";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_OPINION } from "src/shared/shared";
 import { defineAsyncComponent, ref } from "vue";
@@ -54,6 +56,13 @@ import {
   type SeedOpinionItemTranslations,
   seedOpinionItemTranslations,
 } from "./SeedOpinionItem.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+    PrimeCard: Card,
+  },
+});
 
 const props = defineProps<{
   modelValue: string;
@@ -68,7 +77,9 @@ defineEmits<{
   (e: "blur"): void;
 }>();
 
-const Editor = defineAsyncComponent(() => import("src/components/editor/Editor.vue"));
+const Editor = defineAsyncComponent(
+  () => import("src/components/editor/Editor.vue")
+);
 
 const { t } = useComponentI18n<SeedOpinionItemTranslations>(
   seedOpinionItemTranslations

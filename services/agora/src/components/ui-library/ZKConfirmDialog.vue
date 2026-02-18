@@ -28,9 +28,25 @@
 </template>
 
 <script setup lang="ts">
+import Button from "primevue/button";
 import { watch } from "vue";
 
 import ZKBottomDialogContainer from "./ZKBottomDialogContainer.vue";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
+
+withDefaults(defineProps<Props>(), {
+  title: undefined,
+  confirmText: "Confirm",
+  cancelText: "Cancel",
+  variant: "default",
+});
+
+const emit = defineEmits<Emits>();
 
 interface Props {
   title?: string;
@@ -45,15 +61,6 @@ interface Emits {
   (e: "cancel"): void;
   (e: "dialogClosed"): void;
 }
-
-withDefaults(defineProps<Props>(), {
-  title: undefined,
-  confirmText: "Confirm",
-  cancelText: "Cancel",
-  variant: "default",
-});
-
-const emit = defineEmits<Emits>();
 
 const showDialog = defineModel<boolean>({ required: true });
 

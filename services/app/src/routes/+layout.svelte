@@ -3,8 +3,8 @@
   import "../app.css";
 
   import { page } from "$app/state";
-  import Footer from "$lib/components/landing/Footer.svelte";
-  import Header from "$lib/components/landing/Header.svelte";
+  import Footer from "$components/landing/footer.svelte";
+  import Header from "$components/landing/header.svelte";
   import * as m from "$lib/paraglide/messages.js";
   import { locales, localizeHref } from "$lib/paraglide/runtime";
 
@@ -72,9 +72,9 @@
   <link rel="alternate" hreflang="x-default" href={page.url.pathname} />
 </svelte:head>
 
-<div class="flex min-h-screen flex-col bg-bg font-sans text-text-primary">
-  <Header />
-  <main class="flex-1">
+<div class="flex min-h-screen flex-col bg-background font-sans text-foreground">
+  <Header hideOnScroll={true} />
+  <main class="flex-1 pt-24">
     {@render children()}
   </main>
   <Footer />

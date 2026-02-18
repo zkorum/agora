@@ -7,6 +7,14 @@ const config = {
   kit: {
     adapter: adapter(),
 
+    alias: {
+      $ui: "src/lib/ui",
+      $components: "src/lib/components",
+      $logic: "src/lib/logic",
+      $state: "src/lib/state",
+      $server: "src/lib/server",
+    },
+
     experimental: {
       tracing: {
         server: true,

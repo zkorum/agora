@@ -17,16 +17,6 @@ When the user mentions needing to understand an external library or repository, 
 
 **Example**: If analyzing how `vite-plugin-validate-env` works from within `services/agora/`, check `../../external/vite-plugin-validate-env/` first.
 
-## Documentation Convention
-
-When creating investigation documents, technical analysis files, reference documentation, or any temporary files, place them in the `agents_tmp_doc` folder and use the `AGENTS_` prefix for all filenames (e.g., `agents_tmp_doc/AGENTS_TIMEOUT_CONFIGURATION.md`, `agents_tmp_doc/AGENTS_DATABASE_OPTIMIZATION.md`).
-
-**Important**: The `agents_tmp_doc/` directory already exists at the repository root. Do NOT attempt to create it with `mkdir` commands.
-
-**When in doubt, use the `AGENTS_` prefix and place in `agents_tmp_doc`.**
-
-Exception: Only omit the `AGENTS_` prefix and folder when the user explicitly requests a specific filename/location or when creating files that should be integrated into the main documentation (e.g., user-requested README updates, official project documentation).
-
 ## Project Overview
 
 Agora Citizen Network is a privacy-preserving social platform using zero-knowledge proofs and bridging-based ranking algorithms. The monorepo contains:
@@ -663,107 +653,48 @@ Key variables:
 
 ## SvelteKit Frontend (`services/app`)
 
+**See [`services/app/README.md`](services/app/README.md) for complete coding guidelines.**
+
 ### Tech Stack
 
 - **Framework**: SvelteKit with Svelte 5 (runes: `$state`, `$derived`, `$effect`, `$props`)
-- **UI Library**: Bits UI (headless, unstyled compound components)
-- **Styling**: Tailwind CSS v4 (CSS-first config via `@import "tailwindcss"`, no `tailwind.config.js`)
-- **Rendering**: SSG for landing page (`export const prerender = true`), SSR+CSR for dynamic pages
-- **Adapter**: `@sveltejs/adapter-node` (SSR production deployment)
-- **Dev Tools**: Tidewave (Vite plugin for AI-assisted development)
-- **Unit Tests**: Vitest (colocated `.test.ts` files in `src/`)
-- **E2E Tests**: Playwright (in `tests/` directory)
+- **UI Library**: Bits UI (headless components) - **always use `$ui/` wrappers, never import directly**
+- **Styling**: Tailwind CSS v4 (CSS-first, `@import "tailwindcss"`)
+- **Testing**: Vitest + @testing-library/svelte for components, Playwright for E2E
 
-### Project Structure
+### Key Rules
 
-```
-services/app/
-  src/
-    app.html              # HTML shell
-    app.css               # Tailwind CSS v4 entry (@import "tailwindcss")
-    app.d.ts              # SvelteKit type declarations
-    lib/
-      assets/             # Static assets imported by components (favicon, etc.)
-      components/         # Reusable Svelte components
-        ui/               # Base UI primitives (Bits UI wrappers with Tailwind)
-      logic/              # Pure TS functions + colocated Vitest tests
-        greeting.ts       # Example: exports function + its interface
-        greeting.test.ts  # Example: colocated unit test
-      server/             # Server-only code (SvelteKit enforces no client import)
-    routes/
-      +layout.svelte      # Root layout (imports app.css)
-      +page.svelte        # Landing page
-      +page.ts            # SSG config (prerender = true)
-  tests/                  # Playwright E2E tests
-  static/                 # Static files served as-is (robots.txt, etc.)
-```
+- **Path aliases**: `$ui`, `$components`, `$logic`, `$state` (configured in `svelte.config.js`)
+- **No barrel files** (`index.ts` re-exports) - breaks tree-shaking
+- **No cross-app imports** - only import from own app folder or `shared/`
+- **Component Hierarchy**: Routes → Components → UI (keep routes simple)
+- **SSR Safety**: Don't use module-level `$state()` for user data
 
-### Key Conventions
+### Icons
 
-**Svelte 5 Runes** (NOT legacy `let`/`$:` syntax):
+Icons use **Iconify via Tailwind CSS v4** (`@iconify/tailwind4` plugin). Never use inline SVGs for standard icons — use the `icon-[collection--name]` class pattern instead.
+
+**Available collections**: `lucide` (UI icons), `simple-icons` (brand logos)
+
+**Usage**: `<span class="icon-[lucide--menu] h-6 w-6"></span>`
+
+**Applying the brand gradient to icons**: Use the `gradient-primary` Tailwind utility class alongside the icon class. The iconify plugin renders icons as CSS masks, so the gradient background shows through the icon shape:
 ```svelte
-<script lang="ts">
-  let count = $state(0);
-  let doubled = $derived(count * 2);
-  let { children } = $props();
-</script>
+<span class="icon-[lucide--menu] h-6 w-6 gradient-primary"></span>
 ```
 
-**Bits UI** (headless compound components, styled with Tailwind):
-```svelte
-<script lang="ts">
-  import { Button } from 'bits-ui';
-</script>
+**Gradient utilities** (defined in `app.css`): `gradient-primary` (purple→blue with hover), `gradient-secondary` (light purple→blue), `gradient-chip` (nav chip style), `gradient-border` / `gradient-border-light`
 
-<Button.Root class="rounded-lg bg-zinc-900 px-6 py-3 text-white">
-  Click me
-</Button.Root>
-```
-
-**Tailwind CSS v4** (CSS-first, full import including Preflight):
-- Entry point: `src/app.css` with `@import "tailwindcss"`
-- No `tailwind.config.js` — use CSS `@theme` directive for customization
-- Preflight included (all elements reset, style everything explicitly)
-
-**Pure Logic** (in `$lib/logic/`, object params, colocated tests):
-```typescript
-interface GetGreetingParams { count: number; }
-export function getGreeting({ count }: GetGreetingParams): string { ... }
-```
-
-**Rendering Strategy**:
-- Landing page (`/`): Currently SSG, but embedded in app to allow SSR when "Explore Conversations" needs database access
-- Blog posts (`/blog/[slug]`): Prerendered at build time from markdown
-- Dynamic pages: SvelteKit default (SSR + CSR hydration)
-- Per-route configuration allows mixing SSG/SSR/CSR as needed
+**Icon wrapper components** are in `$ui/shared/icons/` for social/external link icons (e.g., `icon-link-github.svelte`).
 
 ### Development
 
 ```bash
-# Start dev server
-make dev-app-new
-# or: cd services/app && pnpm dev
-
-# Lint (ESLint strictTypeChecked + Prettier)
-cd services/app && pnpm lint
-
-# Auto-fix lint + format
-cd services/app && pnpm lint:fix
-
-# Type check
-cd services/app && pnpm check
-
-# Unit tests (Vitest)
-cd services/app && pnpm test:unit
-
-# E2E tests (Playwright)
-cd services/app && pnpm test:e2e
-
-# Production build
-cd services/app && pnpm build
-
-# Preview production build
-cd services/app && pnpm preview
+make dev-app-new                    # Start dev server
+cd services/app && pnpm lint        # Lint
+cd services/app && pnpm check       # Type check
+cd services/app && pnpm test:unit   # Vitest
+cd services/app && pnpm test:e2e    # Playwright
 ```
 
 ## Prerequisites

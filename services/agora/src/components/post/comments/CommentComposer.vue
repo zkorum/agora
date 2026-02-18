@@ -2,6 +2,7 @@
   <div ref="target">
     <div class="container borderStyle" :class="{ focused: innerFocus }">
       <Editor
+        v-if="isEditorMounted"
         ref="editorRef"
         v-model="opinionBody"
         :placeholder="innerFocus ? t('placeholderExpanded') : t('placeholder')"
@@ -85,11 +86,13 @@
 <script setup lang="ts">
 import { onClickOutside, useWindowScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
+import Button from "primevue/button";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useIdleMount } from "src/composables/ui/useIdleMount";
 import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
 import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
 import {
@@ -105,7 +108,17 @@ import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, defineAsyncComponent, inject, nextTick, onMounted, type Ref, ref, useTemplateRef, watch } from "vue";
+import {
+  computed,
+  defineAsyncComponent,
+  inject,
+  nextTick,
+  onMounted,
+  type Ref,
+  ref,
+  useTemplateRef,
+  watch,
+} from "vue";
 import type { RouteLocationNormalized } from "vue-router";
 
 import {
@@ -113,6 +126,12 @@ import {
   commentComposerTranslations,
 } from "./CommentComposer.i18n";
 import OpinionWritingGuidelinesDialog from "./OpinionWritingGuidelinesDialog.vue";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
 
 const props = defineProps<{
   postSlugId: string;
@@ -133,7 +152,12 @@ const emit = defineEmits<{
   ];
 }>();
 
-const Editor = defineAsyncComponent(() => import("src/components/editor/Editor.vue"));
+const Editor = defineAsyncComponent(
+  () => import("src/components/editor/Editor.vue")
+);
+
+// Defer Editor mounting until browser is idle to improve initial page load performance
+const { isMounted: isEditorMounted } = useIdleMount({});
 
 const dummyInput = ref<HTMLInputElement>();
 
@@ -145,7 +169,9 @@ const userStore = useUserStore();
 const { verifiedEventTickets } = storeToRefs(userStore);
 
 // Inject reactive conversation data from parent
-const conversationData = inject<Ref<ExtendedConversation> | undefined>("conversationData");
+const conversationData = inject<Ref<ExtendedConversation> | undefined>(
+  "conversationData"
+);
 
 // Compute if composer should be disabled (closed OR locked by moderator)
 const isComposerDisabled = computed(() => {
@@ -251,7 +277,11 @@ const validationWarning = computed(() => {
     .toLowerCase()
     .match(/\b(and|but|or|yet|nor)\b/g);
 
-  if (coordinatingConjunctions && coordinatingConjunctions.length >= 2 && plainText.length > 50) {
+  if (
+    coordinatingConjunctions &&
+    coordinatingConjunctions.length >= 2 &&
+    plainText.length > 50
+  ) {
     return t("validationWarningMultipleIdeas");
   }
 
@@ -259,7 +289,9 @@ const validationWarning = computed(() => {
   const commaCount = (plainText.match(/,/g) || []).length;
   const clauseIndicators = plainText
     .toLowerCase()
-    .match(/\b(however|moreover|furthermore|therefore|thus|consequently|although|whereas|while|because|since)\b/g);
+    .match(
+      /\b(however|moreover|furthermore|therefore|thus|consequently|although|whereas|while|because|since)\b/g
+    );
 
   if (commaCount >= 3 || (clauseIndicators && clauseIndicators.length >= 2)) {
     return t("validationWarningMultipleIdeas");

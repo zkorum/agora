@@ -64,6 +64,8 @@
 </template>
 
 <script setup lang="ts">
+import Card from "primevue/card";
+import Select from "primevue/select";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import OpinionGroupTab from "src/components/post/analysis/opinionGroupTab/OpinionGroupTab.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -73,12 +75,19 @@ import type {
   PolisClusters,
   PolisKey,
 } from "src/shared/types/zod";
-import { computed, onMounted,ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 
 import {
   type OpinionGroupVisualizationTranslations,
   opinionGroupVisualizationTranslations,
 } from "./opinion-group-visualization.i18n";
+
+defineOptions({
+  components: {
+    PrimeCard: Card,
+    PrimeSelect: Select,
+  },
+});
 
 const { t } = useComponentI18n<OpinionGroupVisualizationTranslations>(
   opinionGroupVisualizationTranslations

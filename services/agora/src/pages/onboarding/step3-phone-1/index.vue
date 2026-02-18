@@ -24,14 +24,7 @@
             <div class="container">
               <div>{{ t("smsDescription") }}</div>
 
-              <!--
-                This component has some form of VNode bug that can cause Vite's dev server
-                to lose its rendering instance upon load. It only affects the development server.
-                There are no solution to fix the issue but since it doesn't affect production
-                it can be safely ignored.
-              -->
-              <!-- @vue-expect-error MazPhoneNumberInput types v-model as T | undefined -->
-              <MazPhoneNumberInput
+              <ZKPhoneNumberInput
                 v-model="phoneData.phoneNumber"
                 v-model:country-code="phoneData.countryCode"
                 :success="phoneData.isValid"
@@ -95,18 +88,18 @@
 </template>
 
 <script setup lang="ts">
+import type { CountryCode } from "libphonenumber-js/max";
 import {
-  type CountryCode,
   parsePhoneNumberFromString,
   type PhoneNumber as LibPhoneNumber,
 } from "libphonenumber-js/max";
 import type { Results } from "maz-ui/components/MazPhoneNumberInput";
-import MazPhoneNumberInput from "maz-ui/components/MazPhoneNumberInput";
 import { storeToRefs } from "pinia";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
+import ZKPhoneNumberInput from "src/components/ui-library/ZKPhoneNumberInput.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import {
@@ -361,9 +354,5 @@ async function validateNumber(): Promise<boolean> {
 .error-icon {
   font-size: 1rem;
   color: #dc2626;
-}
-
-:deep(.m-phone-number-input) {
-  row-gap: 1rem;
 }
 </style>

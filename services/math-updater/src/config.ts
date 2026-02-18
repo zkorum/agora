@@ -21,14 +21,14 @@ const mathUpdaterConfigSchema = sharedConfigSchema.extend({
 
     /**
      * How often to scan conversation_update_queue for pending updates (in milliseconds)
-     * Default: 2000ms (2 seconds)
-     * Minimum: 2000ms
+     * Default: 1000ms (1 second)
+     * Minimum: 1000ms
      */
     MATH_UPDATER_SCAN_INTERVAL_MS: z.coerce
         .number()
         .int()
-        .min(2000)
-        .default(2000),
+        .min(1000)
+        .default(1000),
 
     /**
      * Maximum number of jobs to fetch per batch from pg-boss queue
@@ -86,113 +86,83 @@ const mathUpdaterConfigSchema = sharedConfigSchema.extend({
             return normalized !== "false" && normalized !== "0";
         })
         .pipe(z.boolean()),
-    AWS_AI_LABEL_SUMMARY_REGION: z.string().default("eu-west-1"),
+    AWS_AI_LABEL_SUMMARY_REGION: z.string().default("us-east-1"),
     AWS_AI_LABEL_SUMMARY_MODEL_ID: z
         .string()
-        .default("mistral.mistral-large-2402-v1:0"),
-    AWS_AI_LABEL_SUMMARY_TEMPERATURE: z.string().default("0.4"),
-    AWS_AI_LABEL_SUMMARY_TOP_P: z.string().default("0.8"),
+        .default("mistral.mistral-large-3-675b-instruct"),
+    AWS_AI_LABEL_SUMMARY_TEMPERATURE: z.string().default("0.15"),
+    AWS_AI_LABEL_SUMMARY_TOP_P: z.string().default("0.9"),
     AWS_AI_LABEL_SUMMARY_MAX_TOKENS: z.string().default("8192"),
     AWS_AI_LABEL_SUMMARY_PROMPT: z.string().default(
-        `You are a JSON API analyzing group conversations similar to Pol.is. Output only one raw JSON object, no extra text or markdown.
+        `You are analyzing opinion clusters from a group conversation. Output only raw JSON, no extra text or markdown.
 
-Output Format:
+## Output Format
 {
   "clusters": {
-    "0": { "label": "string", "summary": "string" },
-    "1": { "label": "string", "summary": "string" },
-    "2": { "label": "string", "summary": "string" },
-    "3": { "label": "string", "summary": "string" },
-    "4": { "label": "string", "summary": "string" },
-    "5": { "label": "string", "summary": "string" }
+    "0": {
+      "reasoning": "Step-by-step analysis of what this cluster supports and rejects, then derive the label",
+      "label": "1-2 word neutral label (-ists, -ers, -ians)",
+      "summary": "≤300 chars describing cluster's perspective"
+    },
+    "1": { "reasoning": "...", "label": "...", "summary": "..." },
+    "2": { "reasoning": "...", "label": "...", "summary": "..." },
+    "3": { "reasoning": "...", "label": "...", "summary": "..." },
+    "4": { "reasoning": "...", "label": "...", "summary": "..." },
+    "5": { "reasoning": "...", "label": "...", "summary": "..." }
   }
 }
-(Reference only — never include in output)
 
-Input Format:
+## Input Format
 {
   "conversationTitle": "string",
   "conversationBody": "string (optional)",
   "clusters": {
     "0": { "agreesWith": [...], "disagreesWith": [...] },
-    "1": { ... },
-    "2": { ... },
-    "3": { ... },
-    "4": { ... },
-    "5": { ... }
+    ...
   }
 }
 
-Rules:
-- Use conversationTitle and conversationBody as context.
-- Detect sarcasm/irony; avoid literal misreadings.
-- For each cluster *independently*:
-    - CRITICAL: agreesWith = opinions that members of this cluster AGREE WITH and SUPPORT.
-    - CRITICAL: disagreesWith = opinions that members of this cluster DISAGREE WITH and REJECT.
-    - Do NOT confuse the meaning: if an opinion is in "disagreesWith", the cluster OPPOSES it.
-    - Do NOT confuse the meaning: if an opinion is in "agreesWith", the cluster SUPPORTS it.
+## Reasoning Steps (MUST follow in the reasoning field)
+For each cluster:
+1. List what opinions are in agreesWith - these are opinions the cluster SUPPORTS
+2. List what opinions are in disagreesWith - these are opinions the cluster REJECTS/OPPOSES
+3. Interpret: "Since they reject [X], they believe [opposite of X]"
+4. Derive the label from the interpretation
+5. Write summary based on what they support AND what they reject
 
-Examples showing correct interpretation:
+## Example
+Input cluster "0":
+  "agreesWith": [],
+  "disagreesWith": ["Technology always improves society", "Innovation is always beneficial"]
 
-Example 1 - Basic case:
-Input:
-  cluster "0": {
-    "agreesWith": ["Climate change is real"],
-    "disagreesWith": ["Climate change is a hoax"]
-  }
-CORRECT: "This cluster believes climate change is real and rejects the idea that it is a hoax."
-WRONG: "This cluster believes climate change is a hoax."
+Correct reasoning and output:
+{
+  "reasoning": "agreesWith is empty, so no explicit support. disagreesWith contains 'Technology always improves society' and 'Innovation is always beneficial'. Since they REJECT these pro-technology statements, this cluster is skeptical of uncritical tech optimism.",
+  "label": "Skeptics",
+  "summary": "This cluster rejects the notion that technology and innovation always improve society or provide benefits."
+}
 
-Example 2 - Empty agreesWith (only disagrees):
-Input:
-  cluster "1": {
-    "agreesWith": [],
-    "disagreesWith": ["Technology always improves society", "Innovation is always beneficial"]
-  }
-CORRECT: "This cluster is skeptical of technology and innovation, rejecting the notion that they always improve society or provide benefits."
-WRONG: "This cluster believes technology and innovation always improve society."
+WRONG (do not do this):
+{
+  "reasoning": "They believe technology improves society",
+  "label": "Technologists",
+  "summary": "This cluster believes technology always improves society."
+}
+The above is WRONG because "Technology always improves society" is in disagreesWith, meaning they REJECT it, not believe it.
 
-Example 3 - Complex statement with negation:
-Input:
-  cluster "2": {
-    "agreesWith": [],
-    "disagreesWith": ["Wealth concentration is not a problem", "Democratic tools don't threaten traditional voting"]
-  }
-CORRECT: "This cluster believes wealth concentration IS a problem and that democratic tools DO threaten traditional voting."
-WRONG: "This cluster believes wealth concentration is not a problem."
+## Label Guidelines
+- 1-2 words, ≤30 chars, neutral agentive nouns (-ists, -ers, -ians)
+- Focus on intellectual traditions or philosophical approaches
+- Avoid policy-specific terms or geographic references
+- Good: "Redistributionists", "Decentralists", "Humanists", "Skeptics", "Technologists", "Critics"
+- Bad: "Regional Advocates", "AI Tool Users", "Naysayers", "Plastic Ban Advocates"
 
-Remember: If an opinion is in disagreesWith, the cluster OPPOSES that opinion, regardless of how the opinion is worded.
-
-Labels:
-1. Length and Format:
-    - 1–2 words, ≤30 chars, neutral agentive nouns (-ists, -ers, -ians)
-    - Use neutral agentive nouns ending in -ists, -ers, -ians, etc.
-    - Avoid policy-specific terms or geographic references.
-    - Avoid abstract concepts (e.g. avoid “Concerns”)
-2. Content Abstraction:
-    - Focus on group positions, intellectual traditions, or philosophical approaches.
-    - Overt discussion-specific context may be omitted if the context is implied by opposing clusters (e.g. use labels like “Skeptics”, “Technologists”, and “Ethicists” instead of "AI Skeptics", "AI Tool Advocates", "AI Ethicists")
-    - Avoid describing specific mechanisms (e.g., avoid "Income Threshold Supporters" or “Rural Educators”).
-3. Tone:
-    - Aim for a professional/academic tone that reflects generality and positionality.
-    - Use terms that could apply across contexts (e.g., "Pragmatists", "Skeptics").
-4. Examples:
-    - Good: "Redistributionists", "Decentralists", "Humanists", "Skeptics", "Technologists", "Critics", "Mutualists", "Individualists", etc.
-    - Bad: "Regional Advocates", "AI Tool Users", "Naysayers", "Plastic Ban Advocates", etc.
-5. Generation Process:
-    a) Identify the core stance or intellectual tradition within the cluster. CRITICAL: Opinions in "agreesWith" are what the cluster SUPPORTS. Opinions in "disagreesWith" are what the cluster OPPOSES.
-    b) Abstract this stance into a general term using agentive suffixes.
-    c) Validate that the label avoids policy specifics and geographic references.
-    d) Validate that the label is either 1 or 2 words.
-
-Summaries:
+## Summary Guidelines
 - ≤300 chars, neutral, concise
-- Reflect cluster perspective and disagreements
-- Grounded in cluster "agreesWith" and "disagreesWith" opinions and conversation context
-- CRITICAL: Opinions in "agreesWith" are positions the cluster SUPPORTS. Opinions in "disagreesWith" are positions the cluster REJECTS.
-- Summarize the cluster's perspective fully and precisely, covering all representative opinions of that cluster, concisely and without repetition.
+- Grounded in what the cluster SUPPORTS (agreesWith) and REJECTS (disagreesWith)
+- Must accurately reflect the cluster's perspective based on reasoning
 
-Now analyze the following JSON input and generate precise, neutral labels and summaries for clusters "0"–"5" independently following the above rules.
+Generate labels and summaries for all clusters in the input, using the reasoning field to show your analysis.
 `,
     ),
 });

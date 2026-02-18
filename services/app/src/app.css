@@ -1,50 +1,456 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+@plugin "@iconify/tailwind4";
 
-@theme {
+/* ========================================
+ * THEME TOKENS
+ * Maps :root CSS variables to Tailwind utility classes.
+ * Uses @theme inline to EXTEND (not replace) Tailwind defaults.
+ * Pattern follows shadcn-svelte: see external/huntabyte/shadcn-svelte
+ * ======================================== */
+@theme inline {
   /* Typography */
-  --font-sans: "Albert Sans Variable", sans-serif;
+  --font-sans: var(--font-albert-sans);
+  --default-font-family: var(--font-sans);
 
-  /* Brand colors */
-  --color-brand-purple: #6b4eff;
-  --color-brand-blue: #4f92f6;
+  /* Colors - Ink (dark text/backgrounds) — Figma: node 784:6610 */
+  --color-ink-darkest: var(--ink-darkest);
+  --color-ink-darker: var(--ink-darker);
+  --color-ink-dark: var(--ink-dark);
+  --color-ink-base: var(--ink-base);
+  --color-ink-light: var(--ink-light);
 
-  /* Gradient colors */
-  --color-gradient-light-purple: #f1eeff;
-  --color-gradient-light-blue: #e8f1ff;
-  --color-overlay-dark: #2b1f6c;
+  /* Colors - Sky (light backgrounds/borders) */
+  --color-sky-white: var(--sky-white);
+  --color-sky-lightest: var(--sky-lightest);
+  --color-sky-lighter: var(--sky-lighter);
+  --color-sky-light: var(--sky-light);
+  --color-sky-base: var(--sky-base);
+  --color-sky-dark: var(--sky-dark);
 
-  /* Background & Surface */
-  --color-bg: #fbfbfe;
-  --color-surface-hover: #f6f5f8;
+  /* Colors - Primary (brand purple) */
+  --color-primary-lightest: var(--primary-lightest);
+  --color-primary-lighter: var(--primary-lighter);
+  --color-primary-light: var(--primary-light);
+  --color-primary-base: var(--primary-base);
+  --color-primary-dark: var(--primary-dark);
 
-  /* Text colors */
-  --color-text-muted: #9a97a4;
-  --color-text-secondary: #6d6a74;
-  --color-text-primary: #434149;
-  --color-text-dark: #333238;
+  /* Colors - Brand (for gradients) */
+  --color-brand-purple: var(--brand-purple);
+  --color-brand-blue: var(--brand-blue);
 
-  /* Border colors */
-  --color-border: #e2e1e7;
-  --color-border-accent: #a391ff;
+  /* Colors - Gradient composing — Figma: node 20232:13181 */
+  --color-gradient-light-purple: var(--gradient-light-purple);
+  --color-gradient-light-blue: var(--gradient-light-blue);
+  --color-gradient-border-light-purple: var(--gradient-border-light-purple);
+  --color-gradient-border-light-blue: var(--gradient-border-light-blue);
+  --color-gradient-border-purple: var(--gradient-border-purple);
+  --color-gradient-border-blue: var(--gradient-border-blue);
 
-  /* Shadows */
-  --shadow-card: 0 8px 12px 0 rgba(0, 0, 0, 0.15);
-  --shadow-elevated: 0 1px 24px 8px rgba(20, 20, 20, 0.08);
+  /* Colors - Feedback: Red (Error/Destructive) */
+  --color-red-lightest: var(--red-lightest);
+  --color-red-lighter: var(--red-lighter);
+  --color-red-light: var(--red-light);
+  --color-red-base: var(--red-base);
+  --color-red-darkest: var(--red-darkest);
 
-  /* Border radius */
-  --radius-chip: 0.5625rem;
-  --radius-button: 0.8125rem;
+  /* Colors - Feedback: Green (Success) */
+  --color-green-lightest: var(--green-lightest);
+  --color-green-lighter: var(--green-lighter);
+  --color-green-light: var(--green-light);
+  --color-green-base: var(--green-base);
+  --color-green-darkest: var(--green-darkest);
 
-  /* Font sizes */
-  --font-size-quote: 2rem; /* 32px - used in hero and mission quote */
+  /* Colors - Feedback: Yellow (Warning) */
+  --color-yellow-lightest: var(--yellow-lightest);
+  --color-yellow-lighter: var(--yellow-lighter);
+  --color-yellow-light: var(--yellow-light);
+  --color-yellow-base: var(--yellow-base);
+  --color-yellow-darkest: var(--yellow-darkest);
+
+  /* Colors - Semantic (component-level) */
+  --color-background: var(--background);
+  --color-surface-hover: var(--surface-hover);
+  --color-overlay-dark: var(--overlay-dark);
+
+  --color-foreground: var(--foreground);
+  /* TODO: secondary-foreground should differ from foreground per Figma review */
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-inverse-foreground: var(--inverse-foreground);
+
+  --color-border: var(--border);
+
+  /* Colors - Social icons */
+  --color-icon-discord: var(--icon-discord);
+  --color-icon-telegram: var(--icon-telegram);
+  --color-icon-bluesky: var(--icon-bluesky);
+  --color-icon-linkedin: var(--icon-linkedin);
+  --color-icon-github: var(--icon-github);
+  --color-icon-x: var(--icon-x);
+  --color-icon-email: var(--icon-email);
+
+  /* Shadows — Figma: node 1366:8169 */
+  --shadow-md: var(--shadow-md-val);
+  --shadow-card: var(--shadow-card-val);
+
+  /* Border radius - component-specific (Figma: R = H/3, max 24px) */
+  --radius-button-sm: var(--button-sm-radius);
+  --radius-button-md: var(--button-md-radius);
+  --radius-button-lg: var(--button-lg-radius);
+  --radius-chip: var(--chip-radius);
+
+  /* Typography scale — Figma node 784:6700
+   * Overrides Tailwind defaults so text-sm, text-xl etc. match our design system.
+   * Notable divergences from TW defaults: xl=24px (not 20), 2xl=32px (not 24), 3xl=48px (not 30) */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-xs--line-height: 1rem; /* 16px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-sm--line-height: 1.25rem; /* 20px */
+  --font-size-base: 1rem; /* 16px */
+  --font-size-base--line-height: 1.5rem; /* 24px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-lg--line-height: 1.5rem; /* 24px */
+  --font-size-xl: 1.5rem; /* 24px */
+  --font-size-xl--line-height: 2rem; /* 32px */
+  --font-size-2xl: 2rem; /* 32px */
+  --font-size-2xl--line-height: 2.25rem; /* 36px */
+  --font-size-3xl: 3rem; /* 48px */
+  --font-size-3xl--line-height: 3.5rem; /* 56px */
+
+  /* Per-size tracking (letter-spacing) — pair tracking-sm with text-sm, etc. */
+  --tracking-xs: -0.12px;
+  --tracking-sm: -0.14px;
+  --tracking-base: -0.16px;
+  --tracking-lg: -0.18px;
+  --tracking-xl: -0.24px;
+  --tracking-2xl: -0.32px;
+  --tracking-3xl: -0.48px;
+
+  /* Per-size leading variants (body sizes only — titles use fixed LH from font-size) */
+  --leading-tight-lg: 1.25rem; /* 20px */
+  --leading-none-lg: 1.125rem; /* 18px */
+  --leading-tight-base: 1.25rem; /* 20px */
+  --leading-none-base: 1rem; /* 16px */
+  --leading-tight-sm: 1rem; /* 16px */
+  --leading-none-sm: 0.875rem; /* 14px */
+  --leading-tight-xs: 0.875rem; /* 14px */
+  --leading-none-xs: 0.75rem; /* 12px */
 }
 
+/* ========================================
+ * RAW VALUES
+ * Single source of truth for all design tokens.
+ * Override these in .dark {} for dark mode support.
+ *
+ * Architecture:
+ *   Layer 1 — Palette: actual hex values (single source of truth)
+ *   Layer 2 — Semantic: aliases that reference palette via var()
+ * ======================================== */
+:root {
+  /* ---- Layer 1: Palette ---- */
+
+  /* Font */
+  --font-albert-sans: "Albert Sans Variable", sans-serif;
+
+  /* Ink palette (dark text/backgrounds) */
+  --ink-darkest: #0a0714;
+  --ink-darker: #222127;
+  --ink-dark: #333238;
+  --ink-base: #434149;
+  --ink-light: #6d6a74;
+
+  /* Sky palette (light backgrounds/borders) */
+  --sky-white: #ffffff;
+  --sky-lightest: #f6f5f8;
+  --sky-lighter: #e9e9f1;
+  --sky-light: #e2e1e7;
+  --sky-base: #cdcbd3;
+  --sky-dark: #9a97a4;
+
+  /* Primary palette (brand purple) */
+  --primary-lightest: #eeeeff;
+  --primary-lighter: #c6c4ff;
+  --primary-light: #9990ff;
+  --primary-base: #6b4eff;
+  --primary-dark: #5538ee;
+
+  /* Brand (for gradients) */
+  --brand-purple: var(--primary-base);
+  --brand-blue: #4f92f6;
+
+  /* Gradient composing */
+  --gradient-light-purple: #f1eeff;
+  --gradient-light-blue: #e8f1ff;
+  --gradient-border-light-purple: #d4ccff;
+  --gradient-border-light-blue: #bfd9ff;
+  --gradient-border-purple: #a391ff;
+  --gradient-border-blue: #96bff8;
+
+  /* Feedback - Red */
+  --red-lightest: #ffe5e5;
+  --red-lighter: #ff9898;
+  --red-light: #ff6d6d;
+  --red-base: #ff5247;
+  --red-darkest: #d3180c;
+
+  /* Feedback - Green */
+  --green-lightest: #ecfce5;
+  --green-lighter: #7dde86;
+  --green-light: #4cd471;
+  --green-base: #23c16b;
+  --green-darkest: #198155;
+
+  /* Feedback - Yellow */
+  --yellow-lightest: #ffefd7;
+  --yellow-lighter: #ffd188;
+  --yellow-light: #ffc462;
+  --yellow-base: #ffb323;
+  --yellow-darkest: #a05e03;
+
+  /* ---- Layer 2: Semantic aliases (reference palette) ---- */
+
+  /* Backgrounds */
+  --background: var(--sky-lightest);
+  --surface-hover: var(--sky-lightest);
+  --overlay-dark: rgba(0, 0, 0, 0.6);
+
+  /* Text */
+  --foreground: var(--ink-light);
+  /* TODO: secondary-foreground should differ from foreground per Figma review */
+  --secondary-foreground: var(--ink-light);
+  --muted-foreground: var(--sky-dark);
+  --inverse-foreground: var(--sky-white);
+
+  /* Borders */
+  --border: var(--sky-light);
+
+  /* Shadows */
+  --shadow-md-val:
+    0 0 1px rgba(20, 20, 20, 0.08), 0 1px 8px 2px rgba(20, 20, 20, 0.08);
+  --shadow-card-val: 0 8px 12px 0 rgba(0, 0, 0, 0.15);
+
+  /* Border radius */
+  --button-sm-radius: 0.5rem; /* 8px for h-6 (24px) */
+  --button-md-radius: 0.833rem; /* ~13px for h-10 (40px) */
+  --button-lg-radius: 1rem; /* 16px for h-12 (48px) */
+  --chip-radius: 0.5625rem; /* 9px */
+
+  /* Social icon colors (brand colors where applicable) */
+  --icon-discord: #5865f2;
+  --icon-telegram: #26a5e4;
+  --icon-bluesky: #0085ff;
+  --icon-linkedin: #0a66c2;
+  --icon-github: #24292f;
+  --icon-x: #000000;
+  --icon-email: var(--ink-light);
+}
+
+/* ========================================
+ * BASE STYLES
+ * Default element styles following shadcn-svelte pattern.
+ * ======================================== */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply overflow-x-hidden bg-background font-sans text-foreground;
+  }
+}
+
+/* Override @tailwindcss/typography defaults to use app tokens */
+.prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-links: var(--primary-base);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-quotes: var(--foreground);
+  --tw-prose-counters: var(--foreground);
+  --tw-prose-bullets: var(--foreground);
+  --tw-prose-captions: var(--secondary-foreground);
+}
+
+/* ========================================
+ * CSS GRADIENT UTILITIES
+ * Defined with @utility so Tailwind + ESLint recognize them
+ * ======================================== */
+
+/* Primary gradient (CTAs, brand elements) - angle ~152deg */
+@utility gradient-primary {
+  background: linear-gradient(
+    151.59deg,
+    var(--brand-purple) 46.449%,
+    var(--brand-blue) 100.1%
+  );
+  transition: background 150ms ease-out;
+  &:hover {
+    /* Use gradient with same color at both stops for smooth CSS transition */
+    background: linear-gradient(
+      151.59deg,
+      var(--primary-dark) 46.449%,
+      var(--primary-dark) 100.1%
+    );
+  }
+}
+
+/* Secondary/inverse gradient (light backgrounds) */
+@utility gradient-secondary {
+  background: linear-gradient(
+    153.64deg,
+    var(--gradient-light-purple) 46.449%,
+    var(--gradient-light-blue) 100.1%
+  );
+  transition: background 150ms ease-out;
+  &:hover {
+    background: linear-gradient(153.64deg, #e5e1f7 46.449%, #dbe9fc 100.1%);
+  }
+}
+
+/* Border gradients */
+@utility gradient-border-light {
+  background: linear-gradient(
+    114.81deg,
+    var(--gradient-border-light-purple) 46.449%,
+    var(--gradient-border-light-blue) 100.1%
+  );
+}
+
+@utility gradient-border {
+  background: linear-gradient(
+    114.81deg,
+    var(--gradient-border-purple) 46.449%,
+    var(--gradient-border-blue) 100.1%
+  );
+}
+
+/* Content-aligned fade mask (for full-width elements like marquees) */
+@utility mask-content-fade {
+  --content-max: 1120px;
+  --fade-start: max(0px, calc((100% - var(--content-max)) / 2));
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black var(--fade-start),
+    black calc(100% - var(--fade-start)),
+    transparent
+  );
+}
+
+/* Nav chip gradient (light purple/blue) */
+@utility gradient-chip {
+  background: linear-gradient(
+    150deg,
+    var(--gradient-light-purple) 46%,
+    var(--gradient-light-blue) 100%
+  );
+  transition: background 150ms ease-out;
+  &:hover {
+    background: linear-gradient(150deg, #e5e0f7 46%, #dce8f9 100%);
+  }
+}
+
+/* ========================================
+ * ANIMATIONS
+ * ======================================== */
 @keyframes marquee-scroll {
   from {
     transform: translateX(0);
   }
   to {
     transform: translateX(-50%);
+  }
+}
+
+/* Sheet/Drawer slide animations */
+@keyframes slide-in-from-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-to-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slide-in-from-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-to-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slide-in-from-top {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-out-to-top {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes slide-in-from-bottom {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-out-to-bottom {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+/* Overlay fade animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }

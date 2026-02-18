@@ -1,12 +1,7 @@
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
-import {
-  DefaultApiAxiosParamCreator,
-  DefaultApiFactory,
-} from "src/api";
-import type {
-  DeviceLoginStatus,
-} from "src/shared/types/zod";
+import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
+import type { DeviceLoginStatus } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useLanguageStore } from "src/stores/language";
@@ -26,9 +21,7 @@ import { api } from "./client";
 import { useCommonApi } from "./common";
 
 export function useBackendAuthApi() {
-  const {
-    buildEncodedUcan,
-  } = useCommonApi();
+  const { buildEncodedUcan } = useCommonApi();
   const authStore = useAuthenticationStore();
   const { isAuthInitialized } = storeToRefs(authStore);
   const { loadPostData } = useHomeFeedStore();
@@ -81,8 +74,9 @@ export function useBackendAuthApi() {
   }
 
   async function loadAuthenticatedModules() {
-    await Promise.all([
-      loadUserProfile(),
+    await loadUserProfile();
+
+    void Promise.all([
       loadPostData(),
       loadNotificationData(false),
       loadTopicsData(),
@@ -123,8 +117,12 @@ export function useBackendAuthApi() {
       }
 
       // Extract userId from old and new status for comparison
-      const oldUserId = oldLoginStatus.isKnown ? oldLoginStatus.userId : undefined;
-      const newUserId = newLoginStatus.isKnown ? newLoginStatus.userId : undefined;
+      const oldUserId = oldLoginStatus.isKnown
+        ? oldLoginStatus.userId
+        : undefined;
+      const newUserId = newLoginStatus.isKnown
+        ? newLoginStatus.userId
+        : undefined;
       const userIdChanged = oldUserId !== newUserId;
 
       const authStateChanged =

@@ -14,6 +14,9 @@ importers:
       '@aparajita/capacitor-secure-storage':
         specifier: ^7.1.6
         version: 7.1.6
+      '@capacitor/app':
+        specifier: ^6.0.0
+        version: 6.0.3(@capacitor/core@7.4.4)
       '@dicebear/collection':
         specifier: ^9.2.4
         version: 9.2.4(@dicebear/core@9.2.4)
@@ -29,6 +32,9 @@ importers:
       '@parcnet-js/ticket-spec':
         specifier: ^1.1.9
         version: 1.1.9(@types/snarkjs@0.7.9)(commander@14.0.2)(typescript@5.9.3)
+      '@pcd/gpc':
+        specifier: ^0.4.0
+        version: 0.4.1(@types/snarkjs@0.7.9)(commander@14.0.2)(typescript@5.9.3)
       '@primeuix/themes':
         specifier: ^2.0.2
         version: 2.0.2
@@ -104,6 +110,9 @@ importers:
       linkifyjs:
         specifier: ^4.3.2
         version: 4.3.2
+      localforage:
+        specifier: ^1.10.0
+        version: 1.10.0
       maz-ui:
         specifier: 3.50.1
         version: 3.50.1(libphonenumber-js@1.12.33)(valibot@0.42.1(typescript@5.9.3))(vue-router@4.6.4(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
@@ -162,6 +171,9 @@ importers:
       '@sentry/vite-plugin':
         specifier: ^4.3.0
         version: 4.6.1
+      '@types/localforage':
+        specifier: ^0.0.34
+        version: 0.0.34
       '@types/node':
         specifier: ^25.0.3
         version: 25.0.3
@@ -201,6 +213,9 @@ importers:
       prettier:
         specifier: ^3.4.2
         version: 3.7.4
+      rollup-plugin-visualizer:
+        specifier: ^5.14.0
+        version: 5.14.0(rollup@4.55.1)
       serve:
         specifier: ^14.2.5
         version: 14.2.5
@@ -213,6 +228,9 @@ importers:
       unplugin-vue-router:
         specifier: ^0.19.2
         version: 0.19.2(@vue/compiler-sfc@3.5.26)(vue-router@4.6.4(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
+      vite:
+        specifier: ^7.3.0
+        version: 7.3.0(@types/node@25.0.3)(sass-embedded@1.97.2)(sass@1.97.2)(terser@5.44.1)(yaml@2.8.2)
       vite-plugin-checker:
         specifier: ^0.12.0
         version: 0.12.0(eslint@9.39.2)(optionator@0.9.4)(typescript@5.9.3)(vite@7.3.0(@types/node@25.0.3)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(yaml@2.8.2))(vue-tsc@3.2.1(typescript@5.9.3))
@@ -310,6 +328,11 @@ packages:
     resolution: {integrity: sha512-y8knfV1JXNrd6XZZLZireGT+EBCN0lvOo+HZ/s7L8LkrPBu4nY5UZn0Wxz4yOezItEII9rqYJSHsS5fMJG9gdw==}
     peerDependencies:
       '@capacitor/core': ^7.4.0
+
+  '@capacitor/app@6.0.3':
+    resolution: {integrity: sha512-4gFUCbcVz0N/YYN32OBFerocWXslIv3Nc90gDiRsBkJc0plwK6kIUT6PKa5WtW2kfhteUeCVXQbvArH2fH+0Ug==}
+    peerDependencies:
+      '@capacitor/core': ^6.0.0
 
   '@capacitor/app@7.1.1':
     resolution: {integrity: sha512-H4rmMXlL6GEDs2Yds5JvYqZxz4mdp7R4XdGJ7p+oGV+YapuQ2kW38UabuhdP6qSrKfIeLde6qx+8FEX02krypA==}
@@ -1704,6 +1727,10 @@ packages:
 
   '@types/linkify-it@5.0.0':
     resolution: {integrity: sha512-sVDA58zAw4eWAffKOaQH5/5j3XeayukzDk+ewSsnv3p4yJEZHCCzMDiZM8e0OUrRvmpGZ85jf4yDHkHsgBNr9Q==}
+
+  '@types/localforage@0.0.34':
+    resolution: {integrity: sha512-tJxahnjm9dEI1X+hQSC5f2BSd/coZaqbIl1m3TCl0q9SVuC52XcXfV0XmoCU1+PmjyucuVITwoTnN8OlTbEXXA==}
+    deprecated: This is a stub types definition for localforage (https://github.com/localForage/localForage). localforage provides its own type definitions, so you don't need @types/localforage installed!
 
   '@types/markdown-it@14.1.2':
     resolution: {integrity: sha512-promo4eFwuiW+TfGxhi+0x3czqTYJkG8qB17ZUJiVF10Xm7NLVRSLUsfRTU/6h1e24VvRnXCx+hG7li58lkzog==}
@@ -4937,6 +4964,10 @@ snapshots:
     dependencies:
       '@capacitor/core': 7.4.4
 
+  '@capacitor/app@6.0.3(@capacitor/core@7.4.4)':
+    dependencies:
+      '@capacitor/core': 7.4.4
+
   '@capacitor/app@7.1.1(@capacitor/core@7.4.4)':
     dependencies:
       '@capacitor/core': 7.4.4
@@ -5939,7 +5970,7 @@ snapshots:
 
   '@semaphore-protocol/utils@4.14.0':
     dependencies:
-      ethers: 6.13.4
+      ethers: 6.13.5
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -6316,6 +6347,10 @@ snapshots:
   '@types/json-schema@7.0.15': {}
 
   '@types/linkify-it@5.0.0': {}
+
+  '@types/localforage@0.0.34':
+    dependencies:
+      localforage: 1.10.0
 
   '@types/markdown-it@14.1.2':
     dependencies:

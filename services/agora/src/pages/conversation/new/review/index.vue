@@ -73,6 +73,8 @@
     <NewConversationRouteGuard
       ref="routeGuard"
       :allowed-routes="['/conversation/new/create/', '/welcome/']"
+      :has-unsaved-changes="isDraftModified"
+      :reset-draft="resetDraft"
     />
 
     <PreLoginIntentionDialog
@@ -85,7 +87,20 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import Button from "primevue/button";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+
+import {
+  type ConversationReviewTranslations,
+  conversationReviewTranslations,
+} from "./index.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
+
 import ConversationTitleWithPrivacyLabel from "src/components/features/conversation/ConversationTitleWithPrivacyLabel.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
@@ -93,6 +108,7 @@ import ConversationControlButton from "src/components/newConversation/Conversati
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import SeedOpinionItem from "src/components/newConversation/SeedOpinionItem.vue";
+import { useConversationDraft } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   MAX_LENGTH_OPINION,
@@ -105,18 +121,16 @@ import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useCommonApi } from "src/utils/api/common";
 import { useBackendPostApi } from "src/utils/api/post/post";
-import { type ComponentPublicInstance, nextTick,onMounted, ref } from "vue";
+import { type ComponentPublicInstance, nextTick, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-
-import {
-  type ConversationReviewTranslations,
-  conversationReviewTranslations,
-} from "./index.i18n";
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const router = useRouter();
 
-const { validateForReview } = useNewPostDraftsStore();
+// Use composable for validation and draft management (with syncToStore: true since we're in create flow)
+const { validateForReview, isDraftModified, resetDraft } = useConversationDraft(
+  { syncToStore: true }
+);
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const { createNewPost } = useBackendPostApi();
@@ -365,6 +379,9 @@ async function onSubmit() {
 
       // Set navigation context to indicate user came from conversation creation
       navigationStore.setConversationCreationContext(true);
+
+      // Clear draft before navigation (successful submission)
+      resetDraft();
 
       // Unlock route to prevent "save draft" dialog
       routeGuard.value?.unlockRoute();

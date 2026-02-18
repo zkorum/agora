@@ -1,427 +1,360 @@
-# RFC 0013: Decentralized Deliberation Standard (DDS)
+# Decentralized Deliberation Standard (DDS)
 
-| Metadata       | Value                                       |
-| :------------- | :------------------------------------------ |
-| **RFC ID**     | 0013                                        |
-| **Title**      | DDS: Verifiable Deliberation on AT Protocol |
-| **Status**     | Draft                                       |
-| **Created**    | 2026-01-13                                  |
-| **Supersedes** | RFC-0012, RFC-0005                          |
+| Metadata    | Value                                                                                                                                                                                                           |
+| :---------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Title**   | DDS: Verifiable Deliberation on AT Protocol                                                                                                                                                                     |
+| **Status**  | Draft                                                                                                                                                                                                           |
+| **Created** | 2026-01-13                                                                                                                                                                                                      |
+| **Related** | [Anonymity Addendum](./0013-anonymity-addendum.md), [Implementation Addendum](./0013-implementation-addendum.md), [Background: From ZK-first to AT Protocol](https://whtwnd.com/agoracitizen.network/3meq2b36rw42s) |
 
-## Abstract
+## 1. Design Philosophy
 
-This RFC defines the **Decentralized Deliberation Standard (DDS)**, a vendor-neutral protocol for secure, censorship-resistant and highly interoperable public consultation.
+The **Decentralized Deliberation Standard (DDS)** is a vendor-neutral protocol for secure, censorship-resistant public deliberation. The protocol leverages **AT Protocol** for transport, **Arweave/Filecoin/Logos Storage** for archival, and **Ethereum** for verification.
 
-DDS leverages the **AT Protocol** for transport, standardizing on the **Personal Data Server (PDS)** as the fundamental unit of participation. It unifies all users (Guest, Email, Wallet, ZKPass) under a standard PDS model using OAuth for authentication and PDS-managed signing for interaction.
+DDS is organized around **four design tensions**:
 
-To ensure sovereignty for users on managed infrastructure, DDS introduces the **Encrypted Key Vault**: a cryptographic pattern that guarantees users can retrieve their `did:plc` Rotation Keys and "walk away" to a self-hosted provider at any time, effectively passing the "Walkaway Test" without burdening the user with client-side signing complexity (wallet management) or self-hosting the PDS.
+| Tension                                | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Ownership vs Convenience**           | Sovereignty requires users to control their cryptographic keys — but requiring hardware wallets or self-hosted infrastructure creates friction that prevents adoption. We need real ownership with a familiar login experience.                                                                                                                                                                                                                                                                                                                                |
+| **Discoverability vs Durability**      | Pure P2P protocols (Logos Messaging (formerly Waku), Nostr) provide censorship-resistant storage and messaging, but struggle at scale with: real-time performance, message ordering and conflict resolution, complex queries and search, moderation, and mobile/resource-constrained devices. Federated protocols solve these but introduce provider dependency. We need the UX of federation with the durability guarantees of P2P.                                                                                                                           |
+| **Provable vs Economical Computation** | Running analysis — clustering (PCA, Reddwarf), LLM sensemaking, or other methods — requires significant data access, compute, and infrastructure. Asking every user to replicate this pipeline is impractical — but trusting a single provider's results without verification undermines the system.                                                                                                                                                                                                                                                                                                  |
+| **Autonomy vs Interoperability**       | Self-hosted systems give full autonomy but are siloed — you can define any data model, but you can't leverage other teams' distributed components. Standardized schemas over a shared transport enable separation of concerns: distinct building blocks (Plan, Collect, Analyze) built by different teams that compose permissionlessly. This solves hard problems of data communication at scale that pure self-hosted models cannot. Conversation privacy (restricting who can access a deliberation) is a practical need — e.g., frictionless guest conversations open only to invited participants; participant anonymity (hiding who said what) is a separate, orthogonal concern. |
 
-## 1. Core Philosophy
+When in doubt, we optimize for **usability without sacrificing walkaway capability** — the guarantee that if all providers vanish, users retain sovereign control of their cryptographic identity and can recover their data from decentralized archives.
 
-1. **Identity is Sovereign**: Every user has a portable `did:plc`. The cryptographic root of control (Rotation Key) belongs to the user, not the provider.
-2. **Infrastructure is Commoditized**: The PDS is a utility. If a provider acts maliciously, the user can rotate their DID to a new provider without losing their social graph or history.
-3. **Math is Verifiable**: We do not trust the server that provide the algorithmic analysis. We trust the **Prover**. Analysis Agents publish results with cryptographic proofs that can eventually be challenged on-chain.
-4. **Censorship-resistance**: Users can retrieve their identity and data even if infrastructure disappears. DDS passes Vitalik Buterin's "Walkaway Test": if all providers vanish, users retain sovereign control of their cryptographic identity and can recover their data from decentralized archives.
-5. **Interoperability is Standard**: Semantic schemas (Lexicons) enable ecosystem-wide integration without gatekeepers. Multiple analysis tools, moderation systems, and client applications can work with the same data using vendor-neutral formats.
-6. **Simplicity**: Reusing existing battle-proven infrastructure and protocols as much as possible.
-7. **Familiar UX**: Highly-available, high-performance application, with support for in-app notifications, fast search, web2-friendly login etc.
-8. **Web3-native**: Web3 native users can cryptographically bind their Wallet to their PDS to interact directly the protocol .
+> **Two distinct privacy concerns**: DDS distinguishes between **participant anonymity** (hiding _who_ said what — addressed by per-conversation DIDs, ZK proofs, and the [Anonymity Addendum](./0013-anonymity-addendum.md)) and **conversation privacy** (restricting _who_ can see and participate — addressed by access control and encryption). These are orthogonal: a public conversation can have anonymous participants, and a private conversation can have identified participants. Both are valid requirements. DDS prioritizes public deliberation but must support private/restricted conversations for practical use cases (event-only discussions, private group deliberations). See §6 for conversation privacy and the [Anonymity Addendum](./0013-anonymity-addendum.md) for participant anonymity.
 
-## 2. Architecture: The Unified PDS Model
+## 2. Architecture Overview
 
-DDS standardizes on the **Personal Data Server (PDS)** for all participants.
+```mermaid
+flowchart TB
+    subgraph User["User Layer"]
+        Discover[Discover via AppView]
+        Participate[Participate via PDS]
+        Verify[Verify on-chain]
+    end
 
-### 2.1 The Hosting Tiers
+    subgraph Transport["Transport Layer (hot path) — AT Protocol"]
+        PDS["PDS<br/>did:plc • Encrypted Vault • OAuth"]
+        Firehose["Firehose<br/>Permissionless indexing"]
+        AppView["AppViews<br/>SQL search • SSE notifications"]
+        PDS --> Firehose --> AppView
+    end
 
-To balance **Ease of Access** with **Sovereignty**, we support a spectrum of account types. Note that a single Managed PDS instance is designed to be multi-tenant, capable of hosting thousands of Guest accounts efficiently (similar to standard Bluesky PDS architecture).
+    subgraph Archive["Archive Layer (cold path) — Arweave/Filecoin/Logos Storage"]
+        ArchiveAgents["Archive Agents<br/>Pin org.dds.* records"]
+    end
 
-1. **Self-Hosted (Tier 2)**: The user brings their own PDS (e.g., standard Bluesky account or self-hosted one). They authenticate directly.
-2. **Managed (Tier 1)**: The user authenticates via a Web2/Web3 method (Email, Phone, Wallet, ZKPass), and the application **auto-provisions** a PDS account for them.
-3. **Anonymous (Tier 0)**: A "Guest" user who has not yet verified an identifier. They are provisioned a lightweight PDS account authenticated by a local `did:key` (acting as a session token).
+    subgraph Verification["Verification Layer — Ethereum"]
+        Truth["Verification<br/>On-chain proofs • Dispute resolution"]
+    end
 
-### 2.2 Standard Authentication
+    subgraph Analyzer["Analyzer Agents"]
+        Compute["Read Firehose → Run analysis → Publish results"]
+    end
 
-All tiers use standard **AT Protocol OAuth**.
+    User --> Transport
+    Firehose -->|archival| Archive
+    Firehose -->|analysis| Analyzer
+    Analyzer -->|commit hash| Verification
+    Archive -->|recovery| PDS
+```
 
-- **Signing:** The PDS manages the **Signing Key** (`app.bsky.actor.defs`) and signs posts/votes on behalf of the user.
-- **Benefit:** This simplifies the client architecture (no local signing state for posts) and ensures compatibility with standard AT Proto clients.
-- **Trade-off:** While full OAuth may be considered "bloated" for ephemeral Guest users (where simple key-based proving might suffice), we retain it to ensure a **unified authentication path** for all user tiers, simplifying the overall codebase.
+## 3. Ownership vs Convenience
 
-## 3. The Sovereign Vault (Identity Ownership)
+> **The Walkaway Test**: If all providers vanish, users retain sovereign control of their cryptographic identity and can recover their data from decentralized archives. DDS is designed to pass this test — users control their `did:plc` Rotation Keys (not just Signing Keys), data is archived to censorship-resistant storage, and recovery is possible from any device with the right credentials.
+>
+> **Why AT Protocol here**: `did:plc` provides portable identity with separate Signing Keys (convenience — PDS manages posting) and Rotation Keys (ownership — user controls migration). Nostr ties identity to a single keypair with no recovery or migration. Logos Messaging has no identity layer. This separation lets us build the Encrypted Key Vault: sovereignty without requiring users to manage keys directly.
 
-While the PDS manages _Posting_ (Signing Keys), the User must retain control over _Identity_ (Rotation Keys). We achieve this via the **Encrypted Key Vault**.
+### 3.1 Flexible Authentication
 
-### 3.1 The Risk
+DDS defines a shared authentication interface, not a fixed set of identity methods. Any app can accept any credential type — the protocol standardizes how credentials are represented and shared across tools, not which credentials are valid.
 
-In a Managed model, if the PDS disappears or turns malicious, the user could be locked out. They need the **Recovery Key** (Rotation Key) to move their DID.
+The spectrum ranges from simple auth to cryptographic proofs:
 
-### 3.2 Type A: The Deterministic Vault (Wallet Login)
+- **Simple authentication** — Email, phone, social login. A way to connect to the PDS. No cryptographic binding to a real-world attribute.
+- **Cryptographic proofs** — ZK passport, ZKPass, Zupass event tickets, W3C Verifiable Credentials, eIDAS eWallets, wallet signatures. Two-way binding with verifiable properties (e.g., "is a citizen," "holds an event ticket," "is over 18").
 
-For users logging in with an Ethereum Wallet, we implement the **"Sign-to-Derive"** pattern (pioneered by Fileverse.io):
+Apps choose which credential types to accept for each deliberation. Users range from self-hosted (own PDS) to lightweight guests (ephemeral `did:key`). What matters is that every participant has a DID and can attach credentials from any accepted method.
 
-1. **Generation**: The client generates a random **Recovery Key** (`did:plc` rotation key).
-2. **Derivation**: The user signs a deterministic, domain-bound message.
-   - **Algorithm**: The signature is used as the entropy seed for **HKDF-SHA256** to derive a symmetric **AES-GCM Key**.
-   - **Reference**: This mirrors the architecture of `@fileverse/crypto` (specifically [`src/ecies/core.ts`](https://github.com/fileverse/fileverse-cryptography/blob/main/src/ecies/core.ts)), utilizing standard libraries (`@noble/ciphers`, `@noble/hashes`) for client-side ECIES encryption rather than wallet-specific `eth_decrypt` (which has poor mobile support).
-3. **Storage**: The Recovery Key is encrypted with this AES Key. The ciphertext is stored in the Repository (`org.dds.key.wrapped`).
-4. **Recovery**: User can recover their identity from _any_ device by connecting their wallet and re-signing the challenge.
+> **On guest identity**: The spectrum from self-hosted PDS to lightweight guest raises an open design question. Provisioning a full `did:plc` (with PLC directory registration, PDS account, and repository) is appropriate for committed users but heavyweight for ephemeral participants — a conference attendee who votes once via a Zupass ticket, or with no verification at all, or data imported from an external tool. Whether guests should use managed `did:plc` (full AT Protocol compatibility, simpler moderation, but infrastructure overhead) or `did:key` "soft accounts" within the data (lightweight, supports per-conversation anonymity, but second-class in the ecosystem) is an active design question. Both approaches require a merge/upgrade mechanism when a guest becomes a permanent user. This is a problem worth solving at the AT Protocol level — not just for DDS. See [Implementation Addendum §5](./0013-implementation-addendum.md#5-guest-identity-and-account-upgrade).
 
-### 3.3 Type B: The Device Vault (Email/Phone/Guest)
+### 3.2 Shared Organizations
 
-For users without a global key (Wallet):
+Organizations — teams, DAOs, communities, coalitions — are defined at the protocol level via base lexicons (`org.dds.org.*`). Membership, roles, and permissions are readable by any tool on the Firehose. An org created in one app is visible to every other app — no bilateral integration needed.
 
-1. **Mechanism**: We use a **Device Graph**. Each device has a local `did:key` (Exchange Key used for encryption)
-2. **The Master Secret**: A random Symmetric Key ($K_{account}$) that will encrypt the user's PDS's Recovery Key.
-3. **The Lockbox**: $K_{account}$ is encrypted for each device's Exchange Key and stored in the Repository.
-4. **Device Sync (Detailed)**:
-   - **Device B (New)**: Generates a local `did:key` and displays its Public Key via QR Code.
-   - **Device A (Existing)**: Scans the QR Code, validates the fingerprint (MITM protection), and encrypts the Master Secret ($K_{account}$) specifically for Device B's Public Key.
-   - **Transport**: Device A uploads this **"Lockbox"** to the PDS. Device B downloads it, decrypts $K_{account}$, and can now access the global **Encrypted Vault Blob**.
-5. **Security**: **QR Code Verification** is MANDATORY for device linking to prevent Server MITM attacks.
-   - _Note_: If a PDS is known to be malicious, the user should not attempt to sync new devices. Instead, the existing device should decrypt the `Recovery Key` and execute a **Migration (Walkaway)** to a new provider immediately.
+This enables cross-tool workflows: a community platform manages membership, a deliberation tool checks eligibility, a voting app enforces access rights — all reading the same org records.
 
-### 3.4 Core Concepts & Definitions
+### 3.3 The Encrypted Key Vault
 
-| Feature       | **Lockbox (Device Sync)**                                                                   | **Migration (Walkaway)**                                                                                              |
-| :------------ | :------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------- |
-| **Purpose**   | To **add a new device** to your existing account.                                           | To **escape a malicious/failed PDS** and move your identity elsewhere.                                                |
-| **Mechanism** | Device A encrypts the account secret ($K_{account}$) for Device B and stores it on the PDS. | You take your **Rotation Key** (decrypted from the vault) and update your `did:plc` document to point to a _new_ PDS. |
-| **Trust**     | **Requires PDS cooperation.** The PDS must accept and serve the "Lockbox" file.             | **Sovereign.** Does _not_ require PDS cooperation.                                                                    |
+While the PDS manages _posting_ (Signing Keys), the user must retain control over _identity_ (Rotation Keys). If the PDS disappears or turns malicious, the user could be locked out without their Recovery Key.
 
-- **Encrypted Vault Blob** (`org.dds.key.wrapped`): The user's Identity Root (Rotation Key), encrypted at rest by the Master Secret ($K_{account}$). It is the "Sovereign Backup" and is **identical** across all devices.
-- **Lockbox**: A temporary delivery container. It contains the Master Secret ($K_{account}$) encrypted specifically for a _target device's_ public key.
+The **Encrypted Key Vault** solves this: the user's Rotation Key is encrypted and stored in their Repository. Since Repositories are archived to decentralized storage (Section 4.2), the vault is recoverable even if the PDS vanishes. Two vault designs are proposed — one wallet-derived, one device-based — detailed in the [Implementation Addendum](./0013-implementation-addendum.md).
 
-## 4. Modular Inputs (Lexicons)
+## 4. Discoverability vs Durability
 
-DDS supports any deliberation type via pluggable modules.
+### 4.1 The Hybrid Architecture
 
-### 4.1 `org.dds.module.polis` (Agora)
+We considered three protocol families for the transport layer:
+
+- **AT Protocol** (Bluesky): Federated, server-based. PDSes host data, Firehose enables permissionless indexing, Lexicons provide semantic schemas.
+- **Logos Messaging** (Status, formerly Waku): P2P gossip messaging. Censorship-resistant relay network, strong privacy properties via P2P gossip, ephemeral by design, no guaranteed ordering.
+- **Nostr**: Relay-based pubsub. Simple keypair identity, privacy-friendly via Tor-compatible relay architecture, informal event-kind taxonomy, no formal schema system, no identity migration.
+
+We respect Logos Messaging and Nostr — their work on censorship-resistant infrastructure is foundational. However, for **public deliberation at scale**, pure P2P and relay-based protocols face fundamental challenges:
+
+| Challenge                   | Nostr / Logos Messaging                                                                                                                             | AT Protocol                                                                                                                                                                                                                                                |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Data availability**       | Nostr: relay-dependent, no completeness guarantee. Logos: messages expire, limited retention                                                        | Always-on PDS servers, persistent repositories                                                                                                                                                                                                             |
+| **Performance**             | Nostr: fast for simple relay queries. Logos: P2P overhead, impractical on mobile                                                                    | Standard HTTPS, millisecond response                                                                                                                                                                                                                       |
+| **Message ordering**        | Nostr: last-write-wins with known race conditions. Logos: no guaranteed ordering                                                                    | Server-side total ordering within each repository                                                                                                                                                                                                          |
+| **Conflict resolution**     | Nostr: replaceable events but no merge semantics — concurrent edits silently overwrite. Logos: none                                                 | Server-authoritative within each PDS                                                                                                                                                                                                                       |
+| **Search & discovery**      | Nostr: search exists via specialized relays, but fragmented — no complete index. Logos: no discovery                                                | Firehose enables permissionless indexing, SQL-backed AppViews                                                                                                                                                                                              |
+| **Complex queries**         | Nostr: third-party compute services exist but no standardized query API. Logos: basic message filtering only                                        | AppViews provide precomputed query results with standardized APIs                                                                                                                                                                                          |
+| **Schema**                  | Nostr: event kinds are functional but convention-based — no machine-readable validation. Logos: application-defined content types, no shared schema | Lexicons provide formal, machine-enforceable, versionable schemas                                                                                                                                                                                          |
+| **Moderation**              | Nostr: labeling and reporting exist but are advisory-only — no enforcement infrastructure. Logos: rate-limiting for spam, no content moderation     | Labelers with standardized APIs, stackable moderation, speech/reach separation                                                                                                                                                                             |
+| **Mobile**                  | Nostr: lightweight clients possible. Logos: too resource-heavy                                                                                      | Standard web clients, thin mobile apps                                                                                                                                                                                                                     |
+| **Composable architecture** | Nostr: third-party services exist but each sees a partial network view. Logos: limited ecosystem                                                    | Pluggable and composable: base components (AppViews, Labelers, Feed Generators) connect to a complete Firehose, and new components can be built on top of them (e.g., an Analyzer built on the Feed Generator pattern) — any team builds, any user chooses |
+
+These protocols solve real problems — Nostr's ecosystem of relays and third-party services is a genuine innovation, and Logos Messaging's cryptographic spam protection is technically impressive. But for deliberation at scale, the pattern is consistent: AT Protocol provides each capability as protocol-level infrastructure with standardized APIs and a complete data stream, while alternatives solve them through emergent, application-level mechanisms where each service sees a partial view and each client integrates differently. Building a multi-app deliberation ecosystem on these patterns would require reinventing much of what AT Protocol already provides.
+
+Where Nostr and Logos Messaging genuinely excel is **anonymity-first applications**. Nostr's client-relay architecture enables routing through Tor and mixnets. Logos Messaging's P2P gossip means no server ever knows a user's identity. For applications requiring deep anonymity — ZK-anonymous voting, whistleblower platforms, censorship-resistant communication under authoritarian regimes — these protocols are the right foundation. Privacy _can_ be implemented on AT Protocol, but the PDS pattern is an anti-pattern for strong ZK-anonymity: the server inherently knows the user's identity, so anonymity requires workarounds rather than flowing naturally from the architecture. On Nostr and Logos Messaging, anonymity feels native. DDS does not optimize for this. Our earlier work on [Racine](https://github.com/zkorum/racine) (a ZK-first meta-protocol compatible with Logos Messaging (then called Waku), Nostr, and AT Protocol) taught us that while ZK anonymous identity is technically superior for privacy, it doesn't match how users actually adopt products — they want familiar identifiers (email, phone, social login), not cryptographic key management. DDS is designed for **public** deliberation, where transparency and verifiability are the point. Participant anonymity where needed is handled at the identity layer (ZK proofs for eligibility without revealing identity), not at the transport layer.
+
+A related trade-off is **ephemeral identity**. On Nostr, a guest generates a keypair and participates — no server infrastructure required. On Logos Messaging, messages are P2P with no identity overhead. However, both protocols use secp256k1, which is not in the Web Crypto API — for guest participation, this means private keys are unavoidably exposed to JavaScript, since non-exportable key storage is only available for Web Crypto-supported curves (P-256, Ed25519). On AT Protocol, even a managed guest account involves PLC directory registration and PDS provisioning. For ticket-gated deliberations where participants need per-conversation unlinkability (ZK nullifiers ensure one-person-one-vote per context), a persistent `did:plc` is fundamentally the wrong identifier — it's linkable across conversations by design. This is the most significant practical trade-off of building on AT Protocol: the same PDS infrastructure that provides moderation, schema enforcement, and a complete Firehose also makes throwaway identities more expensive. DDS needs a "Guest Mode" that works within AT Protocol's architecture while supporting both persistent pseudonymous accounts and per-conversation ephemeral identities. See [Implementation Addendum §5](./0013-implementation-addendum.md#5-guest-identity-and-account-upgrade) for the design exploration.
+
+**Our Hybrid**: AT Protocol for the hot path (discovery, search, real-time interaction), Arweave/Filecoin/Logos Storage for the cold path (archival, walkaway recovery), Ethereum for the commitment layer (result hashes for tamper-evidence, and future verification proofs for computation correctness). Each layer uses the protocol best suited to its role — no single system needs to do everything.
+
+### 4.2 Network Archival
+
+- **Role**: Archive Agents listen to the Firehose for `org.dds.*` commits.
+- **Action**: Pin Repository updates to Arweave/Filecoin/Logos Storage.
+- **Keys in Repo**: Since `org.dds.key.wrapped` is in the Repository, it's automatically archived.
+- **Result**: Even if Agora vanishes, User's Identity (PLC Directory) and Vault (decentralized storage) are recoverable.
+
+### 4.3 Local Resilience
+
+- **Cache**: Client mirrors the Encrypted Vault Blob to `IndexedDB`.
+- **Export**: Users can perform "On-Demand Export" (decrypt in memory) to download CAR file + unlocked keys.
+
+## 5. Provable vs Economical Computation
+
+> **Draft**: The Analyzer Protocol and trust levels below are conceptual. The on-chain verification layer requires significant research into feasibility, gas costs, and proof system selection. This tension is protocol-agnostic — verifiable computation works regardless of the underlying transport layer.
+
+### 5.1 The Cost Problem
+
+Running analysis — clustering (PCA, Reddwarf), LLM sensemaking, or other methods — requires:
+
+- **Data access**: Reading all participant input from the Firehose for a given consultation
+- **Compute**: Running analysis algorithms (clustering, summarization, etc.)
+- **Infrastructure**: Maintaining servers to process conversations continuously
+
+For a single user to verify results independently, they'd need to replicate this entire pipeline. This is impractical at scale — most users lack both the infrastructure and the expertise.
+
+### 5.2 The Analyzer Protocol
+
+DDS solves this by separating **computation** from **verification**:
+
+**Agent Protocol**:
+
+1. **Input**: Agent defines a "Scope" (Conversation ID + Time Window).
+2. **Process**: Agent reads all Repositories from the Firehose matching the Scope.
+3. **Compute**: Runs analysis (e.g., Reddwarf clustering, LLM summarization).
+4. **Output**: Publishes result (e.g., `org.dds.result.pca`, `org.dds.result.summary`).
+
+Because inputs (data on the Firehose) and algorithm (open-source) are public, **anyone can re-run the computation to verify an Analyzer's results**. This makes the system auditable without requiring every user to run their own analyzer.
+
+### 5.3 Trust Levels
+
+| Level          | Mechanism                                                                           | Cost                     | Guarantee                                                                                                                                  |
+| -------------- | ----------------------------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Reputation** | Analyzer publishes results to Firehose                                               | Free for users           | Trust the Analyzer's reputation                                                                                                            |
+| **Spot check** | Any party re-runs computation independently                                         | Moderate (compute costs) | Deterministic verification                                                                                                                 |
+| **Trustless**  | Analyzer submits proof on-chain; clients verify cheaply (e.g., ZK proof verification) | Gas fees               | Cryptographic proof — no trust required (see [Implementation Addendum §4.1](./0013-implementation-addendum.md#41-fraud-proving-mechanism)) |
+
+### 5.4 Result Commitment
+
+> **Draft**: The result commitment protocol below is a first proposal. Smart contract design, chain selection (L1 vs L2), and gas optimization need further specification.
+
+The trust levels above address **computation correctness** — is the Analyzer's output honest? A separate concern is **result permanence** — can an Analyzer silently modify or retract published results after the fact?
+
+DDS addresses this with **on-chain result commitment**: when a consultation finishes, a cryptographic hash of the result is committed to Ethereum (or an L2). This makes results tamper-evident and permanently anchored, independent of any single operator. The commitment can be made by the Analyzer that computed the result, the Organizer that created the consultation, or any other party — the protocol defines the commitment format, not who commits.
+
+**What gets committed:**
+
+| Field            | Content                                                |
+| ---------------- | ------------------------------------------------------ |
+| Conversation URI | AT Protocol reference to the deliberation process      |
+| Scope            | Time window of the analysis                            |
+| Input hash       | Merkle root of all input records in scope              |
+| Algorithm        | Identifier + version (e.g., `reddwarf@2.1.0`, `summarizer@1.0.0`) |
+| Output hash      | Hash of the published result record                    |
+| Analyzer DID     | Identity of the computing agent                        |
+
+**Verification**: Anyone downloads the inputs from the Firehose (public), re-runs the algorithm (open-source), and compares the result hash against the on-chain commitment. No ZK proofs required — just deterministic re-execution.
+
+**Relationship to trust levels:**
+- Result commitment **enhances Spot Check**: the on-chain hash makes tampering detectable without requiring re-computation upfront — you only re-run if the hash doesn't match.
+- The **Trustless** level (ZK proof of computation correctness without re-execution) remains future work.
+
+**Analogy**: This is inspired by [Vocdoni](https://vocdoni.io/)'s approach to notarizing election results on Ethereum. In their latest architecture (DAVINCI), raw votes are stored in Ethereum data blobs or IPFS, sequencers process votes off-chain and submit ZK proofs on-chain, and Ethereum smart contracts serve as the coordination layer — no custom blockchain needed. DDS follows a similar pattern: AT Protocol is the data layer, Ethereum is the commitment layer, and verification is by deterministic re-execution on public data.
+
+More broadly, DDS is designed to complement voting protocols — DAVINCI being one example. DDS consultation results published as AT Protocol records could inform ballot design, and voting protocols could publish election metadata and results back into the shared data lake via AT Protocol lexicons — each system keeping its own infrastructure while sharing semantic data.
+
+See [Implementation Addendum §6](./0013-implementation-addendum.md#6-result-commitment-protocol) for protocol details.
+
+## 6. Autonomy vs Interoperability
+
+> **Why AT Protocol here**: Nostr's event kinds and Logos Messaging's content types enable interoperability, but through convention rather than enforceable schemas. AT Protocol's Lexicons are machine-readable and PDS-enforced — data that doesn't match the schema is rejected, not silently malformed. Combined with the Firehose, this means any team can read any other team's records with confidence in data shape, enabling true separation of concerns across the Plan → Collect → Analyze lifecycle.
+>
+> **Public by default**: DDS is designed for **public** deliberation. All `org.dds.*` records are published to the Firehose in plaintext. This is by design — transparency, verifiability, and interoperability require open data. The goal is not just interoperability between Polis-like tools, but across **all** governance and collective intelligence solutions — voting apps, DAO governance, participatory budgeting, and tools that don't exist yet. Open data on a shared transport enables an ecosystem that siloed, self-hosted systems cannot. Moreover, AT Protocol's existing social graph — with public figures maintaining official Bluesky accounts — means that their public posts can be imported as deliberation inputs. "How do public personalities think about X?" becomes a query over AT Protocol data, giving deliberation platforms access to a live stream of attributed public discourse.
+>
+> **On self-hosting**: On AT Protocol, self-hosting means running the full decentralized stack (PDS, Relay, AppView) — not just a data server. All DDS components are open source and every user's data lives in their PDS, so self-hosting is always possible. But siloed instances don't interoperate: the real value comes from sharing semantically structured data across a common network — not just between Polis-like tools, but across all governance and collective intelligence solutions, including tools that don't exist yet. Open data means it's not just organizations running infrastructure for their own benefit — the entire community can run whichever components make sense for them, while the shared data lake stays alive. DDS preserves walkaway capability (anyone _can_ self-host everything), but the protocol optimizes for interoperability, not isolation.
+>
+> **On conversation privacy** (distinct from participant anonymity): Conversation privacy restricts _who_ can participate in a deliberation. This is orthogonal to participant anonymity (hiding _who_ said what). A private conversation can have identified participants; a public conversation can have anonymous participants. Organizers often need frictionless conversations (no login required) restricted to a select group of invited people. Two modes: **participation-gated** (the common case — conversation is publicly viewable, but only invited people can submit, via a secret embedded in the share link) and **restricted** (rare — conversation can't even be viewed by outsiders, via encryption). For restricted conversations, AT Protocol currently only handles public data; long-term, end-to-end encryption (Signal model) is the priority, and research in this direction is already underway in the AT Protocol community. That said, this use case is marginal — most deliberation is public. See [Implementation Addendum §7](./0013-implementation-addendum.md#7-conversation-privacy) for design exploration.
+>
+> **On participant anonymity**: Participant anonymity — hiding _who_ said what — is often important even outside hard-anonymity scenarios. Many participants want to share opinions without them being permanently tied to their identity. DDS supports this at multiple levels: pseudonymity (one DID, not linked to real name) as the default, per-conversation unlinkability (ephemeral `did:key`) for credential-gated or sensitive contexts, and hard anonymity (Tor, mixnets) as future work for high-threat users. See [Anonymity Addendum](./0013-anonymity-addendum.md) for detailed analysis.
+
+### 6.1 The Deliberation Lifecycle
+
+DDS organizes deliberation as an iterative cycle of three phases, each potentially handled by different applications:
+
+This lifecycle is intentionally general. It serves formal governance (a city running participatory budgeting, a DAO voting on treasury allocation), community self-organization (an open-source project shaping its roadmap, a co-op making collective decisions), and bottom-up movements that channel protest energy into concrete proposals—going from "revolution" to "constitution." The process can be a single open discussion or a multi-step pipeline with eligibility rules, multiple rounds, and different modules.
+
+| Phase       | Purpose                                                                                                                    | Example Apps                                                 |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| **Plan**    | Design the consultation: define rounds, modules, eligibility, transition rules, how analysis informs the next round         | Community platforms, grassroots organizers, governance tools |
+| **Collect** | Gather participant input (opinions, votes, comments) and import external data (social media, other tools)                  | Deliberation platforms, data importers                       |
+| **Analyze** | Process data and derive insights: clustering, summaries, consensus                                                         | Analyzer Agents, analysis dashboards                         |
+
+The lifecycle is iterative: Plan defines a sequence of Collect → Analyze rounds. Analysis from one round can trigger the next — new questions, refined topics, deeper dives. The relationship between Collect and Analyze is many-to-many: multiple competing Analyzers can process the same collected data (different algorithms, different perspectives), and multiple Collect streams can feed a single analysis. All are loosely coupled via the Firehose.
+
+What happens with the final results — a binding vote via an external voting protocol, a DAO proposal, a published report — is outside DDS scope. DDS produces structured, verifiable outputs; execution systems consume them via the Firehose.
+
+Applications specialize in one or more phases, but **interoperate via shared lexicons**. Any organizing app—a community platform, a DAO, a grassroots coalition—can orchestrate a deliberation: plan with its own UI, collect via a deliberation platform, analyze via an Analyzer. External systems (voting protocols, DAOs, governance tools) can then consume the results.
+
+The following example shows a two-round consultation — Polis-style clustering followed by a survey — with an external consumer picking up the results:
+
+```mermaid
+sequenceDiagram
+    participant Org as Organizer
+    participant Delib as Deliberation Platform
+    participant Analyzer as Analyzer Agent
+    participant Ext as External Consumer
+
+    Note over Org: PLAN
+    Org->>Delib: Create consultation<br/>(org.dds.process)
+
+    rect rgb(240, 240, 255)
+    Note over Delib,Analyzer: ROUND 1 (Collect → Analyze)
+    Delib->>Delib: Gather opinions<br/>(org.dds.module.polis.opinion)
+    Delib->>Delib: Record reactions<br/>(org.dds.module.polis.vote)
+    Analyzer->>Delib: Read via Firehose
+    Analyzer->>Analyzer: Run clustering
+    Analyzer->>Analyzer: Publish result<br/>(org.dds.result.pca)
+    end
+
+    rect rgb(240, 255, 240)
+    Note over Delib,Analyzer: ROUND 2 (Collect → Analyze)
+    Delib->>Delib: Survey on cluster topics<br/>(org.dds.module.survey)
+    Analyzer->>Analyzer: Summarize responses<br/>(org.dds.result.summary)
+    end
+
+    Note over Ext: EXTERNAL CONSUMER
+    Ext->>Analyzer: Read results via Firehose
+    Ext->>Ext: Create ballot from consensus<br/>(external voting protocol)
+```
+
+### 6.2 Layered Lexicons
+
+DDS uses a layered lexicon design enabling permissionless interoperability:
+
+```
+┌────────────────────────────────────────────────────────┐
+│                   PRODUCT LEXICONS                      │
+│  (Domain-specific, owned by each app)                  │
+│                                                        │
+│  org.dds.module.polis  - Polis-style (opinions, votes) │
+│  org.dds.module.sense  - LLM sensemaking               │
+│  org.dds.module.survey - Surveys, questionnaires       │
+│  org.dds.module.vote   - Voting (token, quadratic)     │
+│  org.dds.result.pca    - Clustering analysis           │
+│  org.dds.result.*      - Other analysis outputs        │
+└────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌────────────────────────────────────────────────────────┐
+│                    BASE LEXICONS                        │
+│  (Shared primitives, used by all apps)                 │
+│                                                        │
+│  org.dds.identity.*   - DID profiles, verification     │
+│  org.dds.auth.*       - Permissions, capabilities      │
+│  org.dds.org.*        - Organizations, DAOs, groups    │
+│  org.dds.ref.*        - Cross-app references           │
+└────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌────────────────────────────────────────────────────────┐
+│                  AT PROTOCOL BASE                       │
+│  com.atproto.*, app.bsky.*                             │
+└────────────────────────────────────────────────────────┘
+```
+
+**Base Lexicons** (shared by all apps):
+
+- `org.dds.identity.*` — DID profiles, verification status
+- `org.dds.auth.*` — Capabilities, permissions, delegation
+- `org.dds.org.*` — Organizations, DAOs, membership
+- `org.dds.ref.*` — Cross-app references (point to records in other namespaces)
+
+**Product Lexicons** (owned by each app):
+
+- `org.dds.module.polis` — Polis-style deliberation (opinions, agree/disagree votes)
+- `org.dds.module.sense` — LLM-based sensemaking (Talk to the City, Jigsaw Sensemaker)
+- `org.dds.module.survey` — Surveys, questionnaires, structured data collection
+- `org.dds.module.vote` — Generic voting (token-weighted, quadratic, ranked-choice, etc.)
+- `org.dds.result.pca` — Clustering analysis outputs
+- `org.dds.result.summary` — LLM-generated summaries, sensemaking outputs
+
+### 6.3 Modular Inputs
+
+DDS supports any consultation type via pluggable modules. Each module defines its own record types:
+
+**`org.dds.module.polis` (Agora)**:
 
 - **Opinion**: `{ text: string }`
 - **Vote**: `{ targetCid: string, value: -1|0|1 }`
 
-### 4.2 other lexicons specific to different product features related to the deliberation process
-
-TODO
-
-## 5. Verifiable Analysis (The Prover)
-
-### 5.1 The Agent Protocol
-
-1. **Input**: Agent defines a "Scope" (Conversation ID + Time Window).
-2. **Process**: Agent reads all Repositories from the Firehose matching the Scope.
-3. **Compute**: Runs PCA/Clustering (e.g., Reddwarf).
-4. **Output**: Publishes `org.dds.result.pca`.
-
-### 5.2 The "Hard Trust" Upgrade
-
-The Agent acts as an Oracle, submitting `Hash(Result)` to a Smart Contract for fraud proving.
-
-> **OPEN ISSUE**: "Fraud Proving" in the traditional sense (on-chain re-execution) is likely infeasible for heavy clustering algorithms (PCA) on standard EVM chains. This mechanism requires further definition, such as using **Zero-Knowledge Machine Learning (ZK-ML)** proofs or an **Optimistic Dispute Game** where a committee of human arbiters can run the code off-chain to resolve disputes.
-
-## 6. Decentralized Availability Strategy
-
-To pass the "Walkaway Test" when the PDS is down:
-
-### 6.1 Network Level: Targeted Archival
-
-- **Role**: Archive Agents listen to the Firehose for `org.dds.*` commits.
-- **Action**: Pin the Repository updates to IPFS/Arweave.
-- **Keys in Repo**: Since the `org.dds.key.wrapped` (Vault) is stored in the Repository, it is automatically archived.
-- **Result**: Even if Agora vanishes, the User's Identity (PLC Directory) and Vault (IPFS) are recoverable.
-
-> **RISK (Data Availability)**: A malicious PDS could accept the User's "Vault" commit and report success, but **refuse to publish it to the Firehose**. In this scenario, the Archive Agents would never see the data. If the PDS subsequently deletes the account, the user is lost.
-> _Mitigation Discussion_: Clients may need to poll independent Archive Agents to confirm their Vault has been indexed before considering the setup "Safe."
-
-### 6.2 Local Resilience
-
-- **Cache**: The Client mirrors the **Encrypted Vault Blob** to `IndexedDB`.
-- **Export**: Users can perform an "On-Demand Export" (decrypting in memory) to download a CAR file + Unlocked Keys.
-
-### 6.3 The 72h Safety Net
-
-We rely on the **did:plc 72-hour Grace Period**. If a malicious PDS or compromised device attempts to rotate the keys, the user has 72 hours to "Undo" the rotation using their Wallet or Backup Code.
-
-## Appendix A: Security Risk Assessment
-
-### A.1 MITM on Device Sync
-
-- **Risk**: During "Type B" sync, a malicious PDS could present its own key instead of the new device's key.
-- **Mitigation**: The User MUST verify a **QR Code** (visual channel) containing the new device's DID fingerprint. This bypasses the server trust.
-
-### A.2 Public Exposure of Keys
-
-- **Risk**: Encrypted keys are public on the Firehose.
-- **Mitigation**: We mandate high-entropy keys. Weak passwords are forbidden. Wallet signatures provide mathematical entropy.
-
-### A.3 Lost Devices
-
-- **Risk**: Type B users lose all devices.
-- **Mitigation**: Users MUST save a "Recovery Code" (the raw $K_{account}$) upon signup. Without this or a device, the account is mathematically lost.
-
-## Appendix B: Architectural Rationale
-
-### B.1 The Design Goals: What DDS Must Achieve
-
-DDS is designed to satisfy seven core requirements:
-
-1. **Pass the Walkaway Test**: Users own their identity and data. The ecosystem can take over the network and data even if the founding team disappears or goes rogue.
-2. **Usability**: Fast, reliable UX (OAuth flows, standard patterns)
-3. **Performance**: Instant search/indexing, real-time notifications, web2-level responsiveness
-4. **Discoverability**: Users can find conversations, no central gatekeeper required
-5. **Interoperability**: Multiple apps/analyzers work with same data
-6. **Separation of Concerns**: Storage ≠ Computation ≠ Moderation
-7. **Verifiable Truth**: Math, not server trust, determines consensus
-8. **Web3-native auth support is first-class**: Bring your own auth, and bind it two-ways with your PDS did:plc.
-
-### B.2 The Pure P2P Alternative: Why We Needed More Than Waku/IPFS
-
-We deeply respect the Waku and IPFS communities - their work on censorship-resistant infrastructure is foundational to web3. Pure P2P protocols excel at messaging and file storage.
-
-**For public deliberation at scale, we encountered specific challenges:**
-
-- **Discovery**: IPFS requires knowing CID beforehand; browsing "all conversations about climate" needs indexing infrastructure
-- **Search Performance**: Users expect instant results (web2 UX); DHT lookups add noticeable latency
-- **Semantic Interop**: No standard schema system; would need to build Lexicon-equivalent
-- **Moderation**: No Labeler ecosystem equivalent
-- **Analysis**: No infrastructure component fits
-
-**Our Hybrid Approach:**
-
-- **AT Protocol**: Hot path (discovery, instant search, semantic interop, real-time notifications)
-- **IPFS/Filecoin/Arweave**: Cold path (archival, censorship resistance)
-- **Ethereum**: Truth layer (verification, sovereignty)
-
-We're using each technology for its strengths. Public deliberation needs both walkaway guarantees (IPFS) and discoverability with web2 performance (AT Protocol).
-
-### B.3 The Foundation: Why AT Protocol Solves the Hard Problems
-
-AT Protocol provides the foundation for DDS's usability and interoperability requirements:
-
-**Portable Identity**: `did:plc` with 72-hour grace period enables provider switching without losing social graph.
-
-**Permissionless Discovery**: The Firehose enables anyone to build search/indexing without permission. AppViews provide SQL-backed search with millisecond response times.
-
-**Semantic Interoperability**: Lexicons provide human-readable schemas (`org.dds.module.polis`, `org.dds.result.pca`) that any tool can parse. No custom format reverse-engineering required.
-
-**Separation of Concerns**: Architecture separates PDS (storage), AppView (presentation), Labeler (moderation, analysis), and Firehose (distribution) - enabling competition and choice at each layer.
-
-**Performance**: Real-time notifications via Server-Sent Events, instant search via indexed queries, OAuth for standard authentication flows.
-
-**Mature Infrastructure**: Battle-tested by Bluesky (millions of users), multiple PDS hosting providers, comprehensive documentation.
-
-**Trade-off**: Initially, more complex than pure P2P, but proven at scale for social applications. Solves lots of problems that we'd need to solve by hand with pure P2P approaches. Users _can_ self-host their PDS for maximum sovereignty, but we provide sensible managed defaults with client-side recovery keys, for those who prioritize usability.
-
-### B.4 The Adaptations: How DDS Adds Walkaway to AT Protocol
-
-Standard AT Protocol prioritizes usability but doesn't guarantee walkaway. DDS adds four key mechanisms:
-
-#### B.4.1 Multi-Identifier PDS Access
-
-**Standard AT Protocol**: Email-only signup → `did:plc` provisioned by PDS host.
-
-**DDS Enhancement**: Support any identifier via three tiers (§2.1):
-
-- **Tier 2 (Self-Hosted)**: User brings own PDS (standard Bluesky account or self-hosted) - maximum sovereignty
-- **Tier 1 (Managed)**: Auto-provision PDS for **Wallet**, **ENS**, **ZKPass**, Email, Phone users, and more - sensible default for usability
-- **Tier 0 (Guest)**: Lightweight PDS authenticated by local `did:key` for Guests - lowest friction entry
-
-**Result**: Crypto-native and non-crypto users get equal `did:plc` treatment. No second-class citizens. Self-hosting available, but not required.
-
-#### B.4.2 Encrypted Key Vault (Identity Sovereignty)
-
-**Problem**: On managed PDS, the host holds signing keys. If it dies, you're locked out.
-
-**Solution**: Store encrypted `did:plc` Rotation Keys in your repository (§3). This enables walkaway even for users on managed infrastructure.
-
-- **Type A (Wallet)**: Deterministic signature-derived decryption (Fileverse pattern)
-
-  - Sign challenge → derive AES key → decrypt Rotation Keys
-  - Recoverable from any device with wallet
-
-- **Type B (Email/Phone/Guest)**: Device-synced lockboxes
-  - Master secret encrypted per-device
-  - QR code verification prevents MITM attacks
-
-**Result**: Walk away with your identity, rotate to new PDS provider - without needing to self-host from day one.
-
-**Privacy Note**: Managed PDS hosts can technically access user data (signing keys, posts). Users who require full privacy should self-host their PDS. DDS provides the _capability_ to walkaway and self-host, making it a credible choice for privacy-conscious users when needed.
-
-#### B.4.3 IPFS/Arweave Archival Layer
-
-**Problem**: PDS can disappear, taking your data.
-
-**Solution**: Archive Agents listen to Firehose, pin `org.dds.*` records to IPFS/Arweave (§6.1).
-
-**Integration**: Encrypted Vault automatically archived alongside data.
-
-**Recovery Flow**:
-
-1. Retrieve CAR file from IPFS (via CID from `did:plc` document)
-2. Decrypt Vault → get Rotation Keys
-3. Rotate DID to new PDS
-4. Re-publish archived data to new PDS
-
-**Risk Acknowledged**: Malicious PDS can refuse to emit to Firehose (see §6 RISK note). Mitigation: clients poll independent Archive Agents to confirm data was indexed.
-
-#### B.4.4 Verifiable Computation (Math Over Trust)
-
-**Problem**: AT Protocol has no built-in analysis verification. Users trust centralized algorithms (like Twitter's Community Notes).
-
-**DDS Solution**: Prover Agent protocol (§5):
-
-1. Define scope (conversation ID + time window)
-2. Consume Firehose (public access)
-3. Run clustering (PCA, embeddings)
-4. Publish `org.dds.result.pca` with `Hash(Result)`
-
-**Ethereum Integration**:
-
-- Provers submit hash on-chain for fraud proving
-- Stake tokens (slashed if caught lying)
-- Disputes resolved via ZK-ML proofs or optimistic arbitration (§5.2)
-
-**Result**: Users verify analysis is mathematically correct, not server opinion.
-
-### B.5 The Tri-Layer Architecture (How It All Fits Together)
-
-```
-┌────────────────────────────────────────────────┐
-│ USER LAYER                                      │
-│ - Discover: Browse AppView (Firehose-powered)  │
-│ - Participate: Wallet/Email/Phone → PDS        │
-│              (self-hosted OR managed)          │
-│ - Verify: Check Prover results on-chain        │
-└────────────────────────────────────────────────┘
-         ↓ (normal operation)
-┌────────────────────────────────────────────────┐
-│ L1: AT PROTOCOL (Hot Path - Usability)         │
-│ ┌──────────────┐  ┌──────────────┐            │
-│ │ PDS (Storage)│→ │Firehose (Pub)│            │
-│ │ - did:plc    │  │ - Permissionless          │
-│ │ - Encrypted  │  │   indexing                │
-│ │   Vault      │  │ - Real-time               │
-│ │ - OAuth      │  │   distribution            │
-│ └──────────────┘  └──────────────┘            │
-│          ↓                ↓                    │
-│    ┌──────────────────────────┐               │
-│    │ AppViews (Discovery)     │               │
-│    │ - Instant search (SQL)   │               │
-│    │ - Real-time notifications│               │
-│    │ - Filter/sort            │               │
-│    └──────────────────────────┘               │
-│ ➜ Provides: Performance, Discovery, Interop   │
-└────────────────────────────────────────────────┘
-         ↓ (archival)           ↓ (analysis)
-┌─────────────────┐    ┌──────────────────────┐
-│ L2: IPFS/Arweave│    │ Prover Agents        │
-│ (Cold - Walkaway)│    │ (Computation)        │
-│ - Archive Agents│    │ - Read Firehose      │
-│   pin org.dds.* │    │ - Run clustering     │
-│ - Vault included│    │ - Publish results    │
-│ - Conversation  │    │ ➜ Algorithm freedom  │
-│   manifests     │    │   Separation of      │
-│   (discovery    │    │   concerns           │
-│   fallback)     │    │                      │
-│ ➜ Censorship    │    │                      │
-│   resistance    │    │                      │
-└─────────────────┘    └──────────────────────┘
-         ↓ (recovery)           ↓ (verification)
-┌────────────────────────────────────────────────┐
-│ L3: ETHEREUM (Truth - Verification)            │
-│ - Wallet Master Key (see hierarchies below)    │
-│ - Hash(Result) commitments (fraud proving)     │
-│ - Token-gating (permission control)            │
-│ - Prover staking/slashing (economic security)  │
-│ ➜ Provides: Verifiability, Sovereignty        │
-└────────────────────────────────────────────────┘
-
-ETHEREUM WALLET MASTER KEY HIERARCHY (Type A Users)
-═══════════════════════════════════════════════════
-
-              Ethereum Wallet Signature
-                        │
-                        ├─────────────────────┐
-                        ↓                     ↓
-            HKDF-SHA256 derivation    Sign OAuth challenge
-                        ↓                     ↓
-                  AES-GCM Key          PDS Login (OAuth)
-                        ↓                     ↓
-         Decrypt org.dds.key.wrapped    Access to L1 PDS ──┐
-                        ↓                                   │
-              did:plc Rotation Key                          │
-                        ↓                                   │
-    ┌───────────────────┴────────────────┐                 │
-    ↓                                    ↓                 │
-Control DID document              Walkaway scenario:       │
-(rotate to new PDS)               Recover from any device  │
-                                  with just wallet         │
-                                                            │
-Result: Ethereum wallet = Master key for BOTH ─────────────┘
-        - Identity sovereignty (did:plc)
-        - Infrastructure access (PDS OAuth)
-
-
-WEB2/NON-WALLET AUTH WALKAWAY & SELF-HOSTED PATH
-═════════════════════════════════════════════════
-
-┌─────────────────────────────────┬──────────────────────────────────┐
-│ WEB2 AUTH (Email/Phone/Guest)   │ SELF-HOSTED PDS (Tier 2)         │
-│ Managed PDS (Tier 1/0)          │                                  │
-├─────────────────────────────────┼──────────────────────────────────┤
-│ Setup Phase:                    │ No setup needed:                 │
-│  Master Secret (K_account)      │  User runs own PDS               │
-│        ↓                        │        ↓                         │
-│  Encrypts did:plc Rotation Key  │  Direct access to Rotation Keys  │
-│        ↓                        │        ↓                         │
-│  Vault: org.dds.key.wrapped     │  Stored in own infrastructure    │
-│        ↓                        │                                  │
-│  K_account encrypted per-device │                                  │
-│  → Lockbox files in PDS         │                                  │
-│                                 │                                  │
-│ Walkaway Options:               │ Walkaway Scenario:               │
-│                                 │                                  │
-│  Option 1: Existing Device      │  No walkaway needed -            │
-│   Has K_account locally         │  already sovereign!              │
-│         ↓                       │                                  │
-│   Decrypt Vault → Rotation Key  │  User controls:                  │
-│         ↓                       │  ✓ PDS infrastructure            │
-│   Rotate did:plc to new PDS     │  ✓ Signing keys                  │
-│                                 │  ✓ Rotation keys                 │
-│  Option 2: Recovery Code        │  ✓ All data                      │
-│   User saved K_account at signup│                                  │
-│         ↓                       │  Participates in DDS with        │
-│   Retrieve Vault from IPFS      │  full sovereignty from day one   │
-│         ↓                       │                                  │
-│   Decrypt → Rotation Key        │                                  │
-│         ↓                       │                                  │
-│   Rotate did:plc to new PDS     │                                  │
-│                                 │                                  │
-│ CRITICAL:                       │ TRADE-OFF:                       │
-│ ⚠ Recovery Code MUST be saved   │ ⚠ Requires technical expertise   │
-│ ⚠ Without device or code,       │ ✓ Maximum privacy & control      │
-│   account is lost               │ ✓ No encrypted vault complexity  │
-└─────────────────────────────────┴──────────────────────────────────┘
+Other product lexicons follow the same pattern — a sensemaking module, a survey module, or any future consultation format. Data from external sources — social media APIs, LLM-based listening platforms (e.g., [Dembrane](https://www.dembrane.com/)), existing pol.is exports — is translated into the appropriate module's lexicons during the Collect phase (e.g., tweets become `org.dds.module.polis` opinions, conversation transcripts become `org.dds.module.sense` records). The exact mappings are TBD.
+
+### 6.4 Cross-App Interoperability
+
+Any app can **read** another app's product lexicons via the Firehose. The `org.dds.ref.*` lexicon enables explicit references:
+
+```typescript
+// A voting app references a deliberation platform's analysis
+{
+  "$type": "org.dds.module.vote.proposal",
+  "title": "Fund Proposal Alpha",
+  "context": {
+    "$type": "org.dds.ref.analysis",
+    "uri": "at://did:plc:abc.../org.dds.result.pca/xyz",
+    "cid": "bafyrei..."
+  },
+  "options": [
+    { "label": "Approve", "derivedFrom": "cluster-1-consensus" },
+    { "label": "Reject", "derivedFrom": "cluster-2-consensus" }
+  ]
+}
 ```
 
-**Mapping DDS Features to Layers:**
+**Common Patterns:**
 
-| Design Goal                | Implementation                                                   |
-| -------------------------- | ---------------------------------------------------------------- |
-| **Walkaway**               | L1 (Encrypted Vault) + L2 (IPFS archival) + L3 (wallet recovery) |
-| **Usability**              | L1 (PDS infrastructure, OAuth, standard patterns)                |
-| **Performance**            | L1 (SQL search, real-time SSE notifications)                     |
-| **Discoverability**        | L1 (Firehose → AppViews) + L2 (IPFS fallback indexers)           |
-| **Interoperability**       | L1 (Lexicons, `org.dds.*` namespace)                             |
-| **Separation of Concerns** | L1 (PDS ≠ AppView ≠ Prover) + L3 (verification layer)            |
-| **Verifiable Truth**       | L1 (public Firehose data) + L3 (fraud proving)                   |
+| Pattern                 | Description                                         |
+| ----------------------- | --------------------------------------------------- |
+| **Sequential Handoff**  | Deliberation → Analysis → External consumer (voting, governance) |
+| **Parallel Collection** | Multiple collection apps feed the same analysis     |
+| **Context Import**      | New process imports conclusions from a previous one |
 
-**The Synthesis:**
+## 7. Implementation Details
 
-- **AT Protocol alone**: Great usability/interop, no walkaway guarantee
-- **Pure IPFS/Waku**: Easy walkaway, challenging discovery/performance/interop
-- **DDS Hybrid**: AT Protocol for UX + IPFS for archival + Ethereum for verification = **Walkaway Test passed while maintaining mainstream adoption potential**
-
-**Ethereum's Parsimonious Role**: Used only where cryptographic guarantees matter (verification, sovereignty, permissions), not for high-throughput social data. This follows Vitalik's "protocol simplicity" principle - use blockchain for truth, use standards for infrastructure.
-
-**The Self-Hosting Trade-off**: Users _can_ self-host their PDS for maximum privacy and control, but DDS provides sensible managed defaults for mainstream adoption. The Encrypted Key Vault ensures that even managed users retain the _ability_ to walkaway - sovereignty without the burden of day-one self-hosting.
+The cryptographic mechanisms (Encrypted Key Vault, Sign-to-Derive, Device Graph), Ethereum verification layer, and security considerations are detailed in a separate [implementation addendum](./0013-implementation-addendum.md). These are preliminary designs requiring further investigation — they represent directional intent, not finalized specifications.

@@ -1,6 +1,7 @@
 [build]
 command = "pnpm build"
 publish = "build"
+ignore = "bash -c '[[ $BRANCH == dependabot/* ]] || ! git diff --name-only $CACHED_COMMIT_REF $COMMIT_REF -- services/app/ | grep -q .'"
 
 [build.environment]
 NODE_VERSION = "24"
