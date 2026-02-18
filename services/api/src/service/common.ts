@@ -35,6 +35,25 @@ import { imagePathToUrl } from "@/utils/organizationLogic.js";
 import { getConversationEngagementScore } from "./recommendationSystem.js";
 import { log } from "@/app.js";
 
+/**
+ * Validates that public conversations have either login requirement or event ticket verification.
+ * Returns false if validation fails (public conversation without login or ticket requirement).
+ */
+export function isValidPublicConversationAccess({
+    isIndexed,
+    isLoginRequired,
+    requiresEventTicket,
+}: {
+    isIndexed: boolean;
+    isLoginRequired: boolean;
+    requiresEventTicket?: EventSlug;
+}): boolean {
+    if (isIndexed && !isLoginRequired && !requiresEventTicket) {
+        return false;
+    }
+    return true;
+}
+
 export function useCommonUser() {
     interface GetUserIdFromUsernameProps {
         db: PostgresJsDatabase;
@@ -184,10 +203,7 @@ export function useCommonPost() {
             )
             .leftJoin(
                 pollTable,
-                eq(
-                    conversationContentTable.id,
-                    pollTable.conversationContentId,
-                ),
+                eq(conversationContentTable.pollId, pollTable.id),
             )
             .leftJoin(
                 organizationTable,
@@ -363,7 +379,6 @@ export function useCommonPost() {
                 const pollResponses = await getUserPollResponse({
                     db: db,
                     authorId: personalizedUserId,
-                    httpErrors: httpErrors,
                     postSlugIdList: postSlugIdList,
                 });
 

@@ -174,7 +174,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         await router.push({
           name: opinionAgreementIntention.isEmbedView
             ? "/conversation/[postSlugId].embed"
-            : "/conversation/[postSlugId]",
+            : "/conversation/[postSlugId]/",
           params: { postSlugId: opinionAgreementIntention.conversationSlugId },
           query: { opinion: opinionAgreementIntention.opinionSlugId },
         });
@@ -192,7 +192,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         await router.push({
           name: votingIntention.isEmbedView
             ? "/conversation/[postSlugId].embed"
-            : "/conversation/[postSlugId]",
+            : "/conversation/[postSlugId]/",
           params: { postSlugId: votingIntention.conversationSlugId },
         });
         break;
@@ -200,7 +200,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         await router.push({
           name: reportUserContentIntention.isEmbedView
             ? "/conversation/[postSlugId].embed"
-            : "/conversation/[postSlugId]",
+            : "/conversation/[postSlugId]/",
           params: { postSlugId: reportUserContentIntention.conversationSlugId },
           query: { opinion: reportUserContentIntention.opinionSlugId },
         });

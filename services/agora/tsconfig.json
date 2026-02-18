@@ -2,7 +2,7 @@
   "extends": "./.quasar/tsconfig.json",
   "compilerOptions": {
     "strict": true,
-    "types": ["unplugin-vue-router/client"]
+    "types": ["unplugin-vue-router/client", "vite/client"]
   },
   "vueCompilerOptions": {
     "strictTemplates": true,

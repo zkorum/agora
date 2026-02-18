@@ -43,7 +43,10 @@ export function useActionHandlers() {
         await loadUserProfile();
 
         // Navigate to home if we're currently viewing this post
-        if (route.name === "/conversation/[postSlugId]") {
+        if (
+          route.name === "/conversation/[postSlugId]" ||
+          route.name === "/conversation/[postSlugId]/"
+        ) {
           await router.push({ name: "/" });
         }
 

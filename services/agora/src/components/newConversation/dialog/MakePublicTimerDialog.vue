@@ -22,15 +22,15 @@
 
   <CustomTimerDialog
     v-model:show-dialog="showCustomDialog"
+    v-model:private-conversation-settings="privateConversationSettings"
     @go-back="handleGoBack"
   />
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import type { PrivateConversationSettings } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { ref } from "vue";
 
 import CustomTimerDialog from "./CustomTimerDialog.vue";
@@ -44,8 +44,10 @@ const { t } = useComponentI18n<MakePublicTimerDialogTranslations>(
 );
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
-
-const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
+const privateConversationSettings = defineModel<PrivateConversationSettings>(
+  "privateConversationSettings",
+  { required: true }
+);
 
 const showCustomDialog = ref<boolean>(false);
 
@@ -101,17 +103,22 @@ function selectOption(option: TimerOption): void {
   selectedValue.value = option.value;
 
   if (option.value === "never") {
-    conversationDraft.value.privateConversationSettings.hasScheduledConversion = false;
+    privateConversationSettings.value = {
+      ...privateConversationSettings.value,
+      hasScheduledConversion: false,
+    };
     showDialog.value = false;
   } else if (option.value === "custom") {
     showDialog.value = false;
     showCustomDialog.value = true;
   } else if (option.hours) {
-    conversationDraft.value.privateConversationSettings.hasScheduledConversion = true;
     const targetDate = new Date();
     targetDate.setHours(targetDate.getHours() + option.hours);
-    conversationDraft.value.privateConversationSettings.conversionDate =
-      targetDate;
+    privateConversationSettings.value = {
+      ...privateConversationSettings.value,
+      hasScheduledConversion: true,
+      conversionDate: targetDate,
+    };
     showDialog.value = false;
   }
 }

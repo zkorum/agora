@@ -46,7 +46,10 @@ export function useRouterGuard() {
     toName: RouteRecordName,
     fromName: RouteRecordName
   ): "home" | "ignore" {
-    if (fromName == "/conversation/[postSlugId]") {
+    if (
+      fromName == "/conversation/[postSlugId]" ||
+      fromName == "/conversation/[postSlugId]/"
+    ) {
       if (onboardingRoutes.includes(toName) && toName != "/") {
         return "home";
       }

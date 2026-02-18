@@ -108,7 +108,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { DOMSerializer } from "@tiptap/pm/model";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
-import { EditorContent,useEditor } from "@tiptap/vue-3";
+import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { BubbleMenu } from "@tiptap/vue-3/menus";
 import { useQuasar } from "quasar";
 import sanitizeHtml from "sanitize-html";

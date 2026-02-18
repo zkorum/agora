@@ -5,6 +5,7 @@
         <UserIdentityCard
           :author-verified="authorVerified"
           :created-at="createdAt"
+          :updated-at="updatedAt"
           :user-identity="
             props.organizationName == ''
               ? posterUserName
@@ -130,6 +131,7 @@ const props = defineProps<{
   posterUserName: string;
   authorUsername: string;
   createdAt: Date;
+  updatedAt: Date;
   postSlugId: string;
   organizationUrl: string;
   organizationName: string;
@@ -251,6 +253,13 @@ async function exportConversationCallback() {
   });
 }
 
+async function editConversationCallback() {
+  await router.push({
+    name: "/conversation/[conversationSlugId]/edit/",
+    params: { conversationSlugId: props.postSlugId },
+  });
+}
+
 function clickedMoreIcon() {
   // Show post actions using the new system
   postActions.showPostActions(props.postSlugId, props.posterUserName, {
@@ -260,6 +269,7 @@ function clickedMoreIcon() {
     moderatePostCallback,
     moderationHistoryCallback,
     copyEmbedLinkCallback,
+    editConversationCallback,
     exportConversationCallback,
   });
 }

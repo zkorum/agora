@@ -105,7 +105,17 @@ import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { useRouteGuard } from "src/utils/component/routing/routeGuard";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, defineAsyncComponent, inject, nextTick, onMounted, type Ref, ref, useTemplateRef, watch } from "vue";
+import {
+  computed,
+  defineAsyncComponent,
+  inject,
+  nextTick,
+  onMounted,
+  type Ref,
+  ref,
+  useTemplateRef,
+  watch,
+} from "vue";
 import type { RouteLocationNormalized } from "vue-router";
 
 import {
@@ -133,7 +143,9 @@ const emit = defineEmits<{
   ];
 }>();
 
-const Editor = defineAsyncComponent(() => import("src/components/editor/Editor.vue"));
+const Editor = defineAsyncComponent(
+  () => import("src/components/editor/Editor.vue")
+);
 
 const dummyInput = ref<HTMLInputElement>();
 
@@ -145,7 +157,9 @@ const userStore = useUserStore();
 const { verifiedEventTickets } = storeToRefs(userStore);
 
 // Inject reactive conversation data from parent
-const conversationData = inject<Ref<ExtendedConversation> | undefined>("conversationData");
+const conversationData = inject<Ref<ExtendedConversation> | undefined>(
+  "conversationData"
+);
 
 // Compute if composer should be disabled (closed OR locked by moderator)
 const isComposerDisabled = computed(() => {
@@ -251,7 +265,11 @@ const validationWarning = computed(() => {
     .toLowerCase()
     .match(/\b(and|but|or|yet|nor)\b/g);
 
-  if (coordinatingConjunctions && coordinatingConjunctions.length >= 2 && plainText.length > 50) {
+  if (
+    coordinatingConjunctions &&
+    coordinatingConjunctions.length >= 2 &&
+    plainText.length > 50
+  ) {
     return t("validationWarningMultipleIdeas");
   }
 
@@ -259,7 +277,9 @@ const validationWarning = computed(() => {
   const commaCount = (plainText.match(/,/g) || []).length;
   const clauseIndicators = plainText
     .toLowerCase()
-    .match(/\b(however|moreover|furthermore|therefore|thus|consequently|although|whereas|while|because|since)\b/g);
+    .match(
+      /\b(however|moreover|furthermore|therefore|thus|consequently|although|whereas|while|because|since)\b/g
+    );
 
   if (commaCount >= 3 || (clauseIndicators && clauseIndicators.length >= 2)) {
     return t("validationWarningMultipleIdeas");
