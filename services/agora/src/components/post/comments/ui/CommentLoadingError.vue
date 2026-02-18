@@ -21,6 +21,14 @@
 </template>
 
 <script setup lang="ts">
+import Button from "primevue/button";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
+
 defineProps<{
   title: string;
   message?: string | null;

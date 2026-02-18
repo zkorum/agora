@@ -55,13 +55,25 @@
 </template>
 
 <script setup lang="ts">
+import Button from "primevue/button";
+import Card from "primevue/card";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { type AppKey,useEmbeddedBrowserWarningStore } from "src/stores/embeddedBrowserWarning";
+import {
+  type AppKey,
+  useEmbeddedBrowserWarningStore,
+} from "src/stores/embeddedBrowserWarning";
 
 import {
   type EmbeddedBrowserWarningTestTranslations,
   embeddedBrowserWarningTestTranslations,
 } from "./EmbeddedBrowserWarningTest.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+    PrimeCard: Card,
+  },
+});
 
 const { t } = useComponentI18n<EmbeddedBrowserWarningTestTranslations>(
   embeddedBrowserWarningTestTranslations

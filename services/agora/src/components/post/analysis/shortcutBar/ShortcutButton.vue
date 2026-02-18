@@ -13,6 +13,14 @@
 </template>
 
 <script setup lang="ts">
+import Button from "primevue/button";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
+
 const props = defineProps<{
   isSelected: boolean;
   label: string;

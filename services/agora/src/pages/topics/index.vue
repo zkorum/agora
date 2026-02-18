@@ -53,6 +53,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import Chip from "primevue/chip";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import FollowButton from "src/components/features/topics/FollowButton.vue";
 import { HomeMenuBar } from "src/components/navigation/header/variants";
@@ -62,7 +63,13 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useTopicStore } from "src/stores/topic";
 import { onMounted, ref } from "vue";
 
-import { type TopicsTranslations,topicsTranslations } from "./index.i18n";
+import { type TopicsTranslations, topicsTranslations } from "./index.i18n";
+
+defineOptions({
+  components: {
+    PrimeChip: Chip,
+  },
+});
 
 const { t } = useComponentI18n<TopicsTranslations>(topicsTranslations);
 
@@ -83,7 +90,7 @@ async function loadInitialData() {
     isLoading.value = true;
     await loadTopicsData();
   } catch (error) {
-    console.error('Failed to load topics:', error);
+    console.error("Failed to load topics:", error);
   } finally {
     isLoading.value = false;
   }

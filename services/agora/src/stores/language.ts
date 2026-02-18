@@ -1,5 +1,6 @@
 import { useLocalStorage } from "@vueuse/core";
 import { defineStore } from "pinia";
+import { loadLocaleMessages, setI18nLanguage } from "src/boot/i18n";
 import type {
   SupportedDisplayLanguageCodes,
   SupportedSpokenLanguageCodes,
@@ -53,13 +54,17 @@ export const useLanguageStore = defineStore("language", () => {
     locale.value = displayLanguage.value;
   }
 
-  function updateLocale(localeCode: SupportedDisplayLanguageCodes): void {
-    if (availableLocales.includes(localeCode)) {
-      locale.value = localeCode;
-      displayLanguage.value = localeCode;
-    } else {
-      console.error(`Unknown locale for i18n: ${localeCode}`, availableLocales);
-    }
+  async function updateLocale(
+    localeCode: SupportedDisplayLanguageCodes
+  ): Promise<void> {
+    // Load the locale messages if not already loaded
+    await loadLocaleMessages(localeCode);
+
+    // Set the locale using the boot helper
+    setI18nLanguage(localeCode);
+
+    // Update local storage
+    displayLanguage.value = localeCode;
   }
 
   async function loadLanguagePreferencesFromBackend(): Promise<LanguagePreferences | null> {
@@ -85,7 +90,7 @@ export const useLanguageStore = defineStore("language", () => {
         spokenLanguages.value = validated.spokenLanguages;
 
         // Update display language from backend
-        updateLocale(validated.displayLanguage);
+        await updateLocale(validated.displayLanguage);
 
         return validated;
       } else {
@@ -167,24 +172,24 @@ export const useLanguageStore = defineStore("language", () => {
     }
   }
 
-  function changeDisplayLanguage({
+  async function changeDisplayLanguage({
     newLanguage,
   }: {
     newLanguage: SupportedDisplayLanguageCodes;
-  }): boolean {
+  }): Promise<boolean> {
     const originalLanguage = displayLanguage.value;
     try {
-      updateLocale(newLanguage);
+      await updateLocale(newLanguage);
 
       // Save to backend if user is authenticated (in background)
       if (authStore.isLoggedIn) {
-        saveDisplayLanguageToBackend({ newDisplayLanguage: newLanguage }).catch(
-          (err) => {
-            // Revert on failure
-            updateLocale(originalLanguage);
-            console.error("Failed to save display language to backend:", err);
-          }
-        );
+        void saveDisplayLanguageToBackend({
+          newDisplayLanguage: newLanguage,
+        }).catch((err) => {
+          // Revert on failure
+          void updateLocale(originalLanguage);
+          console.error("Failed to save display language to backend:", err);
+        });
       }
 
       return true;
@@ -192,7 +197,7 @@ export const useLanguageStore = defineStore("language", () => {
       showNotifyMessage("Failed to change display language");
       console.error("Error changing display language:", err);
       // Revert on failure
-      updateLocale(originalLanguage);
+      await updateLocale(originalLanguage);
       return false;
     }
   }
@@ -208,7 +213,7 @@ export const useLanguageStore = defineStore("language", () => {
 
     try {
       // Reset to browser defaults
-      updateLocale(browserDefaultDisplayLanguage);
+      await updateLocale(browserDefaultDisplayLanguage);
       spokenLanguages.value = browserDefaultSpokenLanguages;
 
       // Save to backend if user is authenticated (in background)
@@ -226,7 +231,7 @@ export const useLanguageStore = defineStore("language", () => {
       return true;
     } catch (err) {
       // Revert on failure
-      updateLocale(originalDisplayLanguage);
+      await updateLocale(originalDisplayLanguage);
       spokenLanguages.value = originalSpokenLanguages;
 
       showNotifyMessage("Failed to clear language preferences");

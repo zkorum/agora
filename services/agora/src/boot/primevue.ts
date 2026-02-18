@@ -1,20 +1,6 @@
 import { definePreset } from "@primeuix/themes";
 import Aura from "@primeuix/themes/aura";
-import Button from "primevue/button";
-import Card from "primevue/card";
-import Chip from "primevue/chip";
 import PrimeVue from "primevue/config";
-import DatePicker from "primevue/datepicker";
-import Divider from "primevue/divider";
-import FileUpload from "primevue/fileupload";
-import IconField from "primevue/iconfield";
-import InputIcon from "primevue/inputicon";
-import InputOtp from "primevue/inputotp";
-import InputText from "primevue/inputtext";
-import Message from "primevue/message";
-import ProgressSpinner from "primevue/progressspinner";
-import Select from "primevue/select";
-import Tag from "primevue/tag";
 
 import { defineBoot } from "#q-app/wrappers";
 
@@ -71,19 +57,4 @@ export default defineBoot(({ app }) => {
       overlay: 2000,
     },
   });
-
-  app.component("PrimeButton", Button);
-  app.component("PrimeCard", Card);
-  app.component("PrimeChip", Chip);
-  app.component("PrimeDatePicker", DatePicker);
-  app.component("PrimeSelect", Select);
-  app.component("PrimeInputOtp", InputOtp);
-  app.component("PrimeInputText", InputText);
-  app.component("PrimeIconField", IconField);
-  app.component("PrimeInputIcon", InputIcon);
-  app.component("PrimeFileUpload", FileUpload);
-  app.component("PrimeProgressSpinner", ProgressSpinner);
-  app.component("PrimeMessage", Message);
-  app.component("PrimeTag", Tag);
-  app.component("PrimeDivider", Divider);
 });

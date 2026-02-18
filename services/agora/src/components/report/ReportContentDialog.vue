@@ -80,6 +80,7 @@
 </template>
 
 <script setup lang="ts">
+import Button from "primevue/button";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_USER_REPORT_EXPLANATION } from "src/shared/shared";
 import type { UserReportReason } from "src/shared/types/zod";
@@ -92,6 +93,12 @@ import {
   type ReportContentDialogTranslations,
   reportContentDialogTranslations,
 } from "./ReportContentDialog.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
 
 const props = defineProps<{
   reportType: "conversation" | "opinion";
