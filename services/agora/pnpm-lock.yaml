@@ -114,8 +114,8 @@ importers:
         specifier: ^1.10.0
         version: 1.10.0
       maz-ui:
-        specifier: 3.50.1
-        version: 3.50.1(libphonenumber-js@1.12.37)(valibot@0.42.1(typescript@5.9.3))(vue-router@4.6.4(vue@3.5.28(typescript@5.9.3)))(vue@3.5.28(typescript@5.9.3))
+        specifier: 4.6.2
+        version: 4.6.2(typescript@5.9.3)(vue-router@4.6.4(vue@3.5.28(typescript@5.9.3)))(vue@3.5.28(typescript@5.9.3))
       multiformats:
         specifier: ^13.4.1
         version: 13.4.2
@@ -364,11 +364,11 @@ packages:
     peerDependencies:
       '@capacitor/core': ^7.4.0
 
-  '@clack/core@0.3.5':
-    resolution: {integrity: sha512-5cfhQNH+1VQ2xLQlmzXMqUoiaH0lRBq9/CLW9lTyMbuKLC3+xEK01tHVvyut++mLOn5urSHmkm6I0Lg9MaJSTQ==}
+  '@clack/core@0.5.0':
+    resolution: {integrity: sha512-p3y0FIOwaYRUPRcMO7+dlmLh8PSRcrjuTndsiA0WAFbWES0mLZlrjVoBRZ9DzkPFJZG6KGkJmoEAY0ZcVWTkow==}
 
-  '@clack/prompts@0.8.2':
-    resolution: {integrity: sha512-6b9Ab2UiZwJYA9iMyboYyW9yJvAO9V753ZhS+DHKEjZRKAxPPOb7MXXu84lsPFG+vZt6FRFniZ8rXi+zCIw4yQ==}
+  '@clack/prompts@0.11.0':
+    resolution: {integrity: sha512-pMN5FcrEw9hUkZA4f+zLlzivQSeQf5dRGJjSUbvVYDLvpKCdQx5OaknvKzgbtXOizhP+SJJJjqEbOe55uKKfAw==}
 
   '@commander-js/extra-typings@12.1.0':
     resolution: {integrity: sha512-wf/lwQvWAA0goIghcb91dQYpkLBcyhOhQNqG/VgWhnKzgt+UOMvra7EX/2fv70arm5RW+PUHoQHHDa6/p77Eqg==}
@@ -968,6 +968,9 @@ packages:
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
 
+  '@floating-ui/vue@1.1.10':
+    resolution: {integrity: sha512-vdf8f6rHnFPPLRsmL4p12wYl+Ux4mOJOkjzKEMYVnwdf7UFdvBtHlLvQyx8iKG5vhPRbDRgZxdtpmyigDPjzYg==}
+
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
     engines: {node: '>=18.18.0'}
@@ -1073,9 +1076,46 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@mazui/cli@3.50.1':
-    resolution: {integrity: sha512-M8N/LdAJUfGt6eAGAJ8/VgA+yFSs+9IrLpDrt2oJfSVKseHRHT4C2t1A2KLlmt5EzeLQibX/eKj00TVNVavllA==}
+  '@kurkle/color@0.3.4':
+    resolution: {integrity: sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==}
+
+  '@maz-ui/cli@4.6.1':
+    resolution: {integrity: sha512-NTG8MJrX4oL8wAjHSzUbxOhn4BTw8szc4dePCRopU6wSl1tWlFo80fEl4v++NQpdYdB+/KPi10XqzQa9EfQj2g==}
     hasBin: true
+
+  '@maz-ui/icons@4.6.1':
+    resolution: {integrity: sha512-OhO4Y1M19L/mVp7EIFBxqTKiF0MZWZrSzR1YxuUEKA4R5uksOmU4OKt39HFJwZ97kJ3gCIoq88AiOiVe+A+GWA==}
+    peerDependencies:
+      unplugin-vue-components: '>=28.0.0 <32.0.0'
+      vite-svg-loader: '>=4.0.0 <6.0.0'
+      vue: '>=3.5.0 <4.0.0'
+    peerDependenciesMeta:
+      unplugin-vue-components:
+        optional: true
+      vite-svg-loader:
+        optional: true
+      vue:
+        optional: true
+
+  '@maz-ui/node@4.6.1':
+    resolution: {integrity: sha512-0iKI1R7WPbk0BRfLLYE6Hkkwsg3W/nDpOx4lEPtixHVI+G86UDle8TEwsf5DZ+Hcf1IkcjlHGRWBlRvMfF9rig==}
+    engines: {node: '>=18.0.0'}
+
+  '@maz-ui/themes@4.6.1':
+    resolution: {integrity: sha512-r3bS6gwnsEVsHeds6cnfqmOxzxx2Dqy6wx8sj7BfCl9ofaEIz/D2+RxVA0kqv5WOVHLzZoKPTxtVrdEUrqcThw==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      vue: '>=3.5.0 <4.0.0'
+
+  '@maz-ui/translations@4.6.1':
+    resolution: {integrity: sha512-e1GWQX2iXwCvqHUOiyh3HZ/LrOGN7KNAD05CJvE2fkBq1xH6NoMCr545OFCZTnp8CbD+hoJmILK0YyCDfoPkaA==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      vue: '>=3.5.0 <4.0.0'
+
+  '@maz-ui/utils@4.6.1':
+    resolution: {integrity: sha512-gzFzDPi3RrG+DO4A8m5sgFJwD0kVuzsfBRla0/MNxThSJcYC40QC3br4uGp8M262wHRhkeDobLMG/jqamIEsQA==}
+    engines: {node: '>=18.0.0'}
 
   '@noble/curves@1.2.0':
     resolution: {integrity: sha512-oYclrNgRaM9SsBUBVbb8M6DTV7ZHRTKugureoYEncY5c65HOmRzvSiTE3y5CYaPYJA/GVkrhXEoF0M3Ya9PMnw==}
@@ -2383,6 +2423,10 @@ packages:
   chardet@2.1.1:
     resolution: {integrity: sha512-PsezH1rqdV9VvyNhxxOW32/d75r01NY7TQCmOqomRo15ZSOKbpTFVsfjghxo6JloQUCGnH4k1LGu0R4yCLlWQQ==}
 
+  chart.js@4.5.1:
+    resolution: {integrity: sha512-GIjfiT9dbmHRiYi6Nl2yFCq7kkwdkp1W/lp2J99rX0yo9tgJGn3lKQATztIjb5tVtevcBtIdICNWqlq5+E8/Pw==}
+    engines: {pnpm: '>=8'}
+
   check-error@1.0.3:
     resolution: {integrity: sha512-iKEoDYaRmd1mxM90a2OEfWhjsjPpYPuQ+lMYsoxB126+t8fw7ySEO48nmDg5COTjxDI65/Y2OWpeEHk3ZOe8zg==}
 
@@ -2430,9 +2474,6 @@ packages:
   clean-css@5.3.3:
     resolution: {integrity: sha512-D5J+kHaVb/wKSFcyyV75uCn8fiY4sV38XJoe4CUyGQ+mOU/fMVYUdH1hJC+CJQ5uY3EnW27SbJYS4X8BiLrAFg==}
     engines: {node: '>= 10.0'}
-
-  clear@0.1.0:
-    resolution: {integrity: sha512-qMjRnoL+JDPJHeLePZJuao6+8orzHMGP04A8CdwCNsKhRbOnKRjefxONR7bwILT3MHecxKBjHkKL/tkZ8r4Uzw==}
 
   cli-boxes@3.0.0:
     resolution: {integrity: sha512-/lzGpEWL/8PfI0BmBOPRwp0c/wFNX1RdUML3jK/RcSBA9T8mZDdQpqYBKtCFTOfQbwPqWEOpjqW+Fnayc0969g==}
@@ -2526,6 +2567,10 @@ packages:
   confbox@0.2.4:
     resolution: {integrity: sha512-ysOGlgTFbN2/Y6Cg3Iye8YKulHw+R2fNXHrgSmXISQdMnomY6eNDprVdW9R5xBguEqI954+S6709UyiO7B+6OQ==}
 
+  consola@3.4.2:
+    resolution: {integrity: sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA==}
+    engines: {node: ^14.18.0 || >=16.10.0}
+
   content-disposition@0.5.2:
     resolution: {integrity: sha512-kRGRZw3bLlFISDBgwTSA1TMBFN6J6GWDeubmDE3AF+3+yXL8hTWv8r5rkLbqYXY4RjPk/EzHnClI3zQf1cFmHA==}
     engines: {node: '>= 0.6'}
@@ -2587,6 +2632,9 @@ packages:
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
+  dayjs@1.11.19:
+    resolution: {integrity: sha512-t5EcLVS6QPBNqM2z8fakk/NKel+Xzshgt8FFKAn+qwlD1pzZWxh0nVCrvFK7ZDb6XucZeF9z8C7CBWTRIVApAw==}
 
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
@@ -3494,43 +3542,22 @@ packages:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
 
-  maz-ui@3.50.1:
-    resolution: {integrity: sha512-4o6EzJmvvOL5mlzF5VZ8UwLGxkX1rwf3ZlKWdtdrKoCZV+b9z5zE/7etefBNziyWY/rY5QanPnkkhil4UZwziA==}
-    engines: {node: '>= 6.0.0', npm: '>= 3.0.0'}
+  maz-ui@4.6.2:
+    resolution: {integrity: sha512-nzp8HqRTvFIJ04xBlsYXj7ZjwjWV70X4lPx3kN3c3v66rZ1vCHHJTt0v7yGHmoad3tpyHElVJVNvlKLjd0u0yw==}
+    engines: {node: '>= 18.0.0'}
     hasBin: true
     peerDependencies:
-      '@nuxt/kit': ^3.4.0
-      chart.js: ^4.0.0
-      dayjs: ^1.1.0
-      defu: ^6.0.0
-      dropzone: ^5.9.3
-      libphonenumber-js: ^1.9.44
-      nuxt: ^3.4.0
-      unplugin-auto-import: '>=0.18.0 <1.0.0'
-      unplugin-vue-components: '>=0.27.0 <1.0.0'
-      valibot: '>=0.30.0 <1.0.0'
-      vue: ^3.0.0
-      vue-router: ^4.0.0
+      nuxt: '>=3.4.0 <5.0.0'
+      unplugin-auto-import: '>=19.0.0 <22.0.0'
+      unplugin-vue-components: '>=28.0.0 <32.0.0'
+      vue: '>=3.5.0 <4.0.0'
+      vue-router: '>=4.0.0 <6.0.0'
     peerDependenciesMeta:
-      '@nuxt/kit':
-        optional: true
-      chart.js:
-        optional: true
-      dayjs:
-        optional: true
-      defu:
-        optional: true
-      dropzone:
-        optional: true
-      libphonenumber-js:
-        optional: true
       nuxt:
         optional: true
       unplugin-auto-import:
         optional: true
       unplugin-vue-components:
-        optional: true
-      valibot:
         optional: true
       vue-router:
         optional: true
@@ -4534,11 +4561,6 @@ packages:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
       typescript: '>=4.8.4 <6.0.0'
 
-  typescript@5.6.2:
-    resolution: {integrity: sha512-NW8ByodCSNCwZeghjN3o+JX5OFH0Ojg6sadjEKY4huZ52TqbJTJnDo5+Tw98lSy63NZvi4n+ez5m2u5d4PkZyw==}
-    engines: {node: '>=14.17'}
-    hasBin: true
-
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
@@ -4640,6 +4662,14 @@ packages:
       typescript:
         optional: true
 
+  valibot@1.2.0:
+    resolution: {integrity: sha512-mm1rxUsmOxzrwnX5arGS+U4T25RdvpPjPN4yR0u9pUBov9+zGVtO84tif1eY4r6zWxVxu3KzIyknJy3rxfRZZg==}
+    peerDependencies:
+      typescript: '>=5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   varint@6.0.0:
     resolution: {integrity: sha512-cXEIW6cfr15lFv563k4GuVuW/fiwjknytD37jIOLSdSWuOI6WnO/oKwmP2FQTU2l01LP8/M5TSAJpzUaGe3uWg==}
 
@@ -4731,6 +4761,12 @@ packages:
 
   vscode-uri@3.1.0:
     resolution: {integrity: sha512-/BpdSx+yCQGnCvecbyXdxHDkuk55/G3xwnC0GqY4gmQ3j+A+g8kzzgB4Nk/SINjqn6+waqw3EgbVF2QKExkRxQ==}
+
+  vue-chartjs@5.3.3:
+    resolution: {integrity: sha512-jqxtL8KZ6YJ5NTv6XzrzLS7osyegOi28UGNZW0h9OkDL7Sh1396ht4Dorh04aKrl2LiSalQ84WtqiG0RIJb0tA==}
+    peerDependencies:
+      chart.js: ^4.1.1
+      vue: ^3.0.0-0 || ^2.7.0
 
   vue-demi@0.14.10:
     resolution: {integrity: sha512-nMZBOwuzabUO0nLgIcc6rycZEebF6eeUfaiQx9+WSk8e29IbLvPU9feI6tqW4kTo3hvoYAJkMh8n8D0fuISphg==}
@@ -5079,14 +5115,14 @@ snapshots:
     dependencies:
       '@capacitor/core': 7.4.4
 
-  '@clack/core@0.3.5':
+  '@clack/core@0.5.0':
     dependencies:
       picocolors: 1.1.1
       sisteransi: 1.0.5
 
-  '@clack/prompts@0.8.2':
+  '@clack/prompts@0.11.0':
     dependencies:
-      '@clack/core': 0.3.5
+      '@clack/core': 0.5.0
       picocolors: 1.1.1
       sisteransi: 1.0.5
 
@@ -5522,6 +5558,15 @@ snapshots:
 
   '@floating-ui/utils@0.2.10': {}
 
+  '@floating-ui/vue@1.1.10(vue@3.5.28(typescript@5.9.3))':
+    dependencies:
+      '@floating-ui/dom': 1.7.5
+      '@floating-ui/utils': 0.2.10
+      vue-demi: 0.14.10(vue@3.5.28(typescript@5.9.3))
+    transitivePeerDependencies:
+      - '@vue/composition-api'
+      - vue
+
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.7':
@@ -5644,16 +5689,40 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@mazui/cli@3.50.1':
+  '@kurkle/color@0.3.4': {}
+
+  '@maz-ui/cli@4.6.1(typescript@5.9.3)':
     dependencies:
-      '@clack/prompts': 0.8.2
-      clear: 0.1.0
-      colorette: 2.0.20
-      commander: 12.1.0
-      cosmiconfig: 9.0.0(typescript@5.6.2)
+      '@clack/prompts': 0.11.0
+      '@maz-ui/node': 4.6.1
+      commander: 14.0.3
+      cosmiconfig: 9.0.0(typescript@5.9.3)
       figlet: 1.10.0
       tinycolor2: 1.6.0
-      typescript: 5.6.2
+    transitivePeerDependencies:
+      - typescript
+
+  '@maz-ui/icons@4.6.1(vue@3.5.28(typescript@5.9.3))':
+    optionalDependencies:
+      vue: 3.5.28(typescript@5.9.3)
+
+  '@maz-ui/node@4.6.1':
+    dependencies:
+      colorette: 2.0.20
+      consola: 3.4.2
+      figlet: 1.10.0
+
+  '@maz-ui/themes@4.6.1(vue@3.5.28(typescript@5.9.3))':
+    dependencies:
+      '@maz-ui/utils': 4.6.1
+      vue: 3.5.28(typescript@5.9.3)
+
+  '@maz-ui/translations@4.6.1(vue@3.5.28(typescript@5.9.3))':
+    dependencies:
+      '@maz-ui/utils': 4.6.1
+      vue: 3.5.28(typescript@5.9.3)
+
+  '@maz-ui/utils@4.6.1': {}
 
   '@noble/curves@1.2.0':
     dependencies:
@@ -7194,6 +7263,10 @@ snapshots:
 
   chardet@2.1.1: {}
 
+  chart.js@4.5.1:
+    dependencies:
+      '@kurkle/color': 0.3.4
+
   check-error@1.0.3:
     dependencies:
       get-func-name: 2.0.2
@@ -7258,8 +7331,6 @@ snapshots:
   clean-css@5.3.3:
     dependencies:
       source-map: 0.6.1
-
-  clear@0.1.0: {}
 
   cli-boxes@3.0.0: {}
 
@@ -7351,6 +7422,8 @@ snapshots:
 
   confbox@0.2.4: {}
 
+  consola@3.4.2: {}
+
   content-disposition@0.5.2: {}
 
   content-disposition@0.5.4:
@@ -7371,14 +7444,14 @@ snapshots:
 
   core-util-is@1.0.3: {}
 
-  cosmiconfig@9.0.0(typescript@5.6.2):
+  cosmiconfig@9.0.0(typescript@5.9.3):
     dependencies:
       env-paths: 2.2.1
       import-fresh: 3.3.1
       js-yaml: 4.1.1
       parse-json: 5.2.0
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 5.9.3
 
   crc-32@1.2.2: {}
 
@@ -7398,6 +7471,8 @@ snapshots:
   cssesc@3.0.0: {}
 
   csstype@3.2.3: {}
+
+  dayjs@1.11.19: {}
 
   debug@2.6.9:
     dependencies:
@@ -8365,14 +8440,26 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
-  maz-ui@3.50.1(libphonenumber-js@1.12.37)(valibot@0.42.1(typescript@5.9.3))(vue-router@4.6.4(vue@3.5.28(typescript@5.9.3)))(vue@3.5.28(typescript@5.9.3)):
+  maz-ui@4.6.2(typescript@5.9.3)(vue-router@4.6.4(vue@3.5.28(typescript@5.9.3)))(vue@3.5.28(typescript@5.9.3)):
     dependencies:
-      '@mazui/cli': 3.50.1
-      vue: 3.5.28(typescript@5.9.3)
-    optionalDependencies:
+      '@floating-ui/vue': 1.1.10(vue@3.5.28(typescript@5.9.3))
+      '@maz-ui/cli': 4.6.1(typescript@5.9.3)
+      '@maz-ui/icons': 4.6.1(vue@3.5.28(typescript@5.9.3))
+      '@maz-ui/themes': 4.6.1(vue@3.5.28(typescript@5.9.3))
+      '@maz-ui/translations': 4.6.1(vue@3.5.28(typescript@5.9.3))
+      '@maz-ui/utils': 4.6.1
+      chart.js: 4.5.1
+      dayjs: 1.11.19
       libphonenumber-js: 1.12.37
-      valibot: 0.42.1(typescript@5.9.3)
+      valibot: 1.2.0(typescript@5.9.3)
+      vue: 3.5.28(typescript@5.9.3)
+      vue-chartjs: 5.3.3(chart.js@4.5.1)(vue@3.5.28(typescript@5.9.3))
+    optionalDependencies:
       vue-router: 4.6.4(vue@3.5.28(typescript@5.9.3))
+    transitivePeerDependencies:
+      - '@vue/composition-api'
+      - typescript
+      - vite-svg-loader
 
   mdurl@2.0.0: {}
 
@@ -9431,8 +9518,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  typescript@5.6.2: {}
-
   typescript@5.9.3: {}
 
   uc.micro@2.1.0: {}
@@ -9544,6 +9629,10 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
+  valibot@1.2.0(typescript@5.9.3):
+    optionalDependencies:
+      typescript: 5.9.3
+
   varint@6.0.0: {}
 
   vary@1.1.2: {}
@@ -9591,6 +9680,11 @@ snapshots:
       yaml: 2.8.2
 
   vscode-uri@3.1.0: {}
+
+  vue-chartjs@5.3.3(chart.js@4.5.1)(vue@3.5.28(typescript@5.9.3)):
+    dependencies:
+      chart.js: 4.5.1
+      vue: 3.5.28(typescript@5.9.3)
 
   vue-demi@0.14.10(vue@3.5.28(typescript@5.9.3)):
     dependencies:
