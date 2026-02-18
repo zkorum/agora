@@ -22,7 +22,7 @@
     "@iconify-json/simple-icons": "^1.2.70",
     "@iconify/tailwind4": "^1.2.1",
     "@playwright/test": "^1.58.2",
-    "@sveltejs/adapter-netlify": "^5.2.4",
+    "@sveltejs/adapter-netlify": "^6.0.0",
     "@sveltejs/enhanced-img": "^0.10.2",
     "@sveltejs/kit": "^2.52.0",
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
