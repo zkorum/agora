@@ -14,7 +14,7 @@
     },
     "devDependencies": {
         "@eslint/js": "^9.39.2",
-        "@types/k6": "^0.53.0",
+        "@types/k6": "^1.6.0",
         "@types/node": "^20.17.47",
         "eslint": "^9.27.0",
         "eslint-config-prettier": "^9.1.0",
