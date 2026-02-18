@@ -207,8 +207,8 @@ importers:
         specifier: ^2.2.1
         version: 2.2.1
       globals:
-        specifier: ^15.15.0
-        version: 15.15.0
+        specifier: ^17.3.0
+        version: 17.3.0
       pino:
         specifier: 9.6.0
         version: 9.6.0
@@ -3237,8 +3237,8 @@ packages:
     resolution: {integrity: sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==}
     engines: {node: '>=18'}
 
-  globals@15.15.0:
-    resolution: {integrity: sha512-7ACyT3wmyp3I61S4fG682L0VA2RGD9otkqGJIwNUMF1SWUombIIk+af1unuDYgMm082aHYwD+mzJvv9Iu8dsgg==}
+  globals@17.3.0:
+    resolution: {integrity: sha512-yMqGUQVVCkD4tqjOJf3TnrvaaHDMYp4VlUSObbkIiuCPe/ofdMBFIAcBbCSRFWOnos6qRiTVStDwqPLUclaxIw==}
     engines: {node: '>=18'}
 
   globrex@0.1.2:
@@ -8979,7 +8979,7 @@ snapshots:
 
   globals@14.0.0: {}
 
-  globals@15.15.0: {}
+  globals@17.3.0: {}
 
   globrex@0.1.2: {}
 
