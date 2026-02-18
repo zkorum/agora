@@ -78,7 +78,7 @@ export const zodPostAsSettings = z.object({
 export const zodSerializablePrivateConversationSettings = z.object({
   requiresLogin: z.boolean(),
   hasScheduledConversion: z.boolean(),
-  conversionDate: z.string().datetime(), // ISO 8601 datetime format
+  conversionDate: z.iso.datetime(), // Validates ISO 8601 datetime format
 });
 
 /**

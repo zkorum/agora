@@ -145,9 +145,8 @@ import {
   MAX_LENGTH_TITLE,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
-import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
+import { useUpdateConversationMutation } from "src/utils/api/post/useConversationMutations";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -164,9 +163,8 @@ const { t } = useComponentI18n<EditConversationTranslations>(
 const route = useRoute("/conversation/[conversationSlugId]/edit/");
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
-const { getConversationForEdit, updateConversation } = useBackendPostEditApi();
-const { invalidateConversation } = useInvalidateConversationQuery();
-const { resetPostData } = useHomeFeedStore();
+const { getConversationForEdit } = useBackendPostEditApi();
+const updateMutation = useUpdateConversationMutation();
 
 const conversationSlugId = route.params.conversationSlugId;
 
@@ -427,7 +425,7 @@ async function performSave(): Promise<void> {
   try {
     const pollAction = determinePollAction();
 
-    const response = await updateConversation({
+    const response = await updateMutation.mutateAsync({
       conversationSlugId: conversationSlugId,
       conversationTitle: title.value,
       conversationBody: content.value,
@@ -443,13 +441,8 @@ async function performSave(): Promise<void> {
 
     if (response.success) {
       showNotifyMessage(t("updateSuccess"));
-      // Invalidate home feed cache to ensure fresh data
-      await resetPostData();
-      // Invalidate conversation cache to ensure fresh data on conversation page
-      invalidateConversation(conversationSlugId);
-      // Navigate back to conversation view
       await router.push({
-        name: "/conversation/[postSlugId]",
+        name: "/conversation/[postSlugId]/",
         params: { postSlugId: conversationSlugId },
       });
     } else {

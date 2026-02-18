@@ -26,14 +26,22 @@ export function useConversationLoginIntentions() {
     }
   }
 
-  function setOpinionAgreementIntention(opinionSlugId: string, eventSlug?: EventSlug) {
+  function setOpinionAgreementIntention(
+    opinionSlugId: string,
+    eventSlug?: EventSlug
+  ) {
     if (
       route.name === "/conversation/[postSlugId]" ||
       route.name === "/conversation/[postSlugId].embed"
     ) {
       const isEmbedView = isEmbeddedMode();
       const postSlugId = route.params.postSlugId;
-      createOpinionAgreementIntention(postSlugId, opinionSlugId, isEmbedView, eventSlug);
+      createOpinionAgreementIntention(
+        postSlugId,
+        opinionSlugId,
+        isEmbedView,
+        eventSlug
+      );
       setActiveUserIntention("agreement");
     }
   }
@@ -45,7 +53,12 @@ export function useConversationLoginIntentions() {
     ) {
       const isEmbedView = isEmbeddedMode();
       const postSlugId = route.params.postSlugId;
-      createReportUserContentIntention(postSlugId, opinionSlugId, isEmbedView, eventSlug);
+      createReportUserContentIntention(
+        postSlugId,
+        opinionSlugId,
+        isEmbedView,
+        eventSlug
+      );
       setActiveUserIntention("reportUserContent");
     }
   }

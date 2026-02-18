@@ -22,6 +22,18 @@ import type {
     ClusterMetadata,
     EventSlug,
 } from "@/shared/types/zod.js";
+import { httpErrors } from "@fastify/sensible";
+import { eq, desc, SQL, and, sql } from "drizzle-orm";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import sanitizeHtml from "sanitize-html";
+import { getUserPollResponse } from "./poll.js";
+import { createPostModerationPropertyObject } from "./moderation.js";
+import { getUserMutePreferences } from "./muteUser.js";
+import { alias } from "drizzle-orm/pg-core";
+import * as polisService from "@/service/polis.js";
+import { imagePathToUrl } from "@/utils/organizationLogic.js";
+import { getConversationEngagementScore } from "./recommendationSystem.js";
+import { log } from "@/app.js";
 
 /**
  * Validates that public conversations have either login requirement or event ticket verification.
@@ -41,18 +53,6 @@ export function isValidPublicConversationAccess({
     }
     return true;
 }
-import { httpErrors } from "@fastify/sensible";
-import { eq, desc, SQL, and, sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import sanitizeHtml from "sanitize-html";
-import { getUserPollResponse } from "./poll.js";
-import { createPostModerationPropertyObject } from "./moderation.js";
-import { getUserMutePreferences } from "./muteUser.js";
-import { alias } from "drizzle-orm/pg-core";
-import * as polisService from "@/service/polis.js";
-import { imagePathToUrl } from "@/utils/organizationLogic.js";
-import { getConversationEngagementScore } from "./recommendationSystem.js";
-import { log } from "@/app.js";
 
 export function useCommonUser() {
     interface GetUserIdFromUsernameProps {

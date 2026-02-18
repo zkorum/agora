@@ -1,6 +1,13 @@
 -- Finalize poll_response schema changes after backfill
 -- Make poll_id NOT NULL, drop old conversation_id column, update constraints
 
+-- Safety check: fail fast if backfill left unresolved rows.
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM poll_response WHERE poll_id IS NULL) THEN
+        RAISE EXCEPTION 'Migration V0034.2 cannot continue: poll_response.poll_id still has NULL values';
+    END IF;
+END $$;--> statement-breakpoint
+
 -- Make poll_id NOT NULL (safe now after backfill)
 ALTER TABLE "poll_response" ALTER COLUMN "poll_id" SET NOT NULL;--> statement-breakpoint
 

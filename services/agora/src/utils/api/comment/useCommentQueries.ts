@@ -46,6 +46,7 @@ export function useCommentsQuery({
     enabled: computed(() => toValue(enabled) && toValue(conversationSlugId) !== ""),
     staleTime: getAnalysisStaleTime(toValue(voteCount)), // Dynamic cache based on conversation size
     // Note: bypassed by manual invalidation on tab changes
+    placeholderData: (previousData) => previousData, // Preserve previous data during refetches
     retry: false, // Disable auto-retry
   });
 }
@@ -67,6 +68,7 @@ export function useHiddenCommentsQuery({
     enabled: computed(() => toValue(enabled) && toValue(conversationSlugId) !== ""),
     staleTime: getAnalysisStaleTime(toValue(voteCount)), // Dynamic cache based on conversation size
     // Note: bypassed by manual invalidation on tab changes
+    placeholderData: (previousData) => previousData, // Preserve previous data during refetches
     retry: false, // Disable auto-retry
   });
 }

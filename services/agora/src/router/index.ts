@@ -40,6 +40,18 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   });
 
   Router.beforeEach((to, from) => {
+    // Redirect parent layout routes to their default child route.
+    // Without this, navigating to the parent route renders the layout
+    // but leaves <router-view> empty (no child component rendered).
+    if (to.name === "/conversation/[postSlugId]") {
+      return {
+        name: "/conversation/[postSlugId]/",
+        params: to.params,
+        query: to.query,
+        hash: to.hash,
+      };
+    }
+
     const target = conversationGuard(to.name, from.name);
     if (target == "home") {
       return { name: "/" };

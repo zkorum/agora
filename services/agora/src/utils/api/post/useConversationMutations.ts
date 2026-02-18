@@ -1,7 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { UpdateConversationRequest } from "src/shared/types/dto";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useBackendPostApi } from "src/utils/api/post/post";
+import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import {
   type ConversationMutationsTranslations,
   conversationMutationsTranslations,
@@ -162,6 +164,71 @@ export function useOpenConversationMutation() {
       }
 
       showNotifyMessage(t("openError"));
+    },
+
+    retry: false,
+  });
+}
+
+export function useUpdateConversationMutation() {
+  const queryClient = useQueryClient();
+  const { updateConversation } = useBackendPostEditApi();
+
+  return useMutation({
+    mutationFn: (data: UpdateConversationRequest) => updateConversation(data),
+
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({
+        queryKey: ["conversation", variables.conversationSlugId],
+      });
+
+      const previousConversations = queryClient.getQueriesData({
+        queryKey: ["conversation", variables.conversationSlugId],
+      });
+
+      queryClient.setQueriesData<ExtendedConversation>(
+        { queryKey: ["conversation", variables.conversationSlugId] },
+        (oldData) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            metadata: {
+              ...oldData.metadata,
+              isIndexed: variables.isIndexed,
+              isLoginRequired: variables.isLoginRequired,
+              requiresEventTicket: variables.requiresEventTicket,
+            },
+            payload: {
+              ...oldData.payload,
+              title: variables.conversationTitle,
+              body: variables.conversationBody,
+            },
+          };
+        }
+      );
+
+      return { previousConversations };
+    },
+
+    onSuccess: (data, variables) => {
+      if (data.success) {
+        void queryClient.invalidateQueries({
+          queryKey: ["feed"],
+          refetchType: "none",
+        });
+      } else {
+        void queryClient.invalidateQueries({
+          queryKey: ["conversation", variables.conversationSlugId],
+        });
+      }
+    },
+
+    onError: (_error, _variables, context) => {
+      if (context?.previousConversations) {
+        for (const [queryKey, data] of context.previousConversations) {
+          queryClient.setQueryData(queryKey, data);
+        }
+      }
     },
 
     retry: false,

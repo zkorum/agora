@@ -86,20 +86,13 @@ export function useOpinionFiltering({
     getOpinionDataForFilter(currentFilter.value)
   );
 
-  // Simplified empty state logic that works directly with TanStack Query
+  // Empty state logic: just check if data is absent/empty, regardless of query status.
+  // This is safe because AsyncStateHandler checks error state first (before consulting isEmpty),
+  // so error won't be confused with empty. This also ensures the loading spinner shows when
+  // queries are pending with no cached data (e.g., after navigating back from edit page).
   const customIsEmpty = computed((): boolean => {
     const query = activeQuery.value;
-
-    // Only show empty state if query succeeded but returned no data
-    if (
-      query.isSuccess.value &&
-      (!query.data.value || query.data.value.length === 0)
-    ) {
-      return true;
-    }
-
-    // Always use TanStack Query data for empty check - no race conditions
-    return false;
+    return !query.data.value || query.data.value.length === 0;
   });
 
   function getOpinionDataForFilter(

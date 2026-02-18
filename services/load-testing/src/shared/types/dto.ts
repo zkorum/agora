@@ -317,7 +317,7 @@ export class Dto {
             isIndexed: z.boolean(),
             isLoginRequired: z.boolean(),
             requiresEventTicket: zodEventSlug.optional(),
-            indexConversationAt: z.string().datetime().optional(),
+            indexConversationAt: z.iso.datetime().optional(),
         })
         .strict();
     static updateConversationResponse = z.discriminatedUnion("success", [

@@ -7,10 +7,9 @@ import {
     conversationTable,
     conversationModerationTable,
 } from "@/shared-backend/schema.js";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
-import type { EventSlug } from "@/shared/types/zod.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import { isValidPublicConversationAccess } from "./common.js";
@@ -19,6 +18,42 @@ import type {
     UpdateConversationRequest,
     UpdateConversationResponse,
 } from "@/shared/types/dto.js";
+
+interface CreatePollAndLinkToContentProps {
+    tx: PostgresDatabase;
+    contentId: number;
+    options: string[];
+}
+
+async function createPollAndLinkToContent({
+    tx,
+    contentId,
+    options,
+}: CreatePollAndLinkToContentProps): Promise<void> {
+    const newPollResult = await tx
+        .insert(pollTable)
+        .values({
+            conversationContentId: contentId,
+            option1: options[0],
+            option2: options[1],
+            option3: options[2] ?? null,
+            option4: options[3] ?? null,
+            option5: options[4] ?? null,
+            option6: options[5] ?? null,
+            option1Response: 0,
+            option2Response: 0,
+            option3Response: options[2] ? 0 : null,
+            option4Response: options[3] ? 0 : null,
+            option5Response: options[4] ? 0 : null,
+            option6Response: options[5] ? 0 : null,
+        })
+        .returning({ pollId: pollTable.id });
+
+    await tx
+        .update(conversationContentTable)
+        .set({ pollId: newPollResult[0].pollId })
+        .where(eq(conversationContentTable.id, contentId));
+}
 
 interface GetConversationForEditProps {
     db: PostgresDatabase;
@@ -83,12 +118,18 @@ export async function getConversationForEdit({
 
     // Build poll options list
     let pollingOptionList: string[] | undefined = undefined;
-    const hasPoll = conversation.option1 !== null;
+    const hasPoll = conversation.pollId !== null;
 
     if (hasPoll) {
+        if (conversation.option1 === null || conversation.option2 === null) {
+            throw httpErrors.internalServerError(
+                "Poll data is inconsistent for this conversation",
+            );
+        }
+
         pollingOptionList = [
-            conversation.option1!,
-            conversation.option2!,
+            conversation.option1,
+            conversation.option2,
             conversation.option3,
             conversation.option4,
             conversation.option5,
@@ -104,9 +145,7 @@ export async function getConversationForEdit({
         pollingOptionList,
         isIndexed: conversation.isIndexed,
         isLoginRequired: conversation.isLoginRequired,
-        requiresEventTicket: toUnionUndefined(
-            conversation.requiresEventTicket,
-        ) as EventSlug | undefined,
+        requiresEventTicket: toUnionUndefined(conversation.requiresEventTicket),
         indexConversationAt: conversation.indexConversationAt ?? undefined,
         createdAt: conversation.createdAt,
         updatedAt: conversation.updatedAt,
@@ -303,30 +342,11 @@ export async function updateConversation({
                     break;
                 }
                 case "create": {
-                    const options = pollAction.options;
-                    const newPollResult = await tx
-                        .insert(pollTable)
-                        .values({
-                            conversationContentId: newContentId,
-                            option1: options[0],
-                            option2: options[1],
-                            option3: options[2] ?? null,
-                            option4: options[3] ?? null,
-                            option5: options[4] ?? null,
-                            option6: options[5] ?? null,
-                            option1Response: 0,
-                            option2Response: 0,
-                            option3Response: options[2] ? 0 : null,
-                            option4Response: options[3] ? 0 : null,
-                            option5Response: options[4] ? 0 : null,
-                            option6Response: options[5] ? 0 : null,
-                        })
-                        .returning({ pollId: pollTable.id });
-
-                    await tx
-                        .update(conversationContentTable)
-                        .set({ pollId: newPollResult[0].pollId })
-                        .where(eq(conversationContentTable.id, newContentId));
+                    await createPollAndLinkToContent({
+                        tx,
+                        contentId: newContentId,
+                        options: pollAction.options,
+                    });
                     break;
                 }
                 case "keep": {
@@ -340,30 +360,11 @@ export async function updateConversation({
                 }
                 case "replace": {
                     // Create a brand new poll (orphaning the old one with its responses)
-                    const options = pollAction.options;
-                    const newPollResult = await tx
-                        .insert(pollTable)
-                        .values({
-                            conversationContentId: newContentId,
-                            option1: options[0],
-                            option2: options[1],
-                            option3: options[2] ?? null,
-                            option4: options[3] ?? null,
-                            option5: options[4] ?? null,
-                            option6: options[5] ?? null,
-                            option1Response: 0,
-                            option2Response: 0,
-                            option3Response: options[2] ? 0 : null,
-                            option4Response: options[3] ? 0 : null,
-                            option5Response: options[4] ? 0 : null,
-                            option6Response: options[5] ? 0 : null,
-                        })
-                        .returning({ pollId: pollTable.id });
-
-                    await tx
-                        .update(conversationContentTable)
-                        .set({ pollId: newPollResult[0].pollId })
-                        .where(eq(conversationContentTable.id, newContentId));
+                    await createPollAndLinkToContent({
+                        tx,
+                        contentId: newContentId,
+                        options: pollAction.options,
+                    });
                     break;
                 }
                 case "remove": {
@@ -390,7 +391,7 @@ export async function updateConversation({
 
             return { success: true } as const;
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
             log.error(error, "Unexpected error updating conversation");
             throw httpErrors.internalServerError(
                 "Failed to update conversation",
