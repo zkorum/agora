@@ -60,7 +60,7 @@
     "@vueuse/router": "^14.1.0",
     "@zkorum/capacitor-secure-signing": "^1.4.0",
     "@zkorum/keystore-idb": "^0.18.1",
-    "axios": "^1.12.2",
+    "axios": "^1.13.5",
     "buffer": "^6.0.3",
     "cborg": "^4.2.15",
     "inapp-spy": "^5.0.7",
