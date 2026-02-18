@@ -1,6 +1,6 @@
 import { log } from "./app.js";
 import { config } from "./config.js";
-import PgBoss from "pg-boss";
+import { PgBoss } from "pg-boss";
 import { scanConversations } from "./jobs/scanConversations.js";
 import {
     UpdateConversationMathData,
