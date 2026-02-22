@@ -84,7 +84,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import InputOtp from "primevue/inputotp";
-import { useQuasar } from "quasar";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 
 import {
@@ -113,7 +112,6 @@ import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useAuthPhoneApi } from "src/utils/api/auth-phone";
 import type { KeyAction } from "src/utils/api/common";
-import { getPlatform } from "src/utils/common";
 import { createDidOverwriteIfAlreadyExists } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
 import { onMounted, ref, watchEffect } from "vue";
@@ -122,10 +120,6 @@ import { useRouter } from "vue-router";
 const { t } = useComponentI18n<Step3Phone2Translations>(
   step3Phone2Translations
 );
-
-const $q = useQuasar();
-let platform: "mobile" | "web" = "web";
-platform = getPlatform($q.platform);
 
 const { verificationPhoneNumber } = storeToRefs(phoneVerificationStore());
 
@@ -269,7 +263,7 @@ async function nextButtonClicked() {
         case "associated_with_another_user": {
           showNotifyMessage(t("syncHiccupDetected"));
           // overwrite key but don't send a request
-          await createDidOverwriteIfAlreadyExists(platform);
+          await createDidOverwriteIfAlreadyExists();
           break;
         }
         case "auth_state_changed": {

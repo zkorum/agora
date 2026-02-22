@@ -40,6 +40,21 @@ Agora Citizen Network is a privacy-preserving social platform using zero-knowled
 
 The landing page is embedded in the app (not a separate static site) because features like "Explore Conversations" will need database access via SSR.
 
+### Terminology: Comment / Opinion / Statement
+
+The codebase uses `comment` and `opinion` interchangeably in variable names, database columns, and API endpoints for historical reasons. **Conceptually, comment = opinion = statement.** They all refer to the same thing: a user-submitted proposition that others vote on.
+
+**In code:** Keep existing `comment`/`opinion` naming as-is. In doubt, use `opinion` for new code.
+
+**In user-facing text (UI labels, translations):**
+- English: **"statement"**
+- French: **"proposition"**
+- Other languages: use the idiomatic equivalent (not a literal translation)
+
+**Exceptions — these are different concepts:**
+- **"Opinion Group"**: refers to a cluster of users with similar voting patterns. Keep as-is.
+- **"Thanks for your comments!"**: in the context of user reports/feedback, "comment" means the user's free-text input, not a statement in a conversation.
+
 ## Environment Variables (Frontend)
 
 The frontend (`services/agora`) uses a comprehensive environment variable validation system:
@@ -106,11 +121,10 @@ make dev-generate
 
 ```bash
 # Frontend (Vue/Quasar) - legacy
-cd services/agora && pnpm lint && pnpm test
+cd services/agora && pnpm lint:fix && pnpm test
 
 # Frontend (SvelteKit) - new
-cd services/app && pnpm lint           # ESLint (strictTypeChecked) + Prettier
-cd services/app && pnpm lint:fix       # Auto-fix lint + format issues
+cd services/app && pnpm lint:fix       # ESLint (strictTypeChecked) + Prettier, auto-fix
 cd services/app && pnpm check          # Type checking
 cd services/app && pnpm test:unit      # Vitest (logic tests)
 cd services/app && pnpm test:e2e       # Playwright (E2E tests)

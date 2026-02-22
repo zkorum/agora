@@ -13,8 +13,11 @@ export interface ShareActionTranslations {
 
 export interface ShareActionCallbacks {
   copyLinkCallback: () => void | Promise<void>;
-  openQrCodeCallback: () => void | Promise<void>;
-  shareViaCallback: () => void | Promise<void>;
+  openQrCodeCallback?: () => void | Promise<void>;
+}
+
+function isWebShareAvailable(): boolean {
+  return typeof navigator !== "undefined" && navigator.share !== undefined;
 }
 
 /**
@@ -23,42 +26,57 @@ export interface ShareActionCallbacks {
 export function getShareActions({
   copyLinkCallback,
   openQrCodeCallback,
-  shareViaCallback,
+  showShareVia,
+  shareUrl,
+  shareTitle,
   translations,
-  isWebShareAvailable,
 }: {
   copyLinkCallback: () => void | Promise<void>;
-  openQrCodeCallback: () => void | Promise<void>;
-  shareViaCallback: () => void | Promise<void>;
+  openQrCodeCallback?: () => void | Promise<void>;
+  showShareVia: boolean;
+  shareUrl: string;
+  shareTitle: string;
   translations: ShareActionTranslations;
-  isWebShareAvailable: boolean;
 }): ContentAction[] {
-  return [
+  const actions: ContentAction[] = [
     {
       id: "copyLink",
       label: translations.copyLink,
       icon: "mdi-content-copy",
       variant: "default",
       handler: copyLinkCallback,
-      isVisible: () => true, // Always show copy link
+      isVisible: () => true,
     },
-    {
+  ];
+
+  if (openQrCodeCallback) {
+    actions.push({
       id: "showQrCode",
       label: translations.showQrCode,
       icon: "mdi-qrcode",
       variant: "default",
       handler: openQrCodeCallback,
-      isVisible: () => true, // Always show QR code option
-    },
-    {
+      isVisible: () => true,
+    });
+  }
+
+  if (showShareVia && isWebShareAvailable()) {
+    actions.push({
       id: "shareVia",
       label: translations.shareVia,
       icon: "mdi-share-variant",
       variant: "default",
-      handler: shareViaCallback,
-      isVisible: () => isWebShareAvailable, // Only show if Web Share API is available
-    },
-  ];
+      handler: async () => {
+        await navigator.share({
+          title: shareTitle,
+          url: shareUrl,
+        });
+      },
+      isVisible: () => true,
+    });
+  }
+
+  return actions;
 }
 
 /**
@@ -68,23 +86,26 @@ export function getAvailableShareActions({
   context,
   copyLinkCallback,
   openQrCodeCallback,
-  shareViaCallback,
+  showShareVia,
+  shareUrl,
+  shareTitle,
   translations,
-  isWebShareAvailable,
 }: {
   context: ContentActionContext;
   copyLinkCallback: () => void | Promise<void>;
-  openQrCodeCallback: () => void | Promise<void>;
-  shareViaCallback: () => void | Promise<void>;
+  openQrCodeCallback?: () => void | Promise<void>;
+  showShareVia: boolean;
+  shareUrl: string;
+  shareTitle: string;
   translations: ShareActionTranslations;
-  isWebShareAvailable: boolean;
 }): ContentAction[] {
   const allActions = getShareActions({
     copyLinkCallback,
     openQrCodeCallback,
-    shareViaCallback,
+    showShareVia,
+    shareUrl,
+    shareTitle,
     translations,
-    isWebShareAvailable,
   });
 
   return allActions.filter((action) => action.isVisible(context));

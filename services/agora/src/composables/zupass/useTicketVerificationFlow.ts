@@ -1,4 +1,3 @@
-import { useQuasar } from "quasar";
 import {
   type EventTicketRequirementBannerTranslations,
   eventTicketRequirementBannerTranslations,
@@ -9,7 +8,6 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useBackendZupassApi } from "src/utils/api/zupass";
-import { getPlatform } from "src/utils/common";
 import { useNotify } from "src/utils/ui/notify";
 
 import { useZupassVerification } from "./useZupassVerification";
@@ -43,10 +41,6 @@ export function useTicketVerificationFlow() {
   const { showNotifyMessage } = useNotify();
   const authStore = useAuthenticationStore();
   const userStore = useUserStore();
-
-  // Get platform at setup level (can't call useQuasar in async functions)
-  const $q = useQuasar();
-  const platform = getPlatform($q.platform);
 
   // Translations for error messages
   const { t } = useComponentI18n<EventTicketRequirementBannerTranslations>(
@@ -86,7 +80,6 @@ export function useTicketVerificationFlow() {
       // Request proof from Zupass (Parcnet creates its own dialog)
       const proofResult = await requestTicketProof({
         eventSlug,
-        platform,
       });
 
       if (!proofResult.success) {

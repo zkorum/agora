@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  fast-xml-parser: '>=5.3.6'
+
 importers:
 
   .:
@@ -715,8 +718,8 @@ packages:
   fast-uri@3.1.0:
     resolution: {integrity: sha512-iPeeDKJSWf4IEOasVVrknXpaBV0IApz/gp7S2bb7Z4Lljbl2MGJRqInZiUrQwV16cpzw/D3S5j5Julj/gT52AA==}
 
-  fast-xml-parser@5.3.4:
-    resolution: {integrity: sha512-EFd6afGmXlCx8H8WTZHhAoDaWaGyuIBoZJ2mknrNxug+aZKjkp0a0dlars9Izl+jF+7Gu1/5f/2h68cQpe0IiA==}
+  fast-xml-parser@5.3.6:
+    resolution: {integrity: sha512-QNI3sAvSvaOiaMl8FYU4trnEzCwiRr8XMWgAHzlrWpTSj+QaCSvOf1h82OEP1s4hiAXhnbXSyFWCf4ldZzZRVA==}
     hasBin: true
 
   fastify@5.7.4:
@@ -1510,7 +1513,7 @@ snapshots:
   '@aws-sdk/xml-builder@3.972.4':
     dependencies:
       '@smithy/types': 4.12.0
-      fast-xml-parser: 5.3.4
+      fast-xml-parser: 5.3.6
       tslib: 2.8.1
 
   '@aws/lambda-invoke-store@0.2.3': {}
@@ -2060,7 +2063,7 @@ snapshots:
 
   fast-uri@3.1.0: {}
 
-  fast-xml-parser@5.3.4:
+  fast-xml-parser@5.3.6:
     dependencies:
       strnum: 2.1.2
 

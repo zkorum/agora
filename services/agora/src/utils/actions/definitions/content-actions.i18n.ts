@@ -37,9 +37,9 @@ export const actionsTranslations: Record<
     cancel: "Cancel",
     confirm: "Confirm",
     confirmDeletePost: "Are you sure you want to delete this conversation?",
-    confirmDeleteComment: "Are you sure you want to delete this opinion?",
+    confirmDeleteComment: "Are you sure you want to delete this statement?",
     confirmMuteUser:
-      "Are you sure you want to mute this user? You won't see their conversations and opinions anymore.",
+      "Are you sure you want to mute this user? You won't see their conversations and statements anymore.",
     confirmGenericAction: "Are you sure you want to perform this action?",
   },
   ar: {
@@ -56,9 +56,9 @@ export const actionsTranslations: Record<
     cancel: "إلغاء",
     confirm: "تأكيد",
     confirmDeletePost: "هل أنت متأكد أنك تريد حذف هذه المحادثة؟",
-    confirmDeleteComment: "هل أنت متأكد أنك تريد حذف هذا الرأي؟",
+    confirmDeleteComment: "هل أنت متأكد أنك تريد حذف هذا المقترح؟",
     confirmMuteUser:
-      "هل أنت متأكد أنك تريد كتم هذا المستخدم؟ لن ترى محادثاته وآراءه بعد الآن.",
+      "هل أنت متأكد أنك تريد كتم هذا المستخدم؟ لن ترى محادثاته ومقترحاته بعد الآن.",
     confirmGenericAction: "هل أنت متأكد أنك تريد تنفيذ هذا الإجراء؟",
   },
   es: {
@@ -75,9 +75,9 @@ export const actionsTranslations: Record<
     cancel: "Cancelar",
     confirm: "Confirmar",
     confirmDeletePost: "¿Está seguro de que desea eliminar esta conversación?",
-    confirmDeleteComment: "¿Está seguro de que desea eliminar esta opinión?",
+    confirmDeleteComment: "¿Está seguro de que desea eliminar esta proposición?",
     confirmMuteUser:
-      "¿Está seguro de que desea silenciar a este usuario? Ya no verá sus conversaciones y opiniones.",
+      "¿Está seguro de que desea silenciar a este usuario? Ya no verá sus conversaciones y proposiciones.",
     confirmGenericAction: "¿Está seguro de que desea realizar esta acción?",
   },
   fr: {
@@ -95,9 +95,9 @@ export const actionsTranslations: Record<
     confirm: "Confirmer",
     confirmDeletePost:
       "Êtes-vous sûr de vouloir supprimer cette conversation ?",
-    confirmDeleteComment: "Êtes-vous sûr de vouloir supprimer cette opinion ?",
+    confirmDeleteComment: "Êtes-vous sûr de vouloir supprimer cette proposition ?",
     confirmMuteUser:
-      "Êtes-vous sûr de vouloir mettre cet utilisateur en sourdine ? Vous ne verrez plus ses conversations et opinions.",
+      "Êtes-vous sûr de vouloir mettre cet utilisateur en sourdine ? Vous ne verrez plus ses conversations et propositions.",
     confirmGenericAction: "Êtes-vous sûr de vouloir effectuer cette action ?",
   },
   "zh-Hans": {
@@ -150,9 +150,9 @@ export const actionsTranslations: Record<
     cancel: "キャンセル",
     confirm: "確認",
     confirmDeletePost: "この会話を削除してもよろしいですか？",
-    confirmDeleteComment: "この意見を削除してもよろしいですか？",
+    confirmDeleteComment: "この主張を削除してもよろしいですか？",
     confirmMuteUser:
-      "このユーザーをミュートしてもよろしいですか？このユーザーの会話や意見は表示されなくなります。",
+      "このユーザーをミュートしてもよろしいですか？このユーザーの会話や主張は表示されなくなります。",
     confirmGenericAction: "この操作を実行してもよろしいですか？",
   },
 };

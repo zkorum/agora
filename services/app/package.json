@@ -67,6 +67,10 @@
       "@sentry/cli",
       "esbuild",
       "sharp"
-    ]
+    ],
+    "overrides": {
+      "ajv": ">=6.12.3",
+      "cookie": ">=0.7.0"
+    }
   }
 }

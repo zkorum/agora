@@ -375,6 +375,7 @@ export async function getNotifications({
                 notificationType: notificationTable.notificationType,
                 importSlugId: conversationImportTable.slugId,
                 conversationSlugId: conversationTable.slugId,
+                conversationTitle: conversationContentTable.title,
                 failureReason: conversationImportTable.failureReason,
                 slugId: notificationTable.slugId,
             })
@@ -398,6 +399,13 @@ export async function getNotifications({
                 eq(
                     conversationTable.id,
                     notificationImportTable.conversationId,
+                ),
+            )
+            .leftJoin(
+                conversationContentTable,
+                eq(
+                    conversationContentTable.id,
+                    conversationTable.currentContentId,
                 ),
             )
             .where(whereClause)
@@ -428,20 +436,30 @@ export async function getNotifications({
                         },
                     };
                     break;
-                case "import_completed":
+                case "import_completed": {
+                    const importCompletedRouteTarget: {
+                        type: "import";
+                        importSlugId: string;
+                        conversationSlugId?: string;
+                    } = {
+                        type: "import",
+                        importSlugId: notificationItem.importSlugId,
+                    };
+
+                    if (notificationItem.conversationSlugId) {
+                        importCompletedRouteTarget.conversationSlugId =
+                            notificationItem.conversationSlugId;
+                    }
+
                     parsedItem = {
                         ...baseNotification,
                         type: "import_completed",
-                        routeTarget: {
-                            type: "import",
-                            importSlugId: notificationItem.importSlugId,
-                            ...(notificationItem.conversationSlugId && {
-                                conversationSlugId:
-                                    notificationItem.conversationSlugId,
-                            }),
-                        },
+                        routeTarget: importCompletedRouteTarget,
+                        conversationTitle:
+                            notificationItem.conversationTitle ?? undefined,
                     };
                     break;
+                }
                 case "import_failed":
                     parsedItem = {
                         ...baseNotification,
@@ -911,16 +929,28 @@ async function buildImportNotification(
 
         const baseData = baseResult[0];
 
-        // Fetch conversation slug separately if conversationId exists
+        // Fetch conversation slug and title separately if conversationId exists
         let conversationSlugId: string | null = null;
+        let conversationTitle: string | null = null;
         if (conversationId !== null) {
             const convResult = await db
-                .select({ slugId: conversationTable.slugId })
+                .select({
+                    slugId: conversationTable.slugId,
+                    title: conversationContentTable.title,
+                })
                 .from(conversationTable)
+                .leftJoin(
+                    conversationContentTable,
+                    eq(
+                        conversationContentTable.id,
+                        conversationTable.currentContentId,
+                    ),
+                )
                 .where(eq(conversationTable.id, conversationId))
                 .limit(1);
             if (convResult.length === 1) {
                 conversationSlugId = convResult[0].slugId;
+                conversationTitle = convResult[0].title;
             }
         }
 
@@ -955,6 +985,7 @@ async function buildImportNotification(
                         importSlugId,
                         conversationSlugId: conversationSlugId ?? undefined,
                     },
+                    conversationTitle: conversationTitle ?? undefined,
                 };
             case "import_failed":
                 return {

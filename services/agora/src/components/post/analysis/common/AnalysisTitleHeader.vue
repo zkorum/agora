@@ -6,7 +6,7 @@
           <StaticIcon src="/images/icons/stars.svg" size="1rem" />
         </div>
         <div>
-          {{ props.title }}
+          <slot name="title">{{ props.title }}</slot>
         </div>
       </div>
 
@@ -19,7 +19,7 @@
 import StaticIcon from "src/components/features/ui/StaticIcon.vue";
 
 const props = defineProps<{
-  title: string;
+  title?: string;
   showStarInTitle: boolean;
 }>();
 </script>

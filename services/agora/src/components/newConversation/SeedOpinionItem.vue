@@ -21,12 +21,13 @@
               :placeholder="t('inputTextPlaceholder')"
               :show-toolbar="true"
               :single-line="false"
-              :max-length="MAX_LENGTH_OPINION"
               :disabled="false"
+              :max-length="maxLengthOpinion"
               min-height="3rem"
-              @update:model-value="(val) => $emit('update:modelValue', val)"
-              @manually-focused="$emit('focus')"
-              @blur="$emit('blur')"
+              @update:model-value="(val: string) => emit('update:modelValue', val)"
+              @update:character-count="onCharacterCountUpdate"
+              @manually-focused="emit('focus')"
+              @blur="emit('blur')"
             />
           </div>
         </div>
@@ -39,7 +40,7 @@
       rounded
       severity="secondary"
       class="delete-button"
-      @click.stop="$emit('remove')"
+      @click.stop="emit('remove')"
       @mousedown.stop
     />
   </div>
@@ -70,12 +71,15 @@ const props = defineProps<{
   isActive: boolean;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   (e: "update:modelValue", value: string): void;
   (e: "remove"): void;
   (e: "focus"): void;
   (e: "blur"): void;
+  (e: "update:characterCount", count: number): void;
 }>();
+
+const maxLengthOpinion = MAX_LENGTH_OPINION;
 
 const Editor = defineAsyncComponent(
   () => import("src/components/editor/Editor.vue")
@@ -86,6 +90,10 @@ const { t } = useComponentI18n<SeedOpinionItemTranslations>(
 );
 
 const editorRef = ref<InstanceType<typeof Editor>>();
+
+function onCharacterCountUpdate(count: number) {
+  emit("update:characterCount", count);
+}
 
 const handleCardClick = (): void => {
   if (!props.isActive) {

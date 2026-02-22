@@ -10,34 +10,34 @@ export const useCommentQueriesTranslations: Record<
   UseCommentQueriesTranslations
 > = {
   en: {
-    commentDeletedSuccessfully: "Comment deleted successfully",
-    failedToDeleteComment: "Failed to delete comment. Please try again.",
+    commentDeletedSuccessfully: "Statement deleted successfully",
+    failedToDeleteComment: "Failed to delete statement. Please try again.",
   },
   es: {
-    commentDeletedSuccessfully: "Comentario eliminado exitosamente",
+    commentDeletedSuccessfully: "Proposición eliminada exitosamente",
     failedToDeleteComment:
-      "Error al eliminar el comentario. Inténtalo de nuevo.",
+      "Error al eliminar la proposición. Inténtalo de nuevo.",
   },
   fr: {
-    commentDeletedSuccessfully: "Commentaire supprimé avec succès",
+    commentDeletedSuccessfully: "Proposition supprimée avec succès",
     failedToDeleteComment:
-      "Échec de la suppression du commentaire. Veuillez réessayer.",
+      "Échec de la suppression de la proposition. Veuillez réessayer.",
   },
   "zh-Hant": {
-    commentDeletedSuccessfully: "評論已成功刪除",
-    failedToDeleteComment: "刪除評論失敗。請重試。",
+    commentDeletedSuccessfully: "觀點已成功刪除",
+    failedToDeleteComment: "刪除觀點失敗。請重試。",
   },
   "zh-Hans": {
-    commentDeletedSuccessfully: "评论已成功删除",
-    failedToDeleteComment: "删除评论失败。请重试。",
+    commentDeletedSuccessfully: "观点已成功删除",
+    failedToDeleteComment: "删除观点失败。请重试。",
   },
   ja: {
-    commentDeletedSuccessfully: "コメントを正常に削除しました",
+    commentDeletedSuccessfully: "主張を正常に削除しました",
     failedToDeleteComment:
-      "コメントの削除に失敗しました。もう一度お試しください。",
+      "主張の削除に失敗しました。もう一度お試しください。",
   },
   ar: {
-    commentDeletedSuccessfully: "تم حذف التعليق بنجاح",
-    failedToDeleteComment: "فشل في حذف التعليق. يرجى المحاولة مرة أخرى.",
+    commentDeletedSuccessfully: "تم حذف المقترح بنجاح",
+    failedToDeleteComment: "فشل في حذف المقترح. يرجى المحاولة مرة أخرى.",
   },
 };

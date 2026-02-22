@@ -2,6 +2,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface CommentActionOptionsTranslations {
   agoraOpinion: string;
+  copiedToClipboard: string;
 }
 
 export const commentActionOptionsTranslations: Record<
@@ -9,24 +10,31 @@ export const commentActionOptionsTranslations: Record<
   CommentActionOptionsTranslations
 > = {
   en: {
-    agoraOpinion: "Agora Opinion",
+    agoraOpinion: "Agora Statement",
+    copiedToClipboard: "Link copied to clipboard",
   },
   ar: {
-    agoraOpinion: "رأي أجورا",
+    agoraOpinion: "مقترح أجورا",
+    copiedToClipboard: "تم نسخ الرابط إلى الحافظة",
   },
   es: {
-    agoraOpinion: "Opinión de Agora",
+    agoraOpinion: "Proposición de Agora",
+    copiedToClipboard: "Enlace copiado al portapapeles",
   },
   fr: {
-    agoraOpinion: "Opinion Agora",
+    agoraOpinion: "Proposition Agora",
+    copiedToClipboard: "Lien copié dans le presse-papiers",
   },
   "zh-Hans": {
-    agoraOpinion: "Agora 意见",
+    agoraOpinion: "Agora 观点",
+    copiedToClipboard: "链接已复制到剪贴板",
   },
   "zh-Hant": {
-    agoraOpinion: "Agora 意見",
+    agoraOpinion: "Agora 觀點",
+    copiedToClipboard: "連結已複製到剪貼簿",
   },
   ja: {
-    agoraOpinion: "Agora 意見",
+    agoraOpinion: "Agora 主張",
+    copiedToClipboard: "リンクをクリップボードにコピーしました",
   },
 };

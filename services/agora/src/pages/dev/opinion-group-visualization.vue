@@ -148,6 +148,9 @@ function generateMockOpinions(count: number = 3): AnalysisOpinionItem[] {
       clustersStats: [],
       moderation: { status: "unmoderated" },
       isSeed: false,
+      groupAwareConsensusAgree: Math.random() * 0.5 + 0.25,
+      groupAwareConsensusDisagree: Math.random() * 0.5 + 0.25,
+      divisiveScore: Math.random() * 3,
     });
   }
 

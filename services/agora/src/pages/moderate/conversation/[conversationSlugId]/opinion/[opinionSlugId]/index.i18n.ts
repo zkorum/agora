@@ -15,7 +15,7 @@ export const opinionModerationTranslations: Record<
   OpinionModerationTranslations
 > = {
   en: {
-    title: "Moderate the opinion",
+    title: "Moderate the statement",
     actionLabel: "Action",
     reasonLabel: "Reason",
     explanationLabel: "Explanation (optional)",
@@ -24,7 +24,7 @@ export const opinionModerationTranslations: Record<
     withdrawButton: "Withdraw",
   },
   ar: {
-    title: "إشراف على الرأي",
+    title: "إشراف على المقترح",
     actionLabel: "الإجراء",
     reasonLabel: "السبب",
     explanationLabel: "الشرح (اختياري)",
@@ -33,7 +33,7 @@ export const opinionModerationTranslations: Record<
     withdrawButton: "سحب",
   },
   es: {
-    title: "Moderar la opinión",
+    title: "Moderar la proposición",
     actionLabel: "Acción",
     reasonLabel: "Razón",
     explanationLabel: "Explicación (opcional)",
@@ -42,7 +42,7 @@ export const opinionModerationTranslations: Record<
     withdrawButton: "Retirar",
   },
   fr: {
-    title: "Modérer l'opinion",
+    title: "Modérer la proposition",
     actionLabel: "Action",
     reasonLabel: "Raison",
     explanationLabel: "Explication (facultatif)",
@@ -51,7 +51,7 @@ export const opinionModerationTranslations: Record<
     withdrawButton: "Retirer",
   },
   "zh-Hans": {
-    title: "管理意见",
+    title: "管理观点",
     actionLabel: "操作",
     reasonLabel: "原因",
     explanationLabel: "解释（可选）",
@@ -60,7 +60,7 @@ export const opinionModerationTranslations: Record<
     withdrawButton: "撤回",
   },
   "zh-Hant": {
-    title: "管理意見",
+    title: "管理觀點",
     actionLabel: "操作",
     reasonLabel: "原因",
     explanationLabel: "解釋（可選）",
@@ -69,7 +69,7 @@ export const opinionModerationTranslations: Record<
     withdrawButton: "撤回",
   },
   ja: {
-    title: "意見を管理",
+    title: "主張を管理",
     actionLabel: "操作",
     reasonLabel: "理由",
     explanationLabel: "説明（任意）",

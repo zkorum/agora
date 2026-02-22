@@ -63,11 +63,15 @@ export function getDisplayMessage(
     case "export_cancelled":
       return `"${notification.conversationTitle}"`;
 
-    case "import_started":
     case "import_completed":
+      // Show conversation title as subtitle if available
+      if (notification.conversationTitle) {
+        return `"${notification.conversationTitle}"`;
+      }
+      return null;
+
+    case "import_started":
     case "import_failed":
-      // Import notifications don't have additional message content
-      // The title already says "Your conversation import has started/completed/failed"
       return null;
   }
 }

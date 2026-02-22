@@ -56,8 +56,6 @@ const configSchema = sharedConfigSchema.extend({
     ZUPASS_PUBLIC_KEY: z
         .string()
         .default("YwahfUdUYehkGMaWh0+q3F8itx2h8mybjPmt8CmTJSs"),
-    NOSTR_PROOF_CHANNEL_EVENT_ID: z.string().optional(), // if undefined, then nostr functionalities are disabled
-    NOSTR_DEFAULT_RELAY_URL: z.url().default("wss://nos.lol"),
     POLIS_BASE_URL: z.url().optional(),
     POLIS_CONV_TO_IMPORT_ON_RUN: z.undefined().or(
         z

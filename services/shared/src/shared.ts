@@ -32,7 +32,15 @@ export function htmlToCountedText(htmlString: string): string {
         .replace(/<br\s*\/?>/gi, "\n")
         .replace(/<p>/gi, "");
 
-    const plainText = textWithNewlines.replace(/<[^>]*>/g, "");
+    // Strip HTML tags; repeat until stable to handle malformed/nested tags
+    let plainText = textWithNewlines;
+    let prev: string;
+    do {
+        prev = plainText;
+        plainText = plainText.replace(/<[^>]*>/g, "");
+    } while (plainText !== prev);
+    // Remove any remaining incomplete opening tag (e.g. "<script" with no closing >)
+    plainText = plainText.replace(/<[^>]*$/, "");
     return plainText.replace(/\n$/, "");
 }
 

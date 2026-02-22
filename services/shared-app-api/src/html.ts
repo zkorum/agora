@@ -41,16 +41,17 @@ export function normalizeEmptyLines(htmlString: string): string {
     }
 
     // Step 1: Trim leading empty paragraphs
-    htmlString = htmlString.replace(/^(\s*<p>\s*<\/p>\s*)+/i, "");
+    // Use non-ambiguous quantifiers to avoid ReDoS (no nested \s* inside repeating group)
+    htmlString = htmlString.replace(/^(\s*<p>\s*<\/p>)+\s*/i, "");
 
     // Step 2: Trim trailing empty paragraphs
-    htmlString = htmlString.replace(/(\s*<p>\s*<\/p>\s*)+$/i, "");
+    htmlString = htmlString.replace(/\s*(<p>\s*<\/p>)+\s*$/i, "");
 
     // Step 3: Trim leading <br> tags
-    htmlString = htmlString.replace(/^(\s*<br\s*\/?>\s*)+/i, "");
+    htmlString = htmlString.replace(/^(\s*<br\s*\/?>)+\s*/i, "");
 
     // Step 4: Trim trailing <br> tags
-    htmlString = htmlString.replace(/(\s*<br\s*\/?>\s*)+$/i, "");
+    htmlString = htmlString.replace(/\s*(<br\s*\/?>)+\s*$/i, "");
 
     return htmlString;
 }

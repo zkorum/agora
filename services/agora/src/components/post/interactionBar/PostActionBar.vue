@@ -49,7 +49,6 @@ import { useShareActions } from "src/composables/share/useShareActions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ContentAction } from "src/utils/actions/core/types";
 import { formatAmount } from "src/utils/common";
-import { useWebShare } from "src/utils/share/WebShare";
 import { useNotify } from "src/utils/ui/notify";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 
@@ -81,7 +80,6 @@ const { t } = useComponentI18n<PostActionBarTranslations>(
   postActionBarTranslations
 );
 
-const webShare = useWebShare();
 const $q = useQuasar();
 const { getConversationUrl } = useConversationUrl();
 const shareActions = useShareActions();
@@ -90,10 +88,6 @@ const notify = useNotify();
 function shareClicked(): void {
   const sharePostUrl = getConversationUrl(props.conversationSlugId);
   const shareTitle = "Agora - " + props.conversationTitle;
-
-  // Check if Web Share API is available
-  const isWebShareAvailable =
-    typeof navigator !== "undefined" && navigator.share !== undefined;
 
   // Show share actions menu
   shareActions.showShareActions({
@@ -113,10 +107,9 @@ function shareClicked(): void {
         },
       });
     },
-    shareViaCallback: async () => {
-      await webShare.share(shareTitle, sharePostUrl);
-    },
-    isWebShareAvailable,
+    showShareVia: true,
+    shareUrl: sharePostUrl,
+    shareTitle,
   });
 }
 
@@ -131,6 +124,10 @@ async function handleShareActionSelected(action: ContentAction): Promise<void> {
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 1rem;
+
+  @media (max-width: 599px) {
+    gap: 0.5rem;
+  }
 }
 
 .buttonClusterBorder {
@@ -148,6 +145,12 @@ async function handleShareActionSelected(action: ContentAction): Promise<void> {
   display: flex;
   align-items: center;
   gap: 1rem;
+  margin-left: auto;
+
+  @media (max-width: 599px) {
+    gap: 0.5rem;
+    font-size: 0.8rem;
+  }
 }
 .participantCountContainer {
   gap: 0.3rem;

@@ -67,7 +67,7 @@ const { reveal: revealHeader } = storeToRefs(useLayoutHeaderStore());
 
 useNotificationRefresher();
 
-const noSwipeOpen = process.env.MODE != "capacitor";
+const noSwipeOpen = true;
 
 const enableHeaderReveal = ref(false);
 setTimeout(() => {

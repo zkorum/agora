@@ -11,19 +11,19 @@ export const seedOpinionItemTranslations: Record<
 > = {
   en: {
     inputTextPlaceholder: "Input text",
-    deleteOpinion: "Delete Opinion",
+    deleteOpinion: "Delete Statement",
   },
   ar: {
     inputTextPlaceholder: "أدخل النص",
-    deleteOpinion: "حذف الرأي",
+    deleteOpinion: "حذف المقترح",
   },
   es: {
     inputTextPlaceholder: "Ingrese texto",
-    deleteOpinion: "Eliminar Opinión",
+    deleteOpinion: "Eliminar Proposición",
   },
   fr: {
     inputTextPlaceholder: "Saisir le texte",
-    deleteOpinion: "Supprimer l'Opinion",
+    deleteOpinion: "Supprimer la Proposition",
   },
   "zh-Hans": {
     inputTextPlaceholder: "输入文本",
@@ -35,6 +35,6 @@ export const seedOpinionItemTranslations: Record<
   },
   ja: {
     inputTextPlaceholder: "テキストを入力",
-    deleteOpinion: "意見を削除",
+    deleteOpinion: "主張を削除",
   },
 };

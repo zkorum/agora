@@ -1,2 +1,15 @@
 node_modules/
 *.temporary
+dist/
+.quasar/
+src-capacitor/
+src-cordova/
+.git/
+.gitignore
+.DS_Store
+.vscode/
+.idea/
+*.md
+LICENSE
+.env.dev
+pnpm-workspace.yaml

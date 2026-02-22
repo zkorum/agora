@@ -11,7 +11,6 @@ This directory contains all Agora services and shared code packages.
 - **python-bridge/** - Python service for Polis math
 - **llm/** - LLM service for AI-generated summaries
 - **nlp/** - NLP utilities
-- **broadcast/** - Broadcasting service
 - **images/** - Image processing service
 
 ## Shared Code Packages

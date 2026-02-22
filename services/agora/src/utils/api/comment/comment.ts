@@ -209,7 +209,8 @@ export function useBackendCommentApi() {
   async function fetchAnalysisData(params: {
     conversationSlugId: string;
   }): Promise<{
-    consensus: AnalysisOpinionItem[];
+    consensusAgree: AnalysisOpinionItem[];
+    consensusDisagree: AnalysisOpinionItem[];
     controversial: AnalysisOpinionItem[];
     polisClusters: Partial<PolisClusters>;
   }> {
@@ -249,7 +250,8 @@ export function useBackendCommentApi() {
     const parsedData = Dto.fetchAnalysisResponse.parse(data);
 
     return {
-      consensus: parsedData.consensus,
+      consensusAgree: parsedData.consensusAgree,
+      consensusDisagree: parsedData.consensusDisagree,
       controversial: parsedData.controversial,
       polisClusters: parsedData.clusters ?? {},
     };

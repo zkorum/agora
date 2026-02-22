@@ -8,3 +8,11 @@ private.dev.key
 public.dev.key
 .env
 flyway.conf
+.git/
+.gitignore
+.DS_Store
+.vscode/
+.idea/
+*.md
+LICENSE
+Dockerfile*

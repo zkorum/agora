@@ -1,5 +1,3 @@
-import type { Platform } from "quasar";
-
 export function getDateString(dateObject: Date) {
   return dateObject.toLocaleDateString("en-US", {
     year: "numeric",
@@ -37,20 +35,6 @@ export async function isDataPersisted(): Promise<boolean> {
   }
 }
 
-export type SupportedPlatform = "mobile" | "web";
-
-export function getPlatform(platform: Platform): SupportedPlatform {
-  if (platform.is.nativeMobile) {
-    console.log("nativeMobile platform detected");
-    return "mobile";
-  }
-  if (!platform.is.bex) {
-    return "web";
-  }
-  // TODO: throw warning
-  console.warn("This platform is not supported");
-  return "web";
-}
 
 export function formatPercentage(percentage: number) {
   const formattedPercentage = Number.isInteger(percentage)

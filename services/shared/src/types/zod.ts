@@ -388,6 +388,7 @@ const zodImportCompletedNotification = zodNotificationBase
     .extend({
         type: z.literal("import_completed"),
         routeTarget: zodImportRouteTarget,
+        conversationTitle: z.string().optional(),
     })
     .strict();
 
@@ -541,6 +542,9 @@ export const zodOpinionItem = z
     .strict();
 export const zodAnalysisOpinionItem = zodOpinionItem.extend({
     clustersStats: z.array(zodClusterStats),
+    groupAwareConsensusAgree: z.number().nonnegative(),
+    groupAwareConsensusDisagree: z.number().nonnegative(),
+    divisiveScore: z.number().nonnegative(),
 });
 export const zodClusterMetadata = z
     .object({

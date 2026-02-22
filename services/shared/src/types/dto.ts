@@ -87,7 +87,8 @@ export class Dto {
     static fetchAnalysisResponse = z
         .object({
             polisContentId: z.number().int().nonnegative().optional(), // for logging/debugging purpose, undefined if no polis calculated
-            consensus: z.array(zodAnalysisOpinionItem),
+            consensusAgree: z.array(zodAnalysisOpinionItem),
+            consensusDisagree: z.array(zodAnalysisOpinionItem),
             controversial: z.array(zodAnalysisOpinionItem),
             clusters: zodPolisClusters,
         })

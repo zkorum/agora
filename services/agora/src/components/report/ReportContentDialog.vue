@@ -1,5 +1,14 @@
 <template>
   <div class="card">
+    <q-btn
+      icon="mdi-close"
+      flat
+      round
+      dense
+      class="close-button"
+      @click="emit('close')"
+    />
+
     <div v-if="!selectedReason" class="container">
       <div class="title">{{ t("submitReportTitle") }}</div>
 
@@ -57,22 +66,11 @@
         </div>
 
         <div class="submitButtons">
-          <div v-if="enabledSkip == false">
-            <ZKGradientButton
-              :label="t('skipButton')"
-              variant="text"
-              label-color="#666666"
-              @click="clickedSkipExplanationButton()"
-            />
-          </div>
-
-          <div>
-            <ZKGradientButton
-              :label="t('submitButton')"
-              :disabled="explanation.length == 0 && !enabledSkip"
-              @click="clickedSubmitButton()"
-            />
-          </div>
+          <PrimeButton
+            :label="t('submitButton')"
+            severity="primary"
+            @click="clickedSubmitButton()"
+          />
         </div>
       </div>
     </div>
@@ -88,7 +86,6 @@ import { useBackendReportApi } from "src/utils/api/report";
 import { useUserReports } from "src/utils/component/userReports";
 import { ref } from "vue";
 
-import ZKGradientButton from "../ui-library/ZKGradientButton.vue";
 import {
   type ReportContentDialogTranslations,
   reportContentDialogTranslations,
@@ -111,8 +108,6 @@ const emit = defineEmits<{
 
 const explanation = ref("");
 const selectedReason = ref<UserReportReason>();
-
-const enabledSkip = ref(false);
 
 const { createUserReportByPostSlugId, createUserReportByCommentSlugId } =
   useBackendReportApi();
@@ -139,11 +134,6 @@ function getTranslatedSelectedReason(): string {
   );
 
   return reasonMapping?.label || selectedReason.value;
-}
-
-async function clickedSkipExplanationButton() {
-  explanation.value = "";
-  await clickedSubmitButton();
 }
 
 async function clickedSubmitButton() {
@@ -184,6 +174,15 @@ async function clickedSubmitButton() {
 
 .card {
   background-color: white;
+  position: relative;
+}
+
+.close-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 1;
+  color: $color-text-weak;
 }
 
 .reportReasonsFlex {

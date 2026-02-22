@@ -53,6 +53,7 @@ import { computed, inject, onMounted, provide, type Ref, ref, watch } from "vue"
 const props = defineProps<{
   conversationData: ExtendedConversation;
   hasConversationData: boolean;
+  moderationHistoryTrigger: number;
 }>();
 
 // Provide conversation data to all descendants (reactive)
@@ -188,6 +189,15 @@ async function handleTicketVerified(payload: {
     await loadAuthenticatedModules();
   }
 }
+
+watch(
+  () => props.moderationHistoryTrigger,
+  () => {
+    if (opinionSectionRef.value) {
+      opinionSectionRef.value.openModerationHistory();
+    }
+  }
+);
 
 onMounted(() => {
   // Report initial loading state to parent

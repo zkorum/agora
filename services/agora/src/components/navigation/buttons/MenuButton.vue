@@ -25,13 +25,12 @@ import { useNavigationStore } from "src/stores/navigation";
 import { useUserStore } from "src/stores/user";
 import { computed } from "vue";
 
-const isCapacitor = process.env.MODE == "capacitor";
 const { profileData } = storeToRefs(useUserStore());
 const { showMobileDrawer, drawerBehavior } = storeToRefs(useNavigationStore());
 const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
 
 const shouldShowMenuButton = computed(() => {
-  return !isCapacitor && drawerBehavior.value === "mobile";
+  return drawerBehavior.value === "mobile";
 });
 
 function toggleMobileDrawer(): void {

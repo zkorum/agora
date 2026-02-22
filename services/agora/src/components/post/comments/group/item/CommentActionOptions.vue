@@ -35,6 +35,14 @@
     @dialog-closed="handleDialogClosed"
   />
 
+  <!-- Share Actions Dialog -->
+  <ZKActionDialog
+    v-model="shareActions.dialogState.value.isVisible"
+    :actions="shareActions.dialogState.value.actions"
+    @action-selected="handleShareActionSelected"
+    @dialog-closed="shareActions.closeDialog"
+  />
+
   <!-- Confirmation Dialog -->
   <ZKConfirmDialog
     v-model="commentActions.confirmationState.value.isVisible"
@@ -49,6 +57,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { copyToClipboard } from "quasar";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
@@ -56,6 +65,7 @@ import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
+import { useShareActions } from "src/composables/share/useShareActions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { OpinionItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -63,7 +73,7 @@ import type { ContentAction } from "src/utils/actions/core/types";
 import { useContentActions } from "src/utils/actions/definitions/content-actions";
 import { useDeleteCommentMutation } from "src/utils/api/comment/useCommentQueries";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
-import { useWebShare } from "src/utils/share/WebShare";
+import { useNotify } from "src/utils/ui/notify";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -84,7 +94,8 @@ const emit = defineEmits<{
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
-const webShare = useWebShare();
+const shareActions = useShareActions();
+const notify = useNotify();
 
 // Use the new content actions system
 const commentActions = useContentActions();
@@ -127,12 +138,24 @@ async function openUserReportsCallback() {
   });
 }
 
-async function shareOpinionCallback() {
+function shareOpinionCallback() {
   const sharePostUrl = new URL(
     `/conversation/${props.postSlugId}?opinion=${props.commentItem.opinionSlugId}`,
     window.location.origin
   ).href;
-  await webShare.share(t("agoraOpinion"), sharePostUrl);
+
+  shareActions.showShareActions({
+    targetType: "comment",
+    targetId: props.commentItem.opinionSlugId,
+    targetAuthor: props.commentItem.username,
+    copyLinkCallback: async () => {
+      await copyToClipboard(sharePostUrl);
+      notify.showNotifyMessage(t("copiedToClipboard"));
+    },
+    showShareVia: true,
+    shareUrl: sharePostUrl,
+    shareTitle: t("agoraOpinion"),
+  });
 }
 
 async function muteUserCallback() {
@@ -178,8 +201,14 @@ function optionButtonClicked() {
  * Handle action selection
  */
 async function handleActionSelected(action: ContentAction) {
-  console.log("Action selected:", action.id);
   await commentActions.executeAction(action);
+}
+
+/**
+ * Handle share action selection
+ */
+async function handleShareActionSelected(action: ContentAction) {
+  await shareActions.executeAction(action);
 }
 
 /**

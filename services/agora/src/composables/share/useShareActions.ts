@@ -27,9 +27,10 @@ export interface ShareActionsComposable {
     targetId: string;
     targetAuthor: string;
     copyLinkCallback: () => void | Promise<void>;
-    openQrCodeCallback: () => void | Promise<void>;
-    shareViaCallback: () => void | Promise<void>;
-    isWebShareAvailable: boolean;
+    openQrCodeCallback?: () => void | Promise<void>;
+    showShareVia: boolean;
+    shareUrl: string;
+    shareTitle: string;
   }) => void;
   executeAction: (action: ContentAction) => Promise<void>;
   closeDialog: () => void;
@@ -62,16 +63,18 @@ export function useShareActions(): ShareActionsComposable {
     targetAuthor,
     copyLinkCallback,
     openQrCodeCallback,
-    shareViaCallback,
-    isWebShareAvailable,
+    showShareVia,
+    shareUrl,
+    shareTitle,
   }: {
     targetType: "post" | "comment";
     targetId: string;
     targetAuthor: string;
     copyLinkCallback: () => void | Promise<void>;
-    openQrCodeCallback: () => void | Promise<void>;
-    shareViaCallback: () => void | Promise<void>;
-    isWebShareAvailable: boolean;
+    openQrCodeCallback?: () => void | Promise<void>;
+    showShareVia: boolean;
+    shareUrl: string;
+    shareTitle: string;
   }): void => {
     const context = createActionContext(
       targetType,
@@ -93,9 +96,10 @@ export function useShareActions(): ShareActionsComposable {
       context,
       copyLinkCallback,
       openQrCodeCallback,
-      shareViaCallback,
+      showShareVia,
+      shareUrl,
+      shareTitle,
       translations,
-      isWebShareAvailable,
     });
 
     dialogStateRef.value = {

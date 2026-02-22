@@ -2,6 +2,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface OpinionGroupCommentsTranslations {
   opinionsTitle: string;
+  opinionsTitleLong: string;
   noOpinionsMessage: string;
   thisGroup: string;
   allOthers: string;
@@ -13,50 +14,57 @@ export const opinionGroupCommentsTranslations: Record<
   OpinionGroupCommentsTranslations
 > = {
   en: {
-    opinionsTitle: "Opinions",
-    noOpinionsMessage: "No opinions available for this group.",
+    opinionsTitle: "Statements",
+    opinionsTitleLong: "Representative statements",
+    noOpinionsMessage: "No statements available for this group.",
     thisGroup: "This group",
     allOthers: "All others",
     allOtherGroups: "All other groups",
   },
   ar: {
-    opinionsTitle: "الآراء",
-    noOpinionsMessage: "لا توجد آراء متاحة لهذه المجموعة.",
+    opinionsTitle: "المقترحات",
+    opinionsTitleLong: "المقترحات الممثّلة",
+    noOpinionsMessage: "لا توجد مقترحات متاحة لهذه المجموعة.",
     thisGroup: "هذه المجموعة",
     allOthers: "جميع الآخرين",
     allOtherGroups: "جميع المجموعات الأخرى",
   },
   es: {
-    opinionsTitle: "Opiniones",
-    noOpinionsMessage: "No hay opiniones disponibles para este grupo.",
+    opinionsTitle: "Proposiciones",
+    opinionsTitleLong: "Proposiciones representativas",
+    noOpinionsMessage: "No hay proposiciones disponibles para este grupo.",
     thisGroup: "Este grupo",
     allOthers: "Todos los demás",
     allOtherGroups: "Los otros grupos",
   },
   fr: {
-    opinionsTitle: "Opinions",
-    noOpinionsMessage: "Aucune opinion disponible pour ce groupe.",
+    opinionsTitle: "Propositions",
+    opinionsTitleLong: "Propositions représentatives",
+    noOpinionsMessage: "Aucune proposition disponible pour ce groupe.",
     thisGroup: "Ce groupe",
     allOthers: "Tous les autres",
     allOtherGroups: "Les autres groupes",
   },
   "zh-Hans": {
-    opinionsTitle: "意见",
-    noOpinionsMessage: "此群组没有意见。",
+    opinionsTitle: "观点",
+    opinionsTitleLong: "代表性观点",
+    noOpinionsMessage: "此群组没有观点。",
     thisGroup: "此群组",
     allOthers: "所有其他",
     allOtherGroups: "所有其他群组",
   },
   "zh-Hant": {
-    opinionsTitle: "意見",
-    noOpinionsMessage: "此群組沒有意見。",
+    opinionsTitle: "觀點",
+    opinionsTitleLong: "代表性觀點",
+    noOpinionsMessage: "此群組沒有觀點。",
     thisGroup: "此群組",
     allOthers: "所有其他",
     allOtherGroups: "所有其他群組",
   },
   ja: {
-    opinionsTitle: "意見",
-    noOpinionsMessage: "このグループには意見がありません。",
+    opinionsTitle: "主張",
+    opinionsTitleLong: "代表的な主張",
+    noOpinionsMessage: "このグループには主張がありません。",
     thisGroup: "このグループ",
     allOthers: "すべての他の",
     allOtherGroups: "すべての他のグループ",

@@ -45,13 +45,11 @@
 </template>
 
 <script setup lang="ts">
-import { useQuasar } from 'quasar';
 import { useComponentI18n } from 'src/composables/ui/useComponentI18n';
 import { useZupassVerification } from 'src/composables/zupass/useZupassVerification';
 import type { EventSlug } from 'src/shared/types/zod';
 import { useBackendAuthApi } from 'src/utils/api/auth';
 import { useBackendZupassApi } from 'src/utils/api/zupass';
-import { getPlatform } from 'src/utils/common';
 import { useNotify } from 'src/utils/ui/notify';
 import { ref } from 'vue';
 
@@ -79,10 +77,6 @@ const { verifyEventTicket } = useBackendZupassApi();
 const { updateAuthState, getDeviceLoginStatus } = useBackendAuthApi();
 const { showNotifyMessage } = useNotify();
 
-// Get platform at setup level (can't call useQuasar in async functions)
-const $q = useQuasar();
-const platform = getPlatform($q.platform);
-
 const error = ref<string | null>(null);
 const verificationSuccess = ref(false);
 
@@ -94,7 +88,6 @@ async function handleVerify() {
     // Request proof from Zupass (opens popup)
     const proofResult = await requestTicketProof({
       eventSlug: props.eventSlug,
-      platform,
     });
 
     if (!proofResult.success) {

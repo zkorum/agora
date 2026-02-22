@@ -31,5 +31,10 @@
         "pino": "^10.3.1",
         "prettier": "^3.8.1",
         "typescript": "^5.8.3"
+    },
+    "pnpm": {
+        "overrides": {
+            "fast-xml-parser": ">=5.3.6"
+        }
     }
 }

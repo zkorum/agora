@@ -27,7 +27,7 @@ export const reportContentDialogTranslations: Record<
     skipButton: "Skip",
     submitButton: "Submit",
     reportTypeConversation: "conversation",
-    reportTypeOpinion: "opinion",
+    reportTypeOpinion: "statement",
   },
   ar: {
     submitReportTitle: "إرسال تقرير",
@@ -40,7 +40,7 @@ export const reportContentDialogTranslations: Record<
     skipButton: "تخطي",
     submitButton: "إرسال",
     reportTypeConversation: "محادثة",
-    reportTypeOpinion: "رأي",
+    reportTypeOpinion: "مقترح",
   },
   es: {
     submitReportTitle: "Enviar un reporte",
@@ -53,7 +53,7 @@ export const reportContentDialogTranslations: Record<
     skipButton: "Omitir",
     submitButton: "Enviar",
     reportTypeConversation: "conversación",
-    reportTypeOpinion: "opinión",
+    reportTypeOpinion: "proposición",
   },
   fr: {
     submitReportTitle: "Soumettre un rapport",
@@ -66,7 +66,7 @@ export const reportContentDialogTranslations: Record<
     skipButton: "Ignorer",
     submitButton: "Soumettre",
     reportTypeConversation: "conversation",
-    reportTypeOpinion: "opinion",
+    reportTypeOpinion: "proposition",
   },
   "zh-Hans": {
     submitReportTitle: "提交报告",
@@ -78,7 +78,7 @@ export const reportContentDialogTranslations: Record<
     skipButton: "跳过",
     submitButton: "提交",
     reportTypeConversation: "对话",
-    reportTypeOpinion: "意见",
+    reportTypeOpinion: "观点",
   },
   "zh-Hant": {
     submitReportTitle: "提交報告",
@@ -90,7 +90,7 @@ export const reportContentDialogTranslations: Record<
     skipButton: "跳過",
     submitButton: "提交",
     reportTypeConversation: "對話",
-    reportTypeOpinion: "意見",
+    reportTypeOpinion: "觀點",
   },
   ja: {
     submitReportTitle: "報告を送信",
@@ -103,6 +103,6 @@ export const reportContentDialogTranslations: Record<
     skipButton: "スキップ",
     submitButton: "送信",
     reportTypeConversation: "会話",
-    reportTypeOpinion: "意見",
+    reportTypeOpinion: "主張",
   },
 };
