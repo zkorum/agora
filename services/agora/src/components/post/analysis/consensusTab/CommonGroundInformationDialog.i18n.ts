@@ -12,59 +12,59 @@ export const commonGroundInformationDialogTranslations: Record<
   CommonGroundInformationDialogTranslations
 > = {
   en: {
-    agreementsTitle: "Agreements",
+    agreementsTitle: "Approved",
     agreementsDescription:
-      "Statements that every opinion group tends to agree with. Unlike a majority vote, even a small group's disagreement means a statement won't appear here. True common ground requires agreement across all groups. Ranked by cross-group agreement strength.",
-    disagreementsTitle: "Disagreements",
+      "Statements that every opinion group tends to approve. Unlike a majority vote, even a small group's disapproval means a statement won't appear here. Only the most representative are shown first. Load more to see the rest, ranked by cross-group agreement strength.",
+    disagreementsTitle: "Rejected",
     disagreementsDescription:
-      "Statements that every opinion group tends to disagree with. Unlike a majority vote, even a small group's agreement means a statement won't appear here. True shared disagreement requires all groups to reject it. Ranked by cross-group disagreement strength.",
+      "Statements that every opinion group tends to reject. Unlike a majority vote, even a small group's approval means a statement won't appear here. Only the most representative are shown first. Load more to see the rest, ranked by cross-group rejection strength.",
   },
   ar: {
-    agreementsTitle: "الاتفاقات",
+    agreementsTitle: "معتمدة",
     agreementsDescription:
-      "مقترحات تميل جميع مجموعات الرأي إلى الموافقة عليها. على عكس تصويت الأغلبية، حتى اعتراض مجموعة صغيرة يعني عدم ظهور المقترح هنا. الإجماع الحقيقي يتطلب اتفاق جميع المجموعات. مرتبة حسب قوة الاتفاق بين المجموعات.",
-    disagreementsTitle: "الخلافات",
+      "مقترحات تميل جميع مجموعات الرأي إلى اعتمادها. على عكس تصويت الأغلبية، حتى رفض مجموعة صغيرة يعني عدم ظهور المقترح هنا. تُعرض الأكثر تمثيلاً أولاً. حمّل المزيد لرؤية البقية، مرتبة حسب قوة الاتفاق بين المجموعات.",
+    disagreementsTitle: "مرفوضة",
     disagreementsDescription:
-      "مقترحات تميل جميع مجموعات الرأي إلى رفضها. على عكس تصويت الأغلبية، حتى موافقة مجموعة صغيرة تعني عدم ظهور المقترح هنا. الخلاف المشترك الحقيقي يتطلب رفض جميع المجموعات. مرتبة حسب قوة الخلاف بين المجموعات.",
+      "مقترحات تميل جميع مجموعات الرأي إلى رفضها. على عكس تصويت الأغلبية، حتى موافقة مجموعة صغيرة تعني عدم ظهور المقترح هنا. تُعرض الأكثر تمثيلاً أولاً. حمّل المزيد لرؤية البقية، مرتبة حسب قوة الرفض بين المجموعات.",
   },
   es: {
-    agreementsTitle: "Acuerdos",
+    agreementsTitle: "Aprobados",
     agreementsDescription:
-      "Afirmaciones con las que todos los grupos de opinión tienden a estar de acuerdo. A diferencia de un voto mayoritario, incluso el desacuerdo de un grupo pequeño impide que aparezca aquí. El verdadero terreno común requiere acuerdo de todos los grupos. Clasificadas por fuerza del acuerdo entre grupos.",
-    disagreementsTitle: "Desacuerdos",
+      "Afirmaciones que todos los grupos de opinión tienden a aprobar. A diferencia de un voto mayoritario, incluso la desaprobación de un grupo pequeño impide que aparezca aquí. Solo se muestran las más representativas primero. Cargue más para ver el resto, clasificadas por fuerza del acuerdo entre grupos.",
+    disagreementsTitle: "Rechazados",
     disagreementsDescription:
-      "Afirmaciones con las que todos los grupos de opinión tienden a no estar de acuerdo. A diferencia de un voto mayoritario, incluso el acuerdo de un grupo pequeño impide que aparezca aquí. El verdadero desacuerdo compartido requiere el rechazo de todos los grupos. Clasificadas por fuerza del desacuerdo entre grupos.",
+      "Afirmaciones que todos los grupos de opinión tienden a rechazar. A diferencia de un voto mayoritario, incluso la aprobación de un grupo pequeño impide que aparezca aquí. Solo se muestran las más representativas primero. Cargue más para ver el resto, clasificadas por fuerza del rechazo entre grupos.",
   },
   fr: {
-    agreementsTitle: "Accords",
+    agreementsTitle: "Approuvés",
     agreementsDescription:
-      "Propositions avec lesquelles tous les groupes d'opinion tendent à être d'accord. Contrairement à un vote majoritaire, même le désaccord d'un petit groupe empêche une proposition d'apparaître ici. Un véritable terrain d'entente nécessite l'accord de tous les groupes. Classées par force de l'accord entre groupes.",
-    disagreementsTitle: "Désaccords",
+      "Propositions que tous les groupes d'opinion tendent à approuver. Contrairement à un vote majoritaire, même le rejet d'un petit groupe empêche une proposition d'apparaître ici. Seules les plus représentatives sont affichées en premier. Chargez plus pour voir les suivantes, classées par force de l'accord entre groupes.",
+    disagreementsTitle: "Rejetés",
     disagreementsDescription:
-      "Propositions avec lesquelles tous les groupes d'opinion tendent à être en désaccord. Contrairement à un vote majoritaire, même l'accord d'un petit groupe empêche une proposition d'apparaître ici. Un véritable désaccord partagé nécessite le rejet de tous les groupes. Classées par force du désaccord entre groupes.",
+      "Propositions que tous les groupes d'opinion tendent à rejeter. Contrairement à un vote majoritaire, même l'approbation d'un petit groupe empêche une proposition d'apparaître ici. Seules les plus représentatives sont affichées en premier. Chargez plus pour voir les suivantes, classées par force du rejet entre groupes.",
   },
   "zh-Hans": {
-    agreementsTitle: "共识",
+    agreementsTitle: "通过",
     agreementsDescription:
-      "所有意见群组都倾向于同意的观点。与多数投票不同，即使一个小群组不同意，该观点也不会出现在这里。真正的共识需要所有群组都同意。按跨群组共识强度排名。",
-    disagreementsTitle: "分歧",
+      "所有意见群组都倾向于认可的观点。与多数投票不同，即使一个小群组不认可，该观点也不会出现在这里。仅先显示最具代表性的观点。加载更多以查看其余，按跨群组认可强度排列。",
+    disagreementsTitle: "否决",
     disagreementsDescription:
-      "所有意见群组都倾向于反对的观点。与多数投票不同，即使一个小群组同意，该观点也不会出现在这里。真正的共同反对需要所有群组都拒绝。按跨群组反对强度排名。",
+      "所有意见群组都倾向于否决的观点。与多数投票不同，即使一个小群组认可，该观点也不会出现在这里。仅先显示最具代表性的观点。加载更多以查看其余，按跨群组否决强度排列。",
   },
   "zh-Hant": {
-    agreementsTitle: "共識",
+    agreementsTitle: "通過",
     agreementsDescription:
-      "所有意見群組都傾向於同意的觀點。與多數投票不同，即使一個小群組不同意，該觀點也不會出現在這裡。真正的共識需要所有群組都同意。按跨群組共識強度排名。",
-    disagreementsTitle: "分歧",
+      "所有意見群組都傾向於認可的觀點。與多數投票不同，即使一個小群組不認可，該觀點也不會出現在這裡。僅先顯示最具代表性的觀點。載入更多以查看其餘，按跨群組認可強度排列。",
+    disagreementsTitle: "否決",
     disagreementsDescription:
-      "所有意見群組都傾向於反對的觀點。與多數投票不同，即使一個小群組同意，該觀點也不會出現在這裡。真正的共同反對需要所有群組都拒絕。按跨群組反對強度排名。",
+      "所有意見群組都傾向於否決的觀點。與多數投票不同，即使一個小群組認可，該觀點也不會出現在這裡。僅先顯示最具代表性的觀點。載入更多以查看其餘，按跨群組否決強度排列。",
   },
   ja: {
-    agreementsTitle: "合意",
+    agreementsTitle: "承認",
     agreementsDescription:
-      "すべての意見グループが同意する傾向がある意見です。多数決とは異なり、小さなグループでも反対すればここには表示されません。本当の共通認識にはすべてのグループの同意が必要です。グループ間の合意の強さで順位付け。",
-    disagreementsTitle: "不一致",
+      "すべての意見グループが承認する傾向がある意見です。多数決とは異なり、小さなグループでも不承認ならここには表示されません。最も代表的なものが最初に表示されます。残りを見るにはもっと読み込んでください。グループ間の承認の強さで順位付け。",
+    disagreementsTitle: "否決",
     disagreementsDescription:
-      "すべての意見グループが反対する傾向がある意見です。多数決とは異なり、小さなグループでも賛成すればここには表示されません。本当の共通の反対にはすべてのグループの拒否が必要です。グループ間の反対の強さで順位付け。",
+      "すべての意見グループが否決する傾向がある意見です。多数決とは異なり、小さなグループでも承認すればここには表示されません。最も代表的なものが最初に表示されます。残りを見るにはもっと読み込んでください。グループ間の否決の強さで順位付け。",
   },
 };

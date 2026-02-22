@@ -19,71 +19,71 @@ export const divisiveTabTranslations: Record<
     divisiveLongTitle: "What {keyword} people across groups?",
     divisiveKeyword: "divides",
     statisticalSubtitle:
-      "Statements that split opinion groups against each other. Ranked by cross-group divisiveness.",
+      "Statements that split opinion groups against each other. Only the most representative are shown. Load more to see the rest.",
     loadMore: "Load more",
     noDivisiveOpinionsMessage: "No significant divisive statements found yet.",
-    lowerRankedDivider: "Lower-ranked",
+    lowerRankedDivider: "Less representative",
   },
   ar: {
     divisiveTitle: "مثير للجدل",
     divisiveLongTitle: "ما الذي {keyword} المشاركين عبر مجموعات الرأي؟",
     divisiveKeyword: "يقسم",
     statisticalSubtitle:
-      "مقترحات تقسم مجموعات الرأي ضد بعضها البعض. مرتبة حسب قوة الانقسام بين المجموعات.",
+      "مقترحات تقسم مجموعات الرأي ضد بعضها البعض. تُعرض الأكثر تمثيلاً فقط. حمّل المزيد لرؤية البقية.",
     loadMore: "تحميل المزيد",
     noDivisiveOpinionsMessage: "لم يتم العثور على مقترحات مثيرة للجدل ذات دلالة بعد.",
-    lowerRankedDivider: "أقل ترتيبًا",
+    lowerRankedDivider: "أقل تمثيلاً",
   },
   es: {
     divisiveTitle: "Divisivo",
     divisiveLongTitle: "¿Qué {keyword} a los participantes entre los grupos de opinión?",
     divisiveKeyword: "divide",
     statisticalSubtitle:
-      "Afirmaciones que dividen a los grupos de opinión entre sí. Clasificadas por fuerza de la división entre grupos.",
+      "Afirmaciones que dividen a los grupos de opinión entre sí. Solo se muestran las más representativas. Cargue más para ver el resto.",
     loadMore: "Cargar más",
     noDivisiveOpinionsMessage:
       "Aún no se encontraron proposiciones divisivas significativas.",
-    lowerRankedDivider: "Menor clasificación",
+    lowerRankedDivider: "Menos representativo",
   },
   fr: {
     divisiveTitle: "Controversé",
     divisiveLongTitle: "Qu'est-ce qui {keyword} les participants entre les groupes d'opinion ?",
     divisiveKeyword: "divise",
     statisticalSubtitle:
-      "Propositions qui divisent les groupes d'opinion entre eux. Classées par force de la division entre groupes.",
+      "Propositions qui divisent les groupes d'opinion entre eux. Seules les plus représentatives sont affichées. Chargez plus pour voir les suivantes.",
     loadMore: "Charger plus",
     noDivisiveOpinionsMessage:
       "Aucune proposition controversée significative trouvée pour le moment.",
-    lowerRankedDivider: "Classement inférieur",
+    lowerRankedDivider: "Moins représentatif",
   },
   "zh-Hans": {
     divisiveTitle: "分歧",
     divisiveLongTitle: "什么使参与者在各意见群组之间产生{keyword}？",
     divisiveKeyword: "分歧",
     statisticalSubtitle:
-      "使意见群组之间产生对立的观点。按跨群组分歧强度排名。",
+      "使意见群组之间产生对立的观点。仅显示最具代表性的观点。加载更多以查看其余。",
     loadMore: "加载更多",
     noDivisiveOpinionsMessage: "尚未找到显著的分歧观点。",
-    lowerRankedDivider: "排名较低",
+    lowerRankedDivider: "代表性较低",
   },
   "zh-Hant": {
     divisiveTitle: "分歧",
     divisiveLongTitle: "什麼使參與者在各意見群組之間產生{keyword}？",
     divisiveKeyword: "分歧",
     statisticalSubtitle:
-      "使意見群組之間產生對立的觀點。按跨群組分歧強度排名。",
+      "使意見群組之間產生對立的觀點。僅顯示最具代表性的觀點。載入更多以查看其餘。",
     loadMore: "載入更多",
     noDivisiveOpinionsMessage: "尚未找到顯著的分歧觀點。",
-    lowerRankedDivider: "排名較低",
+    lowerRankedDivider: "代表性較低",
   },
   ja: {
     divisiveTitle: "分断",
     divisiveLongTitle: "意見グループ間で参加者を{keyword}しているものは何ですか？",
     divisiveKeyword: "分断",
     statisticalSubtitle:
-      "意見グループ同士を対立させる意見です。グループ間の分断の強さで順位付け。",
+      "意見グループ同士を対立させる意見です。最も代表的なもののみ表示。残りを見るにはもっと読み込んでください。",
     loadMore: "もっと読み込む",
     noDivisiveOpinionsMessage: "有意な分断的主張はまだ見つかりません。",
-    lowerRankedDivider: "順位が低い",
+    lowerRankedDivider: "代表性が低い",
   },
 };
