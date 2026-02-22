@@ -61,6 +61,7 @@
             :single-line="true"
             :disabled="false"
             :max-length="MAX_LENGTH_TITLE"
+            :show-character-count="true"
             min-height="auto"
             class="title-editor"
             @update:model-value="updateTitle"
@@ -96,6 +97,7 @@
               :single-line="false"
               :disabled="false"
               :max-length="MAX_LENGTH_BODY"
+              :show-character-count="true"
               @update:model-value="updateContent"
               @update:is-over-limit="(v: boolean) => (isBodyOverLimit = v)"
             />
