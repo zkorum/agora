@@ -33,8 +33,8 @@ export const consensusTabTranslations: Record<
     statisticalSubtitleDisagree:
       "Statements every opinion group rejects, not just the overall majority. Only the most representative are shown. Load more to see the rest.",
     loadMore: "Load more",
-    noAgreementsMessage: "No significant agreements found yet.",
-    noDisagreementsMessage: "No significant disagreements found yet.",
+    noAgreementsMessage: "No significantly approved statements found yet.",
+    noDisagreementsMessage: "No significantly rejected statements found yet.",
     lowerRankedDivider: "Less representative",
   },
   ar: {
@@ -51,8 +51,8 @@ export const consensusTabTranslations: Record<
     statisticalSubtitleDisagree:
       "مقترحات ترفضها جميع مجموعات الرأي، وليس فقط الأغلبية. تُعرض الأكثر تمثيلاً فقط. حمّل المزيد لرؤية البقية.",
     loadMore: "تحميل المزيد",
-    noAgreementsMessage: "لم يتم العثور على اتفاقات ذات دلالة بعد.",
-    noDisagreementsMessage: "لم يتم العثور على خلافات ذات دلالة بعد.",
+    noAgreementsMessage: "لم يتم العثور على مقترحات معتمدة بشكل ملحوظ بعد.",
+    noDisagreementsMessage: "لم يتم العثور على مقترحات مرفوضة بشكل ملحوظ بعد.",
     lowerRankedDivider: "أقل تمثيلاً",
   },
   es: {
@@ -69,8 +69,8 @@ export const consensusTabTranslations: Record<
     statisticalSubtitleDisagree:
       "Afirmaciones rechazadas por todos los grupos de opinión, no solo la mayoría. Solo se muestran las más representativas. Cargue más para ver el resto.",
     loadMore: "Cargar más",
-    noAgreementsMessage: "Aún no se encontraron acuerdos significativos.",
-    noDisagreementsMessage: "Aún no se encontraron desacuerdos significativos.",
+    noAgreementsMessage: "Aún no se encontraron proposiciones aprobadas significativamente.",
+    noDisagreementsMessage: "Aún no se encontraron proposiciones rechazadas significativamente.",
     lowerRankedDivider: "Menos representativo",
   },
   fr: {
@@ -87,8 +87,8 @@ export const consensusTabTranslations: Record<
     statisticalSubtitleDisagree:
       "Propositions rejetées par tous les groupes d'opinion, pas seulement la majorité. Seules les plus représentatives sont affichées. Chargez plus pour voir les suivantes.",
     loadMore: "Charger plus",
-    noAgreementsMessage: "Aucun accord significatif trouvé pour le moment.",
-    noDisagreementsMessage: "Aucun désaccord significatif trouvé pour le moment.",
+    noAgreementsMessage: "Aucune proposition significativement approuvée pour le moment.",
+    noDisagreementsMessage: "Aucune proposition significativement rejetée pour le moment.",
     lowerRankedDivider: "Moins représentatif",
   },
   "zh-Hans": {
@@ -103,8 +103,8 @@ export const consensusTabTranslations: Record<
     statisticalSubtitleDisagree:
       "所有意见群组都否决的观点，而非仅仅是多数人的意见。仅显示最具代表性的观点。加载更多以查看其余。",
     loadMore: "加载更多",
-    noAgreementsMessage: "尚未找到显著的共识。",
-    noDisagreementsMessage: "尚未找到显著的分歧。",
+    noAgreementsMessage: "尚未找到显著认可的观点。",
+    noDisagreementsMessage: "尚未找到显著否决的观点。",
     lowerRankedDivider: "代表性较低",
   },
   "zh-Hant": {
@@ -119,8 +119,8 @@ export const consensusTabTranslations: Record<
     statisticalSubtitleDisagree:
       "所有意見群組都否決的觀點，而非僅僅是多數人的意見。僅顯示最具代表性的觀點。載入更多以查看其餘。",
     loadMore: "載入更多",
-    noAgreementsMessage: "尚未找到顯著的共識。",
-    noDisagreementsMessage: "尚未找到顯著的分歧。",
+    noAgreementsMessage: "尚未找到顯著認可的觀點。",
+    noDisagreementsMessage: "尚未找到顯著否決的觀點。",
     lowerRankedDivider: "代表性較低",
   },
   ja: {
@@ -137,8 +137,8 @@ export const consensusTabTranslations: Record<
     statisticalSubtitleDisagree:
       "単なる多数派ではなく、すべての意見グループが否決した意見です。最も代表的なもののみ表示。残りを見るにはもっと読み込んでください。",
     loadMore: "もっと読み込む",
-    noAgreementsMessage: "有意な合意はまだ見つかりません。",
-    noDisagreementsMessage: "有意な不一致はまだ見つかりません。",
+    noAgreementsMessage: "有意に承認された意見はまだ見つかりません。",
+    noDisagreementsMessage: "有意に否決された意見はまだ見つかりません。",
     lowerRankedDivider: "代表性が低い",
   },
 };
