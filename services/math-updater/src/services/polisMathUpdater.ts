@@ -32,7 +32,11 @@ import {
     opinionModerationTable,
     polisClusterTable,
 } from "@/shared-backend/schema.js";
-import type { MathResults, PolisVoteRecord } from "@/shared/types/polis.js";
+import type {
+    MathResults,
+    PolisVoteRecord,
+    GroupCommentStats,
+} from "@/shared/types/polis.js";
 import type { GetMathRequest } from "@/shared/types/dto.js";
 import { zodMathResults } from "@/shared/types/polis.js";
 import {
@@ -136,7 +140,7 @@ interface Phase1Result {
     polisContentId: number;
     minNumberOfClusters: number;
     clusterIdsByKey: Record<PolisKey, number>;
-    groupCommentStatsByKey: Record<PolisKey, any[]>;
+    groupCommentStatsByKey: Record<PolisKey, GroupCommentStats[string]>;
 }
 
 /**
@@ -224,10 +228,10 @@ async function phase1CreateClusterStructure({
         PolisKey,
         number
     >;
-    const groupCommentStatsByKey: Record<PolisKey, any[]> = {} as Record<
+    const groupCommentStatsByKey: Record<
         PolisKey,
-        any[]
-    >;
+        GroupCommentStats[string]
+    > = {} as Record<PolisKey, GroupCommentStats[string]>;
 
     for (let clusterKey = 0; clusterKey < minNumberOfClusters; clusterKey++) {
         const repnessEntry = polisMathResults.repness[clusterKey];
@@ -396,17 +400,17 @@ async function phase3ActivateNewData({
     polisContentId: number;
     polisMathResults: MathResults;
     clusterIdsByKey: Record<PolisKey, number>;
-    groupCommentStatsByKey: Record<PolisKey, any[]>;
+    groupCommentStatsByKey: Record<PolisKey, GroupCommentStats[string]>;
     minNumberOfClusters: number;
     aiClustersLabelsAndSummaries?:
         | GenLabelSummaryOutputClusterStrict
         | GenLabelSummaryOutputClusterLoose;
-    translations?: Array<{
+    translations?: {
         polisClusterId: number;
         languageCode: string;
         aiLabel: string | null;
         aiSummary: string | null;
-    }>;
+    }[];
 }): Promise<void> {
     await db.transaction(async (tx) => {
         // Write AI labels and summaries if available
@@ -453,10 +457,10 @@ async function phase3ActivateNewData({
 
         // Build SQL clauses for majority opinions (not batched - these apply globally)
         // Use a single data structure to ensure probability and type stay in sync
-        const majorityOpinions: Array<{
+        const majorityOpinions: {
             probability: SQL;
             type: SQL;
-        }> = [];
+        }[] = [];
 
         if (polisMathResults.consensus.agree.length === 0) {
             log.info(
@@ -532,13 +536,13 @@ async function phase3ActivateNewData({
 
         // Build cluster stats lookup maps for efficient batch processing
         // Array indexed by cluster index, containing clusterId and stats map
-        const clusterStatsMapsByIndex: Array<{
+        const clusterStatsMapsByIndex: {
             clusterId: number;
             statsMap: Map<
                 number,
                 { agrees: number; disagrees: number; passes: number }
             >;
-        }> = [];
+        }[] = [];
 
         const polisKeys: PolisKey[] = ["0", "1", "2", "3", "4", "5"];
 
@@ -547,7 +551,7 @@ async function phase3ActivateNewData({
             const polisClusterId = clusterIdsByKey[polisKey];
             const groupCommentStatsEntry = groupCommentStatsByKey[polisKey];
 
-            if (!polisClusterId || !groupCommentStatsEntry) {
+            if (!polisClusterId) {
                 continue;
             }
 
@@ -609,13 +613,10 @@ async function phase3ActivateNewData({
             }
 
             // Build cluster cache updates for this batch
-            const batchClusterUpdates: Record<string, any> = {};
+            const batchClusterUpdates: Record<string, number | SQL | null> = {};
 
             for (let i = 0; i < minNumberOfClusters; i++) {
                 const clusterData = clusterStatsMapsByIndex[i];
-                if (!clusterData) {
-                    continue;
-                }
 
                 const sqlChunksForNumAgrees: SQL[] = [sql`(CASE`];
                 const sqlChunksForNumDisagrees: SQL[] = [sql`(CASE`];
@@ -752,7 +753,7 @@ export async function getAndUpdatePolisMath({
         log.info(
             `[Math] Math Results for conversation_slug_id ${conversationSlugId}: \n${JSON.stringify(polisMathResults)}`,
         );
-    } catch (e) {
+    } catch (_e) {
         log.warn(
             `[Math] Failed to get valid math results for conversation ${conversationSlugId} (insufficient data for clustering). Will retry when more votes/opinions are added.`,
         );
@@ -796,12 +797,12 @@ export async function getAndUpdatePolisMath({
         | GenLabelSummaryOutputClusterLoose
         | undefined = undefined;
     let translations:
-        | Array<{
+        | {
               polisClusterId: number;
               languageCode: string;
               aiLabel: string | null;
               aiSummary: string | null;
-          }>
+          }[]
         | undefined = undefined;
 
     if (awsAiLabelSummaryEnable) {

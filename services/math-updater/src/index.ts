@@ -270,30 +270,32 @@ async function main() {
     // Start scan loop using setInterval (resilient — cannot silently break)
     // Previously used a self-scheduling pg-boss job, but the self-scheduling
     // could silently fail (boss.send returning null), killing the loop permanently.
-    const scanIntervalId = setInterval(async () => {
-        if (scanInProgress) {
-            log.info(
-                "[Scan] Previous scan still in progress, skipping this interval",
-            );
-            return;
-        }
-        scanInProgress = true;
-        try {
-            await scanConversations({
-                db,
-                boss,
-                minTimeBetweenUpdatesMs:
-                    config.MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS,
-            });
-            lastSuccessfulScanTime = Date.now();
-        } catch (error) {
-            log.error(
-                { error },
-                "[Scan] Unhandled error in scan loop - will retry on next interval",
-            );
-        } finally {
-            scanInProgress = false;
-        }
+    const scanIntervalId = setInterval(() => {
+        void (async () => {
+            if (scanInProgress) {
+                log.info(
+                    "[Scan] Previous scan still in progress, skipping this interval",
+                );
+                return;
+            }
+            scanInProgress = true;
+            try {
+                await scanConversations({
+                    db,
+                    boss,
+                    minTimeBetweenUpdatesMs:
+                        config.MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS,
+                });
+                lastSuccessfulScanTime = Date.now();
+            } catch (error) {
+                log.error(
+                    { error },
+                    "[Scan] Unhandled error in scan loop - will retry on next interval",
+                );
+            } finally {
+                scanInProgress = false;
+            }
+        })();
     }, config.MATH_UPDATER_SCAN_INTERVAL_MS);
 
     // Run initial scan immediately (don't wait for first interval)
@@ -306,7 +308,7 @@ async function main() {
         .then(() => {
             lastSuccessfulScanTime = Date.now();
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
             log.error(
                 { error },
                 "[Scan] Error during initial scan - will retry on next interval",
@@ -349,108 +351,110 @@ async function main() {
     const WATCHDOG_INTERVAL_MS = 15000; // Check every 15 seconds
     const WATCHDOG_TIMEOUT_MS = 30000; // Worker should be called at least every 30s if jobs exist
 
-    const watchdogIntervalId = setInterval(async () => {
-        try {
-            const queues = await boss.getQueues();
-            const ourQueue = queues.find(
-                (q) => q.name === "update-conversation-math",
-            );
-            if (!ourQueue) {
-                log.error("[Math Updater] Watchdog: queue not found!");
-                return;
-            }
-
-            // Auto-correct: detect and delete jobs stuck in 'created' state for >10s
-            const stuckJobs = await db.execute<{ id: string; singleton_key: string }>(sql`
-                SELECT id, singleton_key
-                FROM pgboss.job
-                WHERE name = 'update-conversation-math'
-                AND state = 'created'
-                AND created_on < NOW() - INTERVAL '10 seconds'
-            `);
-            if (stuckJobs.length > 0) {
-                log.warn(
-                    `[Math Updater] Watchdog: Found ${stuckJobs.length} jobs stuck in 'created' state >10s, deleting...`,
+    const watchdogIntervalId = setInterval(() => {
+        void (async () => {
+            try {
+                const queues = await boss.getQueues();
+                const ourQueue = queues.find(
+                    (q) => q.name === "update-conversation-math",
                 );
-                for (const job of stuckJobs) {
-                    await db.execute(sql`DELETE FROM pgboss.job WHERE id = ${job.id}`);
-                    log.warn(
-                        `[Math Updater] Watchdog: Deleted stuck job ${job.id.slice(0, 8)}... (key: ${job.singleton_key})`,
-                    );
+                if (!ourQueue) {
+                    log.error("[Math Updater] Watchdog: queue not found!");
+                    return;
                 }
-            }
 
-            // Auto-correct: detect and delete jobs stuck in 'active' state for >5 minutes (handler should have logged by now)
-            const stuckActiveJobs = await db.execute<{ id: string; singleton_key: string; started_on: string }>(sql`
-                SELECT id, singleton_key, started_on
-                FROM pgboss.job
-                WHERE name = 'update-conversation-math'
-                AND state = 'active'
-                AND started_on < NOW() - INTERVAL '5 minutes'
-            `);
-            if (stuckActiveJobs.length > 0) {
-                log.warn(
-                    `[Math Updater] Watchdog: Found ${stuckActiveJobs.length} jobs stuck in 'active' state >5min, deleting...`,
-                );
-                for (const job of stuckActiveJobs) {
-                    await db.execute(sql`DELETE FROM pgboss.job WHERE id = ${job.id}`);
+                // Auto-correct: detect and delete jobs stuck in 'created' state for >10s
+                const stuckJobs = await db.execute<{ id: string; singleton_key: string }>(sql`
+                    SELECT id, singleton_key
+                    FROM pgboss.job
+                    WHERE name = 'update-conversation-math'
+                    AND state = 'created'
+                    AND created_on < NOW() - INTERVAL '10 seconds'
+                `);
+                if (stuckJobs.length > 0) {
                     log.warn(
-                        `[Math Updater] Watchdog: Deleted stuck active job ${job.id.slice(0, 8)}... (key: ${job.singleton_key}, started: ${job.started_on})`,
+                        `[Math Updater] Watchdog: Found ${stuckJobs.length} jobs stuck in 'created' state >10s, deleting...`,
                     );
+                    for (const job of stuckJobs) {
+                        await db.execute(sql`DELETE FROM pgboss.job WHERE id = ${job.id}`);
+                        log.warn(
+                            `[Math Updater] Watchdog: Deleted stuck job ${job.id.slice(0, 8)}... (key: ${job.singleton_key})`,
+                        );
+                    }
                 }
-            }
 
-            // Monitor scan loop health
-            const timeSinceLastScan = Date.now() - lastSuccessfulScanTime;
-            const scanHealthThresholdMs =
-                config.MATH_UPDATER_SCAN_INTERVAL_MS * 5;
-            if (timeSinceLastScan > scanHealthThresholdMs) {
-                log.error(
-                    `[Math Updater] Watchdog: Scan loop hasn't completed successfully in ${(timeSinceLastScan / 1000).toFixed(1)}s (threshold: ${(scanHealthThresholdMs / 1000).toFixed(1)}s, scanInProgress: ${scanInProgress})`,
-                );
-            } else {
-                log.info(
-                    `[Math Updater] Watchdog: Scan loop healthy - last successful scan ${(timeSinceLastScan / 1000).toFixed(1)}s ago`,
-                );
-            }
-
-            const timeSinceLastCall = Date.now() - lastWorkerCallTime;
-            // createdCount exists at runtime but not in pg-boss types
-            const pendingCount = Number(
-                "createdCount" in ourQueue ? ourQueue.createdCount : 0,
-            );
-            const hasPendingJobs = pendingCount > 0;
-
-            // Detect polling stall: worker not called in timeout period + pending jobs exist
-            if (timeSinceLastCall > WATCHDOG_TIMEOUT_MS && hasPendingJobs) {
-                log.error(
-                    `[Math Updater] Watchdog: Worker stalled for ${(timeSinceLastCall / 1000).toFixed(1)}s with ${pendingCount} pending job(s). Restarting...`,
-                );
-
-                try {
-                    await boss.offWork(workerId);
-                    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-                    // Re-register worker using the same handler
-                    workerId = await boss.work(
-                        "update-conversation-math",
-                        { batchSize: config.MATH_UPDATER_BATCH_SIZE },
-                        workerHandler,
+                // Auto-correct: detect and delete jobs stuck in 'active' state for >5 minutes (handler should have logged by now)
+                const stuckActiveJobs = await db.execute<{ id: string; singleton_key: string; started_on: string }>(sql`
+                    SELECT id, singleton_key, started_on
+                    FROM pgboss.job
+                    WHERE name = 'update-conversation-math'
+                    AND state = 'active'
+                    AND started_on < NOW() - INTERVAL '5 minutes'
+                `);
+                if (stuckActiveJobs.length > 0) {
+                    log.warn(
+                        `[Math Updater] Watchdog: Found ${stuckActiveJobs.length} jobs stuck in 'active' state >5min, deleting...`,
                     );
+                    for (const job of stuckActiveJobs) {
+                        await db.execute(sql`DELETE FROM pgboss.job WHERE id = ${job.id}`);
+                        log.warn(
+                            `[Math Updater] Watchdog: Deleted stuck active job ${job.id.slice(0, 8)}... (key: ${job.singleton_key}, started: ${job.started_on})`,
+                        );
+                    }
+                }
 
-                    log.info(
-                        `[Math Updater] Watchdog: Worker restarted (ID: ${workerId})`,
-                    );
-                } catch (restartError) {
+                // Monitor scan loop health
+                const timeSinceLastScan = Date.now() - lastSuccessfulScanTime;
+                const scanHealthThresholdMs =
+                    config.MATH_UPDATER_SCAN_INTERVAL_MS * 5;
+                if (timeSinceLastScan > scanHealthThresholdMs) {
                     log.error(
-                        { error: restartError },
-                        "[Math Updater] Watchdog: Failed to restart worker!",
+                        `[Math Updater] Watchdog: Scan loop hasn't completed successfully in ${(timeSinceLastScan / 1000).toFixed(1)}s (threshold: ${(scanHealthThresholdMs / 1000).toFixed(1)}s, scanInProgress: ${scanInProgress})`,
+                    );
+                } else {
+                    log.info(
+                        `[Math Updater] Watchdog: Scan loop healthy - last successful scan ${(timeSinceLastScan / 1000).toFixed(1)}s ago`,
                     );
                 }
+
+                const timeSinceLastCall = Date.now() - lastWorkerCallTime;
+                // createdCount exists at runtime but not in pg-boss types
+                const pendingCount = Number(
+                    "createdCount" in ourQueue ? ourQueue.createdCount : 0,
+                );
+                const hasPendingJobs = pendingCount > 0;
+
+                // Detect polling stall: worker not called in timeout period + pending jobs exist
+                if (timeSinceLastCall > WATCHDOG_TIMEOUT_MS && hasPendingJobs) {
+                    log.error(
+                        `[Math Updater] Watchdog: Worker stalled for ${(timeSinceLastCall / 1000).toFixed(1)}s with ${pendingCount} pending job(s). Restarting...`,
+                    );
+
+                    try {
+                        await boss.offWork(workerId);
+                        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+                        // Re-register worker using the same handler
+                        workerId = await boss.work(
+                            "update-conversation-math",
+                            { batchSize: config.MATH_UPDATER_BATCH_SIZE },
+                            workerHandler,
+                        );
+
+                        log.info(
+                            `[Math Updater] Watchdog: Worker restarted (ID: ${workerId})`,
+                        );
+                    } catch (restartError) {
+                        log.error(
+                            { error: restartError },
+                            "[Math Updater] Watchdog: Failed to restart worker!",
+                        );
+                    }
+                }
+            } catch (error) {
+                log.error({ error }, "[Math Updater] Watchdog error");
             }
-        } catch (error) {
-            log.error({ error }, "[Math Updater] Watchdog error");
-        }
+        })();
     }, WATCHDOG_INTERVAL_MS);
 
     // Graceful shutdown
@@ -469,7 +473,7 @@ async function main() {
     process.on("SIGHUP", () => void shutdown());
 }
 
-main().catch((error) => {
+main().catch((error: unknown) => {
     log.error(error, "[Math Updater] Fatal error during startup");
     process.exit(1);
 });

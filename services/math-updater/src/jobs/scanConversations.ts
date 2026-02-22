@@ -200,7 +200,7 @@ export async function scanConversations({
                             `);
 
                             const activeCount = parseInt(
-                                activeCountResult[0]?.count || "0",
+                                activeCountResult[0].count || "0",
                             );
 
                             if (activeCount === 0) {
