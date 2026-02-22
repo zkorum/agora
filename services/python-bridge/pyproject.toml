@@ -68,7 +68,7 @@ dependencies = [
 	"tzdata==2025.2",
 	"url-normalize==2.2.1",
 	"urllib3==2.6.3",
-	"Werkzeug==3.1.5",
+	"Werkzeug==3.1.6",
 	"gunicorn==23.0.0",
 	"red-dwarf @ git+https://github.com/nicobao/red-dwarf.git@e6fd28dfcbecfc9b470f5ec8ee7ebf1609cf5a73",
 ]
