@@ -15,7 +15,7 @@ import { nowZeroMs } from "@/shared/util.js";
 import { AxiosInstance } from "axios";
 import { and, eq } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import type { PgBoss } from "pg-boss";
+import type { Job } from "pg-boss";
 
 export interface UpdateConversationMathData {
     conversationId: number;
@@ -86,7 +86,7 @@ export interface UpdateConversationMathData {
  * we prevent duplicate job creation at the application level.
  */
 export async function updateConversationMathHandler(
-    job: PgBoss.Job<UpdateConversationMathData>,
+    job: Job<UpdateConversationMathData>,
     db: PostgresJsDatabase,
     axiosPolis: AxiosInstance,
     googleCloudCredentials?: GoogleCloudCredentials,
