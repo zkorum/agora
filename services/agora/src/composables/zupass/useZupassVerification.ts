@@ -5,7 +5,6 @@ import {
   getZupassEventConfig,
   getZupassSignerPublicKey,
 } from "src/shared/zupass/eventConfig";
-import type { SupportedPlatform } from "src/utils/common";
 import { createDidIfDoesNotExist } from "src/utils/crypto/ucan/operation";
 import { ref, shallowRef } from "vue";
 
@@ -16,6 +15,10 @@ const ZAPP_CONFIG: Zapp = {
     REQUEST_PROOF: { collections: ["Devconnect ARG"] },
     READ_POD: { collections: ["Devconnect ARG"] },
     READ_PUBLIC_IDENTIFIERS: {},
+    SIGN_POD: {},
+    INSERT_POD: { collections: [] },
+    DELETE_POD: { collections: [] },
+    SUGGEST_PODS: { collections: ["Devconnect ARG"] },
   },
 };
 
@@ -176,10 +179,8 @@ export function useZupassVerification() {
    */
   async function requestTicketProof({
     eventSlug,
-    platform,
   }: {
     eventSlug: EventSlug;
-    platform: SupportedPlatform;
   }): Promise<ZupassVerificationResult> {
     // Don't set isVerifying here - it should be managed by caller (useTicketVerificationFlow)
     // to cover the entire verification flow including backend verification
@@ -198,7 +199,7 @@ export function useZupassVerification() {
 
     try {
       // Get user's DID to bind proof (prevents proof stealing)
-      const { did: didWrite } = await createDidIfDoesNotExist(platform);
+      const { did: didWrite } = await createDidIfDoesNotExist();
 
       // Get config from shared configuration
       const config = getZupassEventConfig(eventSlug);

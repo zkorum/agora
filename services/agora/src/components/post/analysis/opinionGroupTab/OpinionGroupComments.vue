@@ -2,7 +2,8 @@
   <div class="opinion-group-comments">
     <div class="header-flex-style">
       <h2 class="title">
-        {{ t("opinionsTitle") }}
+        <span class="title-short">{{ t("opinionsTitle") }}</span>
+        <span class="title-long">{{ t("opinionsTitleLong") }}</span>
         <span class="count">{{ itemList.length }}</span>
       </h2>
 
@@ -211,6 +212,19 @@ const navigateToNextMode = toggleNextMode;
   font-weight: var(--font-weight-medium);
   margin: 0;
   color: #434149;
+}
+
+.title-long {
+  display: none;
+}
+
+@media (min-width: 600px) {
+  .title-short {
+    display: none;
+  }
+  .title-long {
+    display: inline;
+  }
 }
 
 .count {

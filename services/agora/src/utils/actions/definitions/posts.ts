@@ -15,6 +15,7 @@ interface PostActionTranslations {
   muteUser: string;
   delete: string;
   edit: string;
+  share: string;
   moderationHistory: string;
   embedLink: string;
   moderate: string;
@@ -35,35 +36,10 @@ export function getPostActions(
   deletePostCallback: () => void | Promise<void>,
   editConversationCallback: () => void | Promise<void>,
   exportConversationCallback: () => void | Promise<void>,
+  shareCallback: () => void | Promise<void>,
   translations: PostActionTranslations
 ): ContentAction[] {
   return [
-    {
-      id: "report",
-      label: translations.report,
-      icon: "mdi-flag",
-      variant: "warning",
-      handler: reportPostCallback,
-      isVisible: () => true, // Always visible
-    },
-    {
-      id: "muteUser",
-      label: translations.muteUser,
-      icon: "mdi-account-off",
-      variant: "warning",
-      handler: muteUserCallback,
-      isVisible: (context: ContentActionContext) =>
-        !context.isOwner && context.isLoggedIn && !context.isEmbeddedMode,
-    },
-    {
-      id: "delete",
-      label: translations.delete,
-      icon: "mdi-delete",
-      variant: "destructive",
-      handler: deletePostCallback,
-      isVisible: (context: ContentActionContext) =>
-        context.isOwner && !context.isEmbeddedMode,
-    },
     {
       id: "edit",
       label: translations.edit,
@@ -73,18 +49,37 @@ export function getPostActions(
         context.isOwner && !context.isEmbeddedMode,
     },
     {
-      id: "moderationHistory",
-      label: translations.moderationHistory,
-      icon: "mdi-book-open",
-      handler: moderationHistoryCallback,
-      isVisible: () => true, // Always visible
+      id: "share",
+      label: translations.share,
+      icon: "mdi-share",
+      handler: shareCallback,
+      isVisible: () => true,
     },
     {
       id: "embedLink",
       label: translations.embedLink,
       icon: "mdi-content-copy",
       handler: copyEmbedLinkCallback,
-      isVisible: () => true, // Always visible
+      isVisible: () => true,
+    },
+    {
+      id: "exportConversation",
+      label: translations.exportConversation,
+      icon: "mdi-download",
+      handler: exportConversationCallback,
+      // Use !== "false" instead of === "true" so export is enabled by default
+      // when the env var is not set (Zod defaults don't apply at runtime)
+      isVisible: (context: ContentActionContext) =>
+        context.isLoggedIn &&
+        !context.isEmbeddedMode &&
+        processEnv.VITE_EXPORT_CONVOS_ENABLED !== "false",
+    },
+    {
+      id: "moderationHistory",
+      label: translations.moderationHistory,
+      icon: "mdi-book-open",
+      handler: moderationHistoryCallback,
+      isVisible: () => true,
     },
     {
       id: "moderate",
@@ -104,16 +99,30 @@ export function getPostActions(
         context.isModerator && !context.isEmbeddedMode,
     },
     {
-      id: "exportConversation",
-      label: translations.exportConversation,
-      icon: "mdi-download",
-      handler: exportConversationCallback,
-      // Use !== "false" instead of === "true" so export is enabled by default
-      // when the env var is not set (Zod defaults don't apply at runtime)
+      id: "report",
+      label: translations.report,
+      icon: "mdi-flag",
+      variant: "warning",
+      handler: reportPostCallback,
+      isVisible: () => true,
+    },
+    {
+      id: "muteUser",
+      label: translations.muteUser,
+      icon: "mdi-account-off",
+      variant: "warning",
+      handler: muteUserCallback,
       isVisible: (context: ContentActionContext) =>
-        context.isLoggedIn &&
-        !context.isEmbeddedMode &&
-        processEnv.VITE_EXPORT_CONVOS_ENABLED !== "false",
+        !context.isOwner && context.isLoggedIn && !context.isEmbeddedMode,
+    },
+    {
+      id: "delete",
+      label: translations.delete,
+      icon: "mdi-delete",
+      variant: "destructive",
+      handler: deletePostCallback,
+      isVisible: (context: ContentActionContext) =>
+        context.isOwner && !context.isEmbeddedMode,
     },
   ];
 }
@@ -132,6 +141,7 @@ export function getAvailablePostActions(
   deletePostCallback: () => void | Promise<void>,
   editConversationCallback: () => void | Promise<void>,
   exportConversationCallback: () => void | Promise<void>,
+  shareCallback: () => void | Promise<void>,
   translations: PostActionTranslations
 ): ContentAction[] {
   const allActions = getPostActions(
@@ -144,6 +154,7 @@ export function getAvailablePostActions(
     deletePostCallback,
     editConversationCallback,
     exportConversationCallback,
+    shareCallback,
     translations
   );
 

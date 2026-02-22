@@ -1,4 +1,4 @@
-import { opinionTable } from "@/shared-backend/schema.js";
+import { conversationTable, opinionTable } from "@/shared-backend/schema.js";
 import { SQL, and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
 
@@ -28,15 +28,33 @@ export function isSqlOrderByMajority(): SQL[] {
     return orderByClause;
 }
 
-export function isSqlOrderByGroupAwareConsensus(): SQL[] {
-    const orderByClause = [
+/**
+ * Participation dampening weight: totalVotes / (totalVotes + participantCount × 0.1).
+ * Penalizes items with few votes relative to the conversation size.
+ * Requires conversationTable to be joined in the query.
+ */
+export function participationWeight(): SQL {
+    const totalVotes = sql`(${opinionTable.numAgrees} + ${opinionTable.numDisagrees} + ${opinionTable.numPasses})::real`;
+    const dampening = sql`(${conversationTable.participantCount}::real * 0.1)`;
+    return sql`(${totalVotes} / GREATEST(${totalVotes} + ${dampening}, 1))`;
+}
+
+export function isSqlOrderByGroupAwareConsensusAgree(): SQL[] {
+    const weight = participationWeight();
+    return [
         desc(
-            // WARN: postgresql-specific
-            sql`GREATEST(${opinionTable.polisGroupAwareConsensusProbabilityAgree}, ${opinionTable.polisGroupAwareConsensusProbabilityDisagree})`,
+            sql`(${opinionTable.polisGroupAwareConsensusProbabilityAgree} * ${weight})`,
         ),
     ];
+}
 
-    return orderByClause;
+export function isSqlOrderByGroupAwareConsensusDisagree(): SQL[] {
+    const weight = participationWeight();
+    return [
+        desc(
+            sql`(${opinionTable.polisGroupAwareConsensusProbabilityDisagree} * ${weight})`,
+        ),
+    ];
 }
 
 export function isSqlOrderByPolisPriority(): SQL[] {

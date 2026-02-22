@@ -1,1 +1,5 @@
-dangerouslyAllowAllBuilds: true
+packages:
+  - '.'
+
+ignoredBuiltDependencies:
+  - protobufjs

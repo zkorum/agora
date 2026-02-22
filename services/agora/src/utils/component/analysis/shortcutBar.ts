@@ -1,6 +1,7 @@
 export type ShortcutItem =
   | "Summary"
-  | "Common ground"
+  | "Agreements"
+  | "Disagreements"
   | "Divisive"
   | "Groups"
   | "Me";

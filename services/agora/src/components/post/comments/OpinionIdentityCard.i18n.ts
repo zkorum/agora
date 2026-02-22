@@ -9,24 +9,24 @@ export const opinionIdentityCardTranslations: Record<
   OpinionIdentityCardTranslations
 > = {
   en: {
-    seedOpinion: "Seed opinion",
+    seedOpinion: "Seed statement",
   },
   ar: {
-    seedOpinion: "الرأي البدائي",
+    seedOpinion: "المقترح البدائي",
   },
   es: {
-    seedOpinion: "Opinión semilla",
+    seedOpinion: "Proposición semilla",
   },
   fr: {
-    seedOpinion: "Opinion germe",
+    seedOpinion: "Proposition germe",
   },
   "zh-Hans": {
-    seedOpinion: "种子意见",
+    seedOpinion: "种子观点",
   },
   "zh-Hant": {
-    seedOpinion: "種子意見",
+    seedOpinion: "種子觀點",
   },
   ja: {
-    seedOpinion: "意見の種",
+    seedOpinion: "主張の種",
   },
 };

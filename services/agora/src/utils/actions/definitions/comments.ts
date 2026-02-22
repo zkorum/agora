@@ -31,29 +31,11 @@ export function getCommentActions(
 ): ContentAction[] {
   return [
     {
-      id: "report",
-      label: translations.report,
-      icon: "mdi-flag",
-      variant: "warning",
-      handler: reportCommentCallback,
-      isVisible: () => true, // Always visible
-    },
-    {
-      id: "muteUser",
-      label: translations.muteUser,
-      icon: "mdi-account-off",
-      variant: "warning",
-      handler: muteUserCallback,
-      isVisible: (context: ContentActionContext) =>
-        !context.isOwner && context.isLoggedIn && !context.isEmbeddedMode,
-    },
-    {
-      id: "delete",
-      label: translations.delete,
-      icon: "mdi-delete",
-      variant: "destructive",
-      handler: deleteCommentCallback,
-      isVisible: (context: ContentActionContext) => context.isOwner,
+      id: "share",
+      label: translations.share,
+      icon: "mdi-share",
+      handler: shareOpinionCallback,
+      isVisible: () => true,
     },
     {
       id: "moderate",
@@ -73,11 +55,29 @@ export function getCommentActions(
         context.isModerator && !context.isEmbeddedMode,
     },
     {
-      id: "share",
-      label: translations.share,
-      icon: "mdi-export-variant",
-      handler: shareOpinionCallback,
-      isVisible: () => true, // Always visible
+      id: "report",
+      label: translations.report,
+      icon: "mdi-flag",
+      variant: "warning",
+      handler: reportCommentCallback,
+      isVisible: () => true,
+    },
+    {
+      id: "muteUser",
+      label: translations.muteUser,
+      icon: "mdi-account-off",
+      variant: "warning",
+      handler: muteUserCallback,
+      isVisible: (context: ContentActionContext) =>
+        !context.isOwner && context.isLoggedIn && !context.isEmbeddedMode,
+    },
+    {
+      id: "delete",
+      label: translations.delete,
+      icon: "mdi-delete",
+      variant: "destructive",
+      handler: deleteCommentCallback,
+      isVisible: (context: ContentActionContext) => context.isOwner,
     },
   ];
 }

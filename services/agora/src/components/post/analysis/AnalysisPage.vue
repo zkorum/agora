@@ -3,7 +3,7 @@
     <div class="container flexStyle">
       <ShortcutBar v-model="currentTab" />
 
-      <!-- Me tab: Show at top in Summary and Me tab -->
+      <!-- Me tab -->
       <div
         v-if="currentTab === 'Summary' || currentTab === 'Me'"
         class="tabComponent"
@@ -16,35 +16,7 @@
         />
       </div>
 
-      <div
-        v-if="currentTab === 'Summary' || currentTab === 'Common ground'"
-        class="tabComponent"
-      >
-        <ConsensusTab
-          v-model="currentTab"
-          :conversation-slug-id="props.conversationSlugId"
-          :item-list="analysisQuery.data.value?.consensus || []"
-          :compact-mode="currentTab === 'Summary'"
-          :clusters="analysisQuery.data.value?.polisClusters || {}"
-          :cluster-labels="clusterLabels"
-        />
-      </div>
-
-      <div
-        v-if="currentTab === 'Summary' || currentTab === 'Divisive'"
-        class="tabComponent"
-      >
-        <DivisiveTab
-          v-model="currentTab"
-          :conversation-slug-id="props.conversationSlugId"
-          :item-list="analysisQuery.data.value?.controversial || []"
-          :compact-mode="currentTab === 'Summary'"
-          :clusters="analysisQuery.data.value?.polisClusters || {}"
-          :cluster-labels="clusterLabels"
-        />
-      </div>
-
-      <!-- Opinion groups: Show in Summary, Groups and Me tabs -->
+      <!-- Opinion groups -->
       <div
         v-if="currentTab === 'Summary' || currentTab === 'Groups' || currentTab === 'Me'"
         class="tabComponent"
@@ -53,6 +25,53 @@
           :conversation-slug-id="props.conversationSlugId"
           :clusters="analysisQuery.data.value?.polisClusters || {}"
           :total-participant-count="props.participantCount"
+        />
+      </div>
+
+      <!-- Agreements -->
+      <div
+        v-if="currentTab === 'Summary' || currentTab === 'Agreements'"
+        class="tabComponent"
+      >
+        <ConsensusTab
+          v-model="currentTab"
+          direction="agree"
+          :conversation-slug-id="props.conversationSlugId"
+          :item-list="agreementItems"
+          :compact-mode="currentTab === 'Summary'"
+          :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :cluster-labels="clusterLabels"
+        />
+      </div>
+
+      <!-- Disagreements -->
+      <div
+        v-if="currentTab === 'Summary' || currentTab === 'Disagreements'"
+        class="tabComponent"
+      >
+        <ConsensusTab
+          v-model="currentTab"
+          direction="disagree"
+          :conversation-slug-id="props.conversationSlugId"
+          :item-list="disagreementItems"
+          :compact-mode="currentTab === 'Summary'"
+          :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :cluster-labels="clusterLabels"
+        />
+      </div>
+
+      <!-- Divisive -->
+      <div
+        v-if="currentTab === 'Summary' || currentTab === 'Divisive'"
+        class="tabComponent"
+      >
+        <DivisiveTab
+          v-model="currentTab"
+          :conversation-slug-id="props.conversationSlugId"
+          :item-list="controversialItems"
+          :compact-mode="currentTab === 'Summary'"
+          :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :cluster-labels="clusterLabels"
         />
       </div>
     </div>
@@ -82,7 +101,8 @@ import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 
 type AnalysisData = {
-  consensus: AnalysisOpinionItem[];
+  consensusAgree: AnalysisOpinionItem[];
+  consensusDisagree: AnalysisOpinionItem[];
   controversial: AnalysisOpinionItem[];
   polisClusters: Partial<PolisClusters>;
 };
@@ -114,6 +134,24 @@ const clusterLabels = computed(() => {
   }
   return labels;
 });
+
+// Full ranked lists — already sorted by the backend (ga_agree DESC / ga_disagree DESC).
+// ConsensusTab handles the GA > 0.5 threshold filter and "load more" internally.
+const agreementItems = computed(
+  () => analysisQuery.data.value?.consensusAgree ?? []
+);
+
+const disagreementItems = computed(
+  () => analysisQuery.data.value?.consensusDisagree ?? []
+);
+
+// Only show opinions where the math pipeline has run (divisiveScore > 0).
+// Pre-math opinions default to divisiveScore=0 and have no meaningful divisiveness signal.
+const controversialItems = computed(() =>
+  (analysisQuery.data.value?.controversial ?? []).filter(
+    (item) => item.divisiveScore > 0
+  )
+);
 
 
 // Find the cluster the user belongs to

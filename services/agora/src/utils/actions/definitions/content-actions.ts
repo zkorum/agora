@@ -136,6 +136,7 @@ export function useContentActions() {
       copyEmbedLinkCallback: () => void | Promise<void>;
       editConversationCallback: () => void | Promise<void>;
       exportConversationCallback: () => void | Promise<void>;
+      shareCallback: () => void | Promise<void>;
     }
   ): void => {
     const context = createActionContext(
@@ -161,6 +162,7 @@ export function useContentActions() {
       muteUser: t("muteUser"),
       delete: t("delete"),
       edit: t("edit"),
+      share: t("share"),
       moderationHistory: t("moderationHistory"),
       embedLink: t("embedLink"),
       moderate: t("moderate"),
@@ -179,6 +181,7 @@ export function useContentActions() {
       deletePostCallback,
       callbacks.editConversationCallback,
       callbacks.exportConversationCallback,
+      callbacks.shareCallback,
       postTranslations
     );
 

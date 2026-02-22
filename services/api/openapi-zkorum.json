@@ -100,6 +100,7 @@
         "/api/v1/auth/authenticate": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -278,8 +279,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -350,6 +350,7 @@
         "/api/v1/auth/phone/verify-otp": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -529,8 +530,7 @@
                                 ]
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -609,6 +609,7 @@
         "/api/v1/conversation/fetch-recent": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -628,8 +629,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -903,6 +903,7 @@
         "/api/v1/moderation/conversation/create": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -943,8 +944,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -956,6 +956,7 @@
         "/api/v1/moderation/opinion/create": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -997,8 +998,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -1010,6 +1010,7 @@
         "/api/v1/moderation/conversation/withdraw": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -1026,8 +1027,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -1039,6 +1039,7 @@
         "/api/v1/moderation/opinion/withdraw": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -1055,8 +1056,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -1068,6 +1068,7 @@
         "/api/v1/moderation/conversation/get": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -1083,8 +1084,7 @@
                                 ]
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -1168,6 +1168,7 @@
         "/api/v1/moderation/opinion/get": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -1184,8 +1185,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -1298,6 +1298,7 @@
         "/api/v1/topic/follow": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -1313,8 +1314,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -1326,6 +1326,7 @@
         "/api/v1/topic/unfollow": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -1341,8 +1342,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -1433,6 +1433,7 @@
         "/api/v1/user/conversation/fetch": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -1703,6 +1704,7 @@
         "/api/v1/user/opinion/fetch": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -2114,6 +2116,7 @@
         "/api/v1/user/vote/get-by-conversations": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -2132,8 +2135,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -2173,6 +2175,7 @@
         "/api/v1/vote/cast": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -2201,8 +2204,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -2264,6 +2266,7 @@
         "/api/v1/poll/respond": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -2283,8 +2286,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -2296,6 +2298,7 @@
         "/api/v1/user/poll/get-response-by-conversations": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -2341,6 +2344,7 @@
         "/api/v1/opinion/delete": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -2357,8 +2361,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -2370,6 +2373,7 @@
         "/api/v1/opinion/create": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -2391,8 +2395,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -2455,6 +2458,7 @@
         "/api/v1/opinion/fetch-by-conversation": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -2493,8 +2497,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -2644,6 +2647,7 @@
         "/api/v1/opinion/fetch-analysis-by-conversation": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -2660,8 +2664,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -2676,7 +2679,7 @@
                                             "minimum": 0,
                                             "maximum": 9007199254740991
                                         },
-                                        "consensus": {
+                                        "consensusAgree": {
                                             "type": "array",
                                             "items": {
                                                 "type": "object",
@@ -2843,6 +2846,18 @@
                                                             ],
                                                             "additionalProperties": false
                                                         }
+                                                    },
+                                                    "groupAwareConsensusAgree": {
+                                                        "type": "number",
+                                                        "minimum": 0
+                                                    },
+                                                    "groupAwareConsensusDisagree": {
+                                                        "type": "number",
+                                                        "minimum": 0
+                                                    },
+                                                    "divisiveScore": {
+                                                        "type": "number",
+                                                        "minimum": 0
                                                     }
                                                 },
                                                 "required": [
@@ -2857,7 +2872,211 @@
                                                     "username",
                                                     "moderation",
                                                     "isSeed",
-                                                    "clustersStats"
+                                                    "clustersStats",
+                                                    "groupAwareConsensusAgree",
+                                                    "groupAwareConsensusDisagree",
+                                                    "divisiveScore"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "consensusDisagree": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "opinionSlugId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    },
+                                                    "createdAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updatedAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "opinion": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 3000
+                                                    },
+                                                    "numParticipants": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 9007199254740991
+                                                    },
+                                                    "numAgrees": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 9007199254740991
+                                                    },
+                                                    "numDisagrees": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 9007199254740991
+                                                    },
+                                                    "numPasses": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 9007199254740991
+                                                    },
+                                                    "username": {
+                                                        "type": "string"
+                                                    },
+                                                    "moderation": {
+                                                        "oneOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "status": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "moderated"
+                                                                        ]
+                                                                    },
+                                                                    "action": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "move",
+                                                                            "hide"
+                                                                        ]
+                                                                    },
+                                                                    "reason": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "misleading",
+                                                                            "antisocial",
+                                                                            "illegal",
+                                                                            "doxing",
+                                                                            "sexual",
+                                                                            "spam"
+                                                                        ]
+                                                                    },
+                                                                    "explanation": {
+                                                                        "type": "string",
+                                                                        "maxLength": 1000
+                                                                    },
+                                                                    "createdAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    "updatedAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "status",
+                                                                    "action",
+                                                                    "reason",
+                                                                    "explanation",
+                                                                    "createdAt",
+                                                                    "updatedAt"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "status": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "unmoderated"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "status"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        ]
+                                                    },
+                                                    "isSeed": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "clustersStats": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "key": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "0",
+                                                                        "1",
+                                                                        "2",
+                                                                        "3",
+                                                                        "4",
+                                                                        "5"
+                                                                    ]
+                                                                },
+                                                                "isAuthorInCluster": {
+                                                                    "type": "boolean"
+                                                                },
+                                                                "numUsers": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0,
+                                                                    "maximum": 9007199254740991
+                                                                },
+                                                                "numAgrees": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0,
+                                                                    "maximum": 9007199254740991
+                                                                },
+                                                                "numDisagrees": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0,
+                                                                    "maximum": 9007199254740991
+                                                                },
+                                                                "numPasses": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0,
+                                                                    "maximum": 9007199254740991
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "key",
+                                                                "isAuthorInCluster",
+                                                                "numUsers",
+                                                                "numAgrees",
+                                                                "numDisagrees",
+                                                                "numPasses"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
+                                                    },
+                                                    "groupAwareConsensusAgree": {
+                                                        "type": "number",
+                                                        "minimum": 0
+                                                    },
+                                                    "groupAwareConsensusDisagree": {
+                                                        "type": "number",
+                                                        "minimum": 0
+                                                    },
+                                                    "divisiveScore": {
+                                                        "type": "number",
+                                                        "minimum": 0
+                                                    }
+                                                },
+                                                "required": [
+                                                    "opinionSlugId",
+                                                    "createdAt",
+                                                    "updatedAt",
+                                                    "opinion",
+                                                    "numParticipants",
+                                                    "numAgrees",
+                                                    "numDisagrees",
+                                                    "numPasses",
+                                                    "username",
+                                                    "moderation",
+                                                    "isSeed",
+                                                    "clustersStats",
+                                                    "groupAwareConsensusAgree",
+                                                    "groupAwareConsensusDisagree",
+                                                    "divisiveScore"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -3029,6 +3248,18 @@
                                                             ],
                                                             "additionalProperties": false
                                                         }
+                                                    },
+                                                    "groupAwareConsensusAgree": {
+                                                        "type": "number",
+                                                        "minimum": 0
+                                                    },
+                                                    "groupAwareConsensusDisagree": {
+                                                        "type": "number",
+                                                        "minimum": 0
+                                                    },
+                                                    "divisiveScore": {
+                                                        "type": "number",
+                                                        "minimum": 0
                                                     }
                                                 },
                                                 "required": [
@@ -3043,7 +3274,10 @@
                                                     "username",
                                                     "moderation",
                                                     "isSeed",
-                                                    "clustersStats"
+                                                    "clustersStats",
+                                                    "groupAwareConsensusAgree",
+                                                    "groupAwareConsensusDisagree",
+                                                    "divisiveScore"
                                                 ],
                                                 "additionalProperties": false
                                             }
@@ -3245,6 +3479,18 @@
                                                                         ],
                                                                         "additionalProperties": false
                                                                     }
+                                                                },
+                                                                "groupAwareConsensusAgree": {
+                                                                    "type": "number",
+                                                                    "minimum": 0
+                                                                },
+                                                                "groupAwareConsensusDisagree": {
+                                                                    "type": "number",
+                                                                    "minimum": 0
+                                                                },
+                                                                "divisiveScore": {
+                                                                    "type": "number",
+                                                                    "minimum": 0
                                                                 }
                                                             },
                                                             "required": [
@@ -3259,7 +3505,10 @@
                                                                 "username",
                                                                 "moderation",
                                                                 "isSeed",
-                                                                "clustersStats"
+                                                                "clustersStats",
+                                                                "groupAwareConsensusAgree",
+                                                                "groupAwareConsensusDisagree",
+                                                                "divisiveScore"
                                                             ],
                                                             "additionalProperties": false
                                                         }
@@ -3276,7 +3525,8 @@
                                         }
                                     },
                                     "required": [
-                                        "consensus",
+                                        "consensusAgree",
+                                        "consensusDisagree",
                                         "controversial",
                                         "clusters"
                                     ],
@@ -3291,6 +3541,7 @@
         "/api/v1/opinion/fetch-by-slug-id-list": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -3310,8 +3561,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -3461,6 +3711,7 @@
         "/api/v1/opinion/fetch-hidden-by-conversation": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -3482,8 +3733,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -3633,6 +3883,7 @@
         "/api/v1/conversation/delete": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -3649,8 +3900,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -3662,6 +3912,7 @@
         "/api/v1/conversation/close": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -3678,8 +3929,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -3737,6 +3987,7 @@
         "/api/v1/conversation/open": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -3753,8 +4004,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -3812,6 +4062,7 @@
         "/api/v1/conversation/create": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -3872,8 +4123,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -3901,6 +4151,7 @@
         "/api/v1/conversation/import": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -3939,8 +4190,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -4114,6 +4364,7 @@
         "/api/v1/conversation/import/status": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -4130,8 +4381,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -4255,6 +4505,7 @@
         "/api/v1/conversation/get": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -4271,8 +4522,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -4535,6 +4785,7 @@
         "/api/v1/conversation/get-for-edit": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -4551,8 +4802,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -4669,6 +4919,7 @@
         "/api/v1/conversation/update": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -4816,8 +5067,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -4882,6 +5132,7 @@
         "/api/v1/auth/zkp/generate-verification-link": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -4900,8 +5151,7 @@
                                 ]
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -5058,6 +5308,7 @@
         "/api/v1/auth/ticket/verify": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -5078,8 +5329,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -5157,6 +5407,7 @@
         "/api/v1/user/username/update": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -5173,8 +5424,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -5186,6 +5436,7 @@
         "/api/v1/account/is-username-in-use": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -5202,8 +5453,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -5238,6 +5488,7 @@
         "/api/v1/administrator/organization/add-user-organization-mapping": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -5258,8 +5509,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -5271,6 +5521,7 @@
         "/api/v1/administrator/organization/remove-user-organization-mapping": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -5291,8 +5542,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -5304,6 +5554,7 @@
         "/api/v1/administrator/organization/get-organization-names-by-username": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -5320,8 +5571,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -5424,6 +5674,7 @@
         "/api/v1/administrator/organization/create-organization": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -5456,8 +5707,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -5469,6 +5719,7 @@
         "/api/v1/administrator/organization/delete-organization": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -5484,8 +5735,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -5497,6 +5747,7 @@
         "/api/v1/report/conversation/create": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -5529,8 +5780,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -5542,6 +5792,7 @@
         "/api/v1/report/opinion/create": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -5574,8 +5825,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -5587,6 +5837,7 @@
         "/api/v1/report/conversation/fetch": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -5603,8 +5854,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -5660,6 +5910,7 @@
         "/api/v1/report/opinion/fetch": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -5676,8 +5927,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -5766,6 +6016,7 @@
         "/api/v1/mute/user/create": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -5789,8 +6040,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -5802,6 +6052,7 @@
         "/api/v1/notification/fetch": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -6305,6 +6556,9 @@
                                                                     "importSlugId"
                                                                 ],
                                                                 "additionalProperties": false
+                                                            },
+                                                            "conversationTitle": {
+                                                                "type": "string"
                                                             }
                                                         },
                                                         "required": [
@@ -6467,6 +6721,7 @@
         "/api/v1/user/language-preferences/get": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -6491,8 +6746,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -6586,6 +6840,7 @@
         "/api/v1/user/language-preferences/update": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -6675,6 +6930,7 @@
         "/api/v1/conversation/export/request": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -6691,8 +6947,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -6790,6 +7045,7 @@
         "/api/v1/conversation/export/status": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -6806,8 +7062,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -7079,6 +7334,7 @@
         "/api/v1/conversation/export/history": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -7095,8 +7351,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -7144,6 +7399,7 @@
         "/api/v1/conversation/export/readiness": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -7160,8 +7416,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -7246,6 +7501,7 @@
         "/api/v1/conversation/export/delete": {
             "post": {
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -7262,8 +7518,7 @@
                                 "additionalProperties": false
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {

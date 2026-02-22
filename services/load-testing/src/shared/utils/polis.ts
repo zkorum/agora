@@ -19,9 +19,12 @@ export function extractPolisIdFromUrl(url: string): PolisId {
         throw new Error("Polis URL is empty");
     }
     const urlObject = new URL(url); // can throw
+    const hostname = urlObject.hostname;
     if (
-        !urlObject.hostname.endsWith("pol.is") &&
-        !urlObject.hostname.endsWith("deepgov.org")
+        hostname !== "pol.is" &&
+        !hostname.endsWith(".pol.is") &&
+        hostname !== "deepgov.org" &&
+        !hostname.endsWith(".deepgov.org")
     ) {
         throw new Error(`Polis URL ${url} has an incorrect hostname`);
     }

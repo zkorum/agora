@@ -98,14 +98,20 @@
     <div class="editor-wrapper">
       <EditorContent v-if="editor" :editor="editor" />
     </div>
+
+    <!-- Character count footer (shown when maxLength is provided) -->
+    <div v-if="maxLength !== undefined && (showCharacterCount ?? true)" class="character-count-footer">
+      <span :class="{ 'character-count-over-limit': isOverLimit }">
+        {{ internalCharacterCount }}
+      </span>
+      <span>&nbsp;/ {{ maxLength }}</span>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Extension } from "@tiptap/core";
-import CharacterCount from "@tiptap/extension-character-count";
+import { type Editor as TipTapEditor, Extension } from "@tiptap/core";
 import Placeholder from "@tiptap/extension-placeholder";
-import { DOMSerializer } from "@tiptap/pm/model";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
@@ -114,7 +120,7 @@ import Divider from "primevue/divider";
 import { useQuasar } from "quasar";
 import sanitizeHtml from "sanitize-html";
 import { htmlToCountedText } from "src/shared/shared";
-import { computed, onUnmounted, watch } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 
 import EditorToolbarButton from "./EditorToolbarButton.vue";
 
@@ -130,14 +136,45 @@ const props = defineProps<{
   minHeight: string;
   disabled: boolean;
   singleLine: boolean;
-  maxLength: number;
+  maxLength?: number;
+  showCharacterCount?: boolean;
 }>();
 const emit = defineEmits<{
   manuallyFocused: [];
   blur: [];
+  "update:characterCount": [count: number];
+  "update:isOverLimit": [isOverLimit: boolean];
 }>();
 const $q = useQuasar();
 const modelText = defineModel<string>({ required: true });
+
+// Internal character count tracking
+const internalCharacterCount = ref(0);
+const isOverLimit = computed(
+  () =>
+    props.maxLength !== undefined &&
+    internalCharacterCount.value > props.maxLength
+);
+
+function computeCharacterCount(editorInstance: TipTapEditor): number {
+  if (props.singleLine) {
+    return editorInstance.getText().length;
+  }
+  const html = editorInstance.getHTML();
+  if (html === "<p></p>" || html === "<br>" || html === "") {
+    return 0;
+  }
+  return htmlToCountedText(html).length;
+}
+
+function emitCharacterCount(count: number): void {
+  internalCharacterCount.value = count;
+  emit("update:characterCount", count);
+  emit(
+    "update:isOverLimit",
+    props.maxLength !== undefined && count > props.maxLength
+  );
+}
 
 // Custom extension to block Enter key in single-line mode
 const BlockEnterExtension = Extension.create({
@@ -191,42 +228,6 @@ const CustomListTabKeymap = Extension.create({
   },
 });
 
-// Custom extension factory to enforce character limits using transaction filtering
-const createCharacterLimitExtension = (maxLength: number) =>
-  Extension.create({
-    name: "characterLimit",
-
-    addProseMirrorPlugins() {
-      return [
-        new Plugin({
-          key: new PluginKey("characterLimit"),
-          filterTransaction: (transaction, state) => {
-            // Allow non-document-changing transactions
-            if (!transaction.docChanged) {
-              return true;
-            }
-
-            // Get the new document that would result from this transaction
-            const newDoc = transaction.doc;
-
-            // Serialize to HTML
-            const fragment = DOMSerializer.fromSchema(
-              state.schema
-            ).serializeFragment(newDoc.content);
-            const div = document.createElement("div");
-            div.appendChild(fragment);
-            const html = div.innerHTML;
-
-            // Convert to plain text with our counting logic
-            const plainText = htmlToCountedText(html);
-
-            // Block transaction if it would exceed the limit
-            return plainText.length <= maxLength;
-          },
-        }),
-      ];
-    },
-  });
 
 const editor = useEditor({
   content: modelText.value,
@@ -247,9 +248,6 @@ const editor = useEditor({
     Placeholder.configure({
       placeholder: () => props.placeholder,
     }),
-    CharacterCount,
-    // Add character limit enforcement
-    createCharacterLimitExtension(props.maxLength),
     // Add Enter key blocker for single-line mode
     ...(props.singleLine ? [BlockEnterExtension] : []),
     // Add custom Tab/Shift-Tab handler for list indentation (prevents focus change)
@@ -284,21 +282,21 @@ const editor = useEditor({
       return sanitizeHtml(html, options);
     },
   },
+  onCreate: ({ editor }) => {
+    emitCharacterCount(computeCharacterCount(editor));
+  },
   onUpdate: ({ editor }) => {
     if (props.singleLine) {
-      // Get plain text for single-line mode
-      const text = editor.getText();
-      modelText.value = text;
+      modelText.value = editor.getText();
     } else {
-      // Get HTML for multi-line mode
       const html = editor.getHTML();
-      // Clean up empty content
       if (html === "<p></p>" || html === "<br>" || html === "") {
         modelText.value = "";
       } else {
         modelText.value = html;
       }
     }
+    emitCharacterCount(computeCharacterCount(editor));
   },
   onFocus: () => {
     emit("manuallyFocused");
@@ -337,6 +335,8 @@ watch(
       // Only update if the content is actually different
       if (newValue !== currentContent) {
         editor.value.commands.setContent(newValue);
+        // Recalculate character count after external content change (e.g. draft load)
+        emitCharacterCount(computeCharacterCount(editor.value));
       }
     }
   }
@@ -408,6 +408,8 @@ watch(
   line-height: normal;
   overflow-wrap: break-word;
   word-break: break-word;
+  max-height: 40vh;
+  overflow-y: auto;
 }
 
 .editor :deep(.ProseMirror p) {
@@ -475,5 +477,19 @@ watch(
 .button-group {
   display: flex;
   gap: 0.25rem;
+}
+
+.character-count-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  color: $color-text-weak;
+  font-size: 0.875rem;
+}
+
+.character-count-over-limit {
+  color: $negative;
+  font-weight: var(--font-weight-bold);
 }
 </style>

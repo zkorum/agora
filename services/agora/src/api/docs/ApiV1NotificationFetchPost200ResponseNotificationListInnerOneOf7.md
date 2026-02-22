@@ -10,6 +10,7 @@ Name | Type | Description | Notes
 **createdAt** | **string** |  | [default to undefined]
 **type** | **string** |  | [default to undefined]
 **routeTarget** | [**ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf6RouteTarget**](ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf6RouteTarget.md) |  | [default to undefined]
+**conversationTitle** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
@@ -22,6 +23,7 @@ const instance: ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf7
     createdAt,
     type,
     routeTarget,
+    conversationTitle,
 };
 ```
 

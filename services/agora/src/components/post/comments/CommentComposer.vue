@@ -9,9 +9,11 @@
         :min-height="innerFocus ? '6rem' : '2rem'"
         :show-toolbar="innerFocus"
         :single-line="false"
-        :max-length="MAX_LENGTH_OPINION"
         :disabled="false"
-        @update:model-value="checkWordCount()"
+        :max-length="MAX_LENGTH_OPINION"
+        :show-character-count="innerFocus"
+        @update:character-count="onCharacterCountUpdate"
+        @update:is-over-limit="(v: boolean) => (isOverLimit = v)"
         @manually-focused="editorFocused()"
       />
 
@@ -35,24 +37,12 @@
           />
         </ZKButton>
 
-        <div v-if="characterProgress > 100">
-          {{ MAX_LENGTH_OPINION - characterCount }}
-        </div>
-
-        <q-circular-progress
-          :value="characterProgress"
-          size="1.5rem"
-          :thickness="0.3"
-        />
-
-        <q-separator v-if="characterProgress > 0" vertical inset />
-
         <PrimeButton
           :label="t('postButton')"
           severity="primary"
           :disabled="
-            characterProgress > 100 ||
-            characterProgress == 0 ||
+            isOverLimit ||
+            characterCount === 0 ||
             isSubmissionLoading ||
             isVerifyingZupass ||
             isComposerDisabled
@@ -210,6 +200,7 @@ const isOpinionLocked = computed(() => {
 });
 
 const characterCount = ref(0);
+const isOverLimit = ref(false);
 
 const innerFocus = ref(false);
 
@@ -308,15 +299,6 @@ const {
   isRouteLockedCheck,
 } = useRouteGuard(() => characterCount.value > 0, onBeforeRouteLeaveCallback);
 
-const characterProgress = computed(() => {
-  const progressPercentage = (characterCount.value / MAX_LENGTH_OPINION) * 100;
-  if (progressPercentage < 1 && progressPercentage > 0) {
-    return 1;
-  } else {
-    return progressPercentage;
-  }
-});
-
 const { y: yScroll } = useWindowScroll();
 
 let disableAutocollapse = false;
@@ -402,6 +384,10 @@ function checkWordCount() {
     opinionBody.value,
     "opinion"
   ).characterCount;
+}
+
+function onCharacterCountUpdate(count: number) {
+  characterCount.value = count;
 }
 
 async function handleZupassVerification() {

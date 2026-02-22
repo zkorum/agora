@@ -42,9 +42,10 @@
               <router-view v-slot="{ Component }">
                 <component
                   :is="Component"
-                  :key="route.fullPath"
+                  :key="route.path"
                   :conversation-data="loadedConversationData"
                   :has-conversation-data="hasConversationData"
+                  :moderation-history-trigger="moderationHistoryTrigger"
                 />
               </router-view>
             </div>
@@ -122,6 +123,7 @@ const opinionCountOffset = ref(0);
 const participantCountOffset = ref(0);
 const currentTab = ref<"comment" | "analysis">("comment");
 const isCurrentTabLoading = ref(false);
+const moderationHistoryTrigger = ref(0);
 
 // Computed: base participant count + offset
 const participantCountLocal = computed(
@@ -190,8 +192,11 @@ watch(
 );
 
 function openModerationHistory(): void {
-  // Will be handled by child component
-  console.warn("Moderation history should be opened by child component");
+  // Navigate to comment tab if on analysis, then trigger moderation history
+  if (currentTab.value !== "comment") {
+    navigateToCommentTab();
+  }
+  moderationHistoryTrigger.value += 1;
 }
 
 const { loadAuthenticatedModules } = useBackendAuthApi();

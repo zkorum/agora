@@ -20,10 +20,10 @@ export const postMetadataTranslations: Record<
 > = {
   en: {
     closeConfirmMessage:
-      "Are you sure you want to close this conversation? Users will not be able to post new opinions or votes.",
+      "Are you sure you want to close this conversation? Users will not be able to post new statements or votes.",
     closeConfirmButton: "Close conversation",
     reopenConfirmMessage:
-      "Reopen this conversation? Users will be able to post opinions and vote again.",
+      "Reopen this conversation? Users will be able to post statements and vote again.",
     reopenConfirmButton: "Reopen conversation",
     cancelButton: "Cancel",
     closeSuccess: "Conversation closed successfully",
@@ -35,10 +35,10 @@ export const postMetadataTranslations: Record<
   },
   ar: {
     closeConfirmMessage:
-      "هل أنت متأكد أنك تريد إغلاق هذه المحادثة؟ لن يتمكن المستخدمون من نشر آراء أو تصويتات جديدة.",
+      "هل أنت متأكد أنك تريد إغلاق هذه المحادثة؟ لن يتمكن المستخدمون من نشر مقترحات أو تصويتات جديدة.",
     closeConfirmButton: "إغلاق المحادثة",
     reopenConfirmMessage:
-      "إعادة فتح هذه المحادثة؟ سيتمكن المستخدمون من نشر الآراء والتصويت مرة أخرى.",
+      "إعادة فتح هذه المحادثة؟ سيتمكن المستخدمون من نشر المقترحات والتصويت مرة أخرى.",
     reopenConfirmButton: "إعادة فتح المحادثة",
     cancelButton: "إلغاء",
     closeSuccess: "تم إغلاق المحادثة بنجاح",
@@ -50,10 +50,10 @@ export const postMetadataTranslations: Record<
   },
   es: {
     closeConfirmMessage:
-      "¿Estás seguro de que quieres cerrar esta conversación? Los usuarios no podrán publicar nuevas opiniones o votos.",
+      "¿Estás seguro de que quieres cerrar esta conversación? Los usuarios no podrán publicar nuevas proposiciones o votos.",
     closeConfirmButton: "Cerrar conversación",
     reopenConfirmMessage:
-      "¿Reabrir esta conversación? Los usuarios podrán publicar opiniones y votar de nuevo.",
+      "¿Reabrir esta conversación? Los usuarios podrán publicar proposiciones y votar de nuevo.",
     reopenConfirmButton: "Reabrir conversación",
     cancelButton: "Cancelar",
     closeSuccess: "Conversación cerrada exitosamente",
@@ -65,10 +65,10 @@ export const postMetadataTranslations: Record<
   },
   fr: {
     closeConfirmMessage:
-      "Êtes-vous sûr de vouloir fermer cette conversation ? Les utilisateurs ne pourront pas publier de nouvelles opinions ou votes.",
+      "Êtes-vous sûr de vouloir fermer cette conversation ? Les utilisateurs ne pourront pas publier de nouvelles propositions ou votes.",
     closeConfirmButton: "Fermer la conversation",
     reopenConfirmMessage:
-      "Rouvrir cette conversation ? Les utilisateurs pourront à nouveau publier des opinions et voter.",
+      "Rouvrir cette conversation ? Les utilisateurs pourront à nouveau publier des propositions et voter.",
     reopenConfirmButton: "Rouvrir la conversation",
     cancelButton: "Annuler",
     closeSuccess: "Conversation fermée avec succès",
@@ -79,9 +79,9 @@ export const postMetadataTranslations: Record<
     alreadyOpen: "Cette conversation est déjà ouverte",
   },
   "zh-Hans": {
-    closeConfirmMessage: "您确定要关闭此对话吗？用户将无法发布新意见或投票。",
+    closeConfirmMessage: "您确定要关闭此对话吗？用户将无法发布新观点或投票。",
     closeConfirmButton: "关闭对话",
-    reopenConfirmMessage: "重新打开此对话？用户将能够再次发布意见和投票。",
+    reopenConfirmMessage: "重新打开此对话？用户将能够再次发布观点和投票。",
     reopenConfirmButton: "重新打开对话",
     cancelButton: "取消",
     closeSuccess: "成功关闭对话",
@@ -92,9 +92,9 @@ export const postMetadataTranslations: Record<
     alreadyOpen: "此对话已打开",
   },
   "zh-Hant": {
-    closeConfirmMessage: "您確定要關閉此對話嗎？用戶將無法發布新意見或投票。",
+    closeConfirmMessage: "您確定要關閉此對話嗎？用戶將無法發布新觀點或投票。",
     closeConfirmButton: "關閉對話",
-    reopenConfirmMessage: "重新打開此對話？用戶將能夠再次發布意見和投票。",
+    reopenConfirmMessage: "重新打開此對話？用戶將能夠再次發布觀點和投票。",
     reopenConfirmButton: "重新打開對話",
     cancelButton: "取消",
     closeSuccess: "成功關閉對話",
@@ -106,10 +106,10 @@ export const postMetadataTranslations: Record<
   },
   ja: {
     closeConfirmMessage:
-      "この会話を閉じてもよろしいですか？ユーザーは新しい意見や投票を投稿できなくなります。",
+      "この会話を閉じてもよろしいですか？ユーザーは新しい主張や投票を投稿できなくなります。",
     closeConfirmButton: "会話を閉じる",
     reopenConfirmMessage:
-      "この会話を再開しますか？ユーザーは再び意見を投稿したり投票したりできるようになります。",
+      "この会話を再開しますか？ユーザーは再び主張を投稿したり投票したりできるようになります。",
     reopenConfirmButton: "会話を再開する",
     cancelButton: "キャンセル",
     closeSuccess: "会話を正常に閉じました",

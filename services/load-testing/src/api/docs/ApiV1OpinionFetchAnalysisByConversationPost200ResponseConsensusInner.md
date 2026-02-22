@@ -17,6 +17,9 @@ Name | Type | Description | Notes
 **moderation** | [**ApiV1ModerationOpinionGetPost200Response**](ApiV1ModerationOpinionGetPost200Response.md) |  | [default to undefined]
 **isSeed** | **boolean** |  | [default to undefined]
 **clustersStats** | [**Array&lt;ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInnerClustersStatsInner&gt;**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInnerClustersStatsInner.md) |  | [default to undefined]
+**groupAwareConsensusAgree** | **number** |  | [default to undefined]
+**groupAwareConsensusDisagree** | **number** |  | [default to undefined]
+**divisiveScore** | **number** |  | [default to undefined]
 
 ## Example
 
@@ -36,6 +39,9 @@ const instance: ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusI
     moderation,
     isSeed,
     clustersStats,
+    groupAwareConsensusAgree,
+    groupAwareConsensusDisagree,
+    divisiveScore,
 };
 ```
 

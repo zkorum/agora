@@ -1,9 +1,0 @@
-# Android
-# json_key_file("/home/nicobao/fasstlane/BN643Y948W.json") # Path to the json secret file - Follow https://docs.fastlane.tools/actions/supply/#setup to get one
-package_name("com.zkorum.agora") # e.g. com.krausefx.app
-
-# Apple
-app_identifier("com.zkorum.agora")
-apple_id(ENV["APPLE_ID"])
-team_id(ENV["APPLE_DEVELOPER_PORTAL_TEAM_ID"])
-itc_team_id(ENV["APPLE_APP_STORE_CONNECT_TEAM_ID"])

@@ -1,16 +1,14 @@
 import type { AxiosError } from "axios";
 import { type RawAxiosRequestConfig } from "axios";
-import { useQuasar } from "quasar";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { getPlatform } from "src/utils/common";
 
 import {
   buildAuthorizationHeader,
   buildUcan,
   createDidIfDoesNotExist,
+  createDidOverwriteIfAlreadyExists,
   getDid,
 } from "../crypto/ucan/operation";
-import { createDidOverwriteIfAlreadyExists } from "../crypto/ucan/operation";
 import { useNotify } from "../ui/notify";
 import {
   type CommonApiTranslations,
@@ -85,8 +83,6 @@ export function shouldRetryError(code: AxiosErrorCode): boolean {
 }
 
 export function useCommonApi() {
-  const $q = useQuasar();
-
   const { showNotifyMessage } = useNotify();
   const { t } = useComponentI18n<CommonApiTranslations>(commonApiTranslations);
 
@@ -210,24 +206,20 @@ export function useCommonApi() {
     keyAction: KeyAction = "create", // if the key doesn't correspond to an existing logged-in user, HTTP requests requiring authentication will throw a 401 error, and the router will redirect the user to the log-in screen, which is the expected behavior
     lifetimeInSeconds?: number
   ) {
-    let platform: "mobile" | "web" = "web";
-
-    platform = getPlatform($q.platform);
-
     let did: string;
     let prefixedKey: string;
     switch (keyAction) {
       case "overwrite": {
         ({ did, prefixedKey } =
-          await createDidOverwriteIfAlreadyExists(platform));
+          await createDidOverwriteIfAlreadyExists());
         break;
       }
       case "create": {
-        ({ did, prefixedKey } = await createDidIfDoesNotExist(platform));
+        ({ did, prefixedKey } = await createDidIfDoesNotExist());
         break;
       }
       case "get": {
-        ({ did, prefixedKey } = await getDid(platform));
+        ({ did, prefixedKey } = await getDid());
         break;
       }
     }
@@ -236,7 +228,6 @@ export function useCommonApi() {
       prefixedKey,
       pathname: url,
       method: options.method,
-      platform,
       lifetimeInSeconds,
     });
     return encodedUcan;

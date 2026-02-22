@@ -1448,6 +1448,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf
     'createdAt': string;
     'type': ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf7TypeEnum;
     'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf6RouteTarget;
+    'conversationTitle'?: string;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf7TypeEnum = {
@@ -1509,8 +1510,9 @@ export interface ApiV1OpinionCreatePostRequest {
 }
 export interface ApiV1OpinionFetchAnalysisByConversationPost200Response {
     'polisContentId'?: number;
-    'consensus': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner>;
-    'controversial': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner>;
+    'consensusAgree': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner>;
+    'consensusDisagree': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner>;
+    'controversial': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner>;
     'clusters': { [key: string]: ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue; };
 }
 export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue {
@@ -1519,7 +1521,7 @@ export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersV
     'aiLabel'?: string;
     'aiSummary'?: string;
     'isUserInCluster': boolean;
-    'representative': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner>;
+    'representative': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner>;
 }
 
 export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValueKeyEnum = {
@@ -1533,7 +1535,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValueKeyEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValueKeyEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValueKeyEnum];
 
-export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner {
+export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner {
     'opinionSlugId': string;
     'createdAt': string;
     'updatedAt': string;
@@ -1545,10 +1547,13 @@ export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensus
     'username': string;
     'moderation': ApiV1ModerationOpinionGetPost200Response;
     'isSeed': boolean;
-    'clustersStats': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInnerClustersStatsInner>;
+    'clustersStats': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInnerClustersStatsInner>;
+    'groupAwareConsensusAgree': number;
+    'groupAwareConsensusDisagree': number;
+    'divisiveScore': number;
 }
-export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInnerClustersStatsInner {
-    'key': ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInnerClustersStatsInnerKeyEnum;
+export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInnerClustersStatsInner {
+    'key': ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInnerClustersStatsInnerKeyEnum;
     'isAuthorInCluster': boolean;
     'numUsers': number;
     'numAgrees': number;
@@ -1556,7 +1561,7 @@ export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensus
     'numPasses': number;
 }
 
-export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInnerClustersStatsInnerKeyEnum = {
+export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInnerClustersStatsInnerKeyEnum = {
     _0: '0',
     _1: '1',
     _2: '2',
@@ -1565,7 +1570,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInne
     _5: '5'
 } as const;
 
-export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInnerClustersStatsInnerKeyEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInnerClustersStatsInnerKeyEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInnerClustersStatsInnerKeyEnum];
+export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInnerClustersStatsInnerKeyEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInnerClustersStatsInnerKeyEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInnerClustersStatsInnerKeyEnum];
 
 export interface ApiV1OpinionFetchByConversationPostRequest {
     'conversationSlugId': string;
@@ -3429,11 +3434,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
+         * @param {ApiV1NotificationFetchPostRequest} apiV1NotificationFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1NotificationFetchPost: async (apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiV1NotificationFetchPost: async (apiV1NotificationFetchPostRequest: ApiV1NotificationFetchPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1NotificationFetchPostRequest' is not null or undefined
+            assertParamExists('apiV1NotificationFetchPost', 'apiV1NotificationFetchPostRequest', apiV1NotificationFetchPostRequest)
             const localVarPath = `/api/v1/notification/fetch`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -4090,11 +4097,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1UserConversationFetchPostRequest} [apiV1UserConversationFetchPostRequest] 
+         * @param {ApiV1UserConversationFetchPostRequest} apiV1UserConversationFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1UserConversationFetchPost: async (apiV1UserConversationFetchPostRequest?: ApiV1UserConversationFetchPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiV1UserConversationFetchPost: async (apiV1UserConversationFetchPostRequest: ApiV1UserConversationFetchPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1UserConversationFetchPostRequest' is not null or undefined
+            assertParamExists('apiV1UserConversationFetchPost', 'apiV1UserConversationFetchPostRequest', apiV1UserConversationFetchPostRequest)
             const localVarPath = `/api/v1/user/conversation/fetch`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -4196,11 +4205,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1UserLanguagePreferencesUpdatePostRequest} [apiV1UserLanguagePreferencesUpdatePostRequest] 
+         * @param {ApiV1UserLanguagePreferencesUpdatePostRequest} apiV1UserLanguagePreferencesUpdatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1UserLanguagePreferencesUpdatePost: async (apiV1UserLanguagePreferencesUpdatePostRequest?: ApiV1UserLanguagePreferencesUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiV1UserLanguagePreferencesUpdatePost: async (apiV1UserLanguagePreferencesUpdatePostRequest: ApiV1UserLanguagePreferencesUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1UserLanguagePreferencesUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1UserLanguagePreferencesUpdatePost', 'apiV1UserLanguagePreferencesUpdatePostRequest', apiV1UserLanguagePreferencesUpdatePostRequest)
             const localVarPath = `/api/v1/user/language-preferences/update`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -4231,11 +4242,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1UserOpinionFetchPostRequest} [apiV1UserOpinionFetchPostRequest] 
+         * @param {ApiV1UserOpinionFetchPostRequest} apiV1UserOpinionFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1UserOpinionFetchPost: async (apiV1UserOpinionFetchPostRequest?: ApiV1UserOpinionFetchPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiV1UserOpinionFetchPost: async (apiV1UserOpinionFetchPostRequest: ApiV1UserOpinionFetchPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1UserOpinionFetchPostRequest' is not null or undefined
+            assertParamExists('apiV1UserOpinionFetchPost', 'apiV1UserOpinionFetchPostRequest', apiV1UserOpinionFetchPostRequest)
             const localVarPath = `/api/v1/user/opinion/fetch`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -4267,11 +4280,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {Array<string>} [requestBody] 
+         * @param {Array<string>} requestBody 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1UserPollGetResponseByConversationsPost: async (requestBody?: Array<string>, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiV1UserPollGetResponseByConversationsPost: async (requestBody: Array<string>, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'requestBody' is not null or undefined
+            assertParamExists('apiV1UserPollGetResponseByConversationsPost', 'requestBody', requestBody)
             const localVarPath = `/api/v1/user/poll/get-response-by-conversations`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -4941,11 +4956,11 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
+         * @param {ApiV1NotificationFetchPostRequest} apiV1NotificationFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1NotificationFetchPost200Response>> {
+        async apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest: ApiV1NotificationFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1NotificationFetchPost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1NotificationFetchPost']?.[localVarOperationServerIndex]?.url;
@@ -5154,11 +5169,11 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1UserConversationFetchPostRequest} [apiV1UserConversationFetchPostRequest] 
+         * @param {ApiV1UserConversationFetchPostRequest} apiV1UserConversationFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest?: ApiV1UserConversationFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner>>> {
+        async apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest: ApiV1UserConversationFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserConversationFetchPost']?.[localVarOperationServerIndex]?.url;
@@ -5189,11 +5204,11 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1UserLanguagePreferencesUpdatePostRequest} [apiV1UserLanguagePreferencesUpdatePostRequest] 
+         * @param {ApiV1UserLanguagePreferencesUpdatePostRequest} apiV1UserLanguagePreferencesUpdatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest?: ApiV1UserLanguagePreferencesUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest: ApiV1UserLanguagePreferencesUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserLanguagePreferencesUpdatePost']?.[localVarOperationServerIndex]?.url;
@@ -5201,11 +5216,11 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1UserOpinionFetchPostRequest} [apiV1UserOpinionFetchPostRequest] 
+         * @param {ApiV1UserOpinionFetchPostRequest} apiV1UserOpinionFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest?: ApiV1UserOpinionFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserOpinionFetchPost200ResponseInner>>> {
+        async apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest: ApiV1UserOpinionFetchPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserOpinionFetchPost200ResponseInner>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserOpinionFetchPost']?.[localVarOperationServerIndex]?.url;
@@ -5213,11 +5228,11 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {Array<string>} [requestBody] 
+         * @param {Array<string>} requestBody 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1UserPollGetResponseByConversationsPost(requestBody?: Array<string>, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserPollGetResponseByConversationsPost200ResponseInner>>> {
+        async apiV1UserPollGetResponseByConversationsPost(requestBody: Array<string>, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserPollGetResponseByConversationsPost200ResponseInner>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserPollGetResponseByConversationsPost(requestBody, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserPollGetResponseByConversationsPost']?.[localVarOperationServerIndex]?.url;
@@ -5641,11 +5656,11 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
+         * @param {ApiV1NotificationFetchPostRequest} apiV1NotificationFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1NotificationFetchPost200Response> {
+        apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest: ApiV1NotificationFetchPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1NotificationFetchPost200Response> {
             return localVarFp.apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
@@ -5800,11 +5815,11 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1UserConversationFetchPostRequest} [apiV1UserConversationFetchPostRequest] 
+         * @param {ApiV1UserConversationFetchPostRequest} apiV1UserConversationFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest?: ApiV1UserConversationFetchPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner>> {
+        apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest: ApiV1UserConversationFetchPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner>> {
             return localVarFp.apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
@@ -5826,29 +5841,29 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1UserLanguagePreferencesUpdatePostRequest} [apiV1UserLanguagePreferencesUpdatePostRequest] 
+         * @param {ApiV1UserLanguagePreferencesUpdatePostRequest} apiV1UserLanguagePreferencesUpdatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest?: ApiV1UserLanguagePreferencesUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+        apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest: ApiV1UserLanguagePreferencesUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
             return localVarFp.apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {ApiV1UserOpinionFetchPostRequest} [apiV1UserOpinionFetchPostRequest] 
+         * @param {ApiV1UserOpinionFetchPostRequest} apiV1UserOpinionFetchPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest?: ApiV1UserOpinionFetchPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1UserOpinionFetchPost200ResponseInner>> {
+        apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest: ApiV1UserOpinionFetchPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1UserOpinionFetchPost200ResponseInner>> {
             return localVarFp.apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {Array<string>} [requestBody] 
+         * @param {Array<string>} requestBody 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1UserPollGetResponseByConversationsPost(requestBody?: Array<string>, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1UserPollGetResponseByConversationsPost200ResponseInner>> {
+        apiV1UserPollGetResponseByConversationsPost(requestBody: Array<string>, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1UserPollGetResponseByConversationsPost200ResponseInner>> {
             return localVarFp.apiV1UserPollGetResponseByConversationsPost(requestBody, options).then((request) => request(axios, basePath));
         },
         /**
@@ -6296,11 +6311,11 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1NotificationFetchPostRequest} [apiV1NotificationFetchPostRequest] 
+     * @param {ApiV1NotificationFetchPostRequest} apiV1NotificationFetchPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest?: ApiV1NotificationFetchPostRequest, options?: RawAxiosRequestConfig) {
+    public apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest: ApiV1NotificationFetchPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -6473,11 +6488,11 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1UserConversationFetchPostRequest} [apiV1UserConversationFetchPostRequest] 
+     * @param {ApiV1UserConversationFetchPostRequest} apiV1UserConversationFetchPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest?: ApiV1UserConversationFetchPostRequest, options?: RawAxiosRequestConfig) {
+    public apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest: ApiV1UserConversationFetchPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -6502,31 +6517,31 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1UserLanguagePreferencesUpdatePostRequest} [apiV1UserLanguagePreferencesUpdatePostRequest] 
+     * @param {ApiV1UserLanguagePreferencesUpdatePostRequest} apiV1UserLanguagePreferencesUpdatePostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest?: ApiV1UserLanguagePreferencesUpdatePostRequest, options?: RawAxiosRequestConfig) {
+    public apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest: ApiV1UserLanguagePreferencesUpdatePostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {ApiV1UserOpinionFetchPostRequest} [apiV1UserOpinionFetchPostRequest] 
+     * @param {ApiV1UserOpinionFetchPostRequest} apiV1UserOpinionFetchPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest?: ApiV1UserOpinionFetchPostRequest, options?: RawAxiosRequestConfig) {
+    public apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest: ApiV1UserOpinionFetchPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {Array<string>} [requestBody] 
+     * @param {Array<string>} requestBody 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1UserPollGetResponseByConversationsPost(requestBody?: Array<string>, options?: RawAxiosRequestConfig) {
+    public apiV1UserPollGetResponseByConversationsPost(requestBody: Array<string>, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1UserPollGetResponseByConversationsPost(requestBody, options).then((request) => request(this.axios, this.basePath));
     }
 

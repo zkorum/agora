@@ -8,25 +8,28 @@
         </div>
 
         <div class="action-list">
-          <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
-          <!-- Action dialog items should be keyboard navigable for users with motor disabilities -->
-          <div
-            v-for="action in actions"
-            :key="action.id"
-            class="action-item"
-            :class="getActionVariantClass(action)"
-            @click="handleActionClick(action)"
-          >
-            <div class="action-icon">
-              <q-icon :name="action.icon" size="24px" />
-            </div>
-            <div class="action-content">
-              <div class="action-label">{{ action.label }}</div>
-              <div v-if="action.description" class="action-description">
-                {{ action.description }}
+          <template v-for="(action, index) in actions" :key="action.id">
+            <!-- Separator before destructive actions -->
+            <div
+              v-if="action.variant === 'destructive' && index > 0"
+              class="action-separator"
+            />
+            <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+            <!-- Action dialog items should be keyboard navigable for users with motor disabilities -->
+            <div
+              class="action-item"
+              :class="getActionVariantClass(action)"
+              @click="handleActionClick(action)"
+            >
+              <q-icon :name="action.icon" size="20px" class="action-icon" />
+              <div class="action-content">
+                <div class="action-label">{{ action.label }}</div>
+                <div v-if="action.description" class="action-description">
+                  {{ action.description }}
+                </div>
               </div>
             </div>
-          </div>
+          </template>
         </div>
       </div>
     </ZKBottomDialogContainer>
@@ -59,14 +62,13 @@ const showDialog = defineModel<boolean>({ required: true });
  * Get CSS class for action variant
  */
 const getActionVariantClass = (action: ContentAction): string => {
-  const baseClass = "action-item";
   if (action.variant === "destructive") {
-    return `${baseClass} action-destructive`;
+    return "action-destructive";
   }
   if (action.variant === "warning") {
-    return `${baseClass} action-warning`;
+    return "action-warning";
   }
-  return baseClass;
+  return "";
 };
 
 /**
@@ -96,8 +98,7 @@ watch(showDialog, (newValue) => {
 .action-dialog {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  color: $primary;
+  gap: 1rem;
 }
 
 .dialog-header {
@@ -120,41 +121,28 @@ watch(showDialog, (newValue) => {
 .action-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+}
+
+.action-separator {
+  height: 1px;
+  background-color: $color-border-weak;
+  margin: 0.25rem 0;
 }
 
 .action-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 0.75rem;
+  padding: 0.75rem;
   border-radius: 8px;
   cursor: pointer;
   border: 1px solid transparent;
   @include hover-effects($hover-background-color);
 }
 
-.action-warning {
-  .action-icon {
-    color: $warning;
-  }
-}
-
-.action-destructive {
-  .action-icon {
-    color: $negative;
-  }
-}
-
 .action-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 50%;
   flex-shrink: 0;
+  color: $color-text-weak;
 }
 
 .action-content {
@@ -163,15 +151,24 @@ watch(showDialog, (newValue) => {
 }
 
 .action-label {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: var(--font-weight-medium);
   color: $color-text-strong;
-  margin-bottom: 0.25rem;
 }
 
 .action-description {
   font-size: 0.8rem;
   color: $color-text-weak;
   line-height: 1.4;
+}
+
+.action-destructive {
+  .action-icon {
+    color: $negative;
+  }
+
+  .action-label {
+    color: $negative;
+  }
 }
 </style>

@@ -2094,7 +2094,7 @@ This endpoint does not have any parameters.
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1NotificationFetchPost**
-> ApiV1NotificationFetchPost200Response apiV1NotificationFetchPost()
+> ApiV1NotificationFetchPost200Response apiV1NotificationFetchPost(apiV1NotificationFetchPostRequest)
 
 
 ### Example
@@ -2109,7 +2109,7 @@ import {
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let apiV1NotificationFetchPostRequest: ApiV1NotificationFetchPostRequest; // (optional)
+let apiV1NotificationFetchPostRequest: ApiV1NotificationFetchPostRequest; //
 
 const { status, data } = await apiInstance.apiV1NotificationFetchPost(
     apiV1NotificationFetchPostRequest
@@ -2987,7 +2987,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1UserConversationFetchPost**
-> Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner> apiV1UserConversationFetchPost()
+> Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner> apiV1UserConversationFetchPost(apiV1UserConversationFetchPostRequest)
 
 
 ### Example
@@ -3002,7 +3002,7 @@ import {
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let apiV1UserConversationFetchPostRequest: ApiV1UserConversationFetchPostRequest; // (optional)
+let apiV1UserConversationFetchPostRequest: ApiV1UserConversationFetchPostRequest; //
 
 const { status, data } = await apiInstance.apiV1UserConversationFetchPost(
     apiV1UserConversationFetchPostRequest
@@ -3132,7 +3132,7 @@ const { status, data } = await apiInstance.apiV1UserLanguagePreferencesGetPost(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1UserLanguagePreferencesUpdatePost**
-> apiV1UserLanguagePreferencesUpdatePost()
+> apiV1UserLanguagePreferencesUpdatePost(apiV1UserLanguagePreferencesUpdatePostRequest)
 
 
 ### Example
@@ -3147,7 +3147,7 @@ import {
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let apiV1UserLanguagePreferencesUpdatePostRequest: ApiV1UserLanguagePreferencesUpdatePostRequest; // (optional)
+let apiV1UserLanguagePreferencesUpdatePostRequest: ApiV1UserLanguagePreferencesUpdatePostRequest; //
 
 const { status, data } = await apiInstance.apiV1UserLanguagePreferencesUpdatePost(
     apiV1UserLanguagePreferencesUpdatePostRequest
@@ -3183,7 +3183,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1UserOpinionFetchPost**
-> Array<ApiV1UserOpinionFetchPost200ResponseInner> apiV1UserOpinionFetchPost()
+> Array<ApiV1UserOpinionFetchPost200ResponseInner> apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest)
 
 
 ### Example
@@ -3198,7 +3198,7 @@ import {
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let apiV1UserOpinionFetchPostRequest: ApiV1UserOpinionFetchPostRequest; // (optional)
+let apiV1UserOpinionFetchPostRequest: ApiV1UserOpinionFetchPostRequest; //
 
 const { status, data } = await apiInstance.apiV1UserOpinionFetchPost(
     apiV1UserOpinionFetchPostRequest
@@ -3234,7 +3234,7 @@ const { status, data } = await apiInstance.apiV1UserOpinionFetchPost(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1UserPollGetResponseByConversationsPost**
-> Array<ApiV1UserPollGetResponseByConversationsPost200ResponseInner> apiV1UserPollGetResponseByConversationsPost()
+> Array<ApiV1UserPollGetResponseByConversationsPost200ResponseInner> apiV1UserPollGetResponseByConversationsPost(requestBody)
 
 
 ### Example
@@ -3248,7 +3248,7 @@ import {
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let requestBody: Array<string>; // (optional)
+let requestBody: Array<string>; //
 
 const { status, data } = await apiInstance.apiV1UserPollGetResponseByConversationsPost(
     requestBody

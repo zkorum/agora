@@ -30,5 +30,11 @@
         "fast-text-encoding": "^1.0.6",
         "tweetnacl": "^1.0.3",
         "uint8arrays": "^5.1.0"
+    },
+    "pnpm": {
+        "overrides": {
+            "ajv": ">=6.12.3",
+            "js-yaml": ">=4.1.1"
+        }
     }
 }

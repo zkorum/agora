@@ -1,5 +1,4 @@
 import { storeToRefs } from "pinia";
-import { useQuasar } from "quasar";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import type { DeviceLoginStatus } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -13,7 +12,6 @@ import { useRoute } from "vue-router";
 
 import { resetZupassModuleState } from "../../composables/zupass/useZupassVerification";
 import { useNewPostDraftsStore } from "../../stores/newConversationDrafts";
-import { getPlatform } from "../common";
 import { buildAuthorizationHeader, deleteDid } from "../crypto/ucan/operation";
 import { queryClient } from "../query/client";
 import { useRouterGuard } from "../router/guard";
@@ -37,8 +35,6 @@ export function useBackendAuthApi() {
   const route = useRoute();
 
   const { firstLoadGuard } = useRouterGuard();
-
-  const $q = useQuasar();
 
   async function getDeviceLoginStatus(): Promise<DeviceLoginStatus> {
     const { url, options } =
@@ -200,12 +196,10 @@ export function useBackendAuthApi() {
   }: {
     shouldClearLanguagePreferences: boolean;
   }) {
-    const platform: "mobile" | "web" = getPlatform($q.platform);
-
     // Clear all TanStack Query cache data
     queryClient.clear();
 
-    await deleteDid(platform);
+    await deleteDid();
     resetDraft();
     clearOpinionDrafts();
 

@@ -3,8 +3,8 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 export interface ShortcutBarTranslations {
   summary: string;
   me: string;
-  commonGround: string;
-  majority: string;
+  agreements: string;
+  disagreements: string;
   divisive: string;
   groups: string;
 }
@@ -14,57 +14,57 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
     en: {
       summary: "Summary",
       me: "Me",
-      commonGround: "Common ground",
-      majority: "Majority",
+      agreements: "Agreements",
+      disagreements: "Disagreements",
       divisive: "Divisive",
       groups: "Groups",
     },
     ar: {
       summary: "ملخص",
       me: "أنا",
-      commonGround: "أرضية مشتركة",
-      majority: "الأغلبية",
+      agreements: "اتفاقات",
+      disagreements: "خلافات",
       divisive: "مثير للجدل",
       groups: "مجموعات",
     },
     es: {
       summary: "Resumen",
       me: "Yo",
-      commonGround: "Terreno común",
-      majority: "Mayoría",
+      agreements: "Acuerdos",
+      disagreements: "Desacuerdos",
       divisive: "Divisivo",
       groups: "Grupos",
     },
     fr: {
       summary: "Résumé",
       me: "Moi",
-      commonGround: "Terrain d'entente",
-      majority: "Majorité",
+      agreements: "Accords",
+      disagreements: "Désaccords",
       divisive: "Controversé",
       groups: "Groupes",
     },
     "zh-Hans": {
       summary: "总结",
       me: "我",
-      commonGround: "共同点",
-      majority: "多数",
-      divisive: "分歧",
+      agreements: "共识",
+      disagreements: "分歧",
+      divisive: "争议",
       groups: "群组",
     },
     "zh-Hant": {
       summary: "總結",
       me: "我",
-      commonGround: "共同點",
-      majority: "多數",
-      divisive: "分歧",
+      agreements: "共識",
+      disagreements: "分歧",
+      divisive: "爭議",
       groups: "群組",
     },
     ja: {
       summary: "サマリー",
       me: "私",
-      commonGround: "共通点",
-      majority: "マジョリティ",
-      divisive: "分かれる",
+      agreements: "合意",
+      disagreements: "不一致",
+      divisive: "分断",
       groups: "グループ",
     },
   };

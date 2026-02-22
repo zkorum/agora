@@ -15,7 +15,7 @@
         "
         size="0.8rem"
         :loading="isSubmitButtonLoading"
-        :disabled="isSubmitButtonLoading || hasActiveImport"
+        :disabled="isSubmitButtonLoading || hasActiveImport || isTitleOverLimit || isBodyOverLimit || isTitleEmpty"
         @click="onSubmit()"
       />
     </TopMenuWrapper>
@@ -49,9 +49,9 @@
           v-if="conversationDraft.importSettings.importType === null"
           ref="titleInputRef"
         >
-          <div v-if="validationState.title.showError" class="titleErrorMessage">
+          <div v-if="showTitleError" class="titleErrorMessage">
             <q-icon name="mdi-alert-circle" class="titleErrorIcon" />
-            {{ validationState.title.error }}
+            {{ t('titleRequired') }}
           </div>
 
           <Editor
@@ -59,22 +59,19 @@
             :placeholder="t('titlePlaceholder')"
             :show-toolbar="false"
             :single-line="true"
-            :max-length="MAX_LENGTH_TITLE"
             :disabled="false"
+            :max-length="MAX_LENGTH_TITLE"
             min-height="auto"
             class="title-editor"
             @update:model-value="updateTitle"
+            @update:is-over-limit="(v: boolean) => (isTitleOverLimit = v)"
           />
-
-          <div class="wordCountDiv" :style="{ paddingLeft: '0.5rem' }">
-            {{ title.length }} / {{ MAX_LENGTH_TITLE }}
-          </div>
         </div>
         <div v-else class="import-section">
           <PolisUrlInput
             v-if="conversationDraft.importSettings.importType === 'polis-url'"
             ref="polisUrlInputRef"
-            v-model="conversationDraft.importSettings.polisUrl"
+            v-model="importSettings.polisUrl"
             v-model:validation-error="validationState.polisUrl.error"
             v-model:show-validation-error="validationState.polisUrl.showError"
           />
@@ -84,7 +81,7 @@
             "
             ref="polisCsvUploadRef"
             v-model:csv-file-metadata="
-              conversationDraft.importSettings.csvFileMetadata
+              importSettings.csvFileMetadata
             "
           />
         </div>
@@ -97,28 +94,11 @@
               min-height="5rem"
               :show-toolbar="true"
               :single-line="false"
-              :max-length="MAX_LENGTH_BODY"
               :disabled="false"
+              :max-length="MAX_LENGTH_BODY"
               @update:model-value="updateContent"
+              @update:is-over-limit="(v: boolean) => (isBodyOverLimit = v)"
             />
-
-            <div class="wordCountDiv">
-              <q-icon
-                v-if="validationState.body.showError"
-                name="mdi-alert-circle"
-                class="bodySizeWarningIcon"
-              />
-              <span
-                :class="{
-                  wordCountWarning: validationState.body.showError,
-                }"
-                >{{
-                  validateHtmlStringCharacterCount(content, "conversation")
-                    .characterCount
-                }}
-              </span>
-              &nbsp; / {{ MAX_LENGTH_BODY }}
-            </div>
           </div>
 
           <div v-if="pollEnabled">
@@ -167,11 +147,7 @@ import {
   type ValidationErrorField,
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  MAX_LENGTH_BODY,
-  MAX_LENGTH_TITLE,
-  validateHtmlStringCharacterCount,
-} from "src/shared/shared";
+import { MAX_LENGTH_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
@@ -216,7 +192,6 @@ const {
   validationState,
   validatePolisUrl,
   validatePoll,
-  validateTitle: validateTitleField,
   validateBody: validateBodyField,
   validateForReview,
   updateTitle,
@@ -234,6 +209,26 @@ const pollValidationError = computed({
 });
 
 const isSubmitButtonLoading = ref(false);
+const isTitleOverLimit = ref(false);
+const isBodyOverLimit = ref(false);
+
+const isTitleEmpty = computed(
+  () =>
+    conversationDraft.value.importSettings.importType === null &&
+    title.value.trim() === ""
+);
+
+const isTitleDirty = ref(false);
+
+watch(title, (newTitle) => {
+  if (newTitle.trim() !== "") {
+    isTitleDirty.value = true;
+  }
+});
+
+const showTitleError = computed(
+  () => isTitleDirty.value && isTitleEmpty.value
+);
 
 const router = useRouter();
 
@@ -345,7 +340,6 @@ function validateSubmission(): {
 function handleValidationError(errorField: ValidationErrorField): void {
   switch (errorField) {
     case "title":
-      validateTitleField();
       scrollToTitleInput();
       break;
     case "poll":
@@ -513,24 +507,6 @@ watch(pollEnabled, (enablePolling) => {
 .editor-style {
   padding-bottom: 2rem;
   font-size: 1rem;
-}
-
-.wordCountDiv {
-  display: flex;
-  justify-content: right;
-  align-items: center;
-  color: $color-text-weak;
-  font-size: 1rem;
-}
-
-.wordCountWarning {
-  color: $negative;
-  font-weight: var(--font-weight-bold);
-}
-
-.bodySizeWarningIcon {
-  font-size: 1rem;
-  padding-right: 0.5rem;
 }
 
 .cardBackground {

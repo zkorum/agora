@@ -30,7 +30,7 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
   OpinionWritingGuidelinesDialogTranslations
 > = {
   en: {
-    title: "Tips for Writing Good Opinions",
+    title: "Tips for Writing Good Statements",
     singleIdeaTitle: "One specific idea",
     singleIdeaDescription: "Focus on a single point others can vote on",
     singleIdeaExampleGood:
@@ -55,14 +55,14 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
       "Telecommuting paradigms require reconsideration of organizational dynamics",
     dontCombineTitle: "Don't combine",
     dontCombineDescription:
-      'Split "A and B" into separate opinions for clearer voting',
+      'Split "A and B" into separate statements for clearer voting',
     dontCombineExampleBad:
       "We need universal healthcare and free college tuition",
     dontCombineExampleGood1: "Healthcare should be free at point of service",
     dontCombineExampleGood2: "College tuition should be free",
   },
   ar: {
-    title: "نصائح لكتابة آراء جيدة",
+    title: "نصائح لكتابة مقترحات جيدة",
     singleIdeaTitle: "فكرة واحدة محددة",
     singleIdeaDescription: "ركز على نقطة واحدة يمكن للآخرين التصويت عليها",
     singleIdeaExampleGood:
@@ -86,14 +86,14 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     beClearExampleBad: "نماذج العمل عن بُعد تتطلب إعادة النظر في الديناميكيات التنظيمية",
     dontCombineTitle: "لا تدمج",
     dontCombineDescription:
-      'قسّم "أ و ب" إلى آراء منفصلة للحصول على تصويت أوضح',
+      'قسّم "أ و ب" إلى مقترحات منفصلة للحصول على تصويت أوضح',
     dontCombineExampleBad:
       "نحتاج إلى رعاية صحية شاملة ورسوم دراسية جامعية مجانية",
     dontCombineExampleGood1: "يجب أن تكون الرعاية الصحية مجانية عند نقطة الخدمة",
     dontCombineExampleGood2: "يجب أن تكون الرسوم الدراسية الجامعية مجانية",
   },
   es: {
-    title: "Consejos para Escribir Buenas Opiniones",
+    title: "Consejos para Escribir Buenas Proposiciones",
     singleIdeaTitle: "Una idea específica",
     singleIdeaDescription: "Enfócate en un solo punto sobre el que otros puedan votar",
     singleIdeaExampleGood:
@@ -120,7 +120,7 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
       "Los paradigmas de teletrabajo requieren reconsideración de las dinámicas organizacionales",
     dontCombineTitle: "No combines",
     dontCombineDescription:
-      'Divide "A y B" en opiniones separadas para una votación más clara',
+      'Divide "A y B" en proposiciones separadas para una votación más clara',
     dontCombineExampleBad:
       "Necesitamos atención médica universal y matrícula universitaria gratuita",
     dontCombineExampleGood1:
@@ -128,7 +128,7 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     dontCombineExampleGood2: "La matrícula universitaria debería ser gratuita",
   },
   fr: {
-    title: "Conseils pour Rédiger de Bonnes Opinions",
+    title: "Conseils pour Rédiger de Bonnes Propositions",
     singleIdeaTitle: "Une idée spécifique",
     singleIdeaDescription: "Concentrez-vous sur un point unique sur lequel les autres peuvent voter",
     singleIdeaExampleGood:
@@ -155,7 +155,7 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
       "Les paradigmes de télétravail nécessitent une reconsidération des dynamiques organisationnelles",
     dontCombineTitle: "Ne combinez pas",
     dontCombineDescription:
-      "Divisez « A et B » en opinions séparées pour un vote plus clair",
+      "Divisez « A et B » en propositions séparées pour un vote plus clair",
     dontCombineExampleBad:
       "Nous avons besoin de soins de santé universels et de frais de scolarité gratuits",
     dontCombineExampleGood1:
@@ -163,7 +163,7 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     dontCombineExampleGood2: "Les frais de scolarité devraient être gratuits",
   },
   "zh-Hans": {
-    title: "撰写优质意见的技巧",
+    title: "撰写优质观点的技巧",
     singleIdeaTitle: "一个具体想法",
     singleIdeaDescription: "专注于他人可以投票的单一观点",
     singleIdeaExampleGood: "网约车司机应该与出租车司机有相同的保险要求",
@@ -182,13 +182,13 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     beClearExampleGood: "远程工作提高员工生产力",
     beClearExampleBad: "远程办公范式需要重新考虑组织动态",
     dontCombineTitle: "不要组合",
-    dontCombineDescription: '将"A和B"分成单独的意见以便更清晰地投票',
+    dontCombineDescription: '将"A和B"分成单独的观点以便更清晰地投票',
     dontCombineExampleBad: "我们需要全民医疗保健和免费大学学费",
     dontCombineExampleGood1: "医疗保健应该在服务点免费",
     dontCombineExampleGood2: "大学学费应该免费",
   },
   "zh-Hant": {
-    title: "撰寫優質意見的技巧",
+    title: "撰寫優質觀點的技巧",
     singleIdeaTitle: "一個具體想法",
     singleIdeaDescription: "專注於他人可以投票的單一觀點",
     singleIdeaExampleGood: "網約車司機應該與計程車司機有相同的保險要求",
@@ -207,13 +207,13 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     beClearExampleGood: "遠端工作提高員工生產力",
     beClearExampleBad: "遠端辦公範式需要重新考慮組織動態",
     dontCombineTitle: "不要組合",
-    dontCombineDescription: "將「A和B」分成單獨的意見以便更清晰地投票",
+    dontCombineDescription: "將「A和B」分成單獨的觀點以便更清晰地投票",
     dontCombineExampleBad: "我們需要全民醫療保健和免費大學學費",
     dontCombineExampleGood1: "醫療保健應該在服務點免費",
     dontCombineExampleGood2: "大學學費應該免費",
   },
   ja: {
-    title: "良い意見を書くためのヒント",
+    title: "良い主張を書くためのヒント",
     singleIdeaTitle: "1つの具体的なアイデア",
     singleIdeaDescription: "他の人が投票できる単一のポイントに焦点を当てる",
     singleIdeaExampleGood:
@@ -238,7 +238,7 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
       "テレワークのパラダイムは組織のダイナミクスの再考を必要とします",
     dontCombineTitle: "組み合わせない",
     dontCombineDescription:
-      "「AとB」を別々の意見に分割して、より明確な投票を実現する",
+      "「AとB」を別々の主張に分割して、より明確な投票を実現する",
     dontCombineExampleBad: "普遍的な医療と無料の大学授業料が必要です",
     dontCombineExampleGood1: "医療はサービスポイントで無料であるべきです",
     dontCombineExampleGood2: "大学の授業料は無料であるべきです",

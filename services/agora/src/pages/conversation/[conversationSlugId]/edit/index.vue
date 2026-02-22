@@ -9,7 +9,7 @@
         :label="t('saveButton')"
         size="0.8rem"
         :loading="isSaveButtonLoading"
-        :disabled="isSaveButtonLoading || !isDataLoaded || !hasUnsavedChanges"
+        :disabled="isSaveButtonLoading || !isDataLoaded || !hasUnsavedChanges || isTitleOverLimit || isBodyOverLimit"
         @click="onSave()"
       />
     </TopMenuWrapper>
@@ -57,16 +57,13 @@
             :placeholder="t('titlePlaceholder')"
             :show-toolbar="false"
             :single-line="true"
-            :max-length="MAX_LENGTH_TITLE"
             :disabled="false"
+            :max-length="MAX_LENGTH_TITLE"
             min-height="auto"
             class="title-editor"
             @update:model-value="updateTitle"
+            @update:is-over-limit="(v: boolean) => (isTitleOverLimit = v)"
           />
-
-          <div class="wordCountDiv" :style="{ paddingLeft: '0.5rem' }">
-            {{ title.length }} / {{ MAX_LENGTH_TITLE }}
-          </div>
         </div>
 
         <div>
@@ -77,28 +74,11 @@
               min-height="5rem"
               :show-toolbar="true"
               :single-line="false"
-              :max-length="MAX_LENGTH_BODY"
               :disabled="false"
+              :max-length="MAX_LENGTH_BODY"
               @update:model-value="updateContent"
+              @update:is-over-limit="(v: boolean) => (isBodyOverLimit = v)"
             />
-
-            <div class="wordCountDiv">
-              <q-icon
-                v-if="validationState.body.showError"
-                name="mdi-alert-circle"
-                class="bodySizeWarningIcon"
-              />
-              <span
-                :class="{
-                  wordCountWarning: validationState.body.showError,
-                }"
-                >{{
-                  validateHtmlStringCharacterCount(content, "conversation")
-                    .characterCount
-                }}
-              </span>
-              &nbsp; / {{ MAX_LENGTH_BODY }}
-            </div>
           </div>
 
           <div v-if="pollEnabled">
@@ -140,11 +120,7 @@ import {
   type ValidationErrorField,
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  MAX_LENGTH_BODY,
-  MAX_LENGTH_TITLE,
-  validateHtmlStringCharacterCount,
-} from "src/shared/shared";
+import { MAX_LENGTH_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import { useUpdateConversationMutation } from "src/utils/api/post/useConversationMutations";
 import { useNotify } from "src/utils/ui/notify";
@@ -169,6 +145,8 @@ const updateMutation = useUpdateConversationMutation();
 const conversationSlugId = route.params.conversationSlugId;
 
 const isSaveButtonLoading = ref(false);
+const isTitleOverLimit = ref(false);
+const isBodyOverLimit = ref(false);
 const isDataLoaded = ref(false);
 const loadError = ref(false);
 const errorTitle = ref("");
@@ -659,24 +637,6 @@ onMounted(async () => {
 .editor-style {
   padding-bottom: 2rem;
   font-size: 1rem;
-}
-
-.wordCountDiv {
-  display: flex;
-  justify-content: right;
-  align-items: center;
-  color: $color-text-weak;
-  font-size: 1rem;
-}
-
-.wordCountWarning {
-  color: $negative;
-  font-weight: var(--font-weight-bold);
-}
-
-.bodySizeWarningIcon {
-  font-size: 1rem;
-  padding-right: 0.5rem;
 }
 
 .contentFlexStyle {

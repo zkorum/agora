@@ -12,6 +12,7 @@
       :is-login-required="extendedPostData.metadata.isLoginRequired"
       :is-closed="extendedPostData.metadata.isClosed"
       :compact-mode="compactMode"
+      :conversation-title="extendedPostData.payload.title"
       @open-moderation-history="$emit('openModerationHistory')"
     />
 

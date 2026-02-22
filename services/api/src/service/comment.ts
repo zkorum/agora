@@ -60,10 +60,12 @@ import * as authUtilService from "@/service/authUtil.js";
 import { castVoteForOpinionSlugId } from "./voting.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import {
-    isSqlOrderByGroupAwareConsensus,
+    isSqlOrderByGroupAwareConsensusAgree,
+    isSqlOrderByGroupAwareConsensusDisagree,
     isSqlOrderByPolisPriority,
     isSqlWhereRepresentative,
     isSqlOrderByRepresentative,
+    participationWeight,
 } from "@/utils/sqlLogic.js";
 import type { ImportPolisResults } from "@/shared/types/polis.js";
 import type {
@@ -301,7 +303,7 @@ interface FetchAnalysisOpinionsByPostIdProps {
     db: PostgresJsDatabase;
     postId: number;
     personalizationUserId?: string;
-    filterTarget: "consensus" | "controversial" | "representative";
+    filterTarget: "consensus-agree" | "consensus-disagree" | "controversial" | "representative";
     clusterKey?: PolisKey;
     limit: number;
 }
@@ -352,14 +354,24 @@ export async function fetchAnalysisOpinionsByPostId({
     let orderByClause = [desc(opinionTable.createdAt)]; // default value
 
     switch (filterTarget) {
-        case "consensus": {
+        case "consensus-agree": {
             whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            orderByClause = isSqlOrderByGroupAwareConsensus();
+            orderByClause = isSqlOrderByGroupAwareConsensusAgree();
+            break;
+        }
+        case "consensus-disagree": {
+            whereClause = and(whereClause, isNull(opinionModerationTable.id));
+            orderByClause = isSqlOrderByGroupAwareConsensusDisagree();
             break;
         }
         case "controversial": {
             whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            orderByClause = [desc(opinionTable.polisDivisiveness)];
+            const weight = participationWeight();
+            orderByClause = [
+                desc(
+                    sql`(${opinionTable.polisDivisiveness} * ${weight})`,
+                ),
+            ];
             break;
         }
         case "representative": {
@@ -529,6 +541,12 @@ export async function fetchAnalysisOpinionsByPostId({
             polisCluster5NumPasses: opinionTable.polisCluster5NumPasses,
             // Opinion author's cluster
             opinionAuthorPolisClusterId: polisClusterUserTable.polisClusterId,
+            // Ranking scores for statistical relevance on frontend
+            groupAwareConsensusAgree:
+                opinionTable.polisGroupAwareConsensusProbabilityAgree,
+            groupAwareConsensusDisagree:
+                opinionTable.polisGroupAwareConsensusProbabilityDisagree,
+            polisDivisiveness: opinionTable.polisDivisiveness,
         })
         .from(opinionTable)
         .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
@@ -787,6 +805,9 @@ export async function fetchAnalysisOpinionsByPostId({
             moderation: moderationProperties,
             isSeed: result.isSeed,
             clustersStats: clustersStats,
+            groupAwareConsensusAgree: result.groupAwareConsensusAgree,
+            groupAwareConsensusDisagree: result.groupAwareConsensusDisagree,
+            divisiveScore: result.polisDivisiveness,
         };
         opinionItemMap.set(result.commentSlugId, item);
     });
@@ -815,7 +836,7 @@ interface FetchAnalysisOpinionsByPostSlugIdProps {
     db: PostgresJsDatabase;
     postSlugId: SlugId;
     personalizationUserId?: string;
-    filterTarget: "consensus" | "controversial" | "representative";
+    filterTarget: "consensus-agree" | "consensus-disagree" | "controversial" | "representative";
     clusterKey?: PolisKey;
     limit: number;
 }
@@ -982,13 +1003,23 @@ export async function fetchAnalysisByConversationSlugId({
             );
         }
     }
-    const consensusOpinions = await fetchAnalysisOpinionsByPostSlugId({
-        db: db,
-        postSlugId: conversationSlugId,
-        filterTarget: "consensus",
-        personalizationUserId,
-        limit: 3000,
-    });
+    const [consensusAgreeOpinions, consensusDisagreeOpinions] =
+        await Promise.all([
+            fetchAnalysisOpinionsByPostSlugId({
+                db: db,
+                postSlugId: conversationSlugId,
+                filterTarget: "consensus-agree",
+                personalizationUserId,
+                limit: 3000,
+            }),
+            fetchAnalysisOpinionsByPostSlugId({
+                db: db,
+                postSlugId: conversationSlugId,
+                filterTarget: "consensus-disagree",
+                personalizationUserId,
+                limit: 3000,
+            }),
+        ]);
     const controversialOpinions = await fetchAnalysisOpinionsByPostSlugId({
         db: db,
         postSlugId: conversationSlugId,
@@ -1020,7 +1051,8 @@ export async function fetchAnalysisByConversationSlugId({
     }
     const result: ConversationAnalysis = {
         polisContentId: polisMetadata.polisContentId,
-        consensus: Array.from(consensusOpinions.values()),
+        consensusAgree: Array.from(consensusAgreeOpinions.values()),
+        consensusDisagree: Array.from(consensusDisagreeOpinions.values()),
         controversial: Array.from(controversialOpinions.values()),
         clusters: polisClusters,
     };

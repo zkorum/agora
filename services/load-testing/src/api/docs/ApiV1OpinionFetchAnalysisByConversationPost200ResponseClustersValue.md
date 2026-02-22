@@ -10,7 +10,7 @@ Name | Type | Description | Notes
 **aiLabel** | **string** |  | [optional] [default to undefined]
 **aiSummary** | **string** |  | [optional] [default to undefined]
 **isUserInCluster** | **boolean** |  | [default to undefined]
-**representative** | [**Array&lt;ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner&gt;**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusInner.md) |  | [default to undefined]
+**representative** | [**Array&lt;ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner&gt;**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner.md) |  | [default to undefined]
 
 ## Example
 

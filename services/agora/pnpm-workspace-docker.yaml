@@ -1,0 +1,8 @@
+packages:
+  - '.'
+
+ignoredBuiltDependencies:
+  - '@parcel/watcher'
+  - '@sentry/cli'
+  - esbuild
+  - vue-demi

@@ -64,6 +64,14 @@
     @dialog-closed="handleDialogClosed"
   />
 
+  <!-- Share Actions Dialog -->
+  <ZKActionDialog
+    v-model="shareActions.dialogState.value.isVisible"
+    :actions="shareActions.dialogState.value.actions"
+    @action-selected="handleShareActionSelected"
+    @dialog-closed="shareActions.closeDialog"
+  />
+
   <!-- Confirmation Dialog -->
   <ZKConfirmDialog
     v-model="postActions.confirmationState.value.isVisible"
@@ -98,6 +106,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { copyToClipboard, useQuasar } from "quasar";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
@@ -105,6 +114,7 @@ import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
+import { useShareActions } from "src/composables/share/useShareActions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
@@ -116,7 +126,11 @@ import {
   useCloseConversationMutation,
   useOpenConversationMutation,
 } from "src/utils/api/post/useConversationMutations";
-import { useWebShare } from "src/utils/share/WebShare";
+import {
+  type WebShareTranslations,
+  webShareTranslations,
+} from "src/utils/share/WebShare.i18n";
+import { useNotify } from "src/utils/ui/notify";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -138,6 +152,7 @@ const props = defineProps<{
   isLoginRequired: boolean;
   isClosed: boolean;
   compactMode: boolean;
+  conversationTitle: string;
 }>();
 
 const emit = defineEmits<{
@@ -169,8 +184,12 @@ const showReopenDialog = ref(false);
 
 const { setReportIntention } = useConversationLoginIntentions();
 
-const webShare = useWebShare();
-const { getEmbedUrl } = useConversationUrl();
+const $q = useQuasar();
+const notify = useNotify();
+const { t: tShare } =
+  useComponentI18n<WebShareTranslations>(webShareTranslations);
+const { getEmbedUrl, getConversationUrl } = useConversationUrl();
+const shareActions = useShareActions();
 
 // Check if current user can close/reopen this post
 // (post author OR member of the post's organization)
@@ -243,7 +262,8 @@ async function moderationHistoryCallback() {
 
 async function copyEmbedLinkCallback() {
   const embedUrl = getEmbedUrl(props.postSlugId);
-  await webShare.share("Embed: Agora Conversation", embedUrl);
+  await copyToClipboard(embedUrl);
+  notify.showNotifyMessage(tShare("copiedToClipboard"));
 }
 
 async function exportConversationCallback() {
@@ -260,6 +280,35 @@ async function editConversationCallback() {
   });
 }
 
+function shareCallback() {
+  const sharePostUrl = getConversationUrl(props.postSlugId);
+  const shareTitle = "Agora - " + props.conversationTitle;
+
+  shareActions.showShareActions({
+    targetType: "post",
+    targetId: props.postSlugId,
+    targetAuthor: props.authorUsername,
+    copyLinkCallback: async () => {
+      await copyToClipboard(sharePostUrl);
+      notify.showNotifyMessage(tShare("copiedToClipboard"));
+    },
+    openQrCodeCallback: async () => {
+      const { default: ShareDialog } = await import(
+        "../ShareDialog.vue"
+      );
+      $q.dialog({
+        component: ShareDialog,
+        componentProps: {
+          url: sharePostUrl,
+        },
+      });
+    },
+    showShareVia: true,
+    shareUrl: sharePostUrl,
+    shareTitle,
+  });
+}
+
 function clickedMoreIcon() {
   // Show post actions using the new system
   postActions.showPostActions(props.postSlugId, props.posterUserName, {
@@ -271,6 +320,7 @@ function clickedMoreIcon() {
     copyEmbedLinkCallback,
     editConversationCallback,
     exportConversationCallback,
+    shareCallback,
   });
 }
 
@@ -279,6 +329,13 @@ function clickedMoreIcon() {
  */
 async function handleActionSelected(action: ContentAction) {
   await postActions.executeAction(action);
+}
+
+/**
+ * Handle share action selection
+ */
+async function handleShareActionSelected(action: ContentAction) {
+  await shareActions.executeAction(action);
 }
 
 /**
