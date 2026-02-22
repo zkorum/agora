@@ -4,6 +4,11 @@
  */
 
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type {
+    PgTransaction,
+    PgQueryResultHKT,
+} from "drizzle-orm/pg-core";
+import type { TablesRelationalConfig } from "drizzle-orm";
 import { polisClusterTranslationTable } from "@/shared-backend/schema.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import { batchTranslateTexts } from "@/shared-backend/translate.js";
@@ -34,12 +39,12 @@ async function generateTranslationsForMultipleLanguages(
     >,
     targetLanguageCodes: string[],
 ): Promise<
-    Array<{
+    {
         polisClusterId: number;
         languageCode: string;
         aiLabel: string | null;
         aiSummary: string | null;
-    }>
+    }[]
 > {
     // Prepare texts to translate (filter out nulls)
     const textsToTranslate: string[] = [];
@@ -50,7 +55,7 @@ async function generateTranslationsForMultipleLanguages(
 
     for (const polisKey of Object.keys(
         aiClustersLabelsAndSummaries,
-    ) as (keyof typeof aiClustersLabelsAndSummaries)[]) {
+    )) {
         const data = aiClustersLabelsAndSummaries[polisKey];
         if (!data) continue;
 
@@ -68,12 +73,12 @@ async function generateTranslationsForMultipleLanguages(
         return [];
     }
 
-    const allTranslations: Array<{
+    const allTranslations: {
         polisClusterId: number;
         languageCode: string;
         aiLabel: string | null;
         aiSummary: string | null;
-    }> = [];
+    }[] = [];
 
     // Translate for each target language
     for (const targetLanguage of targetLanguageCodes) {
@@ -112,7 +117,10 @@ async function generateTranslationsForMultipleLanguages(
                 });
             }
 
-            const clusterTranslation = clusterTranslations.get(clusterId)!;
+            const clusterTranslation = clusterTranslations.get(clusterId);
+            if (clusterTranslation === undefined) {
+                continue;
+            }
             if (mapping.type === "label") {
                 clusterTranslation.aiLabel = translatedText;
             } else {
@@ -151,12 +159,12 @@ export async function generateAllClusterTranslations({
         | GenLabelSummaryOutputClusterLoose;
     conversationId: number;
 }): Promise<
-    Array<{
+    {
         polisClusterId: number;
         languageCode: string;
         aiLabel: string | null;
         aiSummary: string | null;
-    }>
+    }[]
 > {
     const numClusters = Object.keys(clusterIdsByKey).length;
     if (numClusters === 0) {
@@ -196,18 +204,22 @@ export async function generateAllClusterTranslations({
  * Phase 3: Insert translations into database
  * Should be called inside a transaction
  */
-export async function insertClusterTranslations({
+export async function insertClusterTranslations<
+    TQueryResult extends PgQueryResultHKT,
+    TFullSchema extends Record<string, unknown>,
+    TSchema extends TablesRelationalConfig,
+>({
     db,
     translations,
     conversationId,
 }: {
-    db: PostgresJsDatabase | any; // any to support PgTransaction
-    translations: Array<{
+    db: PostgresJsDatabase | PgTransaction<TQueryResult, TFullSchema, TSchema>;
+    translations: {
         polisClusterId: number;
         languageCode: string;
         aiLabel: string | null;
         aiSummary: string | null;
-    }>;
+    }[];
     conversationId: number;
 }): Promise<void> {
     if (translations.length === 0) {

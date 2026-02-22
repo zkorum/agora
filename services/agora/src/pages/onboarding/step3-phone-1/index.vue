@@ -93,7 +93,7 @@ import {
   parsePhoneNumberFromString,
   type PhoneNumber as LibPhoneNumber,
 } from "libphonenumber-js/max";
-import type { Results } from "maz-ui/components/MazInputPhoneNumber";
+import type { MazInputPhoneNumberData } from "maz-ui/components/MazInputPhoneNumber";
 import { storeToRefs } from "pinia";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
@@ -227,7 +227,7 @@ function validatePhoneNumber(
   return { isValid: true, parsedNumber, callingCode: callingCode.data };
 }
 
-function onPhoneUpdate(_results: Results) {
+function onPhoneUpdate(_results: MazInputPhoneNumberData) {
   phoneData.hasAttemptedSubmission = false;
   clearErrors();
 

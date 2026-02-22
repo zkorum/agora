@@ -2175,7 +2175,7 @@ server.after(() => {
         url: `/api/${apiVersion}/user/delete`,
         schema: {},
         handler: async (request, reply) => {
-            const { encodedUcan, deviceStatus } =
+            const { deviceStatus } =
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 });

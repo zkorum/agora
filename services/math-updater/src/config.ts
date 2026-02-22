@@ -7,7 +7,7 @@ import { sharedConfigSchema } from "./shared-backend/config.js";
  */
 const mathUpdaterConfigSchema = sharedConfigSchema.extend({
     // Polis Service
-    POLIS_BASE_URL: z.string().url(),
+    POLIS_BASE_URL: z.url(),
 
     // Infrastructure Configuration
     /**

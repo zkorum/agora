@@ -262,7 +262,7 @@
           </div>
           <div
             class="
-              flex min-w-0 self-stretch flex-col gap-[6px]
+              flex min-w-0 flex-col gap-[6px] self-stretch
               sm:pt-6
               xl:min-w-[323px]
             "

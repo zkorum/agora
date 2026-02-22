@@ -1,7 +1,7 @@
 # ---- Build ----
 FROM node:22.22.0-alpine AS build
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN corepack enable && corepack prepare pnpm@10 --activate
 ENV PATH=/app/node_modules/.bin:$PATH
 # Copy docker-specific workspace config (packages field required by pnpm v9+)
 COPY pnpm-workspace-docker.yaml ./pnpm-workspace.yaml
