@@ -65,7 +65,7 @@ importers:
         version: 3.20.0
       '@tiptap/vue-3':
         specifier: 3.20.0
-        version: 3.20.0(@floating-ui/dom@1.7.4)(@tiptap/core@3.20.0(@tiptap/pm@3.20.0))(@tiptap/pm@3.20.0)(vue@3.5.28(typescript@5.9.3))
+        version: 3.20.0(@floating-ui/dom@1.7.5)(@tiptap/core@3.20.0(@tiptap/pm@3.20.0))(@tiptap/pm@3.20.0)(vue@3.5.28(typescript@5.9.3))
       '@ucans/ucans':
         specifier: ^0.12.0
         version: 0.12.0
@@ -912,8 +912,14 @@ packages:
   '@floating-ui/core@1.7.3':
     resolution: {integrity: sha512-sGnvb5dmrJaKEZ+LDIpguvdX3bDlEllmv4/ClQ9awcmCZrlx5jQyyMWFM5kBI+EyNOCDDiKk8il0zeuX3Zlg/w==}
 
+  '@floating-ui/core@1.7.4':
+    resolution: {integrity: sha512-C3HlIdsBxszvm5McXlB8PeOEWfBhcGBTZGkGlWc2U0KFY5IwG5OQEuQ8rq52DZmcHDlPLd+YFBK+cZcytwIFWg==}
+
   '@floating-ui/dom@1.7.4':
     resolution: {integrity: sha512-OOchDgh4F2CchOX94cRVqhvy7b3AFb+/rQXyswmzmGakRfkMgoWVjfnLWkRirfLEfuD4ysVW16eXzwt3jHIzKA==}
+
+  '@floating-ui/dom@1.7.5':
+    resolution: {integrity: sha512-N0bD2kIPInNHUHehXhMke1rBGs1dwqvC9O9KYMyyjK7iXt7GAhnro7UlcuYcGdS/yYOlq0MAVgrow8IbWJwyqg==}
 
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
@@ -2947,8 +2953,8 @@ packages:
   ffjavascript@0.3.1:
     resolution: {integrity: sha512-4PbK1WYodQtuF47D4pRI5KUg3Q392vuP5WjE1THSnceHdXwU3ijaoS0OqxTzLknCtz4Z2TtABzkBdBdMn3B/Aw==}
 
-  figlet@1.9.4:
-    resolution: {integrity: sha512-uN6QE+TrzTAHC1IWTyrc4FfGo2KH/82J8Jl1tyKB7+z5DBit/m3D++Iu5lg91qJMnQQ3vpJrj5gxcK/pk4R9tQ==}
+  figlet@1.10.0:
+    resolution: {integrity: sha512-aktIwEZZ6Gp9AWdMXW4YCi0J2Ahuxo67fNJRUIWD81w8pQ0t9TS8FFpbl27ChlTLF06VkwjDesZSzEVzN75rzA==}
     engines: {node: '>= 17.0.0'}
     hasBin: true
 
@@ -3457,39 +3463,11 @@ packages:
     engines: {node: '>= 18.0.0'}
     hasBin: true
     peerDependencies:
-<<<<<<< HEAD
       nuxt: '>=3.4.0 <5.0.0'
       unplugin-auto-import: '>=19.0.0 <22.0.0'
       unplugin-vue-components: '>=28.0.0 <32.0.0'
       vue: '>=3.5.0 <4.0.0'
       vue-router: '>=4.0.0 <6.0.0'
-||||||| parent of 6512f47f (chore(deps): update dependencies and fix known CVEs via pnpm overrides)
-      '@nuxt/kit': ^3.4.0
-      chart.js: ^4.0.0
-      dayjs: ^1.1.0
-      defu: ^6.0.0
-      dropzone: ^5.9.3
-      libphonenumber-js: ^1.9.44
-      nuxt: ^3.4.0
-      unplugin-auto-import: '>=0.18.0 <1.0.0'
-      unplugin-vue-components: '>=0.27.0 <1.0.0'
-      valibot: '>=0.30.0 <1.0.0'
-      vue: ^3.0.0
-      vue-router: ^4.0.0
-=======
-      '@nuxt/kit': ^3.4.0
-      chart.js: ^4.0.0
-      dayjs: ^1.1.0
-      defu: ^6.0.0
-      dropzone: ^5.9.3
-      libphonenumber-js: ^1.9.44
-      nuxt: ^3.4.0
-      unplugin-auto-import: '>=0.18.0 <1.0.0'
-      unplugin-vue-components: '>=0.27.0 <1.0.0'
-      valibot: '>=1.2.0'
-      vue: ^3.0.0
-      vue-router: ^4.0.0
->>>>>>> 6512f47f (chore(deps): update dependencies and fix known CVEs via pnpm overrides)
     peerDependenciesMeta:
       nuxt:
         optional: true
@@ -4588,14 +4566,6 @@ packages:
       typescript:
         optional: true
 
-  valibot@1.2.0:
-    resolution: {integrity: sha512-mm1rxUsmOxzrwnX5arGS+U4T25RdvpPjPN4yR0u9pUBov9+zGVtO84tif1eY4r6zWxVxu3KzIyknJy3rxfRZZg==}
-    peerDependencies:
-      typescript: '>=5'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
   varint@6.0.0:
     resolution: {integrity: sha512-cXEIW6cfr15lFv563k4GuVuW/fiwjknytD37jIOLSdSWuOI6WnO/oKwmP2FQTU2l01LP8/M5TSAJpzUaGe3uWg==}
 
@@ -5429,9 +5399,18 @@ snapshots:
     dependencies:
       '@floating-ui/utils': 0.2.10
 
+  '@floating-ui/core@1.7.4':
+    dependencies:
+      '@floating-ui/utils': 0.2.10
+
   '@floating-ui/dom@1.7.4':
     dependencies:
       '@floating-ui/core': 1.7.3
+      '@floating-ui/utils': 0.2.10
+
+  '@floating-ui/dom@1.7.5':
+    dependencies:
+      '@floating-ui/core': 1.7.4
       '@floating-ui/utils': 0.2.10
 
   '@floating-ui/utils@0.2.10': {}
@@ -5571,27 +5550,11 @@ snapshots:
 
   '@maz-ui/cli@4.6.1(typescript@5.9.3)':
     dependencies:
-<<<<<<< HEAD
       '@clack/prompts': 0.11.0
       '@maz-ui/node': 4.6.1
-      commander: 14.0.3
+      commander: 14.0.2
       cosmiconfig: 9.0.0(typescript@5.9.3)
       figlet: 1.10.0
-||||||| parent of 6512f47f (chore(deps): update dependencies and fix known CVEs via pnpm overrides)
-      '@clack/prompts': 0.8.2
-      clear: 0.1.0
-      colorette: 2.0.20
-      commander: 12.1.0
-      cosmiconfig: 9.0.0(typescript@5.6.2)
-      figlet: 1.10.0
-=======
-      '@clack/prompts': 0.8.2
-      clear: 0.1.0
-      colorette: 2.0.20
-      commander: 12.1.0
-      cosmiconfig: 9.0.0(typescript@5.6.2)
-      figlet: 1.9.4
->>>>>>> 6512f47f (chore(deps): update dependencies and fix known CVEs via pnpm overrides)
       tinycolor2: 1.6.0
     transitivePeerDependencies:
       - typescript
@@ -6235,9 +6198,9 @@ snapshots:
     dependencies:
       '@tiptap/extensions': 3.20.0(@tiptap/core@3.20.0(@tiptap/pm@3.20.0))(@tiptap/pm@3.20.0)
 
-  '@tiptap/extension-floating-menu@3.20.0(@floating-ui/dom@1.7.4)(@tiptap/core@3.20.0(@tiptap/pm@3.20.0))(@tiptap/pm@3.20.0)':
+  '@tiptap/extension-floating-menu@3.20.0(@floating-ui/dom@1.7.5)(@tiptap/core@3.20.0(@tiptap/pm@3.20.0))(@tiptap/pm@3.20.0)':
     dependencies:
-      '@floating-ui/dom': 1.7.4
+      '@floating-ui/dom': 1.7.5
       '@tiptap/core': 3.20.0(@tiptap/pm@3.20.0)
       '@tiptap/pm': 3.20.0
     optional: true
@@ -6359,15 +6322,15 @@ snapshots:
       '@tiptap/extensions': 3.20.0(@tiptap/core@3.20.0(@tiptap/pm@3.20.0))(@tiptap/pm@3.20.0)
       '@tiptap/pm': 3.20.0
 
-  '@tiptap/vue-3@3.20.0(@floating-ui/dom@1.7.4)(@tiptap/core@3.20.0(@tiptap/pm@3.20.0))(@tiptap/pm@3.20.0)(vue@3.5.28(typescript@5.9.3))':
+  '@tiptap/vue-3@3.20.0(@floating-ui/dom@1.7.5)(@tiptap/core@3.20.0(@tiptap/pm@3.20.0))(@tiptap/pm@3.20.0)(vue@3.5.28(typescript@5.9.3))':
     dependencies:
-      '@floating-ui/dom': 1.7.4
+      '@floating-ui/dom': 1.7.5
       '@tiptap/core': 3.20.0(@tiptap/pm@3.20.0)
       '@tiptap/pm': 3.20.0
       vue: 3.5.28(typescript@5.9.3)
     optionalDependencies:
       '@tiptap/extension-bubble-menu': 3.20.0(@tiptap/core@3.20.0(@tiptap/pm@3.20.0))(@tiptap/pm@3.20.0)
-      '@tiptap/extension-floating-menu': 3.20.0(@floating-ui/dom@1.7.4)(@tiptap/core@3.20.0(@tiptap/pm@3.20.0))(@tiptap/pm@3.20.0)
+      '@tiptap/extension-floating-menu': 3.20.0(@floating-ui/dom@1.7.5)(@tiptap/core@3.20.0(@tiptap/pm@3.20.0))(@tiptap/pm@3.20.0)
 
   '@types/body-parser@1.19.6':
     dependencies:
@@ -7837,7 +7800,7 @@ snapshots:
       wasmcurves: 0.2.2
       web-worker: 1.2.0
 
-  figlet@1.9.4:
+  figlet@1.10.0:
     dependencies:
       commander: 14.0.2
 
@@ -8320,13 +8283,7 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
-<<<<<<< HEAD
   maz-ui@4.6.2(typescript@5.9.3)(vue-router@4.6.4(vue@3.5.28(typescript@5.9.3)))(vue@3.5.28(typescript@5.9.3)):
-||||||| parent of 6512f47f (chore(deps): update dependencies and fix known CVEs via pnpm overrides)
-  maz-ui@3.50.1(libphonenumber-js@1.12.37)(valibot@0.42.1(typescript@5.9.3))(vue-router@4.6.4(vue@3.5.28(typescript@5.9.3)))(vue@3.5.28(typescript@5.9.3)):
-=======
-  maz-ui@3.50.1(libphonenumber-js@1.12.37)(valibot@1.2.0(typescript@5.9.3))(vue-router@4.6.4(vue@3.5.28(typescript@5.9.3)))(vue@3.5.28(typescript@5.9.3)):
->>>>>>> 6512f47f (chore(deps): update dependencies and fix known CVEs via pnpm overrides)
     dependencies:
       '@floating-ui/vue': 1.1.10(vue@3.5.28(typescript@5.9.3))
       '@maz-ui/cli': 4.6.1(typescript@5.9.3)
@@ -8337,16 +8294,10 @@ snapshots:
       chart.js: 4.5.1
       dayjs: 1.11.19
       libphonenumber-js: 1.12.37
-<<<<<<< HEAD
       valibot: 1.2.0(typescript@5.9.3)
       vue: 3.5.28(typescript@5.9.3)
       vue-chartjs: 5.3.3(chart.js@4.5.1)(vue@3.5.28(typescript@5.9.3))
     optionalDependencies:
-||||||| parent of 6512f47f (chore(deps): update dependencies and fix known CVEs via pnpm overrides)
-      valibot: 0.42.1(typescript@5.9.3)
-=======
-      valibot: 1.2.0(typescript@5.9.3)
->>>>>>> 6512f47f (chore(deps): update dependencies and fix known CVEs via pnpm overrides)
       vue-router: 4.6.4(vue@3.5.28(typescript@5.9.3))
     transitivePeerDependencies:
       - '@vue/composition-api'
@@ -9499,10 +9450,6 @@ snapshots:
   utils-merge@1.0.1: {}
 
   uuid@9.0.1: {}
-
-  valibot@1.2.0(typescript@5.9.3):
-    optionalDependencies:
-      typescript: 5.9.3
 
   valibot@1.2.0(typescript@5.9.3):
     optionalDependencies:
