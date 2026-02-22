@@ -1,6 +1,15 @@
 -- Finalize poll_response schema changes after backfill
 -- Make poll_id NOT NULL, drop old conversation_id column, update constraints
 
+-- Catch-up backfill: handle rows missed by V0034.1 (edited conversations
+-- where current_content_id no longer points to the content with the poll).
+UPDATE poll_response pr
+SET poll_id = cc.poll_id
+FROM conversation_content cc
+WHERE cc.conversation_id = pr.conversation_id
+  AND cc.poll_id IS NOT NULL
+  AND pr.poll_id IS NULL;--> statement-breakpoint
+
 -- Safety check: fail fast if backfill left unresolved rows.
 DO $$ BEGIN
     IF EXISTS (SELECT 1 FROM poll_response WHERE poll_id IS NULL) THEN
