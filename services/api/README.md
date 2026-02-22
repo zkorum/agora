@@ -71,10 +71,6 @@ LLM Integration cannot be tested locally by design, since it relies on an extern
 
 To visualize how it works, checkout the staging environment.
 
-### Nostr Integration
-
-If `NOSTR_PROOF_CHANNEL_EVENT_ID` is undefined, then the proofs won't be broadcast to Nostr.
-
 ### CSV Export Feature
 
 The API provides a conversation export feature that allows users to download conversation data (opinions and votes) as CSV files. Exports are stored in AWS S3 with secure pre-signed download URLs.

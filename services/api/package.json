@@ -96,7 +96,6 @@
         "multiformats": "^13.4.2",
         "node-cron": "^4.2.1",
         "nodemailer": "^7.0.11",
-        "nostr-tools": "^2.23.1",
         "p-limit": "^7.3.0",
         "parse-json-object": "^3.0.1",
         "pg": "^8.18.0",
@@ -105,7 +104,6 @@
         "tweetnacl": "^1.0.3",
         "twilio": "^5.12.2",
         "uint8arrays": "^4.0.10",
-        "ws": "^8.19.0",
         "zod": "^4.3.6"
     },
     "devDependencies": {
@@ -119,7 +117,6 @@
         "@types/nodemailer": "^6.4.17",
         "@types/pg": "^8.16.0",
         "@types/sanitize-html": "^2.16.0",
-        "@types/ws": "^8.18.1",
         "drizzle-kit": "^0.31.9",
         "eslint": "^9.27.0",
         "eslint-config-prettier": "^9.1.0",

@@ -40,13 +40,8 @@ import { cleanupStuckExportsOnStartup } from "@/service/conversationExport/core.
 import { createImportNotification } from "@/service/conversationImport/notifications.js";
 import { createExportNotification } from "@/service/conversationExport/notifications.js";
 import { validateS3Access } from "./service/s3.js";
-// import * as p2pService from "@/service/p2p.js";
-import * as nostrService from "@/service/nostr.js";
 // import * as polisService from "@/service/polis.js";
 // import * as migrationService from "@/service/migration.js";
-import WebSocket from "ws";
-import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
-import { Relay, useWebSocketImplementation } from "nostr-tools/relay";
 import {
     httpMethodToAbility,
     httpUrlToResourcePointer,
@@ -141,8 +136,6 @@ import {
     type GoogleCloudCredentials,
 } from "./shared-backend/googleCloudAuth.js";
 import { nowZeroMs } from "./shared/util.js";
-// import { Protocols, createLightNode } from "@waku/sdk";
-// import { WAKU_TOPIC_CREATE_POST } from "@/service/p2p.js";
 
 server.register(fastifySensible);
 server.register(fastifyAuth);
@@ -202,34 +195,6 @@ export const axiosPolis: AxiosInstance | undefined =
           })
         : undefined;
 
-// Websocket polyfill necessary on nodejs to avoid
-// .pnpm/nostr-tools@2.10.4_typescript@5.2.2/node_modules/nostr-tools/lib/esm/relay.js:260
-// this._WebSocket = opts.websocketImplementation || WebSocket;
-// ReferenceError: WebSocket is not defined             ^
-// See https://github.com/nbd-wtf/nostr-tools/issues/57#issuecomment-1363420743
-useWebSocketImplementation(WebSocket);
-// Agora backend's own private key
-let nostrSecretKey: Uint8Array;
-let nostrPublicKey: string;
-if (config.NODE_ENV === "development") {
-    nostrSecretKey = generateSecretKey(); // `sk` is a Uint8Array
-    nostrPublicKey = getPublicKey(nostrSecretKey);
-} else {
-    // TODO: use AWS KMS
-    nostrSecretKey = generateSecretKey(); // `sk` is a Uint8Array
-    nostrPublicKey = getPublicKey(nostrSecretKey);
-}
-let relay: Relay;
-if (config.NOSTR_PROOF_CHANNEL_EVENT_ID !== undefined) {
-    try {
-        relay = await Relay.connect(config.NOSTR_DEFAULT_RELAY_URL);
-        log.info(`Connected to ${relay.url}`);
-    } catch (e) {
-        log.error("Unable to start the connection with the Nostr relay");
-        log.error(e);
-        process.exit(1);
-    }
-}
 
 const mustSendActualSms = config.NODE_ENV === "production";
 const isImportDisabled = config.IMPORT_BUFFER_MAX_BATCH_SIZE === 0;
@@ -1356,24 +1321,6 @@ server.after(() => {
                 returnIsUserClustered: request.body.returnIsUserClustered,
             });
             reply.send(castVoteResponse);
-            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-            if (proofChannel40EventId !== undefined) {
-                try {
-                    await nostrService.broadcastProof({
-                        proof: encodedUcan,
-                        secretKey: nostrSecretKey,
-                        publicKey: nostrPublicKey,
-                        proofChannel40EventId: proofChannel40EventId,
-                        relay: relay,
-                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                    });
-                } catch (e) {
-                    log.error(
-                        "Error while trying to broadcast proof to Nostr:",
-                    );
-                    log.error(e);
-                }
-            }
         },
     });
 
@@ -1396,24 +1343,6 @@ server.after(() => {
                 now: now,
             });
             reply.send();
-            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-            if (proofChannel40EventId !== undefined) {
-                try {
-                    await nostrService.broadcastProof({
-                        proof: encodedUcan,
-                        secretKey: nostrSecretKey,
-                        publicKey: nostrPublicKey,
-                        proofChannel40EventId: proofChannel40EventId,
-                        relay: relay,
-                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                    });
-                } catch (e) {
-                    log.error(
-                        "Error while trying to broadcast proof to Nostr:",
-                    );
-                    log.error(e);
-                }
-            }
         },
     });
 
@@ -1462,24 +1391,6 @@ server.after(() => {
                 didWrite: didWrite,
             });
             reply.send();
-            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-            if (proofChannel40EventId !== undefined) {
-                try {
-                    await nostrService.broadcastProof({
-                        proof: encodedUcan,
-                        secretKey: nostrSecretKey,
-                        publicKey: nostrPublicKey,
-                        proofChannel40EventId: proofChannel40EventId,
-                        relay: relay,
-                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                    });
-                } catch (e) {
-                    log.error(
-                        "Error while trying to broadcast proof to Nostr:",
-                    );
-                    log.error(e);
-                }
-            }
         },
     });
 
@@ -1508,24 +1419,6 @@ server.after(() => {
                 notificationSSEManager: notificationSSEManager,
             });
             reply.send(newOpinionResponse);
-            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-            if (proofChannel40EventId !== undefined) {
-                try {
-                    await nostrService.broadcastProof({
-                        proof: encodedUcan,
-                        secretKey: nostrSecretKey,
-                        publicKey: nostrPublicKey,
-                        proofChannel40EventId: proofChannel40EventId,
-                        relay: relay,
-                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                    });
-                } catch (e) {
-                    log.error(
-                        "Error while trying to broadcast proof to Nostr:",
-                    );
-                    log.error(e);
-                }
-            }
         },
     });
 
@@ -1716,24 +1609,6 @@ server.after(() => {
                 didWrite: didWrite,
             });
             reply.send();
-            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-            if (proofChannel40EventId !== undefined) {
-                try {
-                    await nostrService.broadcastProof({
-                        proof: encodedUcan,
-                        secretKey: nostrSecretKey,
-                        publicKey: nostrPublicKey,
-                        proofChannel40EventId: proofChannel40EventId,
-                        relay: relay,
-                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                    });
-                } catch (e) {
-                    log.error(
-                        "Error while trying to broadcast proof to Nostr:",
-                    );
-                    log.error(e);
-                }
-            }
         },
     });
 
@@ -1817,29 +1692,6 @@ server.after(() => {
                 requiresEventTicket: request.body.requiresEventTicket,
             });
             reply.send({ conversationSlugId });
-            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-            if (proofChannel40EventId !== undefined) {
-                try {
-                    await nostrService.broadcastProof({
-                        proof: encodedUcan,
-                        secretKey: nostrSecretKey,
-                        publicKey: nostrPublicKey,
-                        proofChannel40EventId: proofChannel40EventId,
-                        relay: relay,
-                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                    });
-                } catch (e) {
-                    log.error(
-                        "Error while trying to broadcast proof to Nostr:",
-                    );
-                    log.error(e);
-                }
-            }
-            // await p2pService.broadcastProof({
-            //     proof: encodedUcan,
-            //     node: node,
-            //     topic: WAKU_TOPIC_CREATE_POST,
-            // });
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({
@@ -2250,29 +2102,6 @@ server.after(() => {
             });
 
             reply.send(updateResult);
-
-            // Broadcast proof to Nostr if successful
-            if (updateResult.success) {
-                const proofChannel40EventId =
-                    config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-                if (proofChannel40EventId !== undefined) {
-                    try {
-                        await nostrService.broadcastProof({
-                            proof: encodedUcan,
-                            secretKey: nostrSecretKey,
-                            publicKey: nostrPublicKey,
-                            proofChannel40EventId: proofChannel40EventId,
-                            relay: relay,
-                            defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                        });
-                    } catch (e) {
-                        log.error(
-                            "Error while trying to broadcast proof to Nostr:",
-                        );
-                        log.error(e);
-                    }
-                }
-            }
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({
@@ -2355,24 +2184,6 @@ server.after(() => {
                 userId: deviceStatus.userId,
             });
             reply.send();
-            const proofChannel40EventId = config.NOSTR_PROOF_CHANNEL_EVENT_ID;
-            if (proofChannel40EventId !== undefined) {
-                try {
-                    await nostrService.broadcastProof({
-                        proof: encodedUcan,
-                        secretKey: nostrSecretKey,
-                        publicKey: nostrPublicKey,
-                        proofChannel40EventId: proofChannel40EventId,
-                        relay: relay,
-                        defaultRelayUrl: config.NOSTR_DEFAULT_RELAY_URL,
-                    });
-                } catch (e) {
-                    log.error(
-                        "Error while trying to broadcast proof to Nostr:",
-                    );
-                    log.error(e);
-                }
-            }
         },
     });
 

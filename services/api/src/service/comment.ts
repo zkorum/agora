@@ -966,7 +966,8 @@ export async function fetchAnalysisByConversationSlugId({
     if (polisMetadata === undefined) {
         return {
             polisContentId: undefined,
-            consensus: [],
+            consensusAgree: [],
+            consensusDisagree: [],
             controversial: [],
             clusters: {},
         };
