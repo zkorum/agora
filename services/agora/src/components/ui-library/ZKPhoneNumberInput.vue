@@ -29,7 +29,7 @@
 import "maz-ui/styles";
 
 import type { CountryCode } from "libphonenumber-js/max";
-import type { Results } from "maz-ui/components/MazInputPhoneNumber";
+import type { MazInputPhoneNumberData } from "maz-ui/components/MazInputPhoneNumber";
 import MazInputPhoneNumber from "maz-ui/components/MazInputPhoneNumber";
 
 interface ZKPhoneNumberInputProps {
@@ -59,7 +59,7 @@ withDefaults(defineProps<ZKPhoneNumberInputProps>(), {
 const emit = defineEmits<{
   "update:modelValue": [value: string | null];
   "update:countryCode": [value: CountryCode | null];
-  update: [results: Results];
+  update: [results: MazInputPhoneNumberData];
   countryCode: [value: CountryCode | null | undefined];
   blur: [];
 }>();
@@ -72,7 +72,7 @@ function handleCountryCodeUpdate(value: CountryCode | null) {
   emit("update:countryCode", value);
 }
 
-function handleUpdate(results: Results) {
+function handleUpdate(results: MazInputPhoneNumberData) {
   emit("update", results);
 }
 

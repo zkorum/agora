@@ -28,7 +28,7 @@ export default defineConfig((ctx) => {
     boot.push("sentry");
   }
   boot.push(
-    ...["i18n", "axios", "primevue", "vue-query", "embeddedBrowserGuard"]
+    ...["i18n", "axios", "primevue", "vue-query", "embeddedBrowserGuard", "maz-ui"]
   );
 
   if (process.env.NODE_ENV) {
