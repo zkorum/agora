@@ -52,7 +52,7 @@ export const commentComposerTranslations: Record<
       "نصيحة: قد يحتوي هذا على أفكار متعددة - تأكد من أن المصوتين يمكنهم الموافقة أو عدم الموافقة بوضوح",
   },
   es: {
-    placeholder: "Añade tu propia proposición",
+    placeholder: "Añade tu proposición",
     placeholderExpanded: "Enfócate en un solo punto con el que sea fácil estar de acuerdo o en desacuerdo",
     postButton: "Publicar",
     conversationLockedError:
@@ -69,7 +69,7 @@ export const commentComposerTranslations: Record<
       "Consejo: Esto podría contener múltiples ideas - asegúrate de que los votantes puedan estar claramente de acuerdo o en desacuerdo",
   },
   fr: {
-    placeholder: "Ajoutez votre propre proposition",
+    placeholder: "Ajoutez votre proposition",
     placeholderExpanded: "Concentrez-vous sur un seul point avec lequel il est facile d'être d'accord ou en désaccord",
     postButton: "Publier",
     conversationLockedError:
@@ -87,7 +87,7 @@ export const commentComposerTranslations: Record<
       "Conseil : Ceci pourrait contenir plusieurs idées - assurez-vous que les votants puissent clairement être d'accord ou en désaccord",
   },
   "zh-Hans": {
-    placeholder: "添加你自己的观点",
+    placeholder: "添加你的观点",
     placeholderExpanded: "专注于一个容易同意或不同意的单一观点",
     postButton: "发布",
     conversationLockedError: "无法创建观点，因为对话已锁定",
@@ -103,7 +103,7 @@ export const commentComposerTranslations: Record<
       "提示：这可能包含多个想法 - 确保投票者可以清楚地同意或不同意",
   },
   "zh-Hant": {
-    placeholder: "添加你自己的觀點",
+    placeholder: "添加你的觀點",
     placeholderExpanded: "專注於一個容易同意或不同意的單一觀點",
     postButton: "發布",
     conversationLockedError: "無法創建觀點，因為對話已鎖定",
@@ -119,7 +119,7 @@ export const commentComposerTranslations: Record<
       "提示：這可能包含多個想法 - 確保投票者可以清楚地同意或不同意",
   },
   ja: {
-    placeholder: "あなた自身の主張を追加",
+    placeholder: "あなたの主張を追加",
     placeholderExpanded: "賛成または反対しやすい単一の論点に焦点を当てる",
     postButton: "投稿",
     conversationLockedError: "会話がロックされているため、主張を作成できません",

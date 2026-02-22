@@ -14,6 +14,6 @@ defineProps<{
 
 <style lang="scss" scoped>
 .empty-message {
-  margin: 0;
+  margin: 16px 0;
 }
 </style>
