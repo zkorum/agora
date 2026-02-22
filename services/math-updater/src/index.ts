@@ -1,6 +1,6 @@
 import { log } from "./app.js";
 import { config } from "./config.js";
-import { PgBoss } from "pg-boss";
+import { PgBoss, type Job } from "pg-boss";
 import { scanConversations } from "./jobs/scanConversations.js";
 import {
     UpdateConversationMathData,
@@ -31,7 +31,7 @@ function createMathWorkerHandler({
     googleCloudCredentials: GoogleCloudCredentials | undefined;
     onWorkerCalled: () => void;
 }) {
-    return async (jobs: PgBoss.Job<UpdateConversationMathData>[]) => {
+    return async (jobs: Job<UpdateConversationMathData>[]) => {
         log.info(`[Math Updater] Worker called with ${jobs.length} job(s)`);
         onWorkerCalled();
 
