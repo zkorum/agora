@@ -59,6 +59,7 @@
             :single-line="true"
             :disabled="false"
             :max-length="MAX_LENGTH_TITLE"
+            :show-character-count="true"
             min-height="auto"
             class="title-editor"
             @update:model-value="updateTitle"
@@ -76,6 +77,7 @@
               :single-line="false"
               :disabled="false"
               :max-length="MAX_LENGTH_BODY"
+              :show-character-count="true"
               @update:model-value="updateContent"
               @update:is-over-limit="(v: boolean) => (isBodyOverLimit = v)"
             />
@@ -107,6 +109,7 @@
 </template>
 
 <script setup lang="ts">
+import Button from "primevue/button";
 import Editor from "src/components/editor/Editor.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
@@ -131,6 +134,12 @@ import {
   type EditConversationTranslations,
   editConversationTranslations,
 } from "./index.i18n";
+
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
 
 const { t } = useComponentI18n<EditConversationTranslations>(
   editConversationTranslations
