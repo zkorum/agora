@@ -213,7 +213,7 @@
   /* Backgrounds */
   --background: var(--sky-lightest);
   --surface-hover: var(--sky-lightest);
-  --overlay-dark: rgba(0, 0, 0, 0.6);
+  --overlay-dark: rgba(0, 0, 0, 0.75);
 
   /* Text */
   --foreground: var(--ink-light);

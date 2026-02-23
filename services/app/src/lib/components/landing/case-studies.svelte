@@ -43,12 +43,12 @@
         />
         <div
           class="
-            absolute inset-0 bg-linear-to-b from-transparent from-50%
+            absolute inset-0 bg-linear-to-b from-transparent from-30%
             to-overlay-dark
           "
         ></div>
-        <div class="relative z-10 flex flex-col gap-2">
-          <Text size="lg" weight="semibold" element="h3" class="text-white">
+        <div class="relative z-10 flex flex-col gap-2 drop-shadow-lg">
+          <Text size="xl" weight="semibold" element="h3" class="text-white">
             {m.casestudy_bloquonstout_title()}
           </Text>
           <div class="flex items-center justify-between">
@@ -89,12 +89,12 @@
         />
         <div
           class="
-            absolute inset-0 bg-linear-to-b from-transparent from-50%
+            absolute inset-0 bg-linear-to-b from-transparent from-30%
             to-overlay-dark
           "
         ></div>
-        <div class="relative z-10 flex flex-col gap-2">
-          <Text size="lg" weight="semibold" element="h3" class="text-white">
+        <div class="relative z-10 flex flex-col gap-2 drop-shadow-lg">
+          <Text size="xl" weight="semibold" element="h3" class="text-white">
             {m.casestudy_tech4nature_title()}
           </Text>
           <div class="flex items-center justify-between">
@@ -135,12 +135,12 @@
         />
         <div
           class="
-            absolute inset-0 bg-linear-to-b from-transparent from-50%
+            absolute inset-0 bg-linear-to-b from-black/30 from-0%
             to-overlay-dark
           "
         ></div>
-        <div class="relative z-10 flex flex-col gap-2">
-          <Text size="lg" weight="semibold" element="h3" class="text-white">
+        <div class="relative z-10 flex flex-col gap-2 drop-shadow-lg">
+          <Text size="xl" weight="semibold" element="h3" class="text-white">
             {m.casestudy_unesco_mil_title()}
           </Text>
           <div class="flex items-center justify-between">
