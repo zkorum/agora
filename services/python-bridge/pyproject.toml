@@ -39,7 +39,7 @@ dependencies = [
 	"joblib==1.5.3",
 	"kiwisolver==1.4.8",
 	"llvmlite==0.44.0",
-	"MarkupSafe==3.0.2",
+	"MarkupSafe==3.0.3",
 	"matplotlib==3.7.5",
 	"numba==0.61.2",
 	"numpy==1.26.4",
