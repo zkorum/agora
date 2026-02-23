@@ -36,7 +36,8 @@
         <EmptyStateMessage
           v-if="
             props.itemList.length === 0 ||
-            Object.keys(props.clusters).length <= 1
+            Object.keys(props.clusters).length <= 1 ||
+            (compactMode && representativeItems.length === 0)
           "
           :message="t('noDivisiveOpinionsMessage')"
         />
@@ -53,7 +54,7 @@
           <div
             v-if="
               additionalItems.length > 0 ||
-              (representativeItems.length === 0 && !compactMode)
+              (representativeItems.length === 0 && !compactMode && props.itemList.length > 0)
             "
             class="reliability-divider"
           >
@@ -73,28 +74,12 @@
             />
           </div>
 
-          <template v-if="representativeItems.length === 0 && !compactMode">
-            <div
-              v-for="consensusItem in props.itemList"
-              :key="consensusItem.opinion"
-              class="muted-item"
-            >
-              <ConsensusItem
-                :conversation-slug-id="props.conversationSlugId"
-                :opinion-item="consensusItem"
-                :opinion-item-for-visualizer="consensusItem"
-                :cluster-labels="props.clusterLabels"
-              />
-            </div>
-          </template>
-
           <button
             v-if="
               !compactMode &&
               remainingCount > 0 &&
               !hasLoadedMore &&
-              Object.keys(props.clusters).length > 1 &&
-              representativeItems.length > 0
+              Object.keys(props.clusters).length > 1
             "
             class="load-more-button"
             @click="handleLoadMore"
