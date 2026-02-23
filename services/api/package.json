@@ -77,7 +77,7 @@
         "@valkey/valkey-glide": "^2.2.7",
         "axios": "^1.13.5",
         "cborg": "^4.5.8",
-        "csv-parse": "^5.6.0",
+        "csv-parse": "^6.1.0",
         "date-fns": "^4.1.0",
         "dotenv": "^16.5.0",
         "drizzle-orm": "^0.45.1",
