@@ -8,7 +8,7 @@
         >
           <template #action-button>
             <AnalysisActionButton
-              type="informationIcon"
+              type="learnMore"
               @action-click="showClusterInformation = true"
             />
           </template>
