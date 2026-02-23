@@ -2933,114 +2933,65 @@ server.after(() => {
     });
 });
 
-if (
-    config.POLIS_CONV_TO_IMPORT_ON_RUN !== undefined &&
-    axiosPolis !== undefined
-) {
-    console.log("not implemented yet");
-    // const polisConv = config.POLIS_CONV_TO_IMPORT_ON_RUN;
-    // await loadAndImportToAgora({
-    //     db,
-    //     axiosPolis,
-    //     polisUserEmailDomain: config.POLIS_USER_EMAIL_DOMAIN,
-    //     polisUserEmailLocalPart: config.POLIS_USER_EMAIL_LOCAL_PART,
-    //     polisUserPassword: config.POLIS_USER_PASSWORD,
-    //     summaryFilePath: polisConv[0],
-    //     commentFilePath: polisConv[1],
-    //     voteFilePath: polisConv[2],
-    // });
-} else {
-    server.ready((e) => {
-        if (e) {
-            log.error(e);
-            // await node.stop();
-            process.exit(1);
+server.ready((e) => {
+    if (e) {
+        log.error(e);
+        process.exit(1);
+    }
+    if (config.NODE_ENV === "development") {
+        const swaggerObj = server.swagger({ yaml: false });
+        const swaggerJson = JSON.stringify(swaggerObj, null, 4);
+        fs.writeFileSync("./openapi-zkorum.json", swaggerJson);
+    }
+});
+
+const host =
+    config.NODE_ENV === "development"
+        ? config.MODE === "capacitor"
+            ? "192.168.1.96"
+            : "0.0.0.0"
+        : "0.0.0.0";
+
+server.listen({ port: config.PORT, host: host }, (err) => {
+    if (err) {
+        log.error(err);
+        process.exit(1);
+    }
+});
+
+// Graceful shutdown handling
+const shutdown = async (signal: string) => {
+    log.info(`[API] ${signal} received, shutting down gracefully...`);
+
+    try {
+        // Flush pending votes before shutdown
+        await voteBuffer.shutdown();
+
+        // Flush pending exports before shutdown
+        await exportBuffer.shutdown();
+
+        // Flush pending imports before shutdown
+        await importBuffer.shutdown();
+
+        // Close SSE connections before shutdown
+        await notificationSSEManager.shutdown();
+
+        // Close Valkey connection
+        if (queueValkey !== undefined) {
+            queueValkey.close();
+            log.info("[QueueValkey] Connection closed");
         }
-        if (config.NODE_ENV === "development") {
-            const swaggerObj = server.swagger({ yaml: false });
-            const swaggerJson = JSON.stringify(swaggerObj, null, 4);
-            fs.writeFileSync("./openapi-zkorum.json", swaggerJson);
-        }
-    });
 
-    const host =
-        config.NODE_ENV === "development"
-            ? config.MODE === "capacitor"
-                ? "192.168.1.96"
-                : "0.0.0.0"
-            : "0.0.0.0";
+        // Close server
+        await server.close();
+        log.info("[API] Server closed");
 
-    server.listen({ port: config.PORT, host: host }, (err) => {
-        if (err) {
-            log.error(err);
-            // await node.stop();
-            process.exit(1);
-        }
-    });
+        process.exit(0);
+    } catch (error) {
+        log.error(error, "[API] Error during shutdown");
+        process.exit(1);
+    }
+};
 
-    // Graceful shutdown handling
-    const shutdown = async (signal: string) => {
-        log.info(`[API] ${signal} received, shutting down gracefully...`);
-
-        try {
-            // Flush pending votes before shutdown
-            await voteBuffer.shutdown();
-
-            // Flush pending exports before shutdown
-            await exportBuffer.shutdown();
-
-            // Flush pending imports before shutdown
-            await importBuffer.shutdown();
-
-            // Close SSE connections before shutdown
-            await notificationSSEManager.shutdown();
-
-            // Close Valkey connection
-            if (queueValkey !== undefined) {
-                queueValkey.close();
-                log.info("[QueueValkey] Connection closed");
-            }
-
-            // Close server
-            await server.close();
-            log.info("[API] Server closed");
-
-            process.exit(0);
-        } catch (error) {
-            log.error(error, "[API] Error during shutdown");
-            process.exit(1);
-        }
-    };
-
-    process.on("SIGTERM", () => void shutdown("SIGTERM"));
-    process.on("SIGINT", () => void shutdown("SIGINT"));
-
-    // await migrationService.fixNullPassInOpinionTable({ db });
-    // await migrationService.fixEmptyOpinionIdInPolisClusterOpinionTable({ db });
-    // if (axiosPolis !== undefined) {
-    //     const _backgroundTasks = (async () => {
-    //         try {
-    //             await polisService.updateMathAllConversations({
-    //                 db,
-    //                 axiosPolis: axiosPolis,
-    //                 awsAiLabelSummaryEnable:
-    //                     config.AWS_AI_LABEL_SUMMARY_ENABLE &&
-    //                     (config.NODE_ENV === "production" ||
-    //                         config.NODE_ENV === "staging"),
-    //                 awsAiLabelSummaryRegion: config.AWS_AI_LABEL_SUMMARY_REGION,
-    //                 awsAiLabelSummaryModelId:
-    //                     config.AWS_AI_LABEL_SUMMARY_MODEL_ID,
-    //                 awsAiLabelSummaryTemperature:
-    //                     config.AWS_AI_LABEL_SUMMARY_TEMPERATURE,
-    //                 awsAiLabelSummaryTopP: config.AWS_AI_LABEL_SUMMARY_TOP_P,
-    //                 awsAiLabelSummaryMaxTokens:
-    //                     config.AWS_AI_LABEL_SUMMARY_MAX_TOKENS,
-    //                 awsAiLabelSummaryPrompt: config.AWS_AI_LABEL_SUMMARY_PROMPT,
-    //                 doUpdateCounts: true,
-    //             });
-    //         } catch (updateErr) {
-    //             log.error("Error during background update:", updateErr);
-    //         }
-    //     })();
-    // }
-}
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
+process.on("SIGINT", () => void shutdown("SIGINT"));
