@@ -6,13 +6,10 @@
         <div class="titleBar">
           <div class="titleString">{{ summaryTitle }}</div>
 
-          <ZKButton button-type="icon" @click="showInformationDialog = true">
-            <ZKIcon
-              color="#6d6a74"
-              name="mdi-information-outline"
-              size="1.2rem"
-            />
-          </ZKButton>
+          <AnalysisActionButton
+            type="learnMore"
+            @action-click="showInformationDialog = true"
+          />
         </div>
         <div>
           {{ summary }}
@@ -34,11 +31,10 @@
 
 <script setup lang="ts">
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { ref } from "vue";
 
+import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 import {
   type GroupConsensusSummaryTranslations,
   groupConsensusSummaryTranslations,

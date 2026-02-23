@@ -104,6 +104,7 @@
           href={partner.href}
           target="_blank"
           rel="external noopener noreferrer"
+          aria-label={partner.alt}
         >
           <enhanced:img
             src={partner.src}
@@ -121,6 +122,7 @@
           href={partner.href}
           target="_blank"
           rel="external noopener noreferrer"
+          aria-label={partner.alt}
         >
           <enhanced:img
             src={partner.src}
