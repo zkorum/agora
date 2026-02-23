@@ -64,6 +64,25 @@ export function getBlogPosts({ locale }: { locale: string }): BlogPostMeta[] {
     });
   }
 
+  // Fallback: include English-only posts not available in the requested locale
+  if (locale !== "en") {
+    const localeSlugs = new Set(posts.map((p) => p.slug));
+    for (const [path, raw] of Object.entries(markdownFiles)) {
+      if (getLocaleFromPath(path) !== "en") continue;
+      const slug = getSlugFromPath(path);
+      if (localeSlugs.has(slug)) continue;
+      const { data } = matter(raw);
+      posts.push({
+        slug,
+        title: getString(data.title),
+        description: getString(data.description),
+        author: getString(data.author),
+        date: getString(data.date),
+        thumbnail: getString(data.thumbnail),
+      });
+    }
+  }
+
   return posts.sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
@@ -77,7 +96,13 @@ export async function getBlogPost({
   locale: string;
 }): Promise<BlogPost | null> {
   const path = `/src/lib/posts/${locale}/${slug}.md`;
-  const raw = markdownFiles[path];
+  let raw = markdownFiles[path];
+
+  // Fallback to English if locale-specific version doesn't exist
+  if (!raw && locale !== "en") {
+    const fallbackPath = `/src/lib/posts/en/${slug}.md`;
+    raw = markdownFiles[fallbackPath];
+  }
 
   if (!raw) return null;
 
