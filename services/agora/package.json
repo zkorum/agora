@@ -75,7 +75,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@eslint/js": "^9.35.0",
+    "@eslint/js": "^9.39.3",
     "@eslint/json": "^1.0.1",
     "@iconify/vue": "^5.0.0",
     "@quasar/app-vite": "2.4.1",
