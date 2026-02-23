@@ -35,8 +35,8 @@ importers:
         specifier: ^1.6.0
         version: 1.6.0
       '@types/node':
-        specifier: ^20.17.47
-        version: 20.19.22
+        specifier: ^25.3.0
+        version: 25.3.0
       eslint:
         specifier: ^9.27.0
         version: 9.38.0
@@ -57,7 +57,7 @@ importers:
         version: 8.55.0(eslint@9.38.0)(typescript@5.9.3)
       vite:
         specifier: ^7.3.1
-        version: 7.3.1(@types/node@20.19.22)
+        version: 7.3.1(@types/node@25.3.0)
 
 packages:
 
@@ -440,8 +440,8 @@ packages:
   '@types/k6@1.6.0':
     resolution: {integrity: sha512-koixvaHqP241ymqEEgl068kkXek+LhM5YTjysI1ikKUAnmbIKbt8Lngw3nhMHmg3Cihh7viUP/WCIF+FKi4DYQ==}
 
-  '@types/node@20.19.22':
-    resolution: {integrity: sha512-hRnu+5qggKDSyWHlnmThnUqg62l29Aj/6vcYgUaSFL9oc7DVjeWEQN3PRgdSc6F8d9QRMWkf36CLMch1Do/+RQ==}
+  '@types/node@25.3.0':
+    resolution: {integrity: sha512-4K3bqJpXpqfg2XKGK9bpDTc6xO/xoUP/RBWS7AtRMug6zZFaRekiLzjVtAoZMquxoAbzBvy5nxQ7veS5eYzf8A==}
 
   '@typescript-eslint/eslint-plugin@8.55.0':
     resolution: {integrity: sha512-1y/MVSz0NglV1ijHC8OT49mPJ4qhPYjiK08YUQVbIOyu+5k862LKUHFkpKHWu//zmr7hDR2rhwUm6gnCGNmGBQ==}
@@ -909,8 +909,8 @@ packages:
   uint8arrays@5.1.0:
     resolution: {integrity: sha512-vA6nFepEmlSKkMBnLBaUMVvAC4G3CTmO58C12y4sq6WPDOR7mOFYOi7GlrQ4djeSbP6JG9Pv9tJDM97PedRSww==}
 
-  undici-types@6.21.0:
-    resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+  undici-types@7.18.2:
+    resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
 
   vite@7.3.1:
     resolution: {integrity: sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA==}
@@ -1219,9 +1219,9 @@ snapshots:
 
   '@types/k6@1.6.0': {}
 
-  '@types/node@20.19.22':
+  '@types/node@25.3.0':
     dependencies:
-      undici-types: 6.21.0
+      undici-types: 7.18.2
 
   '@typescript-eslint/eslint-plugin@8.55.0(@typescript-eslint/parser@8.55.0(eslint@9.38.0)(typescript@5.9.3))(eslint@9.38.0)(typescript@5.9.3)':
     dependencies:
@@ -1742,9 +1742,9 @@ snapshots:
     dependencies:
       multiformats: 13.4.1
 
-  undici-types@6.21.0: {}
+  undici-types@7.18.2: {}
 
-  vite@7.3.1(@types/node@20.19.22):
+  vite@7.3.1(@types/node@25.3.0):
     dependencies:
       esbuild: 0.27.3
       fdir: 6.5.0(picomatch@4.0.3)
@@ -1753,7 +1753,7 @@ snapshots:
       rollup: 4.57.1
       tinyglobby: 0.2.15
     optionalDependencies:
-      '@types/node': 20.19.22
+      '@types/node': 25.3.0
       fsevents: 2.3.3
 
   which@2.0.2:
