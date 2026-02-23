@@ -57,16 +57,6 @@ const configSchema = sharedConfigSchema.extend({
         .string()
         .default("YwahfUdUYehkGMaWh0+q3F8itx2h8mybjPmt8CmTJSs"),
     POLIS_BASE_URL: z.url().optional(),
-    POLIS_CONV_TO_IMPORT_ON_RUN: z.undefined().or(
-        z
-            .string()
-            .transform((value) =>
-                value.split(",").map((item) => {
-                    return item.trim();
-                }),
-            )
-            .pipe(z.array(z.string()).min(2).max(3)), // summary, comments, votes csv
-    ),
     VOTE_NOTIF_MILESTONES: z
         .string()
         .default(
