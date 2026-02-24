@@ -7,44 +7,46 @@
   import Header from "$components/landing/header.svelte";
   import * as m from "$lib/paraglide/messages.js";
   import { locales, localizeHref } from "$lib/paraglide/runtime";
+  import { DEFAULT_OG_IMAGE } from "$lib/seo";
 
   let { children } = $props();
+
+  const seo = $derived(page.data.seo);
+  const title = $derived(seo?.title ?? m.meta_title());
+  const description = $derived(seo?.description ?? m.meta_description());
+  const ogType = $derived(seo?.ogType ?? "website");
+  const ogImage = $derived(seo?.ogImage ?? DEFAULT_OG_IMAGE);
+  const ogImageType = $derived(seo?.ogImageType ?? "image/png");
 </script>
 
 <svelte:head>
-  <title>{m.meta_title()}</title>
-  <meta name="description" content={m.meta_description()} />
+  <title>{title}</title>
+  <meta name="description" content={description} />
   <meta name="keywords" content="civic tech, social network, peace" />
   <meta name="author" content="Agora Citizen Network" />
 
   <!-- Open Graph -->
-  <meta property="og:title" content={m.meta_title()} />
-  <meta property="og:description" content={m.meta_description()} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
   <meta property="og:url" content={page.url.href} />
-  <meta property="og:type" content="website" />
+  <meta property="og:type" content={ogType} />
   <meta property="og:site_name" content="Agora" />
-  <meta
-    property="og:image"
-    content="https://www.agoracitizen.network/images/favicon/thumbnail_2_1.png"
-  />
-  <meta
-    property="og:image:secure_url"
-    content="https://www.agoracitizen.network/images/favicon/thumbnail_2_1.png"
-  />
-  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image" content={ogImage} />
+  <meta property="og:image:secure_url" content={ogImage} />
+  <meta property="og:image:type" content={ogImageType} />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="600" />
+  {#if seo?.articleAuthor}
+    <meta property="article:author" content={seo.articleAuthor} />
+  {/if}
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:url" content={page.url.href} />
   <meta name="twitter:site" content="@join_agora" />
-  <meta name="twitter:title" content={m.meta_title()} />
-  <meta name="twitter:description" content={m.meta_description()} />
-  <meta
-    name="twitter:image"
-    content="https://www.agoracitizen.network/images/favicon/thumbnail_2_1.png"
-  />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={ogImage} />
 
   <!-- Favicon -->
   <link
