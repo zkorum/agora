@@ -1,7 +1,7 @@
 [build]
 command = "pnpm build"
 publish = "build"
-ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- services/app/"
+ignore = "test -n \"$CACHED_COMMIT_REF\" && git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- services/app/"
 
 [build.environment]
 NODE_VERSION = "24"
