@@ -7,6 +7,10 @@ const config = {
   kit: {
     adapter: adapter(),
 
+    prerender: {
+      origin: "https://www.agoracitizen.network",
+    },
+
     alias: {
       $ui: "src/lib/ui",
       $components: "src/lib/components",

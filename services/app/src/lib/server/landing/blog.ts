@@ -16,6 +16,7 @@ export interface BlogPost {
   author: string;
   date: string;
   thumbnail: string;
+  image: string;
   content: string;
 }
 
@@ -26,6 +27,7 @@ export interface BlogPostMeta {
   author: string;
   date: string;
   thumbnail: string;
+  image: string;
 }
 
 const markdownFiles: Record<string, string> = import.meta.glob(
@@ -61,6 +63,7 @@ export function getBlogPosts({ locale }: { locale: string }): BlogPostMeta[] {
       author: getString(data.author),
       date: getString(data.date),
       thumbnail: getString(data.thumbnail),
+      image: getString(data.image),
     });
   }
 
@@ -79,6 +82,7 @@ export function getBlogPosts({ locale }: { locale: string }): BlogPostMeta[] {
         author: getString(data.author),
         date: getString(data.date),
         thumbnail: getString(data.thumbnail),
+        image: getString(data.image),
       });
     }
   }
@@ -122,6 +126,7 @@ export async function getBlogPost({
     author: getString(data.author),
     date: getString(data.date),
     thumbnail: getString(data.thumbnail),
+    image: getString(data.image),
     content: String(result),
   };
 }
