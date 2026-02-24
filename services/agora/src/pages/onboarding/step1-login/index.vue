@@ -33,6 +33,14 @@
             @click="goToPhoneLogin()"
           />
 
+          <ZKGradientButton
+            :label="t('loginWithEmail')"
+            variant="text"
+            label-color="#6B4EFF"
+            class="email-login-link"
+            @click="goToEmailLogin()"
+          />
+
           <p><SignupAgreement /></p>
         </template>
       </StepperLayout>
@@ -68,6 +76,14 @@ async function goToPassportLogin() {
 async function goToPhoneLogin() {
   await router.push({ name: "/onboarding/step3-phone-1/" });
 }
+
+async function goToEmailLogin() {
+  await router.push({ name: "/onboarding/step3-email-1/" });
+}
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.email-login-link {
+  margin-top: -0.75rem;
+}
+</style>
