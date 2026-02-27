@@ -7,8 +7,10 @@ export interface ConsensusTabTranslations {
   disagreementsLongTitle: string;
   agreementsKeyword: string;
   disagreementsKeyword: string;
-  statisticalSubtitleAgree: string;
-  statisticalSubtitleDisagree: string;
+  subtitleAgree: string;
+  subtitleDisagree: string;
+  subtitleLoadMoreHint: string;
+  subtitleLoadMoreHintEmphasis: string;
   loadMore: string;
   noAgreementsMessage: string;
   noDisagreementsMessage: string;
@@ -28,14 +30,16 @@ export const consensusTabTranslations: Record<
       "Which statements are {keyword} by all groups?",
     agreementsKeyword: "approved",
     disagreementsKeyword: "rejected",
-    statisticalSubtitleAgree:
-      "Statements every opinion group approves, not just the overall majority. Only the most representative are shown. Load more to see the rest.",
-    statisticalSubtitleDisagree:
-      "Statements every opinion group rejects, not just the overall majority. Only the most representative are shown. Load more to see the rest.",
-    loadMore: "Load more",
-    noAgreementsMessage: "No significantly approved statements found yet.",
-    noDisagreementsMessage: "No significantly rejected statements found yet.",
-    lowerRankedDivider: "Less representative",
+    subtitleAgree:
+      "Statements all opinion groups agree to agree on. Not a simple majority, but a cross-group consensus. Ranked by statistical significance.",
+    subtitleDisagree:
+      "Statements all opinion groups agree to disagree on. Not a simple majority, but a cross-group consensus. Ranked by statistical significance.",
+    subtitleLoadMoreHint: "You can load more to see {emphasis} statements.",
+    subtitleLoadMoreHintEmphasis: "all",
+    loadMore: "Load all",
+    noAgreementsMessage: "No consensus has emerged yet.",
+    noDisagreementsMessage: "No consensus has emerged yet.",
+    lowerRankedDivider: "Less statistically significant",
   },
   ar: {
     agreementsTitle: "معتمدة",
@@ -46,14 +50,16 @@ export const consensusTabTranslations: Record<
       "ما المقترحات {keyword} من جميع المجموعات؟",
     agreementsKeyword: "المعتمدة",
     disagreementsKeyword: "المرفوضة",
-    statisticalSubtitleAgree:
-      "مقترحات تعتمدها جميع مجموعات الرأي، وليس فقط الأغلبية. تُعرض الأكثر تمثيلاً فقط. حمّل المزيد لرؤية البقية.",
-    statisticalSubtitleDisagree:
-      "مقترحات ترفضها جميع مجموعات الرأي، وليس فقط الأغلبية. تُعرض الأكثر تمثيلاً فقط. حمّل المزيد لرؤية البقية.",
-    loadMore: "تحميل المزيد",
-    noAgreementsMessage: "لم يتم العثور على مقترحات معتمدة بشكل ملحوظ بعد.",
-    noDisagreementsMessage: "لم يتم العثور على مقترحات مرفوضة بشكل ملحوظ بعد.",
-    lowerRankedDivider: "أقل تمثيلاً",
+    subtitleAgree:
+      "مقترحات تتفق جميع مجموعات الرأي على الموافقة عليها — إجماع بين المجموعات، وليس مجرد تصويت أغلبية. مرتبة حسب الدلالة الإحصائية.",
+    subtitleDisagree:
+      "مقترحات تتفق جميع مجموعات الرأي على رفضها — إجماع بين المجموعات، وليس مجرد تصويت أغلبية. مرتبة حسب الدلالة الإحصائية.",
+    subtitleLoadMoreHint: "يمكنك تحميل المزيد لرؤية {emphasis} المقترحات.",
+    subtitleLoadMoreHintEmphasis: "جميع",
+    loadMore: "تحميل الكل",
+    noAgreementsMessage: "لم يظهر أي إجماع بعد.",
+    noDisagreementsMessage: "لم يظهر أي إجماع بعد.",
+    lowerRankedDivider: "أقل دلالة إحصائياً",
   },
   es: {
     agreementsTitle: "Aprobados",
@@ -64,14 +70,16 @@ export const consensusTabTranslations: Record<
       "¿Qué afirmaciones son {keyword} por todos los grupos?",
     agreementsKeyword: "aprobadas",
     disagreementsKeyword: "rechazadas",
-    statisticalSubtitleAgree:
-      "Afirmaciones aprobadas por todos los grupos de opinión, no solo la mayoría. Solo se muestran las más representativas. Cargue más para ver el resto.",
-    statisticalSubtitleDisagree:
-      "Afirmaciones rechazadas por todos los grupos de opinión, no solo la mayoría. Solo se muestran las más representativas. Cargue más para ver el resto.",
-    loadMore: "Cargar más",
-    noAgreementsMessage: "Aún no se encontraron proposiciones aprobadas significativamente.",
-    noDisagreementsMessage: "Aún no se encontraron proposiciones rechazadas significativamente.",
-    lowerRankedDivider: "Menos representativo",
+    subtitleAgree:
+      "Proposiciones aprobadas por unanimidad por todos los grupos de opinión. No se trata de una simple mayoría, sino de un consenso entre grupos. Ordenadas por significancia estadística.",
+    subtitleDisagree:
+      "Proposiciones rechazadas por unanimidad por todos los grupos de opinión. No se trata de una simple mayoría, sino de un consenso entre grupos. Ordenadas por significancia estadística.",
+    subtitleLoadMoreHint: "Puede cargar más para ver {emphasis} las proposiciones.",
+    subtitleLoadMoreHintEmphasis: "todas",
+    loadMore: "Cargar todo",
+    noAgreementsMessage: "Aún no ha surgido ningún consenso.",
+    noDisagreementsMessage: "Aún no ha surgido ningún consenso.",
+    lowerRankedDivider: "Menos estadísticamente significativas",
   },
   fr: {
     agreementsTitle: "Approuvés",
@@ -82,14 +90,16 @@ export const consensusTabTranslations: Record<
       "Quelles propositions sont {keyword} par tous les groupes ?",
     agreementsKeyword: "approuvées",
     disagreementsKeyword: "rejetées",
-    statisticalSubtitleAgree:
-      "Propositions approuvées par tous les groupes d'opinion, pas seulement la majorité. Seules les plus représentatives sont affichées. Chargez plus pour voir les suivantes.",
-    statisticalSubtitleDisagree:
-      "Propositions rejetées par tous les groupes d'opinion, pas seulement la majorité. Seules les plus représentatives sont affichées. Chargez plus pour voir les suivantes.",
-    loadMore: "Charger plus",
-    noAgreementsMessage: "Aucune proposition significativement approuvée pour le moment.",
-    noDisagreementsMessage: "Aucune proposition significativement rejetée pour le moment.",
-    lowerRankedDivider: "Moins représentatif",
+    subtitleAgree:
+      "Propositions approuvées à l'unanimité par tous les groupes d'opinion. Il ne s'agit pas d'une simple majorité, mais d'un consensus inter-groupes. Elles sont classées par significativité statistique.",
+    subtitleDisagree:
+      "Propositions rejetées à l'unanimité par tous les groupes d'opinion. Il ne s'agit pas d'une simple majorité, mais d'un consensus inter-groupes. Elles sont classées par significativité statistique.",
+    subtitleLoadMoreHint: "Vous pouvez charger plus pour voir {emphasis} les propositions.",
+    subtitleLoadMoreHintEmphasis: "toutes",
+    loadMore: "Tout charger",
+    noAgreementsMessage: "Aucun consensus n'a encore émergé.",
+    noDisagreementsMessage: "Aucun consensus n'a encore émergé.",
+    lowerRankedDivider: "Moins statistiquement significatives",
   },
   "zh-Hans": {
     agreementsTitle: "通过",
@@ -98,14 +108,16 @@ export const consensusTabTranslations: Record<
     disagreementsLongTitle: "哪些观点被所有群组{keyword}？",
     agreementsKeyword: "认可",
     disagreementsKeyword: "否决",
-    statisticalSubtitleAgree:
-      "所有意见群组都认可的观点，而非仅仅是多数人的意见。仅显示最具代表性的观点。加载更多以查看其余。",
-    statisticalSubtitleDisagree:
-      "所有意见群组都否决的观点，而非仅仅是多数人的意见。仅显示最具代表性的观点。加载更多以查看其余。",
-    loadMore: "加载更多",
-    noAgreementsMessage: "尚未找到显著认可的观点。",
-    noDisagreementsMessage: "尚未找到显著否决的观点。",
-    lowerRankedDivider: "代表性较低",
+    subtitleAgree:
+      "所有意见群组一致同意认可的观点——跨群组共识，而非简单的多数投票。按统计显著性排序。",
+    subtitleDisagree:
+      "所有意见群组一致同意否决的观点——跨群组共识，而非简单的多数投票。按统计显著性排序。",
+    subtitleLoadMoreHint: "您可以加载更多以查看{emphasis}观点。",
+    subtitleLoadMoreHintEmphasis: "所有",
+    loadMore: "全部加载",
+    noAgreementsMessage: "尚未形成共识。",
+    noDisagreementsMessage: "尚未形成共识。",
+    lowerRankedDivider: "统计显著性较低",
   },
   "zh-Hant": {
     agreementsTitle: "通過",
@@ -114,14 +126,16 @@ export const consensusTabTranslations: Record<
     disagreementsLongTitle: "哪些觀點被所有群組{keyword}？",
     agreementsKeyword: "認可",
     disagreementsKeyword: "否決",
-    statisticalSubtitleAgree:
-      "所有意見群組都認可的觀點，而非僅僅是多數人的意見。僅顯示最具代表性的觀點。載入更多以查看其餘。",
-    statisticalSubtitleDisagree:
-      "所有意見群組都否決的觀點，而非僅僅是多數人的意見。僅顯示最具代表性的觀點。載入更多以查看其餘。",
-    loadMore: "載入更多",
-    noAgreementsMessage: "尚未找到顯著認可的觀點。",
-    noDisagreementsMessage: "尚未找到顯著否決的觀點。",
-    lowerRankedDivider: "代表性較低",
+    subtitleAgree:
+      "所有意見群組一致同意認可的觀點——跨群組共識，而非簡單的多數投票。按統計顯著性排序。",
+    subtitleDisagree:
+      "所有意見群組一致同意否決的觀點——跨群組共識，而非簡單的多數投票。按統計顯著性排序。",
+    subtitleLoadMoreHint: "您可以載入更多以查看{emphasis}觀點。",
+    subtitleLoadMoreHintEmphasis: "所有",
+    loadMore: "全部載入",
+    noAgreementsMessage: "尚未形成共識。",
+    noDisagreementsMessage: "尚未形成共識。",
+    lowerRankedDivider: "統計顯著性較低",
   },
   ja: {
     agreementsTitle: "承認",
@@ -132,13 +146,15 @@ export const consensusTabTranslations: Record<
       "すべてのグループに{keyword}された意見は？",
     agreementsKeyword: "承認",
     disagreementsKeyword: "否決",
-    statisticalSubtitleAgree:
-      "単なる多数派ではなく、すべての意見グループが承認した意見です。最も代表的なもののみ表示。残りを見るにはもっと読み込んでください。",
-    statisticalSubtitleDisagree:
-      "単なる多数派ではなく、すべての意見グループが否決した意見です。最も代表的なもののみ表示。残りを見るにはもっと読み込んでください。",
-    loadMore: "もっと読み込む",
-    noAgreementsMessage: "有意に承認された意見はまだ見つかりません。",
-    noDisagreementsMessage: "有意に否決された意見はまだ見つかりません。",
-    lowerRankedDivider: "代表性が低い",
+    subtitleAgree:
+      "すべての意見グループが合意して承認した意見です——多数決ではなく、グループ間の合意です。統計的有意性の順に表示。",
+    subtitleDisagree:
+      "すべての意見グループが合意して否決した意見です——多数決ではなく、グループ間の合意です。統計的有意性の順に表示。",
+    subtitleLoadMoreHint: "もっと読み込んで{emphasis}意見を表示できます。",
+    subtitleLoadMoreHintEmphasis: "すべての",
+    loadMore: "すべて読み込む",
+    noAgreementsMessage: "まだ合意は形成されていません。",
+    noDisagreementsMessage: "まだ合意は形成されていません。",
+    lowerRankedDivider: "統計的有意性が低い",
   },
 };

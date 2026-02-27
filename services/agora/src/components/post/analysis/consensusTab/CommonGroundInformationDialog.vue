@@ -4,7 +4,7 @@
       <ZKBottomDialogContainer>
         <div class="title">{{ title }}</div>
 
-        <div>
+        <div class="description">
           {{ description }}
         </div>
       </ZKBottomDialogContainer>
@@ -50,5 +50,9 @@ const description = computed(() =>
   font-size: 1.1rem;
   font-weight: var(--font-weight-medium);
   padding-bottom: 1rem;
+}
+
+.description {
+  white-space: pre-line;
 }
 </style>

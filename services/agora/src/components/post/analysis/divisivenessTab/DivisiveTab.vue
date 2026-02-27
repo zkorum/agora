@@ -30,7 +30,10 @@
 
       <template #body>
         <div v-if="!compactMode" class="statistical-subtitle">
-          {{ t("statisticalSubtitle") }}
+          {{ t("subtitle") }}
+          <template v-if="Object.keys(props.clusters).length > 1">
+            {{ loadMoreHintParts[0] }}<em>{{ t("subtitleLoadMoreHintEmphasis") }}</em>{{ loadMoreHintParts[1] }}
+          </template>
         </div>
 
         <EmptyStateMessage
@@ -152,6 +155,9 @@ const isSmallScreen = useMediaQuery("(max-width: 599px)");
 const keyword = computed(() => t("divisiveKeyword"));
 const titleParts = computed(() => t("divisiveLongTitle").split("{keyword}"));
 const showDivisiveInfo = ref(false);
+const loadMoreHintParts = computed(() =>
+  t("subtitleLoadMoreHint").split("{emphasis}")
+);
 
 const {
   representativeItems,

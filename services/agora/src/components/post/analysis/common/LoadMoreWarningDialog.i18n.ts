@@ -14,48 +14,48 @@ export const loadMoreWarningDialogTranslations: Record<
   en: {
     title: "Load all statements",
     description:
-      "You will load all statements in order of representativeness.",
+      "All statements will be shown, ranked by statistical significance. Those below the divider may not be statistically significant.",
     cancelButton: "Cancel",
-    loadMoreButton: "Load more",
+    loadMoreButton: "Load all",
   },
   ar: {
     title: "تحميل جميع المقترحات",
     description:
-      "سيتم تحميل جميع المقترحات حسب درجة التمثيل.",
+      "ستُعرض جميع المقترحات مرتبة حسب الدلالة الإحصائية. تلك التي تظهر أسفل الفاصل قد لا تكون ذات دلالة إحصائية.",
     cancelButton: "إلغاء",
-    loadMoreButton: "تحميل المزيد",
+    loadMoreButton: "تحميل الكل",
   },
   es: {
-    title: "Cargar todas las afirmaciones",
+    title: "Cargar todas las proposiciones",
     description:
-      "Se cargarán todas las afirmaciones en orden de representatividad.",
+      "Se mostrarán todas las proposiciones, ordenadas por significancia estadística. Las que aparezcan debajo del separador pueden no ser estadísticamente significativas.",
     cancelButton: "Cancelar",
-    loadMoreButton: "Cargar más",
+    loadMoreButton: "Cargar todo",
   },
   fr: {
     title: "Charger toutes les propositions",
     description:
-      "Vous allez charger toutes les propositions par ordre de représentativité décroissante.",
+      "Toutes les propositions seront affichées, classées par significativité statistique. Celles situées sous le séparateur peuvent ne pas être statistiquement significatives.",
     cancelButton: "Annuler",
-    loadMoreButton: "Charger plus",
+    loadMoreButton: "Tout charger",
   },
   "zh-Hans": {
     title: "加载所有观点",
-    description: "将按代表性顺序加载所有观点。",
+    description: "将显示所有观点，按统计显著性排序。分隔线以下的观点可能不具有统计显著性。",
     cancelButton: "取消",
-    loadMoreButton: "加载更多",
+    loadMoreButton: "全部加载",
   },
   "zh-Hant": {
     title: "載入所有觀點",
-    description: "將按代表性順序載入所有觀點。",
+    description: "將顯示所有觀點，按統計顯著性排序。分隔線以下的觀點可能不具有統計顯著性。",
     cancelButton: "取消",
-    loadMoreButton: "載入更多",
+    loadMoreButton: "全部載入",
   },
   ja: {
     title: "すべての意見を読み込む",
     description:
-      "すべての意見を代表性の順に読み込みます。",
+      "すべての意見が統計的有意性の順に表示されます。区切り線より下の意見は統計的に有意でない場合があります。",
     cancelButton: "キャンセル",
-    loadMoreButton: "もっと読み込む",
+    loadMoreButton: "すべて読み込む",
   },
 };

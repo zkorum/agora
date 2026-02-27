@@ -30,11 +30,10 @@
 
       <template #body>
         <div v-if="!compactMode" class="statistical-subtitle">
-          {{
-            props.direction === "agree"
-              ? t("statisticalSubtitleAgree")
-              : t("statisticalSubtitleDisagree")
-          }}
+          {{ props.direction === "agree" ? t("subtitleAgree") : t("subtitleDisagree") }}
+          <template v-if="Object.keys(props.clusters).length > 1">
+            {{ loadMoreHintParts[0] }}<em>{{ t("subtitleLoadMoreHintEmphasis") }}</em>{{ loadMoreHintParts[1] }}
+          </template>
         </div>
 
         <EmptyStateMessage
@@ -186,6 +185,10 @@ const emptyMessage = computed(() =>
   props.direction === "agree"
     ? t("noAgreementsMessage")
     : t("noDisagreementsMessage")
+);
+
+const loadMoreHintParts = computed(() =>
+  t("subtitleLoadMoreHint").split("{emphasis}")
 );
 
 const {
