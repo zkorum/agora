@@ -195,11 +195,11 @@ interface GetDeviceStatusParams {
  * - Guest (soft login): Device exists, user has NO strong credentials
  *   - Can be "logged in" with sessionExpiry, but isLoggedIn returns false for guests
  * - Zupass-only (soft verification): Guest with event tickets, NOT counted as registered
- * - Registered (hard verification): User has phone OR Rarimo credentials (isRegistered: true)
+ * - Registered (hard verification): User has phone, Rarimo, or email credentials (isRegistered: true)
  *   - Only registered users can be "logged in" (isLoggedIn: true)
  *
  * CREDENTIAL HIERARCHY:
- * - Strong credentials (phone/Rarimo): Checked by this function, grant isRegistered: true
+ * - Strong credentials (phone/Rarimo/email): Checked by this function, grant isRegistered: true
  * - Soft credentials (Zupass): NOT checked here, users remain guests (isRegistered: false)
  *
  * DELETED USER HANDLING:
@@ -216,6 +216,7 @@ export async function getDeviceStatus({
             sessionExpiry: deviceTable.sessionExpiry,
             phoneTableId: phoneTable.id,
             zkPassportTableId: zkPassportTable.id,
+            emailTableId: emailTable.id,
             userId: deviceTable.userId,
             isDeleted: userTable.isDeleted,
         })
@@ -226,6 +227,7 @@ export async function getDeviceStatus({
             eq(zkPassportTable.userId, deviceTable.userId),
         )
         .leftJoin(phoneTable, eq(phoneTable.userId, deviceTable.userId))
+        .leftJoin(emailTable, eq(emailTable.userId, deviceTable.userId))
         .where(eq(deviceTable.didWrite, didWrite));
 
     if (resultDevice.length === 0) {
@@ -247,10 +249,12 @@ export async function getDeviceStatus({
 
     const sessionExpiry = device.sessionExpiry;
     const isLoggedIn = sessionExpiry.getTime() > now.getTime();
-    // isRegistered: true if user has phone OR Rarimo (strong credentials)
+    // isRegistered: true if user has phone, Rarimo, or email (strong credentials)
     // Zupass tickets are NOT checked here - they are "soft credentials"
     const isRegistered =
-        device.phoneTableId !== null || device.zkPassportTableId !== null;
+        device.phoneTableId !== null ||
+        device.zkPassportTableId !== null ||
+        device.emailTableId !== null;
 
     log.info({ userId: device.userId }, "[AuthUtil] Returning device status");
 

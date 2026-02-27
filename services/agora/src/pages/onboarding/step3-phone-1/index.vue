@@ -55,12 +55,21 @@
                 <span>{{ phoneData.errorMessage }}</span>
               </div>
 
-              <ZKGradientButton
-                :label="t('preferPrivateLogin')"
-                variant="text"
-                label-color="#6B4EFF"
-                @click="goToPassportVerification()"
-              />
+              <div class="alternativeLogins">
+                <ZKGradientButton
+                  :label="t('preferPrivateLogin')"
+                  variant="text"
+                  label-color="#6B4EFF"
+                  @click="goToPassportVerification()"
+                />
+
+                <ZKGradientButton
+                  :label="t('preferEmailLogin')"
+                  variant="text"
+                  label-color="#6B4EFF"
+                  @click="goToEmailLogin()"
+                />
+              </div>
 
               <div v-if="devAuthorizedNumbers.length > 0">
                 <div class="developmentSection">
@@ -144,6 +153,10 @@ loadDevAuthorizedNumbers();
 
 async function goToPassportVerification() {
   await router.replace({ name: "/onboarding/step3-passport/" });
+}
+
+async function goToEmailLogin() {
+  await router.replace({ name: "/onboarding/step3-email-1/" });
 }
 
 async function injectDevelopmentNumber(phoneItem: PhoneNumber) {
@@ -354,5 +367,10 @@ async function validateNumber(): Promise<boolean> {
 .error-icon {
   font-size: 1rem;
   color: #dc2626;
+}
+
+.alternativeLogins {
+  display: flex;
+  flex-direction: column;
 }
 </style>

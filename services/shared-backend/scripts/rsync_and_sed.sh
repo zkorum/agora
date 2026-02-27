@@ -9,7 +9,7 @@ SHARED_BACKEND_DIR="$(dirname "$SCRIPT_DIR")"
 SERVICES_DIR="$(dirname "$SHARED_BACKEND_DIR")"
 
 # List of backend services to sync to
-BACKEND_SERVICES=("api" "math-updater" "export-worker")
+BACKEND_SERVICES=("api" "math-updater" "export-worker" "x-analyzer")
 
 # Warning comment to add to synced files
 COMMENT="/** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/"

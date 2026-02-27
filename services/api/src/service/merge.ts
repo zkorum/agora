@@ -55,7 +55,7 @@ export async function mergeGuestIntoVerifiedUser({
         .set({ userId: verifiedUserId })
         .where(eq(deviceTable.userId, guestUserId));
 
-    // 2. Transfer emails (no unique constraint on userId, email is primary key)
+    // 2. Transfer emails
     await db
         .update(emailTable)
         .set({ userId: verifiedUserId })

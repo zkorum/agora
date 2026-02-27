@@ -4,8 +4,12 @@ import {
     verifyOtpReqBody,
     authenticate200,
     verifyOtp200,
+    authenticateEmailRequestBody,
+    authenticateEmail200,
+    verifyEmailOtpReqBody,
     checkLoginStatusResponse,
     type AuthenticateResponse,
+    type AuthenticateEmailResponse,
     type VerifyOtp200,
 } from "@/shared/types/dto-auth.js";
 import fastifyAuth from "@fastify/auth";
@@ -182,6 +186,14 @@ const speciallyAuthorizedPhones: string[] =
         : config.SPECIALLY_AUTHORIZED_PHONES !== undefined &&
             config.SPECIALLY_AUTHORIZED_PHONES.length !== 0
           ? config.SPECIALLY_AUTHORIZED_PHONES.replace(/\s/g, "").split(",")
+          : [];
+
+const speciallyAuthorizedEmails: string[] =
+    config.NODE_ENV === "production"
+        ? []
+        : config.SPECIALLY_AUTHORIZED_EMAILS !== undefined &&
+            config.SPECIALLY_AUTHORIZED_EMAILS.length !== 0
+          ? config.SPECIALLY_AUTHORIZED_EMAILS.replace(/\s/g, "").split(",")
           : [];
 
 const axiosVerificatorSvc: AxiosInstance = axios.create({
@@ -714,11 +726,6 @@ function checkConversationExportEnabled(): void {
     }
 }
 
-// const awsMailConf = {
-//     accessKeyId: config.AWS_ACCESS_KEY_ID,
-//     secretAccessKey: config.AWS_SECRET_ACCESS_KEY,
-// };
-
 server.after(() => {
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
@@ -851,6 +858,84 @@ server.after(() => {
             return await doVerifyPhoneOtp();
         },
     });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/auth/email/authenticate`,
+        schema: {
+            body: authenticateEmailRequestBody,
+            response: { 200: authenticateEmail200 },
+        },
+        handler: async (request) => {
+            const { didWrite, deviceStatus } =
+                await verifyUcanAndDeviceStatus(db, request, {
+                    expectedDeviceStatus: undefined,
+                });
+            async function doAuthenticateEmail(): Promise<AuthenticateEmailResponse> {
+                if (deviceStatus.isLoggedIn) {
+                    return {
+                        success: false,
+                        reason: "already_logged_in",
+                    };
+                }
+                const userAgent =
+                    request.headers["user-agent"] ?? "Unknown device";
+
+                return await authService.authenticateEmailAttempt({
+                    db,
+                    email: request.body.email,
+                    isRequestingNewCode: request.body.isRequestingNewCode,
+                    minutesBeforeEmailCodeExpiry:
+                        config.MINUTES_BEFORE_EMAIL_OTP_EXPIRY,
+                    didWrite,
+                    throttleEmailSecondsInterval:
+                        config.THROTTLE_EMAIL_SECONDS_INTERVAL,
+                    doUseTestCode:
+                        config.NODE_ENV !== "production" &&
+                        speciallyAuthorizedEmails.includes(
+                            request.body.email,
+                        ),
+                    testCode: config.TEST_CODE,
+                    userAgent: userAgent,
+                });
+            }
+            return await doAuthenticateEmail();
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/auth/email/verify-otp`,
+        schema: {
+            body: verifyEmailOtpReqBody,
+            response: {
+                200: verifyOtp200,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite, deviceStatus } =
+                await verifyUcanAndDeviceStatus(db, request, {
+                    expectedDeviceStatus: undefined,
+                });
+            async function doVerifyEmailOtp(): Promise<VerifyOtp200> {
+                if (deviceStatus.isLoggedIn) {
+                    return {
+                        success: false,
+                        reason: "already_logged_in",
+                    };
+                }
+                return await authService.verifyEmailOtp({
+                    db,
+                    maxAttempt: config.EMAIL_OTP_MAX_ATTEMPT_AMOUNT,
+                    didWrite,
+                    code: request.body.code,
+                    email: request.body.email,
+                });
+            }
+            return await doVerifyEmailOtp();
+        },
+    });
+
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/auth/logout`,

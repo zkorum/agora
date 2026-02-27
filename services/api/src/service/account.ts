@@ -4,6 +4,7 @@ import {
     zkPassportTable,
     eventTicketTable,
     phoneTable,
+    emailTable,
     voteTable,
     opinionTable,
     conversationTable,
@@ -655,6 +656,11 @@ export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
             .update(phoneTable)
             .set({ isDeleted: true, updatedAt: nowZeroMs() })
             .where(eq(phoneTable.userId, userId));
+
+        await tx
+            .update(emailTable)
+            .set({ isDeleted: true, updatedAt: nowZeroMs() })
+            .where(eq(emailTable.userId, userId));
 
         // Don't delete votes/opinions/conversations - use soft-delete pattern
         // Queries already filter by user.isDeleted, so content will be hidden automatically

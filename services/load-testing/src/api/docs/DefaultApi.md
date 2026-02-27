@@ -14,6 +14,8 @@ All URIs are relative to *http://localhost*
 |[**apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost**](#apiv1administratororganizationremoveuserorganizationmappingpost) | **POST** /api/v1/administrator/organization/remove-user-organization-mapping | |
 |[**apiV1AuthAuthenticatePost**](#apiv1authauthenticatepost) | **POST** /api/v1/auth/authenticate | |
 |[**apiV1AuthCheckLoginStatusPost**](#apiv1authcheckloginstatuspost) | **POST** /api/v1/auth/check-login-status | |
+|[**apiV1AuthEmailAuthenticatePost**](#apiv1authemailauthenticatepost) | **POST** /api/v1/auth/email/authenticate | |
+|[**apiV1AuthEmailVerifyOtpPost**](#apiv1authemailverifyotppost) | **POST** /api/v1/auth/email/verify-otp | |
 |[**apiV1AuthLogoutPost**](#apiv1authlogoutpost) | **POST** /api/v1/auth/logout | |
 |[**apiV1AuthPhoneVerifyOtpPost**](#apiv1authphoneverifyotppost) | **POST** /api/v1/auth/phone/verify-otp | |
 |[**apiV1AuthTicketVerifyPost**](#apiv1authticketverifypost) | **POST** /api/v1/auth/ticket/verify | |
@@ -550,6 +552,108 @@ This endpoint does not have any parameters.
 ### HTTP request headers
 
  - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1AuthEmailAuthenticatePost**
+> ApiV1AuthEmailAuthenticatePost200Response apiV1AuthEmailAuthenticatePost(apiV1AuthEmailAuthenticatePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1AuthEmailAuthenticatePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1AuthEmailAuthenticatePostRequest: ApiV1AuthEmailAuthenticatePostRequest; //
+
+const { status, data } = await apiInstance.apiV1AuthEmailAuthenticatePost(
+    apiV1AuthEmailAuthenticatePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1AuthEmailAuthenticatePostRequest** | **ApiV1AuthEmailAuthenticatePostRequest**|  | |
+
+
+### Return type
+
+**ApiV1AuthEmailAuthenticatePost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1AuthEmailVerifyOtpPost**
+> ApiV1AuthPhoneVerifyOtpPost200Response apiV1AuthEmailVerifyOtpPost(apiV1AuthEmailVerifyOtpPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1AuthEmailVerifyOtpPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1AuthEmailVerifyOtpPostRequest: ApiV1AuthEmailVerifyOtpPostRequest; //
+
+const { status, data } = await apiInstance.apiV1AuthEmailVerifyOtpPost(
+    apiV1AuthEmailVerifyOtpPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1AuthEmailVerifyOtpPostRequest** | **ApiV1AuthEmailVerifyOtpPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1AuthPhoneVerifyOtpPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
  - **Accept**: application/json
 
 

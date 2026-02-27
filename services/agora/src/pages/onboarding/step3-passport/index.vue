@@ -150,12 +150,21 @@
               </div>
             </ZKCard>
 
-            <ZKButton
-              button-type="largeButton"
-              :label="t('preferPhoneVerification')"
-              text-color="primary"
-              @click="goToPhoneVerification()"
-            />
+            <div class="alternativeLogins">
+              <ZKButton
+                button-type="largeButton"
+                :label="t('preferPhoneVerification')"
+                text-color="primary"
+                @click="goToPhoneVerification()"
+              />
+
+              <ZKButton
+                button-type="largeButton"
+                :label="t('preferEmailLogin')"
+                text-color="primary"
+                @click="goToEmailLogin()"
+              />
+            </div>
           </template>
         </StepperLayout>
       </WidthWrapper>
@@ -422,6 +431,10 @@ async function completeVerification() {
 async function goToPhoneVerification() {
   await router.replace({ name: "/onboarding/step3-phone-1/" });
 }
+
+async function goToEmailLogin() {
+  await router.replace({ name: "/onboarding/step3-email-1/" });
+}
 </script>
 
 <style scoped lang="scss">
@@ -531,5 +544,10 @@ async function goToPhoneVerification() {
 
 .cardBackground {
   background-color: $app-background-color;
+}
+
+.alternativeLogins {
+  display: flex;
+  flex-direction: column;
 }
 </style>
