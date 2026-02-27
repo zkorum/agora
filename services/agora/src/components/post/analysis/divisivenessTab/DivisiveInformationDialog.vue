@@ -4,7 +4,7 @@
       <ZKBottomDialogContainer>
         <div class="title">{{ t("title") }}</div>
 
-        <div>
+        <div class="description">
           {{ t("description") }}
         </div>
       </ZKBottomDialogContainer>
@@ -33,5 +33,9 @@ const showDialog = defineModel<boolean>({ required: true });
   font-size: 1.1rem;
   font-weight: var(--font-weight-medium);
   padding-bottom: 1rem;
+}
+
+.description {
+  white-space: pre-line;
 }
 </style>

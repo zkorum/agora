@@ -14,57 +14,57 @@ export const commonGroundInformationDialogTranslations: Record<
   en: {
     agreementsTitle: "Approved",
     agreementsDescription:
-      "Statements that every opinion group tends to approve. Unlike a majority vote, even a small group's disapproval means a statement won't appear here. Only the most representative are shown first. Load more to see the rest, ranked by cross-group agreement strength.",
+      "These are statements all opinion groups agree to agree on.\n\nThis goes beyond a simple majority: even if most individuals approve, a single group's disapproval — no matter how small the group — is enough to exclude a statement.\n\nOnly statements that reflect true cross-group consensus appear here, not those based on majority rule alone.",
     disagreementsTitle: "Rejected",
     disagreementsDescription:
-      "Statements that every opinion group tends to reject. Unlike a majority vote, even a small group's approval means a statement won't appear here. Only the most representative are shown first. Load more to see the rest, ranked by cross-group rejection strength.",
+      "These are statements all opinion groups agree to disagree on.\n\nThis goes beyond a simple majority: even if most individuals reject, a single group's approval — no matter how small the group — is enough to exclude a statement.\n\nOnly statements that reflect true cross-group consensus appear here, not those based on majority rule alone.",
   },
   ar: {
     agreementsTitle: "معتمدة",
     agreementsDescription:
-      "مقترحات تميل جميع مجموعات الرأي إلى اعتمادها. على عكس تصويت الأغلبية، حتى رفض مجموعة صغيرة يعني عدم ظهور المقترح هنا. تُعرض الأكثر تمثيلاً أولاً. حمّل المزيد لرؤية البقية، مرتبة حسب قوة الاتفاق بين المجموعات.",
+      "هذه المقترحات معتمدة بالإجماع من كل مجموعة رأي.\n\nهذا يتجاوز الأغلبية البسيطة: حتى لو وافق معظم الأفراد، فإن رفض مجموعة واحدة — مهما كان حجمها — يكفي لاستبعاد المقترح.\n\nلا تظهر هنا سوى المقترحات التي تعكس إجماعاً حقيقياً بين المجموعات، وليس تلك القائمة على حكم الأغلبية فقط.",
     disagreementsTitle: "مرفوضة",
     disagreementsDescription:
-      "مقترحات تميل جميع مجموعات الرأي إلى رفضها. على عكس تصويت الأغلبية، حتى موافقة مجموعة صغيرة تعني عدم ظهور المقترح هنا. تُعرض الأكثر تمثيلاً أولاً. حمّل المزيد لرؤية البقية، مرتبة حسب قوة الرفض بين المجموعات.",
+      "هذه المقترحات مرفوضة بالإجماع من كل مجموعة رأي.\n\nهذا يتجاوز الأغلبية البسيطة: حتى لو رفض معظم الأفراد، فإن موافقة مجموعة واحدة — مهما كان حجمها — تكفي لاستبعاد المقترح.\n\nلا تظهر هنا سوى المقترحات التي تعكس إجماعاً حقيقياً بين المجموعات، وليس تلك القائمة على حكم الأغلبية فقط.",
   },
   es: {
     agreementsTitle: "Aprobados",
     agreementsDescription:
-      "Afirmaciones que todos los grupos de opinión tienden a aprobar. A diferencia de un voto mayoritario, incluso la desaprobación de un grupo pequeño impide que aparezca aquí. Solo se muestran las más representativas primero. Cargue más para ver el resto, clasificadas por fuerza del acuerdo entre grupos.",
+      "Estas proposiciones son aprobadas por unanimidad por cada grupo de opinión.\n\nEsto va más allá de una simple mayoría: aunque una gran parte de los individuos las aprueben, el rechazo de un solo grupo — sin importar su tamaño — basta para excluirlas.\n\nAsí, solo se presentan aquí las proposiciones que son objeto de un verdadero consenso entre grupos, y no las que se basan únicamente en una regla mayoritaria.",
     disagreementsTitle: "Rechazados",
     disagreementsDescription:
-      "Afirmaciones que todos los grupos de opinión tienden a rechazar. A diferencia de un voto mayoritario, incluso la aprobación de un grupo pequeño impide que aparezca aquí. Solo se muestran las más representativas primero. Cargue más para ver el resto, clasificadas por fuerza del rechazo entre grupos.",
+      "Estas proposiciones son rechazadas por unanimidad por cada grupo de opinión.\n\nEsto va más allá de una simple mayoría: aunque una gran parte de los individuos las rechacen, la aprobación de un solo grupo — sin importar su tamaño — basta para excluirlas.\n\nAsí, solo se presentan aquí las proposiciones que son objeto de un verdadero consenso entre grupos, y no las que se basan únicamente en una regla mayoritaria.",
   },
   fr: {
     agreementsTitle: "Approuvés",
     agreementsDescription:
-      "Propositions que tous les groupes d'opinion tendent à approuver. Contrairement à un vote majoritaire, même le rejet d'un petit groupe empêche une proposition d'apparaître ici. Seules les plus représentatives sont affichées en premier. Chargez plus pour voir les suivantes, classées par force de l'accord entre groupes.",
+      "Ces propositions sont approuvées à l'unanimité par chaque groupe d'opinion.\n\nCela dépasse le cadre d'une simple majorité : même si une large part des individus les approuvent, le rejet d'un seul groupe — quelle que soit sa taille — suffit à les exclure.\n\nAinsi, seules les propositions faisant l'objet d'un véritable consensus inter-groupes sont présentées ici, et non celles qui ne reposent que sur une règle majoritaire.",
     disagreementsTitle: "Rejetés",
     disagreementsDescription:
-      "Propositions que tous les groupes d'opinion tendent à rejeter. Contrairement à un vote majoritaire, même l'approbation d'un petit groupe empêche une proposition d'apparaître ici. Seules les plus représentatives sont affichées en premier. Chargez plus pour voir les suivantes, classées par force du rejet entre groupes.",
+      "Ces propositions sont rejetées à l'unanimité par chaque groupe d'opinion.\n\nCela dépasse le cadre d'une simple majorité : même si une large part des individus les rejettent, l'approbation d'un seul groupe — quelle que soit sa taille — suffit à les exclure.\n\nAinsi, seules les propositions faisant l'objet d'un véritable consensus inter-groupes sont présentées ici, et non celles qui ne reposent que sur une règle majoritaire.",
   },
   "zh-Hans": {
     agreementsTitle: "通过",
     agreementsDescription:
-      "所有意见群组都倾向于认可的观点。与多数投票不同，即使一个小群组不认可，该观点也不会出现在这里。仅先显示最具代表性的观点。加载更多以查看其余，按跨群组认可强度排列。",
+      "这些观点获得了每个意见群组的一致认可。\n\n这超越了简单多数：即使大多数个体认可，一个群组的反对——无论其规模多小——就足以排除该观点。\n\n只有反映真正跨群组共识的观点才会出现在这里，而非仅基于多数决定的观点。",
     disagreementsTitle: "否决",
     disagreementsDescription:
-      "所有意见群组都倾向于否决的观点。与多数投票不同，即使一个小群组认可，该观点也不会出现在这里。仅先显示最具代表性的观点。加载更多以查看其余，按跨群组否决强度排列。",
+      "这些观点被每个意见群组一致否决。\n\n这超越了简单多数：即使大多数个体否决，一个群组的认可——无论其规模多小——就足以排除该观点。\n\n只有反映真正跨群组共识的观点才会出现在这里，而非仅基于多数决定的观点。",
   },
   "zh-Hant": {
     agreementsTitle: "通過",
     agreementsDescription:
-      "所有意見群組都傾向於認可的觀點。與多數投票不同，即使一個小群組不認可，該觀點也不會出現在這裡。僅先顯示最具代表性的觀點。載入更多以查看其餘，按跨群組認可強度排列。",
+      "這些觀點獲得了每個意見群組的一致認可。\n\n這超越了簡單多數：即使大多數個體認可，一個群組的反對——無論其規模多小——就足以排除該觀點。\n\n只有反映真正跨群組共識的觀點才會出現在這裡，而非僅基於多數決定的觀點。",
     disagreementsTitle: "否決",
     disagreementsDescription:
-      "所有意見群組都傾向於否決的觀點。與多數投票不同，即使一個小群組認可，該觀點也不會出現在這裡。僅先顯示最具代表性的觀點。載入更多以查看其餘，按跨群組否決強度排列。",
+      "這些觀點被每個意見群組一致否決。\n\n這超越了簡單多數：即使大多數個體否決，一個群組的認可——無論其規模多小——就足以排除該觀點。\n\n只有反映真正跨群組共識的觀點才會出現在這裡，而非僅基於多數決定的觀點。",
   },
   ja: {
     agreementsTitle: "承認",
     agreementsDescription:
-      "すべての意見グループが承認する傾向がある意見です。多数決とは異なり、小さなグループでも不承認ならここには表示されません。最も代表的なものが最初に表示されます。残りを見るにはもっと読み込んでください。グループ間の承認の強さで順位付け。",
+      "これらの意見はすべての意見グループに全会一致で承認されています。\n\n単純な多数決を超えたものです：大多数が承認しても、一つのグループの反対——その規模に関わらず——だけでその意見は除外されます。\n\n真のグループ間合意を反映する意見のみがここに表示され、多数決だけに基づく意見は表示されません。",
     disagreementsTitle: "否決",
     disagreementsDescription:
-      "すべての意見グループが否決する傾向がある意見です。多数決とは異なり、小さなグループでも承認すればここには表示されません。最も代表的なものが最初に表示されます。残りを見るにはもっと読み込んでください。グループ間の否決の強さで順位付け。",
+      "これらの意見はすべての意見グループに全会一致で否決されています。\n\n単純な多数決を超えたものです：大多数が否決しても、一つのグループの承認——その規模に関わらず——だけでその意見は除外されます。\n\n真のグループ間合意を反映する意見のみがここに表示され、多数決だけに基づく意見は表示されません。",
   },
 };

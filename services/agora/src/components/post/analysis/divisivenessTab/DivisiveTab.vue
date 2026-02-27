@@ -30,18 +30,22 @@
 
       <template #body>
         <div v-if="!compactMode" class="statistical-subtitle">
-          {{ t("statisticalSubtitle") }}
+          {{ t("subtitle") }}
+          <template v-if="Object.keys(props.clusters).length > 1">
+            {{ loadMoreHintParts[0] }}<em>{{ t("subtitleLoadMoreHintEmphasis") }}</em>{{ loadMoreHintParts[1] }}
+          </template>
         </div>
 
         <EmptyStateMessage
           v-if="
             props.itemList.length === 0 ||
             Object.keys(props.clusters).length <= 1 ||
-            (compactMode && representativeItems.length === 0)
+            representativeItems.length === 0
           "
           :message="t('noDivisiveOpinionsMessage')"
         />
-        <template v-else>
+
+        <template v-if="props.itemList.length > 0 && Object.keys(props.clusters).length > 1">
           <ConsensusItem
             v-for="consensusItem in representativeItems"
             :key="consensusItem.opinion"
@@ -52,10 +56,7 @@
           />
 
           <div
-            v-if="
-              additionalItems.length > 0 ||
-              (representativeItems.length === 0 && !compactMode && props.itemList.length > 0)
-            "
+            v-if="additionalItems.length > 0"
             class="reliability-divider"
           >
             <span>{{ t("lowerRankedDivider") }}</span>
@@ -78,8 +79,7 @@
             v-if="
               !compactMode &&
               remainingCount > 0 &&
-              !hasLoadedMore &&
-              Object.keys(props.clusters).length > 1
+              !hasLoadedMore
             "
             class="load-more-button"
             @click="handleLoadMore"
@@ -152,6 +152,9 @@ const isSmallScreen = useMediaQuery("(max-width: 599px)");
 const keyword = computed(() => t("divisiveKeyword"));
 const titleParts = computed(() => t("divisiveLongTitle").split("{keyword}"));
 const showDivisiveInfo = ref(false);
+const loadMoreHintParts = computed(() =>
+  t("subtitleLoadMoreHint").split("{emphasis}")
+);
 
 const {
   representativeItems,

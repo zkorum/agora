@@ -10,8 +10,7 @@ import { computed, type ComputedRef, type Ref, ref } from "vue";
  * The frontend uses **gap detection** on the raw scores to find the natural cutoff.
  * We deliberately do NOT re-apply participation dampening here — the backend already
  * handles ranking quality. Applying the same dampening again ("double dampening")
- * creates an artificial cliff between well-voted and poorly-voted items, causing the
- * algorithm to always return MIN_COUNT.
+ * creates an artificial cliff between well-voted and poorly-voted items.
  *
  * Additionally, items below an absolute minimum score (`minScore`) are excluded before
  * gap detection. This ensures tabs can be empty when no item has a strong enough signal
@@ -33,15 +32,14 @@ import { computed, type ComputedRef, type Ref, ref } from "vue";
  * 1. Filter items below minScore (absolute quality bar)
  * 2. Extract raw scores for remaining items (in backend-sorted order)
  * 3. Compute consecutive gaps: gap[i] = score[i] - score[i+1]
- * 4. Find the first gap > GAP_SIGNIFICANCE × mean_positive_gap, starting from MIN_COUNT
- * 5. Show items up to that position, bounded by [MIN_COUNT, MAX_COUNT]
+ * 4. Find the first gap > GAP_SIGNIFICANCE × mean_positive_gap
+ * 5. Show items up to that position, bounded by MAX_COUNT
  *
  * Note: Raw scores won't be monotonically decreasing (backend sorts by dampened score,
  * not raw score). Negative gaps (score increases) are filtered out — only downward drops
  * are considered significant.
  */
 
-const MIN_COUNT = 3;
 const MAX_COUNT = 15;
 const GAP_SIGNIFICANCE = 2.0;
 
@@ -59,7 +57,6 @@ function computeDefaultDisplayCount<T>({
   getRawScore: (item: T) => number;
 }): number {
   if (items.length === 0) return 0;
-  if (items.length <= MIN_COUNT) return items.length;
 
   const scores = items.map((item) => getRawScore(item));
 
@@ -75,8 +72,8 @@ function computeDefaultDisplayCount<T>({
   const meanGap =
     nonZeroGaps.reduce((a, b) => a + b, 0) / nonZeroGaps.length;
 
-  // Find first significant gap (starting from MIN_COUNT)
-  for (let i = MIN_COUNT - 1; i < gaps.length; i++) {
+  // Find first significant gap
+  for (let i = 0; i < gaps.length; i++) {
     if (gaps[i] > meanGap * GAP_SIGNIFICANCE) {
       return i + 1;
     }
@@ -125,9 +122,10 @@ export function useAnalysisDisplayList<T>({
 
   // Items within the gap-detection cutoff — shown by default
   const representativeItems = computed(() => {
-    if (compactMode.value)
-      return qualifiedItems.value.slice(0, COMPACT_COUNT);
-    return qualifiedItems.value.slice(0, defaultCount.value);
+    const count = compactMode.value
+      ? Math.min(COMPACT_COUNT, defaultCount.value)
+      : defaultCount.value;
+    return qualifiedItems.value.slice(0, count);
   });
 
   // Items beyond the cutoff — only shown after "Load more"
