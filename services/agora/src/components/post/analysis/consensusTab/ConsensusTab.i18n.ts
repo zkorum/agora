@@ -9,8 +9,6 @@ export interface ConsensusTabTranslations {
   disagreementsKeyword: string;
   subtitleAgree: string;
   subtitleDisagree: string;
-  subtitleLoadMoreHint: string;
-  subtitleLoadMoreHintEmphasis: string;
   loadMore: string;
   noAgreementsMessage: string;
   noDisagreementsMessage: string;
@@ -31,11 +29,9 @@ export const consensusTabTranslations: Record<
     agreementsKeyword: "approved",
     disagreementsKeyword: "rejected",
     subtitleAgree:
-      "Statements all opinion groups agree to agree on. Not a simple majority, but a cross-group consensus. Ranked by statistical significance.",
+      "Statements all opinion groups agree to agree on. Not a simple majority, but a cross-group consensus. Only the most statistically significant are shown.",
     subtitleDisagree:
-      "Statements all opinion groups agree to disagree on. Not a simple majority, but a cross-group consensus. Ranked by statistical significance.",
-    subtitleLoadMoreHint: "Load all to show {emphasis} statement.",
-    subtitleLoadMoreHintEmphasis: "every",
+      "Statements all opinion groups agree to disagree on. Not a simple majority, but a cross-group consensus. Only the most statistically significant are shown.",
     loadMore: "Load all",
     noAgreementsMessage: "No consensus has emerged yet.",
     noDisagreementsMessage: "No consensus has emerged yet.",
@@ -51,11 +47,9 @@ export const consensusTabTranslations: Record<
     agreementsKeyword: "المعتمدة",
     disagreementsKeyword: "المرفوضة",
     subtitleAgree:
-      "مقترحات تتفق جميع مجموعات الرأي على الموافقة عليها — إجماع بين المجموعات، وليس مجرد تصويت أغلبية. مرتبة حسب الدلالة الإحصائية.",
+      "مقترحات تتفق جميع مجموعات الرأي على الموافقة عليها — إجماع بين المجموعات، وليس مجرد تصويت أغلبية. تُعرض فقط الأكثر دلالة إحصائياً.",
     subtitleDisagree:
-      "مقترحات تتفق جميع مجموعات الرأي على رفضها — إجماع بين المجموعات، وليس مجرد تصويت أغلبية. مرتبة حسب الدلالة الإحصائية.",
-    subtitleLoadMoreHint: "حمّل الكل لعرض {emphasis} المقترحات.",
-    subtitleLoadMoreHintEmphasis: "جميع",
+      "مقترحات تتفق جميع مجموعات الرأي على رفضها — إجماع بين المجموعات، وليس مجرد تصويت أغلبية. تُعرض فقط الأكثر دلالة إحصائياً.",
     loadMore: "تحميل الكل",
     noAgreementsMessage: "لم يظهر أي إجماع بعد.",
     noDisagreementsMessage: "لم يظهر أي إجماع بعد.",
@@ -71,11 +65,9 @@ export const consensusTabTranslations: Record<
     agreementsKeyword: "aprobadas",
     disagreementsKeyword: "rechazadas",
     subtitleAgree:
-      "Proposiciones aprobadas por unanimidad por todos los grupos de opinión. No se trata de una simple mayoría, sino de un consenso entre grupos. Ordenadas por significancia estadística.",
+      "Proposiciones aprobadas por unanimidad por todos los grupos de opinión. No se trata de una simple mayoría, sino de un consenso entre grupos. Solo se muestran las más estadísticamente significativas.",
     subtitleDisagree:
-      "Proposiciones rechazadas por unanimidad por todos los grupos de opinión. No se trata de una simple mayoría, sino de un consenso entre grupos. Ordenadas por significancia estadística.",
-    subtitleLoadMoreHint: "Cargue todo para mostrar {emphasis} proposición.",
-    subtitleLoadMoreHintEmphasis: "cada",
+      "Proposiciones rechazadas por unanimidad por todos los grupos de opinión. No se trata de una simple mayoría, sino de un consenso entre grupos. Solo se muestran las más estadísticamente significativas.",
     loadMore: "Cargar todo",
     noAgreementsMessage: "Aún no ha surgido ningún consenso.",
     noDisagreementsMessage: "Aún no ha surgido ningún consenso.",
@@ -91,11 +83,9 @@ export const consensusTabTranslations: Record<
     agreementsKeyword: "approuvées",
     disagreementsKeyword: "rejetées",
     subtitleAgree:
-      "Propositions approuvées à l'unanimité par tous les groupes d'opinion. Il ne s'agit pas d'une simple majorité, mais d'un consensus inter-groupes. Elles sont classées par significativité statistique.",
+      "Propositions approuvées à l'unanimité par tous les groupes d'opinion. Il ne s'agit pas d'une simple majorité, mais d'un consensus inter-groupes. Seules les plus statistiquement significatives sont affichées.",
     subtitleDisagree:
-      "Propositions rejetées à l'unanimité par tous les groupes d'opinion. Il ne s'agit pas d'une simple majorité, mais d'un consensus inter-groupes. Elles sont classées par significativité statistique.",
-    subtitleLoadMoreHint: "Tout charger pour afficher {emphasis} proposition.",
-    subtitleLoadMoreHintEmphasis: "chaque",
+      "Propositions rejetées à l'unanimité par tous les groupes d'opinion. Il ne s'agit pas d'une simple majorité, mais d'un consensus inter-groupes. Seules les plus statistiquement significatives sont affichées.",
     loadMore: "Tout charger",
     noAgreementsMessage: "Aucun consensus n'a encore émergé.",
     noDisagreementsMessage: "Aucun consensus n'a encore émergé.",
@@ -109,11 +99,9 @@ export const consensusTabTranslations: Record<
     agreementsKeyword: "认可",
     disagreementsKeyword: "否决",
     subtitleAgree:
-      "所有意见群组一致同意认可的观点——跨群组共识，而非简单的多数投票。按统计显著性排序。",
+      "所有意见群组一致同意认可的观点——跨群组共识，而非简单的多数投票。仅显示统计上最显著的观点。",
     subtitleDisagree:
-      "所有意见群组一致同意否决的观点——跨群组共识，而非简单的多数投票。按统计显著性排序。",
-    subtitleLoadMoreHint: "全部加载以显示{emphasis}观点。",
-    subtitleLoadMoreHintEmphasis: "每个",
+      "所有意见群组一致同意否决的观点——跨群组共识，而非简单的多数投票。仅显示统计上最显著的观点。",
     loadMore: "全部加载",
     noAgreementsMessage: "尚未形成共识。",
     noDisagreementsMessage: "尚未形成共识。",
@@ -127,11 +115,9 @@ export const consensusTabTranslations: Record<
     agreementsKeyword: "認可",
     disagreementsKeyword: "否決",
     subtitleAgree:
-      "所有意見群組一致同意認可的觀點——跨群組共識，而非簡單的多數投票。按統計顯著性排序。",
+      "所有意見群組一致同意認可的觀點——跨群組共識，而非簡單的多數投票。僅顯示統計上最顯著的觀點。",
     subtitleDisagree:
-      "所有意見群組一致同意否決的觀點——跨群組共識，而非簡單的多數投票。按統計顯著性排序。",
-    subtitleLoadMoreHint: "全部載入以顯示{emphasis}觀點。",
-    subtitleLoadMoreHintEmphasis: "每個",
+      "所有意見群組一致同意否決的觀點——跨群組共識，而非簡單的多數投票。僅顯示統計上最顯著的觀點。",
     loadMore: "全部載入",
     noAgreementsMessage: "尚未形成共識。",
     noDisagreementsMessage: "尚未形成共識。",
@@ -147,11 +133,9 @@ export const consensusTabTranslations: Record<
     agreementsKeyword: "承認",
     disagreementsKeyword: "否決",
     subtitleAgree:
-      "すべての意見グループが合意して承認した意見です——多数決ではなく、グループ間の合意です。統計的有意性の順に表示。",
+      "すべての意見グループが合意して承認した意見です——多数決ではなく、グループ間の合意です。統計的に最も有意なもののみ表示されます。",
     subtitleDisagree:
-      "すべての意見グループが合意して否決した意見です——多数決ではなく、グループ間の合意です。統計的有意性の順に表示。",
-    subtitleLoadMoreHint: "すべて読み込んで{emphasis}意見を表示。",
-    subtitleLoadMoreHintEmphasis: "各",
+      "すべての意見グループが合意して否決した意見です——多数決ではなく、グループ間の合意です。統計的に最も有意なもののみ表示されます。",
     loadMore: "すべて読み込む",
     noAgreementsMessage: "まだ合意は形成されていません。",
     noDisagreementsMessage: "まだ合意は形成されていません。",
