@@ -5,8 +5,6 @@ export interface DivisiveTabTranslations {
   divisiveLongTitle: string;
   divisiveKeyword: string;
   subtitle: string;
-  subtitleLoadMoreHint: string;
-  subtitleLoadMoreHintEmphasis: string;
   loadMore: string;
   noDivisiveOpinionsMessage: string;
   lowerRankedDivider: string;
@@ -21,9 +19,7 @@ export const divisiveTabTranslations: Record<
     divisiveLongTitle: "What {keyword} people across groups?",
     divisiveKeyword: "divides",
     subtitle:
-      "Statements that split opinion groups against each other. Ranked by statistical significance.",
-    subtitleLoadMoreHint: "Load all to show {emphasis} statement.",
-    subtitleLoadMoreHintEmphasis: "every",
+      "Statements that split opinion groups against each other. Only the most statistically significant are shown.",
     loadMore: "Load all",
     noDivisiveOpinionsMessage: "No significant divisive statements found yet.",
     lowerRankedDivider: "Less statistically significant",
@@ -33,9 +29,7 @@ export const divisiveTabTranslations: Record<
     divisiveLongTitle: "ما الذي {keyword} المشاركين عبر مجموعات الرأي؟",
     divisiveKeyword: "يقسم",
     subtitle:
-      "مقترحات تقسم مجموعات الرأي ضد بعضها البعض. مرتبة حسب الدلالة الإحصائية.",
-    subtitleLoadMoreHint: "حمّل الكل لعرض {emphasis} المقترحات.",
-    subtitleLoadMoreHintEmphasis: "جميع",
+      "مقترحات تقسم مجموعات الرأي ضد بعضها البعض. تُعرض فقط الأكثر دلالة إحصائياً.",
     loadMore: "تحميل الكل",
     noDivisiveOpinionsMessage: "لم يتم العثور على مقترحات مثيرة للجدل ذات دلالة بعد.",
     lowerRankedDivider: "أقل دلالة إحصائياً",
@@ -45,9 +39,7 @@ export const divisiveTabTranslations: Record<
     divisiveLongTitle: "¿Qué {keyword} a los participantes entre los grupos de opinión?",
     divisiveKeyword: "divide",
     subtitle:
-      "Proposiciones que dividen a los grupos de opinión entre sí. Ordenadas por significancia estadística.",
-    subtitleLoadMoreHint: "Cargue todo para mostrar {emphasis} proposición.",
-    subtitleLoadMoreHintEmphasis: "cada",
+      "Proposiciones que dividen a los grupos de opinión entre sí. Solo se muestran las más estadísticamente significativas.",
     loadMore: "Cargar todo",
     noDivisiveOpinionsMessage:
       "Aún no se encontraron proposiciones divisivas significativas.",
@@ -58,9 +50,7 @@ export const divisiveTabTranslations: Record<
     divisiveLongTitle: "Qu'est-ce qui {keyword} les participants entre les groupes d'opinion ?",
     divisiveKeyword: "divise",
     subtitle:
-      "Propositions qui divisent les groupes d'opinion entre eux. Elles sont classées par significativité statistique.",
-    subtitleLoadMoreHint: "Tout charger pour afficher {emphasis} proposition.",
-    subtitleLoadMoreHintEmphasis: "chaque",
+      "Propositions qui divisent les groupes d'opinion entre eux. Seules les plus statistiquement significatives sont affichées.",
     loadMore: "Tout charger",
     noDivisiveOpinionsMessage:
       "Aucune proposition controversée significative trouvée pour le moment.",
@@ -71,9 +61,7 @@ export const divisiveTabTranslations: Record<
     divisiveLongTitle: "什么使参与者在各意见群组之间产生{keyword}？",
     divisiveKeyword: "分歧",
     subtitle:
-      "使意见群组之间产生对立的观点。按统计显著性排序。",
-    subtitleLoadMoreHint: "全部加载以显示{emphasis}观点。",
-    subtitleLoadMoreHintEmphasis: "每个",
+      "使意见群组之间产生对立的观点。仅显示统计上最显著的观点。",
     loadMore: "全部加载",
     noDivisiveOpinionsMessage: "尚未找到显著的分歧观点。",
     lowerRankedDivider: "统计显著性较低",
@@ -83,9 +71,7 @@ export const divisiveTabTranslations: Record<
     divisiveLongTitle: "什麼使參與者在各意見群組之間產生{keyword}？",
     divisiveKeyword: "分歧",
     subtitle:
-      "使意見群組之間產生對立的觀點。按統計顯著性排序。",
-    subtitleLoadMoreHint: "全部載入以顯示{emphasis}觀點。",
-    subtitleLoadMoreHintEmphasis: "每個",
+      "使意見群組之間產生對立的觀點。僅顯示統計上最顯著的觀點。",
     loadMore: "全部載入",
     noDivisiveOpinionsMessage: "尚未找到顯著的分歧觀點。",
     lowerRankedDivider: "統計顯著性較低",
@@ -95,9 +81,7 @@ export const divisiveTabTranslations: Record<
     divisiveLongTitle: "意見グループ間で参加者を{keyword}しているものは何ですか？",
     divisiveKeyword: "分断",
     subtitle:
-      "意見グループ同士を対立させる意見です。統計的有意性の順に表示。",
-    subtitleLoadMoreHint: "すべて読み込んで{emphasis}意見を表示。",
-    subtitleLoadMoreHintEmphasis: "各",
+      "意見グループ同士を対立させる意見です。統計的に最も有意なもののみ表示されます。",
     loadMore: "すべて読み込む",
     noDivisiveOpinionsMessage: "有意な分断的主張はまだ見つかりません。",
     lowerRankedDivider: "統計的有意性が低い",

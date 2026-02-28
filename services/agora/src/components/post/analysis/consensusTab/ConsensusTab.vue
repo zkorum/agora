@@ -31,9 +31,6 @@
       <template #body>
         <div v-if="!compactMode" class="statistical-subtitle">
           {{ props.direction === "agree" ? t("subtitleAgree") : t("subtitleDisagree") }}
-          <template v-if="Object.keys(props.clusters).length > 1">
-            {{ loadMoreHintParts[0] }}<em>{{ t("subtitleLoadMoreHintEmphasis") }}</em>{{ loadMoreHintParts[1] }}
-          </template>
         </div>
 
         <EmptyStateMessage
@@ -97,11 +94,12 @@
     <ZKConfirmDialog
       v-model="showLoadMoreWarning"
       :title="tWarning('title')"
-      :message="tWarning('description')"
       :confirm-text="tWarning('loadMoreButton')"
       :cancel-text="tWarning('cancelButton')"
       @confirm="hasLoadedMore = true"
-    />
+    >
+      {{ warningDescriptionParts[0] }}<em>{{ tWarning('descriptionEmphasis') }}</em>{{ warningDescriptionParts[1] }}
+    </ZKConfirmDialog>
   </div>
 </template>
 
@@ -184,8 +182,8 @@ const emptyMessage = computed(() =>
     : t("noDisagreementsMessage")
 );
 
-const loadMoreHintParts = computed(() =>
-  t("subtitleLoadMoreHint").split("{emphasis}")
+const warningDescriptionParts = computed(() =>
+  tWarning("description").split("{emphasis}")
 );
 
 const {

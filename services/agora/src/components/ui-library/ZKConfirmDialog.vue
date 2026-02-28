@@ -4,7 +4,9 @@
       <div class="confirm-dialog">
         <div class="dialog-header">
           <h3 v-if="title" class="dialog-title">{{ title }}</h3>
-          <p class="dialog-message">{{ message }}</p>
+          <p v-if="message || $slots.default" class="dialog-message">
+            <slot>{{ message }}</slot>
+          </p>
         </div>
 
         <div class="dialog-actions">
@@ -41,6 +43,7 @@ defineOptions({
 
 withDefaults(defineProps<Props>(), {
   title: undefined,
+  message: undefined,
   confirmText: "Confirm",
   cancelText: "Cancel",
   variant: "default",
@@ -50,7 +53,7 @@ const emit = defineEmits<Emits>();
 
 interface Props {
   title?: string;
-  message: string;
+  message?: string;
   confirmText?: string;
   cancelText?: string;
   variant?: "default" | "destructive";
@@ -104,13 +107,12 @@ watch(showDialog, (newValue) => {
 }
 
 .dialog-header {
-  text-align: center;
-
   .dialog-title {
     margin: 0 0 1rem 0;
     font-size: 1.1rem;
     font-weight: var(--font-weight-semibold);
     color: $color-text-strong;
+    text-align: center;
   }
 
   .dialog-message {
@@ -118,6 +120,7 @@ watch(showDialog, (newValue) => {
     font-size: 1rem;
     color: black;
     line-height: 1.5;
+    text-align: left;
   }
 }
 
