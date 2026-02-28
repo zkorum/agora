@@ -6,6 +6,7 @@ import {
   createWebHistory,
 } from "vue-router";
 import { routes } from "vue-router/auto-routes";
+import { z } from "zod";
 
 import { defineRouter } from "#q-app/wrappers";
 
@@ -28,9 +29,24 @@ export default defineRouter(function (/* { store, ssrContext } */) {
       : createWebHashHistory;
 
   const Router = createRouter({
-    scrollBehavior: (to, from, savedPosition) => {
-      const scrollTop = savedPosition ? savedPosition.top : 0;
-      return { left: 0, top: scrollTop };
+    scrollBehavior: (to, _from, savedPosition) => {
+      if (savedPosition) {
+        return { left: 0, top: savedPosition.top };
+      }
+      // WeChat fallback: replaceState fails in WeChat's WKWebView, so scroll
+      // positions are saved to sessionStorage by the embeddedBrowserGuard patch
+      try {
+        const key = `wechat-scroll:${to.path}`;
+        const stored = sessionStorage.getItem(key);
+        if (stored) {
+          sessionStorage.removeItem(key);
+          const scroll = z.object({ top: z.number().optional() }).parse(JSON.parse(stored));
+          return { left: 0, top: scroll.top ?? 0 };
+        }
+      } catch {
+        // Ignore parse errors or sessionStorage restrictions
+      }
+      return { left: 0, top: 0 };
     },
     routes,
     // Leave this as is and make changes in quasar.conf.js instead!

@@ -62,6 +62,53 @@ export default boot(({ router }) => {
   const isWechat = appKey === "wechat";
   const isX = appKey === "twitter";
 
+  // WECHAT iOS FIX: WeChat's WKWebView hooks into history.pushState/replaceState
+  // at the native level and calls
+  // window.weixinPostMessageHandlers.weixinDispatchMessage.postMessage,
+  // which can be undefined if the bridge isn't fully initialized. This causes a
+  // TypeError that crashes Vue Router's navigation and scroll-position-saving logic.
+  // Wrapping both methods in a try-catch prevents these unhandled errors.
+  // When replaceState fails with scroll data, we save it to sessionStorage so
+  // the router's scrollBehavior can restore it as a fallback.
+  if (isWechat) {
+    const wrapHistoryMethod = (method: "pushState" | "replaceState") => {
+      const original = window.history[method].bind(window.history);
+      window.history[method] = function (
+        data: unknown,
+        unused: string,
+        url?: string | URL | null
+      ) {
+        try {
+          return original(data, unused, url);
+        } catch (error) {
+          console.warn(
+            `[EmbeddedBrowserGuard] history.${method} failed (WeChat bridge):`,
+            error
+          );
+          // Fallback: save scroll position to sessionStorage when replaceState
+          // fails, so scrollBehavior can restore it
+          if (
+            method === "replaceState" &&
+            typeof data === "object" &&
+            data !== null &&
+            "scroll" in data
+          ) {
+            try {
+              sessionStorage.setItem(
+                `wechat-scroll:${window.location.pathname}`,
+                JSON.stringify(data.scroll)
+              );
+            } catch {
+              // sessionStorage might also be restricted
+            }
+          }
+        }
+      };
+    };
+    wrapHistoryMethod("replaceState");
+    wrapHistoryMethod("pushState");
+  }
+
   // ANDROID: Try Intent URI workaround except on WeChat (does nothing) and X (X would redirect to... X Browser, causing User-Agent to change, X Browser would then not be detected, and therefore causing blink during openeing and allowing users to stay in X browser!
   if (Platform.is.android && !isWechat && !isX) {
     console.log(
