@@ -154,6 +154,12 @@ const warningDescriptionParts = computed(() =>
   tWarning("description").split("{emphasis}")
 );
 
+// Normalize extremity to [0,1] so we can apply a minScore threshold.
+// Extremity (sqrt(x²+y²) in PCA space) is unbounded and varies per conversation.
+const maxDivisive = computed(() =>
+  Math.max(...props.itemList.map((item) => item.divisiveScore), 0)
+);
+
 const {
   representativeItems,
   additionalItems,
@@ -164,7 +170,9 @@ const {
 } = useAnalysisDisplayList({
   items: toRef(props, "itemList"),
   compactMode: toRef(props, "compactMode"),
-  getRawScore: (item) => item.divisiveScore,
+  getRawScore: (item) =>
+    maxDivisive.value > 0 ? item.divisiveScore / maxDivisive.value : 0,
+  minScore: 0.6,
 });
 
 function switchTab() {
