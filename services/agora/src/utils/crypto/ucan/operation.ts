@@ -1,3 +1,4 @@
+import * as ucans from "@ucans/ucans";
 import {
   httpMethodToAbility,
   httpPathnameToResourcePointer,
@@ -65,8 +66,6 @@ export async function buildUcan({
   method,
   lifetimeInSeconds = DEFAULT_UCAN_LIFETIME_SECONDS,
 }: BuildUcanProps): Promise<string> {
-  const ucans = await import("@ucans/ucans");
-
   const webCryptoStore = await getWebCryptoStore();
   const u = await ucans.Builder.create()
     .issuedBy({
