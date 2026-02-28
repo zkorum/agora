@@ -193,8 +193,6 @@ defineExpose({
       border-radius: 3px;
       font-size: 0.75rem;
       color: #495057;
-      word-break: break-all;
-      overflow-wrap: break-word;
       max-width: 100%;
     }
   }

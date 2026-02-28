@@ -7,6 +7,8 @@ export default defineBoot(({ app }) => {
   app.use(MazUi, {
     theme: {
       preset: agoraPreset,
+      colorMode: "light",
+      mode: "light",
     },
   });
 });

@@ -142,7 +142,6 @@ function handleClose(): void {
     font-family: monospace;
     color: #c62828;
     white-space: pre-wrap;
-    word-break: break-word;
     line-height: 1.6;
     display: block;
   }

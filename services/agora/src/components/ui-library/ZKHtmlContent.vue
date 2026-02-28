@@ -62,10 +62,6 @@ const handleClick = (event: Event) => {
 .textBreak {
   font-size: 0.9rem;
   line-height: normal;
-  word-break: break-word;
-  /* Prevent potential layout issues with long content */
-  overflow-wrap: break-word;
-  hyphens: auto;
 }
 
 :deep(p) {

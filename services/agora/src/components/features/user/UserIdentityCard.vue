@@ -22,7 +22,6 @@
           :author-verified="authorVerified"
           :user-identity="userIdentity"
           :show-verified-text="showVerifiedText"
-          :user-type="organizationImageUrl != '' ? 'organization' : 'normal'"
         />
       </div>
 

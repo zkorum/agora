@@ -406,8 +406,6 @@ watch(
   outline: none;
   font-size: 1rem;
   line-height: normal;
-  overflow-wrap: break-word;
-  word-break: break-word;
   max-height: 40vh;
   overflow-y: auto;
 }

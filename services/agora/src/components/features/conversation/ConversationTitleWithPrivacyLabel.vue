@@ -62,8 +62,6 @@ const { t } = useComponentI18n<ConversationTitleWithPrivacyLabelTranslations>(
   font-weight: var(--font-weight-medium);
   color: #0a0714;
   line-height: 1.3;
-  overflow-wrap: break-word;
-  word-break: break-word;
   min-width: 0;
   max-width: 100%;
 }

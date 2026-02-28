@@ -393,7 +393,6 @@ function getFailureReasonText(reason: ExportFailureReason): string {
 .export-info-value {
   font-size: 1rem;
   color: $color-text-strong;
-  word-break: break-word;
 }
 
 .status-message {
@@ -511,7 +510,6 @@ function getFailureReasonText(reason: ExportFailureReason): string {
   font-size: 1.1rem;
   font-weight: var(--font-weight-semibold);
   color: $color-text-strong;
-  word-break: break-word;
 }
 
 .file-details {
