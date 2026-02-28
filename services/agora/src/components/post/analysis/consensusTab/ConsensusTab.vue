@@ -200,7 +200,7 @@ const {
     props.direction === "agree"
       ? item.groupAwareConsensusAgree
       : item.groupAwareConsensusDisagree,
-  minScore: 0.5,
+  minScore: 0.6,
 });
 
 function switchTab() {
