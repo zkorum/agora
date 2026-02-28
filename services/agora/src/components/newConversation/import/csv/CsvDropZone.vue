@@ -404,7 +404,6 @@ function formatFileSize(bytes: number): string {
   font-size: 0.75rem;
   color: $color-text-weak;
   white-space: pre-wrap;
-  word-break: break-word;
   display: flex;
   align-items: center;
   gap: 0.5rem;

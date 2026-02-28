@@ -199,7 +199,6 @@ function getFailureReasonText(reason: ImportFailureReason): string {
 .import-info-value {
   font-size: 1rem;
   color: $color-text-strong;
-  word-break: break-word;
 }
 
 .status-message {

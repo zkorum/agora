@@ -2,10 +2,6 @@
   <div class="authorContainer">
     <DisplayUsername
       class="usernameStyle"
-      :class="{
-        wordBreakNormal: userType == 'normal',
-        wordBreakOrganization: userType == 'organization',
-      }"
       :username="userIdentity"
       :show-is-guest="showIsGuest"
     />
@@ -30,7 +26,6 @@ defineProps<{
   userIdentity: string;
   authorVerified: boolean;
   showVerifiedText: boolean;
-  userType: "organization" | "normal";
 }>();
 
 const { t } = useComponentI18n<UserMetadataTranslations>(
@@ -44,14 +39,6 @@ const { t } = useComponentI18n<UserMetadataTranslations>(
   font-size: 0.875rem;
   font-weight: var(--font-weight-medium);
   color: #0a0714;
-}
-
-.wordBreakNormal {
-  word-break: break-all;
-}
-
-.wordBreakOrganization {
-  word-break: break-word;
 }
 
 .verifiedMessage {

@@ -129,9 +129,6 @@ function isAccountSelected(isOrganization: boolean, name: string): boolean {
 .account-name {
   font-size: 16px;
   font-weight: var(--font-weight-medium);
-  word-break: break-word;
-  overflow-wrap: break-word;
-  hyphens: auto;
   line-height: 1.4;
 }
 </style>

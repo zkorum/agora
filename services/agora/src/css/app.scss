@@ -58,6 +58,8 @@ body {
   background-color: $app-background-color;
   color: rgb(24, 28, 31);
   line-height: normal;
+  word-wrap: break-word; /* legacy alias for older browsers (WeChat X5 kernel) */
+  overflow-wrap: break-word; /* modern standard */
 
   /* Mobile-specific font optimizations */
   -webkit-text-size-adjust: 100%;
@@ -79,6 +81,7 @@ a {
 html {
   overscroll-behavior: none;
   overflow-y: scroll;
+  color-scheme: light; /* app doesn't support dark mode */
 }
 
 /* Mobile-specific font optimizations */
