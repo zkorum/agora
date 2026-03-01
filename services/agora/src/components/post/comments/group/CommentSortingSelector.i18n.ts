@@ -69,4 +69,12 @@ export const commentSortingSelectorTranslations: Record<
     hidden: "非表示",
     myVotes: "自分の投票",
   },
+  fa: {
+    filterTitle: "Filter Responses by:",
+    discover: "Discover",
+    new: "New",
+    moderationHistory: "Moderation History",
+    hidden: "Hidden",
+    myVotes: "My Votes",
+  },
 };

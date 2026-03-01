@@ -23,6 +23,15 @@ export default boot(({ router }) => {
     return;
   }
 
+  // Skip detection when embedded inside the Jomhoor native app WebView.
+  // The app injects window.__JOMHOOR__ before page load.
+  if ((window as unknown as Record<string, unknown>).__JOMHOOR__) {
+    console.log(
+      "[EmbeddedBrowserGuard] Inside Jomhoor app WebView, skipping guard"
+    );
+    return;
+  }
+
   // CRITICAL: Skip detection for embed routes
   // Embed routes are designed to be embedded in iframes on other websites
   const currentPath = router.currentRoute.value.path;

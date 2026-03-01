@@ -29,4 +29,7 @@ export const spokenLanguagesSettingsTranslations: Record<
   ja: {
     pageTitle: "話される言語",
   },
+  fa: {
+    pageTitle: "Spoken Languages",
+  },
 };

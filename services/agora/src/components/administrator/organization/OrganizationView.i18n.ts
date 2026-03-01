@@ -45,4 +45,9 @@ export const organizationViewTranslations: Record<
     usernameLabel: "ユーザー名",
     addUserToOrganizationButton: "ユーザーを組織に追加",
   },
+  fa: {
+    deleteOrganizationButton: "Delete Organization",
+    usernameLabel: "Username",
+    addUserToOrganizationButton: "Add User to Organization",
+  },
 };

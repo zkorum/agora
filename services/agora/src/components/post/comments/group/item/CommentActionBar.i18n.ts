@@ -134,4 +134,21 @@ export const commentActionBarTranslations: Record<
     assignedGroup: "グループに割り当てられました！",
     viewAnalysis: "分析を見る",
   },
+  fa: {
+    disagree: "Disagree",
+    pass: "Unsure",
+    agree: "Agree",
+    voteFailed: "Failed to submit vote. Please try again.",
+    conversationClosed:
+      "Cannot vote because the conversation was closed by the author.",
+    closedConversationTooltip:
+      "Voting is disabled - conversation has been closed or locked",
+    disagreeAriaLabel: "Disagree with statement. Current disagrees:",
+    passAriaLabel: "Unsure about this statement. Current count:",
+    agreeAriaLabel: "Agree with statement. Current agrees:",
+    keepVotingToDiscoverGroup: "Keep voting to discover your group",
+    keepVotingToRefineAnalysis: "Keep voting to refine the analysis",
+    assignedGroup: "You have been assigned a group!",
+    viewAnalysis: "View analysis",
+  },
 };

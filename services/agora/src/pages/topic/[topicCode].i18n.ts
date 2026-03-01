@@ -26,4 +26,7 @@ export const topicPageTranslations: Record<SupportedDisplayLanguageCodes, TopicP
   ja: {
     loadPostsHere: "投稿を読み込む",
   },
+  fa: {
+    loadPostsHere: "Load posts here",
+  },
 };

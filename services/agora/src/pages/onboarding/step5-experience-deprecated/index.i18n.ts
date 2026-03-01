@@ -73,4 +73,13 @@ export const step5ExperienceTranslations: Record<
     braveSpaceDescription:
       "反社会的とフラグが立てられたコンテンツは、警告とともに表示されます。",
   },
+  fa: {
+    title: "Choose how you want to experience Agora",
+    safeSpaceTitle: "Safe Space",
+    safeSpaceDescription:
+      "Content flagged as antisocial (trolling or intolerance) is removed from my feed. If I want to see what was removed, I can check the post's moderation history.",
+    braveSpaceTitle: "Brave Space",
+    braveSpaceDescription:
+      "Content flagged as antisocial is shown to me with a warning.",
+  },
 };

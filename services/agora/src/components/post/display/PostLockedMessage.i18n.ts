@@ -53,4 +53,10 @@ export const postLockedMessageTranslations: Record<
       "この会話はオーナーによって閉じられました。新しい主張や投票を投稿できません。",
     editButton: "編集",
   },
+  fa: {
+    lockedMessage: 'Post locked as "{reason}". New statements cannot be posted.',
+    closedMessage:
+      "This conversation was closed by the owner. New statements and votes cannot be posted.",
+    editButton: "Edit",
+  },
 };

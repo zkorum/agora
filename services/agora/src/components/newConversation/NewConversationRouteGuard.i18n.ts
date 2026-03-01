@@ -37,4 +37,8 @@ export const newConversationRouteGuardTranslations: Record<
     saveConversationDraft: "会話を下書きとして保存しますか？",
     draftWillBeHere: "戻ってきたら、下書きした会話がここに表示されます。",
   },
+  fa: {
+    saveConversationDraft: "Save conversation as draft?",
+    draftWillBeHere: "Your drafted conversation will be here when you return.",
+  },
 };

@@ -85,4 +85,14 @@ export const preLoginIntentionDialogTranslations: Record<
     labelOkZupass: "チケット確認",
     labelCancel: "キャンセル",
   },
+  fa: {
+    title: "Log in to Agora",
+    titleZupassOnly: "Verify Event Ticket",
+    message: "Log in to participate in the discussions",
+    messageBothRequired: "This conversation requires login and event ticket verification to participate",
+    messageZupassOnly: "This conversation requires event ticket verification to participate",
+    labelOk: "Log In",
+    labelOkZupass: "Verify Ticket",
+    labelCancel: "Cancel",
+  },
 };

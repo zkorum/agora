@@ -9,12 +9,14 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import { onMounted } from "vue";
 
 import EmbeddedBrowserWarningDialog from "./components/embeddedBrowser/EmbeddedBrowserWarningDialog.vue";
 import PostSignupPreferencesDialog from "./components/onboarding/dialogs/PostSignupPreferencesDialog.vue";
 import { useNotificationSSE } from "./composables/useNotificationSSE";
 import { useZupassVerification } from "./composables/zupass/useZupassVerification";
+import { useAuthenticationStore } from "./stores/authentication";
 import { useBackendAuthApi } from "./utils/api/auth";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
 
@@ -35,7 +37,14 @@ onMounted(async () => {
     await authenticationStore.initializeAuthState();
   } catch (e) {
     console.error("Error while trying to get logged-in status", e);
-    // TODO: create a unified error handling to notify the user _once_ only if the backend is down?
+    // In dev mode over plain HTTP (e.g. LAN IP), WebCrypto is unavailable
+    // (crypto.subtle requires a secure context). Force isAuthInitialized so
+    // the login button still renders. In production this is always HTTPS so
+    // the issue doesn't arise.
+    if (process.env.DEV) {
+      const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
+      isAuthInitialized.value = true;
+    }
   }
 });
 </script>

@@ -37,4 +37,8 @@ export const exitRoutePromptTranslations: Record<
     saveAsDraft: "下書きとして保存",
     discard: "破棄",
   },
+  fa: {
+    saveAsDraft: "Save as draft",
+    discard: "Discard",
+  },
 };

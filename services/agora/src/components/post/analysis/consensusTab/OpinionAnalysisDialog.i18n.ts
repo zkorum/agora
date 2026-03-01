@@ -77,4 +77,13 @@ export const opinionAnalysisDialogTranslations: Record<
     noGroup: "グループなし",
     viewOriginal: "元の主張を見る",
   },
+  fa: {
+    title: "Statement analysis",
+    agree: "Agree",
+    pass: "Unsure",
+    disagree: "Disagree",
+    total: "Total",
+    noGroup: "No group",
+    viewOriginal: "View original statement",
+  },
 };

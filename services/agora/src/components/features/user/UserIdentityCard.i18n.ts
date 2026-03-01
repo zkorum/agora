@@ -37,4 +37,8 @@ export const userIdentityCardTranslations: Record<
     guestParticipationTooltip: "ゲスト参加が有効",
     edited: "編集済み",
   },
+  fa: {
+    guestParticipationTooltip: "Guest participation enabled",
+    edited: "Edited",
+  },
 };

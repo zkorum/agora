@@ -68,4 +68,12 @@ export const welcomeTranslations: Record<
       "ユーザーコンテンツを報告するには、アカウントが必要です。",
     voting: "戻られた際に、この会話に戻ります。",
   },
+  fa: {
+    newOpinion: "Your written statement draft will be restored when you return.",
+    newConversation:
+      "Your written conversation draft will be restored when you return.",
+    agreement: "You will be returned to this statement when you return.",
+    reportUserContent: "A user account is required to report user content.",
+    voting: "You will be returned to this conversation when you return.",
+  },
 };

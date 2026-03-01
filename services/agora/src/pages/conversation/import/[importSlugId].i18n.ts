@@ -29,4 +29,7 @@ export const importStatusPageTranslations: Record<
   ja: {
     pageTitle: "インポートステータス",
   },
+  fa: {
+    pageTitle: "Import Status",
+  },
 };

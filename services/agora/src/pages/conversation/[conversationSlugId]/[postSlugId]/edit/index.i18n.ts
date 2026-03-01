@@ -176,4 +176,26 @@ export const editConversationTranslations: Record<
       "投票を削除すると、すべての既存の投票が削除されます。この操作は元に戻せません。続行しますか？",
     removePollWarningConfirm: "はい、投票を削除",
   },
+  fa: {
+    saveButton: "Save Changes",
+    titlePlaceholder: "What do you want to ask?",
+    bodyPlaceholder:
+      "Body text. Provide context or relevant resources. Make sure it's aligned with the main question!",
+    pageTitle: "Edit Conversation",
+    notFoundError: "Conversation not found",
+    notAuthorError: "You are not authorized to edit this conversation",
+    loadingError: "Failed to load conversation data",
+    pollChangeWarningTitle: "Warning: Poll Modification",
+    pollChangeWarningMessage:
+      "Modifying the poll options will clear all existing votes. This action cannot be undone. Do you want to continue?",
+    pollChangeWarningConfirm: "Yes, Clear Votes",
+    pollChangeWarningCancel: "Cancel",
+    updateSuccess: "Conversation updated successfully",
+    updateError: "Failed to update conversation",
+    conversationLockedError: "This conversation is locked and cannot be edited",
+    removePollWarningTitle: "Warning: Remove Poll",
+    removePollWarningMessage:
+      "Removing the poll will delete all existing votes. This action cannot be undone. Do you want to continue?",
+    removePollWarningConfirm: "Yes, Remove Poll",
+  },
 };

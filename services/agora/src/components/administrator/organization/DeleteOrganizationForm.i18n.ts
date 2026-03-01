@@ -30,4 +30,7 @@ export const deleteOrganizationFormTranslations: Record<
   ja: {
     noOrganizationsMessage: "システムに登録された組織はありません",
   },
+  fa: {
+    noOrganizationsMessage: "No organizations are registered in the system",
+  },
 };

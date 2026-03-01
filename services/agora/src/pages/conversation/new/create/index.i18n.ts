@@ -85,4 +85,15 @@ export const createConversationTranslations: Record<
       "インポートが進行中です。新しいインポートを開始する前に完了するまでお待ちください。",
     viewImportStatus: "インポート状態を表示",
   },
+  fa: {
+    importButton: "Import",
+    nextButton: "Next",
+    titlePlaceholder: "What do you want to ask? (required)",
+    titleRequired: "Title is required to continue",
+    bodyPlaceholder:
+      "Body text. Provide context or relevant resources. Make sure it's aligned with the main question!",
+    activeImportMessage:
+      "You have an import in progress. Please wait for it to complete before starting a new one.",
+    viewImportStatus: "View Import Status",
+  },
 };

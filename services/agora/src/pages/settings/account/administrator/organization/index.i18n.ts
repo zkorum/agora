@@ -29,4 +29,7 @@ export const administratorOrganizationTranslations: Record<
   ja: {
     administrator: "管理者",
   },
+  fa: {
+    administrator: "Administrator",
+  },
 };

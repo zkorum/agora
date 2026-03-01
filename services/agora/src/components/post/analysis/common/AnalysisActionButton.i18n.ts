@@ -45,4 +45,9 @@ export const analysisActionButtonTranslations: Record<
     viewMore: "もっと見る",
     informationIconAriaLabel: "情報",
   },
+  fa: {
+    learnMore: "Learn more",
+    viewMore: "View more",
+    informationIconAriaLabel: "Information",
+  },
 };

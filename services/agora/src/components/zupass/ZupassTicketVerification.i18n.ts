@@ -139,4 +139,21 @@ export const zupassTicketVerificationTranslations: Record<
     errorTicketAlreadyUsed: 'このチケットは既に別のアカウントで確認されています。',
     errorUnknown: '不明なエラーが発生しました。もう一度お試しください。',
   },
+  fa: {
+    title: 'Verify Your Devconnect 2025 Ticket',
+    description:
+      'To participate in this conversation, you need to verify that you own a Devconnect 2025 ticket.',
+    verifyButton: 'Verify Ticket with Zupass',
+    successMessage: 'Ticket verified successfully! You can now participate in gated conversations.',
+    accountRestored: 'Welcome back! Your account has been restored 🎉',
+    accountMerged: 'Success! Your accounts have been merged 🎉',
+    accountRestoredAndMerged: 'Welcome back! Your account has been restored and your guest data has been merged 🎉',
+    note: 'This will open a popup to Zupass where you can prove ticket ownership without revealing personal information.',
+    errorDeserialization: 'Invalid proof format. Please try again.',
+    errorInvalidProof: 'Cryptographic verification failed. Please try again.',
+    errorInvalidSigner: 'Ticket not signed by Zupass.',
+    errorWrongEvent: 'Wrong event ticket. Devconnect 2025 ticket required.',
+    errorTicketAlreadyUsed: 'This ticket has already been verified by another account.',
+    errorUnknown: 'An unknown error occurred. Please try again.',
+  },
 };

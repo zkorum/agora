@@ -60,4 +60,11 @@ export const step2SignupOnboardingTranslations: Record<
     verifyAnonymously: "匿名検証",
     verifyWithPhone: "携帯電話で検証",
   },
+  fa: {
+    pageTitle: "Agora aims to be exclusively human",
+    description:
+      "More than half of internet traffic comes from bots. That's why we verify users, so you're debating people, not robots plotting world domination!",
+    verifyAnonymously: "Verify anonymously",
+    verifyWithPhone: "Verify with my phone number",
+  },
 };

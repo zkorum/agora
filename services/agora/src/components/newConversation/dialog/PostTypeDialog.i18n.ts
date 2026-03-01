@@ -79,4 +79,15 @@ export const postTypeDialogTranslations: Record<
     importFromCsvDescription:
       "エクスポートされた CSV ファイルから Polis 会話をインポートします。",
   },
+  fa: {
+    newConversation: "New Conversation",
+    newConversationDescription:
+      "Create a new conversation topic for discussion.",
+    importFromPolis: "Import from Polis URL",
+    importFromPolisDescription:
+      "Import and continue an existing Polis conversation.",
+    importFromCsv: "Import from CSV",
+    importFromCsvDescription:
+      "Import a Polis conversation from exported CSV files.",
+  },
 };

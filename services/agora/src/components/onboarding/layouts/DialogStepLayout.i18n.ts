@@ -29,4 +29,7 @@ export const dialogStepLayoutTranslations: Record<
   ja: {
     welcomeTitle: "Agora へようこそ！",
   },
+  fa: {
+    welcomeTitle: "Welcome to Agora!",
+  },
 };

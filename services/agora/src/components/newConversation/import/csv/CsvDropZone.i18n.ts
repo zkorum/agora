@@ -85,4 +85,14 @@ export const csvDropZoneTranslations: Record<
     ariaViewDetails: "{fileName} のエラー詳細を表示",
     ariaRemove: "ファイル {fileName} を削除",
   },
+  fa: {
+    statusPending: "Pending",
+    statusUploaded: "Uploaded",
+    statusValidating: "Validating",
+    statusError: "Error",
+    viewDetails: "View Details",
+    remove: "Remove",
+    ariaViewDetails: "View error details for {fileName}",
+    ariaRemove: "Remove file {fileName}",
+  },
 };

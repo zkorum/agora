@@ -80,4 +80,13 @@ export const polisUrlInputTranslations: Record<
     termsOfUse: "利用規約",
     ccLicense: "CC BY 4.0",
   },
+  fa: {
+    importTitle: "Import Conversation from Polis",
+    description: "Paste a Polis URL below to import a conversation.",
+    validUrlExamples: "Valid URL examples:",
+    urlPlaceholder: "e.g., https://pol.is/xxxxx",
+    polisTerms: "Pol.is Terms",
+    termsOfUse: "Terms of Use",
+    ccLicense: "CC BY 4.0",
+  },
 };

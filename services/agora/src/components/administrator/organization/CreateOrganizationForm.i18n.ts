@@ -84,4 +84,14 @@ export const createOrganizationFormTranslations: Record<
     websiteUrlLabel: "ウェブサイトURL",
     addOrganizationButton: "組織を追加",
   },
+  fa: {
+    nameLabel: "Name",
+    descriptionLabel: "Description",
+    imagePathLabel: "Image Path (file name or https path)",
+    fileNameExample: "File name: avatar_default_0.png",
+    fullPathExample:
+      "Full path: https://agoracitizen.network/images/big_logo_agora.png",
+    websiteUrlLabel: "Website URL",
+    addOrganizationButton: "Add Organization",
+  },
 };

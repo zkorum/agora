@@ -69,4 +69,12 @@ export const makePublicTimerDialogTranslations: Record<
     after1Month: "1ヶ月後",
     custom: "カスタム",
   },
+  fa: {
+    never: "Never",
+    after24Hours: "After 24 hours",
+    after3Days: "After 3 days",
+    after1Week: "After 1 week",
+    after1Month: "After 1 month",
+    custom: "Custom",
+  },
 };

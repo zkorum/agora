@@ -1,0 +1,32 @@
+# Local development: just postgres + valkey (no monitoring stack)
+# Usage: docker compose -f docker-compose.local.yaml up -d
+
+services:
+  postgres:
+    container_name: agora-postgres-local
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: agoralocal
+      POSTGRES_DB: agora
+      PGDATA: /data/postgres
+    volumes:
+      - agora_postgres_local:/data/postgres
+      - ./services/api/database/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+
+  valkey:
+    container_name: agora-valkey-local
+    image: valkey/valkey:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - agora_valkey_local:/data
+    command: valkey-server --appendonly yes
+    restart: unless-stopped
+
+volumes:
+  agora_postgres_local:
+  agora_valkey_local:

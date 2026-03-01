@@ -37,4 +37,8 @@ export const opinionGroupTabTranslations: Record<
     groupsTitle: "グループ",
     notEnoughGroupsMessage: "表示するグループが不足しています。",
   },
+  fa: {
+    groupsTitle: "Groups",
+    notEnoughGroupsMessage: "Not enough groups to display.",
+  },
 };

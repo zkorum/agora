@@ -29,4 +29,7 @@ export const userMetadataTranslations: Record<
   ja: {
     idVerified: "ID が確認されました",
   },
+  fa: {
+    idVerified: "ID verified",
+  },
 };

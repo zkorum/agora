@@ -3,24 +3,32 @@
     :general-props="{
       addGeneralPadding: false,
       addBottomPadding: false,
-      enableFooter: true,
+      enableFooter: false,
       enableHeader: true,
       reducedWidth: false,
     }"
   >
     <template #header>
-      <HomeMenuBar>
-        <template #center>
-          <img
-            v-if="drawerBehavior == 'mobile'"
-            src="/images/icons/agora-wings.svg"
-            class="agoraLogoStyle"
-          />
-        </template>
-      </HomeMenuBar>
+      <div class="topBar">
+        <MenuButton />
 
-      <WidthWrapper :enable="true">
-        <div class="tabCluster">
+        <div class="tabScroller">
+          <RouterLink to="/" class="tabLink">
+            <ZKTab
+              :text="t('home')"
+              :is-highlighted="route.name === '/'"
+              :should-underline-on-highlight="false"
+            />
+          </RouterLink>
+
+          <RouterLink to="/topics/" class="tabLink">
+            <ZKTab
+              :text="t('explore')"
+              :is-highlighted="route.name === '/topics/'"
+              :should-underline-on-highlight="false"
+            />
+          </RouterLink>
+
           <div class="tabItem" @click="selectedTab('following')">
             <ZKTab
               :text="isLoggedIn ? t('following') : t('popular')"
@@ -29,8 +37,6 @@
             />
           </div>
 
-          <!-- TODO: ACCESSIBILITY - Change <div> wrapper to semantic <button> or add proper ARIA attributes -->
-          <!-- Tab navigation should be keyboard accessible for users with motor disabilities -->
           <div class="tabItem" @click="selectedTab('new')">
             <ZKTab
               :text="t('new')"
@@ -39,7 +45,9 @@
             />
           </div>
         </div>
-      </WidthWrapper>
+
+        <LoginButton />
+      </div>
     </template>
 
     <div class="container">
@@ -53,22 +61,23 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import CompactPostList from "src/components/feed/CompactPostList.vue";
-import { HomeMenuBar } from "src/components/navigation/header/variants";
-import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import NewPostButtonWrapper from "src/components/post/NewPostButtonWrapper.vue";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useMenuBarActions } from "src/composables/ui/useMenuBarActions";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import type { HomeFeedSortOption } from "src/stores/homeFeed";
 import { useHomeFeedStore } from "src/stores/homeFeed";
-import { useNavigationStore } from "src/stores/navigation";
+import { useRoute } from "vue-router";
 
 import { type HomeTranslations, homeTranslations } from "./index.i18n";
 
 const { t } = useComponentI18n<HomeTranslations>(homeTranslations);
 
-const { drawerBehavior } = storeToRefs(useNavigationStore());
+const route = useRoute();
+
+const { MenuButton, LoginButton } = useMenuBarActions();
 
 const { currentHomeFeedTab } = storeToRefs(useHomeFeedStore());
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
@@ -86,27 +95,47 @@ function selectedTab(tab: HomeFeedSortOption) {
   gap: 1rem;
 }
 
-.agoraLogoStyle {
-  width: 2rem;
-  height: 2rem;
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  width: 100%;
+  overflow: hidden;
 }
 
-.tabCluster {
+.tabScroller {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  white-space: nowrap;
   font-weight: var(--font-weight-semibold);
   font-size: 1rem;
-  padding-bottom: 0.8rem;
+
+  &::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+}
+
+.tabLink {
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+  padding: 0.3rem 0.6rem;
+  border-radius: 15px;
+}
+
+.tabLink:hover {
+  cursor: pointer;
 }
 
 .tabItem {
-  min-width: 8rem;
-  padding-top: 0.3rem;
-  padding-bottom: 0.3rem;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  flex-shrink: 0;
+  padding: 0.3rem 0.6rem;
   border-radius: 15px;
 }
 

@@ -80,4 +80,13 @@ export const exportHistoryListTranslations: Record<
     statusFailed: "失敗",
     statusCancelled: "キャンセル",
   },
+  fa: {
+    loadingExports: "Loading exports...",
+    noExportsYet: "No exports yet. Request your first export above!",
+    errorLoadingExports: "Failed to load export history",
+    statusProcessing: "Processing",
+    statusCompleted: "Completed",
+    statusFailed: "Failed",
+    statusCancelled: "Cancelled",
+  },
 };

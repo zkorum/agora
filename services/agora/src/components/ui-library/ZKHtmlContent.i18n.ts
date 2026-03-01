@@ -37,4 +37,8 @@ export const zkHtmlContentTranslations: Record<
     postContentPreview: "投稿内容プレビュー",
     postContent: "投稿内容",
   },
+  fa: {
+    postContentPreview: "Post content preview",
+    postContent: "Post content",
+  },
 };

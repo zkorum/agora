@@ -53,4 +53,10 @@ export const opinionGroupVisualizationTranslations: Record<
     clusterCountLabel: "クラスター数",
     componentPreview: "コンポーネントプレビュー",
   },
+  fa: {
+    opinionGroupVisualization: "Opinion Group Visualization",
+    visualizationControls: "Visualization Controls",
+    clusterCountLabel: "Number of Groups",
+    componentPreview: "Component Preview",
+  },
 };

@@ -70,4 +70,12 @@ export const usernameChangeTranslations: Record<
     usernameCurrentlyInUse: "このユーザー名は現在使用されています",
     submitError: "ユーザー名の変更を送信する際にエラーが発生しました",
   },
+  fa: {
+    usernameLabel: "Username",
+    updateButton: "Update",
+    usernameChanged: "Username changed",
+    usernameAlreadyInUse: "Username is already in use",
+    usernameCurrentlyInUse: "This username is currently in use",
+    submitError: "Error while trying to submit username change",
+  },
 };

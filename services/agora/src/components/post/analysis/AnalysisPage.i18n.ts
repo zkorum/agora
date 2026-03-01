@@ -75,4 +75,12 @@ export const analysisPageTranslations: Record<
     noAnalysisData: "この会話の分析データは利用できません",
     retryAnalysis: "読み込み再試行",
   },
+  fa: {
+    loadingAnalysis: "Loading analysis...",
+    retryingAnalysis: "Retrying to load analysis...",
+    analysisErrorTitle: "Failed to load analysis",
+    analysisErrorMessage: "Unable to load the analysis data. Please try again.",
+    noAnalysisData: "Analysis data is not available for this conversation",
+    retryAnalysis: "Retry loading",
+  },
 };

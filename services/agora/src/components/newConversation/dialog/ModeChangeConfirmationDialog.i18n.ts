@@ -93,4 +93,16 @@ export const modeChangeConfirmationDialogTranslations: Record<
     cancel: "キャンセル",
     continue: "続ける",
   },
+  fa: {
+    switchToImportMode: "Switch to Import Mode?",
+    switchingWillClear:
+      "Switching to import mode will clear the following fields from the conversation draft:",
+    title: "Title",
+    bodyText: "Body text",
+    pollOptions: "Poll options",
+    settingsPreserved:
+      "Your privacy settings and organization selection will be preserved.",
+    cancel: "Cancel",
+    continue: "Continue",
+  },
 };

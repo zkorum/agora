@@ -45,4 +45,9 @@ export const step4UsernameTranslations: Record<
     howToAppear: "Agora でどのように表示したいですか？",
     usernameInUse: "ユーザー名はすでに使用されています",
   },
+  fa: {
+    title: "Choose your username",
+    howToAppear: "How do you want to appear in Agora?",
+    usernameInUse: "Username is already in use",
+  },
 };

@@ -67,4 +67,12 @@ export const commonGroundInformationDialogTranslations: Record<
     disagreementsDescription:
       "これらの意見はすべての意見グループに全会一致で否決されています。\n\n単純な多数決を超えたものです：大多数が否決しても、一つのグループの承認——その規模に関わらず——だけでその意見は除外されます。\n\n真のグループ間合意を反映する意見のみがここに表示され、多数決だけに基づく意見は表示されません。\n\n統計的に最も有意なものが最初に表示されます。",
   },
+  fa: {
+    agreementsTitle: "Approved",
+    agreementsDescription:
+      "These are statements all opinion groups agree to agree on.\n\nThis goes beyond a simple majority: even if most individuals approve, a single group's disapproval — no matter how small the group — is enough to exclude a statement.\n\nOnly statements that reflect true cross-group consensus appear here, not those based on majority rule alone.\n\nOnly the most statistically significant are shown first.",
+    disagreementsTitle: "Rejected",
+    disagreementsDescription:
+      "These are statements all opinion groups agree to disagree on.\n\nThis goes beyond a simple majority: even if most individuals reject, a single group's approval — no matter how small the group — is enough to exclude a statement.\n\nOnly statements that reflect true cross-group consensus appear here, not those based on majority rule alone.\n\nOnly the most statistically significant are shown first.",
+  },
 };

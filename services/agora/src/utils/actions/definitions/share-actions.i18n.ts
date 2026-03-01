@@ -50,4 +50,9 @@ export const shareActionsTranslations: Record<
     showQrCode: "QRコードを表示",
     shareVia: "共有する...",
   },
+  fa: {
+    copyLink: "Copy link",
+    showQrCode: "Show QR Code",
+    shareVia: "Share via...",
+  },
 };

@@ -69,4 +69,12 @@ export const opinionGroupCommentsTranslations: Record<
     allOthers: "すべての他の",
     allOtherGroups: "すべての他のグループ",
   },
+  fa: {
+    opinionsTitle: "Statements",
+    opinionsTitleLong: "Representative statements",
+    noOpinionsMessage: "No statements available for this group.",
+    thisGroup: "This group",
+    allOthers: "All others",
+    allOtherGroups: "All other groups",
+  },
 };

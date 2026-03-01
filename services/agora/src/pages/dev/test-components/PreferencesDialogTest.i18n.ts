@@ -52,4 +52,10 @@ export const preferencesDialogTestTranslations: Record<
       "ユーザーがアカウントを作成した後、言語とトピックの設定を選択できるダイアログをテストします。",
     openPreferencesDialogButton: "設定ダイアログを開く",
   },
+  fa: {
+    preferencesDialog: "Preferences Dialog",
+    preferencesDialogDescription:
+      "Test the post-signup preferences dialog that allows users to select their language and topic preferences after creating an account.",
+    openPreferencesDialogButton: "Open Preferences Dialog",
+  },
 };

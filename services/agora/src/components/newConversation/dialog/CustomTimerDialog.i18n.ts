@@ -53,4 +53,10 @@ export const customTimerDialogTranslations: Record<
     back: "戻る",
     confirm: "確認",
   },
+  fa: {
+    selectCustomTime: "Select Custom Time",
+    chooseWhenPublic: "Choose when your conversation will become public",
+    back: "Back",
+    confirm: "Confirm",
+  },
 };

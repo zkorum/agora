@@ -67,4 +67,12 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       divisive: "分断",
       groups: "グループ",
     },
+  fa: {
+      summary: "Summary",
+      me: "Me",
+      agreements: "Approved",
+      disagreements: "Rejected",
+      divisive: "Divisive",
+      groups: "Groups",
+    },
   };

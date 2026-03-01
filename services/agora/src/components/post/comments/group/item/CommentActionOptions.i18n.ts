@@ -37,4 +37,8 @@ export const commentActionOptionsTranslations: Record<
     agoraOpinion: "Agora 主張",
     copiedToClipboard: "リンクをクリップボードにコピーしました",
   },
+  fa: {
+    agoraOpinion: "Agora Statement",
+    copiedToClipboard: "Link copied to clipboard",
+  },
 };

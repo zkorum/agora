@@ -61,4 +61,11 @@ export const sideDrawerTranslations: Record<
     profile: "プロフィール",
     settings: "設定",
   },
+  fa: {
+    home: "Home",
+    explore: "Explore",
+    dings: "Dings",
+    profile: "Profile",
+    settings: "Settings",
+  },
 };

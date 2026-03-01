@@ -52,4 +52,10 @@ export const embeddedBrowserWarningTestTranslations: Record<
       "ユーザーがアプリ内ブラウザ（Telegram、WeChatなど）でアプリを開いたときに表示される埋め込みブラウザ警告ダイアログをテストします",
     openWarningButton: "警告ダイアログを開く",
   },
+  fa: {
+    embeddedBrowserWarning: "Embedded Browser Warning",
+    embeddedBrowserWarningDescription:
+      "Test the embedded browser warning dialog that appears when users open the app in an in-app browser (Telegram, WeChat, etc.)",
+    openWarningButton: "Open Warning Dialog",
+  },
 };

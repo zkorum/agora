@@ -160,4 +160,25 @@ export const exportPageTranslations: Record<
       "この会話にはエクスポートする主張がありません。まず主張を追加してください。",
     exportFeatureDisabled: "エクスポート機能は無効です",
   },
+  fa: {
+    pageTitle: "Export Conversation",
+    pageDescription:
+      "Download a CSV export of all statements and votes for this conversation.",
+    previousExports: "Previous Exports",
+    conversationLoadError:
+      "Failed to load conversation details. Please try again.",
+    exportRequestError: "Failed to create export. Please try again.",
+    exportCooldownMinutes:
+      "Export cooldown active. You can request another export in {minutes} minute(s).",
+    exportCooldownSeconds:
+      "Export cooldown active. You can request another export in {seconds} second(s).",
+    viewConversation: "View conversation",
+    requestExportAriaLabel: "Request export of conversation data",
+    errorActiveExportInProgress:
+      "An export is already in progress. Please wait for it to complete.",
+    errorConversationNotFound: "Conversation not found.",
+    errorNoOpinions:
+      "This conversation has no statements to export. Add some statements first.",
+    exportFeatureDisabled: "Export feature is disabled",
+  },
 };

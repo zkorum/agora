@@ -97,4 +97,15 @@ export const newConversationDraftsTranslations: Record<
     pollMinOptionsError: (minOptions: number) =>
       `最低${minOptions}つのオプションが必要です`,
   },
+  fa: {
+    titleRequired: "Title is required to continue",
+    bodyExceedsLimit: (characterCount: number, maxLength: number) =>
+      `Body content exceeds ${maxLength} character limit (${characterCount}/${maxLength})`,
+    polisUrlInvalid: "Please enter a valid Polis URL.",
+    polisUrlRequired: "Please enter a Polis URL to import",
+    pollMaxOptionsError: (maxOptions: number) =>
+      `Maximum ${maxOptions} poll options allowed`,
+    pollMinOptionsError: (minOptions: number) =>
+      `Minimum ${minOptions} poll options required`,
+  },
 };

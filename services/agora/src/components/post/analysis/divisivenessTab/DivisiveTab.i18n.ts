@@ -86,4 +86,14 @@ export const divisiveTabTranslations: Record<
     noDivisiveOpinionsMessage: "有意な分断的主張はまだ見つかりません。",
     lowerRankedDivider: "統計的有意性が低い",
   },
+  fa: {
+    divisiveTitle: "Divisive",
+    divisiveLongTitle: "What {keyword} people across groups?",
+    divisiveKeyword: "divides",
+    subtitle:
+      "Statements that split opinion groups against each other. Only the most statistically significant are shown.",
+    loadMore: "Load all",
+    noDivisiveOpinionsMessage: "No significant divisive statements found yet.",
+    lowerRankedDivider: "Less statistically significant",
+  },
 };

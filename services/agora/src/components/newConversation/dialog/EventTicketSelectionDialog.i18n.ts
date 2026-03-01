@@ -29,4 +29,7 @@ export const eventTicketSelectionDialogTranslations: Record<
   ja: {
     devconnect2025: "Devconnect 2025",
   },
+  fa: {
+    devconnect2025: "Devconnect 2025",
+  },
 };

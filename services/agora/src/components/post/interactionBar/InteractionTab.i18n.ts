@@ -29,4 +29,7 @@ export const interactionTabTranslations: Record<
   ja: {
     analysis: "分析",
   },
+  fa: {
+    analysis: "Analysis",
+  },
 };

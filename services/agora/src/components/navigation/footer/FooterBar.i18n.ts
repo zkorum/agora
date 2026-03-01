@@ -45,4 +45,9 @@ export const footerBarTranslations: Record<
     explore: "探索",
     dings: "Dings",
   },
+  fa: {
+    home: "Home",
+    explore: "Explore",
+    dings: "Dings",
+  },
 };

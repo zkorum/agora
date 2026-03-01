@@ -61,4 +61,11 @@ export const compactPostListTranslations: Record<
     completedDescription: "すべての新しい会話を見ました。",
     newConversationsButton: "新しい会話",
   },
+  fa: {
+    emptyStateTitle: "It is too quiet here...",
+    emptyStateDescription: "Create a new conversation using the",
+    completedTitle: "You're all caught up",
+    completedDescription: "You have seen all the new conversations.",
+    newConversationsButton: "New conversations",
+  },
 };

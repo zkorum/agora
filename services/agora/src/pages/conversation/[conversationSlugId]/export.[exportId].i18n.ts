@@ -37,4 +37,8 @@ export const exportStatusPageTranslations: Record<
     pageTitle: "エクスポートステータス",
     exportFeatureDisabled: "エクスポート機能は無効です",
   },
+  fa: {
+    pageTitle: "Export Status",
+    exportFeatureDisabled: "Export feature is disabled",
+  },
 };

@@ -37,4 +37,8 @@ export const commentModerationTranslations: Record<
     edit: "編集",
     moderatorFlaggedMessage: "モデレーターがこの回答を",
   },
+  fa: {
+    edit: "Edit",
+    moderatorFlaggedMessage: "Moderator flagged this response as",
+  },
 };

@@ -42,4 +42,9 @@ export const topicsTranslations: Record<SupportedDisplayLanguageCodes, TopicsTra
     following: "フォロー中",
     follow: "フォロー",
   },
+  fa: {
+    exploreTopics: "Explore Topics",
+    following: "Following",
+    follow: "Follow",
+  },
 };

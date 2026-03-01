@@ -101,4 +101,16 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "クラスターに割り当てられました！",
     viewAnalysis: "分析を見る",
   },
+  fa: {
+    loadingOpinions: "Loading statements...",
+    retrying: "Retrying...",
+    failedToLoadOpinions: "Failed to load statements",
+    noOpinionsAvailable: "No statements available",
+    retryLoadingOpinions: "Retry loading statements",
+    voteUnlockSingular: "1 more vote to unlock your group analysis",
+    voteUnlockPlural: "{count} more votes to unlock your group analysis",
+    notEnoughOpinions: "Create more statements to vote on to allow opinion group mapping",
+    clusteredBanner: "You have been assigned a group!",
+    viewAnalysis: "View analysis",
+  },
 };

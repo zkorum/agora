@@ -37,4 +37,8 @@ export const spokenLanguageStepTranslations: Record<
     title: "あなたはどの言語を話しますか？",
     nextButton: "次へ",
   },
+  fa: {
+    title: "What languages do you speak?",
+    nextButton: "Next",
+  },
 };

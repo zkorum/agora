@@ -141,4 +141,22 @@ export const consensusTabTranslations: Record<
     noDisagreementsMessage: "まだ合意は形成されていません。",
     lowerRankedDivider: "統計的有意性が低い",
   },
+  fa: {
+    agreementsTitle: "Approved",
+    disagreementsTitle: "Rejected",
+    agreementsLongTitle:
+      "Which statements are {keyword} by all groups?",
+    disagreementsLongTitle:
+      "Which statements are {keyword} by all groups?",
+    agreementsKeyword: "approved",
+    disagreementsKeyword: "rejected",
+    subtitleAgree:
+      "Statements all opinion groups agree to agree on. Not a simple majority, but a cross-group consensus. Only the most statistically significant are shown.",
+    subtitleDisagree:
+      "Statements all opinion groups agree to disagree on. Not a simple majority, but a cross-group consensus. Only the most statistically significant are shown.",
+    loadMore: "Load all",
+    noAgreementsMessage: "No consensus has emerged yet.",
+    noDisagreementsMessage: "No consensus has emerged yet.",
+    lowerRankedDivider: "Less statistically significant",
+  },
 };

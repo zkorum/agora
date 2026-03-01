@@ -106,4 +106,18 @@ export const conversationReviewTranslations: Record<
     opinionDuplicate: "この主張は重複しています",
     errorCreatingConversation: "新しい会話を作成する際にエラーが発生しました",
   },
+  fa: {
+    posting: "Posting...",
+    post: "Post",
+    addSeedOpinions: "Add Seed Statements",
+    seedOpinionsDescription:
+      "It's recommended to seed 8 to 15 statements across a range of viewpoints. This has a powerful effect on early participation.",
+    addOpinion: "Add Statement",
+    opinionCannotBeEmpty: "Statement cannot be empty",
+    opinionExceedsLimit:
+      "Statement exceeds {limit} character limit ({count}/{limit})",
+    opinionDuplicate: "This statement is a duplicate",
+    errorCreatingConversation:
+      "Error while trying to create a new conversation",
+  },
 };

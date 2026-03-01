@@ -134,4 +134,21 @@ export const commentComposerTranslations: Record<
     validationWarningMultipleIdeas:
       "ヒント：これには複数のアイデアが含まれている可能性があります - 投票者が明確に賛成または反対できることを確認してください",
   },
+  fa: {
+    placeholder: "Add your own statement",
+    placeholderExpanded: "Focus on a single point that's easy to agree or disagree with",
+    postButton: "Post",
+    conversationLockedError:
+      "Cannot create statement because the conversation is locked",
+    conversationClosedError:
+      "This conversation has been closed",
+    createOpinionError: "Error while trying to create a new statement",
+    eventTicketRequiredTitle: "Event Ticket Required",
+    eventTicketRequiredMessage:
+      "You need to verify your Devconnect 2025 ticket to participate in this conversation.",
+    exitPromptTitle: "Save statement as draft?",
+    exitPromptDescription: "Your draft statement will be here when you return.",
+    validationWarningMultipleIdeas:
+      "Tip: This might contain multiple ideas - make sure voters can clearly agree or disagree",
+  },
 };

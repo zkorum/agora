@@ -29,4 +29,7 @@ export const termsOfServiceTranslations: Record<
   ja: {
     termsOfService: "利用規約",
   },
+  fa: {
+    termsOfService: "Terms of Service",
+  },
 };

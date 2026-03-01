@@ -37,4 +37,8 @@ export const postActionBarTranslations: Record<
     share: "共有",
     copiedToClipboard: "リンクをクリップボードにコピーしました",
   },
+  fa: {
+    share: "Share",
+    copiedToClipboard: "Link copied to clipboard",
+  },
 };

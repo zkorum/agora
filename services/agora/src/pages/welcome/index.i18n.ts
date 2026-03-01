@@ -61,4 +61,11 @@ export const welcomeTranslations: Record<
     launchApp: "アプリを起動",
     logOut: "ログアウト",
   },
+  fa: {
+    signUp: "Sign Up",
+    login: "Log In",
+    skipAuthentication: "Skip Authentication",
+    launchApp: "Launch App",
+    logOut: "Log Out",
+  },
 };

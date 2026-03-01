@@ -71,4 +71,12 @@ export const commentGroupTranslations: Record<
       "何らかの問題が発生しました。もう一度お試しください。",
     retryLoadOpinions: "主張の読み込みを再試行",
   },
+  fa: {
+    noOpinionsMessage: "There are no statements in this conversation filter.",
+    loadingOpinions: "Loading statements...",
+    retrying: "Retrying...",
+    opinionsLoadFailed: "Statements could not be loaded",
+    unexpectedErrorRetry: "Something went wrong. Please try again.",
+    retryLoadOpinions: "Retry loading statements",
+  },
 };

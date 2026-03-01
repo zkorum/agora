@@ -77,4 +77,13 @@ export const conversationModerationTranslations: Record<
     moderate: "管理",
     withdraw: "取り下げ",
   },
+  fa: {
+    moderateConversation: "Moderate the conversation",
+    action: "Action",
+    reason: "Reason",
+    explanationOptional: "Explanation (optional)",
+    modify: "Modify",
+    moderate: "Moderate",
+    withdraw: "Withdraw",
+  },
 };

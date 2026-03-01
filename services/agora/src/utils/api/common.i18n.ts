@@ -148,4 +148,24 @@ export const commonApiTranslations: Record<
     unexpectedError: "予期しないエラーが発生しました。もう一度お試しください。",
     noInternetConnection: "インターネット接続がありません",
   },
+  fa: {
+    timeoutError:
+      "Request timed out. The server is taking longer than expected to respond.",
+    networkError:
+      "Network error. Please check your internet connection and try again.",
+    requestCanceled: "Request was canceled.",
+    invalidRequest: "Invalid request. Please check your input and try again.",
+    serverError: "Server error. Please try again later.",
+    tooManyRedirects:
+      "Too many redirects. Please contact support if this continues.",
+    configurationError:
+      "Configuration error. Please refresh the page and try again.",
+    featureNotSupported:
+      "This feature is no longer supported. Please update your app.",
+    operationNotSupported:
+      "This operation is not supported in your current environment.",
+    invalidUrl: "Invalid request URL. Please contact support.",
+    unexpectedError: "An unexpected error occurred. Please try again.",
+    noInternetConnection: "No internet connection",
+  },
 };

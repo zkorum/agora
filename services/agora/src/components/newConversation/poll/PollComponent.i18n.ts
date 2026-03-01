@@ -76,4 +76,13 @@ export const pollComponentTranslations: Record<
     inputOptionText: "オプションのテキストを入力",
     addOption: "オプションを追加",
   },
+  fa: {
+    addPoll: "Add a poll",
+    existingPoll: "Existing Poll",
+    readonlyExplanation:
+      "Poll options cannot be edited once votes are cast. To create a new poll, remove this one first.",
+    option: "Option",
+    inputOptionText: "Input option text",
+    addOption: "Add Option",
+  },
 };

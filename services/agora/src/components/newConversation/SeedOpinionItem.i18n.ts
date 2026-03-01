@@ -37,4 +37,8 @@ export const seedOpinionItemTranslations: Record<
     inputTextPlaceholder: "テキストを入力",
     deleteOpinion: "主張を削除",
   },
+  fa: {
+    inputTextPlaceholder: "Input text",
+    deleteOpinion: "Delete Statement",
+  },
 };

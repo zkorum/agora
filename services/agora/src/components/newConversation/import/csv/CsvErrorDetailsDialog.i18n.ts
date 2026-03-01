@@ -86,4 +86,14 @@ export const csvErrorDetailsDialogTranslations: Record<
     errorCopied: "エラーメッセージをクリップボードにコピーしました",
     close: "閉じる",
   },
+  fa: {
+    dialogTitle: "Error Details",
+    helpText: "Please double-check your CSV file format.",
+    supportTextPrefix: "If something seems wrong, please contact us on ",
+    supportLinkText: "Discord",
+    supportTextSuffix: " for support.",
+    copyError: "Copy Error",
+    errorCopied: "Error message copied to clipboard",
+    close: "Close",
+  },
 };

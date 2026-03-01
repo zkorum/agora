@@ -45,4 +45,9 @@ export const topicSelectionStepTranslations: Record<
     backButton: "戻る",
     closeButton: "閉じる",
   },
+  fa: {
+    title: "Select topics you're interested in to get started",
+    backButton: "Back",
+    closeButton: "Close",
+  },
 };

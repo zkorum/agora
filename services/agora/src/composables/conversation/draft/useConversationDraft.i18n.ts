@@ -57,6 +57,14 @@ export const useConversationDraftTranslations: Record<
     pollMinOptionsError: "最小{min}個の投票選択肢が必要です",
     titleRequired: "続行するにはタイトルが必要です",
   },
+  fa: {
+    bodyExceedsLimit: "Body exceeds maximum length ({count}/{max})",
+    polisUrlRequired: "Polis URL is required",
+    polisUrlInvalid: "Please enter a valid Polis URL.",
+    pollMaxOptionsError: "Maximum {max} poll options allowed",
+    pollMinOptionsError: "Minimum {min} poll options required",
+    titleRequired: "Title is required to continue",
+  },
   "zh-Hans": {
     bodyExceedsLimit: "正文超过最大长度 ({count}/{max})",
     polisUrlRequired: "需要 Polis URL",

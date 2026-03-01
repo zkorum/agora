@@ -235,6 +235,43 @@ export const editConversationTranslations: Record<
     pollChangeWarningConfirm: "はい、続行します",
     pollChangeWarningCancel: "キャンセル",
   },
+  fa: {
+    saveButton: "Save",
+    titlePlaceholder: "Conversation title",
+    bodyPlaceholder: "What's on your mind?",
+    updateSuccess: "Conversation updated successfully",
+    updateError: "Failed to update conversation",
+    notFoundError: "Conversation not found",
+    notAuthorError: "You are not the author of this conversation",
+    conversationLockedError: "This conversation is locked and cannot be edited",
+    notFoundErrorTitle: "Conversation not found",
+    notFoundErrorMessage: "Failed to load conversation",
+    notAuthorErrorTitle: "You are not the author of this conversation",
+    notAuthorErrorMessage:
+      "Only the original author can edit this conversation",
+    conversationLockedErrorTitle:
+      "This conversation is locked and cannot be edited",
+    conversationLockedErrorMessage:
+      "Please contact a moderator if you need this conversation to be unlocked",
+    invalidAccessSettingsError:
+      "Invalid access settings. Login cannot be required for private conversations.",
+    pollAlreadyExistsError:
+      "Cannot create poll: this conversation already has a poll",
+    noPollToRemoveError:
+      "Cannot remove poll: this conversation does not have a poll",
+    noPollToKeepError:
+      "Cannot keep poll: this conversation does not have a poll",
+    noPollToReplaceError:
+      "Cannot replace poll: this conversation does not have a poll",
+    loadingErrorTitle: "Failed to load conversation",
+    loadingErrorMessage: "An error occurred while loading the conversation",
+    pollChangeWarningMessage:
+      "Changing poll options will reset all existing votes. Are you sure you want to continue?",
+    removePollWarningMessage:
+      "Removing the poll will delete all existing votes. Are you sure you want to continue?",
+    pollChangeWarningConfirm: "Yes, Continue",
+    pollChangeWarningCancel: "Cancel",
+  },
   ar: {
     saveButton: "حفظ",
     titlePlaceholder: "عنوان المحادثة",

@@ -82,4 +82,14 @@ export const loginRequirementDialogTranslations: Record<
     conversationSwitchedToPrivate:
       "会話がプライベートに切り替わりました。イベントチケット検証なしのゲスト参加はプライベート会話でのみ利用可能です。",
   },
+  fa: {
+    requiresLoginTitle: "Requires login",
+    requiresLoginDescription:
+      "Anyone with the link can view the conversation, but will need to login to vote and contribute statements",
+    guestParticipationTitle: "Guest participation",
+    guestParticipationDescription:
+      "Anyone with the link can view the conversation, vote and contribute statements",
+    conversationSwitchedToPrivate:
+      "Conversation switched to private. Guest participation without event ticket verification is only available for private conversations.",
+  },
 };

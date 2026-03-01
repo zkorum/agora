@@ -53,4 +53,10 @@ export const opinionNotFoundBannerTranslations: Record<
     dismiss: "閉じる",
     dismissBannerAriaLabel: "主張が見つからないメッセージを閉じる",
   },
+  fa: {
+    requestedOpinionNotFound: "The requested statement could not be found.",
+    opinionId: "Statement ID",
+    dismiss: "Dismiss",
+    dismissBannerAriaLabel: "Dismiss statement not found message",
+  },
 };

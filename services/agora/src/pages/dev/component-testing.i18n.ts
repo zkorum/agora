@@ -29,4 +29,7 @@ export const componentTestingTranslations: Record<
   ja: {
     componentTesting: "コンポーネントテスト",
   },
+  fa: {
+    componentTesting: "Component Testing",
+  },
 };

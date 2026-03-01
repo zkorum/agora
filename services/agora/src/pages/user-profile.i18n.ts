@@ -51,4 +51,10 @@ export const userProfileTranslations: Record<SupportedDisplayLanguageCodes, User
       conversationTab: "会話",
       opinionTab: "主張",
     },
+  fa: {
+      userProfile: "User Profile",
+      conversations: "conversations",
+      conversationTab: "Conversation",
+      opinionTab: "Statement",
+    },
   };

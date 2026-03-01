@@ -127,4 +127,20 @@ export const languagesSettingsTranslations: Record<
     other: "その他",
     others: "その他",
   },
+  fa: {
+    pageTitle: "Language",
+    displayLanguageLabel: "Display Language",
+    spokenLanguagesLabel: "Spoken Languages",
+    displayLanguageTitle: "Display language",
+    displayLanguageDescription:
+      "Your preferred language for the Agora App headers, buttons and other text",
+    additionalLanguagesTitle: "Additional languages",
+    additionalLanguagesDescription:
+      "For content you would like to see on Agora",
+    englishFallback: "English",
+    noneSelected: "None selected",
+    and: "and",
+    other: "other",
+    others: "others",
+  },
 };

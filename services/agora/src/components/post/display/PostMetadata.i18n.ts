@@ -119,4 +119,19 @@ export const postMetadataTranslations: Record<
     alreadyClosed: "この会話はすでに閉じられています",
     alreadyOpen: "この会話はすでに開いています",
   },
+  fa: {
+    closeConfirmMessage:
+      "Are you sure you want to close this conversation? Users will not be able to post new statements or votes.",
+    closeConfirmButton: "Close conversation",
+    reopenConfirmMessage:
+      "Reopen this conversation? Users will be able to post statements and vote again.",
+    reopenConfirmButton: "Reopen conversation",
+    cancelButton: "Cancel",
+    closeSuccess: "Conversation closed successfully",
+    openSuccess: "Conversation opened successfully",
+    closeNotAllowed: "You are not allowed to close this conversation",
+    openNotAllowed: "You are not allowed to open this conversation",
+    alreadyClosed: "This conversation is already closed",
+    alreadyOpen: "This conversation is already open",
+  },
 };

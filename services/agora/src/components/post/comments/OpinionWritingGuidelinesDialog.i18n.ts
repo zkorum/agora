@@ -243,4 +243,36 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     dontCombineExampleGood1: "医療はサービスポイントで無料であるべきです",
     dontCombineExampleGood2: "大学の授業料は無料であるべきです",
   },
+  fa: {
+    title: "Tips for Writing Good Statements",
+    singleIdeaTitle: "One specific idea",
+    singleIdeaDescription: "Focus on a single point others can vote on",
+    singleIdeaExampleGood:
+      "Ride-sharing drivers should have the same insurance requirements as taxi drivers",
+    singleIdeaExampleBad:
+      "Uber should be banned and taxis need better apps and rating systems",
+    easyVoteTitle: "Easy to agree/disagree",
+    easyVoteDescription: "Avoid complex or multi-part statements",
+    easyVoteExampleGood:
+      "Social media companies should be liable for misinformation on their platforms",
+    easyVoteExampleBad:
+      "Social media regulation is complex and depends on various factors and cultural contexts",
+    keepBriefTitle: "Keep it brief",
+    keepBriefDescription: "Aim for 280 characters or less",
+    keepBriefExampleGood: "Public transit should be free for students",
+    keepBriefExampleBad:
+      "I think that municipal transportation systems should consider implementing reduced-cost or zero-cost fare policies for individuals enrolled in educational programs because...",
+    beClearTitle: "Be clear",
+    beClearDescription: "Others should immediately understand your point",
+    beClearExampleGood: "Remote work increases employee productivity",
+    beClearExampleBad:
+      "Telecommuting paradigms require reconsideration of organizational dynamics",
+    dontCombineTitle: "Don't combine",
+    dontCombineDescription:
+      'Split "A and B" into separate statements for clearer voting',
+    dontCombineExampleBad:
+      "We need universal healthcare and free college tuition",
+    dontCombineExampleGood1: "Healthcare should be free at point of service",
+    dontCombineExampleGood2: "College tuition should be free",
+  },
 };

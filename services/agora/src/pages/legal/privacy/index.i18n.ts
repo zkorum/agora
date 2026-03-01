@@ -29,4 +29,7 @@ export const privacyPolicyTranslations: Record<
   ja: {
     privacyPolicy: "プライバシーポリシー",
   },
+  fa: {
+    privacyPolicy: "Privacy Policy",
+  },
 };

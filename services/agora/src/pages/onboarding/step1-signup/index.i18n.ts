@@ -44,4 +44,9 @@ export const signupOnboardingTranslations: Record<
     description:
       "分極化が進む世界において、アゴラは重要な社会問題に関する市民対話を人間味あるものにし、分極化を解消するよう努めています。",
   },
+  fa: {
+    pageTitle: "Why does Agora exist?",
+    description:
+      "In a world marked by increasing polarizations, Agora strives to rehumanize and depolarize citizen dialogues on key societal issues.",
+  },
 };

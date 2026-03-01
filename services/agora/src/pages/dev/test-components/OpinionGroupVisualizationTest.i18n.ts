@@ -52,4 +52,10 @@ export const opinionGroupVisualizationTestTranslations: Record<
       "異なるクラスター構成でOpinionGroupTabコンポーネントをテストして、レイアウトがどのように適応するかを確認します。",
     openVisualizationButton: "可視化ツールを開く",
   },
+  fa: {
+    opinionGroupVisualization: "Opinion Group Visualization",
+    opinionGroupVisualizationDescription:
+      "Test the OpinionGroupTab component with different cluster configurations to see how it adapts its layout.",
+    openVisualizationButton: "Open Visualization Tool",
+  },
 };

@@ -29,4 +29,7 @@ export const requestExportButtonTranslations: Record<
   ja: {
     requestNewExport: "新しいエクスポートをリクエスト",
   },
+  fa: {
+    requestNewExport: "Request New Export",
+  },
 };

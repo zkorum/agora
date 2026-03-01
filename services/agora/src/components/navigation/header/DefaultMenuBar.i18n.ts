@@ -29,4 +29,7 @@ export const defaultMenuBarTranslations: Record<
   ja: {
     logIn: "ログイン",
   },
+  fa: {
+    logIn: "Log in",
+  },
 };

@@ -214,4 +214,30 @@ export const passportOnboardingTranslations: Record<
     copiedToClipboard: "リンクをクリップボードにコピーしました",
     couldNotCopy: "クリップボードにコピーできませんでした",
   },
+  fa: {
+    pageTitle: "Own Your Privacy",
+    description:
+      "Rarimo is a ZK-powered identity wallet that converts your passport into an anonymous digital ID, stored on your device, so you can prove that you're a unique human without sharing any personal data with anyone.",
+    download: "Download",
+    claimAnonymousId: "Claim your anonymous ID",
+    comeBackAndVerify: "Come back here and click Verify",
+    scanQrCode: "Scan the QR code with Rarimo to verify your identity",
+    failedToGenerateLink: "Failed to generate verification link",
+    loadingVerificationLink: "Loading verification link",
+    openLinkOnMobile: "Or open the below link on your mobile browser:",
+    copy: "Copy",
+    waitingForVerification: "Waiting for verification...",
+    verify: "Verify",
+    preferPhoneVerification: "I'd rather verify with my phone number",
+    verificationSuccessful: "Verification successful 🎉",
+    accountMerged: "Success! Your accounts have been merged 🎉",
+    verificationFailed: "Verification attempt failed. Please retry.",
+    passportAlreadyLinked:
+      "This passport is already linked to another Rarimo account. Please try a different one.",
+    unexpectedError: "Oops! Unexpected error—try refreshing the page",
+    syncHiccup:
+      "Oops! Sync hiccup detected. We've refreshed your QR code—try scanning it again!",
+    copiedToClipboard: "Copied link to clipboard",
+    couldNotCopy: "Could not copy to clipboard",
+  },
 };

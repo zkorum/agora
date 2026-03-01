@@ -95,4 +95,15 @@ export const spokenLanguageSelectorTranslations: Record<
     failedToSaveLanguages: "言語設定の保存に失敗しました",
     failedToLoadLanguages: "言語設定の読み込みに失敗しました",
   },
+  fa: {
+    selectedLanguages: "Selected Languages",
+    addMoreLanguages: "Add More Languages",
+    selectLanguages: "Select Languages",
+    searchLanguages: "Search languages...",
+    noLanguagesFound: "No languages found",
+    allLanguagesSelected: "All languages selected",
+    cannotRemoveLastLanguage: "You must have at least one language selected",
+    failedToSaveLanguages: "Failed to save language preferences",
+    failedToLoadLanguages: "Failed to load language preferences",
+  },
 };

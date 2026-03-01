@@ -29,4 +29,7 @@ export const contentPreferenceTranslations: Record<
   ja: {
     contentPreference: "コンテンツ設定",
   },
+  fa: {
+    contentPreference: "Content Preference",
+  },
 };

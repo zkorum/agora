@@ -37,4 +37,8 @@ export const embedAccountWidgetTranslations: Record<
     logoutButton: "ログアウト",
     logoutTooltip: "ログアウト",
   },
+  fa: {
+    logoutButton: "Log Out",
+    logoutTooltip: "Logout",
+  },
 };

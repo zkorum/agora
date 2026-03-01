@@ -29,4 +29,7 @@ export const displayUsernameTranslations: Record<
   ja: {
     guest: "ゲスト",
   },
+  fa: {
+    guest: "Guest",
+  },
 };

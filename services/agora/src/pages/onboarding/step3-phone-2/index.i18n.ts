@@ -183,4 +183,27 @@ export const step3Phone2Translations: Record<SupportedDisplayLanguageCodes, Step
       restrictedPhoneType:
         "申し訳ありませんが、この電話番号はセキュリティ上の理由でサポートされていません。別の番号を試してください。",
     },
+  fa: {
+      title: "Enter the 6-digit code",
+      instructions: "Enter the 6-digit that we have sent via the phone number",
+      expiresIn: "Expires in",
+      codeExpired: "Code expired",
+      changeNumber: "Change Number",
+      resendCodeIn: "Resend Code in",
+      resendCode: "Resend Code",
+      pleaseEnterValidCode: "Please enter a valid 6-digit code",
+      verificationSuccessful: "Verification successful 🎉",
+      accountMerged: "Success! Your accounts have been merged 🎉",
+      codeExpiredResend: "Code expired—resend a new code",
+      wrongCodeTryAgain: "Wrong code—try again",
+      syncHiccupDetected: "Oops! Sync hiccup detected—resend a new code",
+      authStateChanged: "Authentication state changed—please request a new code",
+      somethingWrong: "Oops! Something is wrong",
+      tooManyAttempts:
+        "Too many attempts—please wait before requesting a new code",
+      invalidPhoneNumber:
+        "Sorry, this phone number is invalid. Please check and try again.",
+      restrictedPhoneType:
+        "Sorry, this phone number is not supported for security reasons. Please try another.",
+    },
   };

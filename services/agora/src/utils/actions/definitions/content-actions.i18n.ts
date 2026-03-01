@@ -155,4 +155,23 @@ export const actionsTranslations: Record<
       "このユーザーをミュートしてもよろしいですか？このユーザーの会話や主張は表示されなくなります。",
     confirmGenericAction: "この操作を実行してもよろしいですか？",
   },
+  fa: {
+    report: "Report",
+    muteUser: "Mute User",
+    delete: "Delete",
+    edit: "Edit",
+    moderate: "Moderate",
+    userReports: "User Reports",
+    share: "Share",
+    moderationHistory: "Moderation History",
+    embedLink: "Copy Embed Link",
+    exportConversation: "Export Conversation",
+    cancel: "Cancel",
+    confirm: "Confirm",
+    confirmDeletePost: "Are you sure you want to delete this conversation?",
+    confirmDeleteComment: "Are you sure you want to delete this statement?",
+    confirmMuteUser:
+      "Are you sure you want to mute this user? You won't see their conversations and statements anymore.",
+    confirmGenericAction: "Are you sure you want to perform this action?",
+  },
 };

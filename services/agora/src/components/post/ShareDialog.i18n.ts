@@ -50,4 +50,9 @@ export const shareDialogTranslations: Record<
     copiedToClipboard: "リンクをクリップボードにコピーしました",
     couldNotCopy: "クリップボードにコピーできませんでした",
   },
+  fa: {
+    copyLink: "Copy link",
+    copiedToClipboard: "Copied link to clipboard",
+    couldNotCopy: "Could not copy to clipboard",
+  },
 };

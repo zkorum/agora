@@ -105,4 +105,17 @@ export const reportContentDialogTranslations: Record<
     reportTypeConversation: "会話",
     reportTypeOpinion: "主張",
   },
+  fa: {
+    submitReportTitle: "Submit a report",
+    improveCommunityText:
+      "Thank you for helping us improve the community. What is the problem with this {reportType}?",
+    thanksForFeedbackTitle: "Thanks for your feedback!",
+    flaggingReasonText:
+      "Why are you flagging this {reportType} as {selectedReason}?",
+    addExplanationLabel: "Add explanation",
+    skipButton: "Skip",
+    submitButton: "Submit",
+    reportTypeConversation: "conversation",
+    reportTypeOpinion: "statement",
+  },
 };

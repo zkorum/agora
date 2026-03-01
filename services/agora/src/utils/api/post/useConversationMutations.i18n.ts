@@ -70,4 +70,12 @@ export const conversationMutationsTranslations: Record<
     alreadyClosed: "この会話はすでに閉じられています",
     alreadyOpen: "この会話はすでに開いています",
   },
+  fa: {
+    closeError: "Failed to close conversation. Please try again.",
+    openError: "Failed to open conversation. Please try again.",
+    closeNotAllowed: "You are not allowed to close this conversation",
+    openNotAllowed: "You are not allowed to open this conversation",
+    alreadyClosed: "This conversation is already closed",
+    alreadyOpen: "This conversation is already open",
+  },
 };

@@ -43,4 +43,9 @@ export const pollWrapperTranslations: Record<SupportedDisplayLanguageCodes, Poll
       vote: "投票",
       votes: "票",
     },
+  fa: {
+      results: "Results",
+      vote: "Vote",
+      votes: "votes",
+    },
   };

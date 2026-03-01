@@ -153,4 +153,23 @@ export const notificationTranslations: Record<
     failureReasonTimeout: "操作がタイムアウトしました",
     failureReasonInvalidDataFormat: "データ形式が無効です",
   },
+  fa: {
+    notifications: "Notifications",
+    endOfFeed: "End of notification feed",
+    noNotifications: "You have no notifications",
+    contributedOpinion:
+      "{username} contributed a statement to your conversation:",
+    onePersonVoted: "1 person voted on your statement:",
+    peopleVoted: "{count} people voted on your statement:",
+    exportStarted: "Your conversation export has started",
+    exportCompleted: "Your conversation export is ready",
+    exportFailed: "Your conversation export failed",
+    exportCancelled: "Your conversation export was cancelled",
+    importStarted: "Your conversation import has started",
+    importCompleted: "Your conversation import is complete",
+    importFailed: "Your conversation import failed",
+    failureReasonProcessingError: "A processing error occurred",
+    failureReasonTimeout: "The operation timed out",
+    failureReasonInvalidDataFormat: "The data format was invalid",
+  },
 };

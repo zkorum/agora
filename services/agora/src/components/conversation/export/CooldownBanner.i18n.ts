@@ -62,4 +62,10 @@ export const cooldownBannerTranslations: Record<
       "クールダウンが終了しました。新しいエクスポートをリクエストできます。",
     viewLast: "前回のエクスポートを表示",
   },
+  fa: {
+    cooldownSeconds: "Next export in {seconds}s",
+    cooldownMinutes: "Next export in {minutes}m",
+    cooldownEnded: "Cooldown ended. You can now request a new export.",
+    viewLast: "View Last Export",
+  },
 };

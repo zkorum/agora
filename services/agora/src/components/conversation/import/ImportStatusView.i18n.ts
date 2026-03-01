@@ -152,4 +152,22 @@ export const importStatusViewTranslations: Record<
     failureReasonTimeout: "操作がタイムアウトしました",
     failureReasonInvalidDataFormat: "データ形式が無効です",
   },
+  fa: {
+    loadingStatus: "Loading import status...",
+    errorLoadingStatus: "Failed to load import status",
+    importId: "Import ID",
+    status: "Status",
+    createdAt: "Created At",
+    status_processing: "Processing",
+    status_completed: "Completed",
+    status_failed: "Failed",
+    processingMessage:
+      "Your import is being processed. This may take a few seconds to a few minutes depending on the size of your import.",
+    completedMessage: "Your import has completed successfully!",
+    failedMessage: "Import failed. Please try again or contact support.",
+    viewConversation: "View Conversation",
+    failureReasonProcessingError: "A processing error occurred",
+    failureReasonTimeout: "The operation timed out",
+    failureReasonInvalidDataFormat: "The data format was invalid",
+  },
 };

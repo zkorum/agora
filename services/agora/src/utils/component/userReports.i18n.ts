@@ -69,4 +69,12 @@ export const userReportsTranslations: Record<
     sexual: "性的",
     spam: "スパム",
   },
+  fa: {
+    misleading: "Misleading",
+    antisocial: "Antisocial",
+    illegal: "Illegal",
+    doxing: "Doxing",
+    sexual: "Sexual",
+    spam: "Spam",
+  },
 };

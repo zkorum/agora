@@ -77,4 +77,13 @@ export const opinionModerationTranslations: Record<
     modifyButton: "修正",
     withdrawButton: "取り下げ",
   },
+  fa: {
+    title: "Moderate the statement",
+    actionLabel: "Action",
+    reasonLabel: "Reason",
+    explanationLabel: "Explanation (optional)",
+    moderateButton: "Moderate",
+    modifyButton: "Modify",
+    withdrawButton: "Withdraw",
+  },
 };

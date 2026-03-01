@@ -34,4 +34,7 @@ export const webShareTranslations: Record<
   ja: {
     copiedToClipboard: "リンクをクリップボードにコピーしました",
   },
+  fa: {
+    copiedToClipboard: "Copied link to clipboard",
+  },
 };

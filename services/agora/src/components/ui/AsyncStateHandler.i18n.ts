@@ -63,4 +63,11 @@ export const asyncStateHandlerTranslations: Record<
     emptyMessage: "利用可能なデータがありません",
     retry: "再試行",
   },
+  fa: {
+    loading: "Loading...",
+    errorTitle: "Something went wrong",
+    defaultErrorMessage: "An unexpected error occurred. Please try again.",
+    emptyMessage: "No data available",
+    retry: "Retry",
+  },
 };

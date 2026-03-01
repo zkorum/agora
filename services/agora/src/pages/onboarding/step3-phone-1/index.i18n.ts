@@ -95,4 +95,15 @@ export const phoneOnboardingTranslations: Record<
     phoneTypeNotSupported: "この電話番号のタイプはまだサポートされていません",
     pleaseEnterPhoneNumber: "電話番号を入力してください",
   },
+  fa: {
+    pageTitle: "Verify with phone number",
+    smsDescription: "You will receive a 6-digit one-time code by SMS",
+    phoneNumberPlaceholder: "Phone number",
+    preferPrivateLogin: "I'd prefer to login with complete privacy",
+    developmentNumbers: "Development Numbers:",
+    pleaseEnterValidPhone: "Please enter a valid phone number",
+    countryNotSupported: "This country is not supported yet",
+    phoneTypeNotSupported: "This phone number type is not supported",
+    pleaseEnterPhoneNumber: "Please enter a phone number",
+  },
 };

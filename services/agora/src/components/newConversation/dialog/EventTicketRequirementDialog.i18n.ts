@@ -80,4 +80,14 @@ export const eventTicketRequirementDialogTranslations: Record<
     guestParticipationDisabledNotification:
       "イベントチケット検証なしの公開会話でゲスト参加が無効になりました。ログインが必要になります。",
   },
+  fa: {
+    noVerificationTitle: "No verification",
+    noVerificationDescription:
+      "Anyone can participate without event ticket verification",
+    requiresEventTicketTitle: "Requires event ticket",
+    requiresEventTicketDescription:
+      "Only verified event ticket holders can vote and contribute statements",
+    guestParticipationDisabledNotification:
+      "Guest participation disabled for public conversations without event ticket verification. Login is now required.",
+  },
 };

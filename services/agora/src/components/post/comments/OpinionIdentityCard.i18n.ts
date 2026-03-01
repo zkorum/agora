@@ -29,4 +29,7 @@ export const opinionIdentityCardTranslations: Record<
   ja: {
     seedOpinion: "主張の種",
   },
+  fa: {
+    seedOpinion: "Seed statement",
+  },
 };

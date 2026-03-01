@@ -61,4 +61,11 @@ export const voteCountVisualizerTranslations: Record<
     group3: "グループ 3",
     group4: "グループ 4",
   },
+  fa: {
+    votes: "votes",
+    group1: "Group 1",
+    group2: "Group 2",
+    group3: "Group 3",
+    group4: "Group 4",
+  },
 };

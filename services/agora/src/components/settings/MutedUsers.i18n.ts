@@ -34,4 +34,8 @@ export const mutedUsersTranslations: Record<SupportedDisplayLanguageCodes, Muted
     title: "ミュートされたユーザー",
     emptyMessage: "ミュートされたユーザーはいません",
   },
+  fa: {
+    title: "Muted users",
+    emptyMessage: "You have no muted users",
+  },
 };

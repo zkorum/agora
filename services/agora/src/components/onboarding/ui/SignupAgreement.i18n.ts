@@ -53,4 +53,10 @@ export const signupAgreementTranslations: Record<
     and: "と",
     privacyPolicy: "プライバシーポリシー",
   },
+  fa: {
+    agreementText: "By logging in, you agree to our",
+    termsOfService: "Terms of Service",
+    and: "and",
+    privacyPolicy: "Privacy Policy",
+  },
 };

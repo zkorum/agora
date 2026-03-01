@@ -76,4 +76,14 @@ export const visibilityOptionsDialogTranslations: Record<
     guestParticipationDisabledForPublic:
       "イベントチケット検証なしの公開会話でゲスト参加が無効になりました。ログインが必要になります。",
   },
+  fa: {
+    publicTitle: "Public",
+    publicDescription:
+      "This conversation will be visible to all users in the main Agora feed",
+    privateTitle: "Private",
+    privateDescription:
+      "Only visible to those with whom you share a link or QR code",
+    guestParticipationDisabledForPublic:
+      "Guest participation disabled for public conversations without event ticket verification. Login is now required.",
+  },
 };

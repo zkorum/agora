@@ -29,4 +29,7 @@ export const conversationTitleWithPrivacyLabelTranslations: Record<
   ja: {
     privateLabel: "プライベート",
   },
+  fa: {
+    privateLabel: "Private",
+  },
 };

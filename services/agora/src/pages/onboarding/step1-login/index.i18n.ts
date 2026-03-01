@@ -53,4 +53,10 @@ export const loginOnboardingTranslations: Record<
     loginWithRarimo: "Rarimo でログイン",
     loginWithPhone: "携帯電話でログイン",
   },
+  fa: {
+    pageTitle: "Log In",
+    description: "Please select a log in method.",
+    loginWithRarimo: "Login with Rarimo",
+    loginWithPhone: "Login with my phone number",
+  },
 };

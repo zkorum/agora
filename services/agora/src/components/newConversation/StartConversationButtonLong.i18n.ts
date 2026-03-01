@@ -29,4 +29,7 @@ export const startConversationButtonLongTranslations: Record<
   ja: {
     buttonText: "会話を開始",
   },
+  fa: {
+    buttonText: "Start a conversation",
+  },
 };
