@@ -749,6 +749,77 @@ export class Dto {
         }),
     ]);
 
+    // Jomhoor wallet 2-step challenge-response authentication
+    // Step 1: Generate challenge (UCAN authenticated — called by browser/WebView)
+    static generateWalletChallenge200 = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+                challenge: z.string(), // cryptographically random token
+            })
+            .strict(),
+        z.object({
+            success: z.literal(false),
+            reason: z.enum([
+                "already_logged_in",
+                "associated_with_another_user",
+            ]),
+        }),
+    ]);
+
+    // Step 2a: Submit challenge (NO UCAN — called by Jomhoor native app)
+    static walletChallengeSubmitRequest = z
+        .object({
+            challenge: z.string().min(1),
+            walletAddress: z.string().min(1),
+            nationality: z.string().min(1).max(10),
+        })
+        .strict();
+    static walletChallengeSubmit200 = z.discriminatedUnion("success", [
+        z
+            .object({
+                success: z.literal(true),
+            })
+            .strict(),
+        z.object({
+            success: z.literal(false),
+            reason: z.enum([
+                "invalid_challenge",
+                "challenge_expired",
+                "challenge_already_used",
+            ]),
+        }),
+    ]);
+
+    // Step 2b: Verify wallet status (UCAN authenticated — frontend polls)
+    static walletVerifyStatus200 = z.union([
+        // Auth completed successfully
+        z
+            .object({
+                success: z.literal(true),
+                walletStatus: z.literal("verified"),
+                accountMerged: z.boolean(),
+                userId: z.string(),
+            })
+            .strict(),
+        // Still waiting for Jomhoor app to submit
+        z
+            .object({
+                success: z.literal(true),
+                walletStatus: z.enum(["pending", "expired"]),
+            })
+            .strict(),
+        // Failure cases
+        z.object({
+            success: z.literal(false),
+            reason: z.enum([
+                "already_logged_in",
+                "associated_with_another_user",
+                "no_challenge",
+            ]),
+        }),
+    ]);
+
     static zodGetMathRequest = z.object({
         conversation_slug_id: z.string(),
         conversation_id: z.number(),
@@ -957,6 +1028,16 @@ export type VerifyEventTicketRequest = z.infer<
     typeof Dto.verifyEventTicketRequest
 >;
 export type VerifyEventTicket200 = z.infer<typeof Dto.verifyEventTicket200>;
+export type GenerateWalletChallenge200 = z.infer<
+    typeof Dto.generateWalletChallenge200
+>;
+export type WalletChallengeSubmitRequest = z.infer<
+    typeof Dto.walletChallengeSubmitRequest
+>;
+export type WalletChallengeSubmit200 = z.infer<
+    typeof Dto.walletChallengeSubmit200
+>;
+export type WalletVerifyStatus200 = z.infer<typeof Dto.walletVerifyStatus200>;
 export type FetchUserReportsByPostSlugIdResponse = z.infer<
     typeof Dto.fetchConversationReportsResponse
 >;

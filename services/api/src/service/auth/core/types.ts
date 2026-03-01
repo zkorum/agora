@@ -46,6 +46,7 @@ export const zodAuthMethod = z.enum([
     "phone",
     "rarimo",
     "zupass",
+    "wallet",
     // "email", // Future
     // "passkey", // Future
 ]);
@@ -59,6 +60,7 @@ export const AUTH_METHOD_STRENGTH = {
     phone: "hard",
     rarimo: "hard",
     zupass: "soft",
+    wallet: "hard", // Jomhoor wallet - ZK passport backed
     // email: "hard", // Future
     // passkey: "hard", // Future - might be hard or soft depending on implementation
 } as const satisfies Record<AuthMethod, CredentialStrength>;

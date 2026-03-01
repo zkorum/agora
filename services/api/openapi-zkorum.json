@@ -5395,6 +5395,246 @@
                 }
             }
         },
+        "/api/v1/auth/wallet/generate-challenge": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "challenge": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "challenge"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "already_logged_in",
+                                                        "associated_with_another_user"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/wallet/submit": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "challenge": {
+                                        "type": "string",
+                                        "minLength": 1
+                                    },
+                                    "walletAddress": {
+                                        "type": "string",
+                                        "minLength": 1
+                                    },
+                                    "nationality": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "challenge",
+                                    "walletAddress",
+                                    "nationality"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "invalid_challenge",
+                                                        "challenge_expired",
+                                                        "challenge_already_used"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/wallet/verify-status": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "walletStatus": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "verified"
+                                                    ]
+                                                },
+                                                "accountMerged": {
+                                                    "type": "boolean"
+                                                },
+                                                "userId": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "walletStatus",
+                                                "accountMerged",
+                                                "userId"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "walletStatus": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "pending",
+                                                        "expired"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "walletStatus"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "already_logged_in",
+                                                        "associated_with_another_user",
+                                                        "no_challenge"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/user/delete": {
             "post": {
                 "responses": {

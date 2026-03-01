@@ -9,6 +9,7 @@ import type { CredentialAuthState, AuthResult } from "./auth/core/types.js";
 import {
     authAttemptPhoneTable,
     deviceTable,
+    walletTable,
     zkPassportTable,
     phoneTable,
     userTable,
@@ -120,6 +121,31 @@ interface GetPhoneAuthenticationTypeByHash {
 interface GetZKPAuthenticationType {
     db: PostgresDatabase;
     nullifier: string;
+    didWrite: string;
+    deviceStatus: DeviceLoginStatusExtended;
+}
+
+interface RegisterWithWalletProps {
+    db: PostgresDatabase;
+    didWrite: string;
+    walletAddress: string;
+    nationality: string;
+    userAgent: string;
+    userId: string;
+    sessionExpiry: Date;
+}
+
+interface LoginNewDeviceWithWalletProps {
+    db: PostgresDatabase;
+    didWrite: string;
+    userAgent: string;
+    userId: string;
+    sessionExpiry: Date;
+}
+
+interface GetWalletAuthenticationType {
+    db: PostgresDatabase;
+    walletAddress: string;
     didWrite: string;
     deviceStatus: DeviceLoginStatusExtended;
 }
@@ -787,6 +813,71 @@ export async function loginKnownDeviceWithZKP({
         .where(eq(deviceTable.didWrite, didWrite));
 }
 
+// ============================================================================
+// Wallet (Jomhoor) authentication functions
+// ============================================================================
+
+export async function registerWithWallet({
+    db,
+    didWrite,
+    walletAddress,
+    nationality,
+    userAgent,
+    userId,
+    sessionExpiry,
+}: RegisterWithWalletProps): Promise<void> {
+    log.info("Register with Wallet");
+    await db.transaction(async (tx) => {
+        await tx.insert(userTable).values({
+            username: await generateUnusedRandomUsername({ db: db }),
+            id: userId,
+        });
+        await tx.insert(deviceTable).values({
+            userId: userId,
+            didWrite: didWrite,
+            userAgent: userAgent,
+            sessionExpiry: sessionExpiry,
+        });
+        await tx.insert(walletTable).values({
+            userId: userId,
+            walletAddress: walletAddress,
+            nationality: nationality,
+        });
+    });
+}
+
+export async function loginNewDeviceWithWallet({
+    db,
+    didWrite,
+    userId,
+    userAgent,
+    sessionExpiry,
+}: LoginNewDeviceWithWalletProps) {
+    log.info("Logging-in new device with Wallet");
+    await db.insert(deviceTable).values({
+        userId: userId,
+        didWrite: didWrite,
+        userAgent: userAgent,
+        sessionExpiry: sessionExpiry,
+    });
+}
+
+export async function loginKnownDeviceWithWallet({
+    db,
+    didWrite,
+    now,
+    sessionExpiry,
+}: LoginProps) {
+    log.info("Logging-in known device with Wallet");
+    await db
+        .update(deviceTable)
+        .set({
+            sessionExpiry: sessionExpiry,
+            updatedAt: now,
+        })
+        .where(eq(deviceTable.didWrite, didWrite));
+}
+
 // !WARNING: manually update DB enum value if changing this
 // TODO: automatically sync them - use one type only
 export type AuthenticateType =
@@ -1134,6 +1225,127 @@ export async function getZKPAuthenticationType({
         credentialAuthState,
         deviceStatus,
         authMethod: "rarimo",
+    });
+}
+
+// ============================================================================
+// Wallet (Jomhoor) authentication state
+// ============================================================================
+
+interface GetWalletAuthStateParams {
+    db: PostgresDatabase;
+    walletAddress: string;
+    didWrite: string;
+}
+
+type WalletAuthState = CredentialAuthState & {
+    metadata?: { walletAddress: string };
+};
+
+/**
+ * Maps wallet address authentication data to generic CredentialAuthState
+ * Follows the same pattern as getNullifierAuthState
+ */
+async function getWalletAuthState({
+    db,
+    walletAddress,
+    didWrite,
+}: GetWalletAuthStateParams): Promise<WalletAuthState> {
+    // Query 1: Check device association with wallet
+    const didAssociationResult = await db
+        .select({
+            walletAddress: walletTable.walletAddress,
+        })
+        .from(deviceTable)
+        .leftJoin(
+            walletTable,
+            and(
+                eq(walletTable.userId, deviceTable.userId),
+                eq(walletTable.walletAddress, walletAddress),
+            ),
+        )
+        .where(eq(deviceTable.didWrite, didWrite));
+
+    const deviceExists = didAssociationResult.length > 0;
+    const isAssociated =
+        deviceExists && didAssociationResult[0].walletAddress !== null;
+
+    // Query 2: Check wallet user status (only active users, deleted users ignored)
+    const walletResults = await db
+        .select({
+            userId: walletTable.userId,
+            isDeleted: walletTable.isDeleted,
+        })
+        .from(walletTable)
+        .innerJoin(userTable, eq(userTable.id, walletTable.userId))
+        .where(eq(walletTable.walletAddress, walletAddress));
+
+    const activeUser = walletResults.find((r) => !r.isDeleted);
+
+    // Handle "device_owns_credential" case first
+    if (isAssociated) {
+        if (activeUser) {
+            return {
+                deviceCredentialAssociation: "device_owns_credential",
+                userId: activeUser.userId,
+                metadata: { walletAddress },
+            };
+        }
+    }
+
+    // Check active user
+    if (activeUser) {
+        const userId = activeUser.userId;
+        // Wallet is a hard credential - user with wallet is always registered
+        const isRegistered = true;
+
+        if (!deviceExists) {
+            return {
+                deviceCredentialAssociation: "device_unknown_credential_owned",
+                userId,
+                isRegistered,
+                metadata: { walletAddress },
+            };
+        } else {
+            return {
+                deviceCredentialAssociation: "device_missing_credential_owned",
+                userId,
+                isRegistered,
+                metadata: { walletAddress },
+            };
+        }
+    }
+
+    // Wallet address is available (no active user, deleted users ignored)
+    if (!deviceExists) {
+        return {
+            deviceCredentialAssociation: "device_unknown_credential_available",
+            metadata: { walletAddress },
+        };
+    } else {
+        return {
+            deviceCredentialAssociation: "device_missing_credential_available",
+            metadata: { walletAddress },
+        };
+    }
+}
+
+export async function getWalletAuthenticationType({
+    db,
+    walletAddress,
+    didWrite,
+    deviceStatus,
+}: GetWalletAuthenticationType): Promise<AuthResult> {
+    const credentialAuthState = await getWalletAuthState({
+        db,
+        walletAddress,
+        didWrite,
+    });
+
+    return determineAuthType({
+        credentialAuthState,
+        deviceStatus,
+        authMethod: "wallet",
     });
 }
 

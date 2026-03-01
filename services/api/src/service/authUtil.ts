@@ -6,6 +6,7 @@ import {
     phoneTable,
     userOrganizationMappingTable,
     userTable,
+    walletTable,
     zkPassportTable,
 } from "@/shared-backend/schema.js";
 import { and, eq, gt } from "drizzle-orm";
@@ -216,6 +217,7 @@ export async function getDeviceStatus({
             sessionExpiry: deviceTable.sessionExpiry,
             phoneTableId: phoneTable.id,
             zkPassportTableId: zkPassportTable.id,
+            walletTableId: walletTable.id,
             userId: deviceTable.userId,
             isDeleted: userTable.isDeleted,
         })
@@ -226,6 +228,10 @@ export async function getDeviceStatus({
             eq(zkPassportTable.userId, deviceTable.userId),
         )
         .leftJoin(phoneTable, eq(phoneTable.userId, deviceTable.userId))
+        .leftJoin(
+            walletTable,
+            eq(walletTable.userId, deviceTable.userId),
+        )
         .where(eq(deviceTable.didWrite, didWrite));
 
     if (resultDevice.length === 0) {
@@ -247,10 +253,10 @@ export async function getDeviceStatus({
 
     const sessionExpiry = device.sessionExpiry;
     const isLoggedIn = sessionExpiry.getTime() > now.getTime();
-    // isRegistered: true if user has phone OR Rarimo (strong credentials)
+    // isRegistered: true if user has phone OR Rarimo OR Wallet (strong credentials)
     // Zupass tickets are NOT checked here - they are "soft credentials"
     const isRegistered =
-        device.phoneTableId !== null || device.zkPassportTableId !== null;
+        device.phoneTableId !== null || device.zkPassportTableId !== null || device.walletTableId !== null;
 
     log.info({ userId: device.userId }, "[AuthUtil] Returning device status");
 

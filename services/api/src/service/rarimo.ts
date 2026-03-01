@@ -3,6 +3,7 @@
 import {
     deviceTable,
     phoneTable,
+    walletTable,
     zkPassportTable,
 } from "@/shared-backend/schema.js";
 import type {
@@ -133,6 +134,7 @@ export async function isLoggedInOrExistsAndAssociatedWithNoNullifier({
             sessionExpiry: deviceTable.sessionExpiry,
             nullifier: zkPassportTable.nullifier,
             phoneHash: phoneTable.phoneHash,
+            walletAddress: walletTable.walletAddress,
         })
         .from(deviceTable)
         .leftJoin(
@@ -140,6 +142,7 @@ export async function isLoggedInOrExistsAndAssociatedWithNoNullifier({
             eq(deviceTable.userId, zkPassportTable.userId),
         )
         .leftJoin(phoneTable, eq(deviceTable.userId, phoneTable.userId))
+        .leftJoin(walletTable, eq(deviceTable.userId, walletTable.userId))
         .where(eq(deviceTable.didWrite, didWrite));
 
     if (result.length !== 0) {
@@ -147,6 +150,7 @@ export async function isLoggedInOrExistsAndAssociatedWithNoNullifier({
         const isRegistered = isUserRegistered({
             nullifier: deviceMetadata.nullifier,
             phoneHash: deviceMetadata.phoneHash,
+            walletAddress: deviceMetadata.walletAddress,
         });
         const isLoggedIn = isUserLoggedIn({
             now,

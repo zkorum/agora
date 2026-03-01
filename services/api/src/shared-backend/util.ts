@@ -17,6 +17,7 @@ export function nowZeroMs(): Date {
 interface IsUserRegisteredProps {
     nullifier: string | null | undefined;
     phoneHash: string | null | undefined;
+    walletAddress?: string | null | undefined;
 }
 
 interface IsUserLoggedInProps {
@@ -27,10 +28,12 @@ interface IsUserLoggedInProps {
 export function isUserRegistered({
     nullifier,
     phoneHash,
+    walletAddress,
 }: IsUserRegisteredProps): boolean {
     return (
         (nullifier !== undefined && nullifier !== null) ||
-        (phoneHash !== null && phoneHash !== undefined)
+        (phoneHash !== null && phoneHash !== undefined) ||
+        (walletAddress !== undefined && walletAddress !== null)
     );
 }
 

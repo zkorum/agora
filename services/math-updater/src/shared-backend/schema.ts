@@ -891,6 +891,69 @@ export const zkPassportTable = pgTable(
     ],
 );
 
+export const walletTable = pgTable(
+    "wallet",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        userId: uuid("user_id")
+            .references(() => userTable.id)
+            .notNull(),
+        walletAddress: text("wallet_address").notNull(), // EVM address derived from Jomhoor wallet
+        nationality: varchar("nationality", { length: 10 }).notNull(), // 2-letter ISO country code
+        isDeleted: boolean("is_deleted").notNull().default(false), // Denormalized from user table for partial index
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        // Partial unique index: walletAddress must be unique among non-deleted users only
+        uniqueIndex("wallet_address_active_unique")
+            .on(table.walletAddress)
+            .where(sql`${table.isDeleted} = false`),
+        // Regular index for wallet address lookups
+        index("wallet_address_idx").on(table.walletAddress),
+    ],
+);
+
+// Challenge-response table for Jomhoor wallet 2-step authentication
+// Following authAttemptPhoneTable pattern: one active challenge per device (didWrite as PK)
+// Flow: generate challenge → Jomhoor app submits wallet data → frontend polls for result
+export const walletAuthChallengeTable = pgTable(
+    "wallet_auth_challenge",
+    {
+        didWrite: varchar("did_write", { length: 1000 }).primaryKey(), // one active challenge per device
+        challenge: text("challenge").notNull().unique(), // cryptographically random token (32 bytes hex)
+        walletAddress: text("wallet_address"), // filled when Jomhoor app submits
+        nationality: varchar("nationality", { length: 10 }), // filled when Jomhoor app submits
+        status: varchar("status", { length: 20 }).notNull().default("pending"), // pending | submitted
+        expiresAt: timestamp("expires_at", {
+            mode: "date",
+            precision: 0,
+        }).notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+);
+
 export const eventTicketTable = pgTable(
     "event_ticket",
     {
