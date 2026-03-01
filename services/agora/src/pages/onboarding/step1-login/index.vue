@@ -22,15 +22,8 @@
 
         <template #body>
           <ZKGradientButton
-            :label="t('loginWithRarimo')"
-            @click="goToPassportLogin()"
-          />
-
-          <ZKGradientButton
-            :label="t('loginWithPhone')"
-            gradient-background="#E7E7FF"
-            label-color="#6b4eff"
-            @click="goToPhoneLogin()"
+            :label="t('connectWallet')"
+            @click="goToWalletLogin()"
           />
 
           <p><SignupAgreement /></p>
@@ -61,12 +54,8 @@ const { t } = useComponentI18n<LoginOnboardingTranslations>(
 
 const router = useRouter();
 
-async function goToPassportLogin() {
-  await router.push({ name: "/onboarding/step3-passport/" });
-}
-
-async function goToPhoneLogin() {
-  await router.push({ name: "/onboarding/step3-phone-1/" });
+async function goToWalletLogin() {
+  await router.push({ name: "/onboarding/step3-wallet/" });
 }
 </script>
 

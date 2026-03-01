@@ -63,11 +63,13 @@ const { t } = useComponentI18n<Step2SignupOnboardingTranslations>(
 const router = useRouter();
 
 async function goToNextRoute() {
-  await router.push({ name: "/onboarding/step3-passport/" });
+  // Jomhoor-only mode: always use wallet auth
+  await router.push({ name: "/onboarding/step3-wallet/" });
 }
 
 async function verifyPhone() {
-  await router.push({ name: "/onboarding/step3-phone-1/" });
+  // Jomhoor-only mode: redirect to wallet auth instead of phone
+  await router.push({ name: "/onboarding/step3-wallet/" });
 }
 </script>
 
