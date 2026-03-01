@@ -70,11 +70,11 @@ export const userReportsTranslations: Record<
     spam: "スパム",
   },
   fa: {
-    misleading: "Misleading",
-    antisocial: "Antisocial",
-    illegal: "Illegal",
-    doxing: "Doxing",
-    sexual: "Sexual",
-    spam: "Spam",
+    misleading: "گمراه‌کننده",
+    antisocial: "ضد اجتماعی",
+    illegal: "غیرقانونی",
+    doxing: "افشاگری هویت",
+    sexual: "جنسی",
+    spam: "اسپم",
   },
 };

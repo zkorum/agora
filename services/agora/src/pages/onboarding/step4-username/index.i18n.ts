@@ -46,8 +46,8 @@ export const step4UsernameTranslations: Record<
     usernameInUse: "ユーザー名はすでに使用されています",
   },
   fa: {
-    title: "Choose your username",
-    howToAppear: "How do you want to appear in Agora?",
-    usernameInUse: "Username is already in use",
+    title: "نام کاربری خود را انتخاب کنید",
+    howToAppear: "می‌خواهید در جمهور چگونه دیده شوید؟",
+    usernameInUse: "نام کاربری قبلاً استفاده شده است",
   },
 };

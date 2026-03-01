@@ -54,9 +54,9 @@ export const opinionNotFoundBannerTranslations: Record<
     dismissBannerAriaLabel: "主張が見つからないメッセージを閉じる",
   },
   fa: {
-    requestedOpinionNotFound: "The requested statement could not be found.",
-    opinionId: "Statement ID",
-    dismiss: "Dismiss",
-    dismissBannerAriaLabel: "Dismiss statement not found message",
+    requestedOpinionNotFound: "نظر درخواست‌شده یافت نشد.",
+    opinionId: "شناسه نظر",
+    dismiss: "بستن",
+    dismissBannerAriaLabel: "بستن پیام «نظر یافت نشد»",
   },
 };

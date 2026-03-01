@@ -30,6 +30,6 @@ export const moderationTimeTranslations: Record<
     edited: "(編集済み)",
   },
   fa: {
-    edited: "(edited)",
+    edited: "(ویرایش‌شده)",
   },
 };

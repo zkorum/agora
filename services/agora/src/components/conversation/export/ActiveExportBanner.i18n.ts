@@ -45,6 +45,6 @@ export const activeExportBannerTranslations: Record<
   fa: {
     message:
       "You have an export in progress. Please wait for it to complete before starting a new one.",
-    viewStatus: "View Export Status",
+    viewStatus: "مشاهده وضعیت خروجی",
   },
 };

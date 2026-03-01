@@ -46,8 +46,8 @@ export const footerBarTranslations: Record<
     dings: "Dings",
   },
   fa: {
-    home: "Home",
-    explore: "Explore",
-    dings: "Dings",
+    home: "خانه",
+    explore: "کاوش",
+    dings: "اعلان‌ها",
   },
 };

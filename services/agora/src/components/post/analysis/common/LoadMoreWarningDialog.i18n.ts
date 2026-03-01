@@ -69,11 +69,11 @@ export const loadMoreWarningDialogTranslations: Record<
     loadMoreButton: "すべて読み込む",
   },
   fa: {
-    title: "Load all statements",
+    title: "بارگذاری همه نظرات",
     description:
-      "All statements will be shown in decreasing order of statistical significance, including some that may not be significant {emphasis}.",
-    descriptionEmphasis: "at all",
-    cancelButton: "Cancel",
-    loadMoreButton: "Load all",
+      "همه نظرات به ترتیب کاهشی اهمیت آماری نمایش داده می‌شوند، از جمله مواردی که ممکن است {emphasis} معنادار نباشند.",
+    descriptionEmphasis: "اصلاً",
+    cancelButton: "لغو",
+    loadMoreButton: "بارگذاری همه",
   },
 };

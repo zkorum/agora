@@ -71,11 +71,11 @@ export const conversationMutationsTranslations: Record<
     alreadyOpen: "この会話はすでに開いています",
   },
   fa: {
-    closeError: "Failed to close conversation. Please try again.",
-    openError: "Failed to open conversation. Please try again.",
-    closeNotAllowed: "You are not allowed to close this conversation",
-    openNotAllowed: "You are not allowed to open this conversation",
-    alreadyClosed: "This conversation is already closed",
-    alreadyOpen: "This conversation is already open",
+    closeError: "بستن گفتگو ناموفق بود. لطفاً دوباره تلاش کنید.",
+    openError: "باز کردن گفتگو ناموفق بود. لطفاً دوباره تلاش کنید.",
+    closeNotAllowed: "شما اجازه بستن این گفتگو را ندارید",
+    openNotAllowed: "شما اجازه باز کردن این گفتگو را ندارید",
+    alreadyClosed: "این گفتگو از قبل بسته شده است",
+    alreadyOpen: "این گفتگو از قبل باز است",
   },
 };

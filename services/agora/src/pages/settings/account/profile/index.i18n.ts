@@ -38,7 +38,7 @@ export const profileSettingsTranslations: Record<
     changeUsernameTitle: "ユーザー名を変更",
   },
   fa: {
-    pageTitle: "Profile Settings",
-    changeUsernameTitle: "Change username",
+    pageTitle: "تنظیمات نمایه",
+    changeUsernameTitle: "تغییر نام کاربری",
   },
 };

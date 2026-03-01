@@ -61,10 +61,10 @@ export const step2SignupOnboardingTranslations: Record<
     verifyWithPhone: "携帯電話で検証",
   },
   fa: {
-    pageTitle: "Agora aims to be exclusively human",
+    pageTitle: "جمهور فقط برای انسان‌هاست",
     description:
-      "More than half of internet traffic comes from bots. That's why we verify users, so you're debating people, not robots plotting world domination!",
-    verifyAnonymously: "Verify anonymously",
-    verifyWithPhone: "Verify with my phone number",
+      "بیش از نیمی از ترافیک اینترنت از ربات‌هاست. به همین دلیل ما کاربران را تأیید می‌کنیم تا مطمئن باشید که با انسان‌ها بحث می‌کنید نه ربات‌ها!",
+    verifyAnonymously: "تأیید ناشناس",
+    verifyWithPhone: "تأیید با شماره تلفن",
   },
 };

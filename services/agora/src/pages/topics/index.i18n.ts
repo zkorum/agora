@@ -43,8 +43,8 @@ export const topicsTranslations: Record<SupportedDisplayLanguageCodes, TopicsTra
     follow: "フォロー",
   },
   fa: {
-    exploreTopics: "Explore Topics",
-    following: "Following",
-    follow: "Follow",
+    exploreTopics: "کاوش موضوعات",
+    following: "دنبال می‌کنید",
+    follow: "دنبال کنید",
   },
 };

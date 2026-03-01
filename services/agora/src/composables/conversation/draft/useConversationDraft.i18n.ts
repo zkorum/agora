@@ -58,12 +58,12 @@ export const useConversationDraftTranslations: Record<
     titleRequired: "続行するにはタイトルが必要です",
   },
   fa: {
-    bodyExceedsLimit: "Body exceeds maximum length ({count}/{max})",
-    polisUrlRequired: "Polis URL is required",
-    polisUrlInvalid: "Please enter a valid Polis URL.",
-    pollMaxOptionsError: "Maximum {max} poll options allowed",
-    pollMinOptionsError: "Minimum {min} poll options required",
-    titleRequired: "Title is required to continue",
+    bodyExceedsLimit: "متن از حداکثر طول ({count}/{max}) بیشتر شده",
+    polisUrlRequired: "آدرس Polis لازم است",
+    polisUrlInvalid: "لطفاً یک آدرس Polis معتبر وارد کنید.",
+    pollMaxOptionsError: "حداکثر {max} گزینه نظرسنجی مجاز است",
+    pollMinOptionsError: "حداقل {min} گزینه نظرسنجی لازم است",
+    titleRequired: "عنوان برای ادامه لازم است",
   },
   "zh-Hans": {
     bodyExceedsLimit: "正文超过最大长度 ({count}/{max})",

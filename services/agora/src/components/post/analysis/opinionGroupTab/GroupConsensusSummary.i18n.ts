@@ -53,8 +53,8 @@ export const groupConsensusSummaryTranslations: Record<
       "我々は Mistral Large (LLM モデル) を使用して、各合意形成グループの要約とラベルを生成します。",
   },
   fa: {
-    groupSummaryTitle: "Group summary",
-    aiSummaryTitle: "AI Summary",
+    groupSummaryTitle: "خلاصه گروه",
+    aiSummaryTitle: "خلاصه هوش مصنوعی",
     aiSummaryDescription:
       "We use Mistral Large (LLM model) to generate the summary & labels for each consensus group.",
   },

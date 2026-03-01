@@ -69,11 +69,11 @@ export const welcomeTranslations: Record<
     voting: "戻られた際に、この会話に戻ります。",
   },
   fa: {
-    newOpinion: "Your written statement draft will be restored when you return.",
+    newOpinion: "پیش‌نویس نظر شما پس از بازگشت بازیابی می‌شود.",
     newConversation:
-      "Your written conversation draft will be restored when you return.",
-    agreement: "You will be returned to this statement when you return.",
-    reportUserContent: "A user account is required to report user content.",
-    voting: "You will be returned to this conversation when you return.",
+      "پیش‌نویس گفتگوی شما پس از بازگشت بازیابی می‌شود.",
+    agreement: "پس از بازگشت به این نظر برمی‌گردید.",
+    reportUserContent: "برای گزارش محتوا به حساب کاربری نیاز است.",
+    voting: "پس از بازگشت به این گفتگو برمی‌گردید.",
   },
 };

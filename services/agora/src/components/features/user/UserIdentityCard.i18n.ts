@@ -38,7 +38,7 @@ export const userIdentityCardTranslations: Record<
     edited: "編集済み",
   },
   fa: {
-    guestParticipationTooltip: "Guest participation enabled",
-    edited: "Edited",
+    guestParticipationTooltip: "مشارکت مهمان فعال است",
+    edited: "ویرایش شده",
   },
 };

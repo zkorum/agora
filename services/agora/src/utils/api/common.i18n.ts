@@ -150,22 +150,22 @@ export const commonApiTranslations: Record<
   },
   fa: {
     timeoutError:
-      "Request timed out. The server is taking longer than expected to respond.",
+      "زمان درخواست به پایان رسید. سرور بیش از حد انتظار طول می‌کشد.",
     networkError:
-      "Network error. Please check your internet connection and try again.",
-    requestCanceled: "Request was canceled.",
-    invalidRequest: "Invalid request. Please check your input and try again.",
-    serverError: "Server error. Please try again later.",
+      "خطای شبکه. لطفاً اتصال اینترنت خود را بررسی کنید و دوباره تلاش کنید.",
+    requestCanceled: "درخواست لغو شد.",
+    invalidRequest: "درخواست نامعتبر. لطفاً ورودی خود را بررسی کنید و دوباره تلاش کنید.",
+    serverError: "خطای سرور. لطفاً بعداً دوباره تلاش کنید.",
     tooManyRedirects:
-      "Too many redirects. Please contact support if this continues.",
+      "تغییر مسیرهای بیش از حد. اگر ادامه داشت با پشتیبانی تماس بگیرید.",
     configurationError:
-      "Configuration error. Please refresh the page and try again.",
+      "خطای پیکربندی. لطفاً صفحه را بازآوری کنید و دوباره تلاش کنید.",
     featureNotSupported:
-      "This feature is no longer supported. Please update your app.",
+      "این قابلیت دیگر پشتیبانی نمی‌شود. لطفاً برنامه را به‌روزرسانی کنید.",
     operationNotSupported:
-      "This operation is not supported in your current environment.",
-    invalidUrl: "Invalid request URL. Please contact support.",
-    unexpectedError: "An unexpected error occurred. Please try again.",
-    noInternetConnection: "No internet connection",
+      "این عملیات در محیط فعلی شما پشتیبانی نمی‌شود.",
+    invalidUrl: "آدرس درخواست نامعتبر است. لطفاً با پشتیبانی تماس بگیرید.",
+    unexpectedError: "خطای غیرمنتظره‌ای رخ داد. لطفاً دوباره تلاش کنید.",
+    noInternetConnection: "اتصال اینترنت برقرار نیست",
   },
 };

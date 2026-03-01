@@ -80,13 +80,13 @@ export const postTypeDialogTranslations: Record<
       "エクスポートされた CSV ファイルから Polis 会話をインポートします。",
   },
   fa: {
-    newConversation: "New Conversation",
+    newConversation: "گفتگوی جدید",
     newConversationDescription:
       "Create a new conversation topic for discussion.",
-    importFromPolis: "Import from Polis URL",
+    importFromPolis: "واردسازی از آدرس Polis",
     importFromPolisDescription:
       "Import and continue an existing Polis conversation.",
-    importFromCsv: "Import from CSV",
+    importFromCsv: "واردسازی از CSV",
     importFromCsvDescription:
       "Import a Polis conversation from exported CSV files.",
   },

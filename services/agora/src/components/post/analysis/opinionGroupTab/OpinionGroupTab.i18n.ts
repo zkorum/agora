@@ -38,7 +38,7 @@ export const opinionGroupTabTranslations: Record<
     notEnoughGroupsMessage: "表示するグループが不足しています。",
   },
   fa: {
-    groupsTitle: "Groups",
-    notEnoughGroupsMessage: "Not enough groups to display.",
+    groupsTitle: "گروه‌ها",
+    notEnoughGroupsMessage: "گروه‌های کافی برای نمایش وجود ندارد.",
   },
 };

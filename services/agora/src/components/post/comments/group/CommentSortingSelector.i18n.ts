@@ -70,11 +70,11 @@ export const commentSortingSelectorTranslations: Record<
     myVotes: "自分の投票",
   },
   fa: {
-    filterTitle: "Filter Responses by:",
-    discover: "Discover",
-    new: "New",
-    moderationHistory: "Moderation History",
-    hidden: "Hidden",
-    myVotes: "My Votes",
+    filterTitle: "فیلتر پاسخ‌ها بر اساس:",
+    discover: "کاوش",
+    new: "جدید",
+    moderationHistory: "تاریخچه مدیریت",
+    hidden: "مخفی",
+    myVotes: "رأی‌های من",
   },
 };

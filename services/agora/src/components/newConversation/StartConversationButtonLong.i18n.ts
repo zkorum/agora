@@ -30,6 +30,6 @@ export const startConversationButtonLongTranslations: Record<
     buttonText: "会話を開始",
   },
   fa: {
-    buttonText: "Start a conversation",
+    buttonText: "شروع گفتگو",
   },
 };

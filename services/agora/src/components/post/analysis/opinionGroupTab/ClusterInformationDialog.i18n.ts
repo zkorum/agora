@@ -58,7 +58,7 @@ export const clusterInformationDialogTranslations: Record<
       "我々は機械学習を使用して、異なる思想流派を識別します。これは、 Computational Democracy によって開発されたオープンソースの wiki 調査ツール pol.is によって使用されるのと同じアルゴリズムです。",
   },
   fa: {
-    title: "Consensus Groups",
+    title: "گروه‌های اجماع",
     description1:
       "Consensus groups are created based on how people agree and disagree with statements.",
     description2:

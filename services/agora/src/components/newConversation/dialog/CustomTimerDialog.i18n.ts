@@ -54,9 +54,9 @@ export const customTimerDialogTranslations: Record<
     confirm: "確認",
   },
   fa: {
-    selectCustomTime: "Select Custom Time",
-    chooseWhenPublic: "Choose when your conversation will become public",
-    back: "Back",
-    confirm: "Confirm",
+    selectCustomTime: "انتخاب زمان سفارشی",
+    chooseWhenPublic: "انتخاب کنید گفتگوی شما چه زمانی عمومی شود",
+    back: "بازگشت",
+    confirm: "تأیید",
   },
 };

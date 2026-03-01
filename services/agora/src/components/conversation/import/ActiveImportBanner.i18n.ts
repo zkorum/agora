@@ -45,6 +45,6 @@ export const activeImportBannerTranslations: Record<
   fa: {
     message:
       "You have an import in progress. Please wait for it to complete before starting a new one.",
-    viewStatus: "View Import Status",
+    viewStatus: "مشاهده وضعیت واردسازی",
   },
 };

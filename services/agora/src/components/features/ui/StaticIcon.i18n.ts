@@ -27,6 +27,6 @@ export const staticIconTranslations: Record<SupportedDisplayLanguageCodes, Stati
     stars: "スター",
   },
   fa: {
-    stars: "Stars",
+    stars: "ستاره‌ها",
   },
 };

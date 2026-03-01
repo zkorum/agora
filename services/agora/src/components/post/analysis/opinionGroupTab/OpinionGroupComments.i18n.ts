@@ -70,11 +70,11 @@ export const opinionGroupCommentsTranslations: Record<
     allOtherGroups: "すべての他のグループ",
   },
   fa: {
-    opinionsTitle: "Statements",
-    opinionsTitleLong: "Representative statements",
-    noOpinionsMessage: "No statements available for this group.",
-    thisGroup: "This group",
-    allOthers: "All others",
-    allOtherGroups: "All other groups",
+    opinionsTitle: "نظرات",
+    opinionsTitleLong: "نظرات نماینده",
+    noOpinionsMessage: "نظری برای این گروه موجود نیست.",
+    thisGroup: "این گروه",
+    allOthers: "سایرین",
+    allOtherGroups: "سایر گروه‌ها",
   },
 };

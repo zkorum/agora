@@ -87,13 +87,13 @@ export const divisiveTabTranslations: Record<
     lowerRankedDivider: "統計的有意性が低い",
   },
   fa: {
-    divisiveTitle: "Divisive",
-    divisiveLongTitle: "What {keyword} people across groups?",
+    divisiveTitle: "بحث‌برانگیز",
+    divisiveLongTitle: "چه چیزی مردم را در گروه‌های مختلف {keyword} می‌کند؟",
     divisiveKeyword: "divides",
     subtitle:
       "Statements that split opinion groups against each other. Only the most statistically significant are shown.",
-    loadMore: "Load all",
-    noDivisiveOpinionsMessage: "No significant divisive statements found yet.",
-    lowerRankedDivider: "Less statistically significant",
+    loadMore: "بارگذاری همه",
+    noDivisiveOpinionsMessage: "هنوز نظرات بحث‌برانگیز معناداری یافت نشده است.",
+    lowerRankedDivider: "از نظر آماری کم‌اهمیت‌تر",
   },
 };

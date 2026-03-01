@@ -30,6 +30,6 @@ export const conversationTitleWithPrivacyLabelTranslations: Record<
     privateLabel: "プライベート",
   },
   fa: {
-    privateLabel: "Private",
+    privateLabel: "خصوصی",
   },
 };

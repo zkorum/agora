@@ -30,6 +30,6 @@ export const termsOfServiceTranslations: Record<
     termsOfService: "利用規約",
   },
   fa: {
-    termsOfService: "Terms of Service",
+    termsOfService: "شرایط خدمات",
   },
 };

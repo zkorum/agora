@@ -38,7 +38,7 @@ export const commentLoadingErrorTranslations: Record<
     defaultErrorMessage: "何らかの問題が発生しました。もう一度お試しください。",
   },
   fa: {
-    defaultRetryLabel: "Try again",
-    defaultErrorMessage: "Something went wrong. Please try again.",
+    defaultRetryLabel: "تلاش مجدد",
+    defaultErrorMessage: "مشکلی پیش آمد. لطفاً دوباره تلاش کنید.",
   },
 };

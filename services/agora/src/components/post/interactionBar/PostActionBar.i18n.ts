@@ -38,7 +38,7 @@ export const postActionBarTranslations: Record<
     copiedToClipboard: "リンクをクリップボードにコピーしました",
   },
   fa: {
-    share: "Share",
-    copiedToClipboard: "Link copied to clipboard",
+    share: "اشتراک‌گذاری",
+    copiedToClipboard: "لینک در کلیپ‌بورد کپی شد",
   },
 };

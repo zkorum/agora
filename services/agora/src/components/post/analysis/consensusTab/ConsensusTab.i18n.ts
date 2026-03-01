@@ -142,8 +142,8 @@ export const consensusTabTranslations: Record<
     lowerRankedDivider: "統計的有意性が低い",
   },
   fa: {
-    agreementsTitle: "Approved",
-    disagreementsTitle: "Rejected",
+    agreementsTitle: "تأیید شد",
+    disagreementsTitle: "رد شد",
     agreementsLongTitle:
       "Which statements are {keyword} by all groups?",
     disagreementsLongTitle:
@@ -154,9 +154,9 @@ export const consensusTabTranslations: Record<
       "Statements all opinion groups agree to agree on. Not a simple majority, but a cross-group consensus. Only the most statistically significant are shown.",
     subtitleDisagree:
       "Statements all opinion groups agree to disagree on. Not a simple majority, but a cross-group consensus. Only the most statistically significant are shown.",
-    loadMore: "Load all",
-    noAgreementsMessage: "No consensus has emerged yet.",
-    noDisagreementsMessage: "No consensus has emerged yet.",
-    lowerRankedDivider: "Less statistically significant",
+    loadMore: "بارگذاری همه",
+    noAgreementsMessage: "هنوز اجماعی شکل نگرفته است.",
+    noDisagreementsMessage: "هنوز اجماعی شکل نگرفته است.",
+    lowerRankedDivider: "از نظر آماری کم‌اهمیت‌تر",
   },
 };

@@ -72,11 +72,11 @@ export const commentGroupTranslations: Record<
     retryLoadOpinions: "主張の読み込みを再試行",
   },
   fa: {
-    noOpinionsMessage: "There are no statements in this conversation filter.",
-    loadingOpinions: "Loading statements...",
-    retrying: "Retrying...",
-    opinionsLoadFailed: "Statements could not be loaded",
-    unexpectedErrorRetry: "Something went wrong. Please try again.",
-    retryLoadOpinions: "Retry loading statements",
+    noOpinionsMessage: "نظری در این فیلتر گفتگو موجود نیست.",
+    loadingOpinions: "در حال بارگذاری نظرات...",
+    retrying: "تلاش مجدد...",
+    opinionsLoadFailed: "بارگذاری نظرات ممکن نبود",
+    unexpectedErrorRetry: "مشکلی پیش آمد. لطفاً دوباره تلاش کنید.",
+    retryLoadOpinions: "تلاش مجدد بارگذاری نظرات",
   },
 };

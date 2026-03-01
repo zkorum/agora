@@ -70,11 +70,11 @@ export const makePublicTimerDialogTranslations: Record<
     custom: "カスタム",
   },
   fa: {
-    never: "Never",
-    after24Hours: "After 24 hours",
-    after3Days: "After 3 days",
-    after1Week: "After 1 week",
-    after1Month: "After 1 month",
-    custom: "Custom",
+    never: "هرگز",
+    after24Hours: "پس از ۲۴ ساعت",
+    after3Days: "پس از ۳ روز",
+    after1Week: "پس از ۱ هفته",
+    after1Month: "پس از ۱ ماه",
+    custom: "سفارشی",
   },
 };

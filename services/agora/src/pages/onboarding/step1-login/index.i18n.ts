@@ -3,8 +3,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 export interface LoginOnboardingTranslations {
   pageTitle: string;
   description: string;
-  loginWithRarimo: string;
-  loginWithPhone: string;
+  connectWallet: string;
 }
 
 export const loginOnboardingTranslations: Record<
@@ -13,50 +12,42 @@ export const loginOnboardingTranslations: Record<
 > = {
   en: {
     pageTitle: "Log In",
-    description: "Please select a log in method.",
-    loginWithRarimo: "Login with Rarimo",
-    loginWithPhone: "Login with my phone number",
+    description: "Connect your Jomhoor wallet to log in.",
+    connectWallet: "Connect Jomhoor Wallet",
   },
   ar: {
     pageTitle: "تسجيل الدخول",
-    description: "يرجى اختيار طريقة تسجيل الدخول.",
-    loginWithRarimo: "تسجيل الدخول باستخدام Rarimo",
-    loginWithPhone: "تسجيل الدخول برقم هاتفي",
+    description: "اتصل بمحفظة جمهور لتسجيل الدخول.",
+    connectWallet: "اتصل بمحفظة جمهور",
   },
   es: {
     pageTitle: "Iniciar sesión",
-    description: "Por favor, seleccione un método de inicio de sesión.",
-    loginWithRarimo: "Iniciar sesión con Rarimo",
-    loginWithPhone: "Iniciar sesión con mi número de teléfono",
+    description: "Conecta tu billetera Jomhoor para iniciar sesión.",
+    connectWallet: "Conectar billetera Jomhoor",
   },
   fr: {
     pageTitle: "Se connecter",
-    description: "Veuillez sélectionner une méthode de connexion.",
-    loginWithRarimo: "Se connecter avec Rarimo",
-    loginWithPhone: "Se connecter avec mon numéro de téléphone",
+    description: "Connectez votre portefeuille Jomhoor pour vous connecter.",
+    connectWallet: "Connecter le portefeuille Jomhoor",
   },
   "zh-Hans": {
     pageTitle: "登录",
-    description: "请选择登录方式。",
-    loginWithRarimo: "使用 Rarimo 登录",
-    loginWithPhone: "使用手机号登录",
+    description: "连接您的 Jomhoor 钱包以登录。",
+    connectWallet: "连接 Jomhoor 钱包",
   },
   "zh-Hant": {
     pageTitle: "登入",
-    description: "請選擇登入方式。",
-    loginWithRarimo: "使用 Rarimo 登入",
-    loginWithPhone: "使用手機號登入",
+    description: "連接您的 Jomhoor 錢包以登入。",
+    connectWallet: "連接 Jomhoor 錢包",
   },
   ja: {
     pageTitle: "ログイン",
-    description: "ログイン方法を選択してください。",
-    loginWithRarimo: "Rarimo でログイン",
-    loginWithPhone: "携帯電話でログイン",
+    description: "Jomhoor ウォレットを接続してログインしてください。",
+    connectWallet: "Jomhoor ウォレットを接続",
   },
   fa: {
-    pageTitle: "Log In",
-    description: "Please select a log in method.",
-    loginWithRarimo: "Login with Rarimo",
-    loginWithPhone: "Login with my phone number",
+    pageTitle: "ورود",
+    description: "کیف پول جمهور خود را متصل کنید تا وارد شوید.",
+    connectWallet: "اتصال کیف پول جمهور",
   },
 };

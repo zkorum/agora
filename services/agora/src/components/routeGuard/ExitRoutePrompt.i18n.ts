@@ -38,7 +38,7 @@ export const exitRoutePromptTranslations: Record<
     discard: "破棄",
   },
   fa: {
-    saveAsDraft: "Save as draft",
-    discard: "Discard",
+    saveAsDraft: "ذخیره به عنوان پیش‌نویس",
+    discard: "رد کردن",
   },
 };

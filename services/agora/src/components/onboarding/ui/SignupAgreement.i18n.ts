@@ -54,9 +54,9 @@ export const signupAgreementTranslations: Record<
     privacyPolicy: "プライバシーポリシー",
   },
   fa: {
-    agreementText: "By logging in, you agree to our",
-    termsOfService: "Terms of Service",
-    and: "and",
-    privacyPolicy: "Privacy Policy",
+    agreementText: "با ورود، شما با موارد زیر موافقت می‌کنید",
+    termsOfService: "شرایط خدمات",
+    and: "و",
+    privacyPolicy: "سیاست حفظ حریم خصوصی",
   },
 };

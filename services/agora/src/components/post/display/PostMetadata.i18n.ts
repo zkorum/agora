@@ -121,17 +121,17 @@ export const postMetadataTranslations: Record<
   },
   fa: {
     closeConfirmMessage:
-      "Are you sure you want to close this conversation? Users will not be able to post new statements or votes.",
-    closeConfirmButton: "Close conversation",
+      "آیا مطمئنید که می‌خواهید این گفتگو را ببندید؟ کاربران قادر به ارسال نظرات یا رأی‌های جدید نخواهند بود.",
+    closeConfirmButton: "بستن گفتگو",
     reopenConfirmMessage:
-      "Reopen this conversation? Users will be able to post statements and vote again.",
-    reopenConfirmButton: "Reopen conversation",
-    cancelButton: "Cancel",
-    closeSuccess: "Conversation closed successfully",
-    openSuccess: "Conversation opened successfully",
-    closeNotAllowed: "You are not allowed to close this conversation",
-    openNotAllowed: "You are not allowed to open this conversation",
-    alreadyClosed: "This conversation is already closed",
-    alreadyOpen: "This conversation is already open",
+      "این گفتگو بازگشایی شود؟ کاربران دوباره قادر به ارسال نظرات و رأی دادن خواهند بود.",
+    reopenConfirmButton: "بازگشایی گفتگو",
+    cancelButton: "انصراف",
+    closeSuccess: "گفتگو با موفقیت بسته شد",
+    openSuccess: "گفتگو با موفقیت باز شد",
+    closeNotAllowed: "شما اجازه بستن این گفتگو را ندارید",
+    openNotAllowed: "شما اجازه باز کردن این گفتگو را ندارید",
+    alreadyClosed: "این گفتگو از قبل بسته شده است",
+    alreadyOpen: "این گفتگو از قبل باز است",
   },
 };

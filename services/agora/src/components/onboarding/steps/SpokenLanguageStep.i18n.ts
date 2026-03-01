@@ -38,7 +38,7 @@ export const spokenLanguageStepTranslations: Record<
     nextButton: "次へ",
   },
   fa: {
-    title: "What languages do you speak?",
-    nextButton: "Next",
+    title: "به چه زبان‌هایی صحبت می‌کنید؟",
+    nextButton: "بعدی",
   },
 };

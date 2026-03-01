@@ -30,6 +30,6 @@ export const privacyPolicyTranslations: Record<
     privacyPolicy: "プライバシーポリシー",
   },
   fa: {
-    privacyPolicy: "Privacy Policy",
+    privacyPolicy: "سیاست حفظ حریم خصوصی",
   },
 };

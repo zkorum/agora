@@ -54,9 +54,9 @@ export const opinionGroupVisualizationTranslations: Record<
     componentPreview: "コンポーネントプレビュー",
   },
   fa: {
-    opinionGroupVisualization: "Opinion Group Visualization",
-    visualizationControls: "Visualization Controls",
-    clusterCountLabel: "Number of Groups",
-    componentPreview: "Component Preview",
+    opinionGroupVisualization: "تجسم گروه‌های نظری",
+    visualizationControls: "کنترل‌های تجسم",
+    clusterCountLabel: "تعداد گروه‌ها",
+    componentPreview: "پیش‌نمایش اجزا",
   },
 };

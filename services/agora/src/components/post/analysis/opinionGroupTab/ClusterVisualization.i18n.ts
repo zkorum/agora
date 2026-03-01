@@ -38,7 +38,7 @@ export const clusterVisualizationTranslations: Record<
     meLabel: "私",
   },
   fa: {
-    groupsTitle: "Groups",
-    meLabel: "Me",
+    groupsTitle: "گروه‌ها",
+    meLabel: "من",
   },
 };

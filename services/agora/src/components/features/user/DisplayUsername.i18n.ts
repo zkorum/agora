@@ -30,6 +30,6 @@ export const displayUsernameTranslations: Record<
     guest: "ゲスト",
   },
   fa: {
-    guest: "Guest",
+    guest: "مهمان",
   },
 };

@@ -81,12 +81,12 @@ export const polisUrlInputTranslations: Record<
     ccLicense: "CC BY 4.0",
   },
   fa: {
-    importTitle: "Import Conversation from Polis",
-    description: "Paste a Polis URL below to import a conversation.",
-    validUrlExamples: "Valid URL examples:",
+    importTitle: "واردسازی گفتگو از Polis",
+    description: "آدرس Polis را در زیر بچسبانید تا گفتگویی وارد شود.",
+    validUrlExamples: "نمونه آدرس‌های معتبر:",
     urlPlaceholder: "e.g., https://pol.is/xxxxx",
-    polisTerms: "Pol.is Terms",
-    termsOfUse: "Terms of Use",
+    polisTerms: "شرایط Pol.is",
+    termsOfUse: "شرایط استفاده",
     ccLicense: "CC BY 4.0",
   },
 };

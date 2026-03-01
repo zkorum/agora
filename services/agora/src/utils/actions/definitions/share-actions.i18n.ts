@@ -51,8 +51,8 @@ export const shareActionsTranslations: Record<
     shareVia: "共有する...",
   },
   fa: {
-    copyLink: "Copy link",
-    showQrCode: "Show QR Code",
-    shareVia: "Share via...",
+    copyLink: "کپی لینک",
+    showQrCode: "نمایش کد QR",
+    shareVia: "اشتراک‌گذاری از طریق...",
   },
 };

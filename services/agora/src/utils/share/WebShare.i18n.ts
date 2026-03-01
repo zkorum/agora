@@ -35,6 +35,6 @@ export const webShareTranslations: Record<
     copiedToClipboard: "リンクをクリップボードにコピーしました",
   },
   fa: {
-    copiedToClipboard: "Copied link to clipboard",
+    copiedToClipboard: "لینک در کلیپ‌بورد کپی شد",
   },
 };

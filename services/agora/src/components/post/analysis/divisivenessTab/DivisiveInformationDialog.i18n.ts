@@ -45,7 +45,7 @@ export const divisiveInformationDialogTranslations: Record<
       "意見グループ同士が対立する意見です。あるグループは承認し、別のグループは否決します。\n\n会話の主要な分断線を明らかにします。\n\n統計的に最も有意なものが最初に表示されます。",
   },
   fa: {
-    title: "Divisive Statements",
+    title: "نظرات بحث‌برانگیز",
     description:
       "Statements where opinion groups disagree with each other. One group approves while another rejects.\n\nThese reveal the key dividing lines in the conversation.\n\nOnly the most statistically significant are shown first.",
   },

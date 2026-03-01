@@ -30,6 +30,6 @@ export const settingsSearchInputTranslations: Record<
     searchPlaceholder: "検索...",
   },
   fa: {
-    searchPlaceholder: "Search...",
+    searchPlaceholder: "جستجو...",
   },
 };

@@ -30,6 +30,6 @@ export const userMetadataTranslations: Record<
     idVerified: "ID が確認されました",
   },
   fa: {
-    idVerified: "ID verified",
+    idVerified: "هویت تأیید شده",
   },
 };

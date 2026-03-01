@@ -98,11 +98,11 @@ export const newConversationDraftsTranslations: Record<
       `最低${minOptions}つのオプションが必要です`,
   },
   fa: {
-    titleRequired: "Title is required to continue",
+    titleRequired: "عنوان برای ادامه لازم است",
     bodyExceedsLimit: (characterCount: number, maxLength: number) =>
       `Body content exceeds ${maxLength} character limit (${characterCount}/${maxLength})`,
-    polisUrlInvalid: "Please enter a valid Polis URL.",
-    polisUrlRequired: "Please enter a Polis URL to import",
+    polisUrlInvalid: "لطفاً یک آدرس Polis معتبر وارد کنید.",
+    polisUrlRequired: "لطفاً آدرس Polis برای واردسازی وارد کنید",
     pollMaxOptionsError: (maxOptions: number) =>
       `Maximum ${maxOptions} poll options allowed`,
     pollMinOptionsError: (minOptions: number) =>

@@ -30,6 +30,6 @@ export const guidelinesTranslations: Record<
     guidelines: "コミュニティガイドライン",
   },
   fa: {
-    guidelines: "Community Guidelines",
+    guidelines: "قوانین جامعه",
   },
 };

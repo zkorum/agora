@@ -62,10 +62,10 @@ export const sideDrawerTranslations: Record<
     settings: "設定",
   },
   fa: {
-    home: "Home",
-    explore: "Explore",
-    dings: "Dings",
-    profile: "Profile",
-    settings: "Settings",
+    home: "خانه",
+    explore: "کاوش",
+    dings: "اعلان‌ها",
+    profile: "نمایه",
+    settings: "تنظیمات",
   },
 };

@@ -52,9 +52,9 @@ export const userProfileTranslations: Record<SupportedDisplayLanguageCodes, User
       opinionTab: "主張",
     },
   fa: {
-      userProfile: "User Profile",
+      userProfile: "نمایه کاربر",
       conversations: "conversations",
-      conversationTab: "Conversation",
-      opinionTab: "Statement",
+      conversationTab: "گفتگو",
+      opinionTab: "نظر",
     },
   };

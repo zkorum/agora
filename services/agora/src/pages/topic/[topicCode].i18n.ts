@@ -27,6 +27,6 @@ export const topicPageTranslations: Record<SupportedDisplayLanguageCodes, TopicP
     loadPostsHere: "投稿を読み込む",
   },
   fa: {
-    loadPostsHere: "Load posts here",
+    loadPostsHere: "بارگذاری پست‌ها در اینجا",
   },
 };

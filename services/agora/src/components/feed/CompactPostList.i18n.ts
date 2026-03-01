@@ -62,10 +62,10 @@ export const compactPostListTranslations: Record<
     newConversationsButton: "新しい会話",
   },
   fa: {
-    emptyStateTitle: "It is too quiet here...",
-    emptyStateDescription: "Create a new conversation using the",
-    completedTitle: "You're all caught up",
-    completedDescription: "You have seen all the new conversations.",
-    newConversationsButton: "New conversations",
+    emptyStateTitle: "اینجا خیلی ساکت است...",
+    emptyStateDescription: "با استفاده از دکمه، یک گفتگوی جدید بسازید",
+    completedTitle: "همه چیز را دیده‌اید",
+    completedDescription: "شما تمام گفتگوهای جدید را مشاهده کرده‌اید.",
+    newConversationsButton: "گفتگوهای جدید",
   },
 };

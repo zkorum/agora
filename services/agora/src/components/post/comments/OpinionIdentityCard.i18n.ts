@@ -30,6 +30,6 @@ export const opinionIdentityCardTranslations: Record<
     seedOpinion: "主張の種",
   },
   fa: {
-    seedOpinion: "Seed statement",
+    seedOpinion: "نظر اولیه",
   },
 };

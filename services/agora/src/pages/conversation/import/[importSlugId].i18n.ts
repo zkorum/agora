@@ -30,6 +30,6 @@ export const importStatusPageTranslations: Record<
     pageTitle: "インポートステータス",
   },
   fa: {
-    pageTitle: "Import Status",
+    pageTitle: "وضعیت واردسازی",
   },
 };

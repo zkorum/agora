@@ -53,9 +53,9 @@ export const opinionGroupVisualizationTestTranslations: Record<
     openVisualizationButton: "可視化ツールを開く",
   },
   fa: {
-    opinionGroupVisualization: "Opinion Group Visualization",
+    opinionGroupVisualization: "تجسم گروه‌های نظری",
     opinionGroupVisualizationDescription:
       "Test the OpinionGroupTab component with different cluster configurations to see how it adapts its layout.",
-    openVisualizationButton: "Open Visualization Tool",
+    openVisualizationButton: "باز کردن ابزار تجسم",
   },
 };

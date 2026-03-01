@@ -30,6 +30,6 @@ export const administratorOrganizationTranslations: Record<
     administrator: "管理者",
   },
   fa: {
-    administrator: "Administrator",
+    administrator: "مدیر",
   },
 };

@@ -30,6 +30,6 @@ export const defaultMenuBarTranslations: Record<
     logIn: "ログイン",
   },
   fa: {
-    logIn: "Log in",
+    logIn: "ورود",
   },
 };

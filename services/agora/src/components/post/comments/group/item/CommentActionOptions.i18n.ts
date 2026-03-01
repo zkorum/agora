@@ -38,7 +38,7 @@ export const commentActionOptionsTranslations: Record<
     copiedToClipboard: "リンクをクリップボードにコピーしました",
   },
   fa: {
-    agoraOpinion: "Agora Statement",
-    copiedToClipboard: "Link copied to clipboard",
+    agoraOpinion: "نظر جمهور",
+    copiedToClipboard: "لینک در کلیپ‌بورد کپی شد",
   },
 };

@@ -30,6 +30,6 @@ export const componentTestingTranslations: Record<
     componentTesting: "コンポーネントテスト",
   },
   fa: {
-    componentTesting: "Component Testing",
+    componentTesting: "تست اجزا",
   },
 };

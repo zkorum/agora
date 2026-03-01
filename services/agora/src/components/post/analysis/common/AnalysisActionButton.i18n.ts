@@ -46,8 +46,8 @@ export const analysisActionButtonTranslations: Record<
     informationIconAriaLabel: "情報",
   },
   fa: {
-    learnMore: "Learn more",
-    viewMore: "View more",
-    informationIconAriaLabel: "Information",
+    learnMore: "بیشتر بدانید",
+    viewMore: "مشاهده بیشتر",
+    informationIconAriaLabel: "اطلاعات",
   },
 };

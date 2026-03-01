@@ -37,8 +37,8 @@ export const useCommentQueriesTranslations: Record<
       "主張の削除に失敗しました。もう一度お試しください。",
   },
   fa: {
-    commentDeletedSuccessfully: "Statement deleted successfully",
-    failedToDeleteComment: "Failed to delete statement. Please try again.",
+    commentDeletedSuccessfully: "نظر با موفقیت حذف شد",
+    failedToDeleteComment: "حذف نظر ناموفق بود. لطفاً دوباره تلاش کنید.",
   },
   ar: {
     commentDeletedSuccessfully: "تم حذف المقترح بنجاح",

@@ -107,16 +107,16 @@ export const conversationReviewTranslations: Record<
     errorCreatingConversation: "新しい会話を作成する際にエラーが発生しました",
   },
   fa: {
-    posting: "Posting...",
-    post: "Post",
-    addSeedOpinions: "Add Seed Statements",
+    posting: "در حال ارسال...",
+    post: "ارسال",
+    addSeedOpinions: "افزودن نظرات اولیه",
     seedOpinionsDescription:
       "It's recommended to seed 8 to 15 statements across a range of viewpoints. This has a powerful effect on early participation.",
-    addOpinion: "Add Statement",
-    opinionCannotBeEmpty: "Statement cannot be empty",
+    addOpinion: "افزودن نظر",
+    opinionCannotBeEmpty: "نظر نمی‌تواند خالی باشد",
     opinionExceedsLimit:
       "Statement exceeds {limit} character limit ({count}/{limit})",
-    opinionDuplicate: "This statement is a duplicate",
+    opinionDuplicate: "این نظر تکراری است",
     errorCreatingConversation:
       "Error while trying to create a new conversation",
   },

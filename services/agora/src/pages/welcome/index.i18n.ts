@@ -62,10 +62,10 @@ export const welcomeTranslations: Record<
     logOut: "ログアウト",
   },
   fa: {
-    signUp: "Sign Up",
-    login: "Log In",
-    skipAuthentication: "Skip Authentication",
-    launchApp: "Launch App",
-    logOut: "Log Out",
+    signUp: "ثبت‌نام",
+    login: "ورود",
+    skipAuthentication: "رد شدن احراز هویت",
+    launchApp: "شروع برنامه",
+    logOut: "خروج",
   },
 };

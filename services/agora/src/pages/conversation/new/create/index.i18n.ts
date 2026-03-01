@@ -86,14 +86,14 @@ export const createConversationTranslations: Record<
     viewImportStatus: "インポート状態を表示",
   },
   fa: {
-    importButton: "Import",
-    nextButton: "Next",
-    titlePlaceholder: "What do you want to ask? (required)",
-    titleRequired: "Title is required to continue",
+    importButton: "واردسازی",
+    nextButton: "بعدی",
+    titlePlaceholder: "چه سؤالی می‌خواهید بپرسید؟ (الزامی)",
+    titleRequired: "عنوان برای ادامه لازم است",
     bodyPlaceholder:
       "Body text. Provide context or relevant resources. Make sure it's aligned with the main question!",
     activeImportMessage:
       "You have an import in progress. Please wait for it to complete before starting a new one.",
-    viewImportStatus: "View Import Status",
+    viewImportStatus: "مشاهده وضعیت واردسازی",
   },
 };

@@ -30,6 +30,6 @@ export const requestExportButtonTranslations: Record<
     requestNewExport: "新しいエクスポートをリクエスト",
   },
   fa: {
-    requestNewExport: "Request New Export",
+    requestNewExport: "درخواست خروجی جدید",
   },
 };

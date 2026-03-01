@@ -76,11 +76,11 @@ export const analysisPageTranslations: Record<
     retryAnalysis: "読み込み再試行",
   },
   fa: {
-    loadingAnalysis: "Loading analysis...",
-    retryingAnalysis: "Retrying to load analysis...",
-    analysisErrorTitle: "Failed to load analysis",
-    analysisErrorMessage: "Unable to load the analysis data. Please try again.",
-    noAnalysisData: "Analysis data is not available for this conversation",
-    retryAnalysis: "Retry loading",
+    loadingAnalysis: "در حال بارگذاری تحلیل...",
+    retryingAnalysis: "تلاش مجدد برای بارگذاری تحلیل...",
+    analysisErrorTitle: "بارگذاری تحلیل ناموفق بود",
+    analysisErrorMessage: "بارگذاری داده‌های تحلیل ممکن نبود. لطفاً دوباره تلاش کنید.",
+    noAnalysisData: "داده‌های تحلیل برای این گفتگو موجود نیست",
+    retryAnalysis: "تلاش مجدد بارگذاری",
   },
 };

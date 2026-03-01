@@ -135,20 +135,20 @@ export const commentComposerTranslations: Record<
       "ヒント：これには複数のアイデアが含まれている可能性があります - 投票者が明確に賛成または反対できることを確認してください",
   },
   fa: {
-    placeholder: "Add your own statement",
-    placeholderExpanded: "Focus on a single point that's easy to agree or disagree with",
-    postButton: "Post",
+    placeholder: "نظر خود را بنویسید",
+    placeholderExpanded: "روی یک نکته تمرکز کنید که موافقت یا مخالفت با آن آسان باشد",
+    postButton: "ارسال",
     conversationLockedError:
-      "Cannot create statement because the conversation is locked",
+      "ارسال نظر ممکن نیست زیرا گفتگو قفل شده است",
     conversationClosedError:
-      "This conversation has been closed",
-    createOpinionError: "Error while trying to create a new statement",
-    eventTicketRequiredTitle: "Event Ticket Required",
+      "این گفتگو بسته شده است",
+    createOpinionError: "خطا هنگام ایجاد نظر جدید",
+    eventTicketRequiredTitle: "بلیت رویداد الزامی است",
     eventTicketRequiredMessage:
-      "You need to verify your Devconnect 2025 ticket to participate in this conversation.",
-    exitPromptTitle: "Save statement as draft?",
-    exitPromptDescription: "Your draft statement will be here when you return.",
+      "برای مشارکت در این گفتگو باید بلیت Devconnect 2025 خود را تأیید کنید.",
+    exitPromptTitle: "نظر به‌عنوان پیش‌نویس ذخیره شود؟",
+    exitPromptDescription: "پیش‌نویس شما هنگام بازگشت اینجا خواهد بود.",
     validationWarningMultipleIdeas:
-      "Tip: This might contain multiple ideas - make sure voters can clearly agree or disagree",
+      "نکته: ممکن است شامل چند ایده باشد - مطمئن شوید رأی‌دهندگان بتوانند به‌وضوح موافقت یا مخالفت کنند",
   },
 };

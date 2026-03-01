@@ -53,9 +53,9 @@ export const preferencesDialogTestTranslations: Record<
     openPreferencesDialogButton: "設定ダイアログを開く",
   },
   fa: {
-    preferencesDialog: "Preferences Dialog",
+    preferencesDialog: "دیالوگ ترجیحات",
     preferencesDialogDescription:
       "Test the post-signup preferences dialog that allows users to select their language and topic preferences after creating an account.",
-    openPreferencesDialogButton: "Open Preferences Dialog",
+    openPreferencesDialogButton: "باز کردن دیالوگ ترجیحات",
   },
 };

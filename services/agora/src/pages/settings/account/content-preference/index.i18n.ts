@@ -30,6 +30,6 @@ export const contentPreferenceTranslations: Record<
     contentPreference: "コンテンツ設定",
   },
   fa: {
-    contentPreference: "Content Preference",
+    contentPreference: "ترجیحات محتوا",
   },
 };

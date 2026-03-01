@@ -38,7 +38,7 @@ export const exportStatusPageTranslations: Record<
     exportFeatureDisabled: "エクスポート機能は無効です",
   },
   fa: {
-    pageTitle: "Export Status",
-    exportFeatureDisabled: "Export feature is disabled",
+    pageTitle: "وضعیت خروجی",
+    exportFeatureDisabled: "قابلیت خروجی غیرفعال است",
   },
 };

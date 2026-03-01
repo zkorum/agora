@@ -30,6 +30,6 @@ export const dialogStepLayoutTranslations: Record<
     welcomeTitle: "Agora へようこそ！",
   },
   fa: {
-    welcomeTitle: "Welcome to Agora!",
+    welcomeTitle: "به جمهور خوش آمدید!",
   },
 };

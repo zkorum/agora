@@ -30,6 +30,6 @@ export const interactionTabTranslations: Record<
     analysis: "分析",
   },
   fa: {
-    analysis: "Analysis",
+    analysis: "تحلیل",
   },
 };

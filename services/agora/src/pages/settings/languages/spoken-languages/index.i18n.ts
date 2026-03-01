@@ -30,6 +30,6 @@ export const spokenLanguagesSettingsTranslations: Record<
     pageTitle: "話される言語",
   },
   fa: {
-    pageTitle: "Spoken Languages",
+    pageTitle: "زبان‌های مکالمه",
   },
 };

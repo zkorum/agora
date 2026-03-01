@@ -64,10 +64,10 @@ export const asyncStateHandlerTranslations: Record<
     retry: "再試行",
   },
   fa: {
-    loading: "Loading...",
-    errorTitle: "Something went wrong",
-    defaultErrorMessage: "An unexpected error occurred. Please try again.",
-    emptyMessage: "No data available",
-    retry: "Retry",
+    loading: "در حال بارگذاری...",
+    errorTitle: "مشکلی پیش آمد",
+    defaultErrorMessage: "خطای غیرمنتظره‌ای رخ داد. لطفاً دوباره تلاش کنید.",
+    emptyMessage: "داده‌ای موجود نیست",
+    retry: "تلاش مجدد",
   },
 };

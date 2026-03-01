@@ -30,6 +30,6 @@ export const displayLanguageSettingsTranslations: Record<
     pageTitle: "表示言語",
   },
   fa: {
-    pageTitle: "Display Language",
+    pageTitle: "زبان نمایش",
   },
 };

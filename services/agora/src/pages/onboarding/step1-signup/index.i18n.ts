@@ -45,8 +45,8 @@ export const signupOnboardingTranslations: Record<
       "分極化が進む世界において、アゴラは重要な社会問題に関する市民対話を人間味あるものにし、分極化を解消するよう努めています。",
   },
   fa: {
-    pageTitle: "Why does Agora exist?",
+    pageTitle: "چرا جمهور وجود دارد؟",
     description:
-      "In a world marked by increasing polarizations, Agora strives to rehumanize and depolarize citizen dialogues on key societal issues.",
+      "در جهانی که قطب‌بندی‌ها روزافزون افزایش می‌یابد، جمهور تلاش می‌کند گفتگوهای شهروندی را درباره مسائل کلیدی جامعه انسانی‌تر کند.",
   },
 };

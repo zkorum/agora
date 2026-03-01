@@ -46,8 +46,8 @@ export const organizationViewTranslations: Record<
     addUserToOrganizationButton: "ユーザーを組織に追加",
   },
   fa: {
-    deleteOrganizationButton: "Delete Organization",
-    usernameLabel: "Username",
-    addUserToOrganizationButton: "Add User to Organization",
+    deleteOrganizationButton: "حذف سازمان",
+    usernameLabel: "نام کاربری",
+    addUserToOrganizationButton: "افزودن کاربر به سازمان",
   },
 };

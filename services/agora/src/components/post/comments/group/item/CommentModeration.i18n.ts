@@ -38,7 +38,7 @@ export const commentModerationTranslations: Record<
     moderatorFlaggedMessage: "モデレーターがこの回答を",
   },
   fa: {
-    edit: "Edit",
-    moderatorFlaggedMessage: "Moderator flagged this response as",
+    edit: "ویرایش",
+    moderatorFlaggedMessage: "مدیر این پاسخ را علامت‌گذاری کرد به‌عنوان",
   },
 };

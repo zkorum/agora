@@ -46,8 +46,8 @@ export const topicSelectionStepTranslations: Record<
     closeButton: "閉じる",
   },
   fa: {
-    title: "Select topics you're interested in to get started",
-    backButton: "Back",
-    closeButton: "Close",
+    title: "موضوعات مورد علاقه خود را برای شروع انتخاب کنید",
+    backButton: "بازگشت",
+    closeButton: "بستن",
   },
 };

@@ -53,9 +53,9 @@ export const embeddedBrowserWarningTestTranslations: Record<
     openWarningButton: "警告ダイアログを開く",
   },
   fa: {
-    embeddedBrowserWarning: "Embedded Browser Warning",
+    embeddedBrowserWarning: "هشدار مرورگر تعبیه‌شده",
     embeddedBrowserWarningDescription:
       "Test the embedded browser warning dialog that appears when users open the app in an in-app browser (Telegram, WeChat, etc.)",
-    openWarningButton: "Open Warning Dialog",
+    openWarningButton: "باز کردن دیالوگ هشدار",
   },
 };

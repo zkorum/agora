@@ -244,35 +244,35 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     dontCombineExampleGood2: "大学の授業料は無料であるべきです",
   },
   fa: {
-    title: "Tips for Writing Good Statements",
-    singleIdeaTitle: "One specific idea",
-    singleIdeaDescription: "Focus on a single point others can vote on",
+    title: "نکاتی برای نوشتن نظرات خوب",
+    singleIdeaTitle: "یک ایده مشخص",
+    singleIdeaDescription: "روی یک نکته که دیگران بتوانند رأی دهند تمرکز کنید",
     singleIdeaExampleGood:
       "Ride-sharing drivers should have the same insurance requirements as taxi drivers",
     singleIdeaExampleBad:
       "Uber should be banned and taxis need better apps and rating systems",
-    easyVoteTitle: "Easy to agree/disagree",
-    easyVoteDescription: "Avoid complex or multi-part statements",
+    easyVoteTitle: "آسان برای موافقت/مخالفت",
+    easyVoteDescription: "از نظرات پیچیده یا چندبخشی پرهیز کنید",
     easyVoteExampleGood:
       "Social media companies should be liable for misinformation on their platforms",
     easyVoteExampleBad:
       "Social media regulation is complex and depends on various factors and cultural contexts",
-    keepBriefTitle: "Keep it brief",
-    keepBriefDescription: "Aim for 280 characters or less",
-    keepBriefExampleGood: "Public transit should be free for students",
+    keepBriefTitle: "مختصر بنویسید",
+    keepBriefDescription: "هدف ۲۸۰ کاراکتر یا کمتر",
+    keepBriefExampleGood: "حمل و نقل عمومی باید برای دانشجویان رایگان باشد",
     keepBriefExampleBad:
       "I think that municipal transportation systems should consider implementing reduced-cost or zero-cost fare policies for individuals enrolled in educational programs because...",
-    beClearTitle: "Be clear",
-    beClearDescription: "Others should immediately understand your point",
-    beClearExampleGood: "Remote work increases employee productivity",
+    beClearTitle: "واضح بنویسید",
+    beClearDescription: "دیگران باید فوراً منظور شما را بفهمند",
+    beClearExampleGood: "کار از راه دور بهره‌وری کارکنان را افزایش می‌دهد",
     beClearExampleBad:
       "Telecommuting paradigms require reconsideration of organizational dynamics",
-    dontCombineTitle: "Don't combine",
+    dontCombineTitle: "ترکیب نکنید",
     dontCombineDescription:
       'Split "A and B" into separate statements for clearer voting',
     dontCombineExampleBad:
       "We need universal healthcare and free college tuition",
-    dontCombineExampleGood1: "Healthcare should be free at point of service",
-    dontCombineExampleGood2: "College tuition should be free",
+    dontCombineExampleGood1: "خدمات بهداشتی باید در نقطه ارائه رایگان باشد",
+    dontCombineExampleGood2: "شهریه دانشگاه باید رایگان باشد",
   },
 };
