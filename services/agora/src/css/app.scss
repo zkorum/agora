@@ -17,6 +17,16 @@
     format("truetype-variations");
 }
 
+/* Parastoo — Persian/Farsi font (variable weight 400–700) */
+@font-face {
+  font-family: Parastoo;
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 700;
+  src: url("./fonts/Parastoo/Parastoo-Variable.ttf")
+    format("truetype-variations");
+}
+
 /* CSS Custom Properties for responsive font weights */
 :root {
   --font-weight-normal: 400;
@@ -76,6 +86,35 @@ body {
 
 a {
   text-decoration: none;
+}
+
+/* Persian (Farsi) font override — applies Parastoo when locale is fa */
+html[lang="fa"] {
+  direction: rtl;
+
+  /* Override Maz UI font variable */
+  --maz-font-family: Parastoo, "Segoe UI", Tahoma, Arial, sans-serif;
+
+  body {
+    font-family:
+      Parastoo,
+      "Segoe UI",
+      Tahoma,
+      Arial,
+      sans-serif;
+  }
+
+  /* Ensure all form elements and components inherit the Persian font */
+  button,
+  input,
+  textarea,
+  select,
+  .q-btn,
+  .q-field,
+  .q-card,
+  .q-item {
+    font-family: inherit;
+  }
 }
 
 html {
