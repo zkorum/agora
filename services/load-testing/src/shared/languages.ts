@@ -67,6 +67,7 @@ export const ZodSupportedDisplayLanguageCodes = z.enum([
     "zh-Hans",
     "ja",
     "ar",
+    "fa",
 ]);
 export type SupportedDisplayLanguageCodes = z.infer<
     typeof ZodSupportedDisplayLanguageCodes
@@ -291,7 +292,7 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         code: "fa",
         name: "فارسی",
         englishName: "Persian",
-        displaySupported: false,
+        displaySupported: true,
     },
     {
         code: "pl",

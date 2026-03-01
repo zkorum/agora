@@ -3,6 +3,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import ar from "./ar";
 import en from "./en";
 import es from "./es";
+import fa from "./fa";
 import fr from "./fr";
 import ja from "./ja";
 import type { TranslationSchema } from "./types";
@@ -17,6 +18,7 @@ const translations: Record<SupportedDisplayLanguageCodes, TranslationSchema> = {
   "zh-Hant": zh_Hant,
   ja: ja,
   ar: ar,
+  fa: fa,
 };
 
 export default translations;
