@@ -48,7 +48,8 @@ export function useNotificationSSE() {
         await DefaultApiAxiosParamCreator().apiV1NotificationStreamGet(token);
 
       // Construct full URL with base
-      const baseUrl = processEnv.VITE_API_BASE_URL || "";
+      // In dev, use empty base so the request goes through the Vite proxy
+      const baseUrl = process.env.DEV ? "" : (processEnv.VITE_API_BASE_URL || "");
       const authUrl = `${baseUrl}${url}`;
 
       eventSource = new EventSource(authUrl);
