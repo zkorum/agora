@@ -2,6 +2,7 @@
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
 
+import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -13,9 +14,6 @@ import viteCompression from "vite-plugin-compression";
 import { defineConfig } from "#q-app/wrappers";
 
 import { envSchema, validateEnv } from "./src/utils/processEnv";
-
-// TODO: add env var to use TLS/SSL
-// import basicSsl from "@vitejs/plugin-basic-ssl";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -186,8 +184,6 @@ export default defineConfig((ctx) => {
           },
           { server: false },
         ],
-        // TODO: add env variable to add TLS/SSL
-        // basicSsl(),
         [
           "unplugin-vue-router/vite",
           {
@@ -200,9 +196,21 @@ export default defineConfig((ctx) => {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#devServer
     devServer: {
-      // https: {},
+      https: {
+        key: readFileSync(resolve(__dirname, '.certs/key.pem')),
+        cert: readFileSync(resolve(__dirname, '.certs/cert.pem')),
+      },
       open: true, // opens browser window automatically
       port: 3200, // Use whitelisted port for Zupass Devconnect ARG collection
+      proxy: {
+        // Proxy API requests to the backend so the WebView (which loads
+        // from the Quasar dev-server port) can reach the API without
+        // needing to know the backend port.
+        '/api': {
+          target: 'http://localhost:8084',
+          changeOrigin: true,
+        },
+      },
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework

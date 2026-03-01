@@ -79,3 +79,4 @@ typed-router.d.ts
 
 # Chunk visualizer
 stats.html
+.certs/
