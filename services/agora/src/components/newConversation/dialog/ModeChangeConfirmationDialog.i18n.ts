@@ -51,9 +51,9 @@ export const modeChangeConfirmationDialogTranslations: Record<
     continue: "Continuar",
   },
   fr: {
-    switchToImportMode: "Passer en Mode d'Importation ?",
+    switchToImportMode: "Passer en Mode d'Import ?",
     switchingWillClear:
-      "Passer en mode d'importation effacera les champs suivants du brouillon de conversation :",
+      "Passer en mode d'import effacera les champs suivants du brouillon de conversation :",
     title: "Titre",
     bodyText: "Texte du corps",
     pollOptions: "Options de sondage",

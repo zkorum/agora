@@ -18,7 +18,7 @@ export const importStatusPageTranslations: Record<
     pageTitle: "Estado de Importación",
   },
   fr: {
-    pageTitle: "État de l'Importation",
+    pageTitle: "État de l'Import",
   },
   "zh-Hans": {
     pageTitle: "导入状态",

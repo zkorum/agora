@@ -26,8 +26,8 @@ export const activeExportBannerTranslations: Record<
   },
   fr: {
     message:
-      "Vous avez une exportation en cours. Veuillez attendre qu'elle soit terminée avant d'en démarrer une nouvelle.",
-    viewStatus: "Voir l'État de l'Exportation",
+      "Vous avez un export en cours. Veuillez attendre qu'il soit terminé avant d'en démarrer un nouveau.",
+    viewStatus: "Voir l'État de l'Export",
   },
   "zh-Hans": {
     message: "您有一个正在进行的导出。请等待完成后再开始新的导出。",

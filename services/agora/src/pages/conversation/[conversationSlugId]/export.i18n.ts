@@ -86,25 +86,25 @@ export const exportPageTranslations: Record<
   fr: {
     pageTitle: "Exporter la Conversation",
     pageDescription:
-      "Téléchargez une exportation CSV de toutes les propositions et votes pour cette conversation.",
-    previousExports: "Exportations Précédentes",
+      "Téléchargez un export CSV de toutes les propositions et votes pour cette conversation.",
+    previousExports: "Exports Précédents",
     conversationLoadError:
       "Échec du chargement des détails de la conversation. Veuillez réessayer.",
     exportRequestError:
-      "Échec de la création de l'exportation. Veuillez réessayer.",
+      "Échec de la création de l'export. Veuillez réessayer.",
     exportCooldownMinutes:
-      "Période d'attente active. Vous pouvez demander une autre exportation dans {minutes} minute(s).",
+      "Période d'attente active. Vous pouvez demander un autre export dans {minutes} minute(s).",
     exportCooldownSeconds:
-      "Période d'attente active. Vous pouvez demander une autre exportation dans {seconds} seconde(s).",
+      "Période d'attente active. Vous pouvez demander un autre export dans {seconds} seconde(s).",
     viewConversation: "Voir la conversation",
     requestExportAriaLabel:
-      "Demander l'exportation des données de conversation",
+      "Demander l'export des données de conversation",
     errorActiveExportInProgress:
-      "Une exportation est déjà en cours. Veuillez attendre qu'elle soit terminée.",
+      "Un export est déjà en cours. Veuillez attendre qu'il soit terminé.",
     errorConversationNotFound: "Conversation introuvable.",
     errorNoOpinions:
       "Cette conversation n'a pas de propositions à exporter. Ajoutez d'abord quelques propositions.",
-    exportFeatureDisabled: "La fonction d'exportation est désactivée",
+    exportFeatureDisabled: "La fonction d'export est désactivée",
   },
   "zh-Hans": {
     pageTitle: "导出对话",

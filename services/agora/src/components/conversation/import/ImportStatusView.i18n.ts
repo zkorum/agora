@@ -79,9 +79,9 @@ export const importStatusViewTranslations: Record<
     failureReasonInvalidDataFormat: "El formato de datos no es válido",
   },
   fr: {
-    loadingStatus: "Chargement du statut d'importation...",
-    errorLoadingStatus: "Échec du chargement du statut d'importation",
-    importId: "ID d'Importation",
+    loadingStatus: "Chargement du statut d'import...",
+    errorLoadingStatus: "Échec du chargement du statut d'import",
+    importId: "ID d'Import",
     status: "Statut",
     createdAt: "Créé le",
     status_processing: "En cours",
@@ -89,9 +89,9 @@ export const importStatusViewTranslations: Record<
     status_failed: "Échoué",
     processingMessage:
       "Votre import est en cours de traitement. Cela peut prendre de quelques secondes à quelques minutes selon la taille de votre import.",
-    completedMessage: "Votre importation s'est terminée avec succès !",
+    completedMessage: "Votre import s'est terminé avec succès !",
     failedMessage:
-      "L'importation a échoué. Veuillez réessayer ou contacter le support.",
+      "L'import a échoué. Veuillez réessayer ou contacter le support.",
     viewConversation: "Voir la Conversation",
     failureReasonProcessingError: "Une erreur de traitement s'est produite",
     failureReasonTimeout: "L'opération a expiré",
