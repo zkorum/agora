@@ -81,7 +81,8 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     if (
       error.message.includes("Failed to fetch dynamically imported module") ||
       error.message.includes("Loading chunk") ||
-      error.message.includes("Loading CSS chunk")
+      error.message.includes("Loading CSS chunk") ||
+      error.message.includes("Unable to preload CSS")
     ) {
       const reloadKey = "chunk-reload";
       const lastReload = sessionStorage.getItem(reloadKey);
