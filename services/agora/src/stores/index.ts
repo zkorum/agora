@@ -86,6 +86,30 @@ function stateTransformer(
       // Redact userId computed property (exposed from store)
       userId: userId ? redactString(userId, "user_id") : userId,
     };
+
+    // Redact credentials PII from internal _loginStatus ref
+    // _loginStatus is not returned from the store, but we redact defensively
+    // in case Pinia serializes it into the state snapshot
+    const authState = redactedState.authentication as unknown as Record<string, unknown>;
+    const loginStatus = authState._loginStatus as
+      | { isKnown: boolean; credentials?: { email: string | null; phone: unknown; rarimo: unknown } }
+      | undefined;
+    if (loginStatus?.isKnown && loginStatus.credentials) {
+      loginStatus.credentials = {
+        email:
+          loginStatus.credentials.email !== null
+            ? redactString(loginStatus.credentials.email, "email")
+            : null,
+        phone:
+          loginStatus.credentials.phone !== null
+            ? { lastTwoDigits: 0, countryCallingCode: "[REDACTED]" }
+            : null,
+        rarimo:
+          loginStatus.credentials.rarimo !== null
+            ? { nullifier: "[REDACTED_NULLIFIER]" }
+            : null,
+      };
+    }
   }
 
   // Redact newPostDrafts store sensitive data
@@ -158,26 +182,39 @@ function stateTransformer(
 
   // Redact user store sensitive data
   if (redactedState.user) {
+    const profileData = redactedState.user.profileData;
     redactedState.user = {
       ...redactedState.user,
       profileData: {
-        ...redactedState.user.profileData,
-        userName: redactString(
-          redactedState.user.profileData.userName,
-          "username"
-        ),
-        // Clear lists - they contain full post/comment data with sensitive content
+        ...profileData,
+        // Redact precise creation timestamp - enough to identify a user
+        createdAt: new Date(0),
+        // Clamp to 0/1 - exact count can narrow identity
+        activePostCount: profileData.activePostCount > 0 ? 1 : 0,
+        // isModerator: kept as-is (boolean, useful for debugging)
+        userName: redactString(profileData.userName, "username"),
+        // Clear lists - they contain full post/comment data
         userPostList: [],
         userCommentList: [],
-        organizationList: redactedState.user.profileData.organizationList.map(
-          (org) => ({
-            ...org,
-            name: redactString(org.name, "organization_name"),
-          })
+        // Redact all org fields - imageUrl/websiteUrl/description identify specific orgs
+        organizationList: profileData.organizationList.map((org) => ({
+          name: redactString(org.name, "org_name"),
+          imageUrl: redactString(org.imageUrl, "org_image_url"),
+          websiteUrl: redactString(org.websiteUrl, "org_website_url"),
+          description: redactString(org.description, "org_description"),
+        })),
+        // Clear verified event tickets but preserve count via array length
+        verifiedEventTickets: profileData.verifiedEventTickets.map(
+          () => "[REDACTED_EVENT]" as never
         ),
-        // Clear verified event tickets - user privacy
-        verifiedEventTickets: [],
       },
+      // Preserve verification states count but clear identifying event slugs
+      ticketVerificationStates: new Map(
+        Array.from(
+          { length: redactedState.user.ticketVerificationStates.size },
+          (_, i) => [`[REDACTED_EVENT_${i}]`, { state: "redacted" as const }]
+        )
+      ) as typeof redactedState.user.ticketVerificationStates,
     };
   }
 
