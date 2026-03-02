@@ -14,6 +14,17 @@ export default defineBoot(({ app, router }) => {
     // see https://docs.sentry.io/platforms/javascript/guides/vue/#configuration-for-late-defined-vue-apps
     // integrations: (integrations) =>
     //   integrations.filter((integration) => integration.name !== "Vue"),
+    beforeSend(event) {
+      // Filter out benign ResizeObserver warnings (common with Quasar dialogs/layouts)
+      if (
+        event.exception?.values?.some((e) =>
+          e.value?.includes("ResizeObserver loop")
+        )
+      ) {
+        return null;
+      }
+      return event;
+    },
     integrations: [
       Sentry.vueIntegration({
         tracingOptions: {
