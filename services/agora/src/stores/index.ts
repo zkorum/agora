@@ -59,6 +59,47 @@ function redactString(value: string, fieldName: string): string {
 }
 
 /**
+ * Defensively redacts credentials from the internal _loginStatus ref.
+ * _loginStatus is not part of the store's public API, but Pinia may serialize
+ * it into the state snapshot. Uses runtime narrowing (no type casts) since
+ * the shape is not guaranteed.
+ */
+function redactLoginStatusCredentials(
+  authState: Record<string, unknown>
+): void {
+  const loginStatus = authState._loginStatus;
+  if (typeof loginStatus !== "object" || loginStatus === null) {
+    return;
+  }
+  if (!("isKnown" in loginStatus) || !loginStatus.isKnown) {
+    return;
+  }
+  if (!("credentials" in loginStatus) || !loginStatus.credentials) {
+    return;
+  }
+
+  const creds = loginStatus.credentials;
+  if (typeof creds !== "object" || creds === null) {
+    return;
+  }
+
+  loginStatus.credentials = {
+    email:
+      "email" in creds && typeof creds.email === "string"
+        ? redactString(creds.email, "email")
+        : null,
+    phone:
+      "phone" in creds && creds.phone !== null
+        ? { lastTwoDigits: 0, countryCallingCode: "[REDACTED]" }
+        : null,
+    rarimo:
+      "rarimo" in creds && creds.rarimo !== null
+        ? { nullifier: "[REDACTED_NULLIFIER]" }
+        : null,
+  };
+}
+
+/**
  * State transformer for Sentry Pinia plugin
  * Redacts sensitive personal data to comply with GDPR while preserving
  * the data structure for debugging purposes
@@ -67,20 +108,25 @@ function redactString(value: string, fieldName: string): string {
  */
 function stateTransformer(
   state: Partial<AllStoresState>
-): Partial<AllStoresState> {
-  const redactedState: Partial<AllStoresState> = { ...state };
+): unknown {
+  // Output is Record<string, unknown> — the redacted shape doesn't match store
+  // types (e.g. "[REDACTED_EVENT]" is not a valid EventSlug), and that's correct.
+  // We read from `state` (typed) for autocomplete, write to `output` (untyped).
+  const output: Record<string, unknown> = { ...state };
 
   // Redact authentication store sensitive data
-  if (redactedState.authentication) {
-    const userId = redactedState.authentication.userId;
-    redactedState.authentication = {
-      ...redactedState.authentication,
+  if (state.authentication) {
+    const userId = state.authentication.userId;
+
+    // Spread into Record<string, unknown> so we can access internal _loginStatus
+    const redactedAuth: Record<string, unknown> = {
+      ...state.authentication,
       verificationPhoneNumber: redactString(
-        redactedState.authentication.verificationPhoneNumber,
+        state.authentication.verificationPhoneNumber,
         "phone_number"
       ),
       verificationDefaultCallingCode: redactString(
-        redactedState.authentication.verificationDefaultCallingCode,
+        state.authentication.verificationDefaultCallingCode,
         "calling_code"
       ),
       // Redact userId computed property (exposed from store)
@@ -90,34 +136,17 @@ function stateTransformer(
     // Redact credentials PII from internal _loginStatus ref
     // _loginStatus is not returned from the store, but we redact defensively
     // in case Pinia serializes it into the state snapshot
-    const authState = redactedState.authentication as unknown as Record<string, unknown>;
-    const loginStatus = authState._loginStatus as
-      | { isKnown: boolean; credentials?: { email: string | null; phone: unknown; rarimo: unknown } }
-      | undefined;
-    if (loginStatus?.isKnown && loginStatus.credentials) {
-      loginStatus.credentials = {
-        email:
-          loginStatus.credentials.email !== null
-            ? redactString(loginStatus.credentials.email, "email")
-            : null,
-        phone:
-          loginStatus.credentials.phone !== null
-            ? { lastTwoDigits: 0, countryCallingCode: "[REDACTED]" }
-            : null,
-        rarimo:
-          loginStatus.credentials.rarimo !== null
-            ? { nullifier: "[REDACTED_NULLIFIER]" }
-            : null,
-      };
-    }
+    redactLoginStatusCredentials(redactedAuth);
+
+    output.authentication = redactedAuth;
   }
 
   // Redact newPostDrafts store sensitive data
-  if (redactedState.newPostDrafts) {
-    const conversationDraft = redactedState.newPostDrafts.conversationDraft;
+  if (state.newPostDrafts) {
+    const conversationDraft = state.newPostDrafts.conversationDraft;
 
-    redactedState.newPostDrafts = {
-      ...redactedState.newPostDrafts,
+    output.newPostDrafts = {
+      ...state.newPostDrafts,
       conversationDraft: {
         ...conversationDraft,
         title: redactString(conversationDraft.title, "title"),
@@ -153,23 +182,23 @@ function stateTransformer(
   // The opinion drafts are stored in localStorage, not in the Pinia state
 
   // Redact notification store sensitive data
-  if (redactedState.notification) {
-    redactedState.notification = {
-      ...redactedState.notification,
+  if (state.notification) {
+    output.notification = {
+      ...state.notification,
       // Clear notification list - contains user activity data
       notificationList: [],
       // Keep notification count - useful for debugging
-      numNewNotifications: redactedState.notification.numNewNotifications,
+      numNewNotifications: state.notification.numNewNotifications,
     };
   }
 
   // Redact topic store sensitive data
-  if (redactedState.topic) {
-    const followedTopicCount = redactedState.topic.followedTopicCodeSet.size;
-    redactedState.topic = {
-      ...redactedState.topic,
+  if (state.topic) {
+    const followedTopicCount = state.topic.followedTopicCodeSet.size;
+    output.topic = {
+      ...state.topic,
       // Keep full topic list - it's public data
-      fullTopicList: redactedState.topic.fullTopicList,
+      fullTopicList: state.topic.fullTopicList,
       // Clear followed topics but preserve count - useful for debugging without revealing interests
       followedTopicCodeSet: new Set(
         Array.from(
@@ -181,10 +210,10 @@ function stateTransformer(
   }
 
   // Redact user store sensitive data
-  if (redactedState.user) {
-    const profileData = redactedState.user.profileData;
-    redactedState.user = {
-      ...redactedState.user,
+  if (state.user) {
+    const profileData = state.user.profileData;
+    output.user = {
+      ...state.user,
       profileData: {
         ...profileData,
         // Redact precise creation timestamp - enough to identify a user
@@ -203,22 +232,22 @@ function stateTransformer(
           websiteUrl: redactString(org.websiteUrl, "org_website_url"),
           description: redactString(org.description, "org_description"),
         })),
-        // Clear verified event tickets but preserve count via array length
+        // Preserve count via array length, redact actual slugs
         verifiedEventTickets: profileData.verifiedEventTickets.map(
-          () => "[REDACTED_EVENT]" as never
+          () => "[REDACTED_EVENT]"
         ),
       },
       // Preserve verification states count but clear identifying event slugs
       ticketVerificationStates: new Map(
         Array.from(
-          { length: redactedState.user.ticketVerificationStates.size },
-          (_, i) => [`[REDACTED_EVENT_${i}]`, { state: "redacted" as const }]
+          { length: state.user.ticketVerificationStates.size },
+          (_, i) => [`[REDACTED_EVENT_${i}]`, { state: "redacted" }]
         )
-      ) as typeof redactedState.user.ticketVerificationStates,
+      ),
     };
   }
 
-  return redactedState;
+  return output;
 }
 
 export default defineStore((/* { ssrContext } */) => {
