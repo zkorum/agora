@@ -130,7 +130,7 @@ async function gotoNextRoute(isLogin: boolean) {
 .buttonFlex {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
   width: min(15rem, 100%);
 }
 
