@@ -234,7 +234,7 @@ async function phase1CreateClusterStructure({
     > = {} as Record<PolisKey, GroupCommentStats[string]>;
 
     for (let clusterKey = 0; clusterKey < minNumberOfClusters; clusterKey++) {
-        const repnessEntry = polisMathResults.repness[clusterKey];
+        const repnessEntry = polisMathResults.repness[clusterKey] ?? [];
         const groupCommentStatsEntry =
             polisMathResults.group_comment_stats[clusterKey];
         const participants = polisMathResults.participants_df.filter(
