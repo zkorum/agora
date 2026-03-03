@@ -172,10 +172,10 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
 
     switch (activeUserIntention.value) {
       case "none":
-        await router.push({ name: "/" });
+        await router.replace({ name: "/" });
         break;
       case "agreement":
-        await router.push({
+        await router.replace({
           name: opinionAgreementIntention.isEmbedView
             ? "/conversation/[postSlugId].embed"
             : "/conversation/[postSlugId]/",
@@ -184,16 +184,16 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         });
         break;
       case "newConversation":
-        await router.push({ name: "/conversation/new/create/" });
+        await router.replace({ name: "/conversation/new/create/" });
         break;
       case "newOpinion":
-        await router.push({
+        await router.replace({
           name: "/conversation/[postSlugId]/",
           params: { postSlugId: newOpinionIntention.conversationSlugId },
         });
         break;
       case "voting":
-        await router.push({
+        await router.replace({
           name: votingIntention.isEmbedView
             ? "/conversation/[postSlugId].embed"
             : "/conversation/[postSlugId]/",
@@ -201,7 +201,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         });
         break;
       case "reportUserContent":
-        await router.push({
+        await router.replace({
           name: reportUserContentIntention.isEmbedView
             ? "/conversation/[postSlugId].embed"
             : "/conversation/[postSlugId]/",
@@ -210,7 +210,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         });
         break;
       case "settings":
-        await router.push({ name: "/settings/" });
+        await router.replace({ name: "/settings/" });
         break;
       default:
         console.error("Unknown intention");

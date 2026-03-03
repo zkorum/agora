@@ -18,7 +18,7 @@ export function useVerificationComplete() {
     if (onboardingMode == "LOGIN") {
       await routeUserAfterLogin();
     } else {
-      await router.push({ name: "/onboarding/step4-username/" });
+      await router.replace({ name: "/onboarding/step4-username/" });
     }
   }
 
