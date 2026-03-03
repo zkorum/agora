@@ -26,6 +26,7 @@ doc/.*
 
 # misc
 *.bak
+tmp/
 
 # compiled output
 /dist
