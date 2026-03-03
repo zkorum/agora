@@ -90,7 +90,7 @@
     "@vue/eslint-config-typescript": "^14.7.0",
     "autoprefixer": "^10.4.27",
     "env-cmd": "^11.0.0",
-    "eslint": "^9.35.0",
+    "eslint": "^10.0.2",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-vue": "^10.8.0",
     "globals": "^17.4.0",
