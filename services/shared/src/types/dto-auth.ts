@@ -40,7 +40,7 @@ export const authenticate200 = z.discriminatedUnion("success", [
     z.object({
         success: z.literal(false),
         reason: z.enum([
-            "already_logged_in",
+            "already_has_credential",
             "associated_with_another_user",
             "throttled",
             "invalid_phone_number",
@@ -64,7 +64,7 @@ export const verifyOtp200 = z.discriminatedUnion("success", [
                 "expired_code",
                 "wrong_guess",
                 "too_many_wrong_guess",
-                "already_logged_in",
+                "already_has_credential",
                 "associated_with_another_user",
                 "auth_state_changed", // Added: auth type changed during OTP flow
             ]),
@@ -95,7 +95,7 @@ export const authenticateEmail200 = z.discriminatedUnion("success", [
     z.object({
         success: z.literal(false),
         reason: z.enum([
-            "already_logged_in",
+            "already_has_credential",
             "associated_with_another_user",
             "throttled",
         ]),

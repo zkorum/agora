@@ -578,6 +578,12 @@ export const eventSlugEnum = pgEnum("event_slug", ["devconnect-2025"]);
 
 export const importMethodType = pgEnum("import_method", ["url", "csv"]);
 
+export const participationModeEnum = pgEnum("participation_mode", [
+    "strong_verification",
+    "email_verification",
+    "guest",
+]);
+
 // Export status for CSV exports
 export const exportStatusEnum = pgEnum("export_status_enum", [
     "processing",
@@ -1253,9 +1259,10 @@ export const conversationTable = pgTable(
             precision: 0,
         }),
         isIndexed: boolean("is_indexed").notNull().default(true), // if true, the conversation can be fetched in the feed and search engine, else it is hidden, unless users have the link
-        isLoginRequired: boolean("is_login_required").notNull().default(true), // if true, the conversation requires users to sign up to participate -- this field is ignored if the conversation is indexed; in this case, sign-up is always required
+        participationMode: participationModeEnum("participation_mode").notNull().default("strong_verification"), // Determines who can vote/post opinions: "strong_verification" requires phone or Rarimo passport, "email_verification" requires email credential specifically, "guest" allows anyone.
         isImporting: boolean("is_importing").notNull().default(false), // if true, the conversation is being imported from CSV and should not be visible in feed until import completes
         isClosed: boolean("is_closed").notNull().default(false), // if true, the conversation was closed by owner and users cannot post opinions or vote
+        isEdited: boolean("is_edited").notNull().default(false), // if true, the conversation content was edited after creation. Used for "Edited" badge in UI. Use this field (not updatedAt) to determine if a conversation was edited — updatedAt can be accidentally bumped by migration scripts.
         requiresEventTicket: eventSlugEnum("requires_event_ticket"), // if set, only users with verified ticket for this event can participate (vote/post opinions)
         opinionCount: integer("opinion_count").notNull().default(0),
         voteCount: integer("vote_count").notNull().default(0),
@@ -1276,6 +1283,8 @@ export const conversationTable = pgTable(
         })
             .defaultNow()
             .notNull(),
+        // WARNING: Do NOT use updatedAt to determine if a conversation was edited in the UI.
+        // Use isEdited instead. Migration scripts must NOT update this column.
         updatedAt: timestamp("updated_at", {
             mode: "date",
             precision: 0,
