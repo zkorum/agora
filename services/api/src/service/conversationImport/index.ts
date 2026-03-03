@@ -11,7 +11,7 @@ import type {
     GetConversationImportStatusResponse,
     GetActiveImportResponse,
 } from "@/shared/types/dto.js";
-import type { EventSlug } from "@/shared/types/zod.js";
+import type { EventSlug, ParticipationMode } from "@/shared/types/zod.js";
 import type { NotificationSSEManager } from "../notificationSSE.js";
 import * as database from "./database.js";
 import { generateRandomSlugId } from "@/crypto.js";
@@ -25,7 +25,7 @@ interface RequestConversationImportParams {
     formData: {
         postAsOrganization?: string;
         indexConversationAt?: string;
-        isLoginRequired: boolean;
+        participationMode: ParticipationMode;
         isIndexed: boolean;
         requiresEventTicket?: EventSlug;
     };
@@ -146,7 +146,7 @@ interface RequestUrlImportParams {
     formData: {
         postAsOrganization?: string;
         indexConversationAt?: string;
-        isLoginRequired: boolean;
+        participationMode: ParticipationMode;
         isIndexed: boolean;
         requiresEventTicket?: EventSlug;
     };

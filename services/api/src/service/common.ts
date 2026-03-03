@@ -21,6 +21,7 @@ import type {
     PolisClustersMetadata,
     ClusterMetadata,
     EventSlug,
+    ParticipationMode,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { eq, desc, SQL, and, sql } from "drizzle-orm";
@@ -41,14 +42,14 @@ import { log } from "@/app.js";
  */
 export function isValidPublicConversationAccess({
     isIndexed,
-    isLoginRequired,
+    participationMode,
     requiresEventTicket,
 }: {
     isIndexed: boolean;
-    isLoginRequired: boolean;
+    participationMode: ParticipationMode;
     requiresEventTicket?: EventSlug;
 }): boolean {
-    if (isIndexed && !isLoginRequired && !requiresEventTicket) {
+    if (isIndexed && participationMode === "guest" && !requiresEventTicket) {
         return false;
     }
     return true;
@@ -174,8 +175,9 @@ export function useCommonPost() {
                 organizationIsFullImagePath: organizationTable.isFullImagePath,
                 organizationDescription: organizationTable.description,
                 isIndexed: conversationTable.isIndexed,
-                isLoginRequired: conversationTable.isLoginRequired,
+                participationMode: conversationTable.participationMode,
                 isClosed: conversationTable.isClosed,
+                isEdited: conversationTable.isEdited,
                 requiresEventTicket: conversationTable.requiresEventTicket,
                 // moderation
                 moderationAction: conversationModerationTable.moderationAction,
@@ -262,15 +264,16 @@ export function useCommonPost() {
                 conversationSlugId: postItem.slugId,
                 moderation: moderationProperties,
                 createdAt: postItem.createdAt,
-                updatedAt: postItem.updatedAt,
+                updatedAt: postItem.isEdited ? postItem.updatedAt : undefined,
                 lastReactedAt: postItem.lastReactedAt,
                 opinionCount: postItem.opinionCount,
                 voteCount: postItem.voteCount,
                 participantCount: postItem.participantCount,
                 authorUsername: postItem.authorName,
                 isIndexed: postItem.isIndexed,
-                isLoginRequired: postItem.isLoginRequired,
+                participationMode: postItem.participationMode,
                 isClosed: postItem.isClosed,
+                isEdited: postItem.isEdited,
                 requiresEventTicket: postItem.requiresEventTicket ?? undefined,
                 organization:
                     postItem.organizationName !== null &&
@@ -931,7 +934,7 @@ export function useCommonPost() {
         opinionCount: number;
         voteCount: number;
         isIndexed: boolean;
-        isLoginRequired: boolean;
+        participationMode: ParticipationMode;
         isClosed: boolean;
         requiresEventTicket: EventSlug | null;
     }
@@ -955,8 +958,9 @@ export function useCommonPost() {
                 voteCount: conversationTable.voteCount,
                 opinionCount: conversationTable.opinionCount,
                 isIndexed: conversationTable.isIndexed,
-                isLoginRequired: conversationTable.isLoginRequired,
+                participationMode: conversationTable.participationMode,
                 isClosed: conversationTable.isClosed,
+                isEdited: conversationTable.isEdited,
                 requiresEventTicket: conversationTable.requiresEventTicket,
             })
             .from(conversationTable)
@@ -972,7 +976,7 @@ export function useCommonPost() {
             voteCount: postTableResponse[0].voteCount,
             opinionCount: postTableResponse[0].opinionCount,
             isIndexed: postTableResponse[0].isIndexed,
-            isLoginRequired: postTableResponse[0].isLoginRequired,
+            participationMode: postTableResponse[0].participationMode,
             isClosed: postTableResponse[0].isClosed,
             requiresEventTicket: postTableResponse[0].requiresEventTicket,
         };

@@ -107,6 +107,7 @@ import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
 import { createExportBuffer } from "./service/exportBuffer.js";
 import { createImportBuffer } from "./service/importBuffer.js";
+import { createUcanReplayGuard } from "./service/ucanReplayGuard.js";
 import { NotificationSSEManager } from "./service/notificationSSE.js";
 import {
     addUserOrganizationMapping,
@@ -116,10 +117,8 @@ import {
     getOrganizationsByUsername,
     removeUserOrganizationMapping,
 } from "./service/administrator/organization.js";
-import type {
-    DeviceIsKnownTrueLoginStatus,
-    DeviceLoginStatusExtended,
-} from "./shared/types/zod.js";
+import type { DeviceIsKnownTrueLoginStatus } from "./shared/types/zod.js";
+import type { DeviceLoginStatusInternal } from "./service/authUtil.js";
 import {
     getAllTopics,
     getUserFollowedTopics,
@@ -135,6 +134,8 @@ import {
     type SupportedDisplayLanguageCodes,
 } from "./shared/languages.js";
 import { createDb } from "./shared-backend/db.js";
+import { deviceTable } from "./shared-backend/schema.js";
+import { eq } from "drizzle-orm";
 import {
     initializeGoogleCloudCredentials,
     type GoogleCloudCredentials,
@@ -175,6 +176,10 @@ server.register(fastifyMultipart, {
 // @fastify/sse has type compatibility issues with Fastify v5
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
 await server.register(fastifySSE as any);
+
+// Register rate limiting plugin (applied per-route, not globally)
+import fastifyRateLimit from "@fastify/rate-limit";
+await server.register(fastifyRateLimit, { global: false });
 
 // Add schema validator and serializer
 server.setValidatorCompiler(validatorCompiler);
@@ -357,12 +362,30 @@ if (
     );
 }
 
-// Initialize Valkey (optional - for vote buffer persistence)
+// Initialize Valkey (optional - for vote buffer persistence and UCAN replay protection)
 const queueValkey = await initializeValkey({
     valkeyUrl: config.QUEUE_VALKEY_URL,
     log,
     type: "Queue",
 });
+
+if (queueValkey === undefined) {
+    log.warn(
+        "[API] Valkey not configured — UCAN replay protection uses in-memory store. " +
+            "This provides single-instance protection only. " +
+            "Set QUEUE_VALKEY_URL for cross-instance replay prevention.",
+    );
+}
+
+// Initialize UCAN replay guard (prevents token replay attacks)
+const ucanReplayGuard = createUcanReplayGuard({ valkey: queueValkey });
+log.info(
+    `[API] UCAN replay guard initialized — mode: ${
+        queueValkey !== undefined
+            ? "Valkey"
+            : "in-memory (single-instance only)"
+    }`,
+);
 
 // Initialize VoteBuffer (batches votes to reduce DB contention)
 const voteBuffer = createVoteBuffer({
@@ -537,7 +560,7 @@ function getEncodedUcan(request: FastifyRequest): string {
 interface VerifyUcanAndDeviceStatusReturn {
     didWrite: string;
     encodedUcan: string;
-    deviceStatus: DeviceLoginStatusExtended;
+    deviceStatus: DeviceLoginStatusInternal;
 }
 interface VerifyUcanKnownDeviceReturn {
     didWrite: string;
@@ -591,6 +614,21 @@ async function verifyUcan(request: FastifyRequest): Promise<VerifyUcanReturn> {
             new AggregateError(result.error),
         );
     }
+
+    // Replay attack protection: reject tokens that have already been used.
+    const isReplay = await ucanReplayGuard.checkAndMark({
+        encodedUcan,
+        expiryUnix: parsedUcan.payload.exp,
+        issuerDid: rootIssuerDid,
+    });
+    if (isReplay) {
+        log.warn(
+            { didWrite: rootIssuerDid },
+            "[UCAN] Replay attack detected — token already used",
+        );
+        throw server.httpErrors.unauthorized("UCAN already used");
+    }
+
     return {
         encodedUcan: encodedUcan,
         didWrite: rootIssuerDid,
@@ -667,6 +705,39 @@ async function verifyUcanAndDeviceStatus(
             `[${didWrite}] is expected to be either Guest or a Logged-In registered user but it is neither`,
         );
     }
+
+    // Sliding window session refresh for registered users only.
+    // Guests (isLoggedIn always false) are excluded — their identity is
+    // tied to didWrite, not session expiry, so consultations lasting months are safe.
+    // No extra DB read: sessionExpiry comes from getDeviceStatus() which already fetches it.
+    if (deviceStatus.isLoggedIn) {
+        const daysUntilExpiry =
+            (deviceStatus.sessionExpiry.getTime() - now.getTime()) /
+            (1000 * 60 * 60 * 24);
+        if (daysUntilExpiry < config.SESSION_REFRESH_THRESHOLD_DAYS) {
+            const newExpiry = new Date(now);
+            newExpiry.setDate(
+                newExpiry.getDate() + config.SESSION_LIFETIME_DAYS,
+            );
+            // Fire-and-forget: non-blocking write, ~once per 45 days per user
+            db.update(deviceTable)
+                .set({ sessionExpiry: newExpiry, updatedAt: now })
+                .where(eq(deviceTable.didWrite, didWrite))
+                .then(() => {
+                    log.info(
+                        { didWrite },
+                        "[Session] Refreshed session expiry",
+                    );
+                })
+                .catch((err: unknown) => {
+                    log.error(
+                        err,
+                        "[Session] Failed to refresh session expiry",
+                    );
+                });
+        }
+    }
+
     return {
         didWrite: didWrite,
         encodedUcan: encodedUcan,
@@ -749,6 +820,7 @@ server.after(() => {
                         isLoggedIn: deviceStatus.isLoggedIn,
                         isRegistered: deviceStatus.isRegistered,
                         userId: deviceStatus.userId,
+                        credentials: deviceStatus.credentials,
                     },
                 };
             } else {
@@ -757,6 +829,7 @@ server.after(() => {
                         isKnown: deviceStatus.isKnown,
                         isLoggedIn: deviceStatus.isLoggedIn,
                         isRegistered: deviceStatus.isRegistered,
+                        credentials: deviceStatus.credentials,
                     },
                 };
             }
@@ -770,6 +843,12 @@ server.after(() => {
             body: authenticateRequestBody,
             response: { 200: authenticate200 },
         },
+        config: {
+            rateLimit: {
+                max: config.AUTH_RATE_LIMIT_MAX,
+                timeWindow: config.AUTH_RATE_LIMIT_WINDOW_MS,
+            },
+        },
         handler: async (request) => {
             // This endpoint is accessible without being logged in
             // this endpoint could be especially subject to attacks such as DDoS or man-in-the-middle (to associate their own DID instead of the legitimate user's ones for example)
@@ -782,10 +861,10 @@ server.after(() => {
             );
             // wrapper function for Typescript to be happy with the zod discriminated union type
             async function doAuthenticate(): Promise<AuthenticateResponse> {
-                if (deviceStatus.isLoggedIn) {
+                if (deviceStatus.isLoggedIn && deviceStatus.credentials.phone !== null) {
                     return {
                         success: false,
-                        reason: "already_logged_in",
+                        reason: "already_has_credential",
                     };
                 }
                 const userAgent =
@@ -828,6 +907,12 @@ server.after(() => {
                 200: verifyOtp200,
             },
         },
+        config: {
+            rateLimit: {
+                max: config.AUTH_RATE_LIMIT_MAX,
+                timeWindow: config.AUTH_RATE_LIMIT_WINDOW_MS,
+            },
+        },
         handler: async (request) => {
             const { didWrite, deviceStatus } = await verifyUcanAndDeviceStatus(
                 db,
@@ -837,10 +922,10 @@ server.after(() => {
                 },
             );
             async function doVerifyPhoneOtp(): Promise<VerifyOtp200> {
-                if (deviceStatus.isLoggedIn) {
+                if (deviceStatus.isLoggedIn && deviceStatus.credentials.phone !== null) {
                     return {
                         success: false,
-                        reason: "already_logged_in",
+                        reason: "already_has_credential",
                     };
                 }
                 return await authService.verifyPhoneOtp({
@@ -853,6 +938,7 @@ server.after(() => {
                     twilioClient: twilioClient,
                     twilioServiceSid: config.TWILIO_SERVICE_SID,
                     peppers: config.PEPPERS,
+                    sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
                 });
             }
             return await doVerifyPhoneOtp();
@@ -866,16 +952,22 @@ server.after(() => {
             body: authenticateEmailRequestBody,
             response: { 200: authenticateEmail200 },
         },
+        config: {
+            rateLimit: {
+                max: config.AUTH_RATE_LIMIT_MAX,
+                timeWindow: config.AUTH_RATE_LIMIT_WINDOW_MS,
+            },
+        },
         handler: async (request) => {
             const { didWrite, deviceStatus } =
                 await verifyUcanAndDeviceStatus(db, request, {
                     expectedDeviceStatus: undefined,
                 });
             async function doAuthenticateEmail(): Promise<AuthenticateEmailResponse> {
-                if (deviceStatus.isLoggedIn) {
+                if (deviceStatus.isLoggedIn && deviceStatus.credentials.email !== null) {
                     return {
                         success: false,
-                        reason: "already_logged_in",
+                        reason: "already_has_credential",
                     };
                 }
                 const userAgent =
@@ -912,16 +1004,22 @@ server.after(() => {
                 200: verifyOtp200,
             },
         },
+        config: {
+            rateLimit: {
+                max: config.AUTH_RATE_LIMIT_MAX,
+                timeWindow: config.AUTH_RATE_LIMIT_WINDOW_MS,
+            },
+        },
         handler: async (request) => {
             const { didWrite, deviceStatus } =
                 await verifyUcanAndDeviceStatus(db, request, {
                     expectedDeviceStatus: undefined,
                 });
             async function doVerifyEmailOtp(): Promise<VerifyOtp200> {
-                if (deviceStatus.isLoggedIn) {
+                if (deviceStatus.isLoggedIn && deviceStatus.credentials.email !== null) {
                     return {
                         success: false,
-                        reason: "already_logged_in",
+                        reason: "already_has_credential",
                     };
                 }
                 return await authService.verifyEmailOtp({
@@ -930,6 +1028,7 @@ server.after(() => {
                     didWrite,
                     code: request.body.code,
                     email: request.body.email,
+                    sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
                 });
             }
             return await doVerifyEmailOtp();
@@ -1414,11 +1513,14 @@ server.after(() => {
         url: `/api/${apiVersion}/poll/respond`,
         schema: {
             body: Dto.pollRespondRequest,
+            response: {
+                200: Dto.pollRespondResponse,
+            },
         },
         handler: async (request, reply) => {
             const { didWrite, encodedUcan } = await verifyUcan(request);
             const now = nowZeroMs();
-            await submitPollResponse({
+            const pollResponse = await submitPollResponse({
                 db: db,
                 proof: encodedUcan,
                 didWrite: didWrite,
@@ -1427,7 +1529,7 @@ server.after(() => {
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: now,
             });
-            reply.send();
+            reply.send(pollResponse);
         },
     });
 
@@ -1771,7 +1873,7 @@ server.after(() => {
                 indexConversationAt: request.body.indexConversationAt,
                 postAsOrganization: request.body.postAsOrganization,
                 isIndexed: request.body.isIndexed,
-                isLoginRequired: request.body.isLoginRequired,
+                participationMode: request.body.participationMode,
                 isImporting: false,
                 seedOpinionList: request.body.seedOpinionList,
                 requiresEventTicket: request.body.requiresEventTicket,
@@ -1840,7 +1942,7 @@ server.after(() => {
             // Validate public conversation access requirements
             if (
                 request.body.isIndexed &&
-                !request.body.isLoginRequired &&
+                request.body.participationMode === "guest" &&
                 !request.body.requiresEventTicket
             ) {
                 throw server.httpErrors.forbidden(
@@ -1856,7 +1958,7 @@ server.after(() => {
                 formData: {
                     postAsOrganization: request.body.postAsOrganization,
                     indexConversationAt: request.body.indexConversationAt,
-                    isLoginRequired: request.body.isLoginRequired,
+                    participationMode: request.body.participationMode,
                     isIndexed: request.body.isIndexed,
                     requiresEventTicket: request.body.requiresEventTicket,
                 },
@@ -1993,7 +2095,7 @@ server.after(() => {
             // Validate public conversation access requirements
             if (
                 parsedFields.isIndexed &&
-                !parsedFields.isLoginRequired &&
+                parsedFields.participationMode === "guest" &&
                 !parsedFields.requiresEventTicket
             ) {
                 throw server.httpErrors.forbidden(
@@ -2010,7 +2112,7 @@ server.after(() => {
                     formData: {
                         postAsOrganization: parsedFields.postAsOrganization,
                         indexConversationAt: parsedFields.indexConversationAt,
-                        isLoginRequired: parsedFields.isLoginRequired,
+                        participationMode: parsedFields.participationMode,
                         isIndexed: parsedFields.isIndexed,
                         requiresEventTicket: parsedFields.requiresEventTicket,
                     },
@@ -2226,6 +2328,7 @@ server.after(() => {
                     didWrite: didWrite,
                     axiosVerificatorSvc,
                     userAgent,
+                    sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
                 });
             return verificationStatusAndNullifier;
         },
@@ -2251,6 +2354,7 @@ server.after(() => {
                 eventSlug: request.body.eventSlug,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now,
+                sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
             });
         },
     });
@@ -3057,6 +3161,9 @@ const shutdown = async (signal: string) => {
 
         // Flush pending imports before shutdown
         await importBuffer.shutdown();
+
+        // Stop UCAN replay guard cleanup interval
+        ucanReplayGuard.shutdown();
 
         // Close SSE connections before shutdown
         await notificationSSEManager.shutdown();

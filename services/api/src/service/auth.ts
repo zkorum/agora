@@ -3,6 +3,7 @@ import {
     generateOneTimeCode,
     generateUUID,
     hashWithSalt,
+    otpCodesEqual,
 } from "@/crypto.js";
 import { determineAuthType } from "./auth/core/stateHelpers.js";
 import type { CredentialAuthState, AuthResult } from "./auth/core/types.js";
@@ -49,6 +50,7 @@ interface VerifyOtpProps {
     twilioClient?: twilio.Twilio;
     twilioServiceSid?: string;
     peppers: string[];
+    sessionLifetimeDays: number;
 }
 
 interface RegisterWithPhoneNumberProps {
@@ -191,6 +193,7 @@ interface RegisterOrLoginWithPhoneNumberBaseProps {
     pepperVersion: number;
     userAgent: string;
     now: Date;
+    sessionLifetimeDays: number;
 }
 
 type RegisterOrLoginWithPhoneNumberProps =
@@ -223,7 +226,9 @@ async function registerOrLoginWithPhoneNumber(
         now,
     } = props;
     const loginSessionExpiry = new Date(now);
-    loginSessionExpiry.setFullYear(loginSessionExpiry.getFullYear() + 1000);
+    loginSessionExpiry.setDate(
+        loginSessionExpiry.getDate() + props.sessionLifetimeDays,
+    );
 
     // CRITICAL: Expire OTP at the entry point to prevent race conditions
     // This ensures OTP can only be used once across all auth paths
@@ -255,6 +260,27 @@ async function registerOrLoginWithPhoneNumber(
 
     switch (type) {
         case "register": {
+            // Prevent duplicate credential: user must not already have an active phone
+            const existingPhone = await db
+                .select({ id: phoneTable.id })
+                .from(phoneTable)
+                .where(
+                    and(
+                        eq(phoneTable.userId, props.userId),
+                        eq(phoneTable.isDeleted, false),
+                    ),
+                )
+                .limit(1);
+            if (existingPhone.length > 0) {
+                log.warn(
+                    { userId: props.userId },
+                    "[Phone] User already has an active phone credential",
+                );
+                return {
+                    success: false,
+                    reason: "already_has_credential",
+                };
+            }
             await registerWithPhoneNumber({
                 db,
                 didWrite,
@@ -339,6 +365,7 @@ export async function verifyPhoneOtp({
     twilioClient,
     twilioServiceSid,
     peppers,
+    sessionLifetimeDays,
 }: VerifyOtpProps): Promise<VerifyOtp200> {
     if (
         (twilioClient !== undefined && twilioServiceSid === undefined) ||
@@ -501,6 +528,7 @@ export async function verifyPhoneOtp({
                     pepperVersion: resultOtp[0].pepperVersion,
                     userAgent: resultOtp[0].userAgent,
                     now,
+                    sessionLifetimeDays,
                 });
             default:
                 log.error(
@@ -514,7 +542,7 @@ export async function verifyPhoneOtp({
         }
     } else if (resultOtp[0].codeExpiry <= now) {
         return { success: false, reason: "expired_code" };
-    } else if (resultOtp[0].code === code) {
+    } else if (otpCodesEqual({ a: resultOtp[0].code, b: code })) {
         return registerOrLoginWithPhoneNumber({
             ...authResult,
             db,
@@ -526,6 +554,7 @@ export async function verifyPhoneOtp({
             pepperVersion: resultOtp[0].pepperVersion,
             userAgent: resultOtp[0].userAgent,
             now,
+            sessionLifetimeDays,
         });
     } else {
         await updateCodeGuessAttemptAmount(
@@ -591,18 +620,40 @@ export async function registerWithPhoneNumber({
     await db.transaction(async (tx) => {
         // Note: OTP expiration happens at registerOrLoginWithPhoneNumber entry point
         // to prevent race conditions across all auth paths
-        await tx.insert(userTable).values({
-            username: await generateUnusedRandomUsername({
-                db: db,
-            }),
-            id: userId,
-        });
-        await tx.insert(deviceTable).values({
-            userId: userId,
-            didWrite: didWrite,
-            userAgent: userAgent,
-            sessionExpiry: sessionExpiry,
-        });
+
+        // Check if user already exists (credential upgrade case: user logged in
+        // with another credential and is adding phone)
+        const existingUser = await tx
+            .select({ id: userTable.id })
+            .from(userTable)
+            .where(eq(userTable.id, userId))
+            .limit(1);
+
+        if (existingUser.length === 0) {
+            // New user registration
+            await tx.insert(userTable).values({
+                username: await generateUnusedRandomUsername({
+                    db: db,
+                }),
+                id: userId,
+            });
+            await tx.insert(deviceTable).values({
+                userId: userId,
+                didWrite: didWrite,
+                userAgent: userAgent,
+                sessionExpiry: sessionExpiry,
+            });
+        } else {
+            // Credential upgrade — user + device already exist, extend session
+            await tx
+                .update(deviceTable)
+                .set({
+                    sessionExpiry: sessionExpiry,
+                    updatedAt: nowZeroMs(),
+                })
+                .where(eq(deviceTable.didWrite, didWrite));
+        }
+
         await tx.insert(phoneTable).values({
             userId: userId,
             lastTwoDigits: lastTwoDigits,
@@ -685,16 +736,37 @@ export async function registerWithZKP({
 }: RegisterWithZKPProps): Promise<void> {
     log.info("Register with ZKP");
     await db.transaction(async (tx) => {
-        await tx.insert(userTable).values({
-            username: await generateUnusedRandomUsername({ db: db }),
-            id: userId,
-        });
-        await tx.insert(deviceTable).values({
-            userId: userId,
-            didWrite: didWrite,
-            userAgent: userAgent,
-            sessionExpiry: sessionExpiry,
-        });
+        // Check if user already exists (credential upgrade case: user logged in
+        // with another credential and is adding Rarimo)
+        const existingUser = await tx
+            .select({ id: userTable.id })
+            .from(userTable)
+            .where(eq(userTable.id, userId))
+            .limit(1);
+
+        if (existingUser.length === 0) {
+            // New user registration
+            await tx.insert(userTable).values({
+                username: await generateUnusedRandomUsername({ db: db }),
+                id: userId,
+            });
+            await tx.insert(deviceTable).values({
+                userId: userId,
+                didWrite: didWrite,
+                userAgent: userAgent,
+                sessionExpiry: sessionExpiry,
+            });
+        } else {
+            // Credential upgrade — user + device already exist, extend session
+            await tx
+                .update(deviceTable)
+                .set({
+                    sessionExpiry: sessionExpiry,
+                    updatedAt: nowZeroMs(),
+                })
+                .where(eq(deviceTable.didWrite, didWrite));
+        }
+
         await tx.insert(zkPassportTable).values({
             userId: userId,
             citizenship: citizenship,
@@ -897,7 +969,7 @@ async function getPhoneAuthState({
     phoneHash,
     didWrite,
 }: GetPhoneAuthStateParams): Promise<PhoneAuthState> {
-    // Query 1: Check device association with phone
+    // Query 1: Check device association with phone (only active/non-deleted phone credentials)
     const didAssociationResult = await db
         .select({
             phoneHash: phoneTable.phoneHash,
@@ -908,6 +980,7 @@ async function getPhoneAuthState({
             and(
                 eq(phoneTable.userId, deviceTable.userId),
                 eq(phoneTable.phoneHash, phoneHash),
+                eq(phoneTable.isDeleted, false),
             ),
         )
         .where(eq(deviceTable.didWrite, didWrite));
@@ -998,7 +1071,7 @@ async function getNullifierAuthState({
     nullifier,
     didWrite,
 }: GetNullifierAuthStateParams): Promise<NullifierAuthState> {
-    // Query 1: Check device association with nullifier
+    // Query 1: Check device association with nullifier (only active, non-deleted entries)
     const didAssociationResult = await db
         .select({
             nullifier: zkPassportTable.nullifier,
@@ -1009,6 +1082,7 @@ async function getNullifierAuthState({
             and(
                 eq(zkPassportTable.userId, deviceTable.userId),
                 eq(zkPassportTable.nullifier, nullifier),
+                eq(zkPassportTable.isDeleted, false),
             ),
         )
         .where(eq(deviceTable.didWrite, didWrite));
@@ -1567,7 +1641,7 @@ async function getEmailAuthState({
     email,
     didWrite,
 }: GetEmailAuthStateParams): Promise<EmailAuthState> {
-    // Query 1: Check device association with email
+    // Query 1: Check device association with email (only active/non-deleted email credentials)
     const didAssociationResult = await db
         .select({
             email: emailTable.email,
@@ -1578,6 +1652,7 @@ async function getEmailAuthState({
             and(
                 eq(emailTable.userId, deviceTable.userId),
                 eq(emailTable.email, email),
+                eq(emailTable.isDeleted, false),
             ),
         )
         .where(eq(deviceTable.didWrite, didWrite));
@@ -2054,18 +2129,40 @@ async function registerWithEmail({
     await db.transaction(async (tx) => {
         // Note: OTP expiration happens at registerOrLoginWithEmail entry point
         // to prevent race conditions across all auth paths
-        await tx.insert(userTable).values({
-            username: await generateUnusedRandomUsername({
-                db: db,
-            }),
-            id: userId,
-        });
-        await tx.insert(deviceTable).values({
-            userId: userId,
-            didWrite: didWrite,
-            userAgent: userAgent,
-            sessionExpiry: sessionExpiry,
-        });
+
+        // Check if user already exists (credential upgrade case: user logged in
+        // with another credential and is adding email)
+        const existingUser = await tx
+            .select({ id: userTable.id })
+            .from(userTable)
+            .where(eq(userTable.id, userId))
+            .limit(1);
+
+        if (existingUser.length === 0) {
+            // New user registration
+            await tx.insert(userTable).values({
+                username: await generateUnusedRandomUsername({
+                    db: db,
+                }),
+                id: userId,
+            });
+            await tx.insert(deviceTable).values({
+                userId: userId,
+                didWrite: didWrite,
+                userAgent: userAgent,
+                sessionExpiry: sessionExpiry,
+            });
+        } else {
+            // Credential upgrade — user + device already exist, extend session
+            await tx
+                .update(deviceTable)
+                .set({
+                    sessionExpiry: sessionExpiry,
+                    updatedAt: nowZeroMs(),
+                })
+                .where(eq(deviceTable.didWrite, didWrite));
+        }
+
         await tx.insert(emailTable).values({
             userId: userId,
             email: email,
@@ -2080,6 +2177,7 @@ interface RegisterOrLoginWithEmailBaseProps {
     email: string;
     userAgent: string;
     now: Date;
+    sessionLifetimeDays: number;
 }
 
 type RegisterOrLoginWithEmailProps =
@@ -2098,7 +2196,9 @@ async function registerOrLoginWithEmail(
 ): Promise<VerifyOtp200> {
     const { db, type, didWrite, email, userAgent, now } = props;
     const loginSessionExpiry = new Date(now);
-    loginSessionExpiry.setFullYear(loginSessionExpiry.getFullYear() + 1000);
+    loginSessionExpiry.setDate(
+        loginSessionExpiry.getDate() + props.sessionLifetimeDays,
+    );
 
     // CRITICAL: Expire OTP at the entry point to prevent race conditions
     // This ensures OTP can only be used once across all auth paths
@@ -2130,6 +2230,27 @@ async function registerOrLoginWithEmail(
 
     switch (type) {
         case "register": {
+            // Prevent duplicate credential: user must not already have an active email
+            const existingEmail = await db
+                .select({ id: emailTable.id })
+                .from(emailTable)
+                .where(
+                    and(
+                        eq(emailTable.userId, props.userId),
+                        eq(emailTable.isDeleted, false),
+                    ),
+                )
+                .limit(1);
+            if (existingEmail.length > 0) {
+                log.warn(
+                    { userId: props.userId },
+                    "[Email] User already has an active email credential",
+                );
+                return {
+                    success: false,
+                    reason: "already_has_credential",
+                };
+            }
             await registerWithEmail({
                 db,
                 didWrite,
@@ -2206,6 +2327,7 @@ interface VerifyEmailOtpProps {
     didWrite: string;
     code: number;
     email: string;
+    sessionLifetimeDays: number;
 }
 
 export async function verifyEmailOtp({
@@ -2214,6 +2336,7 @@ export async function verifyEmailOtp({
     didWrite,
     code,
     email,
+    sessionLifetimeDays,
 }: VerifyEmailOtpProps): Promise<VerifyOtp200> {
     const now = nowZeroMs();
     const resultOtp = await db
@@ -2313,7 +2436,7 @@ export async function verifyEmailOtp({
     // Direct code comparison (no Twilio involved for email)
     if (resultOtp[0].codeExpiry <= now) {
         return { success: false, reason: "expired_code" };
-    } else if (resultOtp[0].code === code) {
+    } else if (otpCodesEqual({ a: resultOtp[0].code, b: code })) {
         return registerOrLoginWithEmail({
             ...authResult,
             db,
@@ -2321,6 +2444,7 @@ export async function verifyEmailOtp({
             email: resultOtp[0].email,
             userAgent: resultOtp[0].userAgent,
             now,
+            sessionLifetimeDays,
         });
     } else {
         await updateEmailCodeGuessAttemptAmount({

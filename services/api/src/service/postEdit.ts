@@ -73,7 +73,7 @@ export async function getConversationForEdit({
             conversationTitle: conversationContentTable.title,
             conversationBody: conversationContentTable.body,
             isIndexed: conversationTable.isIndexed,
-            isLoginRequired: conversationTable.isLoginRequired,
+            participationMode: conversationTable.participationMode,
             requiresEventTicket: conversationTable.requiresEventTicket,
             indexConversationAt: conversationTable.indexConversationAt,
             createdAt: conversationTable.createdAt,
@@ -144,7 +144,7 @@ export async function getConversationForEdit({
         conversationBody: toUnionUndefined(conversation.conversationBody),
         pollingOptionList,
         isIndexed: conversation.isIndexed,
-        isLoginRequired: conversation.isLoginRequired,
+        participationMode: conversation.participationMode,
         requiresEventTicket: toUnionUndefined(conversation.requiresEventTicket),
         indexConversationAt: conversation.indexConversationAt ?? undefined,
         createdAt: conversation.createdAt,
@@ -177,7 +177,7 @@ export async function updateConversation({
         conversationBody,
         pollAction,
         isIndexed,
-        isLoginRequired,
+        participationMode,
         requiresEventTicket,
         indexConversationAt,
     } = data;
@@ -186,7 +186,7 @@ export async function updateConversation({
     if (
         !isValidPublicConversationAccess({
             isIndexed,
-            isLoginRequired,
+            participationMode,
             requiresEventTicket,
         })
     ) {
@@ -379,13 +379,14 @@ export async function updateConversation({
                 .set({
                     currentContentId: newContentId,
                     isIndexed: isIndexed,
-                    isLoginRequired: isLoginRequired,
+                    participationMode: participationMode,
                     requiresEventTicket: requiresEventTicket ?? null,
                     indexConversationAt:
                         indexConversationAt !== undefined
                             ? new Date(indexConversationAt)
                             : null,
                     updatedAt: new Date(),
+                    isEdited: true,
                 })
                 .where(eq(conversationTable.id, conversationId));
 

@@ -47,12 +47,42 @@
                                                             "enum": [
                                                                 false
                                                             ]
+                                                        },
+                                                        "credentials": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "email": {
+                                                                    "type": "null",
+                                                                    "enum": [
+                                                                        null
+                                                                    ]
+                                                                },
+                                                                "phone": {
+                                                                    "type": "null",
+                                                                    "enum": [
+                                                                        null
+                                                                    ]
+                                                                },
+                                                                "rarimo": {
+                                                                    "type": "null",
+                                                                    "enum": [
+                                                                        null
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "email",
+                                                                "phone",
+                                                                "rarimo"
+                                                            ],
+                                                            "additionalProperties": false
                                                         }
                                                     },
                                                     "required": [
                                                         "isKnown",
                                                         "isRegistered",
-                                                        "isLoggedIn"
+                                                        "isLoggedIn",
+                                                        "credentials"
                                                     ],
                                                     "additionalProperties": false
                                                 },
@@ -73,13 +103,63 @@
                                                         },
                                                         "userId": {
                                                             "type": "string"
+                                                        },
+                                                        "credentials": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "email": {
+                                                                    "nullable": true,
+                                                                    "type": "string"
+                                                                },
+                                                                "phone": {
+                                                                    "nullable": true,
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "lastTwoDigits": {
+                                                                            "type": "number"
+                                                                        },
+                                                                        "countryCallingCode": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "lastTwoDigits",
+                                                                        "countryCallingCode"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                "rarimo": {
+                                                                    "nullable": true,
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "citizenship": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "sex": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "citizenship",
+                                                                        "sex"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "email",
+                                                                "phone",
+                                                                "rarimo"
+                                                            ],
+                                                            "additionalProperties": false
                                                         }
                                                     },
                                                     "required": [
                                                         "isKnown",
                                                         "isRegistered",
                                                         "isLoggedIn",
-                                                        "userId"
+                                                        "userId",
+                                                        "credentials"
                                                     ],
                                                     "additionalProperties": false
                                                 }
@@ -325,7 +405,7 @@
                                                 "reason": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "already_logged_in",
+                                                        "already_has_credential",
                                                         "associated_with_another_user",
                                                         "throttled",
                                                         "invalid_phone_number",
@@ -577,7 +657,7 @@
                                                         "expired_code",
                                                         "wrong_guess",
                                                         "too_many_wrong_guess",
-                                                        "already_logged_in",
+                                                        "already_has_credential",
                                                         "associated_with_another_user",
                                                         "auth_state_changed"
                                                     ]
@@ -669,7 +749,7 @@
                                                 "reason": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "already_logged_in",
+                                                        "already_has_credential",
                                                         "associated_with_another_user",
                                                         "throttled"
                                                     ]
@@ -763,7 +843,7 @@
                                                         "expired_code",
                                                         "wrong_guess",
                                                         "too_many_wrong_guess",
-                                                        "already_logged_in",
+                                                        "already_has_credential",
                                                         "associated_with_another_user",
                                                         "auth_state_changed"
                                                     ]
@@ -867,13 +947,21 @@
                                                             "authorUsername": {
                                                                 "type": "string"
                                                             },
-                                                            "isLoginRequired": {
-                                                                "type": "boolean"
+                                                            "participationMode": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "strong_verification",
+                                                                    "email_verification",
+                                                                    "guest"
+                                                                ]
                                                             },
                                                             "isIndexed": {
                                                                 "type": "boolean"
                                                             },
                                                             "isClosed": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "isEdited": {
                                                                 "type": "boolean"
                                                             },
                                                             "organization": {
@@ -979,15 +1067,15 @@
                                                         "required": [
                                                             "conversationSlugId",
                                                             "createdAt",
-                                                            "updatedAt",
                                                             "lastReactedAt",
                                                             "opinionCount",
                                                             "voteCount",
                                                             "participantCount",
                                                             "authorUsername",
-                                                            "isLoginRequired",
+                                                            "participationMode",
                                                             "isIndexed",
                                                             "isClosed",
+                                                            "isEdited",
                                                             "moderation"
                                                         ],
                                                         "additionalProperties": false
@@ -1682,13 +1770,21 @@
                                                     "authorUsername": {
                                                         "type": "string"
                                                     },
-                                                    "isLoginRequired": {
-                                                        "type": "boolean"
+                                                    "participationMode": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "strong_verification",
+                                                            "email_verification",
+                                                            "guest"
+                                                        ]
                                                     },
                                                     "isIndexed": {
                                                         "type": "boolean"
                                                     },
                                                     "isClosed": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "isEdited": {
                                                         "type": "boolean"
                                                     },
                                                     "organization": {
@@ -1794,15 +1890,15 @@
                                                 "required": [
                                                     "conversationSlugId",
                                                     "createdAt",
-                                                    "updatedAt",
                                                     "lastReactedAt",
                                                     "opinionCount",
                                                     "voteCount",
                                                     "participantCount",
                                                     "authorUsername",
-                                                    "isLoginRequired",
+                                                    "participationMode",
                                                     "isIndexed",
                                                     "isClosed",
+                                                    "isEdited",
                                                     "moderation"
                                                 ],
                                                 "additionalProperties": false
@@ -1956,13 +2052,21 @@
                                                             "authorUsername": {
                                                                 "type": "string"
                                                             },
-                                                            "isLoginRequired": {
-                                                                "type": "boolean"
+                                                            "participationMode": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "strong_verification",
+                                                                    "email_verification",
+                                                                    "guest"
+                                                                ]
                                                             },
                                                             "isIndexed": {
                                                                 "type": "boolean"
                                                             },
                                                             "isClosed": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "isEdited": {
                                                                 "type": "boolean"
                                                             },
                                                             "organization": {
@@ -2068,15 +2172,15 @@
                                                         "required": [
                                                             "conversationSlugId",
                                                             "createdAt",
-                                                            "updatedAt",
                                                             "lastReactedAt",
                                                             "opinionCount",
                                                             "voteCount",
                                                             "participantCount",
                                                             "authorUsername",
-                                                            "isLoginRequired",
+                                                            "participationMode",
                                                             "isIndexed",
                                                             "isClosed",
+                                                            "isEdited",
                                                             "moderation"
                                                         ],
                                                         "additionalProperties": false
@@ -2431,7 +2535,9 @@
                                                     "enum": [
                                                         "conversation_locked",
                                                         "conversation_closed",
-                                                        "event_ticket_required"
+                                                        "event_ticket_required",
+                                                        "strong_verification_required",
+                                                        "email_verification_required"
                                                     ]
                                                 }
                                             },
@@ -2476,7 +2582,53 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Default Response"
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "strong_verification_required",
+                                                        "email_verification_required"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -2623,7 +2775,9 @@
                                                     "enum": [
                                                         "conversation_locked",
                                                         "conversation_closed",
-                                                        "event_ticket_required"
+                                                        "event_ticket_required",
+                                                        "strong_verification_required",
+                                                        "email_verification_required"
                                                     ]
                                                 }
                                             },
@@ -4274,8 +4428,13 @@
                                     "isIndexed": {
                                         "type": "boolean"
                                     },
-                                    "isLoginRequired": {
-                                        "type": "boolean"
+                                    "participationMode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "strong_verification",
+                                            "email_verification",
+                                            "guest"
+                                        ]
                                     },
                                     "pollingOptionList": {
                                         "type": "array",
@@ -4303,7 +4462,7 @@
                                 "required": [
                                     "conversationTitle",
                                     "isIndexed",
-                                    "isLoginRequired",
+                                    "participationMode",
                                     "seedOpinionList"
                                 ],
                                 "additionalProperties": false
@@ -4358,8 +4517,13 @@
                                     "isIndexed": {
                                         "type": "boolean"
                                     },
-                                    "isLoginRequired": {
-                                        "type": "boolean"
+                                    "participationMode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "strong_verification",
+                                            "email_verification",
+                                            "guest"
+                                        ]
                                     },
                                     "requiresEventTicket": {
                                         "type": "string",
@@ -4371,7 +4535,7 @@
                                 "required": [
                                     "polisUrl",
                                     "isIndexed",
-                                    "isLoginRequired"
+                                    "participationMode"
                                 ],
                                 "additionalProperties": false
                             }
@@ -4758,13 +4922,21 @@
                                                         "authorUsername": {
                                                             "type": "string"
                                                         },
-                                                        "isLoginRequired": {
-                                                            "type": "boolean"
+                                                        "participationMode": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "strong_verification",
+                                                                "email_verification",
+                                                                "guest"
+                                                            ]
                                                         },
                                                         "isIndexed": {
                                                             "type": "boolean"
                                                         },
                                                         "isClosed": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "isEdited": {
                                                             "type": "boolean"
                                                         },
                                                         "organization": {
@@ -4870,15 +5042,15 @@
                                                     "required": [
                                                         "conversationSlugId",
                                                         "createdAt",
-                                                        "updatedAt",
                                                         "lastReactedAt",
                                                         "opinionCount",
                                                         "voteCount",
                                                         "participantCount",
                                                         "authorUsername",
-                                                        "isLoginRequired",
+                                                        "participationMode",
                                                         "isIndexed",
                                                         "isClosed",
+                                                        "isEdited",
                                                         "moderation"
                                                     ],
                                                     "additionalProperties": false
@@ -5030,8 +5202,13 @@
                                                 "isIndexed": {
                                                     "type": "boolean"
                                                 },
-                                                "isLoginRequired": {
-                                                    "type": "boolean"
+                                                "participationMode": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "strong_verification",
+                                                        "email_verification",
+                                                        "guest"
+                                                    ]
                                                 },
                                                 "requiresEventTicket": {
                                                     "type": "string",
@@ -5063,7 +5240,7 @@
                                                 "conversationSlugId",
                                                 "conversationTitle",
                                                 "isIndexed",
-                                                "isLoginRequired",
+                                                "participationMode",
                                                 "createdAt",
                                                 "updatedAt",
                                                 "hasPoll",
@@ -5228,8 +5405,13 @@
                                     "isIndexed": {
                                         "type": "boolean"
                                     },
-                                    "isLoginRequired": {
-                                        "type": "boolean"
+                                    "participationMode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "strong_verification",
+                                            "email_verification",
+                                            "guest"
+                                        ]
                                     },
                                     "requiresEventTicket": {
                                         "type": "string",
@@ -5248,7 +5430,7 @@
                                     "conversationTitle",
                                     "pollAction",
                                     "isIndexed",
-                                    "isLoginRequired"
+                                    "participationMode"
                                 ],
                                 "additionalProperties": false
                             }
@@ -5378,7 +5560,7 @@
                                                 "reason": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "already_logged_in",
+                                                        "already_has_credential",
                                                         "associated_with_another_user"
                                                     ]
                                                 }
@@ -5472,7 +5654,7 @@
                                                 "reason": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "already_logged_in",
+                                                        "already_has_credential",
                                                         "associated_with_another_user"
                                                     ]
                                                 }

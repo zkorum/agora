@@ -18,7 +18,7 @@ import {
 import { eq } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/util.js";
 import type { VoteBuffer } from "./voteBuffer.js";
-import type { EventSlug } from "@/shared/types/zod.js";
+import type { EventSlug, ParticipationMode } from "@/shared/types/zod.js";
 
 // URL import configuration
 export interface UrlImportConfig {
@@ -45,7 +45,7 @@ interface LoadImportedPolisConversationProps {
     authorId: string;
     postAsOrganization: string | undefined;
     indexConversationAt?: string;
-    isLoginRequired: boolean;
+    participationMode: ParticipationMode;
     isIndexed: boolean;
     requiresEventTicket?: EventSlug;
 }
@@ -60,7 +60,7 @@ export async function loadImportedPolisConversation({
     authorId,
     postAsOrganization,
     indexConversationAt,
-    isLoginRequired,
+    participationMode,
     isIndexed,
     requiresEventTicket,
 }: LoadImportedPolisConversationProps): Promise<ConversationIds> {
@@ -156,7 +156,7 @@ export async function loadImportedPolisConversation({
             indexConversationAt: indexConversationAt,
             postAsOrganization: postAsOrganization,
             isIndexed: isIndexed,
-            isLoginRequired: isLoginRequired,
+            participationMode: participationMode,
             seedOpinionList: [],
             requiresEventTicket: requiresEventTicket,
             importUrl:

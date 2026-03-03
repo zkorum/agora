@@ -54,7 +54,7 @@ export async function sendOtpEmail({
     const code = codeToString(otp);
     await sendEmail({
         to: email,
-        subject: `Agora confirmation code: ${code}`,
+        subject: "Your Agora confirmation code",
         text: `Your confirmation code is ${code}\n\nEnter it shortly in the same browser/device that you used for your authentication request.\n\nIf you didn't request this email, there's nothing to worry about: you can safely ignore it.`,
     });
 }

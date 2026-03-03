@@ -13,7 +13,7 @@ import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import { useCommonPost, isValidPublicConversationAccess } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import type { ExtendedConversation, EventSlug } from "@/shared/types/zod.js";
+import type { ExtendedConversation, EventSlug, ParticipationMode } from "@/shared/types/zod.js";
 import type {
     CloseConversationResponse,
     OpenConversationResponse,
@@ -39,7 +39,7 @@ interface CreateNewPostProps {
     postAsOrganization?: string;
     indexConversationAt?: string;
     isIndexed: boolean;
-    isLoginRequired: boolean;
+    participationMode: ParticipationMode;
     isImporting: boolean;
     seedOpinionList: string[];
     requiresEventTicket?: EventSlug;
@@ -62,7 +62,7 @@ export async function createNewPost({
     pollingOptionList,
     postAsOrganization,
     indexConversationAt,
-    isLoginRequired,
+    participationMode,
     isIndexed,
     isImporting,
     seedOpinionList,
@@ -110,7 +110,7 @@ export async function createNewPost({
     if (
         !isValidPublicConversationAccess({
             isIndexed,
-            isLoginRequired,
+            participationMode,
             requiresEventTicket,
         })
     ) {
@@ -121,6 +121,7 @@ export async function createNewPost({
 
     const { conversationId, conversationContentId } = await db.transaction(
         async (tx) => {
+            const now = new Date();
             const insertPostResponse = await tx
                 .insert(conversationTable)
                 .values({
@@ -128,7 +129,7 @@ export async function createNewPost({
                     slugId: conversationSlugId,
                     organizationId: organizationId,
                     isIndexed: isIndexed,
-                    isLoginRequired: isLoginRequired,
+                    participationMode: participationMode,
                     isImporting: isImporting,
                     requiresEventTicket: requiresEventTicket,
                     indexConversationAt:
@@ -138,7 +139,9 @@ export async function createNewPost({
                     opinionCount: 0,
                     currentContentId: null,
                     currentPolisContentId: null, // will be subsequently updated upon external polis system fetch
-                    lastReactedAt: new Date(),
+                    createdAt: now,
+                    updatedAt: now,
+                    lastReactedAt: now,
                     importUrl,
                     importConversationUrl,
                     importExportUrl,
@@ -251,7 +254,7 @@ export async function createNewPost({
                     conversationContentId,
                     conversationAuthorId: authorId,
                     conversationIsIndexed: isIndexed,
-                    conversationIsLoginRequired: isLoginRequired,
+                    conversationParticipationMode: participationMode,
                     conversationIsClosed: false,
                     requiresEventTicket: requiresEventTicket ?? null,
                 },
