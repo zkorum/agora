@@ -307,8 +307,12 @@ export async function getDeviceStatus({
                       countryCallingCode: device.phoneCountryCallingCode,
                   }
                 : null,
+        // TODO: handle more gracefully when nullifier exists but citizenship/sex is missing.
+        // We should return whatever fields we have (partial data), and only allow
+        // the user to click on "ID Verified" when info beyond the nullifier is present.
         rarimo:
-            device.zkPassportCitizenship !== null
+            device.zkPassportCitizenship !== null &&
+            device.zkPassportSex !== null
                 ? { citizenship: device.zkPassportCitizenship, sex: device.zkPassportSex }
                 : null,
     };
