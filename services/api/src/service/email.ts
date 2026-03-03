@@ -9,11 +9,11 @@ let transporter: nodemailer.Transporter | undefined;
 
 function getTransporter(): nodemailer.Transporter {
     if (transporter === undefined) {
-        const ses = new SESv2Client({
+        const sesClient = new SESv2Client({
             region: config.AWS_SES_REGION,
         });
         transporter = nodemailer.createTransport({
-            SES: { ses, aws: { SendEmailCommand } },
+            SES: { sesClient, SendEmailCommand },
         });
     }
     return transporter;
