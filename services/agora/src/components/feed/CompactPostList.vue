@@ -2,7 +2,7 @@
   <div>
     <WidthWrapper :enable="true">
       <q-pull-to-refresh @refresh="pullDownTriggered">
-        <FeedSkeleton v-if="!isAuthInitialized" />
+        <FeedSkeleton v-if="!isAuthInitialized || !initializedFeed" />
         <q-infinite-scroll
           v-else
           :offset="2000"
