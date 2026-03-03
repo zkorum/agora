@@ -2306,18 +2306,11 @@ import {
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let auth: string; // (default to undefined)
-
-const { status, data } = await apiInstance.apiV1NotificationStreamGet(
-    auth
-);
+const { status, data } = await apiInstance.apiV1NotificationStreamGet();
 ```
 
 ### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **auth** | [**string**] |  | defaults to undefined|
+This endpoint does not have any parameters.
 
 
 ### Return type

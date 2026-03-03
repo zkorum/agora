@@ -3695,13 +3695,10 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {string} auth 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1NotificationStreamGet: async (auth: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'auth' is not null or undefined
-            assertParamExists('apiV1NotificationStreamGet', 'auth', auth)
+        apiV1NotificationStreamGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/v1/notification/stream`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -3717,10 +3714,6 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             // authentication BearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            if (auth !== undefined) {
-                localVarQueryParameter['auth'] = auth;
-            }
 
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -5195,12 +5188,11 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {string} auth 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1NotificationStreamGet(auth: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1NotificationStreamGet(auth, options);
+        async apiV1NotificationStreamGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1NotificationStreamGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1NotificationStreamGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -5907,12 +5899,11 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {string} auth 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1NotificationStreamGet(auth: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.apiV1NotificationStreamGet(auth, options).then((request) => request(axios, basePath));
+        apiV1NotificationStreamGet(options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1NotificationStreamGet(options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -6584,12 +6575,11 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {string} auth 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1NotificationStreamGet(auth: string, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1NotificationStreamGet(auth, options).then((request) => request(this.axios, this.basePath));
+    public apiV1NotificationStreamGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1NotificationStreamGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

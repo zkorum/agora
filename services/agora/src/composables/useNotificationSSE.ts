@@ -1,4 +1,3 @@
-import { DefaultApiAxiosParamCreator } from "src/api";
 import type {
   SSEConnectedData,
   SSEHeartbeatData,
@@ -21,7 +20,7 @@ export function useNotificationSSE() {
   const isConnected = ref(false);
   const isConnecting = ref(false);
   const lastHeartbeat = ref<number | null>(null);
-  let eventSource: EventSource | null = null;
+  let abortController: AbortController | null = null;
   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   let shouldReconnect = true;
 
@@ -33,54 +32,111 @@ export function useNotificationSSE() {
     try {
       isConnecting.value = true;
 
-      // EventSource doesn't support custom headers, so we use URL-based auth
-      // Build UCAN token using a dummy URL structure first
-      const dummyUrl = "/api/v1/notification/stream";
-      const dummyOptions = { method: "GET" };
-      const encodedUcan = await buildEncodedUcan(dummyUrl, dummyOptions);
+      // Fresh UCAN for each connection attempt — prevents replay guard rejection
+      const encodedUcan = await buildEncodedUcan(
+        "/api/v1/notification/stream",
+        { method: "GET" },
+      );
       const authHeader = buildAuthorizationHeader(encodedUcan);
 
-      // Extract the Bearer token value (remove "Bearer " prefix)
-      const token = authHeader.Authorization.substring(7);
-
-      // Get the properly formatted URL with the actual token
-      const { url } =
-        await DefaultApiAxiosParamCreator().apiV1NotificationStreamGet(token);
-
-      // Construct full URL with base
       const baseUrl = processEnv.VITE_API_BASE_URL || "";
-      const authUrl = `${baseUrl}${url}`;
+      const url = `${baseUrl}/api/v1/notification/stream`;
 
-      eventSource = new EventSource(authUrl);
+      abortController = new AbortController();
 
-      eventSource.onopen = () => {
-        isConnected.value = true;
-        isConnecting.value = false;
-      };
-
-      // Handle 'connected' event
-      eventSource.addEventListener("connected", (event) => {
-        try {
-          const data: SSEConnectedData = JSON.parse(event.data);
-          lastHeartbeat.value = data.timestamp;
-        } catch (error) {
-          console.error("[SSE] Error processing connected event:", error);
-        }
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          ...authHeader,
+          Accept: "text/event-stream",
+        },
+        signal: abortController.signal,
       });
 
-      // Handle 'notification' event - this is the main one for new notifications
-      eventSource.addEventListener("notification", (event) => {
-        try {
-          const data: SSENotificationData = JSON.parse(event.data);
+      if (!response.ok) {
+        throw new Error(`SSE connection failed: ${String(response.status)}`);
+      }
 
-          // Parse and validate notification with zod
+      if (!response.body) {
+        throw new Error("SSE response has no body");
+      }
+
+      isConnected.value = true;
+      isConnecting.value = false;
+
+      // Read and parse SSE stream
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          // SSE events are separated by double newlines
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop() ?? "";
+
+          for (const part of parts) {
+            if (!part.trim()) continue;
+            const parsed = parseSSEEvent(part);
+            handleSSEEvent(parsed.event, parsed.data);
+          }
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return; // Intentional disconnect — don't reconnect
+        }
+        throw error;
+      }
+
+      // Stream ended normally — reconnect
+      isConnected.value = false;
+      if (shouldReconnect) {
+        scheduleReconnect();
+      }
+    } catch (error) {
+      console.error("[SSE] Connection error:", error);
+      isConnected.value = false;
+      isConnecting.value = false;
+
+      if (shouldReconnect) {
+        scheduleReconnect();
+      }
+    }
+  }
+
+  function parseSSEEvent(raw: string): { event: string; data: string } {
+    let event = "";
+    let data = "";
+    for (const line of raw.split("\n")) {
+      if (line.startsWith("event: ")) {
+        event = line.slice(7);
+      } else if (line.startsWith("data: ")) {
+        data = line.slice(6);
+      }
+    }
+    return { event, data };
+  }
+
+  function handleSSEEvent(event: string, rawData: string): void {
+    try {
+      switch (event) {
+        case "connected": {
+          const data: SSEConnectedData = JSON.parse(rawData);
+          lastHeartbeat.value = data.timestamp;
+          break;
+        }
+        case "notification": {
+          const data: SSENotificationData = JSON.parse(rawData);
           const parsedNotification = zodNotificationItem.safeParse({
             ...data.notification,
             createdAt: new Date(data.notification.createdAt),
           });
-
           if (parsedNotification.success) {
-            // Add notification to store
             notificationStore.addNewNotification(parsedNotification.data);
           } else {
             console.error(
@@ -88,66 +144,21 @@ export function useNotificationSSE() {
               parsedNotification.error
             );
           }
-        } catch (error) {
-          console.error("[SSE] Error processing notification event:", error);
+          break;
         }
-      });
-
-      // Handle 'heartbeat' event
-      eventSource.addEventListener("heartbeat", (event) => {
-        try {
-          const data: SSEHeartbeatData = JSON.parse(event.data);
+        case "heartbeat": {
+          const data: SSEHeartbeatData = JSON.parse(rawData);
           lastHeartbeat.value = data.timestamp;
-        } catch (error) {
-          console.error("[SSE] Error processing heartbeat event:", error);
+          break;
         }
-      });
-
-      // Handle 'shutdown' event
-      eventSource.addEventListener("shutdown", (event) => {
-        try {
-          const data: SSEShutdownData = JSON.parse(event.data);
+        case "shutdown": {
+          const data: SSEShutdownData = JSON.parse(rawData);
           console.warn("[SSE] Server shutdown:", data.message);
-          // Close connection but allow auto-reconnect (backend should always be available)
-          if (eventSource) {
-            eventSource.close();
-            eventSource = null;
-          }
-          isConnected.value = false;
-          isConnecting.value = false;
-          // Trigger reconnection
-          if (shouldReconnect) {
-            scheduleReconnect();
-          }
-        } catch (error) {
-          console.error("[SSE] Error processing shutdown event:", error);
+          break;
         }
-      });
-
-      eventSource.onerror = (error) => {
-        console.error("[SSE] Connection error:", error);
-        isConnected.value = false;
-        isConnecting.value = false;
-
-        // Close the connection
-        if (eventSource) {
-          eventSource.close();
-          eventSource = null;
-        }
-
-        // Attempt reconnection if enabled
-        if (shouldReconnect) {
-          scheduleReconnect();
-        }
-      };
-    } catch (error) {
-      console.error("[SSE] Failed to connect:", error);
-      isConnecting.value = false;
-
-      // Attempt reconnection if enabled
-      if (shouldReconnect) {
-        scheduleReconnect();
       }
+    } catch (error) {
+      console.error(`[SSE] Error processing ${event} event:`, error);
     }
   }
 
@@ -176,9 +187,9 @@ export function useNotificationSSE() {
       reconnectTimeout = null;
     }
 
-    if (eventSource) {
-      eventSource.close();
-      eventSource = null;
+    if (abortController) {
+      abortController.abort();
+      abortController = null;
     }
 
     isConnected.value = false;
@@ -191,6 +202,7 @@ export function useNotificationSSE() {
     async (isLoggedIn, wasLoggedIn) => {
       if (isLoggedIn && !wasLoggedIn) {
         // User just logged in, connect to SSE
+        shouldReconnect = true;
         await connect();
       } else if (!isLoggedIn && wasLoggedIn) {
         // User just logged out, disconnect from SSE

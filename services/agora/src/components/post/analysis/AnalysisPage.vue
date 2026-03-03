@@ -270,7 +270,7 @@ defineExpose({
   &:hover {
     background: #f5f4f8;
     border-color: #b8b6c0;
-    color: #333238;
+    color: #6b4eff;
   }
 
   @media (max-width: 768px) {
