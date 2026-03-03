@@ -2868,23 +2868,25 @@ server.after(() => {
     });
 
     // SSE endpoint for real-time notifications
-    // Accepts authentication via query parameter since EventSource doesn't support custom headers
+    // Accepts auth from Authorization header (new fetch-based frontend)
+    // or query param ?auth= (legacy EventSource fallback)
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "GET",
         url: `/api/${apiVersion}/notification/stream`,
         sse: true, // Enable SSE mode - provides reply.sse.* methods
-        schema: {
-            querystring: Dto.notificationStreamQuerystring,
-        },
         handler: async (request, reply) => {
             // Authenticate BEFORE initializing SSE to allow proper HTTP error responses
             let deviceStatus;
             try {
-                // Get auth token from query parameter (type-safe)
-                const { auth } = request.query;
-
-                // Manually inject the auth header for UCAN verification
-                request.headers.authorization = `Bearer ${auth}`;
+                // Accept auth from Authorization header (fetch) or query param (EventSource fallback)
+                if (!request.headers.authorization) {
+                    const auth = (
+                        request.query as Record<string, string>
+                    ).auth;
+                    if (auth) {
+                        request.headers.authorization = `Bearer ${auth}`;
+                    }
+                }
 
                 const result = await verifyUcanAndKnownDeviceStatus(
                     db,

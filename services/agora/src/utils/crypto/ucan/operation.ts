@@ -76,6 +76,7 @@ export async function buildUcan({
     })
     .toAudience(processEnv.VITE_BACK_DID)
     .withLifetimeInSeconds(lifetimeInSeconds)
+    .withNonce()
     .claimCapability({
       with: httpPathnameToResourcePointer(pathname),
       can: httpMethodToAbility(method !== undefined ? method : "POST"),
