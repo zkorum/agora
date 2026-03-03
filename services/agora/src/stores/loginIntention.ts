@@ -329,6 +329,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   }
 
   return {
+    activeUserIntention,
     createVotingIntention,
     createOpinionAgreementIntention,
     createNewConversationIntention,
