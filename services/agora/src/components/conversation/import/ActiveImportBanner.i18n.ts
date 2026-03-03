@@ -26,8 +26,8 @@ export const activeImportBannerTranslations: Record<
   },
   fr: {
     message:
-      "Vous avez une importation en cours. Veuillez attendre qu'elle soit terminée avant d'en démarrer une nouvelle.",
-    viewStatus: "Voir l'État de l'Importation",
+      "Vous avez un import en cours. Veuillez attendre qu'il soit terminé avant d'en démarrer un nouveau.",
+    viewStatus: "Voir l'État de l'Import",
   },
   "zh-Hans": {
     message: "您有一个正在进行的导入。请等待完成后再开始新的导入。",

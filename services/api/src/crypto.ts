@@ -54,6 +54,21 @@ export function codeToString(code: number): string {
     return code.toString().padStart(6, "0");
 }
 
+interface OtpCodesEqualParams {
+    a: number;
+    b: number;
+}
+
+/**
+ * Constant-time comparison for OTP codes.
+ * Prevents timing side-channel attacks on code verification.
+ */
+export function otpCodesEqual({ a, b }: OtpCodesEqualParams): boolean {
+    const bufA = Buffer.from(codeToString(a), "utf8");
+    const bufB = Buffer.from(codeToString(b), "utf8");
+    return crypto.timingSafeEqual(bufA, bufB);
+}
+
 export function generateUUID() {
     return crypto.webcrypto.randomUUID();
 }

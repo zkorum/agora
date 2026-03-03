@@ -40,6 +40,30 @@ const configSchema = sharedConfigSchema.extend({
     TWILIO_SERVICE_SID: z.string().optional(),
     TEST_CODE: z.coerce.number().int().min(0).max(999999).default(0),
     SPECIALLY_AUTHORIZED_PHONES: z.string().optional(),
+    THROTTLE_EMAIL_SECONDS_INTERVAL: z.number().int().min(5).default(30),
+    MINUTES_BEFORE_EMAIL_OTP_EXPIRY: z
+        .number()
+        .int()
+        .min(3)
+        .max(60)
+        .default(10),
+    AWS_SES_REGION: z.string().default("eu-west-1"),
+    EMAIL_FROM_ADDRESS: z
+        .email()
+        .default("noreply@notify.agoracitizen.network"),
+    SPECIALLY_AUTHORIZED_EMAILS: z.string().optional(),
+    AUTH_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(10),
+    AUTH_RATE_LIMIT_WINDOW_MS: z.coerce
+        .number()
+        .int()
+        .min(1000)
+        .default(60000),
+    SESSION_LIFETIME_DAYS: z.coerce.number().int().min(1).default(90),
+    SESSION_REFRESH_THRESHOLD_DAYS: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .default(45),
     PEPPERS: z
         .string()
         .transform((value) =>

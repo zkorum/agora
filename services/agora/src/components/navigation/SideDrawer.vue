@@ -7,7 +7,7 @@
           <img src="/images/icons/agora-text.svg" class="logoStyle2" />
         </div>
 
-        <div v-if="isGuestOrLoggedIn" class="usernameBar">
+        <div v-if="isGuestOrLoggedIn && profileData.dataLoaded" class="usernameBar">
           <UserAvatar
             :key="profileData.userName"
             :user-identity="profileData.userName"

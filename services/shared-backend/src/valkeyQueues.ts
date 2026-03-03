@@ -33,6 +33,13 @@ export const VALKEY_QUEUE_KEYS = {
      * Pattern: Import requests are added here and processed every 1s
      */
     IMPORT_BUFFER: "queue:imports",
+
+    /**
+     * UCAN replay protection - key prefix for used UCAN hashes
+     * Used by: index.ts (verifyUcan)
+     * Pattern: Key = prefix + SHA-256(encodedUcan), Value = issuer DID, TTL = token remaining lifetime + 5s
+     */
+    UCAN_USED_PREFIX: "ucan:used:",
 } as const;
 
 /**

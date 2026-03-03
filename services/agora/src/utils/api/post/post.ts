@@ -23,6 +23,7 @@ import type {
   EventSlug,
   ExtendedConversation,
   FeedSortAlgorithm,
+  ParticipationMode,
 } from "src/shared/types/zod";
 import { zodExtendedConversationData } from "src/shared/types/zod";
 import { CSV_UPLOAD_FIELD_NAMES } from "src/shared-app-api/csvUpload";
@@ -183,7 +184,7 @@ export function useBackendPostApi() {
     postAsOrganizationName: string;
     targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
-    isLoginRequired: boolean;
+    participationMode: ParticipationMode;
     seedOpinionList: string[];
     requiresEventTicket?: EventSlug;
   }
@@ -199,7 +200,7 @@ export function useBackendPostApi() {
     postAsOrganizationName: string;
     targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
-    isLoginRequired: boolean;
+    participationMode: ParticipationMode;
     requiresEventTicket?: EventSlug;
   }
 
@@ -216,7 +217,7 @@ export function useBackendPostApi() {
     postAsOrganizationName: string;
     targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
-    isLoginRequired: boolean;
+    participationMode: ParticipationMode;
     requiresEventTicket?: EventSlug;
   }
 
@@ -237,7 +238,7 @@ export function useBackendPostApi() {
       params.targetIsoConvertDateString || ""
     );
     formData.append("isIndexed", String(params.isIndexed));
-    formData.append("isLoginRequired", String(params.isLoginRequired));
+    formData.append("participationMode", params.participationMode);
     formData.append("requiresEventTicket", params.requiresEventTicket || "");
 
     // Get URL from OpenAPI spec
@@ -272,7 +273,7 @@ export function useBackendPostApi() {
     postAsOrganizationName,
     targetIsoConvertDateString,
     isIndexed,
-    isLoginRequired,
+    participationMode,
     requiresEventTicket,
   }: ImportConversationProps): Promise<ImportConversationResponse> {
     try {
@@ -281,7 +282,7 @@ export function useBackendPostApi() {
         postAsOrganization: postAsOrganizationName,
         indexConversationAt: targetIsoConvertDateString,
         isIndexed,
-        isLoginRequired,
+        participationMode,
         requiresEventTicket,
       };
 
@@ -316,7 +317,7 @@ export function useBackendPostApi() {
     postAsOrganizationName,
     targetIsoConvertDateString,
     isIndexed,
-    isLoginRequired,
+    participationMode,
     seedOpinionList,
     requiresEventTicket,
   }: CreateNewPostProps): Promise<CreateNewPostResponse> {
@@ -326,7 +327,7 @@ export function useBackendPostApi() {
         conversationBody: postBody,
         pollingOptionList: pollingOptionList,
         isIndexed: isIndexed,
-        isLoginRequired: isLoginRequired,
+        participationMode: participationMode,
         postAsOrganization: postAsOrganizationName,
         indexConversationAt: targetIsoConvertDateString,
         seedOpinionList: seedOpinionList,

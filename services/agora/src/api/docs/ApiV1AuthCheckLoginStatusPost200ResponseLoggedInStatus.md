@@ -8,6 +8,7 @@ Name | Type | Description | Notes
 **isKnown** | **boolean** |  | [default to undefined]
 **isRegistered** | **boolean** |  | [default to undefined]
 **isLoggedIn** | **boolean** |  | [default to undefined]
+**credentials** | [**ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1Credentials**](ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1Credentials.md) |  | [default to undefined]
 **userId** | **string** |  | [default to undefined]
 
 ## Example
@@ -19,6 +20,7 @@ const instance: ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatus = {
     isKnown,
     isRegistered,
     isLoggedIn,
+    credentials,
     userId,
 };
 ```

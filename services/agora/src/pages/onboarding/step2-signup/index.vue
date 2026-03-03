@@ -32,6 +32,13 @@
             @click="verifyPhone()"
           />
 
+          <ZKGradientButton
+            :label="t('useEmail')"
+            variant="text"
+            label-color="#6B4EFF"
+            @click="verifyEmail()"
+          />
+
           <p>
             <SignupAgreement />
           </p>
@@ -68,6 +75,10 @@ async function goToNextRoute() {
 
 async function verifyPhone() {
   await router.push({ name: "/onboarding/step3-phone-1/" });
+}
+
+async function verifyEmail() {
+  await router.push({ name: "/onboarding/step3-email-1/" });
 }
 </script>
 

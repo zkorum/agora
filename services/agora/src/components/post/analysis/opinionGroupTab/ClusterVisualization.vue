@@ -8,20 +8,20 @@
         width: imgItem.clusterWidthPercent + '%',
         top: imgItem.top + '%',
         left: imgItem.left + '%',
-        zIndex: imgItem.isSelected ? 100 + imageIndex : 20 + imageIndex,
+        zIndex: props.reportMode ? 20 + imageIndex : imgItem.isSelected ? 100 + imageIndex : 20 + imageIndex,
       }"
-      role="button"
-      tabindex="0"
-      :aria-label="getClusterAriaLabel(String(imageIndex) as PolisKey)"
-      :aria-pressed="imgItem.isSelected"
-      @click="handleClusterSelection(String(imageIndex) as PolisKey)"
-      @keydown.enter="handleClusterSelection(String(imageIndex) as PolisKey)"
+      :role="props.reportMode ? undefined : 'button'"
+      :tabindex="props.reportMode ? -1 : 0"
+      :aria-label="props.reportMode ? undefined : getClusterAriaLabel(String(imageIndex) as PolisKey)"
+      :aria-pressed="props.reportMode ? undefined : imgItem.isSelected"
+      @click="props.reportMode ? undefined : handleClusterSelection(String(imageIndex) as PolisKey)"
+      @keydown.enter="props.reportMode ? undefined : handleClusterSelection(String(imageIndex) as PolisKey)"
     >
       <div :style="{ position: 'relative' }">
         <img
           :src="
             composeImagePath(
-              imgItem.isSelected,
+              props.reportMode || imgItem.isSelected,
               imageIndex,
               activeClusterConfig.numNodes
             )
@@ -31,20 +31,31 @@
         />
         <div
           class="clusterNameOverlay borderStyle dynamicFont"
-          :class="{ selected: imgItem.isSelected }"
+          :class="{ selected: !props.reportMode && imgItem.isSelected }"
           :style="{
             transform: `translate(-50%, calc(-50% + ${imgItem.labelOffsetY}px))`,
           }"
         >
           <div class="clusterLabelFlex">
             <div class="clusterOverlayFontBold">
-              {{
-                formatClusterLabel(
-                  String(imageIndex) as PolisKey,
-                  false,
-                  clusters[String(imageIndex) as PolisKey]?.aiLabel
-                )
-              }}
+              <template v-if="props.reportMode">
+                {{ formatClusterLabel(String(imageIndex) as PolisKey, false) }}
+                <span
+                  v-if="clusters[String(imageIndex) as PolisKey]?.aiLabel"
+                  class="reportAiLabel"
+                >
+                  · {{ clusters[String(imageIndex) as PolisKey]?.aiLabel }}
+                </span>
+              </template>
+              <template v-else>
+                {{
+                  formatClusterLabel(
+                    String(imageIndex) as PolisKey,
+                    false,
+                    clusters[String(imageIndex) as PolisKey]?.aiLabel
+                  )
+                }}
+              </template>
             </div>
             <div class="clusterGroupSize">
               <q-icon name="mdi-account-supervisor-outline" />
@@ -59,7 +70,7 @@
               }})
             </div>
             <div
-              v-if="clusters[String(imageIndex) as PolisKey]?.isUserInCluster"
+              v-if="!props.reportMode && clusters[String(imageIndex) as PolisKey]?.isUserInCluster"
               class="meIndicator"
             >
               <q-icon name="mdi-account-outline" />
@@ -90,6 +101,7 @@ const props = defineProps<{
   clusters: Partial<PolisClusters>;
   totalParticipantCount: number;
   currentClusterTab: PolisKey;
+  reportMode?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -458,6 +470,11 @@ watch(
   font-weight: var(--font-weight-semibold);
   text-align: center;
   margin-bottom: clamp(0.125rem, 0.5vw, 0.25rem);
+}
+
+.reportAiLabel {
+  font-weight: normal;
+  opacity: 0.7;
 }
 
 .clusterLabelFlex {

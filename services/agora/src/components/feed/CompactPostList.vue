@@ -2,8 +2,9 @@
   <div>
     <WidthWrapper :enable="true">
       <q-pull-to-refresh @refresh="pullDownTriggered">
+        <FeedSkeleton v-if="!isAuthInitialized" />
         <q-infinite-scroll
-          v-if="isAuthInitialized"
+          v-else
           :offset="2000"
           :disable="!canLoadMore"
           @load="onLoad"
@@ -104,6 +105,7 @@ import {
   type CompactPostListTranslations,
   compactPostListTranslations,
 } from "./CompactPostList.i18n";
+import FeedSkeleton from "./FeedSkeleton.vue";
 
 const {
   partialHomeFeedList,

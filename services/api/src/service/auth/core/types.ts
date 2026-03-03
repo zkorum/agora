@@ -46,7 +46,7 @@ export const zodAuthMethod = z.enum([
     "phone",
     "rarimo",
     "zupass",
-    // "email", // Future
+    "email",
     // "passkey", // Future
 ]);
 export type AuthMethod = z.infer<typeof zodAuthMethod>;
@@ -59,7 +59,7 @@ export const AUTH_METHOD_STRENGTH = {
     phone: "hard",
     rarimo: "hard",
     zupass: "soft",
-    // email: "hard", // Future
+    email: "hard",
     // passkey: "hard", // Future - might be hard or soft depending on implementation
 } as const satisfies Record<AuthMethod, CredentialStrength>;
 

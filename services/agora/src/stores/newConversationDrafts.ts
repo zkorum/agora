@@ -29,13 +29,13 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       return null;
     }
 
-    // Transform serialized format to runtime format (Date conversion and requiresLogin extraction)
-    const { requiresLogin, ...restPrivateSettings } =
+    // Transform serialized format to runtime format (Date conversion and participationMode extraction)
+    const { participationMode, ...restPrivateSettings } =
       result.data.privateConversationSettings;
 
     return {
       ...result.data,
-      requiresLogin,
+      participationMode,
       privateConversationSettings: {
         ...restPrivateSettings,
         conversionDate: new Date(restPrivateSettings.conversionDate),
@@ -76,12 +76,12 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
         write: (draft: ConversationDraft): string => {
           try {
             // Convert runtime format to serialized format
-            // Move requiresLogin into privateConversationSettings and convert Date to ISO string
-            const { requiresLogin, ...restDraft } = draft;
+            // Move participationMode into privateConversationSettings and convert Date to ISO string
+            const { participationMode, ...restDraft } = draft;
             const serializableDraft: SerializableConversationDraft = {
               ...restDraft,
               privateConversationSettings: {
-                requiresLogin,
+                participationMode,
                 hasScheduledConversion:
                   draft.privateConversationSettings.hasScheduledConversion,
                 conversionDate:
@@ -93,11 +93,11 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
             console.error("Failed to serialize conversation draft:", error);
             // Fallback to empty draft
             const emptyDraft = createEmptyDraft();
-            const { requiresLogin, ...restEmptyDraft } = emptyDraft;
+            const { participationMode, ...restEmptyDraft } = emptyDraft;
             const fallbackData: SerializableConversationDraft = {
               ...restEmptyDraft,
               privateConversationSettings: {
-                requiresLogin,
+                participationMode,
                 hasScheduledConversion:
                   emptyDraft.privateConversationSettings.hasScheduledConversion,
                 conversionDate:
@@ -147,7 +147,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     // Check privacy settings changes
     const hasPrivacyChanges =
       current.isPrivate !== emptyDraft.isPrivate ||
-      current.requiresLogin !== emptyDraft.requiresLogin;
+      current.participationMode !== emptyDraft.participationMode;
 
     // Check private conversation settings changes (only relevant if isPrivate is true)
     // Note: conversionDate is excluded from comparison because the empty draft's date

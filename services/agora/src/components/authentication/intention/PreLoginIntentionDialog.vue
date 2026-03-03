@@ -26,13 +26,12 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
-import type { EventSlug } from "src/shared/types/zod";
-import { useAuthenticationStore } from "src/stores/authentication";
+import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 import type { PossibleIntentions } from "src/stores/loginIntention";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -46,7 +45,8 @@ const props = defineProps<{
   okCallback: () => void;
   activeIntention: PossibleIntentions;
   requiresZupassEventSlug?: EventSlug;
-  loginRequiredToParticipate?: boolean;
+  needsAuth?: boolean;
+  participationMode?: ParticipationMode;
 }>();
 
 const showDialog = defineModel<boolean>({ required: true });
@@ -55,79 +55,119 @@ const { t } = useComponentI18n<PreLoginIntentionDialogTranslations>(
   preLoginIntentionDialogTranslations
 );
 
-const authStore = useAuthenticationStore();
-const { isLoggedIn } = storeToRefs(authStore);
+const { setActiveUserIntention } = useLoginIntentionStore();
 
-const { composeLoginIntentionDialogMessage, setActiveUserIntention } =
-  useLoginIntentionStore();
+const flowStore = onboardingFlowStore();
 
 const { isVerifying: isVerifyingZupass } = useZupassVerification();
 
-const subMessage = ref(
-  composeLoginIntentionDialogMessage(props.activeIntention)
-);
+function getSubMessage(): string {
+  switch (props.activeIntention) {
+    case "none":
+      return "";
+    case "newOpinion":
+      return t("subMessageStatementDraft");
+    case "newConversation":
+      return t("subMessageConversationDraft");
+    case "agreement":
+      return t("subMessageReturnToStatement");
+    case "reportUserContent":
+      return t("subMessageReportRequired");
+    case "voting":
+      return t("subMessageReturnToConversation");
+    case "settings":
+      return "";
+    default:
+      return "";
+  }
+}
+
+const subMessage = ref(getSubMessage());
 
 const router = useRouter();
 
+function hasCredentialUpgradeMode(): boolean {
+  return (
+    props.needsAuth === true &&
+    props.participationMode !== undefined &&
+    props.participationMode !== "guest"
+  );
+}
+
 function getTitle(): string {
   const hasZupassRequirement = props.requiresZupassEventSlug !== undefined;
-  const needsLogin =
-    props.loginRequiredToParticipate === true && !isLoggedIn.value;
 
-  if (hasZupassRequirement && !needsLogin) {
-    return t("titleZupassOnly");
-  } else {
-    return t("title");
+  if (hasCredentialUpgradeMode()) {
+    if (props.participationMode === "email_verification") {
+      return t("titleEmailRequired");
+    }
+    return t("titleStrongRequired");
   }
+
+  if (hasZupassRequirement && !props.needsAuth) {
+    return t("titleZupassOnly");
+  }
+
+  return t("title");
 }
 
 function getMessage(): string {
   const hasZupassRequirement = props.requiresZupassEventSlug !== undefined;
-  const needsLogin =
-    props.loginRequiredToParticipate === true && !isLoggedIn.value;
 
-  if (hasZupassRequirement && needsLogin) {
-    return t("messageBothRequired");
-  } else if (hasZupassRequirement && !needsLogin) {
-    return t("messageZupassOnly");
-  } else {
-    return t("message");
+  if (hasCredentialUpgradeMode()) {
+    if (props.participationMode === "email_verification") {
+      return t("messageEmailRequired");
+    }
+    return t("messageStrongRequired");
   }
+
+  if (hasZupassRequirement && props.needsAuth) {
+    return t("messageBothRequired");
+  } else if (hasZupassRequirement && !props.needsAuth) {
+    return t("messageZupassOnly");
+  }
+
+  return t("message");
 }
 
 function getLabelOk(): string {
   const hasZupassRequirement = props.requiresZupassEventSlug !== undefined;
-  const needsLogin =
-    props.loginRequiredToParticipate === true && !isLoggedIn.value;
 
-  if (hasZupassRequirement && !needsLogin) {
-    return t("labelOkZupass");
-  } else {
-    return t("labelOk");
+  if (hasCredentialUpgradeMode()) {
+    if (props.participationMode === "email_verification") {
+      return t("labelOkEmail");
+    }
+    return t("labelOkStrong");
   }
+
+  if (hasZupassRequirement && !props.needsAuth) {
+    return t("labelOkZupass");
+  }
+
+  return t("labelOk");
 }
 
 async function okButtonClicked() {
   const hasZupassRequirement = props.requiresZupassEventSlug !== undefined;
-  const needsLogin =
-    props.loginRequiredToParticipate === true && !isLoggedIn.value;
 
-  if (needsLogin) {
-    // Need to login first - use existing login flow
-    console.log("[PreLoginIntentionDialog] Routing to /welcome/ for login");
+  if (props.needsAuth) {
     props.okCallback();
     setActiveUserIntention(props.activeIntention);
-    await router.push({ name: "/welcome/" });
+
+    if (props.participationMode === "email_verification") {
+      flowStore.credentialUpgradeTarget = "email";
+      flowStore.onboardingMode = "LOGIN";
+      await router.push({ name: "/verify/email/" });
+    } else if (props.participationMode === "strong_verification") {
+      flowStore.credentialUpgradeTarget = "strong";
+      flowStore.onboardingMode = "LOGIN";
+      await router.push({ name: "/verify/identity/" });
+    } else {
+      await router.push({ name: "/welcome/" });
+    }
   } else if (hasZupassRequirement) {
-    // Zupass verification needed (either logged in or guest)
-    // Trigger the verification flow inline via callback
-    console.log(
-      "[PreLoginIntentionDialog] Triggering inline Zupass verification"
-    );
     props.okCallback();
   } else {
-    // Standard login-only flow (no Zupass required)
-    console.log("[PreLoginIntentionDialog] Standard login flow");
     props.okCallback();
     setActiveUserIntention(props.activeIntention);
     await router.push({ name: "/welcome/" });

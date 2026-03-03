@@ -33,7 +33,7 @@ export function createEmptyDraft(): ConversationDraft {
 
     // Privacy and Advanced Settings
     isPrivate: false,
-    requiresLogin: true,
+    participationMode: "strong_verification",
     privateConversationSettings: {
       hasScheduledConversion: false,
       conversionDate: tomorrow,

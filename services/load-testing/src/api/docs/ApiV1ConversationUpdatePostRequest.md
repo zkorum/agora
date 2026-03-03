@@ -10,7 +10,7 @@ Name | Type | Description | Notes
 **conversationBody** | **string** |  | [optional] [default to undefined]
 **pollAction** | [**ApiV1ConversationUpdatePostRequestPollAction**](ApiV1ConversationUpdatePostRequestPollAction.md) |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
-**isLoginRequired** | **boolean** |  | [default to undefined]
+**participationMode** | **string** |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
 **indexConversationAt** | **string** |  | [optional] [default to undefined]
 
@@ -25,7 +25,7 @@ const instance: ApiV1ConversationUpdatePostRequest = {
     conversationBody,
     pollAction,
     isIndexed,
-    isLoginRequired,
+    participationMode,
     requiresEventTicket,
     indexConversationAt,
 };

@@ -14,6 +14,10 @@
 
     <div class="container">
       <div v-if="isGuestOrLoggedIn">
+        <ListSection :settings-item-list="credentialSettings" />
+      </div>
+
+      <div v-if="isGuestOrLoggedIn">
         <ListSection :settings-item-list="accountSettings" />
       </div>
 
@@ -45,6 +49,8 @@ import ListSection from "src/components/ui-library/ListSection.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useUserStore } from "src/stores/user";
 import { useBackendAccountApi } from "src/utils/api/account";
 import { useBackendAuthApi } from "src/utils/api/auth";
@@ -53,11 +59,12 @@ import type { SettingsInterface } from "src/utils/component/settings/settings";
 import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
+import { useRouter } from "vue-router";
 
 import { type SettingsTranslations,settingsTranslations } from "./index.i18n";
 
 const authStore = useAuthenticationStore();
-const { isGuestOrLoggedIn, isLoggedIn } = storeToRefs(authStore);
+const { isGuestOrLoggedIn, isLoggedIn, credentials } = storeToRefs(authStore);
 const { profileData } = storeToRefs(useUserStore());
 
 const { showDeleteAccountDialog } = useDialog();
@@ -69,11 +76,64 @@ const { t } = useComponentI18n<SettingsTranslations>(settingsTranslations);
 
 const { updateAuthState } = useBackendAuthApi();
 
+const router = useRouter();
+const { setActiveUserIntention } = useLoginIntentionStore();
+const flowStore = onboardingFlowStore();
+
+function navigateToVerify(route: Parameters<typeof router.push>[0]) {
+  setActiveUserIntention("settings");
+  flowStore.onboardingMode = "LOGIN";
+  void router.push(route);
+}
+
 const deleteAccountLabel = computed(() =>
   isLoggedIn.value ? t("deleteAccount") : t("deleteGuestAccount")
 );
 
 const isDevelopment = process.env.DEV;
+
+const credentialSettings = computed<SettingsInterface[]>(() => {
+  const creds = credentials.value;
+  const items: SettingsInterface[] = [
+    {
+      type: "action",
+      label: t("verificationStatus"),
+      value: creds.rarimo !== null ? t("idVerified") : t("notVerified"),
+      action: () => {
+        if (creds.rarimo !== null) {
+          void router.push({ name: "/settings/verification-status/" });
+        } else {
+          navigateToVerify({ name: "/verify/passport/" });
+        }
+      },
+    },
+    {
+      type: "action",
+      label: t("phoneNumber"),
+      value:
+        creds.phone !== null
+          ? `+${creds.phone.countryCallingCode} ******${String(creds.phone.lastTwoDigits).padStart(2, "0")}`
+          : t("clickToAdd"),
+      action: () => {
+        if (creds.phone === null) {
+          navigateToVerify({ name: "/verify/phone/" });
+        }
+      },
+    },
+    {
+      type: "action",
+      label: t("emailAddress"),
+      value: creds.email ?? t("clickToAdd"),
+      action: () => {
+        if (creds.email === null) {
+          navigateToVerify({ name: "/verify/email/" });
+        }
+      },
+    },
+  ];
+
+  return items;
+});
 
 const accountSettings: SettingsInterface[] = [
   {

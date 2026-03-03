@@ -4,5 +4,10 @@ import { ref } from "vue";
 export const onboardingFlowStore = defineStore("onboardingFlow", () => {
   const onboardingMode = ref<"LOGIN" | "SIGNUP">("LOGIN");
 
-  return { onboardingMode };
+  // When non-null, the user is being routed through a streamlined credential
+  // upgrade flow from a gated conversation (skips username + preferences).
+  // "email" = needs email verification, "strong" = needs phone or Rarimo.
+  const credentialUpgradeTarget = ref<"email" | "strong" | null>(null);
+
+  return { onboardingMode, credentialUpgradeTarget };
 });

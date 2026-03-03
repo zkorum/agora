@@ -369,7 +369,7 @@ async function onSubmit() {
         ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
         : undefined,
       isIndexed: !conversationDraft.value.isPrivate,
-      isLoginRequired: conversationDraft.value.requiresLogin,
+      participationMode: conversationDraft.value.participationMode,
       seedOpinionList: conversationDraft.value.seedOpinions,
       requiresEventTicket: conversationDraft.value.requiresEventTicket,
     });

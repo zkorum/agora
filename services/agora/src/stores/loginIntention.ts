@@ -46,7 +46,8 @@ export type PossibleIntentions =
   | "agreement"
   | "newConversation"
   | "newOpinion"
-  | "reportUserContent";
+  | "reportUserContent"
+  | "settings";
 
 export const useLoginIntentionStore = defineStore("loginIntention", () => {
   const router = useRouter();
@@ -159,12 +160,15 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   async function routeUserAfterLogin() {
     completedUserLogin = true;
     const onboardingStore = onboardingFlowStore();
+    const wasCredentialUpgrade =
+      onboardingStore.credentialUpgradeTarget !== null;
     const shouldShowPreferencesDialog =
-      onboardingStore.onboardingMode === "SIGNUP";
+      onboardingStore.onboardingMode === "SIGNUP" && !wasCredentialUpgrade;
 
     if (onboardingStore.onboardingMode === "SIGNUP") {
       onboardingStore.onboardingMode = "LOGIN"; // Reset mode
     }
+    onboardingStore.credentialUpgradeTarget = null; // Reset credential upgrade
 
     switch (activeUserIntention.value) {
       case "none":
@@ -205,6 +209,9 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
           query: { opinion: reportUserContentIntention.opinionSlugId },
         });
         break;
+      case "settings":
+        await router.push({ name: "/settings/" });
+        break;
       default:
         console.error("Unknown intention");
     }
@@ -213,27 +220,6 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     if (shouldShowPreferencesDialog) {
       const preferencesStore = useOnboardingPreferencesStore();
       preferencesStore.openPreferencesDialog();
-    }
-  }
-
-  function composeLoginIntentionDialogMessage(
-    intention: PossibleIntentions
-  ): string {
-    switch (intention) {
-      case "none":
-        return "";
-      case "newOpinion":
-        return "Your written opinion draft will be restored when you return.";
-      case "newConversation":
-        return "Your written conversation draft will be restored when you return.";
-      case "agreement":
-        return "You will be returned to this opinion when you return.";
-      case "reportUserContent":
-        return "A user account is required to report user content.";
-      case "voting":
-        return "You will be returned to this conversation when you return.";
-      default:
-        return "";
     }
   }
 
@@ -349,7 +335,6 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     createNewOpinionIntention,
     createReportUserContentIntention,
     routeUserAfterLogin,
-    composeLoginIntentionDialogMessage,
     clearNewOpinionIntention,
     clearNewConversationIntention,
     clearOpinionAgreementIntention,

@@ -578,6 +578,12 @@ export const eventSlugEnum = pgEnum("event_slug", ["devconnect-2025"]);
 
 export const importMethodType = pgEnum("import_method", ["url", "csv"]);
 
+export const participationModeEnum = pgEnum("participation_mode", [
+    "strong_verification",
+    "email_verification",
+    "guest",
+]);
+
 // Export status for CSV exports
 export const exportStatusEnum = pgEnum("export_status_enum", [
     "processing",
@@ -988,27 +994,41 @@ export const emailType = pgEnum("email_type", [
 // The process of changing emails, especially primary email, is stricly controlled.
 // Emails cannot be shared among users. There is no plan to add "company" or "team" super-users at the moment.
 // In a team, each individual has an account with their own email address, and a few of them can be admin of the group they created.
-// That's why email is primaryKey even though it can change from a user's perspective: changing an email is considered adding another record to this table, and removing the old one.
 // Emails in that table have already been validated by the user at least once and are related to an existing registered user.
-export const emailTable = pgTable("email", {
-    email: varchar("email", { length: 254 }).notNull().primaryKey(),
-    type: emailType("type").notNull(),
-    userId: uuid("user_id")
-        .references(() => userTable.id)
-        .notNull(),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+// Mirrors phoneTable pattern: auto-generated id PK + isDeleted + partial unique index on email.
+// This supports user deletion + re-registration with the same email address.
+export const emailTable = pgTable(
+    "email",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        email: varchar("email", { length: 254 }).notNull(),
+        type: emailType("type").notNull(),
+        userId: uuid("user_id")
+            .references(() => userTable.id)
+            .notNull(),
+        isDeleted: boolean("is_deleted").notNull().default(false), // Denormalized from user table to enable partial unique index
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        // Partial unique index: only enforce uniqueness for non-deleted emails
+        uniqueIndex("email_active_unique")
+            .on(table.email)
+            .where(sql`${table.isDeleted} = false`),
+        // Regular index for lookups
+        index("email_idx").on(table.email),
+    ],
+);
 
 export const deviceTable = pgTable("device", {
     didWrite: varchar("did_write", { length: 1000 }).primaryKey(), // TODO: make sure of length
@@ -1111,6 +1131,33 @@ export const authAttemptPhoneTable = pgTable(
     ],
 );
 
+// Same pattern as authAttemptPhoneTable but simplified for email (no hash/pepper/country code)
+export const authAttemptEmailTable = pgTable("auth_attempt_email", {
+    didWrite: varchar("did_write", { length: 1000 }).primaryKey(),
+    type: authType("type").notNull(),
+    email: varchar("email", { length: 254 }).notNull(),
+    userId: uuid("user_id").notNull(),
+    userAgent: text("user_agent").notNull(),
+    code: integer("code").notNull(), // one-time password sent to the email ("otp")
+    codeExpiry: timestamp("code_expiry").notNull(),
+    guessAttemptAmount: integer("guess_attempt_amount")
+        .default(0)
+        .notNull(),
+    lastOtpSentAt: timestamp("last_otp_sent_at").notNull(),
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+    updatedAt: timestamp("updated_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
+
 // conceptually, it is a "pollContentTable"
 export const pollTable = pgTable("poll", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -1212,9 +1259,10 @@ export const conversationTable = pgTable(
             precision: 0,
         }),
         isIndexed: boolean("is_indexed").notNull().default(true), // if true, the conversation can be fetched in the feed and search engine, else it is hidden, unless users have the link
-        isLoginRequired: boolean("is_login_required").notNull().default(true), // if true, the conversation requires users to sign up to participate -- this field is ignored if the conversation is indexed; in this case, sign-up is always required
+        participationMode: participationModeEnum("participation_mode").notNull().default("strong_verification"), // Determines who can vote/post opinions: "strong_verification" requires phone or Rarimo passport, "email_verification" requires email credential specifically, "guest" allows anyone.
         isImporting: boolean("is_importing").notNull().default(false), // if true, the conversation is being imported from CSV and should not be visible in feed until import completes
         isClosed: boolean("is_closed").notNull().default(false), // if true, the conversation was closed by owner and users cannot post opinions or vote
+        isEdited: boolean("is_edited").notNull().default(false), // if true, the conversation content was edited after creation. Used for "Edited" badge in UI. Use this field (not updatedAt) to determine if a conversation was edited — updatedAt can be accidentally bumped by migration scripts.
         requiresEventTicket: eventSlugEnum("requires_event_ticket"), // if set, only users with verified ticket for this event can participate (vote/post opinions)
         opinionCount: integer("opinion_count").notNull().default(0),
         voteCount: integer("vote_count").notNull().default(0),
@@ -1235,6 +1283,8 @@ export const conversationTable = pgTable(
         })
             .defaultNow()
             .notNull(),
+        // WARNING: Do NOT use updatedAt to determine if a conversation was edited in the UI.
+        // Use isEdited instead. Migration scripts must NOT update this column.
         updatedAt: timestamp("updated_at", {
             mode: "date",
             precision: 0,

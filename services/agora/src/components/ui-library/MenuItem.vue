@@ -17,14 +17,18 @@
             <div class="menu-item__label">
               {{ label }}
             </div>
-            <div v-if="value" class="menu-item__value">
-              {{ value }}
-            </div>
           </slot>
         </div>
       </div>
 
       <div class="menu-item__right">
+        <div
+          v-if="value"
+          class="menu-item__value"
+          :class="{ 'menu-item__value--gradient': valueStyle === 'gradient' }"
+        >
+          {{ value }}
+        </div>
         <slot name="right-icon">
           <ZKIcon
             color="#7D7A85"
@@ -46,6 +50,7 @@ import ZKIcon from "../ui-library/ZKIcon.vue";
 defineProps<{
   label: string;
   value?: string;
+  valueStyle?: "default" | "gradient";
   style?: "none" | "warning" | "negative";
   showSeparator?: boolean;
   borderRadius?: "none" | "top" | "bottom" | "both";
@@ -108,26 +113,13 @@ defineProps<{
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  gap: 0.5rem;
 }
 
 .menu-item__content {
-  display: grid;
-  align-items: flex-start;
-  gap: 0.25rem;
+  display: flex;
+  align-items: center;
   width: 100%;
-  grid-template-columns: 1fr;
-  grid-template-areas:
-    "label"
-    "value";
-
-  .menu-item__label {
-    grid-area: label;
-  }
-
-  .menu-item__value {
-    grid-area: value;
-    justify-self: start;
-  }
 }
 
 .menu-item__label {
@@ -137,12 +129,18 @@ defineProps<{
 }
 
 .menu-item__value {
-  font-weight: var(--font-weight-normal);
-  color: #6b7280;
-  line-height: 1.3;
-  font-size: clamp(1rem, 2vw, 0.875rem);
-  margin-top: 0.125rem;
-  opacity: 0.8;
+  font-weight: var(--font-weight-medium);
+  color: #7d7a85;
+  line-height: 1.4;
+  font-size: 0.875rem;
+  white-space: nowrap;
+
+  &--gradient {
+    background: $gradient-hero;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }
 
 .menu-item__chevron {

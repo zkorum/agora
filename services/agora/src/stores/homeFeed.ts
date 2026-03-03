@@ -37,11 +37,11 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       participantCount: 0,
       authorUsername: "",
       lastReactedAt: new Date(),
-      isLoginRequired: true,
+      participationMode: "strong_verification",
       isIndexed: true,
       conversationSlugId: "",
-      updatedAt: new Date(),
       isClosed: false,
+      isEdited: false,
       moderation: {
         status: "unmoderated",
       },

@@ -1,11 +1,13 @@
 <template>
   <div>
     <div class="container">
-      <OnboardStepper :current-step="currentStep" :total-steps="totalSteps" />
+      <OnboardStepper v-if="showStepper" :current-step="currentStep" :total-steps="totalSteps" />
 
       <slot name="header"></slot>
 
-      <slot name="body"></slot>
+      <div class="bodyContent">
+        <slot name="body"></slot>
+      </div>
 
       <div v-if="showNextButton" class="nextButton">
         <ZKButton
@@ -15,7 +17,6 @@
           :text-color="enableNextButton ? 'white' : 'color-text-strong'"
           :disable="!enableNextButton || showLoadingButton"
           :loading="showLoadingButton"
-          type="submit"
           @click="submitCallBack"
         />
       </div>
@@ -27,14 +28,20 @@
 import OnboardStepper from "src/components/onboarding/layouts/OnboardStepper.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 
-defineProps<{
-  submitCallBack: () => void;
-  currentStep: number;
-  totalSteps: number;
-  enableNextButton: boolean;
-  showNextButton: boolean;
-  showLoadingButton: boolean;
-}>();
+withDefaults(
+  defineProps<{
+    submitCallBack: () => void;
+    currentStep: number;
+    totalSteps: number;
+    enableNextButton: boolean;
+    showNextButton: boolean;
+    showLoadingButton: boolean;
+    showStepper?: boolean;
+  }>(),
+  {
+    showStepper: true,
+  }
+);
 </script>
 
 <style scoped lang="scss">
@@ -46,6 +53,12 @@ defineProps<{
   gap: 2rem;
   padding: 1rem;
   padding-bottom: 5rem;
+}
+
+.bodyContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .nextButton {

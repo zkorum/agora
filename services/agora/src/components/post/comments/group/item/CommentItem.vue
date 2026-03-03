@@ -6,7 +6,6 @@
         <OpinionIdentityCard
           :author-verified="false"
           :created-at="commentItem.createdAt"
-          :updated-at="commentItem.updatedAt"
           :user-identity="commentItem.username"
           :show-verified-text="false"
           organization-image-url=""
@@ -41,7 +40,7 @@
             :comment-item="commentItem"
             :post-slug-id="postSlugId"
             :voting-utilities="votingUtilities"
-            :login-required-to-participate="loginRequiredToParticipate"
+            :participation-mode="participationMode"
             :requires-event-ticket="props.requiresEventTicket"
             @ticket-verified="(payload) => emit('ticketVerified', payload)"
           />
@@ -65,7 +64,7 @@ const props = defineProps<{
   commentItem: OpinionItem;
   postSlugId: string;
   votingUtilities: OpinionVotingUtilities;
-  loginRequiredToParticipate: boolean;
+  participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
 }>();
 
@@ -77,7 +76,7 @@ const emit = defineEmits<{
   ];
 }>();
 
-import type { EventSlug } from "src/shared/types/zod";
+import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 
 function deletedComment() {
   emit("deleted", props.commentItem.opinionSlugId);

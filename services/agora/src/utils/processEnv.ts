@@ -31,6 +31,7 @@ export const envSchema = z.object({
   VUE_ROUTER_BASE: z.string().optional(), // Base path for router
   VITE_STAGING: z.enum(["true", "false"]).optional(),
   VITE_DEV_AUTHORIZED_PHONES: z.string().optional(), // Comma-separated list of phone numbers for dev/staging testing (must match backend). Must not be set in production (safety check enforced)
+  VITE_DEV_AUTHORIZED_EMAILS: z.string().optional(), // Comma-separated list of emails for dev/staging testing (must match backend). Must not be set in production (safety check enforced)
   VITE_SENTRY_AUTH_TOKEN: z.string().optional(), // Sentry auth token for production builds
   VITE_DISCORD_LINK: z.string().optional(), // Discord invite link for support
   // Note: We use z.enum instead of transform because import.meta.env contains raw strings at runtime.
@@ -68,6 +69,16 @@ function validateEnvSchema(
   ) {
     throw new Error(
       "VITE_DEV_AUTHORIZED_PHONES must not be set in production environment"
+    );
+  }
+
+  if (
+    result.NODE_ENV === "production" &&
+    result.VITE_STAGING !== "true" &&
+    result.VITE_DEV_AUTHORIZED_EMAILS !== undefined
+  ) {
+    throw new Error(
+      "VITE_DEV_AUTHORIZED_EMAILS must not be set in production environment"
     );
   }
 

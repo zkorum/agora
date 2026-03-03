@@ -9,7 +9,7 @@ Name | Type | Description | Notes
 **postAsOrganization** | **string** |  | [optional] [default to undefined]
 **indexConversationAt** | **string** |  | [optional] [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
-**isLoginRequired** | **boolean** |  | [default to undefined]
+**participationMode** | **string** |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
 
 ## Example
@@ -22,7 +22,7 @@ const instance: ApiV1ConversationImportPostRequest = {
     postAsOrganization,
     indexConversationAt,
     isIndexed,
-    isLoginRequired,
+    participationMode,
     requiresEventTicket,
 };
 ```

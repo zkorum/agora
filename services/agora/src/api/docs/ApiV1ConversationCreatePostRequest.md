@@ -10,7 +10,7 @@ Name | Type | Description | Notes
 **postAsOrganization** | **string** |  | [optional] [default to undefined]
 **indexConversationAt** | **string** |  | [optional] [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
-**isLoginRequired** | **boolean** |  | [default to undefined]
+**participationMode** | **string** |  | [default to undefined]
 **pollingOptionList** | **Array&lt;string&gt;** |  | [optional] [default to undefined]
 **seedOpinionList** | **Array&lt;string&gt;** |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
@@ -26,7 +26,7 @@ const instance: ApiV1ConversationCreatePostRequest = {
     postAsOrganization,
     indexConversationAt,
     isIndexed,
-    isLoginRequired,
+    participationMode,
     pollingOptionList,
     seedOpinionList,
     requiresEventTicket,

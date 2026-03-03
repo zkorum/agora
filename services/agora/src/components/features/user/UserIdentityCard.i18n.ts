@@ -2,6 +2,8 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface UserIdentityCardTranslations {
   guestParticipationTooltip: string;
+  emailVerificationTooltip: string;
+  strongVerificationTooltip: string;
   edited: string;
 }
 
@@ -11,30 +13,46 @@ export const userIdentityCardTranslations: Record<
 > = {
   en: {
     guestParticipationTooltip: "Guest participation enabled",
+    emailVerificationTooltip: "Email verification required",
+    strongVerificationTooltip: "Phone or passport verification required",
     edited: "Edited",
   },
   ar: {
     guestParticipationTooltip: "مشاركة الضيوف مفعلة",
+    emailVerificationTooltip: "مطلوب التحقق من البريد الإلكتروني",
+    strongVerificationTooltip: "مطلوب التحقق من الهاتف أو جواز السفر",
     edited: "معدل",
   },
   es: {
     guestParticipationTooltip: "Participación de invitados habilitada",
+    emailVerificationTooltip: "Verificación de correo electrónico requerida",
+    strongVerificationTooltip:
+      "Verificación de teléfono o pasaporte requerida",
     edited: "Editado",
   },
   fr: {
     guestParticipationTooltip: "Participation des invités activée",
+    emailVerificationTooltip: "Vérification par e-mail requise",
+    strongVerificationTooltip:
+      "Vérification par téléphone ou passeport requise",
     edited: "Modifié",
   },
   "zh-Hans": {
     guestParticipationTooltip: "已启用访客参与",
+    emailVerificationTooltip: "需要电子邮件验证",
+    strongVerificationTooltip: "需要手机或护照验证",
     edited: "已编辑",
   },
   "zh-Hant": {
     guestParticipationTooltip: "已啟用訪客參與",
+    emailVerificationTooltip: "需要電子郵件驗證",
+    strongVerificationTooltip: "需要手機或護照驗證",
     edited: "已編輯",
   },
   ja: {
     guestParticipationTooltip: "ゲスト参加が有効",
+    emailVerificationTooltip: "メール認証が必要",
+    strongVerificationTooltip: "電話またはパスポート認証が必要",
     edited: "編集済み",
   },
 };

@@ -14,6 +14,7 @@ export interface PassportOnboardingTranslations {
   waitingForVerification: string;
   verify: string;
   preferPhoneVerification: string;
+  preferEmailLogin: string;
   verificationSuccessful: string;
   accountMerged: string;
   verificationFailed: string;
@@ -43,6 +44,7 @@ export const passportOnboardingTranslations: Record<
     waitingForVerification: "Waiting for verification...",
     verify: "Verify",
     preferPhoneVerification: "I'd rather verify with my phone number",
+    preferEmailLogin: "I prefer to use my email address",
     verificationSuccessful: "Verification successful 🎉",
     accountMerged: "Success! Your accounts have been merged 🎉",
     verificationFailed: "Verification attempt failed. Please retry.",
@@ -69,6 +71,7 @@ export const passportOnboardingTranslations: Record<
     waitingForVerification: "في انتظار التحقق...",
     verify: "تحقق",
     preferPhoneVerification: "أفضل التحقق برقم الهاتف",
+    preferEmailLogin: "أفضل استخدام بريدي الإلكتروني",
     verificationSuccessful: "تم التحقق بنجاح 🎉",
     accountMerged: "نجح! تم دمج حساباتك 🎉",
     verificationFailed: "فشلت محاولة التحقق. يرجى المحاولة مرة أخرى.",
@@ -96,6 +99,7 @@ export const passportOnboardingTranslations: Record<
     waitingForVerification: "Esperando verificación...",
     verify: "Verificar",
     preferPhoneVerification: "Prefiero verificar con mi número de teléfono",
+    preferEmailLogin: "Prefiero usar mi correo electrónico",
     verificationSuccessful: "Verificación exitosa 🎉",
     accountMerged: "¡Éxito! Sus cuentas han sido fusionadas 🎉",
     verificationFailed:
@@ -124,6 +128,7 @@ export const passportOnboardingTranslations: Record<
     waitingForVerification: "En attente de vérification...",
     verify: "Vérifier",
     preferPhoneVerification: "Je préfère vérifier avec mon numéro de téléphone",
+    preferEmailLogin: "Je préfère utiliser mon adresse e-mail",
     verificationSuccessful: "Vérification réussie 🎉",
     accountMerged: "Succès ! Vos comptes ont été fusionnés 🎉",
     verificationFailed:
@@ -151,6 +156,7 @@ export const passportOnboardingTranslations: Record<
     waitingForVerification: "等待验证...",
     verify: "验证",
     preferPhoneVerification: "我更喜欢使用手机号验证",
+    preferEmailLogin: "我更想用邮箱",
     verificationSuccessful: "验证成功 🎉",
     accountMerged: "成功！您的账户已合并 🎉",
     verificationFailed: "验证尝试失败。请重试。",
@@ -176,6 +182,7 @@ export const passportOnboardingTranslations: Record<
     waitingForVerification: "等待驗證...",
     verify: "驗證",
     preferPhoneVerification: "我更喜歡使用手機號驗證",
+    preferEmailLogin: "我更想用郵箱",
     verificationSuccessful: "驗證成功 🎉",
     accountMerged: "成功！您的帳戶已合併 🎉",
     verificationFailed: "驗證嘗試失敗。請重試。",
@@ -202,6 +209,7 @@ export const passportOnboardingTranslations: Record<
     waitingForVerification: "検証待ち...",
     verify: "検証",
     preferPhoneVerification: "携帯電話で検証したい",
+    preferEmailLogin: "メールアドレスを使いたい",
     verificationSuccessful: "検証成功 🎉",
     accountMerged: "成功！アカウントが統合されました 🎉",
     verificationFailed: "検証試行に失敗しました。再試行してください。",

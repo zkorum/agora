@@ -6,6 +6,7 @@ import {
     zodUserId,
     zodDeviceLoginStatus,
 } from "./zod.js";
+import { zodEmail } from "./zod-email.js";
 import { zodPhoneNumber } from "./zod-phone.js";
 
 export const checkLoginStatusResponse = z
@@ -39,7 +40,7 @@ export const authenticate200 = z.discriminatedUnion("success", [
     z.object({
         success: z.literal(false),
         reason: z.enum([
-            "already_logged_in",
+            "already_has_credential",
             "associated_with_another_user",
             "throttled",
             "invalid_phone_number",
@@ -63,12 +64,42 @@ export const verifyOtp200 = z.discriminatedUnion("success", [
                 "expired_code",
                 "wrong_guess",
                 "too_many_wrong_guess",
-                "already_logged_in",
+                "already_has_credential",
                 "associated_with_another_user",
                 "auth_state_changed", // Added: auth type changed during OTP flow
             ]),
         })
         .strict(),
+]);
+
+export const authenticateEmailRequestBody = z
+    .object({
+        email: zodEmail,
+        isRequestingNewCode: z.boolean(),
+    })
+    .strict();
+
+export const verifyEmailOtpReqBody = z.object({
+    code: zodCode,
+    email: zodEmail,
+});
+
+export const authenticateEmail200 = z.discriminatedUnion("success", [
+    z
+        .object({
+            success: z.literal(true),
+            codeExpiry: zodDateTimeFlexible,
+            nextCodeSoonestTime: zodDateTimeFlexible,
+        })
+        .strict(),
+    z.object({
+        success: z.literal(false),
+        reason: z.enum([
+            "already_has_credential",
+            "associated_with_another_user",
+            "throttled",
+        ]),
+    }),
 ]);
 
 export const isLoggedInResponse = z.discriminatedUnion("isLoggedIn", [
@@ -85,3 +116,8 @@ export type VerifyOtpReqBody = z.infer<typeof verifyOtpReqBody>;
 export type AuthenticateResponse = z.infer<typeof authenticate200>;
 export type VerifyOtp200 = z.infer<typeof verifyOtp200>;
 export type IsLoggedInResponse = z.infer<typeof isLoggedInResponse>;
+export type AuthenticateEmailRequestBody = z.infer<
+    typeof authenticateEmailRequestBody
+>;
+export type VerifyEmailOtpReqBody = z.infer<typeof verifyEmailOtpReqBody>;
+export type AuthenticateEmailResponse = z.infer<typeof authenticateEmail200>;

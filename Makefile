@@ -47,5 +47,8 @@ dev-api:
 dev-math-updater:
 	cd services/math-updater && pnpm start:dev
 
+dev-x-analyzer:
+	cd services/x-analyzer && pnpm start:dev
+
 dev-polis:
 	cd services/python-bridge && source .venv/bin/activate && make dev

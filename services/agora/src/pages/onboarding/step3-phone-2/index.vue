@@ -3,14 +3,14 @@
     <template #body><DefaultImageExample /> </template>
 
     <template #footer>
-      <form class="formStyle" @submit.prevent="nextButtonClicked">
+      <form class="formStyle" @submit.prevent="onSubmit">
         <StepperLayout
-          :submit-call-back="nextButtonClicked"
+          :submit-call-back="onSubmit"
           :current-step="3.5"
           :total-steps="5"
-          :enable-next-button="verificationCode.length == 6"
+          :enable-next-button="phoneOtpFormRef?.isCodeComplete?.() ?? false"
           :show-next-button="true"
-          :show-loading-button="isSubmitButtonLoading"
+          :show-loading-button="phoneOtpFormRef?.isSubmitButtonLoading?.value ?? false"
         >
           <template #header>
             <InfoHeader
@@ -21,59 +21,10 @@
           </template>
 
           <template #body>
-            <div class="instructions">
-              {{ t("instructions") }}
-              <span class="phoneNumberStyle">{{ formattedPhoneNumber }}</span
-              >.
-            </div>
-
-            <div class="otpDiv">
-              <div class="codeInput">
-                <PrimeInputOtp
-                  v-model="verificationCode"
-                  :length="6"
-                  integer-only
-                />
-              </div>
-
-              <div
-                v-if="verificationCodeExpirySeconds > 0"
-                class="weakColor codeExpiry"
-              >
-                {{ t("expiresIn") }} {{ verificationCodeExpirySeconds }}s
-              </div>
-
-              <div
-                v-if="verificationCodeExpirySeconds <= 0"
-                class="weakColor codeExpiry"
-              >
-                {{ t("codeExpired") }}
-              </div>
-            </div>
-
-            <div class="optionButtons">
-              <ZKButton
-                button-type="largeButton"
-                :label="t('changeNumber')"
-                text-color="primary"
-                @click="changePhoneNumber()"
-              />
-
-              <ZKButton
-                button-type="largeButton"
-                :label="
-                  verificationNextCodeSeconds > 0
-                    ? t('resendCodeIn') +
-                      ' ' +
-                      verificationNextCodeSeconds +
-                      's'
-                    : t('resendCode')
-                "
-                :disable="verificationNextCodeSeconds > 0"
-                text-color="primary"
-                @click="clickedResendButton()"
-              />
-            </div>
+            <PhoneOtpForm
+              ref="phoneOtpFormRef"
+              @change-identifier="changePhoneNumber"
+            />
           </template>
         </StepperLayout>
       </form>
@@ -82,310 +33,34 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
-import InputOtp from "primevue/inputotp";
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
+import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
+import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
+import PhoneOtpForm from "src/components/verification/PhoneOtpForm.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import { ref } from "vue";
+import { useRouter } from "vue-router";
 
 import {
   type Step3Phone2Translations,
   step3Phone2Translations,
 } from "./index.i18n";
 
-defineOptions({
-  components: {
-    PrimeInputOtp: InputOtp,
-  },
-});
-import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
-import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
-import {
-  authenticate200,
-  type AuthenticateResponse,
-  verifyOtp200,
-} from "src/shared/types/dto-auth";
-import { useLoginIntentionStore } from "src/stores/loginIntention";
-import { onboardingFlowStore } from "src/stores/onboarding/flow";
-import { phoneVerificationStore } from "src/stores/onboarding/phone";
-import { useBackendAuthApi } from "src/utils/api/auth";
-import { useAuthPhoneApi } from "src/utils/api/auth-phone";
-import type { KeyAction } from "src/utils/api/common";
-import { createDidOverwriteIfAlreadyExists } from "src/utils/crypto/ucan/operation";
-import { useNotify } from "src/utils/ui/notify";
-import { onMounted, ref, watchEffect } from "vue";
-import { useRouter } from "vue-router";
-
 const { t } = useComponentI18n<Step3Phone2Translations>(
   step3Phone2Translations
 );
 
-const { verificationPhoneNumber } = storeToRefs(phoneVerificationStore());
-
-const verificationCode = ref("");
-
-const verificationNextCodeSeconds = ref(0);
-const verificationCodeExpirySeconds = ref(0);
-let nextCodeTimerId: ReturnType<typeof setTimeout> | undefined = undefined;
-let codeExpiryTimerId: ReturnType<typeof setTimeout> | undefined = undefined;
-
 const router = useRouter();
 
-const { updateAuthState } = useBackendAuthApi();
+const phoneOtpFormRef = ref<{
+  nextButtonClicked: () => void;
+  isSubmitButtonLoading: { value: boolean };
+  isCodeComplete: () => boolean;
+} | null>(null);
 
-const { sendSmsCode, verifyPhoneOtp } = useAuthPhoneApi();
-
-const { onboardingMode } = onboardingFlowStore();
-
-const { showNotifyMessage } = useNotify();
-
-const { routeUserAfterLogin } = useLoginIntentionStore();
-
-const isSubmitButtonLoading = ref(false);
-
-const formattedPhoneNumber = ref("");
-
-watchEffect(() => {
-  const phoneNumber = verificationPhoneNumber.value.internationalPhoneNumber;
-  if (!phoneNumber) {
-    formattedPhoneNumber.value = "";
-    return;
-  }
-
-  // Set initial value as fallback
-  formattedPhoneNumber.value = phoneNumber;
-
-  void (async () => {
-    try {
-      const { parsePhoneNumberFromString } =
-        await import("libphonenumber-js/max");
-      const parsed = parsePhoneNumberFromString(phoneNumber);
-      formattedPhoneNumber.value = parsed?.formatInternational() || phoneNumber;
-    } catch (e) {
-      console.warn("Failed to load phone formatter", e);
-    }
-  })();
-});
-
-function validateAndParseOtpCode(code: string): number | null {
-  const trimmedCode = code.trim();
-
-  // Check if exactly 6 digits
-  if (!/^\d{6}$/.test(trimmedCode)) {
-    return null;
-  }
-
-  const numericCode = parseInt(trimmedCode, 10);
-
-  if (isNaN(numericCode)) {
-    return null;
-  }
-
-  return numericCode;
-}
-
-onMounted(async () => {
-  if (verificationPhoneNumber.value.internationalPhoneNumber == "") {
-    await changePhoneNumber();
-  } else {
-    await requestCodeClicked(false);
-  }
-});
-
-async function clickedResendButton() {
-  verificationCode.value = "";
-  await requestCodeClicked(true);
-}
-
-async function nextButtonClicked() {
-  isSubmitButtonLoading.value = true;
-
-  const validatedCode = validateAndParseOtpCode(verificationCode.value);
-
-  if (validatedCode === null) {
-    isSubmitButtonLoading.value = false;
-    showNotifyMessage(t("pleaseEnterValidCode"));
-    return;
-  }
-
-  const response = await verifyPhoneOtp({
-    code: validatedCode,
-    phoneNumber: verificationPhoneNumber.value.internationalPhoneNumber,
-    defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
-  });
-
-  isSubmitButtonLoading.value = false;
-
-  if (response.status == "success") {
-    const data = verifyOtp200.parse(response.data);
-    if (data.success) {
-      // Show appropriate message based on account state
-      if (data.accountMerged) {
-        showNotifyMessage(t("accountMerged"));
-      } else {
-        showNotifyMessage(t("verificationSuccessful"));
-      }
-      await updateAuthState({
-        partialLoginStatus: { isLoggedIn: true, userId: data.userId },
-        forceRefresh: true,
-      });
-      if (onboardingMode == "LOGIN") {
-        await routeUserAfterLogin();
-      } else {
-        await router.push({ name: "/onboarding/step4-username/" });
-      }
-    } else {
-      switch (data.reason) {
-        case "expired_code":
-          codeExpired();
-          showNotifyMessage(t("codeExpiredResend"));
-          break;
-        case "wrong_guess":
-          showNotifyMessage(t("wrongCodeTryAgain"));
-          break;
-        case "too_many_wrong_guess":
-          codeExpired();
-          showNotifyMessage(t("codeExpiredResend"));
-          break;
-        case "already_logged_in":
-          showNotifyMessage(t("verificationSuccessful"));
-          await updateAuthState({
-            partialLoginStatus: { isLoggedIn: true },
-            forceRefresh: true,
-          });
-          if (onboardingMode == "LOGIN") {
-            await routeUserAfterLogin();
-          } else {
-            await router.push({ name: "/onboarding/step4-username/" });
-          }
-          break;
-        case "associated_with_another_user": {
-          showNotifyMessage(t("syncHiccupDetected"));
-          // overwrite key but don't send a request
-          await createDidOverwriteIfAlreadyExists();
-          break;
-        }
-        case "auth_state_changed": {
-          // Auth state changed during OTP flow (e.g., phone reassigned, account deleted)
-          showNotifyMessage(t("authStateChanged"));
-          codeExpired();
-          break;
-        }
-      }
-    }
-  } else {
-    console.error("Error while verifying code", response.message);
-    showNotifyMessage(t("somethingWrong"));
-  }
-}
-
-async function requestCodeClicked(
-  isRequestingNewCode: boolean,
-  keyAction?: KeyAction
-) {
-  const response = await sendSmsCode({
-    isRequestingNewCode: isRequestingNewCode,
-    phoneNumber: verificationPhoneNumber.value.internationalPhoneNumber,
-    defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
-    keyAction: keyAction,
-  });
-  if (response.status == "success") {
-    const data = authenticate200.parse(response.data);
-    if (data.success) {
-      processRequestCodeResponse(data);
-    } else {
-      switch (data.reason) {
-        case "already_logged_in":
-          showNotifyMessage(t("verificationSuccessful"));
-          await updateAuthState({
-            partialLoginStatus: { isLoggedIn: true },
-            forceRefresh: true,
-          });
-          if (onboardingMode == "LOGIN") {
-            await routeUserAfterLogin();
-          } else {
-            await router.push({ name: "/onboarding/step4-username/" });
-          }
-          break;
-        case "associated_with_another_user":
-          // retry by overwriting key
-          await requestCodeClicked(isRequestingNewCode, "overwrite");
-          break;
-        case "throttled":
-          showNotifyMessage(t("tooManyAttempts"));
-          break;
-        case "invalid_phone_number":
-          showNotifyMessage(t("invalidPhoneNumber"));
-          break;
-        case "restricted_phone_type":
-          showNotifyMessage(t("restrictedPhoneType"));
-          break;
-      }
-    }
-  } else {
-    console.error("Error while requesting a code", response.message);
-    showNotifyMessage(t("somethingWrong"));
-  }
-}
-
-function codeExpired() {
-  verificationCodeExpirySeconds.value = 0;
-}
-
-function processRequestCodeResponse(
-  data: Extract<AuthenticateResponse, { success: true }>
-) {
-  const nowMinusMinusOneSecond = new Date();
-  nowMinusMinusOneSecond.setSeconds(nowMinusMinusOneSecond.getSeconds() - 1); // this is to avoid rounding errors that make us wait 9 seconds instead of 10
-  {
-    const nextCodeSoonestTime = new Date(data.nextCodeSoonestTime);
-
-    const diff =
-      nextCodeSoonestTime.getTime() - nowMinusMinusOneSecond.getTime();
-    const nextCodeSecondsWait = Math.ceil(diff / 1000);
-
-    verificationNextCodeSeconds.value = nextCodeSecondsWait;
-    decrementNextCodeTimer();
-  }
-
-  {
-    const codeExpiryTime = new Date(data.codeExpiry);
-
-    const diff = codeExpiryTime.getTime() - nowMinusMinusOneSecond.getTime();
-    const codeExpirySeconds = Math.ceil(diff / 1000);
-
-    verificationCodeExpirySeconds.value = codeExpirySeconds;
-    decrementCodeExpiryTimer();
-  }
-}
-
-function decrementCodeExpiryTimer() {
-  clearTimeout(codeExpiryTimerId);
-  if (verificationCodeExpirySeconds.value <= 0) {
-    verificationCodeExpirySeconds.value = 0;
-    return;
-  }
-  verificationCodeExpirySeconds.value -= 1;
-  if (verificationCodeExpirySeconds.value > 0) {
-    codeExpiryTimerId = setTimeout(function () {
-      decrementCodeExpiryTimer();
-    }, 1000);
-  }
-}
-
-function decrementNextCodeTimer() {
-  clearTimeout(nextCodeTimerId);
-  if (verificationNextCodeSeconds.value <= 0) {
-    verificationNextCodeSeconds.value = 0;
-    return;
-  }
-  verificationNextCodeSeconds.value -= 1;
-  if (verificationNextCodeSeconds.value > 0) {
-    nextCodeTimerId = setTimeout(function () {
-      decrementNextCodeTimer();
-    }, 1000);
-  }
+function onSubmit() {
+  phoneOtpFormRef.value?.nextButtonClicked();
 }
 
 async function changePhoneNumber() {
@@ -398,40 +73,5 @@ async function changePhoneNumber() {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-}
-
-.instructions {
-  font-size: 1.1rem;
-}
-
-.phoneNumberStyle {
-  font-weight: var(--font-weight-medium);
-}
-
-.otpDiv {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-}
-
-.codeInput {
-  display: flex;
-  justify-content: center;
-}
-
-.weakColor {
-  color: $color-text-weak;
-}
-
-.codeExpiry {
-  text-align: center;
-}
-
-.optionButtons {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
 }
 </style>

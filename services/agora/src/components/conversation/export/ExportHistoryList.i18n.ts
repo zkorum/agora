@@ -43,10 +43,10 @@ export const exportHistoryListTranslations: Record<
     statusCancelled: "Cancelado",
   },
   fr: {
-    loadingExports: "Chargement des exportations...",
+    loadingExports: "Chargement des exports...",
     noExportsYet:
-      "Aucune exportation pour le moment. Demandez votre première exportation ci-dessus.",
-    errorLoadingExports: "Échec du chargement de l'historique des exportations",
+      "Aucun export pour le moment. Demandez votre premier export ci-dessus.",
+    errorLoadingExports: "Échec du chargement de l'historique des exports",
     statusProcessing: "En cours",
     statusCompleted: "Terminé",
     statusFailed: "Échoué",

@@ -9,7 +9,7 @@ import { CSV_UPLOAD_FIELD_NAMES } from "@/shared-app-api/csvUpload.js";
 import * as importService from "./import.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import type { ValidateCsvResponse } from "@/shared/types/dto.js";
-import type { EventSlug } from "@/shared/types/zod.js";
+import type { EventSlug, ParticipationMode } from "@/shared/types/zod.js";
 import { z } from "zod";
 
 /**
@@ -36,7 +36,7 @@ interface ProcessCsvImportProps {
     authorId: string;
     postAsOrganization: string | undefined;
     indexConversationAt?: string;
-    isLoginRequired: boolean;
+    participationMode: ParticipationMode;
     isIndexed: boolean;
     requiresEventTicket?: EventSlug;
 }
@@ -167,7 +167,7 @@ export async function processCsvImport(props: ProcessCsvImportProps) {
         authorId: props.authorId,
         postAsOrganization: props.postAsOrganization,
         indexConversationAt: props.indexConversationAt,
-        isLoginRequired: props.isLoginRequired,
+        participationMode: props.participationMode,
         isIndexed: props.isIndexed,
         requiresEventTicket: props.requiresEventTicket,
     });

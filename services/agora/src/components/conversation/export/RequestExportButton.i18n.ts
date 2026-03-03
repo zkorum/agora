@@ -18,7 +18,7 @@ export const requestExportButtonTranslations: Record<
     requestNewExport: "Solicitar Nueva Exportación",
   },
   fr: {
-    requestNewExport: "Demander une Nouvelle Exportation",
+    requestNewExport: "Demander un Nouvel Export",
   },
   "zh-Hans": {
     requestNewExport: "请求新导出",

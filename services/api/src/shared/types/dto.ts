@@ -43,6 +43,7 @@ import {
     zodDateTimeFlexible,
     zodExportFailureReason,
     zodImportFailureReason,
+    zodParticipationMode,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
@@ -108,7 +109,7 @@ export class Dto {
             postAsOrganization: z.string().optional(),
             indexConversationAt: z.iso.datetime().optional(),
             isIndexed: z.boolean(),
-            isLoginRequired: z.boolean(),
+            participationMode: zodParticipationMode,
             pollingOptionList: zodPollOptionTitle.array().optional(),
             seedOpinionList: z.array(zodOpinionContentInput),
             requiresEventTicket: zodEventSlug.optional(),
@@ -123,7 +124,7 @@ export class Dto {
             postAsOrganization: z.string().optional(),
             indexConversationAt: z.iso.datetime().optional(),
             isIndexed: z.boolean(),
-            isLoginRequired: z.boolean(),
+            participationMode: zodParticipationMode,
             requiresEventTicket: zodEventSlug.optional(),
         })
         .strict();
@@ -137,7 +138,7 @@ export class Dto {
             postAsOrganization: z.string().optional(),
             indexConversationAt: z.iso.datetime().optional(),
             isIndexed: z.boolean(),
-            isLoginRequired: z.boolean(),
+            participationMode: zodParticipationMode,
         })
         .strict();
     static importCsvConversationFormRequest = z
@@ -154,9 +155,14 @@ export class Dto {
                 (val) => val === "true" || val === true,
                 z.boolean(),
             ),
-            isLoginRequired: z.preprocess(
-                (val) => val === "true" || val === true,
-                z.boolean(),
+            participationMode: z.preprocess(
+                (val) => {
+                    // Handle form submission where value comes as string
+                    if (val === "true" || val === true) return "strong_verification";
+                    if (val === "false" || val === false) return "guest";
+                    return val; // Already a valid participation mode string
+                },
+                zodParticipationMode,
             ),
             requiresEventTicket: z.preprocess(
                 (val) => (val === "" || val === undefined ? undefined : val),
@@ -293,7 +299,7 @@ export class Dto {
                 conversationBody: zodConversationBodyOutput,
                 pollingOptionList: z.array(zodPollOptionTitle).optional(),
                 isIndexed: z.boolean(),
-                isLoginRequired: z.boolean(),
+                participationMode: zodParticipationMode,
                 requiresEventTicket: zodEventSlug.optional(),
                 indexConversationAt: zodDateTimeFlexible.optional(),
                 createdAt: zodDateTimeFlexible,
@@ -316,7 +322,7 @@ export class Dto {
             conversationBody: zodConversationBodyInput,
             pollAction: zodPollAction,
             isIndexed: z.boolean(),
-            isLoginRequired: z.boolean(),
+            participationMode: zodParticipationMode,
             requiresEventTicket: zodEventSlug.optional(),
             indexConversationAt: z.iso.datetime().optional(),
         })
@@ -364,6 +370,8 @@ export class Dto {
                     "conversation_locked",
                     "conversation_closed",
                     "event_ticket_required",
+                    "strong_verification_required",
+                    "email_verification_required",
                 ]),
             })
             .strict(),
@@ -374,6 +382,18 @@ export class Dto {
             conversationSlugId: z.string(),
         })
         .strict();
+    static pollRespondResponse = z.discriminatedUnion("success", [
+        z.object({ success: z.literal(true) }).strict(),
+        z
+            .object({
+                success: z.literal(false),
+                reason: z.enum([
+                    "strong_verification_required",
+                    "email_verification_required",
+                ]),
+            })
+            .strict(),
+    ]);
     static getUserPollResponseByConversationsRequest = z.array(z.string());
     static getUserPollResponseByConversationsResponse =
         z.array(zodPollResponse);
@@ -411,6 +431,8 @@ export class Dto {
                     "conversation_locked",
                     "conversation_closed",
                     "event_ticket_required",
+                    "strong_verification_required",
+                    "email_verification_required",
                 ]),
             })
             .strict(),
@@ -498,7 +520,7 @@ export class Dto {
         z.object({
             success: z.literal(false),
             reason: z.enum([
-                "already_logged_in",
+                "already_has_credential",
                 "associated_with_another_user",
             ]),
         }),
@@ -716,7 +738,7 @@ export class Dto {
         z.object({
             success: z.literal(false),
             reason: z.enum([
-                "already_logged_in",
+                "already_has_credential",
                 "associated_with_another_user",
             ]),
         }),

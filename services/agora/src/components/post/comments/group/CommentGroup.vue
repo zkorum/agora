@@ -44,7 +44,7 @@
         :comment-item="commentItem"
         :post-slug-id="postSlugId"
         :voting-utilities="votingUtilities"
-        :login-required-to-participate="loginRequiredToParticipate"
+        :participation-mode="participationMode"
         :requires-event-ticket="props.requiresEventTicket"
         @deleted="deletedComment(commentItem.opinionSlugId)"
         @muted-comment="mutedComment()"
@@ -67,7 +67,7 @@ const props = defineProps<{
   postSlugId: string;
   highlightedOpinion?: OpinionItem | null;
   votingUtilities: OpinionVotingUtilities;
-  loginRequiredToParticipate: boolean;
+  participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
 }>();
 
@@ -79,7 +79,7 @@ const emit = defineEmits<{
   ];
 }>();
 
-import type { EventSlug } from "src/shared/types/zod";
+import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 
 const finalCommentList = computed((): OpinionItem[] => {
   const result: OpinionItem[] = [];

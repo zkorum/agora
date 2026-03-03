@@ -31,12 +31,26 @@
           <span class="bullet">•</span>
           <span>{{ t("edited") }}</span>
         </template>
-        <template v-if="isGuestParticipationAllowed === true">
+        <template v-if="participationMode">
           <span class="bullet">•</span>
-          <i
-            class="pi pi-user-plus access-icon"
+          <span
+            v-if="participationMode === 'guest'"
             :title="t('guestParticipationTooltip')"
-          ></i>
+          >
+            <q-icon name="mdi-account-plus" class="access-icon" />
+          </span>
+          <span
+            v-else-if="participationMode === 'email_verification'"
+            :title="t('emailVerificationTooltip')"
+          >
+            <q-icon name="mdi-email-check" class="access-icon" />
+          </span>
+          <span
+            v-else-if="participationMode === 'strong_verification'"
+            :title="t('strongVerificationTooltip')"
+          >
+            <q-icon name="mdi-shield-check" class="access-icon" />
+          </span>
         </template>
       </div>
     </div>
@@ -49,29 +63,22 @@ import OrganizationImage from "src/components/account/OrganizationImage.vue";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import UserMetadata from "src/components/features/user/UserMetadata.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { computed } from "vue";
+import type { ParticipationMode } from "src/shared/types/zod";
 
 import {
   type UserIdentityCardTranslations,
   userIdentityCardTranslations,
 } from "./UserIdentityCard.i18n";
 
-const props = defineProps<{
+defineProps<{
   userIdentity: string;
   authorVerified: boolean;
   createdAt: Date;
-  updatedAt: Date;
+  isEdited: boolean;
   showVerifiedText: boolean;
   organizationImageUrl: string;
-  isGuestParticipationAllowed?: boolean;
+  participationMode?: ParticipationMode;
 }>();
-
-// Consider content edited if updatedAt is more than 1 second after createdAt
-const isEdited = computed(() => {
-  const diffInSeconds =
-    (props.updatedAt.getTime() - props.createdAt.getTime()) / 1000;
-  return diffInSeconds > 1;
-});
 
 const { t } = useComponentI18n<UserIdentityCardTranslations>(
   userIdentityCardTranslations

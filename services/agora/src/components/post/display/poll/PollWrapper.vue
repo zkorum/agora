@@ -67,7 +67,8 @@
       :ok-callback="onLoginCallback"
       active-intention="voting"
       :requires-zupass-event-slug="props.requiresEventTicket"
-      :login-required-to-participate="props.loginRequiredToParticipate"
+      :needs-auth="needsLogin"
+      :participation-mode="props.participationMode"
     />
   </div>
 </template>
@@ -83,7 +84,7 @@ import type {
   PollOptionWithResult,
   UserInteraction,
 } from "src/shared/types/zod";
-import type { EventSlug } from "src/shared/types/zod";
+import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useUserStore } from "src/stores/user";
@@ -104,7 +105,7 @@ const props = defineProps<{
   userResponse: UserInteraction;
   pollOptions: PollList;
   postSlugId: string;
-  loginRequiredToParticipate: boolean;
+  participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
 }>();
 
@@ -121,7 +122,7 @@ const dataLoaded = ref(false);
 
 const backendPollApi = useBackendPollApi();
 const authStore = useAuthenticationStore();
-const { isLoggedIn } = storeToRefs(authStore);
+const { hasStrongVerification, hasEmailVerification } = storeToRefs(authStore);
 const userStore = useUserStore();
 const { verifiedEventTickets } = storeToRefs(userStore);
 const { loadPostData } = useHomeFeedStore();
@@ -130,6 +131,13 @@ const { updateAuthState } = useBackendAuthApi();
 // Zupass verification
 const { verifyTicket } = useTicketVerificationFlow();
 const { isVerifying: isVerifyingZupass } = useZupassVerification();
+
+// Check if user needs login/verification based on participation mode
+const needsLogin = computed(() => {
+  if (props.participationMode === "strong_verification") return !hasStrongVerification.value;
+  if (props.participationMode === "email_verification") return !hasEmailVerification.value;
+  return false; // guest
+});
 
 // Check if poll is locked due to missing event ticket
 const isPollLocked = computed(() => {
@@ -241,11 +249,10 @@ async function clickedVotingOption(selectedIndex: number) {
     return;
   }
 
-  // Check if user needs login or Zupass verification
-  const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
+  // Check if user needs login/verification or Zupass verification
   const needsZupass = isPollLocked.value;
 
-  if (needsLogin || needsZupass) {
+  if (needsLogin.value || needsZupass) {
     showLoginDialog.value = true;
     return;
   }
@@ -255,10 +262,7 @@ async function clickedVotingOption(selectedIndex: number) {
     selectedIndex,
     props.postSlugId
   );
-  // TODO: refactor backend to send error and reason if any, and react appropriately
-  // and eventual change in state (isGuest etc)
-  if (response == true) {
-    // TODO: refactor because there arep potentially redundant requests (loadPostData inside updateAuthState)
+  if (response === true) {
     await updateAuthState({ partialLoginStatus: { isKnown: true } });
     await Promise.all([loadPostData(), fetchUserPollResponseData(true)]);
     incrementLocalPollIndex(selectedIndex);
@@ -272,18 +276,10 @@ async function onLoginCallback() {
   // Store the intention with eventSlug
   setVotingIntention(props.requiresEventTicket);
 
-  const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
   const hasZupassRequirement = props.requiresEventTicket !== undefined;
 
-  console.log('[PollWrapper] onLoginCallback', {
-    needsLogin,
-    hasZupassRequirement,
-    isLoggedIn: isLoggedIn.value,
-  });
-
   // If user just needs Zupass verification (no login required), trigger it inline
-  if (!needsLogin && hasZupassRequirement) {
-    console.log('[PollWrapper] Triggering inline Zupass verification');
+  if (!needsLogin.value && hasZupassRequirement) {
     await handleZupassVerification();
   }
   // Otherwise, dialog will route user to login via PreLoginIntentionDialog
@@ -308,11 +304,6 @@ async function handleZupassVerification() {
   });
 
   if (result.success) {
-    // Emit to parent so banner gets refreshed
-    console.log('[PollWrapper] Emitting ticketVerified event', {
-      userIdChanged: result.userIdChanged,
-      needsCacheRefresh: result.needsCacheRefresh,
-    });
     emit("ticketVerified", {
       userIdChanged: result.userIdChanged,
       needsCacheRefresh: result.needsCacheRefresh,
@@ -326,7 +317,6 @@ async function handleZupassVerification() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
   gap: 1rem;
 }
 

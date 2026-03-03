@@ -53,8 +53,8 @@ export const createConversationTranslations: Record<
     titleRequired: "Le titre est requis pour continuer",
     bodyPlaceholder: "Ajoutez du contexte ou des liens utiles",
     activeImportMessage:
-      "Vous avez une importation en cours. Veuillez attendre qu'elle soit terminée avant d'en démarrer une nouvelle.",
-    viewImportStatus: "Voir l'État de l'Importation",
+      "Vous avez un import en cours. Veuillez attendre qu'il soit terminé avant d'en démarrer un nouveau.",
+    viewImportStatus: "Voir l'État de l'Import",
   },
   "zh-Hans": {
     importButton: "导入",
