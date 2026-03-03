@@ -7,7 +7,7 @@
     v-else
     :author-verified="authorVerified"
     :created-at="createdAt"
-    :updated-at="updatedAt"
+    :is-edited="false"
     :user-identity="userIdentity"
     :show-verified-text="showVerifiedText"
     :organization-image-url="organizationImageUrl"
@@ -28,7 +28,6 @@ defineProps<{
   userIdentity: string;
   authorVerified: boolean;
   createdAt: Date;
-  updatedAt: Date;
   showVerifiedText: boolean;
   organizationImageUrl: string;
   isSeed: boolean;

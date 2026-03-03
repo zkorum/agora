@@ -195,7 +195,7 @@ export function useUpdateConversationMutation() {
             metadata: {
               ...oldData.metadata,
               isIndexed: variables.isIndexed,
-              isLoginRequired: variables.isLoginRequired,
+              participationMode: variables.participationMode,
               requiresEventTicket: variables.requiresEventTicket,
             },
             payload: {

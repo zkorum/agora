@@ -7,6 +7,8 @@ export interface AnalysisPageTranslations {
   analysisErrorMessage: string;
   noAnalysisData: string;
   retryAnalysis: string;
+  generateReport: string;
+  report: string;
 }
 
 export const analysisPageTranslations: Record<
@@ -20,6 +22,8 @@ export const analysisPageTranslations: Record<
     analysisErrorMessage: "Unable to load the analysis data. Please try again.",
     noAnalysisData: "Analysis data is not available for this conversation",
     retryAnalysis: "Retry loading",
+    generateReport: "Generate report",
+    report: "Report",
   },
   ar: {
     loadingAnalysis: "جاري تحميل التحليل...",
@@ -29,6 +33,8 @@ export const analysisPageTranslations: Record<
       "غير قادر على تحميل بيانات التحليل. يرجى المحاولة مرة أخرى.",
     noAnalysisData: "بيانات التحليل غير متاحة لهذه المحادثة",
     retryAnalysis: "إعادة المحاولة",
+    generateReport: "إنشاء تقرير",
+    report: "تقرير",
   },
   es: {
     loadingAnalysis: "Cargando análisis...",
@@ -39,6 +45,8 @@ export const analysisPageTranslations: Record<
     noAnalysisData:
       "Los datos de análisis no están disponibles para esta conversación",
     retryAnalysis: "Reintentar carga",
+    generateReport: "Generar informe",
+    report: "Informe",
   },
   fr: {
     loadingAnalysis: "Chargement de l'analyse...",
@@ -49,6 +57,8 @@ export const analysisPageTranslations: Record<
     noAnalysisData:
       "Les données d'analyse ne sont pas disponibles pour cette conversation",
     retryAnalysis: "Réessayer le chargement",
+    generateReport: "Générer le rapport",
+    report: "Rapport",
   },
   "zh-Hans": {
     loadingAnalysis: "正在加载分析...",
@@ -57,6 +67,8 @@ export const analysisPageTranslations: Record<
     analysisErrorMessage: "无法加载分析数据。请重试。",
     noAnalysisData: "此对话没有可用的分析数据",
     retryAnalysis: "重试加载",
+    generateReport: "生成报告",
+    report: "报告",
   },
   "zh-Hant": {
     loadingAnalysis: "正在載入分析...",
@@ -65,6 +77,8 @@ export const analysisPageTranslations: Record<
     analysisErrorMessage: "無法載入分析資料。請重試。",
     noAnalysisData: "此對話沒有可用的分析資料",
     retryAnalysis: "重試載入",
+    generateReport: "生成報告",
+    report: "報告",
   },
   ja: {
     loadingAnalysis: "分析を読み込み中...",
@@ -74,5 +88,7 @@ export const analysisPageTranslations: Record<
       "分析データを読み込めませんでした。もう一度お試しください。",
     noAnalysisData: "この会話の分析データは利用できません",
     retryAnalysis: "読み込み再試行",
+    generateReport: "レポートを生成",
+    report: "レポート",
   },
 };

@@ -10,31 +10,31 @@ export const opinionGroupTabTranslations: Record<
   OpinionGroupTabTranslations
 > = {
   en: {
-    groupsTitle: "Groups",
+    groupsTitle: "Opinion groups",
     notEnoughGroupsMessage: "Not enough groups to display.",
   },
   ar: {
-    groupsTitle: "المجموعات",
+    groupsTitle: "مجموعات الرأي",
     notEnoughGroupsMessage: "لا توجد مجموعات كافية للعرض.",
   },
   es: {
-    groupsTitle: "Grupos",
+    groupsTitle: "Grupos de opinión",
     notEnoughGroupsMessage: "No hay suficientes grupos para mostrar.",
   },
   fr: {
-    groupsTitle: "Groupes",
+    groupsTitle: "Groupes d'opinion",
     notEnoughGroupsMessage: "Pas assez de groupes à afficher.",
   },
   "zh-Hans": {
-    groupsTitle: "群组",
+    groupsTitle: "意见群组",
     notEnoughGroupsMessage: "群组数量不足以显示。",
   },
   "zh-Hant": {
-    groupsTitle: "群組",
+    groupsTitle: "意見群組",
     notEnoughGroupsMessage: "群組數量不足以顯示。",
   },
   ja: {
-    groupsTitle: "グループ",
+    groupsTitle: "意見グループ",
     notEnoughGroupsMessage: "表示するグループが不足しています。",
   },
 };

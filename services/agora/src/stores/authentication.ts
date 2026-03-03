@@ -5,10 +5,17 @@ import { computed, ref } from "vue";
 export const useAuthenticationStore = defineStore("authentication", () => {
   const verificationPhoneNumber = ref("");
   const verificationDefaultCallingCode = ref("");
+  const nullCredentials = {
+    email: null,
+    phone: null,
+    rarimo: null,
+  } as const;
+
   const _loginStatus = ref<DeviceLoginStatus>({
     isLoggedIn: false,
     isRegistered: false,
     isKnown: false,
+    credentials: nullCredentials,
   });
 
   const isRegistered = computed(() => _loginStatus.value.isRegistered);
@@ -31,6 +38,26 @@ export const useAuthenticationStore = defineStore("authentication", () => {
     return undefined;
   });
 
+  // Expose credentials for settings page display
+  const credentials = computed(() => {
+    if (!_loginStatus.value.isKnown) return nullCredentials;
+    return _loginStatus.value.credentials;
+  });
+
+  // Strong verification = phone or rarimo (email alone is not strong)
+  const hasStrongVerification = computed(() => {
+    if (!_loginStatus.value.isKnown) return false;
+    const creds = _loginStatus.value.credentials;
+    return creds.phone !== null || creds.rarimo !== null;
+  });
+
+  // Email verification = specifically email credential (phone/Rarimo don't count)
+  const hasEmailVerification = computed(() => {
+    if (!_loginStatus.value.isKnown) return false;
+    const creds = _loginStatus.value.credentials;
+    return creds.email !== null;
+  });
+
   // Function to safely update loginStatus
   function setLoginStatus(status: Partial<DeviceLoginStatus>): {
     newLoginStatus: DeviceLoginStatus;
@@ -46,6 +73,7 @@ export const useAuthenticationStore = defineStore("authentication", () => {
         isKnown: false,
         isLoggedIn: false,
         isRegistered: false,
+        credentials: nullCredentials,
       };
     } else if (
       status.isKnown === true ||
@@ -60,6 +88,14 @@ export const useAuthenticationStore = defineStore("authentication", () => {
         ? status.userId
         : currentUserId;
 
+      // Preserve existing credentials if not provided in partial update
+      const currentCredentials = _loginStatus.value.isKnown
+        ? _loginStatus.value.credentials
+        : nullCredentials;
+      const newCredentials = (status.isKnown === true && 'credentials' in status && status.credentials)
+        ? status.credentials
+        : currentCredentials;
+
       _loginStatus.value = {
         isKnown: true,
         isLoggedIn: status.isLoggedIn ?? _loginStatus.value.isLoggedIn,
@@ -67,12 +103,14 @@ export const useAuthenticationStore = defineStore("authentication", () => {
           ? true
           : (status.isRegistered ?? _loginStatus.value.isRegistered),
         userId: newUserId,
+        credentials: newCredentials,
       };
     } else {
       _loginStatus.value = {
         isKnown: false,
         isLoggedIn: false,
         isRegistered: false,
+        credentials: nullCredentials,
       };
     }
     console.log(
@@ -96,6 +134,9 @@ export const useAuthenticationStore = defineStore("authentication", () => {
     isGuest,
     isGuestOrLoggedIn,
     userId,
+    credentials,
+    hasStrongVerification,
+    hasEmailVerification,
     setLoginStatus,
     isAuthInitialized,
   };

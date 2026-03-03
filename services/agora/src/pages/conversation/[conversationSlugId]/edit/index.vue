@@ -34,7 +34,7 @@
       <NewConversationControlBar
         v-model:poll-enabled="pollEnabled"
         v-model:is-private="isPrivate"
-        v-model:requires-login="requiresLogin"
+        v-model:participation-mode="participationMode"
         v-model:requires-event-ticket="requiresEventTicket"
         v-model:private-conversation-settings="privateConversationSettings"
         v-model:post-as="postAs"
@@ -124,6 +124,7 @@ import {
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
+import type { ParticipationMode } from "src/shared/types/zod";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import { useUpdateConversationMutation } from "src/utils/api/post/useConversationMutations";
 import { useNotify } from "src/utils/ui/notify";
@@ -173,7 +174,7 @@ const originalState = ref<{
   title: string;
   content: string;
   isPrivate: boolean;
-  requiresLogin: boolean;
+  participationMode: ParticipationMode;
   requiresEventTicket: string | undefined;
   privateConversationSettings: {
     hasScheduledConversion: boolean;
@@ -187,7 +188,7 @@ const originalState = ref<{
   title: "",
   content: "",
   isPrivate: false,
-  requiresLogin: false,
+  participationMode: "strong_verification",
   requiresEventTicket: undefined,
   privateConversationSettings: {
     hasScheduledConversion: false,
@@ -223,7 +224,7 @@ const hasUnsavedChanges = computed(() => {
   // Compare privacy settings
   if (
     isPrivate.value !== originalState.value.isPrivate ||
-    requiresLogin.value !== originalState.value.requiresLogin
+    participationMode.value !== originalState.value.participationMode
   ) {
     return true;
   }
@@ -285,7 +286,7 @@ const {
   pollEnabled,
   pollOptions,
   isPrivate,
-  requiresLogin,
+  participationMode,
   requiresEventTicket,
   privateConversationSettings,
   postAs,
@@ -418,7 +419,7 @@ async function performSave(): Promise<void> {
       conversationBody: content.value,
       pollAction: pollAction,
       isIndexed: !isPrivate.value,
-      isLoginRequired: requiresLogin.value,
+      participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
       indexConversationAt: privateConversationSettings.value
         .hasScheduledConversion
@@ -588,7 +589,7 @@ onMounted(async () => {
       pollEnabled: response.hasPoll ?? false,
       pollOptions: response.pollingOptionList ?? ["", ""],
       isPrivate: !response.isIndexed,
-      requiresLogin: response.isLoginRequired,
+      participationMode: response.participationMode,
       requiresEventTicket: response.requiresEventTicket,
       privateConversationSettings: {
         hasScheduledConversion: !!response.indexConversationAt,
@@ -603,7 +604,7 @@ onMounted(async () => {
       title: response.conversationTitle,
       content: response.conversationBody ?? "",
       isPrivate: !response.isIndexed,
-      requiresLogin: response.isLoginRequired,
+      participationMode: response.participationMode,
       requiresEventTicket: response.requiresEventTicket,
       privateConversationSettings: {
         hasScheduledConversion: !!response.indexConversationAt,

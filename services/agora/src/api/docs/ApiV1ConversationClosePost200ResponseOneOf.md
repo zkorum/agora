@@ -6,6 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **boolean** |  | [default to undefined]
+**reason** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -14,6 +15,7 @@ import { ApiV1ConversationClosePost200ResponseOneOf } from './api';
 
 const instance: ApiV1ConversationClosePost200ResponseOneOf = {
     success,
+    reason,
 };
 ```
 

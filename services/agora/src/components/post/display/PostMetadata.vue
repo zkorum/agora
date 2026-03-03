@@ -5,7 +5,7 @@
         <UserIdentityCard
           :author-verified="authorVerified"
           :created-at="createdAt"
-          :updated-at="updatedAt"
+          :is-edited="isEdited"
           :user-identity="
             props.organizationName == ''
               ? posterUserName
@@ -13,7 +13,7 @@
           "
           :show-verified-text="false"
           :organization-image-url="props.organizationUrl"
-          :is-guest-participation-allowed="!props.isLoginRequired"
+          :participation-mode="props.participationMode"
         />
       </div>
 
@@ -116,6 +116,7 @@ import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
 import { useShareActions } from "src/composables/share/useShareActions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { ParticipationMode } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useUserStore } from "src/stores/user";
@@ -145,11 +146,11 @@ const props = defineProps<{
   posterUserName: string;
   authorUsername: string;
   createdAt: Date;
-  updatedAt: Date;
+  isEdited: boolean;
   postSlugId: string;
   organizationUrl: string;
   organizationName: string;
-  isLoginRequired: boolean;
+  participationMode: ParticipationMode;
   isClosed: boolean;
   compactMode: boolean;
   conversationTitle: string;

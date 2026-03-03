@@ -34,10 +34,10 @@
           />
 
           <ZKGradientButton
+            v-if="credentialUpgradeTarget !== 'strong'"
             :label="t('loginWithEmail')"
-            variant="text"
-            label-color="#6B4EFF"
-            class="email-login-link"
+            gradient-background="#E7E7FF"
+            label-color="#6b4eff"
             @click="goToEmailLogin()"
           />
 
@@ -49,6 +49,7 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import ClusterImageExample from "src/components/onboarding/backgrounds/ClusterImageExample.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
@@ -56,6 +57,7 @@ import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useRouter } from "vue-router";
 
 import {
@@ -66,6 +68,8 @@ import {
 const { t } = useComponentI18n<LoginOnboardingTranslations>(
   loginOnboardingTranslations
 );
+
+const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
 
 const router = useRouter();
 
@@ -81,9 +85,3 @@ async function goToEmailLogin() {
   await router.push({ name: "/onboarding/step3-email-1/" });
 }
 </script>
-
-<style scoped lang="scss">
-.email-login-link {
-  margin-top: -0.75rem;
-}
-</style>

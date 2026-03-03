@@ -1,0 +1,137 @@
+<template>
+  <div class="report-header">
+    <div class="header-top">
+      <div class="branding">Agora Citizen Network</div>
+      <div class="stats-row">
+        <div class="stat-item">
+          <span class="stat-value">{{ participantCount }}</span>
+          <span class="stat-label">{{ t("participants") }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ opinionCount }}</span>
+          <span class="stat-label">{{ t("statements") }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ voteCount }}</span>
+          <span class="stat-label">{{ t("votes") }}</span>
+        </div>
+      </div>
+    </div>
+
+    <h1 class="conversation-title">{{ conversationTitle }}</h1>
+
+    <div class="meta-row">
+      <span v-if="authorUsername">{{ t("by") }} {{ authorUsername }}</span>
+      <span class="separator">·</span>
+      <span>{{ formattedDate }}</span>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { computed } from "vue";
+
+import {
+  type ReportHeaderTranslations,
+  reportHeaderTranslations,
+} from "./ReportHeader.i18n";
+
+const props = defineProps<{
+  conversationTitle: string;
+  authorUsername: string;
+  createdAt: string | Date;
+  participantCount: number;
+  opinionCount: number;
+  voteCount: number;
+}>();
+
+const { t, locale } = useComponentI18n<ReportHeaderTranslations>(
+  reportHeaderTranslations,
+);
+
+const localeMap: Record<string, string> = {
+  en: "en-US",
+  fr: "fr-FR",
+  es: "es-ES",
+  ar: "ar-SA",
+  "zh-Hans": "zh-CN",
+  "zh-Hant": "zh-TW",
+  ja: "ja-JP",
+};
+
+const bcp47Locale = computed(() => localeMap[locale.value] ?? "en-US");
+
+const formattedDate = computed(() => {
+  const date = new Date(props.createdAt);
+  return date.toLocaleDateString(bcp47Locale.value, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+});
+</script>
+
+<style lang="scss" scoped>
+.report-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e9e9f1;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.branding {
+  font-size: 0.75rem;
+  color: #9e9ba5;
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.conversation-title {
+  font-size: 1.4rem;
+  font-weight: var(--font-weight-bold);
+  color: #333238;
+  margin: 0 0 0.375rem 0;
+  line-height: 1.3;
+}
+
+.meta-row {
+  font-size: 0.85rem;
+  color: #6d6a74;
+
+  .separator {
+    margin: 0 0.375rem;
+  }
+}
+
+.stats-row {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-value {
+  font-size: 1rem;
+  font-weight: var(--font-weight-semibold);
+  color: #333238;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: #9e9ba5;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+</style>

@@ -7,6 +7,7 @@
     <MenuItem
       :label="item.label"
       :value="item.value"
+      :value-style="item.valueStyle"
       :style="item.style"
       :show-separator="showSeparator"
       :border-radius="borderRadius"
@@ -21,6 +22,7 @@
     <MenuItem
       :label="item.label"
       :value="item.value"
+      :value-style="item.valueStyle"
       :style="item.style"
       :show-separator="showSeparator"
       :border-radius="borderRadius"

@@ -2,6 +2,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface SignupAgreementTranslations {
   agreementText: string;
+  agreementTextVerify: string;
   termsOfService: string;
   and: string;
   privacyPolicy: string;
@@ -13,42 +14,49 @@ export const signupAgreementTranslations: Record<
 > = {
   en: {
     agreementText: "By logging in, you agree to our",
+    agreementTextVerify: "By verifying, you agree to our",
     termsOfService: "Terms of Service",
     and: "and",
     privacyPolicy: "Privacy Policy",
   },
   ar: {
     agreementText: "بتسجيل الدخول، فإنك توافق على",
+    agreementTextVerify: "بالتحقق، فإنك توافق على",
     termsOfService: "شروط الخدمة",
     and: "و",
     privacyPolicy: "سياسة الخصوصية",
   },
   es: {
     agreementText: "Al iniciar sesión, aceptas nuestros",
+    agreementTextVerify: "Al verificar, aceptas nuestros",
     termsOfService: "Términos de Servicio",
     and: "y",
     privacyPolicy: "Política de Privacidad",
   },
   fr: {
     agreementText: "En vous connectant, vous acceptez nos",
+    agreementTextVerify: "En vérifiant, vous acceptez nos",
     termsOfService: "Conditions d'utilisation",
     and: "et",
     privacyPolicy: "Politique de confidentialité",
   },
   "zh-Hans": {
     agreementText: "登录即表示您同意我们的",
+    agreementTextVerify: "验证即表示您同意我们的",
     termsOfService: "服务条款",
     and: "和",
     privacyPolicy: "隐私政策",
   },
   "zh-Hant": {
     agreementText: "登入即表示您同意我們的",
+    agreementTextVerify: "驗證即表示您同意我們的",
     termsOfService: "服務條款",
     and: "和",
     privacyPolicy: "隱私政策",
   },
   ja: {
     agreementText: "ログインすることで、私たちの",
+    agreementTextVerify: "確認することで、私たちの",
     termsOfService: "サービスの利用規約",
     and: "と",
     privacyPolicy: "プライバシーポリシー",

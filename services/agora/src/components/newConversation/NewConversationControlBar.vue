@@ -40,13 +40,13 @@
   <VisibilityOptionsDialog
     v-model:show-dialog="showVisibilityDialog"
     v-model:is-private="isPrivate"
-    v-model:requires-login="requiresLogin"
+    v-model:participation-mode="participationMode"
     v-model:requires-event-ticket="requiresEventTicket"
   />
 
   <LoginRequirementDialog
     v-model:show-dialog="showLoginRequirementDialog"
-    v-model:requires-login="requiresLogin"
+    v-model:participation-mode="participationMode"
     v-model:is-private="isPrivate"
     v-model:requires-event-ticket="requiresEventTicket"
   />
@@ -59,7 +59,7 @@
   <EventTicketRequirementDialog
     v-model:show-dialog="showEventTicketRequirementDialog"
     v-model:requires-event-ticket="requiresEventTicket"
-    v-model:requires-login="requiresLogin"
+    v-model:participation-mode="participationMode"
     v-model:is-private="isPrivate"
   />
 </template>
@@ -81,7 +81,7 @@ import {
   type PrivateConversationSettings,
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { EventSlug } from "src/shared/types/zod";
+import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { processEnv } from "src/utils/processEnv";
@@ -118,7 +118,9 @@ const { profileData } = storeToRefs(useUserStore());
 // Define models for two-way binding
 const pollEnabled = defineModel<boolean>("pollEnabled", { required: true });
 const isPrivate = defineModel<boolean>("isPrivate", { required: true });
-const requiresLogin = defineModel<boolean>("requiresLogin", { required: true });
+const participationMode = defineModel<ParticipationMode>("participationMode", {
+  required: true,
+});
 const requiresEventTicket = defineModel<EventSlug | undefined>(
   "requiresEventTicket",
   { required: true }
@@ -339,7 +341,12 @@ const controlButtons = computed((): ControlButton[] => [
   },
   {
     id: "login-requirement",
-    label: requiresLogin.value ? t("requiresLogin") : t("guestParticipation"),
+    label:
+      participationMode.value === "strong_verification"
+        ? t("requiresLogin")
+        : participationMode.value === "email_verification"
+          ? t("requiresEmailVerification")
+          : t("guestParticipation"),
     icon: showLoginRequirementDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",

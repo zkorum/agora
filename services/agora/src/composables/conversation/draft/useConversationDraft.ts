@@ -13,7 +13,7 @@ import {
   MAX_LENGTH_OPTION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import type { EventSlug } from "src/shared/types/zod";
+import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { computed, type ComputedRef, type Ref, ref, watch } from "vue";
@@ -50,7 +50,7 @@ export interface UseConversationDraftReturn {
   pollOptions: Ref<string[]>;
   seedOpinions: Ref<string[]>;
   isPrivate: Ref<boolean>;
-  requiresLogin: Ref<boolean>;
+  participationMode: Ref<ParticipationMode>;
   requiresEventTicket: Ref<EventSlug | undefined>;
   privateConversationSettings: Ref<PrivateConversationSettings>;
   postAs: Ref<PostAsSettings>;
@@ -125,7 +125,7 @@ export function useConversationDraft(
   const pollOptions = ref<string[]>([...initialDraft.poll.options]);
   const seedOpinions = ref<string[]>([...initialDraft.seedOpinions]);
   const isPrivate = ref(initialDraft.isPrivate);
-  const requiresLogin = ref(initialDraft.requiresLogin);
+  const participationMode = ref<ParticipationMode>(initialDraft.participationMode);
   const requiresEventTicket = ref<EventSlug | undefined>(
     initialDraft.requiresEventTicket
   );
@@ -157,7 +157,7 @@ export function useConversationDraft(
       pollOptions: [...pollOptions.value],
       seedOpinions: [...seedOpinions.value],
       isPrivate: isPrivate.value,
-      requiresLogin: requiresLogin.value,
+      participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
       privateConversationSettings: { ...privateConversationSettings.value },
       postAs: { ...postAs.value },
@@ -174,7 +174,7 @@ export function useConversationDraft(
         store.conversationDraft.poll.options = newSnapshot.pollOptions;
         store.conversationDraft.seedOpinions = newSnapshot.seedOpinions;
         store.conversationDraft.isPrivate = newSnapshot.isPrivate;
-        store.conversationDraft.requiresLogin = newSnapshot.requiresLogin;
+        store.conversationDraft.participationMode = newSnapshot.participationMode;
         store.conversationDraft.requiresEventTicket =
           newSnapshot.requiresEventTicket;
         store.conversationDraft.privateConversationSettings =
@@ -535,7 +535,7 @@ export function useConversationDraft(
     // Check privacy settings changes
     const hasPrivacyChanges =
       isPrivate.value !== emptyDraft.isPrivate ||
-      requiresLogin.value !== emptyDraft.requiresLogin;
+      participationMode.value !== emptyDraft.participationMode;
 
     // Check private conversation settings changes
     const hasPrivateSettingsChanges =
@@ -585,7 +585,7 @@ export function useConversationDraft(
     pollOptions.value = [...emptyDraft.poll.options];
     seedOpinions.value = [];
     isPrivate.value = emptyDraft.isPrivate;
-    requiresLogin.value = emptyDraft.requiresLogin;
+    participationMode.value = emptyDraft.participationMode;
     requiresEventTicket.value = emptyDraft.requiresEventTicket;
     privateConversationSettings.value = {
       ...emptyDraft.privateConversationSettings,
@@ -609,7 +609,7 @@ export function useConversationDraft(
     pollEnabled.value = data.pollEnabled;
     pollOptions.value = [...data.pollOptions];
     isPrivate.value = data.isPrivate;
-    requiresLogin.value = data.requiresLogin;
+    participationMode.value = data.participationMode;
     requiresEventTicket.value = data.requiresEventTicket;
     privateConversationSettings.value = {
       ...data.privateConversationSettings,
@@ -628,7 +628,7 @@ export function useConversationDraft(
       pollEnabled: pollEnabled.value,
       pollOptions: [...pollOptions.value],
       isPrivate: isPrivate.value,
-      requiresLogin: requiresLogin.value,
+      participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
       privateConversationSettings: {
         ...privateConversationSettings.value,
@@ -664,7 +664,7 @@ export function useConversationDraft(
     pollOptions,
     seedOpinions,
     isPrivate,
-    requiresLogin,
+    participationMode,
     requiresEventTicket,
     privateConversationSettings,
     postAs,

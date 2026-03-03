@@ -34,7 +34,7 @@
               userVotes,
               castVote,
             }"
-            :login-required-to-participate="props.loginRequiredToParticipate"
+            :participation-mode="props.participationMode"
             :requires-event-ticket="props.requiresEventTicket"
             @deleted="(opinionSlugId) => handleOpinionDeleted(opinionSlugId)"
             @muted-comment="handleOpinionMuted()"
@@ -69,7 +69,7 @@ import OpinionNotFoundBanner from "./OpinionNotFoundBanner.vue";
 
 const props = defineProps<{
   postSlugId: string;
-  loginRequiredToParticipate: boolean;
+  participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
   preloadedQueries: {
     commentsDiscoverQuery: UseQueryReturnType<OpinionItem[], Error>;
@@ -88,7 +88,7 @@ const emit = defineEmits<{
   ];
 }>();
 
-import type { EventSlug } from "src/shared/types/zod";
+import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 
 const isComponentMounted = ref(false);
 

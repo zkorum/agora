@@ -66,7 +66,8 @@
       :ok-callback="onLoginCallback"
       active-intention="newOpinion"
       :requires-zupass-event-slug="props.requiresEventTicket"
-      :login-required-to-participate="props.loginRequiredToParticipate"
+      :needs-auth="needsLogin"
+      :participation-mode="props.participationMode"
     />
 
     <OpinionWritingGuidelinesDialog v-model="showGuidelinesDialog" />
@@ -89,7 +90,7 @@ import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import type { EventSlug, ExtendedConversation } from "src/shared/types/zod";
+import type { EventSlug, ExtendedConversation, ParticipationMode } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
@@ -125,7 +126,7 @@ defineOptions({
 
 const props = defineProps<{
   postSlugId: string;
-  loginRequiredToParticipate: boolean;
+  participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
 }>();
 
@@ -154,7 +155,7 @@ const dummyInput = ref<HTMLInputElement>();
 const { saveOpinionDraft, getOpinionDraft, deleteOpinionDraft } =
   useNewOpinionDraftsStore();
 const authStore = useAuthenticationStore();
-const { isLoggedIn } = storeToRefs(authStore);
+const { hasStrongVerification, hasEmailVerification } = storeToRefs(authStore);
 const userStore = useUserStore();
 const { verifiedEventTickets } = storeToRefs(userStore);
 
@@ -189,6 +190,13 @@ const { invalidateConversation } = useInvalidateConversationQuery();
 // Zupass verification
 const { verifyTicket } = useTicketVerificationFlow();
 const { isVerifying: isVerifyingZupass } = useZupassVerification();
+
+// Check if user needs login/verification based on participation mode
+const needsLogin = computed(() => {
+  if (props.participationMode === "strong_verification") return !hasStrongVerification.value;
+  if (props.participationMode === "email_verification") return !hasEmailVerification.value;
+  return false; // guest
+});
 
 // Check if opinion submission is locked due to missing event ticket
 const isOpinionLocked = computed(() => {
@@ -348,11 +356,10 @@ async function onLoginCallback() {
     props.requiresEventTicket
   );
 
-  const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
   const hasZupassRequirement = props.requiresEventTicket !== undefined;
 
   // If user just needs Zupass verification (no login required), trigger it inline
-  if (!needsLogin && hasZupassRequirement) {
+  if (!needsLogin.value && hasZupassRequirement) {
     await handleZupassVerification();
   } else {
     // Otherwise, unlock route so user can navigate to login
@@ -417,11 +424,10 @@ async function handleZupassVerification() {
 }
 
 async function submitPostClicked() {
-  // Check if user needs login or Zupass verification
-  const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
+  // Check if user needs login/verification or Zupass verification
   const needsZupass = isOpinionLocked.value;
 
-  if (needsLogin || needsZupass) {
+  if (needsLogin.value || needsZupass) {
     showLoginDialog.value = true;
   } else {
     isSubmissionLoading.value = true;
@@ -471,6 +477,11 @@ async function submitPostClicked() {
               // Backend says ticket required, but our local state might be stale
               // Refresh user profile to get latest verified tickets, then show dialog
               await userStore.loadUserProfile();
+              showLoginDialog.value = true;
+              break;
+            case "strong_verification_required":
+            case "email_verification_required":
+              // User lacks required verification for this conversation
               showLoginDialog.value = true;
               break;
           }

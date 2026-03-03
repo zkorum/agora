@@ -10,31 +10,31 @@ export const clusterVisualizationTranslations: Record<
   ClusterVisualizationTranslations
 > = {
   en: {
-    groupsTitle: "Groups",
+    groupsTitle: "Opinion groups",
     meLabel: "Me",
   },
   ar: {
-    groupsTitle: "المجموعات",
+    groupsTitle: "مجموعات الرأي",
     meLabel: "أنا",
   },
   es: {
-    groupsTitle: "Grupos",
+    groupsTitle: "Grupos de opinión",
     meLabel: "Yo",
   },
   fr: {
-    groupsTitle: "Groupes",
+    groupsTitle: "Groupes d'opinion",
     meLabel: "Moi",
   },
   "zh-Hans": {
-    groupsTitle: "群组",
+    groupsTitle: "意见群组",
     meLabel: "我",
   },
   "zh-Hant": {
-    groupsTitle: "群組",
+    groupsTitle: "意見群組",
     meLabel: "我",
   },
   ja: {
-    groupsTitle: "グループ",
+    groupsTitle: "意見グループ",
     meLabel: "私",
   },
 };

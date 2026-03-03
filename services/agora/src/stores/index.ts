@@ -94,7 +94,7 @@ function redactLoginStatusCredentials(
         : null,
     rarimo:
       "rarimo" in creds && creds.rarimo !== null
-        ? { nullifier: "[REDACTED_NULLIFIER]" }
+        ? { citizenship: "[REDACTED]", sex: "[REDACTED]" }
         : null,
   };
 }

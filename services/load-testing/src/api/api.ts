@@ -56,7 +56,7 @@ export interface ApiV1AuthAuthenticatePost200ResponseOneOf1 {
 }
 
 export const ApiV1AuthAuthenticatePost200ResponseOneOf1ReasonEnum = {
-    AlreadyLoggedIn: 'already_logged_in',
+    AlreadyHasCredential: 'already_has_credential',
     AssociatedWithAnotherUser: 'associated_with_another_user',
     Throttled: 'throttled',
     InvalidPhoneNumber: 'invalid_phone_number',
@@ -243,13 +243,47 @@ export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf {
     'isKnown': boolean;
     'isRegistered': boolean;
     'isLoggedIn': boolean;
+    'credentials': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentials;
 }
 export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1 {
     'isKnown': boolean;
     'isRegistered': boolean;
     'isLoggedIn': boolean;
     'userId': string;
+    'credentials': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1Credentials;
 }
+export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1Credentials {
+    'email': string | null;
+    'phone': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1CredentialsPhone | null;
+    'rarimo': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1CredentialsRarimo | null;
+}
+export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1CredentialsPhone {
+    'lastTwoDigits': number;
+    'countryCallingCode': string;
+}
+export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1CredentialsRarimo {
+    'citizenship': string;
+    'sex': string;
+}
+export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentials {
+    'email': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsEmailEnum | null;
+    'phone': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsPhoneEnum | null;
+    'rarimo': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsRarimoEnum | null;
+}
+
+export const ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsEmailEnum = {
+} as const;
+
+export type ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsEmailEnum = typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsEmailEnum[keyof typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsEmailEnum];
+export const ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsPhoneEnum = {
+} as const;
+
+export type ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsPhoneEnum = typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsPhoneEnum[keyof typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsPhoneEnum];
+export const ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsRarimoEnum = {
+} as const;
+
+export type ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsRarimoEnum = typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsRarimoEnum[keyof typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsRarimoEnum];
+
 /**
  * @type ApiV1AuthEmailAuthenticatePost200Response
  */
@@ -261,7 +295,7 @@ export interface ApiV1AuthEmailAuthenticatePost200ResponseOneOf {
 }
 
 export const ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum = {
-    AlreadyLoggedIn: 'already_logged_in',
+    AlreadyHasCredential: 'already_has_credential',
     AssociatedWithAnotherUser: 'associated_with_another_user',
     Throttled: 'throttled'
 } as const;
@@ -295,7 +329,7 @@ export const ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1ReasonEnum = {
     ExpiredCode: 'expired_code',
     WrongGuess: 'wrong_guess',
     TooManyWrongGuess: 'too_many_wrong_guess',
-    AlreadyLoggedIn: 'already_logged_in',
+    AlreadyHasCredential: 'already_has_credential',
     AssociatedWithAnotherUser: 'associated_with_another_user',
     AuthStateChanged: 'auth_state_changed'
 } as const;
@@ -514,7 +548,7 @@ export interface ApiV1AuthZkpGenerateVerificationLinkPost200ResponseOneOf1 {
 }
 
 export const ApiV1AuthZkpGenerateVerificationLinkPost200ResponseOneOf1ReasonEnum = {
-    AlreadyLoggedIn: 'already_logged_in',
+    AlreadyHasCredential: 'already_has_credential',
     AssociatedWithAnotherUser: 'associated_with_another_user'
 } as const;
 
@@ -547,7 +581,7 @@ export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoSta
 
 export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum = typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum[keyof typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum];
 export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseReasonEnum = {
-    AlreadyLoggedIn: 'already_logged_in',
+    AlreadyHasCredential: 'already_has_credential',
     AssociatedWithAnotherUser: 'associated_with_another_user'
 } as const;
 
@@ -582,22 +616,19 @@ export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1Rari
 /**
  * @type ApiV1ConversationClosePost200Response
  */
-export type ApiV1ConversationClosePost200Response = ApiV1ConversationClosePost200ResponseOneOf | ApiV1ConversationClosePost200ResponseOneOf1;
+export type ApiV1ConversationClosePost200Response = ApiV1ConversationClosePost200ResponseOneOf | ApiV1PollRespondPost200ResponseOneOf;
 
 export interface ApiV1ConversationClosePost200ResponseOneOf {
     'success': boolean;
-}
-export interface ApiV1ConversationClosePost200ResponseOneOf1 {
-    'success': boolean;
-    'reason': ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum;
+    'reason': ApiV1ConversationClosePost200ResponseOneOfReasonEnum;
 }
 
-export const ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum = {
+export const ApiV1ConversationClosePost200ResponseOneOfReasonEnum = {
     NotAllowed: 'not_allowed',
     AlreadyClosed: 'already_closed'
 } as const;
 
-export type ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum];
+export type ApiV1ConversationClosePost200ResponseOneOfReasonEnum = typeof ApiV1ConversationClosePost200ResponseOneOfReasonEnum[keyof typeof ApiV1ConversationClosePost200ResponseOneOfReasonEnum];
 
 export interface ApiV1ConversationCreatePost200Response {
     'conversationSlugId': string;
@@ -608,12 +639,19 @@ export interface ApiV1ConversationCreatePostRequest {
     'postAsOrganization'?: string;
     'indexConversationAt'?: string;
     'isIndexed': boolean;
-    'isLoginRequired': boolean;
+    'participationMode': ApiV1ConversationCreatePostRequestParticipationModeEnum;
     'pollingOptionList'?: Array<string>;
     'seedOpinionList': Array<string>;
     'requiresEventTicket'?: ApiV1ConversationCreatePostRequestRequiresEventTicketEnum;
 }
 
+export const ApiV1ConversationCreatePostRequestParticipationModeEnum = {
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest'
+} as const;
+
+export type ApiV1ConversationCreatePostRequestParticipationModeEnum = typeof ApiV1ConversationCreatePostRequestParticipationModeEnum[keyof typeof ApiV1ConversationCreatePostRequestParticipationModeEnum];
 export const ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = {
     Devconnect2025: 'devconnect-2025'
 } as const;
@@ -866,20 +904,28 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
 export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata {
     'conversationSlugId': string;
     'createdAt': string;
-    'updatedAt': string;
+    'updatedAt'?: string;
     'lastReactedAt': string;
     'opinionCount': number;
     'voteCount': number;
     'participantCount': number;
     'authorUsername': string;
-    'isLoginRequired': boolean;
+    'participationMode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum;
     'isIndexed': boolean;
     'isClosed': boolean;
+    'isEdited': boolean;
     'organization'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization;
     'moderation': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration;
     'requiresEventTicket'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum;
 }
 
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum = {
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest'
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum];
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum = {
     Devconnect2025: 'devconnect-2025'
 } as const;
@@ -970,7 +1016,7 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
     'conversationBody'?: string;
     'pollingOptionList'?: Array<string>;
     'isIndexed': boolean;
-    'isLoginRequired': boolean;
+    'participationMode': ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum;
     'requiresEventTicket'?: ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum;
     'indexConversationAt'?: string;
     'createdAt': string;
@@ -979,6 +1025,13 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
     'isLocked': boolean;
 }
 
+export const ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum = {
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest'
+} as const;
+
+export type ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum];
 export const ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum = {
     Devconnect2025: 'devconnect-2025'
 } as const;
@@ -1021,10 +1074,17 @@ export interface ApiV1ConversationImportPostRequest {
     'postAsOrganization'?: string;
     'indexConversationAt'?: string;
     'isIndexed': boolean;
-    'isLoginRequired': boolean;
+    'participationMode': ApiV1ConversationImportPostRequestParticipationModeEnum;
     'requiresEventTicket'?: ApiV1ConversationImportPostRequestRequiresEventTicketEnum;
 }
 
+export const ApiV1ConversationImportPostRequestParticipationModeEnum = {
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest'
+} as const;
+
+export type ApiV1ConversationImportPostRequestParticipationModeEnum = typeof ApiV1ConversationImportPostRequestParticipationModeEnum[keyof typeof ApiV1ConversationImportPostRequestParticipationModeEnum];
 export const ApiV1ConversationImportPostRequestRequiresEventTicketEnum = {
     Devconnect2025: 'devconnect-2025'
 } as const;
@@ -1091,7 +1151,7 @@ export interface ApiV1ConversationImportStatusPostRequest {
 /**
  * @type ApiV1ConversationOpenPost200Response
  */
-export type ApiV1ConversationOpenPost200Response = ApiV1ConversationClosePost200ResponseOneOf | ApiV1ConversationOpenPost200ResponseOneOf;
+export type ApiV1ConversationOpenPost200Response = ApiV1ConversationOpenPost200ResponseOneOf | ApiV1PollRespondPost200ResponseOneOf;
 
 export interface ApiV1ConversationOpenPost200ResponseOneOf {
     'success': boolean;
@@ -1108,7 +1168,7 @@ export type ApiV1ConversationOpenPost200ResponseOneOfReasonEnum = typeof ApiV1Co
 /**
  * @type ApiV1ConversationUpdatePost200Response
  */
-export type ApiV1ConversationUpdatePost200Response = ApiV1ConversationClosePost200ResponseOneOf | ApiV1ConversationUpdatePost200ResponseOneOf;
+export type ApiV1ConversationUpdatePost200Response = ApiV1ConversationUpdatePost200ResponseOneOf | ApiV1PollRespondPost200ResponseOneOf;
 
 export interface ApiV1ConversationUpdatePost200ResponseOneOf {
     'success': boolean;
@@ -1135,11 +1195,18 @@ export interface ApiV1ConversationUpdatePostRequest {
     'conversationBody'?: string;
     'pollAction': ApiV1ConversationUpdatePostRequestPollAction;
     'isIndexed': boolean;
-    'isLoginRequired': boolean;
+    'participationMode': ApiV1ConversationUpdatePostRequestParticipationModeEnum;
     'requiresEventTicket'?: ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum;
     'indexConversationAt'?: string;
 }
 
+export const ApiV1ConversationUpdatePostRequestParticipationModeEnum = {
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest'
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestParticipationModeEnum = typeof ApiV1ConversationUpdatePostRequestParticipationModeEnum[keyof typeof ApiV1ConversationUpdatePostRequestParticipationModeEnum];
 export const ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = {
     Devconnect2025: 'devconnect-2025'
 } as const;
@@ -1631,6 +1698,26 @@ export interface ApiV1OpinionFetchHiddenByConversationPostRequest {
     'conversationSlugId': string;
     'createdAt'?: string;
 }
+/**
+ * @type ApiV1PollRespondPost200Response
+ */
+export type ApiV1PollRespondPost200Response = ApiV1PollRespondPost200ResponseOneOf | ApiV1PollRespondPost200ResponseOneOf1;
+
+export interface ApiV1PollRespondPost200ResponseOneOf {
+    'success': boolean;
+}
+export interface ApiV1PollRespondPost200ResponseOneOf1 {
+    'success': boolean;
+    'reason': ApiV1PollRespondPost200ResponseOneOf1ReasonEnum;
+}
+
+export const ApiV1PollRespondPost200ResponseOneOf1ReasonEnum = {
+    StrongVerificationRequired: 'strong_verification_required',
+    EmailVerificationRequired: 'email_verification_required'
+} as const;
+
+export type ApiV1PollRespondPost200ResponseOneOf1ReasonEnum = typeof ApiV1PollRespondPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1PollRespondPost200ResponseOneOf1ReasonEnum];
+
 export interface ApiV1PollRespondPostRequest {
     'voteOptionChoice': number;
     'conversationSlugId': string;
@@ -1931,7 +2018,9 @@ export interface ApiV1VoteCastPost200ResponseOneOf1 {
 export const ApiV1VoteCastPost200ResponseOneOf1ReasonEnum = {
     ConversationLocked: 'conversation_locked',
     ConversationClosed: 'conversation_closed',
-    EventTicketRequired: 'event_ticket_required'
+    EventTicketRequired: 'event_ticket_required',
+    StrongVerificationRequired: 'strong_verification_required',
+    EmailVerificationRequired: 'email_verification_required'
 } as const;
 
 export type ApiV1VoteCastPost200ResponseOneOf1ReasonEnum = typeof ApiV1VoteCastPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1VoteCastPost200ResponseOneOf1ReasonEnum];
@@ -3896,6 +3985,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -5193,7 +5283,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1PollRespondPost(apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async apiV1PollRespondPost(apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1PollRespondPost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1PollRespondPost(apiV1PollRespondPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1PollRespondPost']?.[localVarOperationServerIndex]?.url;
@@ -5884,7 +5974,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1PollRespondPost(apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+        apiV1PollRespondPost(apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1PollRespondPost200Response> {
             return localVarFp.apiV1PollRespondPost(apiV1PollRespondPostRequest, options).then((request) => request(axios, basePath));
         },
         /**

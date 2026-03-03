@@ -1,0 +1,27 @@
+{
+    "name": "@types/eslint__js",
+    "version": "8.42.3",
+    "description": "TypeScript definitions for @eslint/js",
+    "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/eslint__js",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Matt Wilkinson",
+            "githubUsername": "matwilko",
+            "url": "https://github.com/matwilko"
+        }
+    ],
+    "main": "",
+    "types": "index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/eslint__js"
+    },
+    "scripts": {},
+    "dependencies": {
+        "@types/eslint": "*"
+    },
+    "typesPublisherContentHash": "50440df96b971d2888a11ded23bb4fa236598d71ddda2a17ce1319a9fe86d6e0",
+    "typeScriptVersion": "4.5"
+}

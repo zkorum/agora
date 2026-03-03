@@ -8,6 +8,7 @@ export interface NewConversationControlBarTranslations {
   private: string;
   public: string;
   requiresLogin: string;
+  requiresEmailVerification: string;
   guestParticipation: string;
   makePublicNever: string;
   makePublic: string;
@@ -28,7 +29,8 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "New Conversation",
     private: "Private",
     public: "Public",
-    requiresLogin: "Requires login",
+    requiresLogin: "Requires strong verification",
+    requiresEmailVerification: "Requires email verification",
     guestParticipation: "Guest participation",
     makePublicNever: "Make public: Never",
     makePublic: "Make public: {date}",
@@ -44,7 +46,8 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "محادثة جديدة",
     private: "خاص",
     public: "عام",
-    requiresLogin: "يتطلب تسجيل الدخول",
+    requiresLogin: "يتطلب تحققًا قويًا",
+    requiresEmailVerification: "يتطلب التحقق من البريد الإلكتروني",
     guestParticipation: "مشاركة الضيوف",
     makePublicNever: "جعله عامًا: أبدًا",
     makePublic: "جعله عامًا: {date}",
@@ -60,7 +63,8 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "Nueva Conversación",
     private: "Privado",
     public: "Público",
-    requiresLogin: "Requiere inicio de sesión",
+    requiresLogin: "Requiere verificación fuerte",
+    requiresEmailVerification: "Requiere verificación por correo electrónico",
     guestParticipation: "Participación de invitados",
     makePublicNever: "Hacer público: Nunca",
     makePublic: "Hacer público: {date}",
@@ -76,7 +80,8 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "Nouvelle Conversation",
     private: "Privé",
     public: "Public",
-    requiresLogin: "Connexion requise",
+    requiresLogin: "Vérification renforcée requise",
+    requiresEmailVerification: "Vérification par email requise",
     guestParticipation: "Participation d'invités",
     makePublicNever: "Rendre public : Jamais",
     makePublic: "Rendre public : {date}",
@@ -92,7 +97,8 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "新对话",
     private: "私密",
     public: "公开",
-    requiresLogin: "需要登录",
+    requiresLogin: "需要强验证",
+    requiresEmailVerification: "需要邮箱验证",
     guestParticipation: "访客参与",
     makePublicNever: "公开：永不",
     makePublic: "公开：{date}",
@@ -108,7 +114,8 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "新對話",
     private: "私密",
     public: "公開",
-    requiresLogin: "需要登入",
+    requiresLogin: "需要強驗證",
+    requiresEmailVerification: "需要電郵驗證",
     guestParticipation: "訪客參與",
     makePublicNever: "公開：永不",
     makePublic: "公開：{date}",
@@ -124,7 +131,8 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "新しい会話",
     private: "プライベート",
     public: "パブリック",
-    requiresLogin: "ログインが必要",
+    requiresLogin: "強力な認証が必要",
+    requiresEmailVerification: "メール認証が必要",
     guestParticipation: "ゲスト参加",
     makePublicNever: "公開：Never",
     makePublic: "公開：{date}",

@@ -17,6 +17,7 @@ export function useConversationLoginIntentions() {
   function setVotingIntention(eventSlug?: EventSlug) {
     if (
       route.name === "/conversation/[postSlugId]" ||
+      route.name === "/conversation/[postSlugId]/" ||
       route.name === "/conversation/[postSlugId].embed"
     ) {
       const isEmbedView = isEmbeddedMode();
@@ -32,6 +33,7 @@ export function useConversationLoginIntentions() {
   ) {
     if (
       route.name === "/conversation/[postSlugId]" ||
+      route.name === "/conversation/[postSlugId]/" ||
       route.name === "/conversation/[postSlugId].embed"
     ) {
       const isEmbedView = isEmbeddedMode();
@@ -49,6 +51,7 @@ export function useConversationLoginIntentions() {
   function setReportIntention(opinionSlugId: string, eventSlug?: EventSlug) {
     if (
       route.name === "/conversation/[postSlugId]" ||
+      route.name === "/conversation/[postSlugId]/" ||
       route.name === "/conversation/[postSlugId].embed"
     ) {
       const isEmbedView = isEmbeddedMode();

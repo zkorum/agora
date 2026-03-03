@@ -2648,7 +2648,7 @@ const { status, data } = await apiInstance.apiV1OpinionFetchHiddenByConversation
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1PollRespondPost**
-> apiV1PollRespondPost(apiV1PollRespondPostRequest)
+> ApiV1PollRespondPost200Response apiV1PollRespondPost(apiV1PollRespondPostRequest)
 
 
 ### Example
@@ -2679,7 +2679,7 @@ const { status, data } = await apiInstance.apiV1PollRespondPost(
 
 ### Return type
 
-void (empty response body)
+**ApiV1PollRespondPost200Response**
 
 ### Authorization
 
@@ -2688,7 +2688,7 @@ void (empty response body)
 ### HTTP request headers
 
  - **Content-Type**: application/json
- - **Accept**: Not defined
+ - **Accept**: application/json
 
 
 ### HTTP response details

@@ -152,7 +152,20 @@ export function useVoteMutation(postSlugId: string) {
       }
     },
 
-    onSuccess: async (data, variables) => {
+    onSuccess: async (data, variables, context) => {
+      // Rollback optimistic updates when backend rejects the vote
+      if (!data.success) {
+        if (context?.previousUserVotes !== undefined) {
+          queryClient.setQueryData(["userVotes", postSlugId], context.previousUserVotes);
+        }
+        if (context?.previousComments !== undefined) {
+          for (const [queryKey, previousData] of context.previousComments) {
+            queryClient.setQueryData(queryKey, previousData);
+          }
+        }
+        return;
+      }
+
       // If backend confirms user is clustered, track it and mark analysis as stale
       if (data.success && data.userIsClustered === true) {
         // Track in session - this STOPS all future clustering requests

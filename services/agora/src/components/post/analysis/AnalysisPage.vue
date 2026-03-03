@@ -1,7 +1,18 @@
 <template>
   <AsyncStateHandler :query="analysisQuery" :config="asyncStateConfig">
     <div class="container flexStyle">
-      <ShortcutBar v-model="currentTab" />
+      <div class="analysis-header">
+        <ShortcutBar v-model="currentTab" />
+        <button
+          class="report-button"
+          :title="t('generateReport')"
+          :aria-label="t('generateReport')"
+          @click="openReport"
+        >
+          <q-icon name="mdi-file-chart-outline" size="1.2rem" />
+          <span>{{ t("report") }}</span>
+        </button>
+      </div>
 
       <!-- Me tab -->
       <div
@@ -88,7 +99,8 @@ import type {
   PolisKey,
 } from "src/shared/types/zod";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
-import { computed,ref } from "vue";
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
 
 import {
   type AnalysisPageTranslations,
@@ -117,7 +129,16 @@ const { t } = useComponentI18n<AnalysisPageTranslations>(
   analysisPageTranslations
 );
 
+const router = useRouter();
+
 const currentTab = ref<ShortcutItem>("Summary");
+
+function openReport(): void {
+  void router.push({
+    name: "/conversation/[conversationSlugId]/report",
+    params: { conversationSlugId: props.conversationSlugId },
+  });
+}
 
 // Use the passed-in analysis query instead of creating our own
 const analysisQuery = props.analysisQuery;
@@ -217,5 +238,43 @@ defineExpose({
 .tabComponent {
   border-radius: 12px;
   padding: 0.5rem;
+}
+
+.analysis-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.report-button {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.75rem;
+  height: 2rem;
+  border: 1px solid #d8d6de;
+  border-radius: 8px;
+  background: white;
+  color: #6d6a74;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-medium);
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+
+  &:hover {
+    background: #f5f4f8;
+    border-color: #b8b6c0;
+    color: #333238;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 }
 </style>

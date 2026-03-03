@@ -44,8 +44,8 @@
             v-if="currentTab == 'comment'"
             ref="opinionSectionRef"
             :post-slug-id="conversationData.metadata.conversationSlugId"
-            :login-required-to-participate="
-              conversationData.metadata.isLoginRequired
+            :participation-mode="
+              conversationData.metadata.participationMode
             "
             :requires-event-ticket="
               conversationData.metadata.requiresEventTicket
@@ -70,8 +70,8 @@
     <FloatingBottomContainer v-if="!compactMode">
       <CommentComposer
         :post-slug-id="conversationData.metadata.conversationSlugId"
-        :login-required-to-participate="
-          conversationData.metadata.isLoginRequired
+        :participation-mode="
+          conversationData.metadata.participationMode
         "
         :requires-event-ticket="conversationData.metadata.requiresEventTicket"
         @submitted-comment="submittedComment"
