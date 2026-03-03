@@ -50,7 +50,7 @@ const configSchema = sharedConfigSchema.extend({
     AWS_SES_REGION: z.string().default("eu-west-1"),
     EMAIL_FROM_ADDRESS: z
         .email()
-        .default("noreply@notify.agoracitizen.app"),
+        .default("noreply@notify.agoracitizen.network"),
     SPECIALLY_AUTHORIZED_EMAILS: z.string().optional(),
     AUTH_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(10),
     AUTH_RATE_LIMIT_WINDOW_MS: z.coerce
