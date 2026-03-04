@@ -2,7 +2,6 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface AnalysisReportTranslations {
   summary: string;
-  legend: string;
   agreements: string;
   disagreements: string;
   divisive: string;
@@ -23,7 +22,6 @@ export const analysisReportTranslations: Record<
 > = {
   en: {
     summary: "Summary",
-    legend: "Legend",
     agreements: "Approved",
     disagreements: "Rejected",
     divisive: "Divisive",
@@ -39,7 +37,6 @@ export const analysisReportTranslations: Record<
   },
   ar: {
     summary: "ملخص",
-    legend: "دليل الألوان",
     agreements: "معتمدة",
     disagreements: "مرفوضة",
     divisive: "مثير للجدل",
@@ -55,7 +52,6 @@ export const analysisReportTranslations: Record<
   },
   es: {
     summary: "Resumen",
-    legend: "Leyenda",
     agreements: "Aprobados",
     disagreements: "Rechazados",
     divisive: "Divisivo",
@@ -71,7 +67,6 @@ export const analysisReportTranslations: Record<
   },
   fr: {
     summary: "Résumé",
-    legend: "Légende",
     agreements: "Approuvés",
     disagreements: "Rejetés",
     divisive: "Controversé",
@@ -87,7 +82,6 @@ export const analysisReportTranslations: Record<
   },
   "zh-Hans": {
     summary: "摘要",
-    legend: "图例",
     agreements: "通过",
     disagreements: "否决",
     divisive: "分歧",
@@ -103,7 +97,6 @@ export const analysisReportTranslations: Record<
   },
   "zh-Hant": {
     summary: "摘要",
-    legend: "圖例",
     agreements: "通過",
     disagreements: "否決",
     divisive: "分歧",
@@ -119,7 +112,6 @@ export const analysisReportTranslations: Record<
   },
   ja: {
     summary: "概要",
-    legend: "凡例",
     agreements: "承認",
     disagreements: "否決",
     divisive: "分断",

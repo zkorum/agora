@@ -15,14 +15,12 @@ async function captureElement({
   element,
   showCaptureHeaders = false,
   showCaptureFooters = false,
-  showInlineLegends = false,
 }: {
   element: HTMLElement;
   showCaptureHeaders?: boolean;
   showCaptureFooters?: boolean;
-  showInlineLegends?: boolean;
 }): Promise<HTMLCanvasElement> {
-  const needsClone = showCaptureHeaders || showCaptureFooters || showInlineLegends;
+  const needsClone = showCaptureHeaders || showCaptureFooters;
   return html2canvas(element, {
     scale: 2,
     useCORS: true,
@@ -38,11 +36,6 @@ async function captureElement({
           if (showCaptureFooters) {
             clonedDoc.querySelectorAll(".capture-footer").forEach((el) => {
               (el as HTMLElement).style.display = "block";
-            });
-          }
-          if (showInlineLegends) {
-            clonedDoc.querySelectorAll(".export-inline-legend").forEach((el) => {
-              (el as HTMLElement).style.display = "flex";
             });
           }
         }
@@ -95,7 +88,6 @@ export function useReportDownload({
           element: capture.element,
           showCaptureHeaders: true,
           showCaptureFooters: true,
-          showInlineLegends: true,
         });
         const blob = await canvasToBlob({ canvas });
         zip.file(`${capture.name}.jpg`, blob);
@@ -135,7 +127,6 @@ export function useReportDownload({
         const canvas = await captureElement({
           element: captures[i].element,
           showCaptureHeaders: !isFirstPage,
-          showInlineLegends: true,
         });
 
         if (!isFirstPage) pdf.addPage();

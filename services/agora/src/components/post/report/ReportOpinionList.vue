@@ -7,6 +7,8 @@
       <p v-if="subtitle" class="section-subtitle">{{ subtitle }}</p>
     </template>
 
+    <slot name="after-subtitle" />
+
     <div v-if="items.length === 0" class="empty-state">
       {{ emptyMessage ?? t("noItems") }}
     </div>
@@ -157,7 +159,7 @@ function getClusterStats({
 
 .section-title {
   font-size: 1rem;
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-medium);
   color: #333238;
   margin: 0 0 0.25rem 0;
 }
@@ -165,7 +167,7 @@ function getClusterStats({
 .section-subtitle {
   font-size: 0.85rem;
   color: #6d6a74;
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 1rem 0;
   font-weight: normal;
 }
 

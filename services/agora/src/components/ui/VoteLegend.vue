@@ -5,15 +5,17 @@
       :key="index"
       class="vote-legend-entry"
     >
-      <span class="vote-legend-swatch" :style="{ background: item.color }" />
+      <span :class="['vote-legend-swatch', `swatch-${item.type}`]" />
       <span class="vote-legend-label">{{ item.label }}</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+export type VoteLegendType = "agree" | "unsure" | "disagree" | "noVote";
+
 defineProps<{
-  items: Array<{ label: string; color: string }>;
+  items: Array<{ label: string; type: VoteLegendType }>;
 }>();
 </script>
 
@@ -23,7 +25,6 @@ defineProps<{
   flex-wrap: wrap;
   gap: 0.75rem;
   margin: 0.5rem 0;
-
 }
 
 .vote-legend-entry {
@@ -38,6 +39,22 @@ defineProps<{
   height: 8px;
   border-radius: 2px;
   flex-shrink: 0;
+}
+
+.swatch-agree {
+  background: linear-gradient(90deg, var(--sentiment-positive), var(--sentiment-positive-end));
+}
+
+.swatch-unsure {
+  background: var(--sentiment-neutral);
+}
+
+.swatch-disagree {
+  background: linear-gradient(90deg, var(--sentiment-negative), var(--sentiment-negative-end));
+}
+
+.swatch-noVote {
+  background: var(--sentiment-empty);
 }
 
 .vote-legend-label {

@@ -50,7 +50,15 @@
             :current-cluster-tab="currentClusterTab"
             :has-ungrouped-participants="hasUngroupedParticipants"
             :cluster-labels="clusterLabels"
-          />
+          >
+            <template #after-header>
+              <VoteLegend
+                v-if="Object.keys(props.clusters).length > 1"
+                :items="analysisLegendItems"
+
+              />
+            </template>
+          </OpinionGroupComments>
         </template>
       </template>
     </AnalysisSectionWrapper>
@@ -61,6 +69,11 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import {
+  type VoteLegendTranslations,
+  voteLegendTranslations,
+} from "src/components/ui/VoteLegend.i18n";
+import VoteLegend from "src/components/ui/VoteLegend.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import { useNavigationStore } from "src/stores/navigation";
@@ -113,6 +126,17 @@ const hasAiLabels = computed(() =>
   Object.values(props.clusters).some((cluster) => Boolean(cluster?.aiLabel)),
 );
 
+const { t: tLegend } = useComponentI18n<VoteLegendTranslations>(
+  voteLegendTranslations
+);
+
+const analysisLegendItems = computed(() => [
+  { label: tLegend("agree"), type: "agree" as const },
+  { label: tLegend("unsure"), type: "unsure" as const },
+  { label: tLegend("disagree"), type: "disagree" as const },
+  { label: tLegend("noVote"), type: "noVote" as const },
+]);
+
 const currentClusterTab = ref<PolisKey>("0");
 const showClusterInformation = ref(false);
 
@@ -142,4 +166,5 @@ const clusterLabels = computed(() => {
   margin: 0 0 0.5rem 0;
   font-weight: normal;
 }
+
 </style>

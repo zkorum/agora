@@ -76,6 +76,19 @@ $sentiment-negative-text: #a05e03;      // darker orange for readable text
 $sentiment-mixed: #b58091;               // pink (divisive/mixed)
 $sentiment-empty: #e9e9f1;             // light gray (no vote)
 
+// CSS custom properties — expose SCSS sentiment colors at runtime so they can
+// be used in :style bindings and component props (SCSS vars are compile-time only).
+:root {
+  --sentiment-positive: #{$sentiment-positive};
+  --sentiment-positive-end: #{$sentiment-positive-end};
+  --sentiment-neutral: #{$sentiment-neutral};
+  --sentiment-negative: #{$sentiment-negative};
+  --sentiment-negative-end: #{$sentiment-negative-end};
+  --sentiment-negative-text: #{$sentiment-negative-text};
+  --sentiment-mixed: #{$sentiment-mixed};
+  --sentiment-empty: #{$sentiment-empty};
+}
+
 .text-button-disagree-background-unselected {
   color: #ffefd7;
 }

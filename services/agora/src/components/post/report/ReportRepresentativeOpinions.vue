@@ -23,6 +23,8 @@
       </h2>
       <p class="group-subtitle">{{ t("groupSubtitle") }}</p>
 
+      <slot name="after-subtitle" />
+
       <table class="opinion-table">
         <thead>
           <tr>
@@ -180,7 +182,7 @@ function getClusterStats({
 
 .section-title {
   font-size: 1rem;
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-medium);
   color: #333238;
   margin: 0 0 0.25rem 0;
 }
@@ -210,7 +212,7 @@ function getClusterStats({
 .group-subtitle {
   font-size: 0.85rem;
   color: #6d6a74;
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 1rem 0;
   font-weight: normal;
 }
 

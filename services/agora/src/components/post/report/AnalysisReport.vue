@@ -47,18 +47,6 @@
       <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
     </div>
 
-    <!-- Legend section: own page in PDF, excluded from JPG -->
-    <div ref="legendRef" class="report-section-block">
-      <div class="detail-context capture-only">
-        <span class="detail-branding">Agora Citizen Network</span>
-        <span class="detail-separator">·</span>
-        <span class="detail-title">{{ conversationTitle }}</span>
-      </div>
-      <h2 class="section-title">{{ t('legend') }}</h2>
-      <VoteLegend :items="reportLegendItems" />
-      <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
-    </div>
-
     <!-- Representative opinions: always one capture per group -->
     <template v-if="clusterCount >= 2">
       <div
@@ -76,8 +64,11 @@
           :clusters="clusters"
           :total-participant-count="participantCount"
           :single-cluster-key="key"
-        />
-        <VoteLegend :items="reportLegendItems" class="export-inline-legend" />
+        >
+          <template #after-subtitle>
+            <VoteLegend :items="reportLegendItems" style="margin-bottom: 0.75rem" />
+          </template>
+        </ReportRepresentativeOpinions>
         <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
       </div>
     </template>
@@ -93,18 +84,17 @@
         <span class="detail-separator">·</span>
         <span class="detail-title">{{ conversationTitle }}</span>
         <span class="detail-separator">·</span>
-        <span class="detail-section-name" :style="{ color: SENTIMENT_POSITIVE }">{{ t('agreements') }}</span>
+        <span class="detail-section-name" :style="{ color: 'var(--sentiment-positive)' }">{{ t('agreements') }}</span>
       </div>
       <ReportOpinionList
         :title="t('agreementsLong')"
         :subtitle="t('agreementsSubtitle')"
-        :title-color="SENTIMENT_POSITIVE"
+        title-color="var(--sentiment-positive)"
         :items="[]"
         :clusters="clusters"
         :total-participants="participantCount"
         :empty-message="t('noAgreementsMessage')"
       />
-      <VoteLegend :items="reportLegendItems" class="export-inline-legend" />
       <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
     </div>
     <div
@@ -119,24 +109,27 @@
         <span class="detail-title">{{ conversationTitle }}</span>
         <template v-if="agreementChunks.length > 1">
           <span class="detail-separator">·</span>
-          <span class="detail-section-name" :style="{ color: SENTIMENT_POSITIVE }">{{ t('agreements') }} ({{ chunkIdx + 1 }}/{{ agreementChunks.length }})</span>
+          <span class="detail-section-name" :style="{ color: 'var(--sentiment-positive)' }">{{ t('agreements') }} ({{ chunkIdx + 1 }}/{{ agreementChunks.length }})</span>
         </template>
         <template v-else>
           <span class="detail-separator">·</span>
-          <span class="detail-section-name" :style="{ color: SENTIMENT_POSITIVE }">{{ t('agreements') }}</span>
+          <span class="detail-section-name" :style="{ color: 'var(--sentiment-positive)' }">{{ t('agreements') }}</span>
         </template>
       </div>
       <ReportOpinionList
         :title="t('agreementsLong')"
         :subtitle="t('agreementsSubtitle')"
-        :title-color="SENTIMENT_POSITIVE"
+        title-color="var(--sentiment-positive)"
         :items="chunk"
         :clusters="clusters"
         :total-participants="participantCount"
         :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="chunkIdx > 0"
-      />
-      <VoteLegend :items="reportLegendItems" class="export-inline-legend" />
+      >
+        <template #after-subtitle>
+          <VoteLegend :items="reportLegendItems" style="margin-bottom: 0.75rem" />
+        </template>
+      </ReportOpinionList>
       <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
     </div>
 
@@ -150,18 +143,17 @@
         <span class="detail-separator">·</span>
         <span class="detail-title">{{ conversationTitle }}</span>
         <span class="detail-separator">·</span>
-        <span class="detail-section-name" :style="{ color: SENTIMENT_NEGATIVE_TEXT }">{{ t('disagreements') }}</span>
+        <span class="detail-section-name" :style="{ color: 'var(--sentiment-negative-text)' }">{{ t('disagreements') }}</span>
       </div>
       <ReportOpinionList
         :title="t('disagreementsLong')"
         :subtitle="t('disagreementsSubtitle')"
-        :title-color="SENTIMENT_NEGATIVE_TEXT"
+        title-color="var(--sentiment-negative-text)"
         :items="[]"
         :clusters="clusters"
         :total-participants="participantCount"
         :empty-message="t('noDisagreementsMessage')"
       />
-      <VoteLegend :items="reportLegendItems" class="export-inline-legend" />
       <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
     </div>
     <div
@@ -176,24 +168,27 @@
         <span class="detail-title">{{ conversationTitle }}</span>
         <template v-if="disagreementChunks.length > 1">
           <span class="detail-separator">·</span>
-          <span class="detail-section-name" :style="{ color: SENTIMENT_NEGATIVE_TEXT }">{{ t('disagreements') }} ({{ chunkIdx + 1 }}/{{ disagreementChunks.length }})</span>
+          <span class="detail-section-name" :style="{ color: 'var(--sentiment-negative-text)' }">{{ t('disagreements') }} ({{ chunkIdx + 1 }}/{{ disagreementChunks.length }})</span>
         </template>
         <template v-else>
           <span class="detail-separator">·</span>
-          <span class="detail-section-name" :style="{ color: SENTIMENT_NEGATIVE_TEXT }">{{ t('disagreements') }}</span>
+          <span class="detail-section-name" :style="{ color: 'var(--sentiment-negative-text)' }">{{ t('disagreements') }}</span>
         </template>
       </div>
       <ReportOpinionList
         :title="t('disagreementsLong')"
         :subtitle="t('disagreementsSubtitle')"
-        :title-color="SENTIMENT_NEGATIVE_TEXT"
+        title-color="var(--sentiment-negative-text)"
         :items="chunk"
         :clusters="clusters"
         :total-participants="participantCount"
         :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="chunkIdx > 0"
-      />
-      <VoteLegend :items="reportLegendItems" class="export-inline-legend" />
+      >
+        <template #after-subtitle>
+          <VoteLegend :items="reportLegendItems" style="margin-bottom: 0.75rem" />
+        </template>
+      </ReportOpinionList>
       <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
     </div>
 
@@ -207,18 +202,17 @@
         <span class="detail-separator">·</span>
         <span class="detail-title">{{ conversationTitle }}</span>
         <span class="detail-separator">·</span>
-        <span class="detail-section-name" :style="{ color: SENTIMENT_MIXED }">{{ t('divisive') }}</span>
+        <span class="detail-section-name" :style="{ color: 'var(--sentiment-mixed)' }">{{ t('divisive') }}</span>
       </div>
       <ReportOpinionList
         :title="t('divisiveLong')"
         :subtitle="t('divisiveSubtitle')"
-        :title-color="SENTIMENT_MIXED"
+        title-color="var(--sentiment-mixed)"
         :items="[]"
         :clusters="clusters"
         :total-participants="participantCount"
         :empty-message="t('noDivisiveMessage')"
       />
-      <VoteLegend :items="reportLegendItems" class="export-inline-legend" />
       <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
     </div>
     <div
@@ -233,24 +227,27 @@
         <span class="detail-title">{{ conversationTitle }}</span>
         <template v-if="divisiveChunks.length > 1">
           <span class="detail-separator">·</span>
-          <span class="detail-section-name" :style="{ color: SENTIMENT_MIXED }">{{ t('divisive') }} ({{ chunkIdx + 1 }}/{{ divisiveChunks.length }})</span>
+          <span class="detail-section-name" :style="{ color: 'var(--sentiment-mixed)' }">{{ t('divisive') }} ({{ chunkIdx + 1 }}/{{ divisiveChunks.length }})</span>
         </template>
         <template v-else>
           <span class="detail-separator">·</span>
-          <span class="detail-section-name" :style="{ color: SENTIMENT_MIXED }">{{ t('divisive') }}</span>
+          <span class="detail-section-name" :style="{ color: 'var(--sentiment-mixed)' }">{{ t('divisive') }}</span>
         </template>
       </div>
       <ReportOpinionList
         :title="t('divisiveLong')"
         :subtitle="t('divisiveSubtitle')"
-        :title-color="SENTIMENT_MIXED"
+        title-color="var(--sentiment-mixed)"
         :items="chunk"
         :clusters="clusters"
         :total-participants="participantCount"
         :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="chunkIdx > 0"
-      />
-      <VoteLegend :items="reportLegendItems" class="export-inline-legend" />
+      >
+        <template #after-subtitle>
+          <VoteLegend :items="reportLegendItems" style="margin-bottom: 0.75rem" />
+        </template>
+      </ReportOpinionList>
       <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
     </div>
 
@@ -273,14 +270,6 @@ import VoteLegend from "src/components/ui/VoteLegend.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { AnalysisOpinionItem, PolisClusters, PolisKey } from "src/shared/types/zod";
 import { REPORT_ITEMS_PER_CAPTURE_PAGE } from "src/utils/component/report/reportData";
-import {
-  SENTIMENT_EMPTY,
-  SENTIMENT_MIXED,
-  SENTIMENT_NEGATIVE,
-  SENTIMENT_NEGATIVE_TEXT,
-  SENTIMENT_NEUTRAL,
-  SENTIMENT_POSITIVE,
-} from "src/utils/component/report/sentimentColors";
 import { computed, type Ref, ref } from "vue";
 
 import {
@@ -321,10 +310,10 @@ const { t: tLegend } = useComponentI18n<VoteLegendTranslations>(
 );
 
 const reportLegendItems = computed(() => [
-  { label: tLegend("agree"), color: SENTIMENT_POSITIVE },
-  { label: tLegend("unsure"), color: SENTIMENT_NEUTRAL },
-  { label: tLegend("disagree"), color: SENTIMENT_NEGATIVE },
-  { label: tLegend("noVote"), color: SENTIMENT_EMPTY },
+  { label: tLegend("agree"), type: "agree" as const },
+  { label: tLegend("unsure"), type: "unsure" as const },
+  { label: tLegend("disagree"), type: "disagree" as const },
+  { label: tLegend("noVote"), type: "noVote" as const },
 ]);
 
 const defaultClusterTab = computed<PolisKey>(() => {
@@ -358,7 +347,6 @@ const divisiveChunks = computed(() =>
 
 const summaryRef = ref<HTMLElement | null>(null);
 const groupsTableRef = ref<HTMLElement | null>(null);
-const legendRef = ref<HTMLElement | null>(null);
 const footerRef = ref<HTMLElement | null>(null);
 
 // Empty state refs
@@ -391,7 +379,6 @@ const setDivisiveRef = createRefSetter(divisiveRefs);
 defineExpose({
   summaryRef,
   groupsTableRef,
-  legendRef,
   groupsAndRepresentativeRefs,
   agreementEmptyRef,
   disagreementEmptyRef,
@@ -462,16 +449,8 @@ defineExpose({
   pointer-events: none;
 }
 
-.section-title {
-  font-size: 1rem;
-  font-weight: var(--font-weight-semibold);
-  color: #333238;
-  margin: 0 0 0.25rem 0;
-}
-
 .capture-footer,
-.capture-only,
-.export-inline-legend {
+.capture-only {
   display: none;
 }
 </style>

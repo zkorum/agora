@@ -34,7 +34,7 @@
         </div>
 
         <VoteLegend
-          v-if="!compactMode && itemList.length > 0 && Object.keys(clusters).length > 1"
+          v-if="itemList.length > 0 && Object.keys(clusters).length > 1"
           :items="analysisLegendItems"
         />
 
@@ -161,10 +161,10 @@ const { t: tLegend } = useComponentI18n<VoteLegendTranslations>(
 );
 
 const analysisLegendItems = computed(() => [
-  { label: tLegend("agree"), color: "linear-gradient(90deg, #6b4eff, #4f92f6)" },
-  { label: tLegend("unsure"), color: "#cdcbd3" },
-  { label: tLegend("disagree"), color: "linear-gradient(90deg, #ffb323, #ffdd1c)" },
-  { label: tLegend("noVote"), color: "#e9e9f1" },
+  { label: tLegend("agree"), type: "agree" as const },
+  { label: tLegend("unsure"), type: "unsure" as const },
+  { label: tLegend("disagree"), type: "disagree" as const },
+  { label: tLegend("noVote"), type: "noVote" as const },
 ]);
 
 const isSmallScreen = useMediaQuery("(max-width: 599px)");
