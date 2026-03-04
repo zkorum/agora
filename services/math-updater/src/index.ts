@@ -219,8 +219,14 @@ async function main() {
 
     const boss = new PgBoss(pgBossConfig);
 
+    let pgBossErrorCount = 0;
+
     boss.on("error", (error) => {
-        log.error(error, "[Math Updater] pg-boss error");
+        pgBossErrorCount++;
+        log.error(
+            error,
+            `[Math Updater] pg-boss error (#${String(pgBossErrorCount)})`,
+        );
     });
 
     await boss.start();
@@ -350,11 +356,15 @@ async function main() {
     // If worker hasn't been called in 30s AND there are pending jobs, something is wrong
     const WATCHDOG_INTERVAL_MS = 15000; // Check every 15 seconds
     const WATCHDOG_TIMEOUT_MS = 30000; // Worker should be called at least every 30s if jobs exist
+    const WATCHDOG_MAX_CONSECUTIVE_FAILURES = 3; // Exit after 3 failed ticks (45s)
+
+    let watchdogConsecutiveFailures = 0;
 
     const watchdogIntervalId = setInterval(() => {
         void (async () => {
             try {
                 const queues = await boss.getQueues();
+                watchdogConsecutiveFailures = 0;
                 const ourQueue = queues.find(
                     (q) => q.name === "update-conversation-math",
                 );
@@ -452,7 +462,20 @@ async function main() {
                     }
                 }
             } catch (error) {
-                log.error({ error }, "[Math Updater] Watchdog error");
+                watchdogConsecutiveFailures++;
+                log.error(
+                    { error, consecutiveFailures: watchdogConsecutiveFailures },
+                    `[Math Updater] Watchdog error (${String(watchdogConsecutiveFailures)}/${String(WATCHDOG_MAX_CONSECUTIVE_FAILURES)})`,
+                );
+                if (
+                    watchdogConsecutiveFailures >=
+                    WATCHDOG_MAX_CONSECUTIVE_FAILURES
+                ) {
+                    log.error(
+                        "[Math Updater] Watchdog: Persistent failure detected, exiting for container restart",
+                    );
+                    process.exit(1);
+                }
             }
         })();
     }, WATCHDOG_INTERVAL_MS);
@@ -473,7 +496,39 @@ async function main() {
     process.on("SIGHUP", () => void shutdown());
 }
 
-main().catch((error: unknown) => {
-    log.error(error, "[Math Updater] Fatal error during startup");
+async function startWithRetry(): Promise<void> {
+    const MAX_STARTUP_RETRIES = 10;
+    const INITIAL_BACKOFF_MS = 2000;
+    const MAX_BACKOFF_MS = 60000;
+
+    for (let attempt = 1; attempt <= MAX_STARTUP_RETRIES; attempt++) {
+        try {
+            await main();
+            return;
+        } catch (error: unknown) {
+            if (attempt >= MAX_STARTUP_RETRIES) {
+                log.error(
+                    error,
+                    `[Math Updater] Fatal error during startup after ${String(MAX_STARTUP_RETRIES)} attempts`,
+                );
+                process.exit(1);
+            }
+            const backoffMs = Math.min(
+                INITIAL_BACKOFF_MS * Math.pow(2, attempt - 1),
+                MAX_BACKOFF_MS,
+            );
+            log.warn(
+                error,
+                `[Math Updater] Startup failed (attempt ${String(attempt)}/${String(MAX_STARTUP_RETRIES)}), retrying in ${String(backoffMs)}ms...`,
+            );
+            await new Promise<void>((resolve) =>
+                setTimeout(resolve, backoffMs),
+            );
+        }
+    }
+}
+
+startWithRetry().catch((error: unknown) => {
+    log.error(error, "[Math Updater] Unexpected error in startWithRetry");
     process.exit(1);
 });
