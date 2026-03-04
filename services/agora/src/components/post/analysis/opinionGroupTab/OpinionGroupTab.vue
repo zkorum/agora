@@ -16,6 +16,9 @@
       </template>
 
       <template #body>
+        <p v-if="!compactMode" class="groups-subtitle">
+          {{ hasAiLabels ? t('groupsSubtitle') : t('groupsSubtitleNoAi') }}
+        </p>
         <EmptyStateMessage
           v-if="Object.keys(props.clusters).length <= 1"
           :message="t('notEnoughGroupsMessage')"
@@ -77,11 +80,17 @@ import {
   opinionGroupTabTranslations,
 } from "./OpinionGroupTab.i18n";
 
-const props = defineProps<{
-  conversationSlugId: string;
-  clusters: Partial<PolisClusters>;
-  totalParticipantCount: number;
-}>();
+const props = withDefaults(
+  defineProps<{
+    conversationSlugId: string;
+    clusters: Partial<PolisClusters>;
+    totalParticipantCount: number;
+    compactMode?: boolean;
+  }>(),
+  {
+    compactMode: false,
+  },
+);
 
 const { t } = useComponentI18n<OpinionGroupTabTranslations>(
   opinionGroupTabTranslations
@@ -99,6 +108,10 @@ const hasUngroupedParticipants = computed(() => {
   );
   return props.totalParticipantCount > totalGroupParticipants;
 });
+
+const hasAiLabels = computed(() =>
+  Object.values(props.clusters).some((cluster) => Boolean(cluster?.aiLabel)),
+);
 
 const currentClusterTab = ref<PolisKey>("0");
 const showClusterInformation = ref(false);
@@ -121,3 +134,12 @@ const clusterLabels = computed(() => {
   return labels;
 });
 </script>
+
+<style lang="scss" scoped>
+.groups-subtitle {
+  font-size: 0.85rem;
+  color: #6d6a74;
+  margin: 0 0 0.5rem 0;
+  font-weight: normal;
+}
+</style>

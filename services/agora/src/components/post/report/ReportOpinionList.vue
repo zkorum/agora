@@ -8,7 +8,7 @@
     </template>
 
     <div v-if="items.length === 0" class="empty-state">
-      {{ t("noItems") }}
+      {{ emptyMessage ?? t("noItems") }}
     </div>
 
     <table v-else class="opinion-table">
@@ -109,11 +109,13 @@ const props = withDefaults(
     totalParticipants: number;
     startRank?: number;
     hideTitle?: boolean;
+    emptyMessage?: string;
   }>(),
   {
     subtitle: undefined,
     startRank: 0,
     hideTitle: false,
+    emptyMessage: undefined,
   },
 );
 
@@ -163,7 +165,7 @@ function getClusterStats({
 .section-subtitle {
   font-size: 0.85rem;
   color: #6d6a74;
-  margin: 0 0 1.25rem 0;
+  margin: 0 0 0.75rem 0;
   font-weight: normal;
 }
 

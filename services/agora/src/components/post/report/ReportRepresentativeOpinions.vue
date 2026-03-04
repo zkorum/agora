@@ -7,7 +7,7 @@
       :key="entry.key"
       class="group-section"
     >
-      <div class="group-header">
+      <h2 class="section-title">
         <span class="group-name">
           <template v-if="useLetterCodes">
             {{ formatClusterLabel(entry.key, false) }}<template v-if="entry.cluster.aiLabel"> · {{ entry.cluster.aiLabel }}</template>
@@ -20,7 +20,7 @@
           — {{ entry.cluster.numUsers }} {{ t("participants") }}
           ({{ formatPercentage(calculatePercentage(entry.cluster.numUsers, totalParticipantCount)) }})
         </span>
-      </div>
+      </h2>
       <p class="group-subtitle">{{ t("groupSubtitle") }}</p>
 
       <table class="opinion-table">
@@ -174,37 +174,29 @@ function getClusterStats({
 
 <style lang="scss" scoped>
 .report-section {
-  margin-top: 2rem;
   page-break-inside: avoid;
   break-inside: avoid;
 }
 
 .section-title {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: var(--font-weight-semibold);
   color: #333238;
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e9e9f1;
+  margin: 0 0 0.25rem 0;
 }
 
 .empty-state {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #9e9ba5;
   font-style: italic;
-  padding: 1rem 0;
+  padding: 0.5rem 0;
 }
 
 .group-section {
   margin-bottom: 1.5rem;
 }
 
-.group-header {
-  margin-bottom: 0.25rem;
-}
-
 .group-name {
-  font-size: 0.95rem;
   font-weight: var(--font-weight-semibold);
   color: #333238;
 }
@@ -212,13 +204,14 @@ function getClusterStats({
 .group-meta {
   font-size: 0.85rem;
   color: #6d6a74;
+  font-weight: normal;
 }
 
 .group-subtitle {
-  font-size: 0.8rem;
-  color: #9e9ba5;
+  font-size: 0.85rem;
+  color: #6d6a74;
   margin: 0 0 0.75rem 0;
-  font-style: italic;
+  font-weight: normal;
 }
 
 .opinion-table {

@@ -33,6 +33,11 @@
           {{ props.direction === "agree" ? t("subtitleAgree") : t("subtitleDisagree") }}
         </div>
 
+        <VoteLegend
+          v-if="!compactMode && itemList.length > 0 && Object.keys(clusters).length > 1"
+          :items="analysisLegendItems"
+        />
+
         <EmptyStateMessage
           v-if="
             props.itemList.length === 0 ||
@@ -105,6 +110,11 @@
 
 <script setup lang="ts">
 import { useMediaQuery } from "@vueuse/core";
+import {
+  type VoteLegendTranslations,
+  voteLegendTranslations,
+} from "src/components/ui/VoteLegend.i18n";
+import VoteLegend from "src/components/ui/VoteLegend.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
@@ -149,6 +159,17 @@ const { t } = useComponentI18n<ConsensusTabTranslations>(
 const { t: tWarning } = useComponentI18n<LoadMoreWarningDialogTranslations>(
   loadMoreWarningDialogTranslations
 );
+
+const { t: tLegend } = useComponentI18n<VoteLegendTranslations>(
+  voteLegendTranslations
+);
+
+const analysisLegendItems = computed(() => [
+  { label: tLegend("agree"), color: "linear-gradient(90deg, #6b4eff, #4f92f6)" },
+  { label: tLegend("unsure"), color: "#cdcbd3" },
+  { label: tLegend("disagree"), color: "linear-gradient(90deg, #ffb323, #ffdd1c)" },
+  { label: tLegend("noVote"), color: "#e9e9f1" },
+]);
 
 const isSmallScreen = useMediaQuery("(max-width: 599px)");
 const keywordColor = computed(() =>
