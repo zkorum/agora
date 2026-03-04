@@ -142,7 +142,7 @@
         <!-- Delete Button (Moderator Only) -->
         <div
           v-if="
-            isModerator && exportStatusQuery.data.value.status !== 'expired'
+            isSiteModerator && exportStatusQuery.data.value.status !== 'expired'
           "
           class="delete-section"
         >
@@ -276,7 +276,7 @@ const exportStatusQuery = useExportStatusQuery({
 
 const deleteExportMutation = useDeleteExportMutation();
 
-const isModerator = computed(() => profileData.value.isModerator);
+const isSiteModerator = computed(() => profileData.value.isSiteModerator);
 
 function handleDeleteExport(): void {
   const exportData = exportStatusQuery.data.value;

@@ -441,7 +441,8 @@ export class Dto {
             activePostCount: z.number().gte(0),
             createdAt: z.date(),
             username: zodUsername,
-            isModerator: z.boolean(),
+            isSiteModerator: z.boolean(),
+            isSiteOrgAdmin: z.boolean(),
             organizationList: z.array(zodOrganization),
             verifiedEventTickets: z.array(zodEventSlug), // User's verified event tickets (always returned by backend)
         })

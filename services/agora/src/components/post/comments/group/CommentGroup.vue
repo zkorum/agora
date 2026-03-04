@@ -43,6 +43,8 @@
       <CommentItem
         :comment-item="commentItem"
         :post-slug-id="postSlugId"
+        :conversation-author-username="conversationAuthorUsername"
+        :conversation-organization-name="conversationOrganizationName"
         :voting-utilities="votingUtilities"
         :participation-mode="participationMode"
         :requires-event-ticket="props.requiresEventTicket"
@@ -65,6 +67,8 @@ import CommentItem from "./item/CommentItem.vue";
 const props = defineProps<{
   commentItemList: OpinionItem[];
   postSlugId: string;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
   highlightedOpinion?: OpinionItem | null;
   votingUtilities: OpinionVotingUtilities;
   participationMode: ParticipationMode;

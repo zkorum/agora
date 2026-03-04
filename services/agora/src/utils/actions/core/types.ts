@@ -15,7 +15,9 @@ export interface BaseContentAction {
 // Context for determining available content actions
 export interface ContentActionContext {
   isOwner: boolean;
-  isModerator: boolean;
+  isSiteModerator: boolean;
+  isConversationOwner: boolean;
+  isOrgMember: boolean;
   isLoggedIn: boolean;
   isEmbeddedMode: boolean;
   targetType: "post" | "comment";

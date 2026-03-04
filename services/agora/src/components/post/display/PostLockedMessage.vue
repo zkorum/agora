@@ -29,7 +29,7 @@
         />
 
         <ZKButton
-          v-if="profileData.isModerator"
+          v-if="profileData.isSiteModerator"
           button-type="largeButton"
           :label="t('editButton')"
           color="primary"

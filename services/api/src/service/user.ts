@@ -340,7 +340,8 @@ export async function getUserProfile({
                 activePostCount: userTable.activeConversationCount,
                 createdAt: userTable.createdAt,
                 username: userTable.username,
-                isModerator: userTable.isModerator,
+                isSiteModerator: userTable.isSiteModerator,
+                isSiteOrgAdmin: userTable.isSiteOrgAdmin,
             })
             .from(userTable)
             .where(eq(userTable.id, userId));
@@ -375,7 +376,8 @@ export async function getUserProfile({
                 activePostCount: userTableResponse[0].activePostCount,
                 createdAt: userTableResponse[0].createdAt,
                 username: userTableResponse[0].username,
-                isModerator: userTableResponse[0].isModerator,
+                isSiteModerator: userTableResponse[0].isSiteModerator,
+                isSiteOrgAdmin: userTableResponse[0].isSiteOrgAdmin,
                 organizationList: organizationNamesResponse.organizationList,
                 verifiedEventTickets: verifiedEventTickets,
             };

@@ -18,7 +18,8 @@ export const useUserStore = defineStore("user", () => {
     userName: string;
     userPostList: ExtendedConversation[];
     userCommentList: ExtendedOpinion[];
-    isModerator: boolean;
+    isSiteModerator: boolean;
+    isSiteOrgAdmin: boolean;
     dataLoaded: boolean;
     organizationList: OrganizationProperties[];
     verifiedEventTickets: EventSlug[];
@@ -30,7 +31,8 @@ export const useUserStore = defineStore("user", () => {
     userName: "",
     userPostList: [],
     userCommentList: [],
-    isModerator: false,
+    isSiteModerator: false,
+    isSiteOrgAdmin: false,
     dataLoaded: false,
     organizationList: [],
     verifiedEventTickets: [],
@@ -56,7 +58,8 @@ export const useUserStore = defineStore("user", () => {
         userName: String(userProfile.username),
         userPostList: userPosts ?? [],
         userCommentList: userComments ?? [],
-        isModerator: userProfile.isModerator,
+        isSiteModerator: userProfile.isSiteModerator,
+        isSiteOrgAdmin: userProfile.isSiteOrgAdmin,
         dataLoaded: true,
         organizationList: userProfile.organizationList,
         verifiedEventTickets: userProfile.verifiedEventTickets,

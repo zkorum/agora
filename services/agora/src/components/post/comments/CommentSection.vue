@@ -22,6 +22,8 @@
           <CommentGroup
             :comment-item-list="visibleOpinions"
             :post-slug-id="postSlugId"
+            :conversation-author-username="conversationAuthorUsername"
+            :conversation-organization-name="conversationOrganizationName"
             :highlighted-opinion="targetOpinion"
             :voting-utilities="{
               userVotes,
@@ -64,6 +66,8 @@ import CommentSortingSelector from "./group/CommentSortingSelector.vue";
 
 const props = defineProps<{
   postSlugId: string;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
   preloadedQueries: {
@@ -128,7 +132,7 @@ const {
     if (opinion.moderation.action === "move") {
       currentFilter.value = "moderated";
     } else if (opinion.moderation.action === "hide") {
-      if (profileData.value.isModerator) {
+      if (profileData.value.isSiteModerator) {
         currentFilter.value = "hidden";
       } else {
         showNotifyMessage(t("statementRemovedByModerator"));

@@ -44,6 +44,8 @@
             v-if="currentTab == 'comment'"
             ref="opinionSectionRef"
             :post-slug-id="conversationData.metadata.conversationSlugId"
+            :conversation-author-username="conversationData.metadata.authorUsername"
+            :conversation-organization-name="conversationData.metadata.organization?.name ?? ''"
             :participation-mode="
               conversationData.metadata.participationMode
             "
@@ -147,7 +149,7 @@ const isAnalysisEnabled = computed(
 );
 
 // Create a computed property to ensure reactivity for the query's enabled parameter
-const isModerator = computed(() => profileData.value.isModerator);
+const isSiteModerator = computed(() => profileData.value.isSiteModerator);
 
 // Preload both analysis and comment data immediately when component mounts (only if not in compact mode)
 const analysisQuery = useAnalysisQuery({
@@ -188,7 +190,7 @@ const commentsMyVotesQuery = useCommentsQuery({
 const hiddenCommentsQuery = useHiddenCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   voteCount: props.conversationData.metadata.voteCount,
-  enabled: !props.compactMode && isModerator.value,
+  enabled: !props.compactMode && isSiteModerator.value,
 });
 
 // Track loading states from child components
@@ -289,7 +291,7 @@ watch(currentTab, async (newTab) => {
       ];
 
       // Only include hiddenCommentsQuery if user is a moderator
-      if (isModerator.value) {
+      if (isSiteModerator.value) {
         commentQueries.push(hiddenCommentsQuery);
       }
 
@@ -318,7 +320,7 @@ async function refreshAllData(): Promise<void> {
   invalidateComments(slugId);
   invalidateAnalysis(slugId);
 
-  if (isModerator.value) {
+  if (isSiteModerator.value) {
     invalidateHiddenComments(slugId);
   }
 

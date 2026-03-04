@@ -594,6 +594,20 @@ export function getUserById(userId: string): User {
 
 Do not use `!important` in CSS or SCSS. It makes styles hard to override and debug. Instead, use more specific selectors or restructure the CSS to achieve the desired specificity.
 
+### Props Drilling Over Inject/Provide (Vue)
+
+In Vue components, prefer **explicit props drilling** over `inject`/`provide` for passing data through the component tree. All drilled props must be **required** (not optional) and **typesafe**.
+
+**Why:**
+- Explicit data flow is easier to trace and debug
+- TypeScript catches missing props at compile time
+- No hidden dependencies or magic string keys
+
+**Rules:**
+- Use required props with explicit types — never optional props for data that must exist
+- Thread props through every intermediate component in the chain
+- Convert nullable upstream data to a concrete type at the source (e.g., `organization?.name ?? ""`)
+
 ### Logging Guidelines
 
 **Important:** Do NOT use `log.debug()` in this codebase. Always use `log.info()`, `log.warn()`, or `log.error()` instead.

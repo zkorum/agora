@@ -15,6 +15,8 @@
         <CommentActionOptions
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
+          :conversation-author-username="conversationAuthorUsername"
+          :conversation-organization-name="conversationOrganizationName"
           @deleted="deletedComment()"
           @muted-comment="mutedComment()"
         />
@@ -33,6 +35,8 @@
           v-if="commentItem.moderation?.status == 'moderated'"
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
+          :conversation-author-username="conversationAuthorUsername"
+          :conversation-organization-name="conversationOrganizationName"
         />
 
         <div>
@@ -63,6 +67,8 @@ import CommentModeration from "./CommentModeration.vue";
 const props = defineProps<{
   commentItem: OpinionItem;
   postSlugId: string;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
   votingUtilities: OpinionVotingUtilities;
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;

@@ -1,7 +1,9 @@
 // util service to get data about devices, users, emails, etc
 import {
+    conversationTable,
     deviceTable,
     emailTable,
+    opinionTable,
     organizationTable,
     phoneTable,
     userOrganizationMappingTable,
@@ -35,25 +37,46 @@ interface InfoDevice {
     sessionExpiry: Date;
 }
 
-interface IsModeratorProps {
+interface IsSiteModeratorParams {
     db: PostgresDatabase;
     userId: string;
 }
 
-export async function isModeratorAccount({
+export async function isSiteModeratorAccount({
     db,
     userId,
-}: IsModeratorProps): Promise<boolean> {
+}: IsSiteModeratorParams): Promise<boolean> {
     const userTableResponse = await db
-        .select({ isModerator: userTable.isModerator })
+        .select({ isSiteModerator: userTable.isSiteModerator })
         .from(userTable)
         .where(eq(userTable.id, userId));
     if (userTableResponse.length === 1) {
-        const userItem = userTableResponse[0];
-        return userItem.isModerator;
+        return userTableResponse[0].isSiteModerator;
     } else {
         throw httpErrors.internalServerError(
-            "User table returned more than 1 response while checking if a user is a moderator",
+            "User table returned more than 1 response while checking if a user is a site moderator",
+        );
+    }
+}
+
+interface IsSiteOrgAdminParams {
+    db: PostgresDatabase;
+    userId: string;
+}
+
+export async function isSiteOrgAdminAccount({
+    db,
+    userId,
+}: IsSiteOrgAdminParams): Promise<boolean> {
+    const userTableResponse = await db
+        .select({ isSiteOrgAdmin: userTable.isSiteOrgAdmin })
+        .from(userTable)
+        .where(eq(userTable.id, userId));
+    if (userTableResponse.length === 1) {
+        return userTableResponse[0].isSiteOrgAdmin;
+    } else {
+        throw httpErrors.internalServerError(
+            "User table returned more than 1 response while checking if a user is a site org admin",
         );
     }
 }
@@ -523,4 +546,99 @@ export function validateOrgImportRestriction(
             "Import feature restricted to organizations",
         );
     }
+}
+
+interface CanModerateConversationResult {
+    isAuthorized: boolean;
+    isSiteModerator: boolean;
+}
+
+interface CanModerateConversationParams {
+    db: PostgresDatabase;
+    userId: string;
+    conversationSlugId: string;
+}
+
+/**
+ * Checks if a user can moderate content in a conversation.
+ * Returns authorized if user is a site moderator, the conversation author,
+ * or a member of the organization that owns the conversation.
+ */
+export async function canModerateConversation({
+    db,
+    userId,
+    conversationSlugId,
+}: CanModerateConversationParams): Promise<CanModerateConversationResult> {
+    const isMod = await isSiteModeratorAccount({ db, userId });
+    if (isMod) {
+        return { isAuthorized: true, isSiteModerator: true };
+    }
+
+    const conversation = await db
+        .select({
+            authorId: conversationTable.authorId,
+            organizationId: conversationTable.organizationId,
+        })
+        .from(conversationTable)
+        .where(eq(conversationTable.slugId, conversationSlugId))
+        .limit(1);
+
+    if (conversation.length === 0) {
+        throw httpErrors.notFound("Conversation not found");
+    }
+
+    const isAuthor = conversation[0].authorId === userId;
+    if (isAuthor) {
+        return { isAuthorized: true, isSiteModerator: false };
+    }
+
+    if (conversation[0].organizationId !== null) {
+        const isOrgMember = await isUserPartOfOrganizationById({
+            db,
+            userId,
+            organizationId: conversation[0].organizationId,
+        });
+        if (isOrgMember) {
+            return { isAuthorized: true, isSiteModerator: false };
+        }
+    }
+
+    return { isAuthorized: false, isSiteModerator: false };
+}
+
+interface CanModerateConversationByOpinionSlugIdParams {
+    db: PostgresDatabase;
+    userId: string;
+    opinionSlugId: string;
+}
+
+/**
+ * Like canModerateConversation but resolves the conversation from an opinion slugId.
+ */
+export async function canModerateConversationByOpinionSlugId({
+    db,
+    userId,
+    opinionSlugId,
+}: CanModerateConversationByOpinionSlugIdParams): Promise<CanModerateConversationResult> {
+    const opinionResult = await db
+        .select({
+            conversationSlugId: conversationTable.slugId,
+        })
+        .from(opinionTable)
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, opinionTable.conversationId),
+        )
+        .where(eq(opinionTable.slugId, opinionSlugId))
+        .limit(1);
+
+    if (opinionResult.length === 0) {
+        throw httpErrors.notFound("Opinion not found");
+    }
+
+    return await canModerateConversation({
+        db,
+        userId,
+        conversationSlugId: opinionResult[0].conversationSlugId,
+    });
 }

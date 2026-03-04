@@ -43,7 +43,8 @@ export function useBackendUserApi() {
       return {
         activePostCount: response.data.activePostCount,
         createdAt: new Date(response.data.createdAt),
-        isModerator: response.data.isModerator,
+        isSiteModerator: response.data.isSiteModerator,
+        isSiteOrgAdmin: response.data.isSiteOrgAdmin,
         username: response.data.username,
         organizationList: response.data.organizationList,
         verifiedEventTickets: response.data.verifiedEventTickets || [],
