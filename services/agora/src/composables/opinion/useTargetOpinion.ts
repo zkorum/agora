@@ -1,44 +1,46 @@
 import { useRouteQuery } from "@vueuse/router";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { OpinionItem } from "src/shared/types/zod";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
-import { type Ref,ref } from "vue";
-import { useRoute,useRouter } from "vue-router";
+import { useNotify } from "src/utils/ui/notify";
+import { type Ref, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+
+import {
+  type UseTargetOpinionTranslations,
+  useTargetOpinionTranslations,
+} from "./useTargetOpinion.i18n";
 
 export interface UseTargetOpinionReturn {
   targetOpinion: Ref<OpinionItem | null>;
-  opinionNotFoundState: Ref<{
-    isVisible: boolean;
-    opinionId: string | null;
-  }>;
   setupHighlightFromRoute: () => Promise<void>;
   fetchTargetOpinion: (opinionSlugId: string) => Promise<void>;
   refreshAndHighlightOpinion: (opinionSlugId: string) => Promise<void>;
   clearRouteQueryParameters: () => Promise<void>;
-  dismissOpinionNotFoundBanner: () => void;
-  showOpinionNotFoundBanner: (opinionSlugId: string) => void;
 }
 
-export function useTargetOpinion(
-  refreshDataCallback?: () => Promise<void>
-): UseTargetOpinionReturn {
+interface UseTargetOpinionParams {
+  refreshDataCallback?: () => Promise<void>;
+  onModeratedOpinionDetected?: (opinion: OpinionItem) => void;
+}
+
+export function useTargetOpinion({
+  refreshDataCallback,
+  onModeratedOpinionDetected,
+}: UseTargetOpinionParams = {}): UseTargetOpinionReturn {
   const router = useRouter();
   const route = useRoute();
   const targetOpinion = ref<OpinionItem | null>(null);
+  const { showNotifyMessage } = useNotify();
 
-  // Opinion not found banner state
-  const opinionNotFoundState = ref<{
-    isVisible: boolean;
-    opinionId: string | null;
-  }>({
-    isVisible: false,
-    opinionId: null,
-  });
+  const { t } = useComponentI18n<UseTargetOpinionTranslations>(
+    useTargetOpinionTranslations
+  );
 
   const opinionSlugIdQuery = useRouteQuery("opinion", "", {
     transform: String,
   });
 
-  // Simple target opinion fetching using the API
   const { fetchOpinionsBySlugIdList } = useBackendCommentApi();
 
   async function clearRouteQueryParameters(): Promise<void> {
@@ -50,49 +52,7 @@ export function useTargetOpinion(
     }
   }
 
-  async function setupHighlightFromRoute(): Promise<void> {
-    const opinionSlugId = opinionSlugIdQuery.value;
-    if (opinionSlugId && opinionSlugId.trim() !== "") {
-      await fetchTargetOpinion(opinionSlugId);
-    }
-  }
-
-  async function fetchTargetOpinion(opinionSlugId: string): Promise<void> {
-    console.log("Fetching target opinion:", opinionSlugId);
-
-    if (opinionSlugId === "") {
-      return;
-    }
-
-    try {
-      const opinions = await fetchOpinionsBySlugIdList([opinionSlugId]);
-      if (opinions.length > 0) {
-        targetOpinion.value = opinions[0];
-        // Clear any existing banner when opinion is found
-        dismissOpinionNotFoundBanner();
-      } else {
-        // Show banner instead of notification to avoid string concatenation
-        showOpinionNotFoundBanner(opinionSlugId);
-      }
-    } catch (error) {
-      console.error("Error fetching target opinion:", error);
-      // Show banner instead of notification to avoid string concatenation
-      showOpinionNotFoundBanner(opinionSlugId);
-    }
-  }
-
-  async function refreshAndHighlightOpinion(
-    opinionSlugId: string
-  ): Promise<void> {
-    // Use provided refresh callback if available
-    if (refreshDataCallback) {
-      await refreshDataCallback();
-    }
-
-    // Fetch the target opinion again
-    await fetchTargetOpinion(opinionSlugId);
-
-    // Scroll to the highlighted opinion with a delay to ensure DOM has updated
+  function scrollToOpinion(opinionSlugId: string): void {
     setTimeout(() => {
       const element = document.getElementById(`comment-${opinionSlugId}`);
       if (element) {
@@ -101,29 +61,54 @@ export function useTargetOpinion(
     }, 300);
   }
 
-  // Banner management functions
-  function dismissOpinionNotFoundBanner(): void {
-    opinionNotFoundState.value = {
-      isVisible: false,
-      opinionId: null,
-    };
+  async function setupHighlightFromRoute(): Promise<void> {
+    const opinionSlugId = opinionSlugIdQuery.value;
+    if (opinionSlugId && opinionSlugId.trim() !== "") {
+      await fetchTargetOpinion(opinionSlugId);
+      if (targetOpinion.value) {
+        scrollToOpinion(opinionSlugId);
+      }
+    }
   }
 
-  function showOpinionNotFoundBanner(opinionSlugId: string): void {
-    opinionNotFoundState.value = {
-      isVisible: true,
-      opinionId: opinionSlugId,
-    };
+  async function fetchTargetOpinion(opinionSlugId: string): Promise<void> {
+    if (opinionSlugId === "") {
+      return;
+    }
+
+    try {
+      const opinions = await fetchOpinionsBySlugIdList([opinionSlugId]);
+      if (opinions.length > 0) {
+        targetOpinion.value = opinions[0];
+        if (opinions[0].moderation.status === "moderated") {
+          onModeratedOpinionDetected?.(opinions[0]);
+        }
+      } else {
+        showNotifyMessage(t("statementNotFound"));
+      }
+    } catch (error) {
+      console.error("Error fetching target opinion:", error);
+      showNotifyMessage(t("statementNotFound"));
+    }
+  }
+
+  async function refreshAndHighlightOpinion(
+    opinionSlugId: string
+  ): Promise<void> {
+    if (refreshDataCallback) {
+      await refreshDataCallback();
+    }
+
+    await fetchTargetOpinion(opinionSlugId);
+
+    scrollToOpinion(opinionSlugId);
   }
 
   return {
     targetOpinion,
-    opinionNotFoundState,
     setupHighlightFromRoute,
     fetchTargetOpinion,
     refreshAndHighlightOpinion,
     clearRouteQueryParameters,
-    dismissOpinionNotFoundBanner,
-    showOpinionNotFoundBanner,
   };
 }
