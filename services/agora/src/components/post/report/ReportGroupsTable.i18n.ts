@@ -2,6 +2,8 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface ReportGroupsTableTranslations {
   title: string;
+  subtitle: string;
+  subtitleNoAi: string;
   label: string;
   participants: string;
   aiSummary: string;
@@ -16,6 +18,8 @@ export const reportGroupsTableTranslations: Record<
 > = {
   en: {
     title: "Opinion Groups",
+    subtitle: "Groups are formed based on voting behavior, regardless of language. An AI model then reads each group's statements to generate a name and summary.",
+    subtitleNoAi: "Groups are formed based on voting behavior, regardless of language.",
     label: "Group",
     participants: "Participants",
     aiSummary: "Summary",
@@ -26,6 +30,8 @@ export const reportGroupsTableTranslations: Record<
   },
   ar: {
     title: "مجموعات الرأي",
+    subtitle: "تُنشأ المجموعات بناءً على سلوك التصويت، بغض النظر عن اللغة. ثم يقرأ نموذج ذكاء اصطناعي مقترحات كل مجموعة لمنحها اسمًا وملخصًا.",
+    subtitleNoAi: "تُنشأ المجموعات بناءً على سلوك التصويت، بغض النظر عن اللغة.",
     label: "المجموعة",
     participants: "المشاركون",
     aiSummary: "الملخص",
@@ -36,6 +42,8 @@ export const reportGroupsTableTranslations: Record<
   },
   es: {
     title: "Grupos de opinión",
+    subtitle: "Los grupos se crean en función del comportamiento de voto, sin tener en cuenta el idioma. Luego, un modelo de inteligencia artificial lee las proposiciones de cada grupo para darles un nombre y un resumen.",
+    subtitleNoAi: "Los grupos se crean en función del comportamiento de voto, sin tener en cuenta el idioma.",
     label: "Grupo",
     participants: "Participantes",
     aiSummary: "Resumen",
@@ -46,6 +54,8 @@ export const reportGroupsTableTranslations: Record<
   },
   fr: {
     title: "Groupes d'opinion",
+    subtitle: "Les groupes sont créés en fonction des comportements de vote, sans tenir compte de la langue. Ensuite, un modèle d'intelligence artificielle lit les propositions de chaque groupe pour leur donner un nom et un résumé.",
+    subtitleNoAi: "Les groupes sont créés en fonction des comportements de vote, sans tenir compte de la langue.",
     label: "Groupe",
     participants: "Participants",
     aiSummary: "Résumé",
@@ -56,6 +66,8 @@ export const reportGroupsTableTranslations: Record<
   },
   "zh-Hans": {
     title: "意见群体",
+    subtitle: "群组根据投票行为创建，与语言无关。然后由人工智能模型阅读各群组的观点，为其生成名称和摘要。",
+    subtitleNoAi: "群组根据投票行为创建，与语言无关。",
     label: "群体",
     participants: "参与者",
     aiSummary: "摘要",
@@ -65,6 +77,8 @@ export const reportGroupsTableTranslations: Record<
   },
   "zh-Hant": {
     title: "意見群體",
+    subtitle: "群組根據投票行為建立，與語言無關。然後由人工智慧模型閱讀各群組的觀點，為其產生名稱和摘要。",
+    subtitleNoAi: "群組根據投票行為建立，與語言無關。",
     label: "群體",
     participants: "參與者",
     aiSummary: "摘要",
@@ -74,6 +88,8 @@ export const reportGroupsTableTranslations: Record<
   },
   ja: {
     title: "意見グループ",
+    subtitle: "グループは投票行動に基づいて作成され、言語は考慮されません。その後、AIモデルが各グループの意見を読み取り、名前と要約を生成します。",
+    subtitleNoAi: "グループは投票行動に基づいて作成され、言語は考慮されません。",
     label: "グループ",
     participants: "参加者",
     aiSummary: "要約",

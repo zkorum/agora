@@ -7,8 +7,10 @@
       <p v-if="subtitle" class="section-subtitle">{{ subtitle }}</p>
     </template>
 
+    <slot name="after-subtitle" />
+
     <div v-if="items.length === 0" class="empty-state">
-      {{ t("noItems") }}
+      {{ emptyMessage ?? t("noItems") }}
     </div>
 
     <table v-else class="opinion-table">
@@ -109,11 +111,13 @@ const props = withDefaults(
     totalParticipants: number;
     startRank?: number;
     hideTitle?: boolean;
+    emptyMessage?: string;
   }>(),
   {
     subtitle: undefined,
     startRank: 0,
     hideTitle: false,
+    emptyMessage: undefined,
   },
 );
 
@@ -155,7 +159,7 @@ function getClusterStats({
 
 .section-title {
   font-size: 1rem;
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-medium);
   color: #333238;
   margin: 0 0 0.25rem 0;
 }
@@ -163,7 +167,7 @@ function getClusterStats({
 .section-subtitle {
   font-size: 0.85rem;
   color: #6d6a74;
-  margin: 0 0 1.25rem 0;
+  margin: 0 0 1rem 0;
   font-weight: normal;
 }
 

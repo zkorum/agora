@@ -44,7 +44,10 @@ export function getCommentActions(
       variant: "warning",
       handler: moderateCommentCallback,
       isVisible: (context: ContentActionContext) =>
-        context.isModerator && !context.isEmbeddedMode,
+        (context.isSiteModerator ||
+          context.isConversationOwner ||
+          context.isOrgMember) &&
+        !context.isEmbeddedMode,
     },
     {
       id: "userReports",
@@ -52,7 +55,10 @@ export function getCommentActions(
       icon: "mdi-account-alert",
       handler: openUserReportsCallback,
       isVisible: (context: ContentActionContext) =>
-        context.isModerator && !context.isEmbeddedMode,
+        (context.isSiteModerator ||
+          context.isConversationOwner ||
+          context.isOrgMember) &&
+        !context.isEmbeddedMode,
     },
     {
       id: "report",

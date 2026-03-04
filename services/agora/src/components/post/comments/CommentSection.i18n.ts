@@ -11,6 +11,7 @@ export interface CommentSectionTranslations {
   notEnoughOpinions: string;
   clusteredBanner: string;
   viewAnalysis: string;
+  statementRemovedByModerator: string;
 }
 
 export const commentSectionTranslations: Record<
@@ -28,6 +29,7 @@ export const commentSectionTranslations: Record<
     notEnoughOpinions: "Create more statements to vote on to allow opinion group mapping",
     clusteredBanner: "You have been assigned a group!",
     viewAnalysis: "View analysis",
+    statementRemovedByModerator: "This statement has been removed by a moderator.",
   },
   ar: {
     loadingOpinions: "جاري تحميل المقترحات...",
@@ -40,6 +42,7 @@ export const commentSectionTranslations: Record<
     notEnoughOpinions: "أنشئ المزيد من المقترحات للتصويت عليها للسماح بالتجميع",
     clusteredBanner: "تم تعيينك لمجموعة!",
     viewAnalysis: "عرض التحليل",
+    statementRemovedByModerator: "تم إزالة هذا المقترح من قبل المشرف.",
   },
   es: {
     loadingOpinions: "Cargando proposiciones...",
@@ -52,6 +55,7 @@ export const commentSectionTranslations: Record<
     notEnoughOpinions: "Crea más proposiciones para votar y permitir el clustering",
     clusteredBanner: "¡Te han asignado un cluster!",
     viewAnalysis: "Ver análisis",
+    statementRemovedByModerator: "Esta proposición ha sido eliminada por un moderador.",
   },
   fr: {
     loadingOpinions: "Chargement des propositions...",
@@ -64,6 +68,7 @@ export const commentSectionTranslations: Record<
     notEnoughOpinions: "Créez plus de propositions pour voter et permettre le clustering",
     clusteredBanner: "Vous avez été assigné à un cluster!",
     viewAnalysis: "Voir l'analyse",
+    statementRemovedByModerator: "Cette proposition a été supprimée par un modérateur.",
   },
   "zh-Hans": {
     loadingOpinions: "正在加载观点...",
@@ -76,6 +81,7 @@ export const commentSectionTranslations: Record<
     notEnoughOpinions: "创建更多观点以投票并允许聚类",
     clusteredBanner: "您已被分配到一个群组!",
     viewAnalysis: "查看分析",
+    statementRemovedByModerator: "该观点已被管理员移除。",
   },
   "zh-Hant": {
     loadingOpinions: "正在載入觀點...",
@@ -88,6 +94,7 @@ export const commentSectionTranslations: Record<
     notEnoughOpinions: "創建更多觀點以投票並允許聚類",
     clusteredBanner: "您已被分配到一個群組!",
     viewAnalysis: "查看分析",
+    statementRemovedByModerator: "該觀點已被管理員移除。",
   },
   ja: {
     loadingOpinions: "主張を読み込み中...",
@@ -100,5 +107,6 @@ export const commentSectionTranslations: Record<
     notEnoughOpinions: "クラスタリングを許可するために、投票するための主張をもっと作成してください",
     clusteredBanner: "クラスターに割り当てられました！",
     viewAnalysis: "分析を見る",
+    statementRemovedByModerator: "この主張はモデレーターによって削除されました。",
   },
 };

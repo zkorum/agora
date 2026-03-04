@@ -647,7 +647,8 @@ export const userTable = pgTable(
         username: varchar("username", { length: MAX_LENGTH_USERNAME })
             .notNull()
             .unique(),
-        isModerator: boolean("is_moderator").notNull().default(false),
+        isSiteModerator: boolean("is_site_moderator").notNull().default(false),
+        isSiteOrgAdmin: boolean("is_site_org_admin").notNull().default(false),
         isImported: boolean("is_imported").notNull().default(false),
         isDeleted: boolean("is_deleted").notNull().default(false),
         deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }), // Track when soft-delete occurred (hard-deleted after 15 days)

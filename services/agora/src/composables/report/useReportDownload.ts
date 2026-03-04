@@ -20,12 +20,13 @@ async function captureElement({
   showCaptureHeaders?: boolean;
   showCaptureFooters?: boolean;
 }): Promise<HTMLCanvasElement> {
+  const needsClone = showCaptureHeaders || showCaptureFooters;
   return html2canvas(element, {
-    scale: 3,
+    scale: 2,
     useCORS: true,
     logging: false,
     backgroundColor: "#ffffff",
-    onclone: (showCaptureHeaders || showCaptureFooters)
+    onclone: needsClone
       ? (clonedDoc) => {
           if (showCaptureHeaders) {
             clonedDoc.querySelectorAll(".capture-only").forEach((el) => {
@@ -45,7 +46,7 @@ async function captureElement({
 function canvasToBlob({
   canvas,
   type = "image/jpeg",
-  quality = 0.95,
+  quality = 0.85,
 }: {
   canvas: HTMLCanvasElement;
   type?: string;
@@ -98,6 +99,10 @@ export function useReportDownload({
       link.href = URL.createObjectURL(content);
       link.click();
       URL.revokeObjectURL(link.href);
+      // link.click() triggers the download asynchronously — the browser needs
+      // time to process the blob and show the save dialog. Without this delay,
+      // the loading state clears before the dialog appears.
+      await new Promise((resolve) => { setTimeout(resolve, 500); });
     } finally {
       isGeneratingZip.value = false;
     }
@@ -116,33 +121,31 @@ export function useReportDownload({
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
 
+      let isFirstPage = true;
+
       for (let i = 0; i < captures.length; i++) {
-        if (i > 0) pdf.addPage();
-
-        const isFirst = i === 0;
-
         const canvas = await captureElement({
           element: captures[i].element,
-          showCaptureHeaders: !isFirst,
+          showCaptureHeaders: !isFirstPage,
         });
-        const imgData = canvas.toDataURL("image/jpeg", 0.95);
+
+        if (!isFirstPage) pdf.addPage();
+        const imgData = canvas.toDataURL("image/jpeg", 0.80);
         const aspectRatio = canvas.width / canvas.height;
-
-        const scaledWidth = pageWidth;
-        const scaledHeight = pageWidth / aspectRatio;
-
-        pdf.addImage(imgData, "JPEG", 0, 0, scaledWidth, Math.min(scaledHeight, pageHeight));
+        pdf.addImage(imgData, "JPEG", 0, 0, pageWidth, pageWidth / aspectRatio);
+        isFirstPage = false;
       }
 
       // Place footer at the absolute bottom of the last page
       if (footerElement) {
         const footerCanvas = await captureElement({ element: footerElement });
-        const footerImgData = footerCanvas.toDataURL("image/jpeg", 0.95);
+        const footerImgData = footerCanvas.toDataURL("image/jpeg", 0.80);
         const footerAspectRatio = footerCanvas.width / footerCanvas.height;
         const footerWidth = pageWidth;
         const footerHeight = pageWidth / footerAspectRatio;
 
-        const footerY = pageHeight - footerHeight;
+        const FOOTER_BOTTOM_MARGIN_MM = 10;
+        const footerY = pageHeight - footerHeight - FOOTER_BOTTOM_MARGIN_MM;
         pdf.addImage(
           footerImgData,
           "JPEG",
@@ -154,6 +157,10 @@ export function useReportDownload({
       }
 
       pdf.save(`${toValue(fileName)}.pdf`);
+      // pdf.save() triggers the download asynchronously — the browser needs
+      // time to process the blob and show the save dialog. Without this delay,
+      // the loading state clears before the dialog appears.
+      await new Promise((resolve) => { setTimeout(resolve, 500); });
     } finally {
       isGeneratingPdf.value = false;
     }

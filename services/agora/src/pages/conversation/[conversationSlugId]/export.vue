@@ -9,7 +9,11 @@
     }"
   >
     <template #header>
-      <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
+      <StandardMenuBar
+        :title="t('pageTitle')"
+        :center-content="true"
+        :fallback-route="`/conversation/${conversationSlugId}/`"
+      />
     </template>
 
     <q-pull-to-refresh @refresh="handleRefresh">

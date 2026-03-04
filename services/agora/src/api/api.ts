@@ -1971,7 +1971,8 @@ export interface ApiV1UserProfileGetPost200Response {
     'activePostCount': number;
     'createdAt': string;
     'username': string;
-    'isModerator': boolean;
+    'isSiteModerator': boolean;
+    'isSiteOrgAdmin': boolean;
     'organizationList': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization>;
     'verifiedEventTickets': Array<ApiV1UserProfileGetPost200ResponseVerifiedEventTicketsEnum>;
 }

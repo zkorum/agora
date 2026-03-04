@@ -98,19 +98,19 @@ const legendItems = computed(() => {
 }
 
 .vote-bar-1 {
-  background: linear-gradient(90deg, #6b4eff 0%, #4f92f6 100%);
+  background: linear-gradient(90deg, $sentiment-positive 0%, $sentiment-positive-end 100%);
 }
 
 .vote-bar-2 {
-  background: #cdcbd3;
+  background: $sentiment-neutral;
 }
 
 .vote-bar-3 {
-  background: linear-gradient(90deg, #ffb323 0%, #ffdd1c 100%);
+  background: linear-gradient(90deg, $sentiment-negative 0%, $sentiment-negative-end 100%);
 }
 
 .vote-bar-4 {
-  background: #e9e9f1;
+  background: $sentiment-empty;
 }
 
 .legend-container {
@@ -133,19 +133,19 @@ const legendItems = computed(() => {
 }
 
 .legend-color-1 {
-  background: linear-gradient(90deg, #6b4eff 0%, #4f92f6 100%);
+  background: linear-gradient(90deg, $sentiment-positive 0%, $sentiment-positive-end 100%);
 }
 
 .legend-color-2 {
-  background: #cdcbd3;
+  background: $sentiment-neutral;
 }
 
 .legend-color-3 {
-  background: linear-gradient(90deg, #ffb323 0%, #ffdd1c 100%);
+  background: linear-gradient(90deg, $sentiment-negative 0%, $sentiment-negative-end 100%);
 }
 
 .legend-color-4 {
-  background: #e9e9f1;
+  background: $sentiment-empty;
 }
 
 .legend-label {

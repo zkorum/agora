@@ -33,6 +33,11 @@
           {{ t("subtitle") }}
         </div>
 
+        <VoteLegend
+          v-if="itemList.length > 0 && Object.keys(clusters).length > 1"
+          :items="analysisLegendItems"
+        />
+
         <EmptyStateMessage
           v-if="
             props.itemList.length === 0 ||
@@ -102,6 +107,11 @@
 
 <script setup lang="ts">
 import { useMediaQuery } from "@vueuse/core";
+import {
+  type VoteLegendTranslations,
+  voteLegendTranslations,
+} from "src/components/ui/VoteLegend.i18n";
+import VoteLegend from "src/components/ui/VoteLegend.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
@@ -146,6 +156,17 @@ const { t: tWarning } = useComponentI18n<LoadMoreWarningDialogTranslations>(
   loadMoreWarningDialogTranslations
 );
 
+const { t: tLegend } = useComponentI18n<VoteLegendTranslations>(
+  voteLegendTranslations
+);
+
+const analysisLegendItems = computed(() => [
+  { label: tLegend("agree"), type: "agree" as const },
+  { label: tLegend("unsure"), type: "unsure" as const },
+  { label: tLegend("disagree"), type: "disagree" as const },
+  { label: tLegend("noVote"), type: "noVote" as const },
+]);
+
 const isSmallScreen = useMediaQuery("(max-width: 599px)");
 const keyword = computed(() => t("divisiveKeyword"));
 const titleParts = computed(() => t("divisiveLongTitle").split("{keyword}"));
@@ -154,7 +175,10 @@ const warningDescriptionParts = computed(() =>
   tWarning("description").split("{emphasis}")
 );
 
-// Normalize extremity to [0,1] so we can apply a minScore threshold.
+// DIVERGENCE FROM POLIS: Polis does not normalize extremity or apply a
+// display threshold. We normalize to [0,1] by dividing by the max score
+// in the conversation, then apply minScore=0.6 so only items with at least
+// 60% of the top extremity are shown as representative.
 // Extremity (sqrt(x²+y²) in PCA space) is unbounded and varies per conversation.
 const maxDivisive = computed(() =>
   Math.max(...props.itemList.map((item) => item.divisiveScore), 0)
@@ -182,7 +206,7 @@ function switchTab() {
 
 <style lang="scss" scoped>
 .gradient-text {
-  background: linear-gradient(90deg, #6b4eff 0%, #a05e03 100%);
+  background: linear-gradient(90deg, $sentiment-positive 0%, $sentiment-negative-text 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

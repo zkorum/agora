@@ -1,6 +1,6 @@
 <template>
   <div class="report-container">
-    <!-- Summary section: header + cluster viz + groups table (always together) -->
+    <!-- Summary section: header + cluster viz (+ groups table if ≤3 clusters) -->
     <div ref="summaryRef" class="report-section-block">
       <ReportHeader
         :conversation-title="conversationTitle"
@@ -21,10 +21,29 @@
       </div>
 
       <ReportGroupsTable
+        v-if="clusterCount <= 2"
         :clusters="clusters"
         :total-participant-count="participantCount"
       />
 
+      <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
+    </div>
+
+    <!-- Groups table as own section for 3+ clusters (avoids page overflow) -->
+    <div
+      v-if="clusterCount >= 3"
+      ref="groupsTableRef"
+      class="report-section-block"
+    >
+      <div class="detail-context capture-only">
+        <span class="detail-branding">Agora Citizen Network</span>
+        <span class="detail-separator">·</span>
+        <span class="detail-title">{{ conversationTitle }}</span>
+      </div>
+      <ReportGroupsTable
+        :clusters="clusters"
+        :total-participant-count="participantCount"
+      />
       <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
     </div>
 
@@ -34,7 +53,7 @@
         v-for="(key, idx) in clusterKeys"
         :key="key"
         :ref="(el) => setGroupRepRef({ el, index: idx })"
-        class="report-section-block detail-section"
+        class="report-section-block"
       >
         <div class="detail-context capture-only">
           <span class="detail-branding">Agora Citizen Network</span>
@@ -45,12 +64,39 @@
           :clusters="clusters"
           :total-participant-count="participantCount"
           :single-cluster-key="key"
-        />
+        >
+          <template #after-subtitle>
+            <VoteLegend :items="reportLegendItems" style="margin-bottom: 0.75rem" />
+          </template>
+        </ReportRepresentativeOpinions>
         <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
       </div>
     </template>
 
     <!-- Consensus sections (chunked for page-sized captures) -->
+    <div
+      v-if="agreementChunks.length === 0"
+      ref="agreementEmptyRef"
+      class="report-section-block detail-section"
+    >
+      <div class="detail-context capture-only">
+        <span class="detail-branding">Agora Citizen Network</span>
+        <span class="detail-separator">·</span>
+        <span class="detail-title">{{ conversationTitle }}</span>
+        <span class="detail-separator">·</span>
+        <span class="detail-section-name" :style="{ color: 'var(--sentiment-positive)' }">{{ t('agreements') }}</span>
+      </div>
+      <ReportOpinionList
+        :title="t('agreementsLong')"
+        :subtitle="t('agreementsSubtitle')"
+        title-color="var(--sentiment-positive)"
+        :items="[]"
+        :clusters="clusters"
+        :total-participants="participantCount"
+        :empty-message="t('noAgreementsMessage')"
+      />
+      <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
+    </div>
     <div
       v-for="(chunk, chunkIdx) in agreementChunks"
       :key="`agreement-${chunkIdx}`"
@@ -63,26 +109,53 @@
         <span class="detail-title">{{ conversationTitle }}</span>
         <template v-if="agreementChunks.length > 1">
           <span class="detail-separator">·</span>
-          <span class="detail-section-name">{{ t('agreements') }} ({{ chunkIdx + 1 }}/{{ agreementChunks.length }})</span>
+          <span class="detail-section-name" :style="{ color: 'var(--sentiment-positive)' }">{{ t('agreements') }} ({{ chunkIdx + 1 }}/{{ agreementChunks.length }})</span>
         </template>
         <template v-else>
           <span class="detail-separator">·</span>
-          <span class="detail-section-name">{{ t('agreements') }}</span>
+          <span class="detail-section-name" :style="{ color: 'var(--sentiment-positive)' }">{{ t('agreements') }}</span>
         </template>
       </div>
       <ReportOpinionList
         :title="t('agreementsLong')"
         :subtitle="t('agreementsSubtitle')"
-        title-color="#6b4eff"
+        title-color="var(--sentiment-positive)"
         :items="chunk"
         :clusters="clusters"
         :total-participants="participantCount"
-        :start-rank="chunkIdx * ITEMS_PER_CAPTURE_PAGE"
+        :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="chunkIdx > 0"
-      />
+      >
+        <template #after-subtitle>
+          <VoteLegend :items="reportLegendItems" style="margin-bottom: 0.75rem" />
+        </template>
+      </ReportOpinionList>
       <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
     </div>
 
+    <div
+      v-if="disagreementChunks.length === 0"
+      ref="disagreementEmptyRef"
+      class="report-section-block detail-section"
+    >
+      <div class="detail-context capture-only">
+        <span class="detail-branding">Agora Citizen Network</span>
+        <span class="detail-separator">·</span>
+        <span class="detail-title">{{ conversationTitle }}</span>
+        <span class="detail-separator">·</span>
+        <span class="detail-section-name" :style="{ color: 'var(--sentiment-negative-text)' }">{{ t('disagreements') }}</span>
+      </div>
+      <ReportOpinionList
+        :title="t('disagreementsLong')"
+        :subtitle="t('disagreementsSubtitle')"
+        title-color="var(--sentiment-negative-text)"
+        :items="[]"
+        :clusters="clusters"
+        :total-participants="participantCount"
+        :empty-message="t('noDisagreementsMessage')"
+      />
+      <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
+    </div>
     <div
       v-for="(chunk, chunkIdx) in disagreementChunks"
       :key="`disagreement-${chunkIdx}`"
@@ -95,26 +168,53 @@
         <span class="detail-title">{{ conversationTitle }}</span>
         <template v-if="disagreementChunks.length > 1">
           <span class="detail-separator">·</span>
-          <span class="detail-section-name">{{ t('disagreements') }} ({{ chunkIdx + 1 }}/{{ disagreementChunks.length }})</span>
+          <span class="detail-section-name" :style="{ color: 'var(--sentiment-negative-text)' }">{{ t('disagreements') }} ({{ chunkIdx + 1 }}/{{ disagreementChunks.length }})</span>
         </template>
         <template v-else>
           <span class="detail-separator">·</span>
-          <span class="detail-section-name">{{ t('disagreements') }}</span>
+          <span class="detail-section-name" :style="{ color: 'var(--sentiment-negative-text)' }">{{ t('disagreements') }}</span>
         </template>
       </div>
       <ReportOpinionList
         :title="t('disagreementsLong')"
         :subtitle="t('disagreementsSubtitle')"
-        title-color="#a05e03"
+        title-color="var(--sentiment-negative-text)"
         :items="chunk"
         :clusters="clusters"
         :total-participants="participantCount"
-        :start-rank="chunkIdx * ITEMS_PER_CAPTURE_PAGE"
+        :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="chunkIdx > 0"
-      />
+      >
+        <template #after-subtitle>
+          <VoteLegend :items="reportLegendItems" style="margin-bottom: 0.75rem" />
+        </template>
+      </ReportOpinionList>
       <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
     </div>
 
+    <div
+      v-if="divisiveChunks.length === 0"
+      ref="divisiveEmptyRef"
+      class="report-section-block detail-section"
+    >
+      <div class="detail-context capture-only">
+        <span class="detail-branding">Agora Citizen Network</span>
+        <span class="detail-separator">·</span>
+        <span class="detail-title">{{ conversationTitle }}</span>
+        <span class="detail-separator">·</span>
+        <span class="detail-section-name" :style="{ color: 'var(--sentiment-mixed)' }">{{ t('divisive') }}</span>
+      </div>
+      <ReportOpinionList
+        :title="t('divisiveLong')"
+        :subtitle="t('divisiveSubtitle')"
+        title-color="var(--sentiment-mixed)"
+        :items="[]"
+        :clusters="clusters"
+        :total-participants="participantCount"
+        :empty-message="t('noDivisiveMessage')"
+      />
+      <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
+    </div>
     <div
       v-for="(chunk, chunkIdx) in divisiveChunks"
       :key="`divisive-${chunkIdx}`"
@@ -127,23 +227,27 @@
         <span class="detail-title">{{ conversationTitle }}</span>
         <template v-if="divisiveChunks.length > 1">
           <span class="detail-separator">·</span>
-          <span class="detail-section-name">{{ t('divisive') }} ({{ chunkIdx + 1 }}/{{ divisiveChunks.length }})</span>
+          <span class="detail-section-name" :style="{ color: 'var(--sentiment-mixed)' }">{{ t('divisive') }} ({{ chunkIdx + 1 }}/{{ divisiveChunks.length }})</span>
         </template>
         <template v-else>
           <span class="detail-separator">·</span>
-          <span class="detail-section-name">{{ t('divisive') }}</span>
+          <span class="detail-section-name" :style="{ color: 'var(--sentiment-mixed)' }">{{ t('divisive') }}</span>
         </template>
       </div>
       <ReportOpinionList
         :title="t('divisiveLong')"
         :subtitle="t('divisiveSubtitle')"
-        title-color="#b58091"
+        title-color="var(--sentiment-mixed)"
         :items="chunk"
         :clusters="clusters"
         :total-participants="participantCount"
-        :start-rank="chunkIdx * ITEMS_PER_CAPTURE_PAGE"
+        :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="chunkIdx > 0"
-      />
+      >
+        <template #after-subtitle>
+          <VoteLegend :items="reportLegendItems" style="margin-bottom: 0.75rem" />
+        </template>
+      </ReportOpinionList>
       <ReportFooter :conversation-slug-id="conversationSlugId" class="capture-footer" />
     </div>
 
@@ -158,6 +262,11 @@
 
 <script setup lang="ts">
 import ClusterVisualization from "src/components/post/analysis/opinionGroupTab/ClusterVisualization.vue";
+import {
+  type VoteLegendTranslations,
+  voteLegendTranslations,
+} from "src/components/ui/VoteLegend.i18n";
+import VoteLegend from "src/components/ui/VoteLegend.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { AnalysisOpinionItem, PolisClusters, PolisKey } from "src/shared/types/zod";
 import { REPORT_ITEMS_PER_CAPTURE_PAGE } from "src/utils/component/report/reportData";
@@ -185,18 +294,32 @@ const props = defineProps<{
   agreementItems: AnalysisOpinionItem[];
   disagreementItems: AnalysisOpinionItem[];
   divisiveItems: AnalysisOpinionItem[];
+  itemsPerPage?: number;
 }>();
+
+const effectiveItemsPerPage = computed(() =>
+  props.itemsPerPage ?? REPORT_ITEMS_PER_CAPTURE_PAGE,
+);
 
 const { t } = useComponentI18n<AnalysisReportTranslations>(
   analysisReportTranslations,
 );
 
+const { t: tLegend } = useComponentI18n<VoteLegendTranslations>(
+  voteLegendTranslations,
+);
+
+const reportLegendItems = computed(() => [
+  { label: tLegend("agree"), type: "agree" as const },
+  { label: tLegend("unsure"), type: "unsure" as const },
+  { label: tLegend("disagree"), type: "disagree" as const },
+  { label: tLegend("noVote"), type: "noVote" as const },
+]);
+
 const defaultClusterTab = computed<PolisKey>(() => {
   const keys = Object.keys(props.clusters);
   return (keys[0] ?? "0") as PolisKey;
 });
-
-const ITEMS_PER_CAPTURE_PAGE = REPORT_ITEMS_PER_CAPTURE_PAGE;
 
 const clusterCount = computed(() => Object.keys(props.clusters).length);
 
@@ -213,17 +336,23 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 }
 
 const agreementChunks = computed(() =>
-  chunkArray(props.agreementItems, ITEMS_PER_CAPTURE_PAGE),
+  chunkArray(props.agreementItems, effectiveItemsPerPage.value),
 );
 const disagreementChunks = computed(() =>
-  chunkArray(props.disagreementItems, ITEMS_PER_CAPTURE_PAGE),
+  chunkArray(props.disagreementItems, effectiveItemsPerPage.value),
 );
 const divisiveChunks = computed(() =>
-  chunkArray(props.divisiveItems, ITEMS_PER_CAPTURE_PAGE),
+  chunkArray(props.divisiveItems, effectiveItemsPerPage.value),
 );
 
 const summaryRef = ref<HTMLElement | null>(null);
+const groupsTableRef = ref<HTMLElement | null>(null);
 const footerRef = ref<HTMLElement | null>(null);
+
+// Empty state refs
+const agreementEmptyRef = ref<HTMLElement | null>(null);
+const disagreementEmptyRef = ref<HTMLElement | null>(null);
+const divisiveEmptyRef = ref<HTMLElement | null>(null);
 
 // Dynamic arrays of refs
 const groupsAndRepresentativeRefs = ref<HTMLElement[]>([]);
@@ -235,6 +364,9 @@ function createRefSetter(target: Ref<HTMLElement[]>) {
   return ({ el, index }: { el: unknown; index: number }): void => {
     if (el instanceof HTMLElement) {
       target.value[index] = el;
+    } else {
+      // Element was unmounted — truncate stale entries from this index onward
+      target.value.splice(index);
     }
   };
 }
@@ -246,7 +378,11 @@ const setDivisiveRef = createRefSetter(divisiveRefs);
 
 defineExpose({
   summaryRef,
+  groupsTableRef,
   groupsAndRepresentativeRefs,
+  agreementEmptyRef,
+  disagreementEmptyRef,
+  divisiveEmptyRef,
   agreementRefs,
   disagreementRefs,
   divisiveRefs,

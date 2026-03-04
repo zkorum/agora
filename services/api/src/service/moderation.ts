@@ -14,7 +14,7 @@ import type {
     ConversationModerationProperties,
     ModerationReason,
 } from "@/shared/types/zod.js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/util.js";
 import { httpErrors } from "@fastify/sensible";
 
@@ -248,11 +248,15 @@ export async function withdrawModerationReportByPostSlugId({
 interface WithdrawModerationReportByCommentSlugIdProps {
     commentSlugId: string;
     db: PostgresJsDatabase;
+    callerUserId: string;
+    isSiteModerator: boolean;
 }
 
 export async function withdrawModerationReportByCommentSlugId({
     db,
     commentSlugId,
+    callerUserId,
+    isSiteModerator,
 }: WithdrawModerationReportByCommentSlugIdProps) {
     const { getCommentIdFromCommentSlugId } = useCommonComment();
     const commentId = await getCommentIdFromCommentSlugId({
@@ -269,7 +273,17 @@ export async function withdrawModerationReportByCommentSlugId({
     await db.transaction(async (tx) => {
         const moderationCommentsTableResponse = await tx
             .delete(opinionModerationTable)
-            .where(eq(opinionModerationTable.opinionId, commentId))
+            .where(
+                isSiteModerator
+                    ? eq(opinionModerationTable.opinionId, commentId)
+                    : and(
+                          eq(opinionModerationTable.opinionId, commentId),
+                          eq(
+                              opinionModerationTable.authorId,
+                              callerUserId,
+                          ),
+                      ),
+            )
             .returning();
 
         if (moderationCommentsTableResponse.length != 1) {

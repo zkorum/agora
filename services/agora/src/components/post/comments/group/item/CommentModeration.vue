@@ -26,7 +26,7 @@
               :updated-at="commentItem.moderation.updatedAt"
             />
 
-            <div v-if="profileData.isModerator" class="moderationEditButton">
+            <div v-if="canModerateConversation" class="moderationEditButton">
               <RouterLink
                 :to="{
                   name: '/moderate/conversation/[conversationSlugId]/opinion/[opinionSlugId]/',
@@ -58,18 +58,32 @@ import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { OpinionItem } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
+import { computed } from "vue";
 
 import {
   type CommentModerationTranslations,
   commentModerationTranslations,
 } from "./CommentModeration.i18n";
 
-defineProps<{
+const props = defineProps<{
   commentItem: OpinionItem;
   postSlugId: string;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
 }>();
 
 const { profileData } = storeToRefs(useUserStore());
+
+const canModerateConversation = computed(() => {
+  const profile = profileData.value;
+  if (profile.isSiteModerator) return true;
+  if (profile.userName !== "" && profile.userName === props.conversationAuthorUsername) return true;
+  if (
+    props.conversationOrganizationName !== "" &&
+    profile.organizationList.some((org) => org.name === props.conversationOrganizationName)
+  ) return true;
+  return false;
+});
 
 const { t } = useComponentI18n<CommentModerationTranslations>(
   commentModerationTranslations

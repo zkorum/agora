@@ -323,7 +323,7 @@ async function viewOriginalComment() {
 
 .agree-header,
 .agree-cell {
-  color: #6b4eff;
+  color: $sentiment-positive;
 }
 
 .pass-header,
@@ -333,7 +333,7 @@ async function viewOriginalComment() {
 
 .disagree-header,
 .disagree-cell {
-  color: #a05e03;
+  color: $sentiment-negative-text;
 }
 
 .view-original {

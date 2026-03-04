@@ -27,6 +27,7 @@
         v-model="moderationAction"
         :options="actionMapping"
         :label="t('actionLabel')"
+        :disable="actionMapping.length <= 1"
         emit-value
         map-options
       />
@@ -59,6 +60,7 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
@@ -69,6 +71,7 @@ import type {
   OpinionItem,
   OpinionModerationAction,
 } from "src/shared/types/zod";
+import { useUserStore } from "src/stores/user";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { useBackendModerateApi } from "src/utils/api/moderation";
 import {
@@ -104,7 +107,12 @@ const DEFAULT_MODERATION_ACTION = "move";
 const moderationAction = ref<OpinionModerationAction>(
   DEFAULT_MODERATION_ACTION
 );
-const actionMapping = ref(opinionModerationActionMapping);
+const { profileData } = storeToRefs(useUserStore());
+const actionMapping = ref(
+  profileData.value.isSiteModerator
+    ? opinionModerationActionMapping
+    : opinionModerationActionMapping.filter((a) => a.value !== "hide")
+);
 
 const DEFAULT_MODERATION_REASON = "misleading";
 const moderationReason = ref<ModerationReason>(DEFAULT_MODERATION_REASON);

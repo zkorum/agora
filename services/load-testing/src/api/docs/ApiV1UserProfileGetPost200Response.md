@@ -8,7 +8,8 @@ Name | Type | Description | Notes
 **activePostCount** | **number** |  | [default to undefined]
 **createdAt** | **string** |  | [default to undefined]
 **username** | **string** |  | [default to undefined]
-**isModerator** | **boolean** |  | [default to undefined]
+**isSiteModerator** | **boolean** |  | [default to undefined]
+**isSiteOrgAdmin** | **boolean** |  | [default to undefined]
 **organizationList** | [**Array&lt;ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization&gt;**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization.md) |  | [default to undefined]
 **verifiedEventTickets** | **Array&lt;string&gt;** |  | [default to undefined]
 
@@ -21,7 +22,8 @@ const instance: ApiV1UserProfileGetPost200Response = {
     activePostCount,
     createdAt,
     username,
-    isModerator,
+    isSiteModerator,
+    isSiteOrgAdmin,
     organizationList,
     verifiedEventTickets,
 };

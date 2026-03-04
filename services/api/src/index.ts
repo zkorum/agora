@@ -79,7 +79,7 @@ import {
     generateUnusedRandomUsername,
     submitUsernameChange,
 } from "./service/account.js";
-import { isModeratorAccount } from "@/service/authUtil.js";
+import { isSiteModeratorAccount, isSiteOrgAdminAccount, canModerateConversation, canModerateConversationByOpinionSlugId } from "@/service/authUtil.js";
 import {
     fetchModerationReportByCommentSlugId as getOpinionModerationStatus,
     fetchModerationReportByPostSlugId as getConversationModerationStatus,
@@ -1112,13 +1112,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isMod = await isSiteModeratorAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isMod) {
+                throw server.httpErrors.unauthorized("User is not a site moderator");
             }
 
             await moderateByPostSlugId({
@@ -1149,13 +1149,18 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const { isAuthorized, isSiteModerator } = await canModerateConversationByOpinionSlugId({
                 db: db,
                 userId: deviceStatus.userId,
+                opinionSlugId: request.body.opinionSlugId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isAuthorized) {
+                throw server.httpErrors.unauthorized("User is not authorized to moderate this conversation");
+            }
+
+            if (!isSiteModerator && request.body.moderationAction === "hide") {
+                throw server.httpErrors.forbidden("Only site moderators can hide opinions");
             }
 
             await moderateByCommentSlugId({
@@ -1186,13 +1191,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isMod = await isSiteModeratorAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isMod) {
+                throw server.httpErrors.unauthorized("User is not a site moderator");
             }
 
             await withdrawModerationReportByPostSlugId({
@@ -1219,18 +1224,21 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const { isAuthorized, isSiteModerator } = await canModerateConversationByOpinionSlugId({
                 db: db,
                 userId: deviceStatus.userId,
+                opinionSlugId: request.body.opinionSlugId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isAuthorized) {
+                throw server.httpErrors.unauthorized("User is not authorized to moderate this conversation");
             }
 
             await withdrawModerationReportByCommentSlugId({
                 db: db,
                 commentSlugId: request.body.opinionSlugId,
+                callerUserId: deviceStatus.userId,
+                isSiteModerator,
             });
         },
     });
@@ -1255,13 +1263,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isMod = await isSiteModeratorAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isMod) {
+                throw server.httpErrors.unauthorized("User is not a site moderator");
             }
 
             return await getConversationModerationStatus({
@@ -1291,13 +1299,14 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const { isAuthorized } = await canModerateConversationByOpinionSlugId({
                 db: db,
                 userId: deviceStatus.userId,
+                opinionSlugId: request.body.opinionSlugId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isAuthorized) {
+                throw server.httpErrors.unauthorized("User is not authorized to moderate this conversation");
             }
 
             return await getOpinionModerationStatus({
@@ -1759,13 +1768,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isMod = await isSiteModeratorAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isMod) {
+                throw server.httpErrors.unauthorized("User is not a site moderator");
             }
             const opinionItemsPerSlugId = await fetchOpinionsByPostSlugId({
                 db: db,
@@ -2448,13 +2457,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isOrgAdmin = await isSiteOrgAdminAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isOrgAdmin) {
+                throw server.httpErrors.unauthorized("User is not a site org admin");
             }
 
             await addUserOrganizationMapping({
@@ -2483,13 +2492,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isOrgAdmin = await isSiteOrgAdminAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isOrgAdmin) {
+                throw server.httpErrors.unauthorized("User is not a site org admin");
             }
 
             await removeUserOrganizationMapping({
@@ -2521,13 +2530,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isOrgAdmin = await isSiteOrgAdminAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isOrgAdmin) {
+                throw server.httpErrors.unauthorized("User is not a site org admin");
             }
 
             return await getOrganizationsByUsername({
@@ -2557,13 +2566,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isOrgAdmin = await isSiteOrgAdminAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isOrgAdmin) {
+                throw server.httpErrors.unauthorized("User is not a site org admin");
             }
 
             return await getAllOrganizations({
@@ -2590,13 +2599,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isOrgAdmin = await isSiteOrgAdminAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isOrgAdmin) {
+                throw server.httpErrors.unauthorized("User is not a site org admin");
             }
 
             await createOrganization({
@@ -2627,13 +2636,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isOrgAdmin = await isSiteOrgAdminAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isOrgAdmin) {
+                throw server.httpErrors.unauthorized("User is not a site org admin");
             }
 
             await deleteOrganization({
@@ -2719,13 +2728,14 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const { isAuthorized } = await canModerateConversation({
                 db: db,
                 userId: deviceStatus.userId,
+                conversationSlugId: request.body.conversationSlugId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isAuthorized) {
+                throw server.httpErrors.unauthorized("User is not authorized to view reports for this conversation");
             }
 
             return await fetchUserReportsByPostSlugId({
@@ -2755,13 +2765,14 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const { isAuthorized } = await canModerateConversationByOpinionSlugId({
                 db: db,
                 userId: deviceStatus.userId,
+                opinionSlugId: request.body.opinionSlugId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isAuthorized) {
+                throw server.httpErrors.unauthorized("User is not authorized to view reports for this conversation");
             }
 
             return await fetchUserReportsByCommentSlugId({
@@ -3107,13 +3118,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isMod = await isSiteModeratorAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isMod) {
+                throw server.httpErrors.unauthorized("User is not a site moderator");
             }
 
             await conversationExportService.deleteConversationExport({

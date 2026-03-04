@@ -64,7 +64,7 @@ const disagreeWidth = computed(() => `${disagreePct.value}%`);
   height: 8px;
   border-radius: 2px;
   overflow: hidden;
-  background: #f0f0f5;
+  background: $sentiment-empty;
 }
 
 .bar-segment {
@@ -72,15 +72,15 @@ const disagreeWidth = computed(() => `${disagreePct.value}%`);
   min-width: 0;
 
   &.agree {
-    background: #6b4eff;
+    background: $sentiment-positive;
   }
 
   &.pass {
-    background: #cdcbd3;
+    background: $sentiment-neutral;
   }
 
   &.disagree {
-    background: #ffb323;
+    background: $sentiment-negative;
   }
 }
 
@@ -95,7 +95,7 @@ const disagreeWidth = computed(() => `${disagreePct.value}%`);
 
 .pct {
   &.agree-text {
-    color: #6b4eff;
+    color: $sentiment-positive;
   }
 
   &.pass-text {
@@ -103,7 +103,7 @@ const disagreeWidth = computed(() => `${disagreePct.value}%`);
   }
 
   &.disagree-text {
-    color: #a05e03;
+    color: $sentiment-negative-text;
   }
 }
 

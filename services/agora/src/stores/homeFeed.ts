@@ -69,6 +69,10 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       return;
     }
 
+    if (localTopConversationSlugIdList.length === 0) {
+      return;
+    }
+
     try {
       const response = await fetchRecentPost({
         loadUserPollData: isGuestOrLoggedIn.value,

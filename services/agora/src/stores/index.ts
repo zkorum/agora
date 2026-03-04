@@ -220,7 +220,8 @@ function stateTransformer(
         createdAt: new Date(0),
         // Clamp to 0/1 - exact count can narrow identity
         activePostCount: profileData.activePostCount > 0 ? 1 : 0,
-        // isModerator: kept as-is (boolean, useful for debugging)
+        // isSiteModerator: kept as-is (boolean, useful for debugging)
+        // isSiteOrgAdmin: kept as-is (boolean, useful for debugging)
         userName: redactString(profileData.userName, "username"),
         // Clear lists - they contain full post/comment data
         userPostList: [],

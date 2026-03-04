@@ -9,7 +9,11 @@
     }"
   >
     <template #header>
-      <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
+      <StandardMenuBar
+        :title="t('pageTitle')"
+        :center-content="true"
+        :fallback-route="`/conversation/${conversationSlugId}/analysis`"
+      />
     </template>
 
     <!-- Narrow screen message -->
@@ -18,7 +22,7 @@
         <q-icon name="mdi-monitor" size="3rem" color="grey-6" />
         <h2 class="narrow-title">{{ t("narrowScreenTitle") }}</h2>
         <p class="narrow-text">{{ t("narrowScreenMessage") }}</p>
-        <ZKButton button-type="compactButton" @click="router.back()">
+        <ZKButton button-type="compactButton" @click="handleNarrowBack">
           {{ t("goBack") }}
         </ZKButton>
       </div>
@@ -61,6 +65,7 @@
             <AnalysisReport
               v-if="conversationQuery.data.value && analysisQuery.data.value"
               ref="analysisReportRef"
+              :items-per-page="itemsPerPage"
               :conversation-slug-id="conversationSlugId"
               :conversation-title="conversationQuery.data.value.payload.title"
               :author-username="conversationQuery.data.value.metadata.authorUsername"
@@ -93,9 +98,10 @@ import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
-import { getReportOpinions } from "src/utils/component/report/reportData";
-import { computed, onMounted, onUnmounted, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { getReportOpinions, REPORT_ITEMS_PER_CAPTURE_PAGE, REPORT_ITEMS_PER_PDF_PAGE } from "src/utils/component/report/reportData";
+import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
+import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
+import { useRoute } from "vue-router";
 
 import {
   type ReportPageTranslations,
@@ -108,7 +114,7 @@ const authStore = useAuthenticationStore();
 const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(authStore);
 
 const route = useRoute("/conversation/[conversationSlugId]/report");
-const router = useRouter();
+const goBackButtonHandler = useGoBackButtonHandler();
 
 const conversationSlugId = computed(() => {
   const value = route.params.conversationSlugId;
@@ -117,6 +123,12 @@ const conversationSlugId = computed(() => {
   }
   return value || "";
 });
+
+async function handleNarrowBack(): Promise<void> {
+  await goBackButtonHandler.safeNavigateBack(
+    `/conversation/${conversationSlugId.value}/analysis`,
+  );
+}
 
 const conversationQuery = useConversationQuery({
   conversationSlugId: conversationSlugId,
@@ -190,7 +202,11 @@ onUnmounted(() => {
 // Report capture refs
 interface AnalysisReportExposed {
   summaryRef: HTMLElement | null;
+  groupsTableRef: HTMLElement | null;
   groupsAndRepresentativeRefs: HTMLElement[];
+  agreementEmptyRef: HTMLElement | null;
+  disagreementEmptyRef: HTMLElement | null;
+  divisiveEmptyRef: HTMLElement | null;
   agreementRefs: HTMLElement[];
   disagreementRefs: HTMLElement[];
   divisiveRefs: HTMLElement[];
@@ -208,6 +224,8 @@ const reportFileName = computed(() => {
   return `agora-report-${sanitized}`;
 });
 
+const itemsPerPage = ref(REPORT_ITEMS_PER_CAPTURE_PAGE);
+
 const { downloadAsZip, downloadAsPdf, isGeneratingZip, isGeneratingPdf } = useReportDownload({
   fileName: reportFileName,
 });
@@ -218,30 +236,42 @@ function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
 
   const captures: Array<{ element: HTMLElement; name: string }> = [];
 
-  if (report.summaryRef) {
+  if (report.summaryRef?.isConnected) {
     captures.push({ element: report.summaryRef, name: "summary" });
+  }
+  if (report.groupsTableRef?.isConnected) {
+    captures.push({ element: report.groupsTableRef, name: "groups-table" });
   }
   for (let i = 0; i < report.groupsAndRepresentativeRefs.length; i++) {
     const el = report.groupsAndRepresentativeRefs[i];
-    if (el) {
+    if (el?.isConnected) {
       captures.push({ element: el, name: `groups-rep-${i}` });
     }
   }
+  if (report.agreementEmptyRef?.isConnected) {
+    captures.push({ element: report.agreementEmptyRef, name: "agreements-empty" });
+  }
   for (let j = 0; j < report.agreementRefs.length; j++) {
     const el = report.agreementRefs[j];
-    if (el) {
+    if (el?.isConnected) {
       captures.push({ element: el, name: `agreements-${j}` });
     }
   }
+  if (report.disagreementEmptyRef?.isConnected) {
+    captures.push({ element: report.disagreementEmptyRef, name: "disagreements-empty" });
+  }
   for (let j = 0; j < report.disagreementRefs.length; j++) {
     const el = report.disagreementRefs[j];
-    if (el) {
+    if (el?.isConnected) {
       captures.push({ element: el, name: `disagreements-${j}` });
     }
   }
+  if (report.divisiveEmptyRef?.isConnected) {
+    captures.push({ element: report.divisiveEmptyRef, name: "divisive-empty" });
+  }
   for (let j = 0; j < report.divisiveRefs.length; j++) {
     const el = report.divisiveRefs[j];
-    if (el) {
+    if (el?.isConnected) {
       captures.push({ element: el, name: `divisive-${j}` });
     }
   }
@@ -250,6 +280,7 @@ function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
 }
 
 async function handleDownloadZip(): Promise<void> {
+  await nextTick();
   const captures = buildCaptures();
   if (captures.length > 0) {
     await downloadAsZip({ captures });
@@ -257,6 +288,8 @@ async function handleDownloadZip(): Promise<void> {
 }
 
 async function handleDownloadPdf(): Promise<void> {
+  itemsPerPage.value = REPORT_ITEMS_PER_PDF_PAGE;
+  await nextTick();
   const captures = buildCaptures();
   if (captures.length > 0) {
     await downloadAsPdf({
@@ -264,6 +297,7 @@ async function handleDownloadPdf(): Promise<void> {
       footerElement: analysisReportRef.value?.footerRef ?? undefined,
     });
   }
+  itemsPerPage.value = REPORT_ITEMS_PER_CAPTURE_PAGE;
 }
 </script>
 
@@ -278,8 +312,6 @@ async function handleDownloadPdf(): Promise<void> {
   justify-content: center;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background: #f8f8fb;
-  border-radius: 12px;
 }
 
 .toolbar-button-content {

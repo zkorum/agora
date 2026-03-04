@@ -12,6 +12,8 @@
           :is-indexed="commentItem.conversationData.metadata.isIndexed"
           :opinion-slug-id="commentItem.opinionItem.opinionSlugId"
           :opinion-item="commentItem.opinionItem"
+          :conversation-author-username="commentItem.conversationData.metadata.authorUsername"
+          :conversation-organization-name="commentItem.conversationData.metadata.organization?.name ?? ''"
         />
       </div>
     </q-infinite-scroll>

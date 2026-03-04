@@ -92,7 +92,7 @@
 
     <!-- @vue-expect-error Quasar q-page-sticky doesn't type onClick event handler -->
     <q-page-sticky
-      v-if="hasPendingNewPosts"
+      v-if="hasPendingNewPosts && !isPending"
       position="top"
       :offset="[0, 20]"
       @click="refreshPage(() => {})"

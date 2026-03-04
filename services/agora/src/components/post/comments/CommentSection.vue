@@ -14,13 +14,6 @@
           </div>
         </div>
 
-        <!-- Opinion not found banner -->
-        <OpinionNotFoundBanner
-          :is-visible="opinionNotFoundState.isVisible"
-          :opinion-id="opinionNotFoundState.opinionId"
-          @dismiss="dismissOpinionNotFoundBanner"
-        />
-
         <AsyncStateHandler
           :query="activeQuery"
           :is-empty="customIsEmpty"
@@ -29,6 +22,8 @@
           <CommentGroup
             :comment-item-list="visibleOpinions"
             :post-slug-id="postSlugId"
+            :conversation-author-username="conversationAuthorUsername"
+            :conversation-organization-name="conversationOrganizationName"
             :highlighted-opinion="targetOpinion"
             :voting-utilities="{
               userVotes,
@@ -48,6 +43,7 @@
 
 <script setup lang="ts">
 import type { UseQueryReturnType } from "@tanstack/vue-query";
+import { storeToRefs } from "pinia";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useOpinionFiltering } from "src/composables/opinion/useOpinionFiltering";
 import { useOpinionPagination } from "src/composables/opinion/useOpinionPagination";
@@ -55,8 +51,10 @@ import { useOpinionVoting } from "src/composables/opinion/useOpinionVoting";
 import { useTargetOpinion } from "src/composables/opinion/useTargetOpinion";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { OpinionItem } from "src/shared/types/zod";
+import { useUserStore } from "src/stores/user";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
+import { useNotify } from "src/utils/ui/notify";
 import { computed, onMounted, ref, watch } from "vue";
 
 import {
@@ -65,10 +63,11 @@ import {
 } from "./CommentSection.i18n";
 import CommentGroup from "./group/CommentGroup.vue";
 import CommentSortingSelector from "./group/CommentSortingSelector.vue";
-import OpinionNotFoundBanner from "./OpinionNotFoundBanner.vue";
 
 const props = defineProps<{
   postSlugId: string;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
   preloadedQueries: {
@@ -96,6 +95,9 @@ const { t } = useComponentI18n<CommentSectionTranslations>(
   commentSectionTranslations
 );
 
+const { profileData } = storeToRefs(useUserStore());
+const { showNotifyMessage } = useNotify();
+
 // Get invalidation utilities
 const { invalidateAll } = useInvalidateCommentQueries();
 
@@ -118,12 +120,27 @@ const refreshData = async (): Promise<void> => {
 
 const {
   targetOpinion,
-  opinionNotFoundState,
   setupHighlightFromRoute,
   clearRouteQueryParameters,
-  dismissOpinionNotFoundBanner,
   refreshAndHighlightOpinion,
-} = useTargetOpinion(refreshData);
+} = useTargetOpinion({
+  refreshDataCallback: refreshData,
+  onModeratedOpinionDetected: (opinion) => {
+    if (opinion.moderation.status !== "moderated") {
+      return;
+    }
+    if (opinion.moderation.action === "move") {
+      currentFilter.value = "moderated";
+    } else if (opinion.moderation.action === "hide") {
+      if (profileData.value.isSiteModerator) {
+        currentFilter.value = "hidden";
+      } else {
+        showNotifyMessage(t("statementRemovedByModerator"));
+        targetOpinion.value = null;
+      }
+    }
+  },
+});
 
 const { visibleOpinions, hasMore, onLoad, triggerLoadMore } =
   useOpinionPagination({

@@ -1,6 +1,7 @@
 <template>
   <div class="report-section">
     <h2 class="section-title">{{ t("title") }}</h2>
+    <p class="section-subtitle">{{ hasAiLabels ? t("subtitle") : t("subtitleNoAi") }}</p>
 
     <div v-if="Object.keys(clusters).length <= 1" class="empty-state">
       {{ t("notEnoughGroups") }}
@@ -32,7 +33,7 @@
             {{ entry.cluster.aiSummary || t("noSummary") }}
           </td>
         </tr>
-        <tr v-if="noGroupUsers > 0">
+        <tr>
           <td class="col-label cell-no-group">
             {{ t("noGroup") }}
           </td>
@@ -85,6 +86,10 @@ const clusterEntries = computed(() => {
 
 const useLetterCodes = computed(() => clusterEntries.value.length >= 4);
 
+const hasAiLabels = computed(() =>
+  clusterEntries.value.some((entry) => Boolean(entry.cluster.aiLabel)),
+);
+
 const noGroupUsers = computed(() => {
   const clusteredUsers = clusterEntries.value.reduce(
     (sum, entry) => sum + entry.cluster.numUsers,
@@ -96,25 +101,30 @@ const noGroupUsers = computed(() => {
 
 <style lang="scss" scoped>
 .report-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   page-break-inside: avoid;
   break-inside: avoid;
 }
 
 .section-title {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: var(--font-weight-semibold);
   color: #333238;
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e9e9f1;
+  margin: 0 0 0.25rem 0;
+}
+
+.section-subtitle {
+  font-size: 0.85rem;
+  color: #6d6a74;
+  margin: 0 0 0.75rem 0;
+  font-weight: normal;
 }
 
 .empty-state {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #9e9ba5;
   font-style: italic;
-  padding: 1rem 0;
+  padding: 0.5rem 0;
 }
 
 .groups-table {
@@ -124,18 +134,19 @@ const noGroupUsers = computed(() => {
 
   th,
   td {
-    padding: 0.5rem 0.5rem;
+    padding: 0.4rem 0.5rem;
     text-align: left;
     vertical-align: top;
-    border-bottom: 1px solid #e9e9f1;
+    border-bottom: 1px solid #f0f0f5;
   }
 
   th {
     font-weight: var(--font-weight-semibold);
     color: #6d6a74;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+    font-size: 0.6rem;
+    letter-spacing: 0.01em;
+    border-bottom: 1px solid #e9e9f1;
+    word-break: break-word;
   }
 }
 

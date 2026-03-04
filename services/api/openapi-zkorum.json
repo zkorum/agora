@@ -1647,7 +1647,10 @@
                                             "type": "string",
                                             "pattern": "^[a-z0-9_]*$"
                                         },
-                                        "isModerator": {
+                                        "isSiteModerator": {
+                                            "type": "boolean"
+                                        },
+                                        "isSiteOrgAdmin": {
                                             "type": "boolean"
                                         },
                                         "organizationList": {
@@ -1692,7 +1695,8 @@
                                         "activePostCount",
                                         "createdAt",
                                         "username",
-                                        "isModerator",
+                                        "isSiteModerator",
+                                        "isSiteOrgAdmin",
                                         "organizationList",
                                         "verifiedEventTickets"
                                     ],

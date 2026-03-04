@@ -36,6 +36,7 @@
           :conversation-slug-id="props.conversationSlugId"
           :clusters="analysisQuery.data.value?.polisClusters || {}"
           :total-participant-count="props.participantCount"
+          :compact-mode="currentTab === 'Summary'"
         />
       </div>
 

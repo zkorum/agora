@@ -23,8 +23,12 @@ export function useActionPermissions(): ContentActionPermissionCheckers {
   };
 
   const canModerate = (context: ContentActionContext): boolean => {
-    // Can moderate if user is a moderator and not in embedded mode
-    return context.isModerator && !context.isEmbeddedMode;
+    return (
+      (context.isSiteModerator ||
+        context.isConversationOwner ||
+        context.isOrgMember) &&
+      !context.isEmbeddedMode
+    );
   };
 
   const canMute = (context: ContentActionContext): boolean => {
@@ -43,8 +47,12 @@ export function useActionPermissions(): ContentActionPermissionCheckers {
   };
 
   const canViewUserReports = (context: ContentActionContext): boolean => {
-    // Only moderators can view user reports, and not in embedded mode
-    return context.isModerator && !context.isEmbeddedMode;
+    return (
+      (context.isSiteModerator ||
+        context.isConversationOwner ||
+        context.isOrgMember) &&
+      !context.isEmbeddedMode
+    );
   };
 
   const canViewModerationHistory = (): boolean => {
@@ -69,23 +77,36 @@ export function useActionPermissions(): ContentActionPermissionCheckers {
   };
 }
 
-/**
- * Helper function to create action context
- */
-export function createActionContext(
-  targetType: "post" | "comment",
-  targetId: string,
-  targetAuthor: string,
-  currentUser: string | null,
-  isModerator: boolean,
-  isLoggedIn: boolean,
-  isEmbeddedMode: boolean
-): ContentActionContext {
+interface CreateActionContextParams {
+  targetType: "post" | "comment";
+  targetId: string;
+  targetAuthor: string;
+  currentUser: string | null;
+  isSiteModerator: boolean;
+  isConversationOwner: boolean;
+  isOrgMember: boolean;
+  isLoggedIn: boolean;
+  isEmbeddedMode: boolean;
+}
+
+export function createActionContext({
+  targetType,
+  targetId,
+  targetAuthor,
+  currentUser,
+  isSiteModerator,
+  isConversationOwner,
+  isOrgMember,
+  isLoggedIn,
+  isEmbeddedMode,
+}: CreateActionContextParams): ContentActionContext {
   const isOwner = currentUser === targetAuthor;
 
   return {
     isOwner,
-    isModerator,
+    isSiteModerator,
+    isConversationOwner,
+    isOrgMember,
     isLoggedIn,
     isEmbeddedMode,
     targetType,

@@ -97,7 +97,7 @@ const extendedOptions = computed((): OptionItem[] =>
 );
 
 const currentOptionList = computed((): OptionItem[] => {
-  if (profileData.value.isModerator) {
+  if (profileData.value.isSiteModerator) {
     return extendedOptions.value;
   } else {
     return baseOptions.value;

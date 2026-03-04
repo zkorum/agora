@@ -3,6 +3,8 @@
     <CommentSection
       ref="opinionSectionRef"
       :post-slug-id="conversationData.metadata.conversationSlugId"
+      :conversation-author-username="conversationData.metadata.authorUsername"
+      :conversation-organization-name="conversationData.metadata.organization?.name ?? ''"
       :participation-mode="
         conversationData.metadata.participationMode
       "
@@ -83,7 +85,7 @@ const { profileData } = storeToRefs(userStore);
 const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(authStore);
 
 // Create computed properties to ensure reactivity
-const isModerator = computed(() => profileData.value.isModerator);
+const isSiteModerator = computed(() => profileData.value.isSiteModerator);
 const conversationSlugId = computed(
   () => props.conversationData.metadata.conversationSlugId
 );
@@ -121,7 +123,7 @@ const commentsMyVotesQuery = useCommentsQuery({
 const hiddenCommentsQuery = useHiddenCommentsQuery({
   conversationSlugId,
   voteCount,
-  enabled: computed(() => isModerator.value && props.hasConversationData),
+  enabled: computed(() => isSiteModerator.value && props.hasConversationData),
 });
 
 function handleParticipantCountDelta(delta: number): void {
