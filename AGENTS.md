@@ -384,6 +384,20 @@ Authorization headers built via `buildAuthorizationHeader(encodedUcan)` in front
 
 ## Code Quality Principles
 
+### Avoid Unsafe TypeScript Escape Hatches
+
+Avoid `as` type assertions, `!` non-null assertions, `@ts-ignore`, `@ts-expect-error`, and `eslint-disable` / `eslint-ignore` directives. Write typesafe code instead.
+
+- **Instead of `as`**: Narrow types with type guards, discriminated unions, or `satisfies`. If the type system can't prove it, restructure the code so it can.
+- **Instead of `!`**: Use explicit null checks, optional chaining, or refactor to eliminate the nullable path.
+- **Instead of `@ts-ignore` / `@ts-expect-error`**: Fix the underlying type error.
+- **Instead of `eslint-disable`**: Fix the lint violation. If a rule is genuinely wrong for this codebase, disable it in the ESLint config, not inline.
+
+**When escape hatches ARE acceptable** (rare):
+- Working around a confirmed TypeScript compiler bug (with a comment linking to the issue)
+
+**Untyped third-party libraries**: Use `zod.parse()` or `zod.safeParse()` to validate and parse untyped data into typed values (see "Parse, Don't Validate" below). Do not use `as` to cast untyped results.
+
 ### Favor Static Type Safety Over Defensive Programming
 
 This codebase prioritizes **strong static type safety** using TypeScript to eliminate entire classes of bugs at compile time, rather than relying on runtime defensive checks.

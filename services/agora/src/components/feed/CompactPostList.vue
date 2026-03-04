@@ -2,7 +2,7 @@
   <div>
     <WidthWrapper :enable="true">
       <q-pull-to-refresh @refresh="pullDownTriggered">
-        <FeedSkeleton v-if="!isAuthInitialized || !initializedFeed" />
+        <FeedSkeleton v-if="isPending" />
         <q-infinite-scroll
           v-else
           :offset="2000"
@@ -10,7 +10,31 @@
           @load="onLoad"
         >
           <div
-            v-if="partialHomeFeedList.length == 0 && initializedFeed"
+            v-if="isError"
+            class="emptyDivPadding"
+          >
+            <div class="centerMessage">
+              <div>
+                <q-icon name="mdi-alert-circle-outline" size="4rem" />
+              </div>
+
+              <div :style="{ fontSize: '1.3rem' }">
+                {{ t("emptyStateTitle") }}
+              </div>
+
+              <ZKButton
+                button-type="standardButton"
+                color="primary"
+                no-caps
+                unelevated
+                :label="t('newConversationsButton')"
+                @click="refetch()"
+              />
+            </div>
+          </div>
+
+          <div
+            v-else-if="partialHomeFeedList.length == 0"
             class="emptyDivPadding"
           >
             <div class="centerMessage">
@@ -29,19 +53,18 @@
             </div>
           </div>
 
-          <div>
-            <!-- Loading indicator for tab switches only -->
+          <div v-else>
+            <!-- Loading indicator for tab switches -->
             <div
-              v-if="isLoadingFeed && initializedFeed"
+              v-if="isFetching"
               class="centerMessage loading-indicator"
             >
               <q-spinner-dots size="4rem" color="primary" />
             </div>
 
             <div
-              v-if="initializedFeed && partialHomeFeedList.length > 0"
               class="postListFlex"
-              :class="{ 'loading-overlay': isLoadingFeed }"
+              :class="{ 'loading-overlay': isFetching }"
             >
               <PostListItem
                 v-for="postData in partialHomeFeedList"
@@ -52,7 +75,7 @@
           </div>
 
           <div
-            v-if="initializedFeed && partialHomeFeedList.length > 0"
+            v-if="!isError && partialHomeFeedList.length > 0"
             class="centerMessage"
           >
             <div>
@@ -96,6 +119,7 @@ import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
+import { useFeedQuery } from "src/utils/api/post/useFeedQuery";
 import { onMounted, watch } from "vue";
 
 import WidthWrapper from "../navigation/WidthWrapper.vue";
@@ -110,11 +134,9 @@ import FeedSkeleton from "./FeedSkeleton.vue";
 const {
   partialHomeFeedList,
   hasPendingNewPosts,
-  initializedFeed,
   canLoadMore,
-  isLoadingFeed,
 } = storeToRefs(useHomeFeedStore());
-const { loadPostData, hasNewPostCheck, loadMore } = useHomeFeedStore();
+const { hasNewPostCheck, loadMore, setFeedData } = useHomeFeedStore();
 
 const documentVisibility = useDocumentVisibility();
 
@@ -125,6 +147,16 @@ const { y: windowY } = useWindowScroll();
 const { t } = useComponentI18n<CompactPostListTranslations>(
   compactPostListTranslations
 );
+
+const { data, isPending, isFetching, isError, refetch } = useFeedQuery({
+  enabled: isAuthInitialized,
+});
+
+watch(data, (newData) => {
+  if (newData) {
+    setFeedData(newData);
+  }
+});
 
 onMounted(async () => {
   await hasNewPostCheck();
@@ -146,7 +178,7 @@ function onLoad(index: number, done: () => void) {
 function pullDownTriggered(done: () => void) {
   setTimeout(() => {
     void (async () => {
-      await loadPostData();
+      await refetch();
       canLoadMore.value = true;
       done();
     })();
@@ -156,7 +188,8 @@ function pullDownTriggered(done: () => void) {
 async function refreshPage(done: () => void) {
   windowY.value = 0;
 
-  canLoadMore.value = await loadPostData();
+  await refetch();
+  canLoadMore.value = true;
 
   setTimeout(() => {
     done();

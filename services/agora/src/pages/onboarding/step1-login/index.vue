@@ -74,14 +74,14 @@ const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
 const router = useRouter();
 
 async function goToPassportLogin() {
-  await router.push({ name: "/onboarding/step3-passport/" });
+  await router.replace({ name: "/onboarding/step3-passport/" });
 }
 
 async function goToPhoneLogin() {
-  await router.push({ name: "/onboarding/step3-phone-1/" });
+  await router.replace({ name: "/onboarding/step3-phone-1/" });
 }
 
 async function goToEmailLogin() {
-  await router.push({ name: "/onboarding/step3-email-1/" });
+  await router.replace({ name: "/onboarding/step3-email-1/" });
 }
 </script>

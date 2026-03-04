@@ -2,7 +2,6 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface ReportGroupsTableTranslations {
   title: string;
-  groupName: string;
   label: string;
   participants: string;
   aiSummary: string;
@@ -17,8 +16,7 @@ export const reportGroupsTableTranslations: Record<
 > = {
   en: {
     title: "Opinion Groups",
-    groupName: "Group",
-    label: "Label",
+    label: "Group",
     participants: "Participants",
     aiSummary: "Summary",
     notEnoughGroups:
@@ -28,8 +26,7 @@ export const reportGroupsTableTranslations: Record<
   },
   ar: {
     title: "مجموعات الرأي",
-    groupName: "المجموعة",
-    label: "التسمية",
+    label: "المجموعة",
     participants: "المشاركون",
     aiSummary: "الملخص",
     notEnoughGroups:
@@ -39,8 +36,7 @@ export const reportGroupsTableTranslations: Record<
   },
   es: {
     title: "Grupos de opinión",
-    groupName: "Grupo",
-    label: "Etiqueta",
+    label: "Grupo",
     participants: "Participantes",
     aiSummary: "Resumen",
     notEnoughGroups:
@@ -50,8 +46,7 @@ export const reportGroupsTableTranslations: Record<
   },
   fr: {
     title: "Groupes d'opinion",
-    groupName: "Groupe",
-    label: "Libellé",
+    label: "Groupe",
     participants: "Participants",
     aiSummary: "Résumé",
     notEnoughGroups:
@@ -61,8 +56,7 @@ export const reportGroupsTableTranslations: Record<
   },
   "zh-Hans": {
     title: "意见群体",
-    groupName: "群体",
-    label: "标签",
+    label: "群体",
     participants: "参与者",
     aiSummary: "摘要",
     notEnoughGroups: "参与人数不足，无法形成不同的意见群体。",
@@ -71,8 +65,7 @@ export const reportGroupsTableTranslations: Record<
   },
   "zh-Hant": {
     title: "意見群體",
-    groupName: "群體",
-    label: "標籤",
+    label: "群體",
     participants: "參與者",
     aiSummary: "摘要",
     notEnoughGroups: "參與人數不足，無法形成不同的意見群體。",
@@ -81,8 +74,7 @@ export const reportGroupsTableTranslations: Record<
   },
   ja: {
     title: "意見グループ",
-    groupName: "グループ",
-    label: "ラベル",
+    label: "グループ",
     participants: "参加者",
     aiSummary: "要約",
     notEnoughGroups:

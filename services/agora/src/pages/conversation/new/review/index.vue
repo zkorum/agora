@@ -115,12 +115,12 @@ import {
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useCommonApi } from "src/utils/api/common";
 import { useBackendPostApi } from "src/utils/api/post/post";
+import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
 import { type ComponentPublicInstance, nextTick, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -134,7 +134,7 @@ const { validateForReview, isDraftModified, resetDraft } = useConversationDraft(
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const { createNewPost } = useBackendPostApi();
-const { loadPostData } = useHomeFeedStore();
+const { invalidateFeed } = useInvalidateFeedQuery();
 const { handleAxiosErrorStatusCodes } = useCommonApi();
 
 const showLoginDialog = ref(false);
@@ -375,7 +375,7 @@ async function onSubmit() {
     });
 
     if (response.status == "success") {
-      await loadPostData();
+      invalidateFeed();
 
       // Set navigation context to indicate user came from conversation creation
       navigationStore.setConversationCreationContext(true);

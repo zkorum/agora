@@ -3,9 +3,9 @@
  * This composable provides action execution functions with proper error handling
  */
 
-import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useUserStore } from "src/stores/user";
 import { useBackendPostApi } from "src/utils/api/post/post";
+import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
 import { useNotify } from "src/utils/ui/notify";
 import { useRoute, useRouter } from "vue-router";
 
@@ -20,7 +20,7 @@ export function useActionHandlers() {
   const { showNotifyMessage } = useNotify();
   const { deletePostBySlugId } = useBackendPostApi();
   const { loadUserProfile } = useUserStore();
-  const { loadPostData } = useHomeFeedStore();
+  const { invalidateFeed } = useInvalidateFeedQuery();
 
   /**
    * Handle post deletion with proper cleanup and navigation
@@ -39,7 +39,7 @@ export function useActionHandlers() {
       const response = await deletePostBySlugId(context.targetId);
       if (response) {
         showNotifyMessage("Conversation deleted");
-        await loadPostData();
+        invalidateFeed();
         await loadUserProfile();
 
         // Navigate to home if we're currently viewing this post

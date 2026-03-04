@@ -9,7 +9,6 @@
     <table v-else class="groups-table">
       <thead>
         <tr>
-          <th class="col-name">{{ t("groupName") }}</th>
           <th class="col-label">{{ t("label") }}</th>
           <th class="col-participants">{{ t("participants") }}</th>
           <th class="col-summary">{{ t("aiSummary") }}</th>
@@ -17,11 +16,13 @@
       </thead>
       <tbody>
         <tr v-for="entry in clusterEntries" :key="entry.key">
-          <td class="col-name cell-name">
-            {{ formatClusterLabel(entry.key, false) }}
-          </td>
           <td class="col-label cell-label">
-            {{ entry.cluster.aiLabel || "—" }}
+            <template v-if="useLetterCodes">
+              <strong>{{ formatClusterLabel(entry.key, false) }}</strong><template v-if="entry.cluster.aiLabel"> · <strong>{{ entry.cluster.aiLabel }}</strong></template>
+            </template>
+            <template v-else>
+              <strong>{{ entry.cluster.aiLabel || formatClusterLabel(entry.key, true) }}</strong>
+            </template>
           </td>
           <td class="col-participants cell-participants">
             {{ entry.cluster.numUsers }}
@@ -32,10 +33,9 @@
           </td>
         </tr>
         <tr v-if="noGroupUsers > 0">
-          <td class="col-name cell-name cell-no-group">
+          <td class="col-label cell-no-group">
             {{ t("noGroup") }}
           </td>
-          <td class="col-label cell-no-group">—</td>
           <td class="col-participants cell-participants">
             {{ noGroupUsers }}
             ({{ formatPercentage(calculatePercentage(noGroupUsers, totalParticipantCount)) }})
@@ -83,6 +83,8 @@ const clusterEntries = computed(() => {
   return entries;
 });
 
+const useLetterCodes = computed(() => clusterEntries.value.length >= 4);
+
 const noGroupUsers = computed(() => {
   const clusteredUsers = clusterEntries.value.reduce(
     (sum, entry) => sum + entry.cluster.numUsers,
@@ -122,7 +124,7 @@ const noGroupUsers = computed(() => {
 
   th,
   td {
-    padding: 0.625rem 0.75rem;
+    padding: 0.5rem 0.5rem;
     text-align: left;
     vertical-align: top;
     border-bottom: 1px solid #e9e9f1;
@@ -137,28 +139,20 @@ const noGroupUsers = computed(() => {
   }
 }
 
-.col-name {
-  width: 8%;
-}
-
 .col-label {
-  width: 20%;
+  min-width: 200px;
 }
 
 .col-participants {
-  width: 12%;
+  white-space: nowrap;
 }
 
 .col-summary {
-  width: 60%;
-}
-
-.cell-name {
-  font-weight: var(--font-weight-semibold);
-  color: #333238;
+  width: 100%;
 }
 
 .cell-label {
+  font-weight: var(--font-weight-semibold);
   color: #333238;
 }
 

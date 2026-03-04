@@ -83,7 +83,7 @@ const flowStore = onboardingFlowStore();
 function navigateToVerify(route: Parameters<typeof router.push>[0]) {
   setActiveUserIntention("settings");
   flowStore.onboardingMode = "LOGIN";
-  void router.push(route);
+  void router.replace(route);
 }
 
 const deleteAccountLabel = computed(() =>

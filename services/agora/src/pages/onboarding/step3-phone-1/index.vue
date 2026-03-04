@@ -81,7 +81,7 @@ function onSubmit() {
 }
 
 async function goToOtpPage() {
-  await router.push({ name: "/onboarding/step3-phone-2/" });
+  await router.replace({ name: "/onboarding/step3-phone-2/" });
 }
 
 async function goToPassportVerification() {

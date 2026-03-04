@@ -7,7 +7,7 @@
     </div>
 
     <div class="otpDiv">
-      <div class="codeInput">
+      <div class="codeInput" @keydown.enter="handleEnterKey">
         <PrimeInputOtp
           v-model="verificationCode"
           :length="6"
@@ -126,6 +126,12 @@ onMounted(async () => {
 async function clickedResendButton() {
   resetCode();
   await requestCodeClicked(true);
+}
+
+function handleEnterKey() {
+  if (verificationCode.value.length === 6) {
+    void nextButtonClicked();
+  }
 }
 
 async function nextButtonClicked() {

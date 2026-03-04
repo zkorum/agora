@@ -82,6 +82,7 @@ import type {
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useBackendModerateApi } from "src/utils/api/moderation";
 import { useBackendPostApi } from "src/utils/api/post/post";
+import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
 import {
   moderationActionPostsMapping,
   moderationReasonMapping,
@@ -103,7 +104,8 @@ const {
 const route = useRoute("/moderate/conversation/[conversationSlugId]/");
 const router = useRouter();
 
-const { loadPostData, emptyPost } = useHomeFeedStore();
+const { emptyPost } = useHomeFeedStore();
+const { invalidateFeed } = useInvalidateFeedQuery();
 const { fetchPostBySlugId } = useBackendPostApi();
 
 const DEFAULT_MODERATION_ACTION = "lock";
@@ -178,7 +180,7 @@ async function clickedWithdraw() {
     const isSuccessful = await cancelModerationPostReport(postSlugId);
     if (isSuccessful) {
       await initializeData();
-      await loadPostData();
+      invalidateFeed();
       await redirectToPost();
     }
   } else {
@@ -196,7 +198,7 @@ async function clickedSubmit() {
     );
 
     if (isSuccessful) {
-      await loadPostData();
+      invalidateFeed();
       await redirectToPost();
     }
   }

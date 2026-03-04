@@ -2,7 +2,6 @@ import { storeToRefs } from "pinia";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import type { DeviceLoginStatus } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useLanguageStore } from "src/stores/language";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useNotificationStore } from "src/stores/notification";
@@ -22,7 +21,7 @@ export function useBackendAuthApi() {
   const { buildEncodedUcan } = useCommonApi();
   const authStore = useAuthenticationStore();
   const { isAuthInitialized } = storeToRefs(authStore);
-  const { loadPostData } = useHomeFeedStore();
+
   const { loadUserProfile, clearProfileData } = useUserStore();
   const { loadTopicsData, clearTopicsData } = useTopicStore();
   const { loadNotificationData } = useNotificationStore();
@@ -73,11 +72,10 @@ export function useBackendAuthApi() {
     await loadUserProfile();
 
     void Promise.all([
-      loadPostData(),
       loadNotificationData(false),
       loadTopicsData(),
       loadLanguagePreferencesFromBackend(),
-    ]);
+    ]).catch((e) => console.error("Background module load failed", e));
   }
 
   // update the global state according to the change in login status
@@ -205,7 +203,6 @@ export function useBackendAuthApi() {
 
     authStore.setLoginStatus({ isKnown: false });
 
-    await loadPostData();
     clearProfileData();
 
     clearNotificationData();

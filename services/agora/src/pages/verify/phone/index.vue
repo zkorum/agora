@@ -1,5 +1,5 @@
 <template>
-  <OnboardingLayout>
+  <OnboardingLayout :back-callback="backCallback">
     <template #body><DefaultImageExample /> </template>
 
     <template #footer>
@@ -41,6 +41,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useVerificationComplete } from "src/composables/verification/useVerificationComplete";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNotify } from "src/utils/ui/notify";
 import { onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -60,6 +61,17 @@ const { isLoggedIn, isAuthInitialized, credentials } = storeToRefs(
 const { completeVerification } = useVerificationComplete();
 const { showNotifyMessage } = useNotify();
 const router = useRouter();
+
+const loginIntentionStore = useLoginIntentionStore();
+const { activeUserIntention } = storeToRefs(loginIntentionStore);
+
+function backCallback() {
+  if (activeUserIntention.value === "settings") {
+    void router.replace({ name: "/settings/" });
+  } else {
+    router.back();
+  }
+}
 
 onMounted(() => {
   checkExistingCredential();
@@ -85,6 +97,6 @@ function onSubmit() {
 }
 
 async function goToOtpPage() {
-  await router.push({ name: "/verify/phone-code/" });
+  await router.replace({ name: "/verify/phone-code/" });
 }
 </script>

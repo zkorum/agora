@@ -26,7 +26,7 @@
       </div>
 
       <div :style="{ fontSize: '0.75rem' }" class="timestamp-container">
-        {{ useTimeAgo(new Date(createdAt)) }}
+        {{ timeAgo }}
         <template v-if="isEdited">
           <span class="bullet">•</span>
           <span>{{ t("edited") }}</span>
@@ -58,11 +58,11 @@
 </template>
 
 <script setup lang="ts">
-import { useTimeAgo } from "@vueuse/core";
 import OrganizationImage from "src/components/account/OrganizationImage.vue";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import UserMetadata from "src/components/features/user/UserMetadata.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useLocalizedTimeAgo } from "src/composables/ui/useLocalizedTimeAgo";
 import type { ParticipationMode } from "src/shared/types/zod";
 
 import {
@@ -70,7 +70,7 @@ import {
   userIdentityCardTranslations,
 } from "./UserIdentityCard.i18n";
 
-defineProps<{
+const props = defineProps<{
   userIdentity: string;
   authorVerified: boolean;
   createdAt: Date;
@@ -79,6 +79,8 @@ defineProps<{
   organizationImageUrl: string;
   participationMode?: ParticipationMode;
 }>();
+
+const timeAgo = useLocalizedTimeAgo(() => props.createdAt);
 
 const { t } = useComponentI18n<UserIdentityCardTranslations>(
   userIdentityCardTranslations

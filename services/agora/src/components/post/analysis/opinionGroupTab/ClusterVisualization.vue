@@ -38,14 +38,11 @@
         >
           <div class="clusterLabelFlex">
             <div class="clusterOverlayFontBold">
-              <template v-if="props.reportMode">
-                {{ formatClusterLabel(String(imageIndex) as PolisKey, false) }}
-                <span
-                  v-if="clusters[String(imageIndex) as PolisKey]?.aiLabel"
-                  class="reportAiLabel"
-                >
-                  · {{ clusters[String(imageIndex) as PolisKey]?.aiLabel }}
-                </span>
+              <template v-if="props.reportMode && useLetterCodes">
+                {{ formatClusterLabel(String(imageIndex) as PolisKey, false) }}<template v-if="clusters[String(imageIndex) as PolisKey]?.aiLabel"> · {{ clusters[String(imageIndex) as PolisKey]?.aiLabel }}</template>
+              </template>
+              <template v-else-if="props.reportMode">
+                {{ clusters[String(imageIndex) as PolisKey]?.aiLabel || formatClusterLabel(String(imageIndex) as PolisKey, false) }}
               </template>
               <template v-else>
                 {{
@@ -89,7 +86,7 @@ import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import { calculatePercentage } from "src/shared/util";
 import { formatPercentage } from "src/utils/common";
 import { formatClusterLabel } from "src/utils/component/opinion";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { z } from "zod";
 
 import {
@@ -107,6 +104,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   "update:currentClusterTab": [value: PolisKey];
 }>();
+
+const useLetterCodes = computed(() => Object.keys(props.clusters).length >= 4);
 
 const { t } = useComponentI18n<ClusterVisualizationTranslations>(
   clusterVisualizationTranslations
@@ -470,11 +469,6 @@ watch(
   font-weight: var(--font-weight-semibold);
   text-align: center;
   margin-bottom: clamp(0.125rem, 0.5vw, 0.25rem);
-}
-
-.reportAiLabel {
-  font-weight: normal;
-  opacity: 0.7;
 }
 
 .clusterLabelFlex {

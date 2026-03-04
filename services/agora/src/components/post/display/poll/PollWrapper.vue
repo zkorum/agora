@@ -86,10 +86,10 @@ import type {
 } from "src/shared/types/zod";
 import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useBackendPollApi } from "src/utils/api/poll";
+import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
 import { computed,onBeforeMount, ref, watch } from "vue";
 
 import PreLoginIntentionDialog from "../../../authentication/intention/PreLoginIntentionDialog.vue";
@@ -125,7 +125,7 @@ const authStore = useAuthenticationStore();
 const { hasStrongVerification, hasEmailVerification } = storeToRefs(authStore);
 const userStore = useUserStore();
 const { verifiedEventTickets } = storeToRefs(userStore);
-const { loadPostData } = useHomeFeedStore();
+const { invalidateFeed } = useInvalidateFeedQuery();
 const { updateAuthState } = useBackendAuthApi();
 
 // Zupass verification
@@ -264,7 +264,8 @@ async function clickedVotingOption(selectedIndex: number) {
   );
   if (response === true) {
     await updateAuthState({ partialLoginStatus: { isKnown: true } });
-    await Promise.all([loadPostData(), fetchUserPollResponseData(true)]);
+    invalidateFeed();
+    await fetchUserPollResponseData(true);
     incrementLocalPollIndex(selectedIndex);
     totalVoteCount.value += 1;
   } else {
@@ -299,7 +300,8 @@ async function handleZupassVerification() {
     },
     onSuccess: async () => {
       // Reload poll data after successful verification
-      await Promise.all([loadPostData(), fetchUserPollResponseData(true)]);
+      invalidateFeed();
+      await fetchUserPollResponseData(true);
     },
   });
 

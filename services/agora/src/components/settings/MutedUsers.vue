@@ -22,7 +22,7 @@
 
             <q-item-section>
               <q-item-label caption>
-                {{ useTimeAgo(muteItem.createdAt) }}</q-item-label
+                {{ formatTimeAgo(muteItem.createdAt) }}</q-item-label
               >
               <q-item-label>{{ muteItem.username }}</q-item-label>
             </q-item-section>
@@ -45,13 +45,13 @@
 </template>
 
 <script setup lang="ts">
-import { useTimeAgo } from "@vueuse/core";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useLocalizedTimeAgoFormatter } from "src/composables/ui/useLocalizedTimeAgo";
 import type { UserMuteItem } from "src/shared/types/zod";
-import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
+import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
 import { onMounted,ref } from "vue";
 
 import {
@@ -60,7 +60,8 @@ import {
 } from "./MutedUsers.i18n";
 
 const { getMutedUsers, muteUser } = useBackendUserMuteApi();
-const { loadPostData } = useHomeFeedStore();
+const { invalidateFeed } = useInvalidateFeedQuery();
+const formatTimeAgo = useLocalizedTimeAgoFormatter();
 
 const userMuteItemList = ref<UserMuteItem[]>([]);
 const dataLoaded = ref(false);
@@ -79,7 +80,7 @@ async function loadMuteData() {
 async function removeMutedUser(targetUsername: string) {
   await muteUser(targetUsername, "unmute");
   await loadMuteData();
-  await loadPostData();
+  invalidateFeed();
 }
 </script>
 
