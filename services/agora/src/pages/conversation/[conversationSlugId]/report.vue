@@ -191,6 +191,7 @@ onUnmounted(() => {
 // Report capture refs
 interface AnalysisReportExposed {
   summaryRef: HTMLElement | null;
+  groupsTableRef: HTMLElement | null;
   groupsAndRepresentativeRefs: HTMLElement[];
   agreementEmptyRef: HTMLElement | null;
   disagreementEmptyRef: HTMLElement | null;
@@ -226,6 +227,9 @@ function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
 
   if (report.summaryRef?.isConnected) {
     captures.push({ element: report.summaryRef, name: "summary" });
+  }
+  if (report.groupsTableRef?.isConnected) {
+    captures.push({ element: report.groupsTableRef, name: "groups-table" });
   }
   for (let i = 0; i < report.groupsAndRepresentativeRefs.length; i++) {
     const el = report.groupsAndRepresentativeRefs[i];

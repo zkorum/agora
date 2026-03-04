@@ -26,20 +26,20 @@ $warning: #f79327;
 
 $color-text-strong: rgb(51, 61, 66);
 .text-color-text-strong {
-  color: $color-text-strong !important;
+  color: $color-text-strong;
 }
 
 .bg-color-text-strong {
-  background: $color-text-strong !important;
+  background: $color-text-strong;
 }
 
 $color-text-weak: rgb(92, 108, 116);
 .text-color-text-weak {
-  color: $color-text-weak !important;
+  color: $color-text-weak;
 }
 
 .bg-color-text-weak {
-  background: $color-text-weak !important;
+  background: $color-text-weak;
 }
 
 $color-border-weak: #e0e0e0;
@@ -47,11 +47,11 @@ $color-background-default: #ffffff;
 
 $button-background-color: #e7e7ff;
 .text-button-background-color {
-  color: $button-background-color !important;
+  color: $button-background-color;
 }
 
 .bg-button-background-color {
-  background: $button-background-color !important;
+  background: $button-background-color;
 }
 
 $app-background-color: #f6f5f8;
@@ -61,38 +61,48 @@ $mouse-hover-transition: background-color 0.2s ease;
 
 $feed-flex-gap: 0.5rem;
 
-.text-button-disagree-background-unselected {
-  color: #ffefd7 !important;
-}
-.bg-button-disagree-background-unselected {
-  background: #ffefd7 !important;
-}
-
-.text-button-agree-background-unselected {
-  color: #e7e7ff !important;
-}
-.bg-button-agree-background-unselected {
-  background: #e7e7ff !important;
-}
-
-.text-button-disagree-background-selected {
-  color: #ffb323 !important;
-}
-.bg-button-disagree-background-selected {
-  background: #ffb323 !important;
-}
-
-.text-button-agree-background-selected {
-  color: #6b4eff !important;
-}
-.bg-button-agree-background-selected {
-  background: #6b4eff !important;
-}
-
 $gradient-hero: linear-gradient(#6b4eff, #4f92f6);
 $gradient-hover: linear-gradient(#836bff, #5c9dff);
 $gradient-pressed: linear-gradient(#5c43dd, #4582dd);
 $container-padding: 1.5rem;
+
+// Sentiment / vote colors (used in vote bars, legends, and voting buttons)
+$sentiment-positive: $primary;          // #6b4eff (agree)
+$sentiment-positive-end: #4f92f6;       // gradient end for analysis bars
+$sentiment-neutral: #cdcbd3;            // gray (pass/unsure)
+$sentiment-negative: #ffb323;           // orange (disagree)
+$sentiment-negative-end: #ffdd1c;       // gradient end for analysis bars
+$sentiment-negative-text: #a05e03;      // darker orange for readable text
+$sentiment-mixed: #b58091;               // pink (divisive/mixed)
+$sentiment-empty: #e9e9f1;             // light gray (no vote)
+
+.text-button-disagree-background-unselected {
+  color: #ffefd7;
+}
+.bg-button-disagree-background-unselected {
+  background: #ffefd7;
+}
+
+.text-button-agree-background-unselected {
+  color: #e7e7ff;
+}
+.bg-button-agree-background-unselected {
+  background: #e7e7ff;
+}
+
+.text-button-disagree-background-selected {
+  color: $sentiment-negative;
+}
+.bg-button-disagree-background-selected {
+  background: $sentiment-negative;
+}
+
+.text-button-agree-background-selected {
+  color: $sentiment-positive;
+}
+.bg-button-agree-background-selected {
+  background: $sentiment-positive;
+}
 
 // Import hover effects styles to make mixins available globally
 @import "./hover-effects";

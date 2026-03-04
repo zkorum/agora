@@ -15,17 +15,20 @@ async function captureElement({
   element,
   showCaptureHeaders = false,
   showCaptureFooters = false,
+  showInlineLegends = false,
 }: {
   element: HTMLElement;
   showCaptureHeaders?: boolean;
   showCaptureFooters?: boolean;
+  showInlineLegends?: boolean;
 }): Promise<HTMLCanvasElement> {
+  const needsClone = showCaptureHeaders || showCaptureFooters || showInlineLegends;
   return html2canvas(element, {
-    scale: 3,
+    scale: 2,
     useCORS: true,
     logging: false,
     backgroundColor: "#ffffff",
-    onclone: (showCaptureHeaders || showCaptureFooters)
+    onclone: needsClone
       ? (clonedDoc) => {
           if (showCaptureHeaders) {
             clonedDoc.querySelectorAll(".capture-only").forEach((el) => {
@@ -37,6 +40,11 @@ async function captureElement({
               (el as HTMLElement).style.display = "block";
             });
           }
+          if (showInlineLegends) {
+            clonedDoc.querySelectorAll(".export-inline-legend").forEach((el) => {
+              (el as HTMLElement).style.display = "flex";
+            });
+          }
         }
       : undefined,
   });
@@ -45,7 +53,7 @@ async function captureElement({
 function canvasToBlob({
   canvas,
   type = "image/jpeg",
-  quality = 0.95,
+  quality = 0.85,
 }: {
   canvas: HTMLCanvasElement;
   type?: string;
@@ -87,6 +95,7 @@ export function useReportDownload({
           element: capture.element,
           showCaptureHeaders: true,
           showCaptureFooters: true,
+          showInlineLegends: true,
         });
         const blob = await canvasToBlob({ canvas });
         zip.file(`${capture.name}.jpg`, blob);
@@ -126,10 +135,11 @@ export function useReportDownload({
         const canvas = await captureElement({
           element: captures[i].element,
           showCaptureHeaders: !isFirstPage,
+          showInlineLegends: true,
         });
 
         if (!isFirstPage) pdf.addPage();
-        const imgData = canvas.toDataURL("image/jpeg", 0.95);
+        const imgData = canvas.toDataURL("image/jpeg", 0.80);
         const aspectRatio = canvas.width / canvas.height;
         pdf.addImage(imgData, "JPEG", 0, 0, pageWidth, pageWidth / aspectRatio);
         isFirstPage = false;
@@ -138,7 +148,7 @@ export function useReportDownload({
       // Place footer at the absolute bottom of the last page
       if (footerElement) {
         const footerCanvas = await captureElement({ element: footerElement });
-        const footerImgData = footerCanvas.toDataURL("image/jpeg", 0.95);
+        const footerImgData = footerCanvas.toDataURL("image/jpeg", 0.80);
         const footerAspectRatio = footerCanvas.width / footerCanvas.height;
         const footerWidth = pageWidth;
         const footerHeight = pageWidth / footerAspectRatio;

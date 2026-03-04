@@ -146,11 +146,11 @@ const emptySectionsMode = ref<"none" | "all" | "agreements" | "disagreements" | 
 
 const mockConversationSlugId = "dev-test-report";
 const mockConversationTitle =
-  "Comment améliorer la gouvernance participative dans notre commune ?";
+  "Comment améliorer la gouvernance participative et renforcer l'engagement citoyen dans les décisions budgétaires et urbanistiques de notre commune ?";
 const mockAuthorUsername = "test-user";
 const mockCreatedAt = new Date("2025-11-15");
-const mockOpinionCount = 42;
-const mockVoteCount = 380;
+const mockOpinionCount = 187;
+const mockVoteCount = 4280;
 
 const clusterCountOptions = computed(() => [
   { label: t("clusterCount0"), value: 0 },
@@ -176,21 +176,21 @@ const emptySectionsOptions = computed(() => [
 ]);
 
 const longAiLabels = [
-  "Progressive Environmentalists",
-  "Fiscal Conservative Traditionalists",
-  "Social Democratic Reformists",
-  "Libertarian Technologists",
-  "Community-Oriented Pragmatists",
-  "Radical Decentralization Advocates",
+  "Écologistes progressistes pour la transition énergétique",
+  "Conservateurs fiscaux attachés aux traditions institutionnelles",
+  "Réformistes sociaux-démocrates pour un État-providence renforcé",
+  "Libertariens technophiles pour la décentralisation numérique",
+  "Pragmatiques communautaires axés sur les compromis locaux",
+  "Militants pour la décentralisation radicale des institutions",
 ];
 
 const aiSummaries = [
-  "Ce groupe soutient des politiques environnementales progressistes et une transition énergétique rapide.",
-  "Ce groupe favorise la prudence fiscale et le respect des traditions institutionnelles.",
-  "Ce groupe promeut des réformes sociales-démocrates avec un État-providence renforcé.",
-  "Ce groupe valorise la liberté individuelle et les solutions technologiques décentralisées.",
-  "Ce groupe privilégie le pragmatisme communautaire et les compromis locaux.",
-  "Ce groupe milite pour une décentralisation radicale des institutions existantes.",
+  "Ce groupe soutient des politiques environnementales progressistes et une transition énergétique rapide vers les énergies renouvelables. Ils plaident pour des investissements massifs dans les infrastructures vertes et les transports en commun durables, tout en préservant les espaces naturels et la biodiversité locale.",
+  "Ce groupe favorise la prudence fiscale et le respect des traditions institutionnelles établies. Ils s'opposent aux augmentations d'impôts et préfèrent une gestion rigoureuse des dépenses publiques, avec un accent particulier sur la réduction de la dette communale et la simplification administrative.",
+  "Ce groupe promeut des réformes sociales-démocrates avec un État-providence renforcé et des services publics de qualité. Ils soutiennent l'augmentation des budgets pour l'éducation, la santé et le logement social, tout en favorisant le dialogue social et la négociation collective.",
+  "Ce groupe valorise la liberté individuelle et les solutions technologiques décentralisées pour la gouvernance. Ils préconisent l'utilisation de plateformes numériques pour la démocratie directe, le vote électronique sécurisé et la transparence totale des données publiques via la blockchain.",
+  "Ce groupe privilégie le pragmatisme communautaire et les compromis locaux basés sur l'expérience du terrain. Ils favorisent les solutions progressives et testées à petite échelle, avec une forte implication des associations de quartier et des conseils citoyens dans les processus décisionnels.",
+  "Ce groupe milite pour une décentralisation radicale des institutions existantes et un transfert massif de pouvoir vers les citoyens. Ils souhaitent la création d'assemblées populaires autonomes, le tirage au sort pour les mandats publics et l'abolition progressive des structures bureaucratiques centralisées.",
 ];
 
 const mockStatements = [
@@ -268,7 +268,7 @@ const mockClusters = computed<Partial<PolisClusters>>(() => {
   if (selectedClusterCount.value === 0) return {};
 
   const clusters: Partial<PolisClusters> = {};
-  const baseSizes = [28, 21, 15, 12, 9, 7];
+  const baseSizes = [145, 112, 87, 63, 48, 35];
 
   for (let i = 0; i < selectedClusterCount.value; i++) {
     const key = polisKeys[i];
@@ -350,6 +350,7 @@ const mockDivisiveItems = computed(() => {
 // Download functionality
 interface AnalysisReportExposed {
   summaryRef: HTMLElement | null;
+  groupsTableRef: HTMLElement | null;
   groupsAndRepresentativeRefs: HTMLElement[];
   agreementEmptyRef: HTMLElement | null;
   disagreementEmptyRef: HTMLElement | null;
@@ -376,6 +377,9 @@ function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
 
   if (report.summaryRef?.isConnected) {
     captures.push({ element: report.summaryRef, name: "summary" });
+  }
+  if (report.groupsTableRef?.isConnected) {
+    captures.push({ element: report.groupsTableRef, name: "groups-table" });
   }
   for (let i = 0; i < report.groupsAndRepresentativeRefs.length; i++) {
     const el = report.groupsAndRepresentativeRefs[i];

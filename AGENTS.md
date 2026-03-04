@@ -590,6 +590,10 @@ export function getUserById(userId: string): User {
 }
 ```
 
+### Avoid `!important` in CSS/SCSS
+
+Do not use `!important` in CSS or SCSS. It makes styles hard to override and debug. Instead, use more specific selectors or restructure the CSS to achieve the desired specificity.
+
 ### Logging Guidelines
 
 **Important:** Do NOT use `log.debug()` in this codebase. Always use `log.info()`, `log.warn()`, or `log.error()` instead.
