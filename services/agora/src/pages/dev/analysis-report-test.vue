@@ -51,19 +51,32 @@
                 class="control-select"
               />
             </div>
+            <div class="control-item">
+              <label for="empty-sections" class="control-label">
+                {{ t("emptySectionsLabel") }}
+              </label>
+              <PrimeSelect
+                id="empty-sections"
+                v-model="emptySectionsMode"
+                :options="emptySectionsOptions"
+                option-label="label"
+                option-value="value"
+                class="control-select"
+              />
+            </div>
           </div>
         </template>
       </PrimeCard>
 
       <div class="download-bar no-print">
         <PrimeButton
-          :label="isGeneratingZip ? 'Generating...' : 'Download Images (ZIP)'"
+          :label="isGeneratingZip ? t('generating') : t('downloadImagesZip')"
           icon="pi pi-image"
           :disabled="isGeneratingZip"
           @click="handleDownloadZip"
         />
         <PrimeButton
-          :label="isGeneratingPdf ? 'Generating...' : 'Download PDF'"
+          :label="isGeneratingPdf ? t('generating') : t('downloadPdf')"
           icon="pi pi-file-pdf"
           :disabled="isGeneratingPdf"
           @click="handleDownloadPdf"
@@ -73,7 +86,8 @@
       <div class="report-preview">
         <AnalysisReport
           ref="analysisReportRef"
-          :key="`${selectedClusterCount}-${useAiLabels}`"
+          :key="`${selectedClusterCount}-${useAiLabels}-${emptySectionsMode}`"
+          :items-per-page="itemsPerPage"
           :conversation-slug-id="mockConversationSlugId"
           :conversation-title="mockConversationTitle"
           :author-username="mockAuthorUsername"
@@ -106,7 +120,8 @@ import type {
   PolisClusters,
   PolisKey,
 } from "src/shared/types/zod";
-import { computed, ref } from "vue";
+import { REPORT_ITEMS_PER_CAPTURE_PAGE, REPORT_ITEMS_PER_PDF_PAGE } from "src/utils/component/report/reportData";
+import { computed, nextTick, ref } from "vue";
 
 import {
   type AnalysisReportTestTranslations,
@@ -127,6 +142,7 @@ const { t } = useComponentI18n<AnalysisReportTestTranslations>(
 
 const selectedClusterCount = ref(3);
 const useAiLabels = ref(true);
+const emptySectionsMode = ref<"none" | "all" | "agreements" | "disagreements" | "divisive">("none");
 
 const mockConversationSlugId = "dev-test-report";
 const mockConversationTitle =
@@ -136,19 +152,28 @@ const mockCreatedAt = new Date("2025-11-15");
 const mockOpinionCount = 42;
 const mockVoteCount = 380;
 
-const clusterCountOptions = [
-  { label: "0 Groups", value: 0 },
-  { label: "2 Groups", value: 2 },
-  { label: "3 Groups", value: 3 },
-  { label: "4 Groups", value: 4 },
-  { label: "5 Groups", value: 5 },
-  { label: "6 Groups", value: 6 },
-];
+const clusterCountOptions = computed(() => [
+  { label: t("clusterCount0"), value: 0 },
+  { label: t("clusterCount1"), value: 1 },
+  { label: t("clusterCount2"), value: 2 },
+  { label: t("clusterCount3"), value: 3 },
+  { label: t("clusterCount4"), value: 4 },
+  { label: t("clusterCount5"), value: 5 },
+  { label: t("clusterCount6"), value: 6 },
+]);
 
-const aiLabelOptions = [
-  { label: "With AI Labels", value: true },
-  { label: "Without AI Labels (A/B/C)", value: false },
-];
+const aiLabelOptions = computed(() => [
+  { label: t("withAiLabels"), value: true },
+  { label: t("withoutAiLabels"), value: false },
+]);
+
+const emptySectionsOptions = computed(() => [
+  { label: t("emptySectionsNone"), value: "none" as const },
+  { label: t("emptySectionsAll"), value: "all" as const },
+  { label: t("emptySectionsAgreements"), value: "agreements" as const },
+  { label: t("emptySectionsDisagreements"), value: "disagreements" as const },
+  { label: t("emptySectionsDivisive"), value: "divisive" as const },
+]);
 
 const longAiLabels = [
   "Progressive Environmentalists",
@@ -279,6 +304,7 @@ const totalParticipantCount = computed(() => {
 
 const mockAgreementItems = computed(() => {
   if (selectedClusterCount.value === 0) return [];
+  if (emptySectionsMode.value === "all" || emptySectionsMode.value === "agreements") return [];
   const items: AnalysisOpinionItem[] = [];
   for (let i = 0; i < 20; i++) {
     items.push(
@@ -293,6 +319,7 @@ const mockAgreementItems = computed(() => {
 
 const mockDisagreementItems = computed(() => {
   if (selectedClusterCount.value === 0) return [];
+  if (emptySectionsMode.value === "all" || emptySectionsMode.value === "disagreements") return [];
   const items: AnalysisOpinionItem[] = [];
   for (let i = 0; i < 15; i++) {
     items.push(
@@ -307,6 +334,7 @@ const mockDisagreementItems = computed(() => {
 
 const mockDivisiveItems = computed(() => {
   if (selectedClusterCount.value === 0) return [];
+  if (emptySectionsMode.value === "all" || emptySectionsMode.value === "divisive") return [];
   const items: AnalysisOpinionItem[] = [];
   for (let i = 8; i < 10; i++) {
     items.push(
@@ -323,6 +351,9 @@ const mockDivisiveItems = computed(() => {
 interface AnalysisReportExposed {
   summaryRef: HTMLElement | null;
   groupsAndRepresentativeRefs: HTMLElement[];
+  agreementEmptyRef: HTMLElement | null;
+  disagreementEmptyRef: HTMLElement | null;
+  divisiveEmptyRef: HTMLElement | null;
   agreementRefs: HTMLElement[];
   disagreementRefs: HTMLElement[];
   divisiveRefs: HTMLElement[];
@@ -330,6 +361,8 @@ interface AnalysisReportExposed {
 }
 
 const analysisReportRef = ref<AnalysisReportExposed | null>(null);
+
+const itemsPerPage = ref(REPORT_ITEMS_PER_CAPTURE_PAGE);
 
 const { downloadAsZip, downloadAsPdf, isGeneratingZip, isGeneratingPdf } = useReportDownload({
   fileName: computed(() => `test-report-${selectedClusterCount.value}groups`),
@@ -341,30 +374,39 @@ function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
 
   const captures: Array<{ element: HTMLElement; name: string }> = [];
 
-  if (report.summaryRef) {
+  if (report.summaryRef?.isConnected) {
     captures.push({ element: report.summaryRef, name: "summary" });
   }
   for (let i = 0; i < report.groupsAndRepresentativeRefs.length; i++) {
     const el = report.groupsAndRepresentativeRefs[i];
-    if (el) {
+    if (el?.isConnected) {
       captures.push({ element: el, name: `groups-rep-${i}` });
     }
   }
+  if (report.agreementEmptyRef?.isConnected) {
+    captures.push({ element: report.agreementEmptyRef, name: "agreements-empty" });
+  }
   for (let j = 0; j < report.agreementRefs.length; j++) {
     const el = report.agreementRefs[j];
-    if (el) {
+    if (el?.isConnected) {
       captures.push({ element: el, name: `agreements-${j}` });
     }
   }
+  if (report.disagreementEmptyRef?.isConnected) {
+    captures.push({ element: report.disagreementEmptyRef, name: "disagreements-empty" });
+  }
   for (let j = 0; j < report.disagreementRefs.length; j++) {
     const el = report.disagreementRefs[j];
-    if (el) {
+    if (el?.isConnected) {
       captures.push({ element: el, name: `disagreements-${j}` });
     }
   }
+  if (report.divisiveEmptyRef?.isConnected) {
+    captures.push({ element: report.divisiveEmptyRef, name: "divisive-empty" });
+  }
   for (let j = 0; j < report.divisiveRefs.length; j++) {
     const el = report.divisiveRefs[j];
-    if (el) {
+    if (el?.isConnected) {
       captures.push({ element: el, name: `divisive-${j}` });
     }
   }
@@ -373,6 +415,7 @@ function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
 }
 
 async function handleDownloadZip(): Promise<void> {
+  await nextTick();
   const captures = buildCaptures();
   if (captures.length > 0) {
     await downloadAsZip({ captures });
@@ -380,6 +423,8 @@ async function handleDownloadZip(): Promise<void> {
 }
 
 async function handleDownloadPdf(): Promise<void> {
+  itemsPerPage.value = REPORT_ITEMS_PER_PDF_PAGE;
+  await nextTick();
   const captures = buildCaptures();
   if (captures.length > 0) {
     await downloadAsPdf({
@@ -387,6 +432,7 @@ async function handleDownloadPdf(): Promise<void> {
       footerElement: analysisReportRef.value?.footerRef ?? undefined,
     });
   }
+  itemsPerPage.value = REPORT_ITEMS_PER_CAPTURE_PAGE;
 }
 </script>
 

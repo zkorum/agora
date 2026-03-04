@@ -61,6 +61,7 @@
             <AnalysisReport
               v-if="conversationQuery.data.value && analysisQuery.data.value"
               ref="analysisReportRef"
+              :items-per-page="itemsPerPage"
               :conversation-slug-id="conversationSlugId"
               :conversation-title="conversationQuery.data.value.payload.title"
               :author-username="conversationQuery.data.value.metadata.authorUsername"
@@ -93,8 +94,8 @@ import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
-import { getReportOpinions } from "src/utils/component/report/reportData";
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { getReportOpinions, REPORT_ITEMS_PER_CAPTURE_PAGE, REPORT_ITEMS_PER_PDF_PAGE } from "src/utils/component/report/reportData";
+import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import {
@@ -191,6 +192,9 @@ onUnmounted(() => {
 interface AnalysisReportExposed {
   summaryRef: HTMLElement | null;
   groupsAndRepresentativeRefs: HTMLElement[];
+  agreementEmptyRef: HTMLElement | null;
+  disagreementEmptyRef: HTMLElement | null;
+  divisiveEmptyRef: HTMLElement | null;
   agreementRefs: HTMLElement[];
   disagreementRefs: HTMLElement[];
   divisiveRefs: HTMLElement[];
@@ -208,6 +212,8 @@ const reportFileName = computed(() => {
   return `agora-report-${sanitized}`;
 });
 
+const itemsPerPage = ref(REPORT_ITEMS_PER_CAPTURE_PAGE);
+
 const { downloadAsZip, downloadAsPdf, isGeneratingZip, isGeneratingPdf } = useReportDownload({
   fileName: reportFileName,
 });
@@ -218,30 +224,39 @@ function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
 
   const captures: Array<{ element: HTMLElement; name: string }> = [];
 
-  if (report.summaryRef) {
+  if (report.summaryRef?.isConnected) {
     captures.push({ element: report.summaryRef, name: "summary" });
   }
   for (let i = 0; i < report.groupsAndRepresentativeRefs.length; i++) {
     const el = report.groupsAndRepresentativeRefs[i];
-    if (el) {
+    if (el?.isConnected) {
       captures.push({ element: el, name: `groups-rep-${i}` });
     }
   }
+  if (report.agreementEmptyRef?.isConnected) {
+    captures.push({ element: report.agreementEmptyRef, name: "agreements-empty" });
+  }
   for (let j = 0; j < report.agreementRefs.length; j++) {
     const el = report.agreementRefs[j];
-    if (el) {
+    if (el?.isConnected) {
       captures.push({ element: el, name: `agreements-${j}` });
     }
   }
+  if (report.disagreementEmptyRef?.isConnected) {
+    captures.push({ element: report.disagreementEmptyRef, name: "disagreements-empty" });
+  }
   for (let j = 0; j < report.disagreementRefs.length; j++) {
     const el = report.disagreementRefs[j];
-    if (el) {
+    if (el?.isConnected) {
       captures.push({ element: el, name: `disagreements-${j}` });
     }
   }
+  if (report.divisiveEmptyRef?.isConnected) {
+    captures.push({ element: report.divisiveEmptyRef, name: "divisive-empty" });
+  }
   for (let j = 0; j < report.divisiveRefs.length; j++) {
     const el = report.divisiveRefs[j];
-    if (el) {
+    if (el?.isConnected) {
       captures.push({ element: el, name: `divisive-${j}` });
     }
   }
@@ -250,6 +265,7 @@ function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
 }
 
 async function handleDownloadZip(): Promise<void> {
+  await nextTick();
   const captures = buildCaptures();
   if (captures.length > 0) {
     await downloadAsZip({ captures });
@@ -257,6 +273,8 @@ async function handleDownloadZip(): Promise<void> {
 }
 
 async function handleDownloadPdf(): Promise<void> {
+  itemsPerPage.value = REPORT_ITEMS_PER_PDF_PAGE;
+  await nextTick();
   const captures = buildCaptures();
   if (captures.length > 0) {
     await downloadAsPdf({
@@ -264,6 +282,7 @@ async function handleDownloadPdf(): Promise<void> {
       footerElement: analysisReportRef.value?.footerRef ?? undefined,
     });
   }
+  itemsPerPage.value = REPORT_ITEMS_PER_CAPTURE_PAGE;
 }
 </script>
 
@@ -278,8 +297,6 @@ async function handleDownloadPdf(): Promise<void> {
   justify-content: center;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background: #f8f8fb;
-  border-radius: 12px;
 }
 
 .toolbar-button-content {
