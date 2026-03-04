@@ -15,6 +15,7 @@
     <div class="container">
       <PreferencesDialogTest />
       <OpinionGroupVisualizationTest />
+      <AnalysisReportTest />
       <AsyncStateHandlerTest />
       <EmbeddedBrowserWarningTest />
     </div>
@@ -30,6 +31,7 @@ import {
   type ComponentTestingTranslations,
   componentTestingTranslations,
 } from "./component-testing.i18n";
+import AnalysisReportTest from "./test-components/AnalysisReportTest.vue";
 import AsyncStateHandlerTest from "./test-components/AsyncStateHandlerTest.vue";
 import EmbeddedBrowserWarningTest from "./test-components/EmbeddedBrowserWarningTest.vue";
 import OpinionGroupVisualizationTest from "./test-components/OpinionGroupVisualizationTest.vue";

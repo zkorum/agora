@@ -2,6 +2,8 @@ import type { AnalysisOpinionItem } from "src/shared/types/zod";
 
 export const REPORT_MAX_ITEMS = 10;
 export const SUMMARY_MAX_ITEMS = 3;
+export const REPORT_MAX_REPRESENTATIVE_ITEMS = 5;
+export const REPORT_ITEMS_PER_CAPTURE_PAGE = 5;
 const MIN_SCORE = 0.6;
 
 export function getReportOpinions({

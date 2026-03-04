@@ -66,11 +66,11 @@ const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const router = useRouter();
 
 async function goToPassport() {
-  await router.push({ name: "/verify/passport/" });
+  await router.replace({ name: "/verify/passport/" });
 }
 
 async function goToPhone() {
-  await router.push({ name: "/verify/phone/" });
+  await router.replace({ name: "/verify/phone/" });
 }
 </script>
 

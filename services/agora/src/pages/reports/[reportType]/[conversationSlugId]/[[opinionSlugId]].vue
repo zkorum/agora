@@ -50,7 +50,7 @@
         <div v-for="report in reportItemList" :key="report.id">
           <div>{{ t("id") }} {{ report.id }}</div>
           <div>{{ t("username") }} {{ report.username }}</div>
-          <div>{{ t("createdAt") }} {{ useTimeAgo(report.createdAt) }}</div>
+          <div>{{ t("createdAt") }} {{ formatTimeAgo(report.createdAt) }}</div>
           <div>{{ t("reason") }} {{ report.reason }}</div>
           <div>
             {{ t("explanation") }} {{ report.explanation ?? t("notAvailable") }}
@@ -62,10 +62,10 @@
 </template>
 
 <script setup lang="ts">
-import { useTimeAgo } from "@vueuse/core";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useLocalizedTimeAgoFormatter } from "src/composables/ui/useLocalizedTimeAgo";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { UserReportItem } from "src/shared/types/zod";
 import { useBackendReportApi } from "src/utils/api/report";
@@ -87,6 +87,7 @@ const { showNotifyMessage } = useNotify();
 
 const { fetchUserReportsByPostSlugId, fetchUserReportsByCommentSlugId } =
   useBackendReportApi();
+const formatTimeAgo = useLocalizedTimeAgoFormatter();
 
 const reportItemList = ref<UserReportItem[]>([]);
 

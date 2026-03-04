@@ -29,12 +29,12 @@
       <div class="toolbar no-print">
         <ZKButton
           button-type="compactButton"
-          :disable="isGeneratingImages || !hasData"
-          @click="handleDownloadImages"
+          :disable="isGeneratingZip || !hasData"
+          @click="handleDownloadZip"
         >
           <div class="toolbar-button-content">
             <ZKIcon name="mdi:image-outline" size="1.2rem" color="#333238" />
-            <span>{{ isGeneratingImages ? t("generating") : t("downloadImages") }}</span>
+            <span>{{ isGeneratingZip ? t("generating") : t("downloadImages") }}</span>
           </div>
         </ZKButton>
         <ZKButton
@@ -68,7 +68,7 @@
               :participant-count="conversationQuery.data.value.metadata.participantCount"
               :opinion-count="conversationQuery.data.value.metadata.opinionCount"
               :vote-count="conversationQuery.data.value.metadata.voteCount"
-              :clusters="analysisQuery.data.value.polisClusters"
+              :clusters="analysisQuery.data.value?.polisClusters ?? {}"
               :agreement-items="agreementItems"
               :disagreement-items="disagreementItems"
               :divisive-items="divisiveItems"
@@ -190,9 +190,10 @@ onUnmounted(() => {
 // Report capture refs
 interface AnalysisReportExposed {
   summaryRef: HTMLElement | null;
-  agreementsRef: HTMLElement | null;
-  disagreementsRef: HTMLElement | null;
-  divisiveRef: HTMLElement | null;
+  groupsAndRepresentativeRefs: HTMLElement[];
+  agreementRefs: HTMLElement[];
+  disagreementRefs: HTMLElement[];
+  divisiveRefs: HTMLElement[];
   footerRef: HTMLElement | null;
 }
 
@@ -207,7 +208,7 @@ const reportFileName = computed(() => {
   return `agora-report-${sanitized}`;
 });
 
-const { downloadAsImages, downloadAsPdf, isGeneratingImages, isGeneratingPdf } = useReportDownload({
+const { downloadAsZip, downloadAsPdf, isGeneratingZip, isGeneratingPdf } = useReportDownload({
   fileName: reportFileName,
 });
 
@@ -220,23 +221,38 @@ function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
   if (report.summaryRef) {
     captures.push({ element: report.summaryRef, name: "summary" });
   }
-  if (report.agreementsRef) {
-    captures.push({ element: report.agreementsRef, name: "agreements" });
+  for (let i = 0; i < report.groupsAndRepresentativeRefs.length; i++) {
+    const el = report.groupsAndRepresentativeRefs[i];
+    if (el) {
+      captures.push({ element: el, name: `groups-rep-${i}` });
+    }
   }
-  if (report.disagreementsRef) {
-    captures.push({ element: report.disagreementsRef, name: "disagreements" });
+  for (let j = 0; j < report.agreementRefs.length; j++) {
+    const el = report.agreementRefs[j];
+    if (el) {
+      captures.push({ element: el, name: `agreements-${j}` });
+    }
   }
-  if (report.divisiveRef) {
-    captures.push({ element: report.divisiveRef, name: "divisive" });
+  for (let j = 0; j < report.disagreementRefs.length; j++) {
+    const el = report.disagreementRefs[j];
+    if (el) {
+      captures.push({ element: el, name: `disagreements-${j}` });
+    }
+  }
+  for (let j = 0; j < report.divisiveRefs.length; j++) {
+    const el = report.divisiveRefs[j];
+    if (el) {
+      captures.push({ element: el, name: `divisive-${j}` });
+    }
   }
 
   return captures;
 }
 
-async function handleDownloadImages(): Promise<void> {
+async function handleDownloadZip(): Promise<void> {
   const captures = buildCaptures();
   if (captures.length > 0) {
-    await downloadAsImages({ captures });
+    await downloadAsZip({ captures });
   }
 }
 

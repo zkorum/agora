@@ -216,6 +216,9 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
         console.error("Unknown intention");
     }
 
+    // Reset intention after consuming it
+    activeUserIntention.value = "none";
+
     // Open preferences dialog after routing is complete
     if (shouldShowPreferencesDialog) {
       const preferencesStore = useOnboardingPreferencesStore();

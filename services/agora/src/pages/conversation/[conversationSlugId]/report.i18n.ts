@@ -17,7 +17,7 @@ export const reportPageTranslations: Record<
 > = {
   en: {
     pageTitle: "Analysis Report",
-    downloadImages: "Download Images",
+    downloadImages: "Download images (ZIP)",
     downloadPdf: "Download PDF",
     generating: "Generating...",
     loadingError: "Failed to load conversation data",
@@ -28,7 +28,7 @@ export const reportPageTranslations: Record<
   },
   ar: {
     pageTitle: "تقرير التحليل",
-    downloadImages: "تحميل الصور",
+    downloadImages: "تحميل الصور (ZIP)",
     downloadPdf: "تحميل PDF",
     generating: "جاري الإنشاء...",
     loadingError: "فشل في تحميل بيانات المحادثة",
@@ -39,7 +39,7 @@ export const reportPageTranslations: Record<
   },
   es: {
     pageTitle: "Informe de análisis",
-    downloadImages: "Descargar imágenes",
+    downloadImages: "Descargar imágenes (ZIP)",
     downloadPdf: "Descargar PDF",
     generating: "Generando...",
     loadingError: "Error al cargar los datos de la conversación",
@@ -50,7 +50,7 @@ export const reportPageTranslations: Record<
   },
   fr: {
     pageTitle: "Rapport d'analyse",
-    downloadImages: "Télécharger les images",
+    downloadImages: "Télécharger les images (ZIP)",
     downloadPdf: "Télécharger le PDF",
     generating: "Génération en cours...",
     loadingError: "Échec du chargement des données de la conversation",
@@ -61,7 +61,7 @@ export const reportPageTranslations: Record<
   },
   "zh-Hans": {
     pageTitle: "分析报告",
-    downloadImages: "下载图片",
+    downloadImages: "下载图片 (ZIP)",
     downloadPdf: "下载 PDF",
     generating: "正在生成...",
     loadingError: "加载对话数据失败",
@@ -71,7 +71,7 @@ export const reportPageTranslations: Record<
   },
   "zh-Hant": {
     pageTitle: "分析報告",
-    downloadImages: "下載圖片",
+    downloadImages: "下載圖片 (ZIP)",
     downloadPdf: "下載 PDF",
     generating: "正在生成...",
     loadingError: "載入對話資料失敗",
@@ -81,7 +81,7 @@ export const reportPageTranslations: Record<
   },
   ja: {
     pageTitle: "分析レポート",
-    downloadImages: "画像をダウンロード",
+    downloadImages: "画像をダウンロード (ZIP)",
     downloadPdf: "PDFをダウンロード",
     generating: "生成中...",
     loadingError: "会話データの読み込みに失敗しました",

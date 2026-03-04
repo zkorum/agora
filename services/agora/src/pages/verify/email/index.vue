@@ -98,6 +98,6 @@ function onSubmit() {
 }
 
 async function goToOtpPage() {
-  await router.push({ name: "/verify/email-code/" });
+  await router.replace({ name: "/verify/email-code/" });
 }
 </script>

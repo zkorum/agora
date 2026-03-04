@@ -97,6 +97,6 @@ function onSubmit() {
 }
 
 async function goToOtpPage() {
-  await router.push({ name: "/verify/phone-code/" });
+  await router.replace({ name: "/verify/phone-code/" });
 }
 </script>

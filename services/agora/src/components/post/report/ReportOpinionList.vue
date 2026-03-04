@@ -1,9 +1,11 @@
 <template>
   <div class="report-section">
-    <h2 class="section-title">
-      <span :style="{ color: titleColor }">{{ title }}</span>
-    </h2>
-    <p v-if="subtitle" class="section-subtitle">{{ subtitle }}</p>
+    <template v-if="!hideTitle">
+      <h2 class="section-title">
+        <span :style="{ color: titleColor }">{{ title }}</span>
+      </h2>
+      <p v-if="subtitle" class="section-subtitle">{{ subtitle }}</p>
+    </template>
 
     <div v-if="items.length === 0" class="empty-state">
       {{ t("noItems") }}
@@ -14,14 +16,19 @@
         <tr>
           <th class="col-rank">#</th>
           <th class="col-statement">{{ t("statement") }}</th>
-          <th class="col-vote">{{ t("overall") }} {{ totalParticipants }}</th>
+          <th class="col-vote">{{ t("overall") }} ({{ totalParticipants }})</th>
           <th
             v-for="entry in clusterEntries"
             :key="entry.key"
             class="col-vote"
           >
-            {{ formatClusterLabel(entry.key, false) }}
-            {{ entry.cluster.numUsers }}
+            <template v-if="useLetterCodes">
+              {{ formatClusterLabel(entry.key, false) }} ({{ entry.cluster.numUsers }})
+            </template>
+            <template v-else>
+              {{ entry.cluster.aiLabel || formatClusterLabel(entry.key, false) }}
+              ({{ entry.cluster.numUsers }})
+            </template>
           </th>
         </tr>
       </thead>
@@ -30,7 +37,7 @@
           v-for="(item, index) in items"
           :key="item.opinionSlugId"
         >
-          <td class="col-rank cell-rank">{{ index + 1 }}</td>
+          <td class="col-rank cell-rank">{{ startRank + index + 1 }}</td>
           <td class="col-statement cell-statement">
             <div class="statement-text">
               <ZKHtmlContent
@@ -92,14 +99,23 @@ import {
 } from "./ReportOpinionList.i18n";
 import ReportVoteCell from "./ReportVoteCell.vue";
 
-const props = defineProps<{
-  title: string;
-  subtitle?: string;
-  titleColor: string;
-  items: AnalysisOpinionItem[];
-  clusters: Partial<PolisClusters>;
-  totalParticipants: number;
-}>();
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    subtitle?: string;
+    titleColor: string;
+    items: AnalysisOpinionItem[];
+    clusters: Partial<PolisClusters>;
+    totalParticipants: number;
+    startRank?: number;
+    hideTitle?: boolean;
+  }>(),
+  {
+    subtitle: undefined,
+    startRank: 0,
+    hideTitle: false,
+  },
+);
 
 const { t } = useComponentI18n<ReportOpinionListTranslations>(
   reportOpinionListTranslations,
@@ -116,6 +132,8 @@ const clusterEntries = computed(() => {
   }
   return entries;
 });
+
+const useLetterCodes = computed(() => clusterEntries.value.length >= 4);
 
 function getClusterStats({
   item,
@@ -158,6 +176,7 @@ function getClusterStats({
 
 .opinion-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.9rem;
 
@@ -172,17 +191,18 @@ function getClusterStats({
   th {
     font-weight: var(--font-weight-semibold);
     color: #6d6a74;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    white-space: nowrap;
+    font-size: 0.6rem;
+    letter-spacing: 0.01em;
     border-bottom: 1px solid #e9e9f1;
+    word-break: break-word;
   }
+
 }
 
 .col-rank {
   width: 2rem;
   text-align: center;
+  white-space: nowrap;
 }
 
 .cell-rank {
@@ -192,8 +212,8 @@ function getClusterStats({
 }
 
 .col-statement {
-  width: 40%;
-  padding-right: 2rem;
+  width: 250px;
+  padding-right: 0.5rem;
 }
 
 .cell-statement {
@@ -203,13 +223,15 @@ function getClusterStats({
 
 .statement-text {
   display: -webkit-box;
-  -webkit-line-clamp: 6;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
   font-size: 0.9rem;
+  word-break: break-word;
 }
 
 .col-vote {
-  min-width: 90px;
+  padding-left: 0.15rem;
+  padding-right: 0.15rem;
 }
 </style>

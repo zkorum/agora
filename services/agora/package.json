@@ -57,6 +57,7 @@
     "html2canvas": "^1.4.1",
     "inapp-spy": "^5.0.7",
     "jspdf": "^4.2.0",
+    "jszip": "^3.10.1",
     "libphonenumber-js": "^1.12.38",
     "linkify-html": "^4.3.2",
     "linkifyjs": "^4.3.2",

@@ -77,7 +77,7 @@ function onSubmit() {
 }
 
 async function goToOtpPage() {
-  await router.push({ name: "/onboarding/step3-email-2/" });
+  await router.replace({ name: "/onboarding/step3-email-2/" });
 }
 
 async function goToPassportVerification() {

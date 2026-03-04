@@ -56,7 +56,7 @@ const disagreeWidth = computed(() => `${disagreePct.value}%`);
 }
 
 .vote-cell {
-  min-width: 80px;
+  width: 100%;
 }
 
 .bar {
@@ -86,9 +86,10 @@ const disagreeWidth = computed(() => `${disagreePct.value}%`);
 
 .percentages {
   display: flex;
-  gap: 0.25rem;
-  margin-top: 5px;
-  font-size: 0.8rem;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  margin-top: 3px;
+  font-size: 0.65rem;
   line-height: 1;
 }
 

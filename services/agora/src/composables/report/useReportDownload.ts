@@ -42,32 +42,64 @@ async function captureElement({
   });
 }
 
+function canvasToBlob({
+  canvas,
+  type = "image/jpeg",
+  quality = 0.95,
+}: {
+  canvas: HTMLCanvasElement;
+  type?: string;
+  quality?: number;
+}): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error("Failed to convert canvas to blob"));
+        }
+      },
+      type,
+      quality,
+    );
+  });
+}
+
 export function useReportDownload({
   fileName,
 }: UseReportDownloadParams) {
-  const isGeneratingImages = ref(false);
+  const isGeneratingZip = ref(false);
   const isGeneratingPdf = ref(false);
 
-  async function downloadAsImages({
+  async function downloadAsZip({
     captures,
   }: {
     captures: ImageCapture[];
   }): Promise<void> {
-    isGeneratingImages.value = true;
+    isGeneratingZip.value = true;
     try {
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+
       for (const capture of captures) {
         const canvas = await captureElement({
           element: capture.element,
           showCaptureHeaders: true,
           showCaptureFooters: true,
         });
-        const link = document.createElement("a");
-        link.download = `${toValue(fileName)}-${capture.name}.jpg`;
-        link.href = canvas.toDataURL("image/jpeg", 0.95);
-        link.click();
+        const blob = await canvasToBlob({ canvas });
+        zip.file(`${capture.name}.jpg`, blob);
       }
+
+      const content = await zip.generateAsync({ type: "blob" });
+      const link = document.createElement("a");
+      link.download = `${toValue(fileName)}.zip`;
+      link.href = URL.createObjectURL(content);
+      link.click();
+      URL.revokeObjectURL(link.href);
     } finally {
-      isGeneratingImages.value = false;
+      isGeneratingZip.value = false;
     }
   }
 
@@ -99,22 +131,7 @@ export function useReportDownload({
         const scaledWidth = pageWidth;
         const scaledHeight = pageWidth / aspectRatio;
 
-        if (scaledHeight <= pageHeight) {
-          pdf.addImage(imgData, "JPEG", 0, 0, scaledWidth, scaledHeight);
-        } else {
-          const totalPages = Math.ceil(scaledHeight / pageHeight);
-          for (let page = 0; page < totalPages; page++) {
-            if (page > 0) pdf.addPage();
-            pdf.addImage(
-              imgData,
-              "JPEG",
-              0,
-              -(page * pageHeight),
-              scaledWidth,
-              scaledHeight,
-            );
-          }
-        }
+        pdf.addImage(imgData, "JPEG", 0, 0, scaledWidth, Math.min(scaledHeight, pageHeight));
       }
 
       // Place footer at the absolute bottom of the last page
@@ -142,5 +159,5 @@ export function useReportDownload({
     }
   }
 
-  return { downloadAsImages, downloadAsPdf, isGeneratingImages, isGeneratingPdf };
+  return { downloadAsZip, downloadAsPdf, isGeneratingZip, isGeneratingPdf };
 }
