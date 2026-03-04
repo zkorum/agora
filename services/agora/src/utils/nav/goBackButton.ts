@@ -1,11 +1,16 @@
 import { useNavigationStore } from "src/stores/navigation";
+import type { RouteLocationRaw } from "vue-router";
 import { useRouter } from "vue-router";
+
+const defaultFallback: RouteLocationRaw = { name: "/" };
 
 export function useGoBackButtonHandler() {
   const router = useRouter();
   const navigationStore = useNavigationStore();
 
-  async function safeNavigateBack() {
+  async function safeNavigateBack(
+    fallbackRoute: RouteLocationRaw = defaultFallback,
+  ) {
     // Check if user came from conversation creation flow
     if (navigationStore.cameFromConversationCreation) {
       navigationStore.clearConversationCreationContext();
@@ -18,7 +23,7 @@ export function useGoBackButtonHandler() {
     if (currentIndex > 1) {
       router.go(-1);
     } else {
-      await router.replace({ name: "/" });
+      await router.replace(fallbackRoute);
     }
   }
 

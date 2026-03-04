@@ -1,9 +1,20 @@
 <template>
-  <NavigationButton icon="ci:chevron-left" aria-label="Go back" />
+  <NavigationButton
+    icon="ci:chevron-left"
+    aria-label="Go back"
+    :fallback-route="fallbackRoute"
+  />
 </template>
 
 <script setup lang="ts">
 import NavigationButton from "src/components/navigation/NavigationButton.vue";
-</script>
+import type { RouteLocationRaw } from "vue-router";
 
-<style scoped></style>
+interface Props {
+  fallbackRoute?: RouteLocationRaw;
+}
+
+withDefaults(defineProps<Props>(), {
+  fallbackRoute: undefined,
+});
+</script>

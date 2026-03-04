@@ -9,7 +9,11 @@
     }"
   >
     <template #header>
-      <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
+      <StandardMenuBar
+        :title="t('pageTitle')"
+        :center-content="true"
+        :fallback-route="`/conversation/${conversationSlugId}/analysis`"
+      />
     </template>
 
     <!-- Narrow screen message -->
@@ -18,7 +22,7 @@
         <q-icon name="mdi-monitor" size="3rem" color="grey-6" />
         <h2 class="narrow-title">{{ t("narrowScreenTitle") }}</h2>
         <p class="narrow-text">{{ t("narrowScreenMessage") }}</p>
-        <ZKButton button-type="compactButton" @click="router.back()">
+        <ZKButton button-type="compactButton" @click="handleNarrowBack">
           {{ t("goBack") }}
         </ZKButton>
       </div>
@@ -95,8 +99,9 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { getReportOpinions, REPORT_ITEMS_PER_CAPTURE_PAGE, REPORT_ITEMS_PER_PDF_PAGE } from "src/utils/component/report/reportData";
+import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 
 import {
   type ReportPageTranslations,
@@ -109,7 +114,7 @@ const authStore = useAuthenticationStore();
 const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(authStore);
 
 const route = useRoute("/conversation/[conversationSlugId]/report");
-const router = useRouter();
+const goBackButtonHandler = useGoBackButtonHandler();
 
 const conversationSlugId = computed(() => {
   const value = route.params.conversationSlugId;
@@ -118,6 +123,12 @@ const conversationSlugId = computed(() => {
   }
   return value || "";
 });
+
+async function handleNarrowBack(): Promise<void> {
+  await goBackButtonHandler.safeNavigateBack(
+    `/conversation/${conversationSlugId.value}/analysis`,
+  );
+}
 
 const conversationQuery = useConversationQuery({
   conversationSlugId: conversationSlugId,
