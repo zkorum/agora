@@ -984,6 +984,12 @@ server.after(() => {
                 const userAgent =
                     request.headers["user-agent"] ?? "Unknown device";
 
+                const parsedLang = ZodSupportedDisplayLanguageCodes.safeParse(
+                    request.headers["accept-language"],
+                );
+                const headerLanguageCode: SupportedDisplayLanguageCodes =
+                    parsedLang.success ? parsedLang.data : "en";
+
                 return await authService.authenticateEmailAttempt({
                     db,
                     axiosReacher,
@@ -1001,6 +1007,7 @@ server.after(() => {
                         ),
                     testCode: config.TEST_CODE,
                     userAgent: userAgent,
+                    headerLanguageCode,
                 });
             }
             return await doAuthenticateEmail();
