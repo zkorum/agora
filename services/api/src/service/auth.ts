@@ -20,6 +20,7 @@ import {
     zkPassportTable,
     phoneTable,
     userTable,
+    userDisplayLanguageTable,
 } from "@/shared-backend/schema.js";
 import { nowZeroMs } from "@/shared/util.js";
 import type {
@@ -44,6 +45,10 @@ import { isPhoneNumberTypeSupported } from "@/shared-app-api/phone.js";
 import { base64Decode, base64Encode } from "@/shared-app-api/base64.js";
 import { mergeGuestIntoVerifiedUser } from "./merge.js";
 import { sendOtpEmail } from "./email.js";
+import {
+    type SupportedDisplayLanguageCodes,
+    ZodSupportedDisplayLanguageCodes,
+} from "@/shared/languages.js";
 
 interface VerifyOtpProps {
     db: PostgresDatabase;
@@ -1799,6 +1804,7 @@ interface AuthenticateEmailAttemptProps {
     throttleEmailSecondsInterval: number;
     testCode: number;
     doUseTestCode: boolean;
+    headerLanguageCode?: SupportedDisplayLanguageCodes;
 }
 
 export async function authenticateEmailAttempt({
@@ -1812,6 +1818,7 @@ export async function authenticateEmailAttempt({
     throttleEmailSecondsInterval,
     testCode,
     doUseTestCode,
+    headerLanguageCode = "en",
 }: AuthenticateEmailAttemptProps): Promise<AuthenticateEmailResponse> {
     const now = nowZeroMs();
     const authResult = await getEmailAuthType({
@@ -1845,6 +1852,31 @@ export async function authenticateEmailAttempt({
     const userId =
         authResult.type === "merge" ? authResult.toUserId : authResult.userId;
     const type = authResult.type;
+
+    // Resolve email language: for existing users (login/merge), prefer stored display language;
+    // for registration, the user has no preferences yet so use Accept-Language header
+    let emailLanguageCode: SupportedDisplayLanguageCodes = headerLanguageCode;
+    if (type !== "register") {
+        const storedDisplayLanguage = await db
+            .select({ languageCode: userDisplayLanguageTable.languageCode })
+            .from(userDisplayLanguageTable)
+            .where(
+                and(
+                    eq(userDisplayLanguageTable.userId, userId),
+                    eq(userDisplayLanguageTable.isDeleted, false),
+                ),
+            )
+            .limit(1);
+        if (storedDisplayLanguage.length > 0) {
+            const parsed = ZodSupportedDisplayLanguageCodes.safeParse(
+                storedDisplayLanguage[0].languageCode,
+            );
+            if (parsed.success) {
+                emailLanguageCode = parsed.data;
+            }
+        }
+    }
+
     const resultHasAttempted = await db
         .select({
             codeExpiry: authAttemptEmailTable.codeExpiry,
@@ -1867,6 +1899,7 @@ export async function authenticateEmailAttempt({
             doUseTestCode,
             testCode,
             emailReachability,
+            languageCode: emailLanguageCode,
         });
     } else if (isRequestingNewCode) {
         // user wants to regenerate new code (if possible according to throttling)
@@ -1882,6 +1915,7 @@ export async function authenticateEmailAttempt({
             doUseTestCode,
             testCode,
             emailReachability,
+            languageCode: emailLanguageCode,
         });
     } else if (resultHasAttempted[0].codeExpiry > now) {
         // code hasn't expired
@@ -1925,6 +1959,7 @@ interface InsertEmailAuthAttemptCodeProps {
     testCode: number;
     doUseTestCode: boolean;
     emailReachability: ReacherIsReachable | null;
+    languageCode: SupportedDisplayLanguageCodes;
 }
 
 async function insertEmailAuthAttemptCode({
@@ -1940,6 +1975,7 @@ async function insertEmailAuthAttemptCode({
     doUseTestCode,
     testCode,
     emailReachability,
+    languageCode,
 }: InsertEmailAuthAttemptCodeProps): Promise<AuthenticateEmailResponse> {
     const isThrottled = await isThrottledByEmail({
         db,
@@ -1960,7 +1996,7 @@ async function insertEmailAuthAttemptCode({
     );
     const mustSendActualEmail = config.NODE_ENV === "production";
     if (mustSendActualEmail) {
-        await sendOtpEmail({ email, otp: oneTimeCode });
+        await sendOtpEmail({ email, otp: oneTimeCode, languageCode });
     } else {
         console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
     }
@@ -1998,6 +2034,7 @@ interface UpdateEmailAuthAttemptCodeProps {
     testCode: number;
     doUseTestCode: boolean;
     emailReachability: ReacherIsReachable | null;
+    languageCode: SupportedDisplayLanguageCodes;
 }
 
 async function updateEmailAuthAttemptCode({
@@ -2012,6 +2049,7 @@ async function updateEmailAuthAttemptCode({
     doUseTestCode,
     testCode,
     emailReachability,
+    languageCode,
 }: UpdateEmailAuthAttemptCodeProps): Promise<AuthenticateEmailResponse> {
     const isThrottled = await isThrottledByEmail({
         db,
@@ -2032,7 +2070,7 @@ async function updateEmailAuthAttemptCode({
     );
     const mustSendActualEmail = config.NODE_ENV === "production";
     if (mustSendActualEmail) {
-        await sendOtpEmail({ email, otp: oneTimeCode });
+        await sendOtpEmail({ email, otp: oneTimeCode, languageCode });
     } else {
         console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
     }
