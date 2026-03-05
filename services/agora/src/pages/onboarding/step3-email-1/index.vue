@@ -80,7 +80,6 @@ const { isLoading, submitEmail } = useEmailSubmit({
   },
   showNotifyMessage,
   translations: {
-    alreadyHasEmail: t("alreadyHasEmail"),
     throttled: t("throttled"),
     unreachable: t("unreachable"),
     disposable: t("disposable"),

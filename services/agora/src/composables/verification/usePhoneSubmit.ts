@@ -1,47 +1,48 @@
 import { storeToRefs } from "pinia";
-import { authenticateEmail200 } from "src/shared/types/dto-auth";
-import { emailVerificationStore } from "src/stores/onboarding/email";
-import { useAuthEmailApi } from "src/utils/api/auth-email";
+import { authenticate200 } from "src/shared/types/dto-auth";
+import { phoneVerificationStore } from "src/stores/onboarding/phone";
+import { useAuthPhoneApi } from "src/utils/api/auth-phone";
 import { ref } from "vue";
 
-interface EmailSubmitTranslations {
+interface PhoneSubmitTranslations {
   throttled: string;
-  unreachable: string;
-  disposable: string;
+  invalidPhoneNumber: string;
+  restrictedPhoneType: string;
   somethingWrong: string;
 }
 
-interface UseEmailSubmitParams {
+interface UsePhoneSubmitParams {
   onNavigateToOtp: () => Promise<unknown>;
   onAlreadyHasCredential: () => void;
   showNotifyMessage: (message: string) => void;
-  translations: EmailSubmitTranslations;
+  translations: PhoneSubmitTranslations;
 }
 
-export function useEmailSubmit({
+export function usePhoneSubmit({
   onNavigateToOtp,
   onAlreadyHasCredential,
   showNotifyMessage,
   translations,
-}: UseEmailSubmitParams) {
-  const emailStore = emailVerificationStore();
-  const { verificationEmail, pendingOtpData } = storeToRefs(emailStore);
-  const { sendEmailCode } = useAuthEmailApi();
+}: UsePhoneSubmitParams) {
+  const store = phoneVerificationStore();
+  const { verificationPhoneNumber, pendingOtpData } = storeToRefs(store);
+  const { sendSmsCode } = useAuthPhoneApi();
 
   const isLoading = ref(false);
 
-  async function submitEmail() {
-    const email = verificationEmail.value;
-    if (email === "") return;
+  async function submitPhone() {
+    const phoneNumber = verificationPhoneNumber.value.internationalPhoneNumber;
+    if (phoneNumber === "") return;
 
     isLoading.value = true;
     try {
-      const response = await sendEmailCode({
-        email,
+      const response = await sendSmsCode({
+        phoneNumber,
+        defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
         isRequestingNewCode: false,
       });
       if (response.status === "success") {
-        const data = authenticateEmail200.parse(response.data);
+        const data = authenticate200.parse(response.data);
         if (data.success) {
           pendingOtpData.value = {
             codeExpiry: new Date(data.codeExpiry),
@@ -54,21 +55,21 @@ export function useEmailSubmit({
               onAlreadyHasCredential();
               break;
             case "associated_with_another_user":
-              await submitEmailWithOverwrite(email);
+              await submitPhoneWithOverwrite(phoneNumber);
               break;
             case "throttled":
               showNotifyMessage(translations.throttled);
               break;
-            case "unreachable":
-              showNotifyMessage(translations.unreachable);
+            case "invalid_phone_number":
+              showNotifyMessage(translations.invalidPhoneNumber);
               break;
-            case "disposable":
-              showNotifyMessage(translations.disposable);
+            case "restricted_phone_type":
+              showNotifyMessage(translations.restrictedPhoneType);
               break;
           }
         }
       } else {
-        console.error("Error while sending email code", response.message);
+        console.error("Error while sending SMS code", response.message);
         showNotifyMessage(translations.somethingWrong);
       }
     } finally {
@@ -76,14 +77,15 @@ export function useEmailSubmit({
     }
   }
 
-  async function submitEmailWithOverwrite(email: string) {
-    const response = await sendEmailCode({
-      email,
+  async function submitPhoneWithOverwrite(phoneNumber: string) {
+    const response = await sendSmsCode({
+      phoneNumber,
+      defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
       isRequestingNewCode: false,
       keyAction: "overwrite",
     });
     if (response.status === "success") {
-      const data = authenticateEmail200.parse(response.data);
+      const data = authenticate200.parse(response.data);
       if (data.success) {
         pendingOtpData.value = {
           codeExpiry: new Date(data.codeExpiry),
@@ -98,5 +100,5 @@ export function useEmailSubmit({
     }
   }
 
-  return { isLoading, submitEmail };
+  return { isLoading, submitPhone };
 }

@@ -94,7 +94,8 @@ const { t } = useComponentI18n<PhoneOtpFormTranslations>(
   phoneOtpFormTranslations
 );
 
-const { verificationPhoneNumber } = storeToRefs(phoneVerificationStore());
+const phoneStore = phoneVerificationStore();
+const { verificationPhoneNumber, pendingOtpData } = storeToRefs(phoneStore);
 
 const {
   verificationCode,
@@ -140,6 +141,9 @@ watchEffect(() => {
 onMounted(async () => {
   if (verificationPhoneNumber.value.internationalPhoneNumber == "") {
     emit("changeIdentifier");
+  } else if (pendingOtpData.value !== null) {
+    processRequestCodeResponse(pendingOtpData.value);
+    pendingOtpData.value = null;
   } else {
     await requestCodeClicked(false);
   }
