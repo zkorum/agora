@@ -1793,6 +1793,7 @@ interface AuthenticateEmailAttemptProps {
     throttleEmailSecondsInterval: number;
     testCode: number;
     doUseTestCode: boolean;
+    emailReachability: string | null;
 }
 
 export async function authenticateEmailAttempt({
@@ -1805,6 +1806,7 @@ export async function authenticateEmailAttempt({
     throttleEmailSecondsInterval,
     testCode,
     doUseTestCode,
+    emailReachability,
 }: AuthenticateEmailAttemptProps): Promise<AuthenticateEmailResponse> {
     const now = nowZeroMs();
     const authResult = await getEmailAuthType({
@@ -1843,6 +1845,7 @@ export async function authenticateEmailAttempt({
             throttleEmailSecondsInterval,
             doUseTestCode,
             testCode,
+            emailReachability,
         });
     } else if (isRequestingNewCode) {
         // user wants to regenerate new code (if possible according to throttling)
@@ -1857,6 +1860,7 @@ export async function authenticateEmailAttempt({
             throttleEmailSecondsInterval,
             doUseTestCode,
             testCode,
+            emailReachability,
         });
     } else if (resultHasAttempted[0].codeExpiry > now) {
         // code hasn't expired
@@ -1882,6 +1886,7 @@ export async function authenticateEmailAttempt({
             throttleEmailSecondsInterval,
             doUseTestCode,
             testCode,
+            emailReachability,
         });
     }
 }
@@ -1898,6 +1903,7 @@ interface InsertEmailAuthAttemptCodeProps {
     throttleEmailSecondsInterval: number;
     testCode: number;
     doUseTestCode: boolean;
+    emailReachability: string | null;
 }
 
 async function insertEmailAuthAttemptCode({
@@ -1912,6 +1918,7 @@ async function insertEmailAuthAttemptCode({
     throttleEmailSecondsInterval,
     doUseTestCode,
     testCode,
+    emailReachability,
 }: InsertEmailAuthAttemptCodeProps): Promise<AuthenticateEmailResponse> {
     const isThrottled = await isThrottledByEmail({
         db,
@@ -1943,6 +1950,7 @@ async function insertEmailAuthAttemptCode({
         userId: userId,
         userAgent: userAgent,
         code: oneTimeCode,
+        emailReachability: emailReachability,
         codeExpiry: codeExpiry,
         lastOtpSentAt: now,
     });
@@ -1968,6 +1976,7 @@ interface UpdateEmailAuthAttemptCodeProps {
     throttleEmailSecondsInterval: number;
     testCode: number;
     doUseTestCode: boolean;
+    emailReachability: string | null;
 }
 
 async function updateEmailAuthAttemptCode({
@@ -1981,6 +1990,7 @@ async function updateEmailAuthAttemptCode({
     throttleEmailSecondsInterval,
     doUseTestCode,
     testCode,
+    emailReachability,
 }: UpdateEmailAuthAttemptCodeProps): Promise<AuthenticateEmailResponse> {
     const isThrottled = await isThrottledByEmail({
         db,
@@ -2012,6 +2022,7 @@ async function updateEmailAuthAttemptCode({
             type: type,
             email: email,
             code: oneTimeCode,
+            emailReachability: emailReachability,
             codeExpiry: codeExpiry,
             guessAttemptAmount: 0,
             lastOtpSentAt: now,
@@ -2114,6 +2125,7 @@ interface RegisterWithEmailProps {
     userAgent: string;
     userId: string;
     sessionExpiry: Date;
+    emailReachability: string | null;
 }
 
 // WARN: we assume the OTP was verified AND EXPIRED at registerOrLoginWithEmail entry point
@@ -2124,6 +2136,7 @@ async function registerWithEmail({
     userAgent,
     userId,
     sessionExpiry,
+    emailReachability,
 }: RegisterWithEmailProps): Promise<void> {
     log.info("Register with email");
     await db.transaction(async (tx) => {
@@ -2167,6 +2180,7 @@ async function registerWithEmail({
             userId: userId,
             email: email,
             type: "primary",
+            emailReachability: emailReachability,
         });
     });
 }
@@ -2178,6 +2192,7 @@ interface RegisterOrLoginWithEmailBaseProps {
     userAgent: string;
     now: Date;
     sessionLifetimeDays: number;
+    emailReachability: string | null;
 }
 
 type RegisterOrLoginWithEmailProps =
@@ -2194,7 +2209,7 @@ type RegisterOrLoginWithEmailProps =
 async function registerOrLoginWithEmail(
     props: RegisterOrLoginWithEmailProps,
 ): Promise<VerifyOtp200> {
-    const { db, type, didWrite, email, userAgent, now } = props;
+    const { db, type, didWrite, email, userAgent, now, emailReachability } = props;
     const loginSessionExpiry = new Date(now);
     loginSessionExpiry.setDate(
         loginSessionExpiry.getDate() + props.sessionLifetimeDays,
@@ -2258,6 +2273,7 @@ async function registerOrLoginWithEmail(
                 userAgent,
                 userId: props.userId,
                 sessionExpiry: loginSessionExpiry,
+                emailReachability,
             });
             return {
                 success: true,
@@ -2348,6 +2364,7 @@ export async function verifyEmailOtp({
             guessAttemptAmount: authAttemptEmailTable.guessAttemptAmount,
             code: authAttemptEmailTable.code,
             codeExpiry: authAttemptEmailTable.codeExpiry,
+            emailReachability: authAttemptEmailTable.emailReachability,
         })
         .from(authAttemptEmailTable)
         .where(eq(authAttemptEmailTable.didWrite, didWrite));
@@ -2445,6 +2462,7 @@ export async function verifyEmailOtp({
             userAgent: resultOtp[0].userAgent,
             now,
             sessionLifetimeDays,
+            emailReachability: resultOtp[0].emailReachability,
         });
     } else {
         await updateEmailCodeGuessAttemptAmount({

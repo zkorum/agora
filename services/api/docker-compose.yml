@@ -123,6 +123,17 @@ services:
             - prometheus
         restart: always
 
+    reacher:
+        container_name: reacher
+        image: reacherhq/backend:latest
+        environment:
+            RCH__HTTP_HOST: "0.0.0.0"
+            RCH__FROM_EMAIL: "noreply@probe.agoracitizen.network"
+            RCH__HELLO_NAME: "probe.agoracitizen.network"
+        ports:
+            - "8080:8080"
+        restart: always
+
 volumes:
     valkey-data:
     postgres:

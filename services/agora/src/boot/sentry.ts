@@ -23,6 +23,15 @@ export default defineBoot(({ app, router }) => {
       ) {
         return null;
       }
+      // Filter out Telegram WebView bridge errors (postEvent is Telegram's internal
+      // method, not ours — this fires during Intent URI redirect which works fine)
+      if (
+        event.exception?.values?.some((e) =>
+          e.value?.includes("postEvent")
+        )
+      ) {
+        return null;
+      }
       return event;
     },
     integrations: [

@@ -31,7 +31,7 @@
         <ListSection :settings-item-list="logoutSettings" />
       </div>
 
-      <div v-if="isLoggedIn && profileData.isSiteModerator">
+      <div v-if="isLoggedIn && profileData.isSiteOrgAdmin">
         <ListSection :settings-item-list="moderatorSettings" />
       </div>
 

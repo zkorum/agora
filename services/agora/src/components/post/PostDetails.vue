@@ -170,27 +170,27 @@ const commentsNewQuery = useCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   filter: "new",
   voteCount: props.conversationData.metadata.voteCount,
-  enabled: !props.compactMode,
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
 
 const commentsModeratedQuery = useCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   filter: "moderated",
   voteCount: props.conversationData.metadata.voteCount,
-  enabled: !props.compactMode,
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
 
 const commentsMyVotesQuery = useCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   filter: "my_votes",
   voteCount: props.conversationData.metadata.voteCount,
-  enabled: !props.compactMode,
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
 
 const hiddenCommentsQuery = useHiddenCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   voteCount: props.conversationData.metadata.voteCount,
-  enabled: !props.compactMode && isSiteModerator.value,
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
 
 // Track loading states from child components
@@ -295,10 +295,10 @@ watch(currentTab, async (newTab) => {
         commentQueries.push(hiddenCommentsQuery);
       }
 
-      const staleQueries = commentQueries.filter(
-        (query) => query.isStale.value
+      const staleOrUnfetchedQueries = commentQueries.filter(
+        (query) => query.isStale.value || !query.data.value
       );
-      await Promise.all(staleQueries.map((query) => query.refetch()));
+      await Promise.all(staleOrUnfetchedQueries.map((query) => query.refetch()));
     } else if (newTab === "analysis") {
       // Check and refetch analysis query if it is stale
       if (analysisQuery.isStale.value) {

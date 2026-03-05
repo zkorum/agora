@@ -3,17 +3,17 @@
     <template #title>
       <div class="section-header">
         <i class="pi pi-chart-bar section-icon"></i>
-        <span>{{ t("opinionGroupVisualization") }}</span>
+        <span>{{ t("analysisTabTest") }}</span>
       </div>
     </template>
     <template #content>
       <p class="section-description">
-        {{ t("opinionGroupVisualizationDescription") }}
+        {{ t("analysisTabTestDescription") }}
       </p>
 
       <div class="button-container">
         <PrimeButton
-          :label="t('openVisualizationButton')"
+          :label="t('openTestButton')"
           icon="pi pi-eye"
           class="test-button"
           @click="navigateToVisualization"

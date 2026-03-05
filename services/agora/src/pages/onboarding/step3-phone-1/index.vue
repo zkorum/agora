@@ -8,9 +8,9 @@
           :submit-call-back="onSubmit"
           :current-step="3"
           :total-steps="5"
-          :enable-next-button="true"
+          :enable-next-button="!isLoading"
           :show-next-button="true"
-          :show-loading-button="false"
+          :show-loading-button="isLoading"
         >
           <template #header>
             <InfoHeader
@@ -21,7 +21,7 @@
           </template>
 
           <template #body>
-            <PhoneInputForm ref="phoneInputFormRef" @submit="goToOtpPage" />
+            <PhoneInputForm ref="phoneInputFormRef" @submit="submitPhone" />
 
             <div class="alternativeLogins">
               <ZKGradientButton
@@ -54,8 +54,11 @@ import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import PhoneInputForm from "src/components/verification/PhoneInputForm.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { usePhoneSubmit } from "src/composables/verification/usePhoneSubmit";
+import { useVerificationComplete } from "src/composables/verification/useVerificationComplete";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import { useNotify } from "src/utils/ui/notify";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -69,8 +72,25 @@ const { t } = useComponentI18n<PhoneOnboardingTranslations>(
 );
 
 const router = useRouter();
+const { showNotifyMessage } = useNotify();
+const { completeVerification } = useVerificationComplete();
 
 const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
+
+const { isLoading, submitPhone } = usePhoneSubmit({
+  onNavigateToOtp: () => router.replace({ name: "/onboarding/step3-phone-2/" }),
+  onAlreadyHasCredential: () => {
+    showNotifyMessage(t("alreadyHasPhone"));
+    void completeVerification();
+  },
+  showNotifyMessage,
+  translations: {
+    throttled: t("throttled"),
+    invalidPhoneNumber: t("invalidPhoneNumber"),
+    restrictedPhoneType: t("restrictedPhoneType"),
+    somethingWrong: t("somethingWrong"),
+  },
+});
 
 const phoneInputFormRef = ref<{
   submit: () => boolean;
@@ -78,10 +98,6 @@ const phoneInputFormRef = ref<{
 
 function onSubmit() {
   phoneInputFormRef.value?.submit();
-}
-
-async function goToOtpPage() {
-  await router.replace({ name: "/onboarding/step3-phone-2/" });
 }
 
 async function goToPassportVerification() {

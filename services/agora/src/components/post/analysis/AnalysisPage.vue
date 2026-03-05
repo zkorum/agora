@@ -3,15 +3,17 @@
     <div class="container flexStyle">
       <div class="analysis-header">
         <ShortcutBar v-model="currentTab" />
-        <button
+        <PrimeButton
+          variant="outlined"
+          rounded
           class="report-button"
           :title="t('generateReport')"
           :aria-label="t('generateReport')"
           @click="openReport"
         >
-          <q-icon name="mdi-file-chart-outline" size="1.2rem" />
-          <span>{{ t("report") }}</span>
-        </button>
+          <q-icon name="mdi-file-chart-outline" size="1rem" />
+          <div>{{ t("report") }}</div>
+        </PrimeButton>
       </div>
 
       <!-- Me tab -->
@@ -92,6 +94,7 @@
 
 <script setup lang="ts">
 import type { UseQueryReturnType } from "@tanstack/vue-query";
+import Button from "primevue/button";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
@@ -113,18 +116,24 @@ import MeTab from "./meTab/MeTab.vue";
 import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 
-type AnalysisData = {
-  consensusAgree: AnalysisOpinionItem[];
-  consensusDisagree: AnalysisOpinionItem[];
-  controversial: AnalysisOpinionItem[];
-  polisClusters: Partial<PolisClusters>;
-};
+defineOptions({
+  components: {
+    PrimeButton: Button,
+  },
+});
 
 const props = defineProps<{
   participantCount: number;
   conversationSlugId: string;
   analysisQuery: UseQueryReturnType<AnalysisData, Error>;
 }>();
+
+type AnalysisData = {
+  consensusAgree: AnalysisOpinionItem[];
+  consensusDisagree: AnalysisOpinionItem[];
+  controversial: AnalysisOpinionItem[];
+  polisClusters: Partial<PolisClusters>;
+};
 
 const { t } = useComponentI18n<AnalysisPageTranslations>(
   analysisPageTranslations
@@ -250,27 +259,17 @@ defineExpose({
 
 .report-button {
   flex-shrink: 0;
-  margin-top: 0.15rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.3rem 0.75rem;
-  height: 2rem;
+  border-radius: 10px;
   border: 1px solid #d8d6de;
-  border-radius: 8px;
-  background: white;
+  background-color: white;
   color: #6d6a74;
+  padding: 0.4rem 0.5rem;
+  gap: 0.3rem;
   cursor: pointer;
-  font-size: 0.75rem;
-  font-weight: var(--font-weight-medium);
-  transition:
-    background-color 0.2s,
-    border-color 0.2s,
-    color 0.2s;
 
   &:hover {
-    background: #f5f4f8;
-    border-color: #b8b6c0;
+    background-color: #c6c4ff;
+    border-color: #6b4eff;
     color: #6b4eff;
   }
 

@@ -17,6 +17,8 @@ export interface EmailOtpFormTranslations {
   somethingWrong: string;
   tooManyAttempts: string;
   alreadyHasCredential: string;
+  unreachable: string;
+  disposable: string;
 }
 
 export const emailOtpFormTranslations: Record<
@@ -43,6 +45,10 @@ export const emailOtpFormTranslations: Record<
       "Too many attempts—please wait before requesting a new code",
     alreadyHasCredential:
       "You already have an email address linked to your account",
+    unreachable:
+      "This email address doesn't seem to exist—please use a different one",
+    disposable:
+      "Temporary or disposable email addresses are not allowed",
   },
   ar: {
     instructions: "أدخل الرمز المكون من 6 أرقام الذي أرسلناه إلى",
@@ -63,6 +69,9 @@ export const emailOtpFormTranslations: Record<
     tooManyAttempts: "محاولات كثيرة جداً - يرجى الانتظار قبل طلب رمز جديد",
     alreadyHasCredential:
       "لديك بالفعل عنوان بريد إلكتروني مرتبط بحسابك",
+    unreachable:
+      "يبدو أن عنوان البريد الإلكتروني هذا غير موجود—يرجى استخدام عنوان آخر",
+    disposable: "عناوين البريد الإلكتروني المؤقتة أو التي يمكن التخلص منها غير مسموح بها",
   },
   es: {
     instructions:
@@ -86,6 +95,10 @@ export const emailOtpFormTranslations: Record<
       "Demasiados intentos—por favor, espere antes de solicitar un nuevo código",
     alreadyHasCredential:
       "Ya tienes una dirección de correo electrónico vinculada a tu cuenta",
+    unreachable:
+      "Esta dirección de correo electrónico no parece existir—use una diferente",
+    disposable:
+      "No se permiten direcciones de correo electrónico temporales o desechables",
   },
   fr: {
     instructions:
@@ -109,6 +122,10 @@ export const emailOtpFormTranslations: Record<
       "Trop de tentatives—veuillez attendre avant de demander un nouveau code",
     alreadyHasCredential:
       "Une adresse e-mail est déjà associée à votre compte",
+    unreachable:
+      "Cette adresse e-mail ne semble pas exister—veuillez en utiliser une autre",
+    disposable:
+      "Les adresses e-mail temporaires ou jetables ne sont pas autorisées",
   },
   "zh-Hans": {
     instructions: "输入我们发送到以下地址的6位验证码",
@@ -127,6 +144,8 @@ export const emailOtpFormTranslations: Record<
     somethingWrong: "哎呀！出错了",
     tooManyAttempts: "太多尝试—请等待重新请求一个新代码",
     alreadyHasCredential: "您的账户已关联电子邮箱地址",
+    unreachable: "此电子邮箱地址似乎不存在—请使用其他地址",
+    disposable: "不允许使用临时或一次性电子邮箱地址",
   },
   "zh-Hant": {
     instructions: "輸入我們發送到以下地址的6位驗證碼",
@@ -145,6 +164,8 @@ export const emailOtpFormTranslations: Record<
     somethingWrong: "哎呀！出錯了",
     tooManyAttempts: "太多嘗試—請等待重新請求一個新代碼",
     alreadyHasCredential: "您的帳戶已關聯電子郵箱地址",
+    unreachable: "此電子郵箱地址似乎不存在—請使用其他地址",
+    disposable: "不允許使用臨時或一次性電子郵箱地址",
   },
   ja: {
     instructions: "以下のアドレスに送信した6桁のコードを入力してください",
@@ -167,5 +188,9 @@ export const emailOtpFormTranslations: Record<
       "試行回数が多すぎます—新しいコードを要求する前に、少し待ってください",
     alreadyHasCredential:
       "アカウントにはすでにメールアドレスがリンクされています",
+    unreachable:
+      "このメールアドレスは存在しないようです—別のアドレスをお使いください",
+    disposable:
+      "一時的または使い捨てのメールアドレスは許可されていません",
   },
 };

@@ -68,6 +68,7 @@ import {
     getUserProfile,
 } from "./service/user.js";
 import axios, { type AxiosInstance } from "axios";
+import { checkEmailDeliverability } from "./service/emailVerification.js";
 import {
     generateVerificationLink,
     verifyUserStatusAndAuthenticate,
@@ -211,6 +212,17 @@ export const axiosPolis: AxiosInstance | undefined =
               baseURL: config.POLIS_BASE_URL,
           })
         : undefined;
+
+const reacherBaseUrl = config.REACHER_BASE_URL;
+const axiosReacher: AxiosInstance | undefined =
+    reacherBaseUrl !== undefined
+        ? axios.create({ baseURL: reacherBaseUrl })
+        : undefined;
+log.info(
+    reacherBaseUrl !== undefined
+        ? `[API] Reacher email verification enabled (URL: ${reacherBaseUrl})`
+        : "[API] Reacher email verification disabled (REACHER_BASE_URL not set)",
+);
 
 
 const mustSendActualSms = config.NODE_ENV === "production";
@@ -970,6 +982,20 @@ server.after(() => {
                         reason: "already_has_credential",
                     };
                 }
+                let emailReachability: string | null = null;
+                if (axiosReacher !== undefined) {
+                    const deliverability = await checkEmailDeliverability({
+                        axiosReacher,
+                        email: request.body.email,
+                    });
+                    emailReachability = deliverability.isReachable;
+                    if (!deliverability.deliverable) {
+                        return {
+                            success: false,
+                            reason: deliverability.reason,
+                        };
+                    }
+                }
                 const userAgent =
                     request.headers["user-agent"] ?? "Unknown device";
 
@@ -989,6 +1015,7 @@ server.after(() => {
                         ),
                     testCode: config.TEST_CODE,
                     userAgent: userAgent,
+                    emailReachability,
                 });
             }
             return await doAuthenticateEmail();

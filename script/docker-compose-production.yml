@@ -26,6 +26,7 @@ services:
       NODE_ENV: "production"
       VERIFICATOR_SVC_BASE_URL: "http://verificator-svc:8000"
       POLIS_BASE_URL: "http://polis-server:8004"
+      REACHER_BASE_URL: "http://reacher:8080"
       TWILIO_ACCOUNT_SID: "CHANGEME"
       TWILIO_AUTH_TOKEN: "CHANGEME"
       TWILIO_SERVICE_SID: "CHANGEME"
@@ -52,6 +53,21 @@ services:
       driver: awslogs
       options:
         <<: *aws-logging-options
+  reacher:
+    container_name: reacher
+    image: reacherhq/backend:latest
+    environment:
+      RCH__HTTP_HOST: "0.0.0.0"
+      RCH__FROM_EMAIL: "noreply@probe.agoracitizen.network"
+      RCH__HELLO_NAME: "probe.agoracitizen.network"
+    expose:
+      - "8080"
+    restart: unless-stopped
+    logging:
+      driver: awslogs
+      options:
+        <<: *aws-logging-options
+        awslogs-stream: reacher
   verificator-svc:
     container_name: verificator_svc
     image: ghcr.io/rarimo/verificator-svc:v0.2.13

@@ -8,9 +8,9 @@
           :submit-call-back="onSubmit"
           :current-step="1"
           :total-steps="2"
-          :enable-next-button="true"
+          :enable-next-button="!isLoading"
           :show-next-button="true"
-          :show-loading-button="false"
+          :show-loading-button="isLoading"
         >
           <template #header>
             <InfoHeader
@@ -21,7 +21,7 @@
           </template>
 
           <template #body>
-            <PhoneInputForm ref="phoneInputFormRef" @submit="goToOtpPage" />
+            <PhoneInputForm ref="phoneInputFormRef" @submit="submitPhone" />
             <p v-if="!isLoggedIn"><SignupAgreement variant="verify" /></p>
           </template>
         </StepperLayout>
@@ -38,6 +38,7 @@ import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
 import PhoneInputForm from "src/components/verification/PhoneInputForm.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { usePhoneSubmit } from "src/composables/verification/usePhoneSubmit";
 import { useVerificationComplete } from "src/composables/verification/useVerificationComplete";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -64,6 +65,21 @@ const router = useRouter();
 
 const loginIntentionStore = useLoginIntentionStore();
 const { activeUserIntention } = storeToRefs(loginIntentionStore);
+
+const { isLoading, submitPhone } = usePhoneSubmit({
+  onNavigateToOtp: () => router.replace({ name: "/verify/phone-code/" }),
+  onAlreadyHasCredential: () => {
+    showNotifyMessage(t("alreadyHasPhone"));
+    void completeVerification();
+  },
+  showNotifyMessage,
+  translations: {
+    throttled: t("throttled"),
+    invalidPhoneNumber: t("invalidPhoneNumber"),
+    restrictedPhoneType: t("restrictedPhoneType"),
+    somethingWrong: t("somethingWrong"),
+  },
+});
 
 function backCallback() {
   if (activeUserIntention.value === "settings") {
@@ -94,9 +110,5 @@ const phoneInputFormRef = ref<{
 
 function onSubmit() {
   phoneInputFormRef.value?.submit();
-}
-
-async function goToOtpPage() {
-  await router.replace({ name: "/verify/phone-code/" });
 }
 </script>

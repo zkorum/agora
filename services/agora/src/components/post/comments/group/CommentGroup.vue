@@ -90,7 +90,13 @@ const finalCommentList = computed((): OpinionItem[] => {
 
   // Add highlighted opinion first if it exists
   if (props.highlightedOpinion) {
-    result.push(props.highlightedOpinion);
+    // targetOpinion is fetched separately from the comments cache, so optimistic
+    // vote updates (which modify the cache) don't reach it. Use the cached version
+    // when available; fall back to targetOpinion while cache is still loading.
+    const cachedVersion = props.commentItemList.find(
+      (c) => c.opinionSlugId === props.highlightedOpinion?.opinionSlugId
+    );
+    result.push(cachedVersion ?? props.highlightedOpinion);
   }
 
   // Add regular comments, excluding the highlighted one to prevent duplication

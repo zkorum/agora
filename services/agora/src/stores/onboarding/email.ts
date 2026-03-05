@@ -3,6 +3,10 @@ import { ref } from "vue";
 
 export const emailVerificationStore = defineStore("emailVerification", () => {
   const verificationEmail = ref("");
+  const pendingOtpData = ref<{
+    codeExpiry: Date;
+    nextCodeSoonestTime: Date;
+  } | null>(null);
 
-  return { verificationEmail };
+  return { verificationEmail, pendingOtpData };
 });

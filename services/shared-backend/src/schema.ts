@@ -992,6 +992,13 @@ export const emailType = pgEnum("email_type", [
     "other",
 ]);
 
+export const emailReachabilityEnum = pgEnum("email_reachability", [
+    "safe",
+    "risky",
+    "invalid",
+    "unknown",
+]);
+
 // The process of changing emails, especially primary email, is stricly controlled.
 // Emails cannot be shared among users. There is no plan to add "company" or "team" super-users at the moment.
 // In a team, each individual has an account with their own email address, and a few of them can be admin of the group they created.
@@ -1008,6 +1015,7 @@ export const emailTable = pgTable(
             .references(() => userTable.id)
             .notNull(),
         isDeleted: boolean("is_deleted").notNull().default(false), // Denormalized from user table to enable partial unique index
+        emailReachability: emailReachabilityEnum("email_reachability"), // Reacher verification result at registration time (null = not checked)
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1140,6 +1148,7 @@ export const authAttemptEmailTable = pgTable("auth_attempt_email", {
     userId: uuid("user_id").notNull(),
     userAgent: text("user_agent").notNull(),
     code: integer("code").notNull(), // one-time password sent to the email ("otp")
+    emailReachability: emailReachabilityEnum("email_reachability"), // Reacher verification result (null = not checked)
     codeExpiry: timestamp("code_expiry").notNull(),
     guessAttemptAmount: integer("guess_attempt_amount")
         .default(0)

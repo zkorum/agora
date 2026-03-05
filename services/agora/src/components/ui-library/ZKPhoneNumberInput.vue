@@ -18,7 +18,7 @@
     :no-validation-error="noValidationError"
     :aria-describedby="ariaDescribedby"
     :phone-input-attributes="{ name: 'phone', autocomplete: 'tel', inputmode: 'numeric', type: 'tel' }"
-    @keydown.capture="(e: KeyboardEvent) => { if (e.key.length === 1 && !/[0-9+\-() ]/.test(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault() }"
+    @keydown.capture="(e: KeyboardEvent) => { if (e.key != null && e.key.length === 1 && !/[0-9+\-() ]/.test(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault() }"
     @data="handleUpdate"
     @country-code="handleCountryCode"
     @blur="handleBlur"

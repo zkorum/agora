@@ -126,7 +126,7 @@
         :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="chunkIdx > 0"
       >
-        <template #after-subtitle>
+        <template v-if="clusterCount >= 2" #after-subtitle>
           <VoteLegend :items="reportLegendItems" style="margin-bottom: 0.75rem" />
         </template>
       </ReportOpinionList>
@@ -185,7 +185,7 @@
         :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="chunkIdx > 0"
       >
-        <template #after-subtitle>
+        <template v-if="clusterCount >= 2" #after-subtitle>
           <VoteLegend :items="reportLegendItems" style="margin-bottom: 0.75rem" />
         </template>
       </ReportOpinionList>
@@ -244,7 +244,7 @@
         :start-rank="chunkIdx * effectiveItemsPerPage"
         :hide-title="chunkIdx > 0"
       >
-        <template #after-subtitle>
+        <template v-if="clusterCount >= 2" #after-subtitle>
           <VoteLegend :items="reportLegendItems" style="margin-bottom: 0.75rem" />
         </template>
       </ReportOpinionList>

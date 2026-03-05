@@ -28,6 +28,12 @@ const setCurrentTabLoading = inject<(loading: boolean) => void>(
     /* noop */
   }
 );
+const registerChildRefreshHandler = inject<(handler: () => Promise<void>) => void>(
+  "registerChildRefreshHandler",
+  () => {
+    /* noop */
+  }
+);
 
 const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
 
@@ -51,6 +57,11 @@ const isLoading = computed(
 
 watch(isLoading, (loading) => {
   setCurrentTabLoading(loading);
+});
+
+// Register pull-to-refresh handler: refetch analysis data
+registerChildRefreshHandler(async () => {
+  await analysisQuery.refetch();
 });
 
 onMounted(() => {

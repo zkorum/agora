@@ -11,6 +11,11 @@ export interface PhoneOnboardingTranslations {
   countryNotSupported: string;
   phoneTypeNotSupported: string;
   pleaseEnterPhoneNumber: string;
+  alreadyHasPhone: string;
+  throttled: string;
+  invalidPhoneNumber: string;
+  restrictedPhoneType: string;
+  somethingWrong: string;
 }
 
 export const phoneOnboardingTranslations: Record<
@@ -28,6 +33,13 @@ export const phoneOnboardingTranslations: Record<
     countryNotSupported: "This country is not supported yet",
     phoneTypeNotSupported: "This phone number type is not supported",
     pleaseEnterPhoneNumber: "Please enter a phone number",
+    alreadyHasPhone: "You already have a phone number linked to your account",
+    throttled: "Too many attempts—please wait before trying again",
+    invalidPhoneNumber:
+      "Sorry, this phone number is invalid. Please check and try again.",
+    restrictedPhoneType:
+      "Sorry, this phone number is not supported for security reasons. Please try another.",
+    somethingWrong: "Oops! Something went wrong—please try again",
   },
   ar: {
     pageTitle: "التحقق برقم الهاتف",
@@ -40,6 +52,13 @@ export const phoneOnboardingTranslations: Record<
     countryNotSupported: "هذا البلد غير مدعوم بعد",
     phoneTypeNotSupported: "نوع رقم الهاتف هذا غير مدعوم",
     pleaseEnterPhoneNumber: "الرجاء إدخال رقم هاتف",
+    alreadyHasPhone: "لديك بالفعل رقم هاتف مرتبط بحسابك",
+    throttled: "محاولات كثيرة جداً—يرجى الانتظار قبل المحاولة مرة أخرى",
+    invalidPhoneNumber:
+      "عذراً، رقم الهاتف هذا غير صالح. يرجى التحقق والمحاولة مرة أخرى.",
+    restrictedPhoneType:
+      "عذراً، رقم الهاتف هذا غير مدعوم لأسباب أمنية. يرجى تجربة رقم آخر.",
+    somethingWrong: "عفواً! حدث خطأ—يرجى المحاولة مرة أخرى",
   },
   es: {
     pageTitle: "Verificar con número de teléfono",
@@ -52,6 +71,15 @@ export const phoneOnboardingTranslations: Record<
     countryNotSupported: "Este país aún no es compatible",
     phoneTypeNotSupported: "Este tipo de número de teléfono no es compatible",
     pleaseEnterPhoneNumber: "Por favor, ingrese un número de teléfono",
+    alreadyHasPhone:
+      "Ya tienes un número de teléfono vinculado a tu cuenta",
+    throttled:
+      "Demasiados intentos—por favor, espere antes de intentar de nuevo",
+    invalidPhoneNumber:
+      "Lo siento, este número de teléfono es inválido. Por favor, verifique e intente de nuevo.",
+    restrictedPhoneType:
+      "Lo siento, este número de teléfono no es compatible por razones de seguridad. Por favor, pruebe con otro.",
+    somethingWrong: "¡Ups! Algo salió mal—intente de nuevo",
   },
   fr: {
     pageTitle: "Vérifier avec le numéro de téléphone",
@@ -66,6 +94,15 @@ export const phoneOnboardingTranslations: Record<
     phoneTypeNotSupported:
       "Ce type de numéro de téléphone n'est pas pris en charge",
     pleaseEnterPhoneNumber: "Veuillez saisir un numéro de téléphone",
+    alreadyHasPhone:
+      "Un numéro de téléphone est déjà associé à votre compte",
+    throttled:
+      "Trop de tentatives—veuillez attendre avant de réessayer",
+    invalidPhoneNumber:
+      "Désolé, ce numéro de téléphone est invalide. Veuillez vérifier et réessayer.",
+    restrictedPhoneType:
+      "Désolé, ce numéro de téléphone n'est pas pris en charge pour des raisons de sécurité. Veuillez en essayer un autre.",
+    somethingWrong: "Oups ! Quelque chose a mal tourné—veuillez réessayer",
   },
   "zh-Hans": {
     pageTitle: "使用手机号验证",
@@ -78,6 +115,11 @@ export const phoneOnboardingTranslations: Record<
     countryNotSupported: "此国家暂不支持",
     phoneTypeNotSupported: "此手机号类型暂不支持",
     pleaseEnterPhoneNumber: "请输入手机号",
+    alreadyHasPhone: "您的账户已关联手机号码",
+    throttled: "尝试次数过多—请稍后再试",
+    invalidPhoneNumber: "抱歉，这个手机号无效。请检查并重试。",
+    restrictedPhoneType: "抱歉，这个手机号因安全原因不支持。请尝试其他号码。",
+    somethingWrong: "哎呀！出错了—请重试",
   },
   "zh-Hant": {
     pageTitle: "使用手機號驗證",
@@ -90,6 +132,11 @@ export const phoneOnboardingTranslations: Record<
     countryNotSupported: "此國家暫不支持",
     phoneTypeNotSupported: "此手機號類型暫不支持",
     pleaseEnterPhoneNumber: "請輸入手機號",
+    alreadyHasPhone: "您的帳戶已關聯手機號碼",
+    throttled: "嘗試次數過多—請稍後再試",
+    invalidPhoneNumber: "抱歉，這個手機號無效。請檢查後重試。",
+    restrictedPhoneType: "抱歉，這個手機號因安全原因不支持。請嘗試其他號碼。",
+    somethingWrong: "哎呀！出錯了—請重試",
   },
   ja: {
     pageTitle: "携帯電話で検証",
@@ -102,5 +149,12 @@ export const phoneOnboardingTranslations: Record<
     countryNotSupported: "この国はまだサポートされていません",
     phoneTypeNotSupported: "この電話番号のタイプはまだサポートされていません",
     pleaseEnterPhoneNumber: "電話番号を入力してください",
+    alreadyHasPhone: "アカウントにはすでに電話番号がリンクされています",
+    throttled: "試行回数が多すぎます—もう一度試す前にお待ちください",
+    invalidPhoneNumber:
+      "申し訳ありませんが、この電話番号は無効です。確認してからもう一度試してください。",
+    restrictedPhoneType:
+      "申し訳ありませんが、この電話番号はセキュリティ上の理由でサポートされていません。別の番号を試してください。",
+    somethingWrong: "おっと！何かが間違っています—もう一度お試しください",
   },
 };

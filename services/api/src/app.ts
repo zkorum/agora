@@ -81,6 +81,7 @@ const configSchema = sharedConfigSchema.extend({
         .string()
         .default("YwahfUdUYehkGMaWh0+q3F8itx2h8mybjPmt8CmTJSs"),
     POLIS_BASE_URL: z.url().optional(),
+    REACHER_BASE_URL: z.url().optional(),
     VOTE_NOTIF_MILESTONES: z
         .string()
         .default(

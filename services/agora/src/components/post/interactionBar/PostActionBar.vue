@@ -1,45 +1,49 @@
 <template>
-  <div class="buttonClusterBar" :class="{ buttonClusterBorder: !compactMode }">
-    <div class="leftSection">
-      <InteractionTab
-        v-model="currentTab"
-        :compact-mode="props.compactMode"
-        :opinion-count="opinionCount"
-        :is-loading="isLoading"
-        :conversation-slug-id="conversationSlugId"
+  <div class="postActionBarContainer">
+    <div class="buttonClusterBar" :class="{ buttonClusterBorder: !compactMode }">
+      <div class="leftSection">
+        <InteractionTab
+          v-model="currentTab"
+          :compact-mode="props.compactMode"
+          :opinion-count="opinionCount"
+          :is-loading="isLoading"
+          :conversation-slug-id="conversationSlugId"
+        />
+      </div>
+
+      <div class="rightSection">
+        <div class="voteCountContainer">
+          <ZKIcon color="#7D7A85" name="mdi:vote" size="1rem" />
+          <span>{{ formatAmount(voteCount) }}</span>
+        </div>
+
+        <div class="participantCountContainer">
+          <ZKIcon color="#7D7A85" name="ph:users-fill" size="1rem" />
+          <span>{{ formatAmount(participantCount) }}</span>
+        </div>
+        <ZKButton
+          button-type="compactButton"
+          @click.stop.prevent="shareClicked()"
+        >
+          <div class="shareButtonContentContainer">
+            <div>
+              <ZKIcon color="#7D7A85" name="mdi:share" size="1rem" />
+            </div>
+            <div>{{ t("share") }}</div>
+          </div>
+        </ZKButton>
+      </div>
+
+      <!-- Share Actions Dialog -->
+      <ZKActionDialog
+        v-model="shareActions.dialogState.value.isVisible"
+        :actions="shareActions.dialogState.value.actions"
+        @action-selected="handleShareActionSelected"
+        @dialog-closed="shareActions.closeDialog"
       />
     </div>
 
-    <div class="rightSection">
-      <div class="voteCountContainer">
-        <ZKIcon color="#7D7A85" name="mdi:vote" size="1rem" />
-        <span>{{ formatAmount(voteCount) }}</span>
-      </div>
-
-      <div class="participantCountContainer">
-        <ZKIcon color="#7D7A85" name="ph:users-fill" size="1rem" />
-        <span>{{ formatAmount(participantCount) }}</span>
-      </div>
-      <ZKButton
-        button-type="compactButton"
-        @click.stop.prevent="shareClicked()"
-      >
-        <div class="shareButtonContentContainer">
-          <div>
-            <ZKIcon color="#7D7A85" name="mdi:share" size="1rem" />
-          </div>
-          <div>{{ t("share") }}</div>
-        </div>
-      </ZKButton>
-    </div>
-
-    <!-- Share Actions Dialog -->
-    <ZKActionDialog
-      v-model="shareActions.dialogState.value.isVisible"
-      :actions="shareActions.dialogState.value.actions"
-      @action-selected="handleShareActionSelected"
-      @dialog-closed="shareActions.closeDialog"
-    />
+    <slot name="dropdown" />
   </div>
 </template>
 
@@ -119,6 +123,12 @@ async function handleShareActionSelected(action: ContentAction): Promise<void> {
 </script>
 
 <style scoped lang="scss">
+.postActionBarContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .buttonClusterBar {
   display: flex;
   flex-wrap: wrap;
