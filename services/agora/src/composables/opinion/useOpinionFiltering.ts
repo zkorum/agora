@@ -1,7 +1,7 @@
 import type { UseQueryReturnType } from "@tanstack/vue-query";
 import type { OpinionItem } from "src/shared/types/zod";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
-import { computed, type ComputedRef, type Ref, ref } from "vue";
+import { computed, type ComputedRef, type Ref, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { z } from "zod";
 
@@ -113,6 +113,15 @@ export function useOpinionFiltering({
         return opinionsDiscover.value;
     }
   }
+
+  // Auto-fetch lazy queries when they become active.
+  // This catches ALL filter change paths: user clicks, programmatic changes
+  // (openModerationHistory, onModeratedOpinionDetected), and route ?filter= params.
+  watch(activeQuery, (query) => {
+    if (!query.data.value && !query.isFetching.value) {
+      void query.refetch();
+    }
+  }, { immediate: true });
 
   function handleUserFilterChange(filterValue: CommentFilterOptions): void {
     currentFilter.value = filterValue;

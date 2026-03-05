@@ -94,6 +94,7 @@
 
 <script setup lang="ts">
 import type { UseQueryReturnType } from "@tanstack/vue-query";
+import Button from "primevue/button";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
@@ -114,7 +115,6 @@ import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
 import MeTab from "./meTab/MeTab.vue";
 import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
-import Button from "primevue/button";
 
 defineOptions({
   components: {
@@ -122,18 +122,18 @@ defineOptions({
   },
 });
 
+const props = defineProps<{
+  participantCount: number;
+  conversationSlugId: string;
+  analysisQuery: UseQueryReturnType<AnalysisData, Error>;
+}>();
+
 type AnalysisData = {
   consensusAgree: AnalysisOpinionItem[];
   consensusDisagree: AnalysisOpinionItem[];
   controversial: AnalysisOpinionItem[];
   polisClusters: Partial<PolisClusters>;
 };
-
-const props = defineProps<{
-  participantCount: number;
-  conversationSlugId: string;
-  analysisQuery: UseQueryReturnType<AnalysisData, Error>;
-}>();
 
 const { t } = useComponentI18n<AnalysisPageTranslations>(
   analysisPageTranslations

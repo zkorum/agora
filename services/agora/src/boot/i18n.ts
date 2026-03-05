@@ -77,17 +77,32 @@ export async function loadLocaleMessages(
     return;
   }
 
-  // Load locale messages with dynamic import for code splitting
-  const messages = await import(
-    /* webpackChunkName: "locale-[request]" */
-    /* vite-chunk-name: "locale-[request]" */
-    `../i18n/${locale}/index.ts`
+  // Retry up to 3 times with delay — dynamic imports can fail after deployments
+  // when old chunk filenames no longer exist on the server
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const messages = await import(
+        /* webpackChunkName: "locale-[request]" */
+        /* vite-chunk-name: "locale-[request]" */
+        `../i18n/${locale}/index.ts`
+      );
+
+      i18nInstance.global.setLocaleMessage(locale, messages.default);
+      return nextTick();
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+  }
+
+  console.error(
+    `[i18n] Failed to load locale "${locale}" after 3 attempts, falling back to English`,
+    lastError
   );
-
-  // Set locale message
-  i18nInstance.global.setLocaleMessage(locale, messages.default);
-
-  return nextTick();
+  setI18nLanguage("en");
 }
 
 /**
@@ -134,9 +149,17 @@ export default defineBoot(({ app }) => {
 
   // Load the initial locale if it's not English
   if (defaultLocale !== "en") {
-    void loadLocaleMessages(defaultLocale).then(() => {
-      setI18nLanguage(defaultLocale);
-    });
+    void loadLocaleMessages(defaultLocale)
+      .then(() => {
+        setI18nLanguage(defaultLocale);
+      })
+      .catch((error) => {
+        console.error(
+          "[i18n] Failed to load initial locale, using English",
+          error
+        );
+        setI18nLanguage("en");
+      });
   } else {
     setI18nLanguage(defaultLocale);
   }
