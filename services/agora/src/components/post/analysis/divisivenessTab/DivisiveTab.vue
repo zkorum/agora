@@ -34,7 +34,7 @@
         </div>
 
         <VoteLegend
-          v-if="itemList.length > 0 && Object.keys(clusters).length > 1"
+          v-if="representativeItems.length > 0 && Object.keys(clusters).length > 1"
           :items="analysisLegendItems"
         />
 
