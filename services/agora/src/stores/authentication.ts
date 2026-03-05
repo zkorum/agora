@@ -113,9 +113,6 @@ export const useAuthenticationStore = defineStore("authentication", () => {
         credentials: nullCredentials,
       };
     }
-    console.log(
-      `Login status updated from input '${JSON.stringify(status)}' to '${JSON.stringify(_loginStatus.value)}'`
-    );
     return {
       newLoginStatus: _loginStatus.value,
       oldLoginStatus: oldLoginStatus,
