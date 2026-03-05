@@ -83,7 +83,12 @@ export function useVoteMutation(postSlugId: string) {
 
       // Optimistically update userVotes cache (for vote highlighting)
       queryClient.setQueryData<Array<{ opinionSlugId: string; votingAction: string }>>(userVotesKey, (oldData) => {
-        if (!oldData) return [];
+        // Handle empty cache (e.g., right after queryClient.clear() during auth transition)
+        if (!oldData) {
+          return voteAction !== "cancel"
+            ? [{ opinionSlugId, votingAction: voteAction }]
+            : [];
+        }
 
         // Remove existing vote for this opinion (if any)
         const filteredVotes = oldData.filter(vote => vote.opinionSlugId !== opinionSlugId);
