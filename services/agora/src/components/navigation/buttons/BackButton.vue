@@ -15,6 +15,6 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
-  fallbackRoute: undefined,
+  fallbackRoute: () => ({ name: "/" }),
 });
 </script>

@@ -18,7 +18,9 @@ export function useConversationLoginIntentions() {
     if (
       route.name === "/conversation/[postSlugId]" ||
       route.name === "/conversation/[postSlugId]/" ||
-      route.name === "/conversation/[postSlugId].embed"
+      route.name === "/conversation/[postSlugId]/analysis" ||
+      route.name === "/conversation/[postSlugId].embed/" ||
+      route.name === "/conversation/[postSlugId].embed/analysis"
     ) {
       const isEmbedView = isEmbeddedMode();
       const postSlugId = route.params.postSlugId;
@@ -34,7 +36,9 @@ export function useConversationLoginIntentions() {
     if (
       route.name === "/conversation/[postSlugId]" ||
       route.name === "/conversation/[postSlugId]/" ||
-      route.name === "/conversation/[postSlugId].embed"
+      route.name === "/conversation/[postSlugId]/analysis" ||
+      route.name === "/conversation/[postSlugId].embed/" ||
+      route.name === "/conversation/[postSlugId].embed/analysis"
     ) {
       const isEmbedView = isEmbeddedMode();
       const postSlugId = route.params.postSlugId;
@@ -52,7 +56,9 @@ export function useConversationLoginIntentions() {
     if (
       route.name === "/conversation/[postSlugId]" ||
       route.name === "/conversation/[postSlugId]/" ||
-      route.name === "/conversation/[postSlugId].embed"
+      route.name === "/conversation/[postSlugId]/analysis" ||
+      route.name === "/conversation/[postSlugId].embed/" ||
+      route.name === "/conversation/[postSlugId].embed/analysis"
     ) {
       const isEmbedView = isEmbeddedMode();
       const postSlugId = route.params.postSlugId;

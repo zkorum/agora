@@ -10,12 +10,12 @@
       show-code-on-list
       :placeholder="t('phoneNumberPlaceholder')"
       required
-      :auto-format="false"
+      auto-format="blur"
       no-validation-error
       aria-describedby="phone-error"
       @update="onPhoneUpdate"
       @country-code="onCountryCodeUpdate"
-      @blur="onPhoneBlur"
+      @keydown.enter="submit"
     />
 
     <div
@@ -55,21 +55,15 @@
 
 <script setup lang="ts">
 import type { CountryCode } from "libphonenumber-js/max";
-import {
-  parsePhoneNumberFromString,
-  type PhoneNumber as LibPhoneNumber,
-} from "libphonenumber-js/max";
+import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import type { MazInputPhoneNumberData } from "maz-ui/components/MazInputPhoneNumber";
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import {
-  type SupportedCountryCallingCode,
-  zodSupportedCountryCallingCode,
-} from "src/shared/types/zod";
+import { zodSupportedCountryCallingCode } from "src/shared/types/zod";
 import { isPhoneNumberTypeSupported } from "src/shared-app-api/phone";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import { processEnv } from "src/utils/processEnv";
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
 
 import ZKGradientButton from "../ui-library/ZKGradientButton.vue";
 import ZKPhoneNumberInput from "../ui-library/ZKPhoneNumberInput.vue";
@@ -124,6 +118,8 @@ function loadDevAuthorizedNumbers() {
   }
 }
 
+const lastMazResults = ref<MazInputPhoneNumberData | null>(null);
+
 function clearErrors() {
   phoneData.hasError = false;
   phoneData.errorMessage = "";
@@ -134,109 +130,42 @@ function setError(message: string) {
   phoneData.errorMessage = message;
 }
 
-function validatePhoneNumber(
-  phoneNumber: string,
-  countryCode: CountryCode
-):
-  | { isValid: false; error: string }
-  | {
-      isValid: true;
-      parsedNumber: LibPhoneNumber;
-      callingCode: SupportedCountryCallingCode;
-    } {
-  const parsedNumber = parsePhoneNumberFromString(phoneNumber, countryCode);
-
-  if (!parsedNumber) {
-    return { isValid: false, error: t("pleaseEnterValidPhone") };
+function validateFromMazResults(results: MazInputPhoneNumberData) {
+  if (!results.isValid || !results.countryCallingCode) {
+    phoneData.isValid = false;
+    return;
   }
 
   const callingCode = zodSupportedCountryCallingCode.safeParse(
-    parsedNumber.countryCallingCode
+    results.countryCallingCode
   );
   if (!callingCode.success) {
-    return { isValid: false, error: t("countryNotSupported") };
+    phoneData.isValid = false;
+    phoneData.hasError = true;
+    phoneData.errorMessage = t("countryNotSupported");
+    return;
   }
 
-  if (!parsedNumber.isValid()) {
-    return { isValid: false, error: t("pleaseEnterValidPhone") };
+  if (!isPhoneNumberTypeSupported(results.type)) {
+    phoneData.isValid = false;
+    phoneData.hasError = true;
+    phoneData.errorMessage = t("phoneTypeNotSupported");
+    return;
   }
 
-  const isPhoneTypeNotSupported = !isPhoneNumberTypeSupported(
-    parsedNumber.getType()
-  );
-  if (isPhoneTypeNotSupported) {
-    return {
-      isValid: false,
-      error: t("phoneTypeNotSupported"),
-    };
-  }
-
-  return { isValid: true, parsedNumber, callingCode: callingCode.data };
+  clearErrors();
+  phoneData.isValid = true;
 }
 
-function onPhoneUpdate(_results: MazInputPhoneNumberData) {
+function onPhoneUpdate(results: MazInputPhoneNumberData) {
+  lastMazResults.value = results;
   phoneData.hasAttemptedSubmission = false;
   clearErrors();
-
-  if (phoneData.countryCode && phoneData.phoneNumber) {
-    validatePhoneInRealTime();
-  }
+  validateFromMazResults(results);
 }
 
 function onCountryCodeUpdate(_countryCode: CountryCode | null | undefined) {
   phoneData.hasAttemptedSubmission = false;
-  clearErrors();
-
-  if (phoneData.phoneNumber) {
-    validatePhoneInRealTime();
-  }
-}
-
-function validatePhoneInRealTime() {
-  if (!phoneData.phoneNumber || !phoneData.countryCode) {
-    phoneData.isValid = false;
-    return;
-  }
-
-  try {
-    const result = validatePhoneNumber(
-      phoneData.phoneNumber,
-      phoneData.countryCode
-    );
-
-    if (!result.isValid) {
-      phoneData.errorMessage = result.error;
-      phoneData.hasError = true;
-      phoneData.isValid = false;
-      return;
-    }
-
-    clearErrors();
-    phoneData.isValid = true;
-  } catch {
-    phoneData.errorMessage = t("pleaseEnterValidPhone");
-    phoneData.hasError = true;
-    phoneData.isValid = false;
-  }
-}
-
-function onPhoneBlur() {
-  if (!phoneData.phoneNumber || !phoneData.countryCode || !phoneData.isValid) {
-    return;
-  }
-
-  try {
-    const parsedNumber = parsePhoneNumberFromString(
-      phoneData.phoneNumber,
-      phoneData.countryCode
-    );
-
-    if (parsedNumber && parsedNumber.isValid()) {
-      phoneData.phoneNumber = parsedNumber.formatNational();
-    }
-  } catch (error) {
-    console.warn("Failed to format phone number on blur:", error);
-  }
 }
 
 function injectDevelopmentNumber(phoneItem: PhoneNumber) {
@@ -249,35 +178,39 @@ function injectDevelopmentNumber(phoneItem: PhoneNumber) {
 }
 
 function submit(): boolean {
-  try {
-    phoneData.hasAttemptedSubmission = true;
+  phoneData.hasAttemptedSubmission = true;
 
-    if (!phoneData.phoneNumber || !phoneData.countryCode) {
-      setError(t("pleaseEnterPhoneNumber"));
-      return false;
-    }
+  if (!lastMazResults.value || !phoneData.phoneNumber) {
+    setError(t("pleaseEnterPhoneNumber"));
+    return false;
+  }
 
-    const result = validatePhoneNumber(
-      phoneData.phoneNumber,
-      phoneData.countryCode
-    );
+  const results = lastMazResults.value;
 
-    if (!result.isValid) {
-      setError(result.error);
-      return false;
-    }
-
-    verificationPhoneNumber.value = {
-      countryCallingCode: result.callingCode,
-      internationalPhoneNumber: result.parsedNumber.number,
-    };
-    emit("submit");
-    return true;
-  } catch (e) {
-    console.error("Unexpected error during phone validation", e);
+  if (!results.isValid || !results.e164 || !results.countryCallingCode) {
     setError(t("pleaseEnterValidPhone"));
     return false;
   }
+
+  const callingCode = zodSupportedCountryCallingCode.safeParse(
+    results.countryCallingCode
+  );
+  if (!callingCode.success) {
+    setError(t("countryNotSupported"));
+    return false;
+  }
+
+  if (!isPhoneNumberTypeSupported(results.type)) {
+    setError(t("phoneTypeNotSupported"));
+    return false;
+  }
+
+  verificationPhoneNumber.value = {
+    countryCallingCode: callingCode.data,
+    internationalPhoneNumber: results.e164,
+  };
+  emit("submit");
+  return true;
 }
 
 defineExpose({ submit });

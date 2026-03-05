@@ -150,7 +150,6 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  max-width: 90%;
 }
 
 .optionDescriptionStyle {

@@ -69,10 +69,6 @@ import {
 } from "./service/user.js";
 import axios, { type AxiosInstance } from "axios";
 import {
-    checkEmailDeliverability,
-    type ReacherIsReachable,
-} from "./service/emailVerification.js";
-import {
     generateVerificationLink,
     verifyUserStatusAndAuthenticate,
 } from "./service/rarimo.js";
@@ -985,25 +981,12 @@ server.after(() => {
                         reason: "already_has_credential",
                     };
                 }
-                let emailReachability: ReacherIsReachable | null = null;
-                if (axiosReacher !== undefined) {
-                    const deliverability = await checkEmailDeliverability({
-                        axiosReacher,
-                        email: request.body.email,
-                    });
-                    emailReachability = deliverability.isReachable;
-                    if (!deliverability.deliverable) {
-                        return {
-                            success: false,
-                            reason: deliverability.reason,
-                        };
-                    }
-                }
                 const userAgent =
                     request.headers["user-agent"] ?? "Unknown device";
 
                 return await authService.authenticateEmailAttempt({
                     db,
+                    axiosReacher,
                     email: request.body.email,
                     isRequestingNewCode: request.body.isRequestingNewCode,
                     minutesBeforeEmailCodeExpiry:
@@ -1018,7 +1001,6 @@ server.after(() => {
                         ),
                     testCode: config.TEST_CODE,
                     userAgent: userAgent,
-                    emailReachability,
                 });
             }
             return await doAuthenticateEmail();

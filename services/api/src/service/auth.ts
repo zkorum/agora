@@ -6,7 +6,11 @@ import {
     otpCodesEqual,
 } from "@/crypto.js";
 import { determineAuthType } from "./auth/core/stateHelpers.js";
-import type { ReacherIsReachable } from "@/service/emailVerification.js";
+import {
+    checkEmailDeliverability,
+    type ReacherIsReachable,
+} from "@/service/emailVerification.js";
+import type { AxiosInstance } from "axios";
 import type { CredentialAuthState, AuthResult } from "./auth/core/types.js";
 import {
     authAttemptPhoneTable,
@@ -1786,6 +1790,7 @@ export async function getEmailAuthType({
 
 interface AuthenticateEmailAttemptProps {
     db: PostgresDatabase;
+    axiosReacher: AxiosInstance | undefined;
     email: string;
     isRequestingNewCode: boolean;
     minutesBeforeEmailCodeExpiry: number;
@@ -1794,11 +1799,11 @@ interface AuthenticateEmailAttemptProps {
     throttleEmailSecondsInterval: number;
     testCode: number;
     doUseTestCode: boolean;
-    emailReachability: ReacherIsReachable | null;
 }
 
 export async function authenticateEmailAttempt({
     db,
+    axiosReacher,
     email,
     isRequestingNewCode,
     minutesBeforeEmailCodeExpiry,
@@ -1807,7 +1812,6 @@ export async function authenticateEmailAttempt({
     throttleEmailSecondsInterval,
     testCode,
     doUseTestCode,
-    emailReachability,
 }: AuthenticateEmailAttemptProps): Promise<AuthenticateEmailResponse> {
     const now = nowZeroMs();
     const authResult = await getEmailAuthType({
@@ -1820,6 +1824,22 @@ export async function authenticateEmailAttempt({
             success: false,
             reason: authResult.type,
         };
+    }
+    // Only check email deliverability for registration (new email).
+    // For login/merge, the email was already validated during registration.
+    let emailReachability: ReacherIsReachable | null = null;
+    if (authResult.type === "register" && axiosReacher !== undefined) {
+        const deliverability = await checkEmailDeliverability({
+            axiosReacher,
+            email,
+        });
+        emailReachability = deliverability.isReachable;
+        if (!deliverability.deliverable) {
+            return {
+                success: false,
+                reason: deliverability.reason,
+            };
+        }
     }
     // Get userId - for merge type use toUserId (the device user)
     const userId =

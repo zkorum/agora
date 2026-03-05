@@ -1,16 +1,20 @@
 <template>
-  <button
+  <component
+    :is="to && !disabled ? 'router-link' : 'button'"
+    :to="to"
     class="zk-icon-button"
-    :disabled="disabled"
+    :disabled="!to ? disabled : undefined"
     v-bind="$attrs"
     @click="handleClick"
     @touchend="handleTouchEnd"
   >
     <ZKIcon :name="icon" :size="iconSize" :color="iconColor" />
-  </button>
+  </component>
 </template>
 
 <script setup lang="ts">
+import type { RouteLocationRaw } from "vue-router";
+
 import ZKIcon from "./ZKIcon.vue";
 
 interface Props {
@@ -18,6 +22,7 @@ interface Props {
   iconSize?: string;
   iconColor?: string;
   disabled?: boolean;
+  to?: RouteLocationRaw;
 }
 
 defineOptions({
@@ -28,6 +33,7 @@ const props = withDefaults(defineProps<Props>(), {
   iconSize: "1.2rem",
   iconColor: "7D7A85",
   disabled: false,
+  to: undefined,
 });
 
 const emit = defineEmits<{
@@ -54,11 +60,13 @@ function handleTouchEnd(event: TouchEvent) {
 @import "src/css/hover-effects";
 
 .zk-icon-button {
-  // Reset default button styles
+  // Reset default button/link styles
   border: none;
   background: none;
   cursor: pointer;
   outline: none;
+  text-decoration: none;
+  color: inherit;
 
   // Apply icon button styling
   padding: 0.6rem 0.8rem;
@@ -76,12 +84,6 @@ function handleTouchEnd(event: TouchEvent) {
   // Custom active state with transform effect
   &:active:not(:disabled) {
     transform: translateY(1px);
-  }
-
-  // Custom focus state with box-shadow for accessibility
-  &:focus:not(:disabled),
-  &:focus-visible:not(:disabled) {
-    box-shadow: 0 0 0 1px rgba(125, 122, 133, 0.6);
   }
 
   &:disabled {

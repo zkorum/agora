@@ -2,6 +2,7 @@
   <ZKIconButton
     :icon="icon"
     :disabled="disabled"
+    :to="fallbackRoute"
     v-bind="$attrs"
     @click="handleClick"
   />
@@ -39,9 +40,12 @@ async function handleClick(event: MouseEvent) {
   // Emit click event for custom handlers
   emit("click", event);
 
-  // If no custom handler prevented default, use navigation handler
-  if (!event.defaultPrevented) {
-    await goBackButtonHandler.safeNavigateBack(props.fallbackRoute);
-  }
+  // If a custom handler prevented default, stop here
+  if (event.defaultPrevented) return;
+
+  // Prevent router-link's default navigation (we handle it via JS go-back)
+  event.preventDefault();
+
+  await goBackButtonHandler.safeNavigateBack(props.fallbackRoute);
 }
 </script>

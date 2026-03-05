@@ -1,0 +1,250 @@
+<template>
+  <div>
+    <CommentSection
+      ref="opinionSectionRef"
+      :post-slug-id="conversationData.metadata.conversationSlugId"
+      :conversation-author-username="conversationData.metadata.authorUsername"
+      :conversation-organization-name="conversationData.metadata.organization?.name ?? ''"
+      :participation-mode="
+        conversationData.metadata.participationMode
+      "
+      :requires-event-ticket="conversationData.metadata.requiresEventTicket"
+      :preloaded-queries="{
+        commentsDiscoverQuery,
+        commentsNewQuery,
+        commentsModeratedQuery,
+        hiddenCommentsQuery,
+        commentsMyVotesQuery,
+      }"
+      @deleted="decrementOpinionCount()"
+      @participant-count-delta="handleParticipantCountDelta"
+      @ticket-verified="(payload) => handleTicketVerified(payload)"
+    />
+
+    <FloatingBottomContainer>
+      <CommentComposer
+        :post-slug-id="conversationData.metadata.conversationSlugId"
+        :participation-mode="
+          conversationData.metadata.participationMode
+        "
+        :requires-event-ticket="conversationData.metadata.requiresEventTicket"
+        @submitted-comment="submittedComment"
+        @ticket-verified="(payload) => handleTicketVerified(payload)"
+      />
+    </FloatingBottomContainer>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { storeToRefs } from "pinia";
+import type { ExtendedConversation } from "src/shared/types/zod";
+import { useUserStore } from "src/stores/user";
+import { useBackendAuthApi } from "src/utils/api/auth";
+import {
+  useCommentsQuery,
+  useHiddenCommentsQuery,
+  useInvalidateCommentQueries,
+} from "src/utils/api/comment/useCommentQueries";
+import type { CommentFilterOptions } from "src/utils/component/opinion";
+import { computed, inject, onMounted, provide, type Ref, ref, watch } from "vue";
+
+import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
+import CommentComposer from "./comments/CommentComposer.vue";
+import CommentSection from "./comments/CommentSection.vue";
+
+// Props from parent
+const props = defineProps<{
+  conversationData: ExtendedConversation;
+  hasConversationData: boolean;
+  moderationHistoryTrigger: number;
+  commentFilter: CommentFilterOptions;
+}>();
+
+const emit = defineEmits<{
+  "update:commentFilter": [filter: CommentFilterOptions];
+}>();
+
+// Provide conversation data to all descendants (reactive)
+provide("conversationData", computed(() => props.conversationData));
+
+// Inject shared state from parent
+const opinionCountOffset = inject<Ref<number>>("opinionCountOffset", ref(0));
+const participantCountOffset = inject<Ref<number>>("participantCountOffset", ref(0));
+const setCurrentTabLoading = inject<(loading: boolean) => void>(
+  "setCurrentTabLoading",
+  () => {
+    /* noop */
+  }
+);
+const decrementOpinionCount = inject<() => void>("decrementOpinionCount", () => {
+  /* noop */
+});
+const registerChildRefreshHandler = inject<(handler: () => Promise<void>) => void>(
+  "registerChildRefreshHandler",
+  () => {
+    /* noop */
+  }
+);
+
+const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
+
+const { forceRefreshAnalysis, markCommentsAsStale } = useInvalidateCommentQueries();
+const { loadAuthenticatedModules } = useBackendAuthApi();
+const userStore = useUserStore();
+
+const { profileData } = storeToRefs(userStore);
+
+const conversationSlugId = computed(
+  () => props.conversationData.metadata.conversationSlugId
+);
+const voteCount = computed(() => props.conversationData.metadata.voteCount);
+
+// Preload comment queries for all filter types
+const commentsDiscoverQuery = useCommentsQuery({
+  conversationSlugId,
+  filter: "discover",
+  voteCount,
+  enabled: () => props.hasConversationData,
+});
+
+const commentsNewQuery = useCommentsQuery({
+  conversationSlugId,
+  filter: "new",
+  voteCount,
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
+});
+
+const commentsModeratedQuery = useCommentsQuery({
+  conversationSlugId,
+  filter: "moderated",
+  voteCount,
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
+});
+
+const commentsMyVotesQuery = useCommentsQuery({
+  conversationSlugId,
+  filter: "my_votes",
+  voteCount,
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
+});
+
+const hiddenCommentsQuery = useHiddenCommentsQuery({
+  conversationSlugId,
+  voteCount,
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
+});
+
+function handleParticipantCountDelta(delta: number): void {
+  participantCountOffset.value += delta;
+}
+
+// Report loading state to parent (for spinner in PostActionBar)
+watch(
+  () => opinionSectionRef.value?.isLoading ?? false,
+  (isLoading) => {
+    setCurrentTabLoading(isLoading);
+  }
+);
+
+// Sync filter: when parent changes filter (user clicked sorting selector), tell CommentSection
+watch(
+  () => props.commentFilter,
+  (newFilter) => {
+    if (opinionSectionRef.value && opinionSectionRef.value.currentFilter !== newFilter) {
+      opinionSectionRef.value.handleUserFilterChange(newFilter);
+    }
+  }
+);
+
+// Sync filter: when CommentSection changes filter internally (e.g. openModerationHistory), tell parent
+watch(
+  () => opinionSectionRef.value?.currentFilter,
+  (newFilter) => {
+    if (newFilter !== undefined && newFilter !== props.commentFilter) {
+      emit("update:commentFilter", newFilter);
+    }
+  }
+);
+
+async function submittedComment(data: {
+  opinionSlugId: string;
+  authStateChanged: boolean;
+  needsCacheRefresh: boolean;
+}): Promise<void> {
+  opinionCountOffset.value += 1;
+
+  if (opinionSectionRef.value) {
+    await opinionSectionRef.value.refreshAndHighlightOpinion(
+      data.opinionSlugId
+    );
+  }
+
+  // Force refresh analysis data since new opinion affects analysis results
+  forceRefreshAnalysis(props.conversationData.metadata.conversationSlugId);
+
+  // Handle deferred cache refresh if auth state changed (new guest user)
+  if (data.needsCacheRefresh) {
+    console.log(
+      "[ConversationCommentTab] New guest user detected - performing deferred cache refresh"
+    );
+
+    await loadAuthenticatedModules();
+
+    if (opinionSectionRef.value) {
+      await opinionSectionRef.value.refreshAndHighlightOpinion(
+        data.opinionSlugId
+      );
+
+      const targetOpinion = opinionSectionRef.value.targetOpinion;
+      if (targetOpinion && targetOpinion.username) {
+        profileData.value.userName = targetOpinion.username;
+      }
+    }
+  }
+}
+
+async function handleTicketVerified(payload: {
+  userIdChanged: boolean;
+  needsCacheRefresh: boolean;
+}): Promise<void> {
+  console.log(
+    "[ConversationCommentTab] Ticket verified event received",
+    payload
+  );
+
+  if (payload.needsCacheRefresh) {
+    console.log(
+      "[ConversationCommentTab] New guest via Zupass - performing deferred cache refresh"
+    );
+    await loadAuthenticatedModules();
+  }
+}
+
+watch(
+  () => props.moderationHistoryTrigger,
+  () => {
+    if (opinionSectionRef.value) {
+      opinionSectionRef.value.openModerationHistory();
+    }
+  }
+);
+
+// Register pull-to-refresh handler: mark all comment queries stale + refetch only the active one.
+// Does NOT call refreshData() (which also invalidates analysis + refetches votes) to avoid
+// duplicating work the parent already handles.
+registerChildRefreshHandler(async () => {
+  const section = opinionSectionRef.value;
+  if (!section) return;
+  await Promise.all([
+    markCommentsAsStale(conversationSlugId.value),
+    section.refetchActiveQuery(),
+  ]);
+});
+
+onMounted(() => {
+  // Report initial loading state to parent
+  setCurrentTabLoading(opinionSectionRef.value?.isLoading ?? false);
+});
+</script>
+
+<style scoped lang="scss"></style>

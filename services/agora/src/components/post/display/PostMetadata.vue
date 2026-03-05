@@ -131,6 +131,7 @@ import {
   type WebShareTranslations,
   webShareTranslations,
 } from "src/utils/share/WebShare.i18n";
+import { useEmbedMode } from "src/utils/ui/embedMode";
 import { useNotify } from "src/utils/ui/notify";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import { computed, ref } from "vue";
@@ -162,6 +163,7 @@ const emit = defineEmits<{
 
 const router = useRouter();
 const route = useRoute();
+const { isEmbeddedMode } = useEmbedMode();
 
 // Use the new content actions system
 const postActions = useContentActions();
@@ -249,7 +251,7 @@ async function moderatePostCallback() {
 async function moderationHistoryCallback() {
   if (
     route.name == "/conversation/[postSlugId]/" ||
-    route.name == "/conversation/[postSlugId].embed"
+    isEmbeddedMode()
   ) {
     emit("openModerationHistory");
   } else {

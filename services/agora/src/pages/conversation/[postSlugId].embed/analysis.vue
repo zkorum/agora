@@ -2,6 +2,7 @@
   <ConversationAnalysisTab
     :conversation-data="conversationData"
     :has-conversation-data="hasConversationData"
+    :show-report-button="false"
   />
 </template>
 

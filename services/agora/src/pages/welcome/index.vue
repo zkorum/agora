@@ -65,7 +65,7 @@ async function skipAuthentication() {
 
   if (hasEmbedIntention.hasIntention && hasEmbedIntention.conversationSlugId) {
     await router.push({
-      name: "/conversation/[postSlugId].embed",
+      name: "/conversation/[postSlugId].embed/",
       params: { postSlugId: hasEmbedIntention.conversationSlugId },
       ...(hasEmbedIntention.opinionSlugId && {
         query: { opinion: hasEmbedIntention.opinionSlugId },

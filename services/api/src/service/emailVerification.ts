@@ -34,7 +34,7 @@ export async function checkEmailDeliverability({
         const response = await axiosReacher.post(
             "/v0/check_email",
             { to_email: email },
-            { timeout: 30_000 },
+            { timeout: 5_000 },
         );
         const parsed = zodReacherResponse.parse(response.data);
         if (parsed.is_reachable === "invalid") {
