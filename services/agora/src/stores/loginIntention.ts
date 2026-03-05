@@ -177,7 +177,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
       case "agreement":
         await router.replace({
           name: opinionAgreementIntention.isEmbedView
-            ? "/conversation/[postSlugId].embed"
+            ? "/conversation/[postSlugId].embed/"
             : "/conversation/[postSlugId]/",
           params: { postSlugId: opinionAgreementIntention.conversationSlugId },
           query: { opinion: opinionAgreementIntention.opinionSlugId },
@@ -195,7 +195,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
       case "voting":
         await router.replace({
           name: votingIntention.isEmbedView
-            ? "/conversation/[postSlugId].embed"
+            ? "/conversation/[postSlugId].embed/"
             : "/conversation/[postSlugId]/",
           params: { postSlugId: votingIntention.conversationSlugId },
         });
@@ -203,7 +203,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
       case "reportUserContent":
         await router.replace({
           name: reportUserContentIntention.isEmbedView
-            ? "/conversation/[postSlugId].embed"
+            ? "/conversation/[postSlugId].embed/"
             : "/conversation/[postSlugId]/",
           params: { postSlugId: reportUserContentIntention.conversationSlugId },
           query: { opinion: reportUserContentIntention.opinionSlugId },

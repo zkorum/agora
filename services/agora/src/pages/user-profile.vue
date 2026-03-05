@@ -69,7 +69,6 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { getDateString } from "src/utils/common";
 import { onMounted, ref, watch } from "vue";
-import type { RouteRecordName } from "vue-router";
 import { useRoute } from "vue-router";
 
 import {
@@ -81,7 +80,7 @@ const { loadUserProfile } = useUserStore();
 const { isGuest } = storeToRefs(useAuthenticationStore());
 
 interface CustomTab {
-  route: RouteRecordName;
+  route: "/user-profile/conversations/" | "/user-profile/opinions/";
   label: string;
   value: number;
 }

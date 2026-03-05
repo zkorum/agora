@@ -68,6 +68,15 @@ export default defineRouter(function (/* { store, ssrContext } */) {
       };
     }
 
+    if (to.name === "/conversation/[postSlugId].embed") {
+      return {
+        name: "/conversation/[postSlugId].embed/",
+        params: to.params,
+        query: to.query,
+        hash: to.hash,
+      };
+    }
+
     const target = conversationGuard(to.name, from.name);
     if (target == "home") {
       return { name: "/" };

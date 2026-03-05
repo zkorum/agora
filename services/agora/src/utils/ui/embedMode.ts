@@ -4,7 +4,11 @@ export const useEmbedMode = () => {
   const route = useRoute();
 
   function isEmbeddedMode(): boolean {
-    return route.name === "/conversation/[postSlugId].embed";
+    const name = route.name;
+    return (
+      typeof name === "string" &&
+      name.startsWith("/conversation/[postSlugId].embed")
+    );
   }
 
   return {

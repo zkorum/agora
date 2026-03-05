@@ -111,7 +111,7 @@ import {
 const { t } = useComponentI18n<ReportPageTranslations>(reportPageTranslations);
 
 const authStore = useAuthenticationStore();
-const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(authStore);
+const { isAuthInitialized } = storeToRefs(authStore);
 
 const route = useRoute("/conversation/[conversationSlugId]/report");
 const goBackButtonHandler = useGoBackButtonHandler();
@@ -132,7 +132,7 @@ async function handleNarrowBack(): Promise<void> {
 
 const conversationQuery = useConversationQuery({
   conversationSlugId: conversationSlugId,
-  enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value),
+  enabled: computed(() => isAuthInitialized.value),
 });
 
 const analysisQuery = useAnalysisQuery({
@@ -141,7 +141,6 @@ const analysisQuery = useAnalysisQuery({
   enabled: computed(
     () =>
       isAuthInitialized.value &&
-      isGuestOrLoggedIn.value &&
       conversationQuery.data.value !== undefined,
   ),
 });

@@ -33,6 +33,9 @@ export function useRouterGuard() {
       "/conversation/[postSlugId]/",
       "/conversation/[postSlugId]/analysis",
       "/conversation/[postSlugId].embed",
+      "/conversation/[postSlugId].embed/",
+      "/conversation/[postSlugId].embed/analysis",
+      "/conversation/[conversationSlugId]/report",
       "/conversation/new/create/",
       "/conversation/new/review/",
       "/legal/privacy/",
@@ -57,7 +60,9 @@ export function useRouterGuard() {
   ): "home" | "ignore" {
     if (
       fromName == "/conversation/[postSlugId]" ||
-      fromName == "/conversation/[postSlugId]/"
+      fromName == "/conversation/[postSlugId]/" ||
+      fromName == "/conversation/[postSlugId].embed" ||
+      fromName == "/conversation/[postSlugId].embed/"
     ) {
       // Allow navigation to onboarding when doing a credential upgrade
       // (e.g., user needs email/phone verification to participate)

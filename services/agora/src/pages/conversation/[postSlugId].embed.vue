@@ -1,62 +1,81 @@
 <template>
   <EmbedLayout>
-    <PostDetails
-      v-if="hasConversationData"
-      :conversation-data="loadedConversationData"
-      :compact-mode="false"
-    />
+    <div v-if="hasConversationData">
+      <div class="container">
+        <PostContent
+          :extended-post-data="loadedConversationData"
+          :compact-mode="false"
+          @open-moderation-history="openModerationHistory()"
+          @verified="(payload) => handleTicketVerified(payload)"
+        />
+
+        <PostActionBar
+          v-model="currentTab"
+          :compact-mode="false"
+          :opinion-count="
+            loadedConversationData.metadata.opinionCount + opinionCountOffset
+          "
+          :participant-count="participantCountLocal"
+          :vote-count="loadedConversationData.metadata.voteCount"
+          :is-loading="isCurrentTabLoading"
+          :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
+          :conversation-title="loadedConversationData.payload.title"
+          :author-username="loadedConversationData.metadata.authorUsername"
+        />
+
+        <!-- Child routes: only tab-specific content -->
+        <router-view v-slot="{ Component }">
+          <component
+            :is="Component"
+            :key="route.path"
+            :conversation-data="loadedConversationData"
+            :has-conversation-data="hasConversationData"
+            :moderation-history-trigger="moderationHistoryTrigger"
+            :comment-filter="commentFilter"
+            @update:comment-filter="
+              (filter: CommentFilterOptions) => { commentFilter = filter }
+            "
+          />
+        </router-view>
+      </div>
+    </div>
   </EmbedLayout>
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
-import PostDetails from "src/components/post/PostDetails.vue";
+import PostContent from "src/components/post/display/PostContent.vue";
+import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
+import { useConversationParentState } from "src/composables/conversation/useConversationParentState";
 import EmbedLayout from "src/layouts/EmbedLayout.vue";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { useLoginIntentionStore } from "src/stores/loginIntention";
-import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
-import { computed } from "vue";
-import { useRoute } from "vue-router";
+import type { CommentFilterOptions } from "src/utils/component/opinion";
 
-const route = useRoute();
-const authStore = useAuthenticationStore();
-const { isAuthInitialized } = storeToRefs(authStore);
-
-// Clear login intentions immediately (before query setup)
-const loginIntentionStore = useLoginIntentionStore();
-loginIntentionStore.clearVotingIntention();
-loginIntentionStore.clearOpinionAgreementIntention();
-loginIntentionStore.clearReportUserContentIntention();
-
-// Use TanStack Query for conversation data
-const conversationQuery = useConversationQuery({
-  conversationSlugId: computed(
-    () => (route.params as { postSlugId: string }).postSlugId
-  ),
-  enabled: computed(() => isAuthInitialized.value),
-});
-
-const conversationData = computed(() => {
-  const data = conversationQuery.data.value;
-  if (!data || data.metadata.conversationSlugId === "") {
-    return undefined;
-  }
-  return data;
-});
-
-const hasConversationData = computed(
-  () => conversationData.value !== undefined
-);
-
-// Type-safe version for template use (guaranteed non-undefined)
-const loadedConversationData = computed(() => {
-  const data = conversationData.value;
-  if (!data) {
-    // This should never happen inside v-if="hasConversationData" block
-    throw new Error("[EmbedPage] Accessed conversation data before loaded");
-  }
-  return data;
+const {
+  route,
+  hasConversationData,
+  loadedConversationData,
+  opinionCountOffset,
+  currentTab,
+  isCurrentTabLoading,
+  moderationHistoryTrigger,
+  commentFilter,
+  participantCountLocal,
+  openModerationHistory,
+  handleTicketVerified,
+} = useConversationParentState({
+  analysisRouteName: "/conversation/[postSlugId].embed/analysis",
+  commentRouteNames: [
+    "/conversation/[postSlugId].embed/",
+    "/conversation/[postSlugId].embed",
+  ],
+  routePrefix: "/conversation/{id}/embed",
 });
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.container {
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+  padding: 1rem;
+}
+</style>
