@@ -8,9 +8,9 @@
           :submit-call-back="onSubmit"
           :current-step="1"
           :total-steps="2"
-          :enable-next-button="emailInputFormRef?.getIsValid() ?? true"
+          :enable-next-button="(emailInputFormRef?.getIsValid() ?? true) && !isLoading"
           :show-next-button="true"
-          :show-loading-button="false"
+          :show-loading-button="isLoading"
         >
           <template #header>
             <InfoHeader
@@ -21,7 +21,7 @@
           </template>
 
           <template #body>
-            <EmailInputForm ref="emailInputFormRef" @submit="goToOtpPage" />
+            <EmailInputForm ref="emailInputFormRef" @submit="submitEmail" />
             <p v-if="!isLoggedIn"><SignupAgreement variant="verify" /></p>
           </template>
         </StepperLayout>
@@ -38,6 +38,7 @@ import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
 import EmailInputForm from "src/components/verification/EmailInputForm.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useEmailSubmit } from "src/composables/verification/useEmailSubmit";
 import { useVerificationComplete } from "src/composables/verification/useVerificationComplete";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -64,6 +65,22 @@ const router = useRouter();
 
 const loginIntentionStore = useLoginIntentionStore();
 const { activeUserIntention } = storeToRefs(loginIntentionStore);
+
+const { isLoading, submitEmail } = useEmailSubmit({
+  onNavigateToOtp: () => router.replace({ name: "/verify/email-code/" }),
+  onAlreadyHasCredential: () => {
+    showNotifyMessage(t("alreadyHasEmail"));
+    void completeVerification();
+  },
+  showNotifyMessage,
+  translations: {
+    alreadyHasEmail: t("alreadyHasEmail"),
+    throttled: t("throttled"),
+    unreachable: t("unreachable"),
+    disposable: t("disposable"),
+    somethingWrong: t("somethingWrong"),
+  },
+});
 
 function backCallback() {
   if (activeUserIntention.value === "settings") {
@@ -95,9 +112,5 @@ const emailInputFormRef = ref<{
 
 function onSubmit() {
   emailInputFormRef.value?.submit();
-}
-
-async function goToOtpPage() {
-  await router.replace({ name: "/verify/email-code/" });
 }
 </script>

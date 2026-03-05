@@ -297,7 +297,9 @@ export interface ApiV1AuthEmailAuthenticatePost200ResponseOneOf {
 export const ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum = {
     AlreadyHasCredential: 'already_has_credential',
     AssociatedWithAnotherUser: 'associated_with_another_user',
-    Throttled: 'throttled'
+    Throttled: 'throttled',
+    Unreachable: 'unreachable',
+    Disposable: 'disposable'
 } as const;
 
 export type ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum = typeof ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum[keyof typeof ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum];

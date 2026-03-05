@@ -274,6 +274,13 @@
       "when": 1772663619638,
       "tag": "0038_red_kronos",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1772725194591,
+      "tag": "0039_cheerful_human_fly",
+      "breakpoints": true
     }
   ]
 }

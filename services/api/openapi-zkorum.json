@@ -751,7 +751,9 @@
                                                     "enum": [
                                                         "already_has_credential",
                                                         "associated_with_another_user",
-                                                        "throttled"
+                                                        "throttled",
+                                                        "unreachable",
+                                                        "disposable"
                                                     ]
                                                 }
                                             },

@@ -98,6 +98,8 @@ export const authenticateEmail200 = z.discriminatedUnion("success", [
             "already_has_credential",
             "associated_with_another_user",
             "throttled",
+            "unreachable",
+            "disposable",
         ]),
     }),
 ]);

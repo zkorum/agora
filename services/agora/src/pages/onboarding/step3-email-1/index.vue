@@ -8,9 +8,9 @@
           :submit-call-back="onSubmit"
           :current-step="3"
           :total-steps="5"
-          :enable-next-button="emailInputFormRef?.getIsValid() ?? true"
+          :enable-next-button="(emailInputFormRef?.getIsValid() ?? true) && !isLoading"
           :show-next-button="true"
-          :show-loading-button="false"
+          :show-loading-button="isLoading"
         >
           <template #header>
             <InfoHeader
@@ -21,7 +21,7 @@
           </template>
 
           <template #body>
-            <EmailInputForm ref="emailInputFormRef" @submit="goToOtpPage" />
+            <EmailInputForm ref="emailInputFormRef" @submit="submitEmail" />
 
             <div class="alternativeLogins">
               <ZKGradientButton
@@ -52,7 +52,10 @@ import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import EmailInputForm from "src/components/verification/EmailInputForm.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useEmailSubmit } from "src/composables/verification/useEmailSubmit";
+import { useVerificationComplete } from "src/composables/verification/useVerificationComplete";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
+import { useNotify } from "src/utils/ui/notify";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -66,6 +69,24 @@ const { t } = useComponentI18n<EmailOnboardingTranslations>(
 );
 
 const router = useRouter();
+const { showNotifyMessage } = useNotify();
+const { completeVerification } = useVerificationComplete();
+
+const { isLoading, submitEmail } = useEmailSubmit({
+  onNavigateToOtp: () => router.replace({ name: "/onboarding/step3-email-2/" }),
+  onAlreadyHasCredential: () => {
+    showNotifyMessage(t("alreadyHasEmail"));
+    void completeVerification();
+  },
+  showNotifyMessage,
+  translations: {
+    alreadyHasEmail: t("alreadyHasEmail"),
+    throttled: t("throttled"),
+    unreachable: t("unreachable"),
+    disposable: t("disposable"),
+    somethingWrong: t("somethingWrong"),
+  },
+});
 
 const emailInputFormRef = ref<{
   submit: () => boolean;
@@ -74,10 +95,6 @@ const emailInputFormRef = ref<{
 
 function onSubmit() {
   emailInputFormRef.value?.submit();
-}
-
-async function goToOtpPage() {
-  await router.replace({ name: "/onboarding/step3-email-2/" });
 }
 
 async function goToPassportVerification() {

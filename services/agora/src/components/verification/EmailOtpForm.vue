@@ -95,7 +95,7 @@ const { t } = useComponentI18n<EmailOtpFormTranslations>(
 );
 
 const emailStore = emailVerificationStore();
-const { verificationEmail } = storeToRefs(emailStore);
+const { verificationEmail, pendingOtpData } = storeToRefs(emailStore);
 
 const {
   verificationCode,
@@ -116,8 +116,11 @@ const { showNotifyMessage } = useNotify();
 const isSubmitButtonLoading = ref(false);
 
 onMounted(async () => {
-  if (verificationEmail.value == "") {
+  if (verificationEmail.value === "") {
     emit("changeIdentifier");
+  } else if (pendingOtpData.value !== null) {
+    processRequestCodeResponse(pendingOtpData.value);
+    pendingOtpData.value = null;
   } else {
     await requestCodeClicked(false);
   }
@@ -225,6 +228,14 @@ async function requestCodeClicked(
           break;
         case "throttled":
           showNotifyMessage(t("tooManyAttempts"));
+          break;
+        case "unreachable":
+          showNotifyMessage(t("unreachable"));
+          emit("changeIdentifier");
+          break;
+        case "disposable":
+          showNotifyMessage(t("disposable"));
+          emit("changeIdentifier");
           break;
       }
     }
