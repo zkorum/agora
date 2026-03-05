@@ -7,6 +7,8 @@
         :is-highlighted="currentTab === 'comment' && !compactMode"
         :should-underline-on-highlight="true"
         :is-loading="isLoading && currentTab === 'comment'"
+        :to="compactMode ? undefined : { name: commentRouteName, params: { postSlugId: conversationSlugId } }"
+        :replace="true"
         @click="clickedTab('comment')"
       />
       <ZKTab
@@ -16,6 +18,8 @@
         :is-highlighted="currentTab === 'analysis'"
         :should-underline-on-highlight="true"
         :is-loading="isLoading && currentTab === 'analysis'"
+        :to="{ name: analysisRouteName, params: { postSlugId: conversationSlugId } }"
+        :replace="true"
         @click="clickedTab('analysis')"
       />
     </div>
@@ -27,7 +31,7 @@ import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { formatAmount } from "src/utils/common";
 import { computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 
 import {
   type InteractionTabTranslations,
@@ -46,8 +50,21 @@ const { t } = useComponentI18n<InteractionTabTranslations>(
   interactionTabTranslations
 );
 
-const router = useRouter();
 const route = useRoute();
+
+const isEmbed = computed(() => route.path.includes("/embed"));
+
+const commentRouteName = computed(() =>
+  isEmbed.value
+    ? "/conversation/[postSlugId].embed/"
+    : "/conversation/[postSlugId]/"
+);
+
+const analysisRouteName = computed(() =>
+  isEmbed.value
+    ? "/conversation/[postSlugId].embed/analysis"
+    : "/conversation/[postSlugId]/analysis"
+);
 
 // Determine current tab from route path
 const currentTab = computed<"comment" | "analysis">(() => {
@@ -63,18 +80,7 @@ const currentTab = computed<"comment" | "analysis">(() => {
 function clickedTab(tabKey: "comment" | "analysis") {
   if (props.compactMode) return;
 
-  if (tabKey === "comment") {
-    // Analysis → Comment: use replace to avoid adding to history
-    if (currentTab.value === "analysis") {
-      void router.replace(`/conversation/${props.conversationSlugId}`);
-    }
-  } else if (tabKey === "analysis") {
-    // Comment → Analysis: use replace to avoid adding to history
-    // This ensures back button skips all tab switches and returns to referrer
-    void router.replace(`/conversation/${props.conversationSlugId}/analysis`);
-  }
-
-  // Sync with v-model for backward compatibility
+  // Sync with v-model (router-link handles navigation)
   model.value = tabKey;
 }
 </script>

@@ -2,6 +2,7 @@
   <component
     :is="to ? 'router-link' : 'button'"
     :to="to"
+    :replace="to ? replace : undefined"
     class="tabStyle"
     :class="{
       highlightTab: isHighlighted,
@@ -32,7 +33,7 @@
 
 <script setup lang="ts">
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
-import type { RouteNamedMap } from "vue-router/auto-routes";
+import type { RouteLocationRaw } from "vue-router";
 
 defineProps<{
   text?: string;
@@ -40,7 +41,8 @@ defineProps<{
   isHighlighted: boolean;
   shouldUnderlineOnHighlight: boolean;
   isLoading?: boolean;
-  to?: { name: keyof RouteNamedMap };
+  to?: RouteLocationRaw;
+  replace?: boolean;
 }>();
 
 const emit = defineEmits<{

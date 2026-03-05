@@ -3,17 +3,19 @@
     <div class="container flexStyle">
       <div class="analysis-header">
         <ShortcutBar v-model="currentTab" />
-        <PrimeButton
-          variant="outlined"
-          rounded
+        <router-link
+          v-if="showReportButton"
+          :to="{
+            name: '/conversation/[conversationSlugId]/report',
+            params: { conversationSlugId: props.conversationSlugId },
+          }"
           class="report-button"
           :title="t('generateReport')"
           :aria-label="t('generateReport')"
-          @click="openReport"
         >
           <q-icon name="mdi-file-chart-outline" size="1rem" />
           <div>{{ t("report") }}</div>
-        </PrimeButton>
+        </router-link>
       </div>
 
       <!-- Me tab -->
@@ -94,7 +96,6 @@
 
 <script setup lang="ts">
 import type { UseQueryReturnType } from "@tanstack/vue-query";
-import Button from "primevue/button";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
@@ -104,7 +105,6 @@ import type {
 } from "src/shared/types/zod";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
 
 import {
   type AnalysisPageTranslations,
@@ -116,17 +116,17 @@ import MeTab from "./meTab/MeTab.vue";
 import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 
-defineOptions({
-  components: {
-    PrimeButton: Button,
-  },
-});
-
-const props = defineProps<{
-  participantCount: number;
-  conversationSlugId: string;
-  analysisQuery: UseQueryReturnType<AnalysisData, Error>;
-}>();
+const props = withDefaults(
+  defineProps<{
+    participantCount: number;
+    conversationSlugId: string;
+    analysisQuery: UseQueryReturnType<AnalysisData, Error>;
+    showReportButton?: boolean;
+  }>(),
+  {
+    showReportButton: true,
+  }
+);
 
 type AnalysisData = {
   consensusAgree: AnalysisOpinionItem[];
@@ -139,16 +139,7 @@ const { t } = useComponentI18n<AnalysisPageTranslations>(
   analysisPageTranslations
 );
 
-const router = useRouter();
-
 const currentTab = ref<ShortcutItem>("Summary");
-
-function openReport(): void {
-  void router.push({
-    name: "/conversation/[conversationSlugId]/report",
-    params: { conversationSlugId: props.conversationSlugId },
-  });
-}
 
 // Use the passed-in analysis query instead of creating our own
 const analysisQuery = props.analysisQuery;
@@ -258,6 +249,9 @@ defineExpose({
 }
 
 .report-button {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
   flex-shrink: 0;
   border-radius: 10px;
   border: 1px solid #d8d6de;
