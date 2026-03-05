@@ -68,7 +68,10 @@ import {
     getUserProfile,
 } from "./service/user.js";
 import axios, { type AxiosInstance } from "axios";
-import { checkEmailDeliverability } from "./service/emailVerification.js";
+import {
+    checkEmailDeliverability,
+    type ReacherIsReachable,
+} from "./service/emailVerification.js";
 import {
     generateVerificationLink,
     verifyUserStatusAndAuthenticate,
@@ -982,7 +985,7 @@ server.after(() => {
                         reason: "already_has_credential",
                     };
                 }
-                let emailReachability: string | null = null;
+                let emailReachability: ReacherIsReachable | null = null;
                 if (axiosReacher !== undefined) {
                     const deliverability = await checkEmailDeliverability({
                         axiosReacher,

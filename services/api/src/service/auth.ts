@@ -6,6 +6,7 @@ import {
     otpCodesEqual,
 } from "@/crypto.js";
 import { determineAuthType } from "./auth/core/stateHelpers.js";
+import type { ReacherIsReachable } from "@/service/emailVerification.js";
 import type { CredentialAuthState, AuthResult } from "./auth/core/types.js";
 import {
     authAttemptPhoneTable,
@@ -1793,7 +1794,7 @@ interface AuthenticateEmailAttemptProps {
     throttleEmailSecondsInterval: number;
     testCode: number;
     doUseTestCode: boolean;
-    emailReachability: string | null;
+    emailReachability: ReacherIsReachable | null;
 }
 
 export async function authenticateEmailAttempt({
@@ -1903,7 +1904,7 @@ interface InsertEmailAuthAttemptCodeProps {
     throttleEmailSecondsInterval: number;
     testCode: number;
     doUseTestCode: boolean;
-    emailReachability: string | null;
+    emailReachability: ReacherIsReachable | null;
 }
 
 async function insertEmailAuthAttemptCode({
@@ -1976,7 +1977,7 @@ interface UpdateEmailAuthAttemptCodeProps {
     throttleEmailSecondsInterval: number;
     testCode: number;
     doUseTestCode: boolean;
-    emailReachability: string | null;
+    emailReachability: ReacherIsReachable | null;
 }
 
 async function updateEmailAuthAttemptCode({
@@ -2125,7 +2126,7 @@ interface RegisterWithEmailProps {
     userAgent: string;
     userId: string;
     sessionExpiry: Date;
-    emailReachability: string | null;
+    emailReachability: ReacherIsReachable | null;
 }
 
 // WARN: we assume the OTP was verified AND EXPIRED at registerOrLoginWithEmail entry point
@@ -2192,7 +2193,7 @@ interface RegisterOrLoginWithEmailBaseProps {
     userAgent: string;
     now: Date;
     sessionLifetimeDays: number;
-    emailReachability: string | null;
+    emailReachability: ReacherIsReachable | null;
 }
 
 type RegisterOrLoginWithEmailProps =
