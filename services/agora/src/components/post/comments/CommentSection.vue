@@ -2,18 +2,6 @@
   <q-infinite-scroll :offset="2000" :disable="!hasMore" @load="onLoad">
     <div>
       <div class="container">
-        <div class="commentSectionToolbar">
-          <div class="commentSortingSelector">
-            <CommentSortingSelector
-              :filter-value="currentFilter"
-              @changed-algorithm="
-                (filterValue: CommentFilterOptions) =>
-                  handleUserFilterChange(filterValue)
-              "
-            />
-          </div>
-        </div>
-
         <AsyncStateHandler
           :query="activeQuery"
           :is-empty="customIsEmpty"
@@ -62,7 +50,6 @@ import {
   commentSectionTranslations,
 } from "./CommentSection.i18n";
 import CommentGroup from "./group/CommentGroup.vue";
-import CommentSortingSelector from "./group/CommentSortingSelector.vue";
 
 const props = defineProps<{
   postSlugId: string;
@@ -114,7 +101,9 @@ const {
 });
 
 const refreshData = async (): Promise<void> => {
-  invalidateAll(props.postSlugId);
+  void invalidateAll(props.postSlugId);
+  // Refetch active query — needed for lazy queries where invalidation alone won't trigger refetch
+  void activeQuery.value.refetch();
   await fetchUserVotingData();
 };
 
@@ -155,6 +144,14 @@ const { userVotes, castVote, fetchUserVotingData } = useOpinionVoting({
   visibleOpinions,
 });
 
+const emptyTextByFilter: Record<CommentFilterOptions, keyof CommentSectionTranslations> = {
+  discover: "emptyDiscover",
+  new: "emptyNew",
+  moderated: "emptyModerated",
+  my_votes: "emptyMyVotes",
+  hidden: "emptyHidden",
+};
+
 // AsyncStateHandler configuration
 const asyncStateConfig = computed(() => ({
   loading: {
@@ -169,14 +166,13 @@ const asyncStateConfig = computed(() => ({
     showRetryButton: true,
   },
   empty: {
-    text: t("noOpinionsAvailable"),
+    text: t(emptyTextByFilter[currentFilter.value]),
     icon: "forum",
     iconColor: "grey-5",
   },
 }));
 
 onMounted(async (): Promise<void> => {
-  await fetchUserVotingData();
   await setupHighlightFromRoute();
   await clearRouteQueryParameters();
   isComponentMounted.value = true;
@@ -219,7 +215,10 @@ defineExpose({
   triggerLoadMore,
   handleRetryLoadComments,
   refreshData,
+  refetchActiveQuery: () => activeQuery.value.refetch(),
   targetOpinion,
+  currentFilter,
+  handleUserFilterChange,
   isLoading: computed(
     () =>
       activeQuery.value.isPending.value || activeQuery.value.isRefetching.value
@@ -232,18 +231,6 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding-top: 1rem;
   padding-bottom: 10rem;
-}
-
-.commentSectionToolbar {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 1rem;
-  align-items: end;
-}
-
-.commentSortingSelector {
-  margin-left: auto;
 }
 </style>

@@ -36,7 +36,18 @@
                 :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
                 :conversation-title="loadedConversationData.payload.title"
                 :author-username="loadedConversationData.metadata.authorUsername"
-              />
+              >
+                <template #dropdown>
+                  <div v-if="currentTab === 'comment'" class="dropdownSlot">
+                    <CommentSortingSelector
+                      :filter-value="commentFilter"
+                      @changed-algorithm="
+                        (filter: CommentFilterOptions) => { commentFilter = filter }
+                      "
+                    />
+                  </div>
+                </template>
+              </PostActionBar>
 
               <!-- Child routes: only tab-specific content -->
               <router-view v-slot="{ Component }">
@@ -46,6 +57,10 @@
                   :conversation-data="loadedConversationData"
                   :has-conversation-data="hasConversationData"
                   :moderation-history-trigger="moderationHistoryTrigger"
+                  :comment-filter="commentFilter"
+                  @update:comment-filter="
+                    (filter: CommentFilterOptions) => { commentFilter = filter }
+                  "
                 />
               </router-view>
             </div>
@@ -60,6 +75,7 @@
 import { storeToRefs } from "pinia";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
+import CommentSortingSelector from "src/components/post/comments/group/CommentSortingSelector.vue";
 import PostContent from "src/components/post/display/PostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
@@ -72,6 +88,7 @@ import { useBackendAuthApi } from "src/utils/api/auth";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { useInvalidateVoteQueries } from "src/utils/api/vote/useVoteQueries";
+import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -116,7 +133,13 @@ const loadedConversationData = computed(() => {
 });
 
 const { invalidateUserVotes } = useInvalidateVoteQueries();
-const { invalidateAnalysis: invalidateAnalysisQuery, invalidateAll, invalidateComments } = useInvalidateCommentQueries();
+const { invalidateAnalysis: invalidateAnalysisQuery, invalidateComments } = useInvalidateCommentQueries();
+
+// Child tab refresh: the active child route registers its own refresh handler
+const childRefreshHandler = ref<(() => Promise<void>) | undefined>();
+provide("registerChildRefreshHandler", (handler: () => Promise<void>) => {
+  childRefreshHandler.value = handler;
+});
 
 // Shared state for children
 const opinionCountOffset = ref(0);
@@ -124,6 +147,9 @@ const participantCountOffset = ref(0);
 const currentTab = ref<"comment" | "analysis">("comment");
 const isCurrentTabLoading = ref(false);
 const moderationHistoryTrigger = ref(0);
+
+// Filter state: owned here, displayed in PostActionBar slot, synced with child route via props
+const commentFilter = ref<CommentFilterOptions>("discover");
 
 // Computed: base participant count + offset
 const participantCountLocal = computed(
@@ -221,13 +247,14 @@ async function handleRefresh(done: () => void): Promise<void> {
 
   const slugId = conversationData.value.metadata.conversationSlugId;
 
-  // Invalidate all queries to force refresh (uses default refetchType: "active")
-  // Active queries refetch immediately, inactive queries marked stale
-  invalidateUserVotes(slugId);
-  invalidateAll(slugId); // Invalidates comments + analysis
-
-  // Refetch conversation metadata
-  await conversationQuery.refetch();
+  // Each layer refreshes what it owns:
+  // - Parent: conversation metadata + user votes
+  // - Child tab: its own queries (comments or analysis) via registered handler
+  await Promise.all([
+    conversationQuery.refetch(),
+    invalidateUserVotes(slugId),
+    childRefreshHandler.value?.() ?? Promise.resolve(),
+  ]);
 
   done();
 }
@@ -245,7 +272,7 @@ watch(userId, async (newUserId, oldUserId) => {
     oldUserId !== undefined && newUserId !== undefined && oldUserId !== newUserId
   ) {
     if (conversationData.value) {
-      invalidateUserVotes(conversationData.value.metadata.conversationSlugId);
+      void invalidateUserVotes(conversationData.value.metadata.conversationSlugId);
     }
     await conversationQuery.refetch();
   }
@@ -269,5 +296,10 @@ onBeforeUnmount(() => {
   padding-left: 1rem;
   padding-right: 1rem;
   padding-bottom: 1rem;
+}
+
+.dropdownSlot {
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

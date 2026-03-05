@@ -41,7 +41,6 @@ import FloatingBottomContainer from "src/components/navigation/FloatingBottomCon
 import CommentComposer from "src/components/post/comments/CommentComposer.vue";
 import CommentSection from "src/components/post/comments/CommentSection.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";
-import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import {
@@ -49,6 +48,7 @@ import {
   useHiddenCommentsQuery,
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
+import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { computed, inject, onMounted, provide, type Ref, ref, watch } from "vue";
 
 // Props from parent
@@ -56,6 +56,11 @@ const props = defineProps<{
   conversationData: ExtendedConversation;
   hasConversationData: boolean;
   moderationHistoryTrigger: number;
+  commentFilter: CommentFilterOptions;
+}>();
+
+const emit = defineEmits<{
+  "update:commentFilter": [filter: CommentFilterOptions];
 }>();
 
 // Provide conversation data to all descendants (reactive)
@@ -73,19 +78,21 @@ const setCurrentTabLoading = inject<(loading: boolean) => void>(
 const decrementOpinionCount = inject<() => void>("decrementOpinionCount", () => {
   /* noop */
 });
+const registerChildRefreshHandler = inject<(handler: () => Promise<void>) => void>(
+  "registerChildRefreshHandler",
+  () => {
+    /* noop */
+  }
+);
 
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
 
-const { forceRefreshAnalysis } = useInvalidateCommentQueries();
+const { forceRefreshAnalysis, markCommentsAsStale } = useInvalidateCommentQueries();
 const { loadAuthenticatedModules } = useBackendAuthApi();
 const userStore = useUserStore();
-const authStore = useAuthenticationStore();
 
 const { profileData } = storeToRefs(userStore);
-const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(authStore);
 
-// Create computed properties to ensure reactivity
-const isSiteModerator = computed(() => profileData.value.isSiteModerator);
 const conversationSlugId = computed(
   () => props.conversationData.metadata.conversationSlugId
 );
@@ -103,27 +110,27 @@ const commentsNewQuery = useCommentsQuery({
   conversationSlugId,
   filter: "new",
   voteCount,
-  enabled: () => props.hasConversationData,
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
 
 const commentsModeratedQuery = useCommentsQuery({
   conversationSlugId,
   filter: "moderated",
   voteCount,
-  enabled: () => props.hasConversationData,
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
 
 const commentsMyVotesQuery = useCommentsQuery({
   conversationSlugId,
   filter: "my_votes",
   voteCount,
-  enabled: computed(() => isAuthInitialized.value && isGuestOrLoggedIn.value && props.hasConversationData),
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
 
 const hiddenCommentsQuery = useHiddenCommentsQuery({
   conversationSlugId,
   voteCount,
-  enabled: computed(() => isSiteModerator.value && props.hasConversationData),
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
 
 function handleParticipantCountDelta(delta: number): void {
@@ -135,6 +142,26 @@ watch(
   () => opinionSectionRef.value?.isLoading ?? false,
   (isLoading) => {
     setCurrentTabLoading(isLoading);
+  }
+);
+
+// Sync filter: when parent changes filter (user clicked sorting selector), tell CommentSection
+watch(
+  () => props.commentFilter,
+  (newFilter) => {
+    if (opinionSectionRef.value && opinionSectionRef.value.currentFilter !== newFilter) {
+      opinionSectionRef.value.handleUserFilterChange(newFilter);
+    }
+  }
+);
+
+// Sync filter: when CommentSection changes filter internally (e.g. openModerationHistory), tell parent
+watch(
+  () => opinionSectionRef.value?.currentFilter,
+  (newFilter) => {
+    if (newFilter !== undefined && newFilter !== props.commentFilter) {
+      emit("update:commentFilter", newFilter);
+    }
   }
 );
 
@@ -200,6 +227,18 @@ watch(
     }
   }
 );
+
+// Register pull-to-refresh handler: mark all comment queries stale + refetch only the active one.
+// Does NOT call refreshData() (which also invalidates analysis + refetches votes) to avoid
+// duplicating work the parent already handles.
+registerChildRefreshHandler(async () => {
+  const section = opinionSectionRef.value;
+  if (!section) return;
+  await Promise.all([
+    markCommentsAsStale(conversationSlugId.value),
+    section.refetchActiveQuery(),
+  ]);
+});
 
 onMounted(() => {
   // Report initial loading state to parent

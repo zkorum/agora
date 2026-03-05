@@ -211,12 +211,7 @@ export function useInvalidateVoteQueries() {
 
   return {
     invalidateUserVotes: (postSlugId: string) => {
-      void queryClient.invalidateQueries({
-        queryKey: ["userVotes", postSlugId],
-      });
-    },
-    invalidateAll: (postSlugId: string) => {
-      void queryClient.invalidateQueries({
+      return queryClient.invalidateQueries({
         queryKey: ["userVotes", postSlugId],
       });
     },
