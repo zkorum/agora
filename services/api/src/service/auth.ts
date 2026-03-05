@@ -1942,6 +1942,7 @@ export async function authenticateEmailAttempt({
             doUseTestCode,
             testCode,
             emailReachability,
+            languageCode: emailLanguageCode,
         });
     }
 }
