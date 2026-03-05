@@ -18,21 +18,28 @@
       <ZKBottomDialogContainer>
         <div class="titleStyle">{{ t("filterTitle") }}</div>
 
-        <div class="optionFlexStyle">
-          <ZKGradientButton
+        <div class="optionListStyle">
+          <div
             v-for="optionItem in currentOptionList"
             :key="optionItem.name"
-            :label="optionItem.name"
-            :label-color="
-              currentFilterAlgorithm == optionItem.name ? '#FFFFFF' : '#6B4EFF'
-            "
-            :gradient-background="
-              currentFilterAlgorithm == optionItem.name
-                ? 'linear-gradient(114.81deg, #6B4EFF 76.45%, #4F92F6 100.1%)'
-                : 'linear-gradient(114.81deg, #e7e4f7 76.45%, #E8F1FF 100.1%)'
-            "
-            @click="selectedAlgorithm(optionItem.value)"
-          />
+            class="optionItemStyle"
+          >
+            <ZKGradientButton
+              :label="optionItem.name"
+              :label-color="
+                currentFilterAlgorithm == optionItem.name ? '#FFFFFF' : '#6B4EFF'
+              "
+              :gradient-background="
+                currentFilterAlgorithm == optionItem.name
+                  ? 'linear-gradient(114.81deg, #6B4EFF 76.45%, #4F92F6 100.1%)'
+                  : 'linear-gradient(114.81deg, #e7e4f7 76.45%, #E8F1FF 100.1%)'
+              "
+              @click="selectedAlgorithm(optionItem.value)"
+            />
+            <div class="optionDescriptionStyle">
+              {{ optionItem.description }}
+            </div>
+          </div>
         </div>
       </ZKBottomDialogContainer>
     </q-dialog>
@@ -74,26 +81,27 @@ const { t } = useComponentI18n<CommentSortingSelectorTranslations>(
 
 interface OptionItem {
   name: string;
+  description: string;
   value: CommentFilterOptions;
 }
 
 const baseOptions = computed((): OptionItem[] => {
   const options: OptionItem[] = [
-    { name: t("discover"), value: "discover" },
-    { name: t("new"), value: "new" },
-    { name: t("moderationHistory"), value: "moderated" },
+    { name: t("discover"), description: t("discoverDescription"), value: "discover" },
+    { name: t("new"), description: t("newDescription"), value: "new" },
+    { name: t("moderationHistory"), description: t("moderationHistoryDescription"), value: "moderated" },
   ];
 
   // Add "My Votes" option only for logged in users
   if (isGuestOrLoggedIn.value) {
-    options.push({ name: t("myVotes"), value: "my_votes" });
+    options.push({ name: t("myVotes"), description: t("myVotesDescription"), value: "my_votes" });
   }
 
   return options;
 });
 
 const extendedOptions = computed((): OptionItem[] =>
-  baseOptions.value.concat([{ name: t("hidden"), value: "hidden" }])
+  baseOptions.value.concat([{ name: t("hidden"), description: t("hiddenDescription"), value: "hidden" }])
 );
 
 const currentOptionList = computed((): OptionItem[] => {
@@ -132,10 +140,25 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
   padding-left: 0.2rem;
 }
 
-.optionFlexStyle {
+.optionListStyle {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.optionItemStyle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 90%;
+}
+
+.optionDescriptionStyle {
+  font-size: 0.8rem;
+  line-height: 1.3;
+  min-height: calc(2 * 0.8rem * 1.3);
+  color: $color-text-weak;
+  padding-left: 0.5rem;
 }
 
 .titleStyle {
