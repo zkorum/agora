@@ -34,7 +34,7 @@ export async function sendEmail({
     html,
 }: SendEmailProps): Promise<void> {
     await getTransporter().sendMail({
-        from: config.EMAIL_FROM_ADDRESS,
+        from: `"Agora Citizen Network" <${config.EMAIL_FROM_ADDRESS}>`,
         to,
         subject,
         text,
