@@ -32,6 +32,8 @@
                 "
                 :participant-count="participantCountLocal"
                 :vote-count="loadedConversationData.metadata.voteCount"
+                :total-participant-count="loadedConversationData.metadata.totalParticipantCount"
+                :total-vote-count="loadedConversationData.metadata.totalVoteCount"
                 :is-loading="isCurrentTabLoading"
                 :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
                 :conversation-title="loadedConversationData.payload.title"
@@ -41,6 +43,8 @@
                   <div v-if="currentTab === 'comment'" class="dropdownSlot">
                     <CommentSortingSelector
                       :filter-value="commentFilter"
+                      :moderated-opinion-count="loadedConversationData.metadata.moderatedOpinionCount"
+                      :hidden-opinion-count="loadedConversationData.metadata.hiddenOpinionCount"
                       @changed-algorithm="
                         (filter: CommentFilterOptions) => { commentFilter = filter }
                       "
@@ -50,19 +54,21 @@
               </PostActionBar>
 
               <!-- Child routes: only tab-specific content -->
-              <router-view v-slot="{ Component }">
-                <component
-                  :is="Component"
-                  :key="route.path"
-                  :conversation-data="loadedConversationData"
-                  :has-conversation-data="hasConversationData"
-                  :moderation-history-trigger="moderationHistoryTrigger"
-                  :comment-filter="commentFilter"
-                  @update:comment-filter="
-                    (filter: CommentFilterOptions) => { commentFilter = filter }
-                  "
-                />
-              </router-view>
+              <div class="tab-content">
+                <router-view v-slot="{ Component }">
+                  <component
+                    :is="Component"
+                    :key="route.path"
+                    :conversation-data="loadedConversationData"
+                    :has-conversation-data="hasConversationData"
+                    :moderation-history-trigger="moderationHistoryTrigger"
+                    :comment-filter="commentFilter"
+                    @update:comment-filter="
+                      (filter: CommentFilterOptions) => { commentFilter = filter }
+                    "
+                  />
+                </router-view>
+              </div>
             </div>
           </ZKHoverEffect>
         </div>
@@ -160,5 +166,9 @@ onBeforeUnmount(() => {
 .dropdownSlot {
   display: flex;
   justify-content: flex-end;
+}
+
+.tab-content {
+  min-height: 100vh;
 }
 </style>

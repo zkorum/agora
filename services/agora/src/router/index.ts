@@ -4,11 +4,51 @@ import {
   createRouter,
   createWebHashHistory,
   createWebHistory,
+  type RouteLocationNormalized,
+  type RouteLocationNormalizedLoaded,
 } from "vue-router";
 import { routes } from "vue-router/auto-routes";
 import { z } from "zod";
 
 import { defineRouter } from "#q-app/wrappers";
+
+const conversationTabRouteNames: ReadonlySet<string> = new Set([
+  "/conversation/[postSlugId]/",
+  "/conversation/[postSlugId]/analysis",
+  "/conversation/[postSlugId].embed/",
+  "/conversation/[postSlugId].embed/analysis",
+]);
+
+function isConversationTabSwitch({
+  to,
+  from,
+}: {
+  to: RouteLocationNormalized;
+  from: RouteLocationNormalizedLoaded;
+}): boolean {
+  const toName = to.name;
+  const fromName = from.name;
+
+  if (typeof toName !== "string" || typeof fromName !== "string") {
+    return false;
+  }
+
+  if (
+    !conversationTabRouteNames.has(toName) ||
+    !conversationTabRouteNames.has(fromName)
+  ) {
+    return false;
+  }
+
+  const toParams = to.params;
+  const fromParams = from.params;
+
+  if (!("postSlugId" in toParams) || !("postSlugId" in fromParams)) {
+    return false;
+  }
+
+  return toParams.postSlugId === fromParams.postSlugId;
+}
 
 /*
  * If not building with SSR mode, you can
@@ -29,7 +69,11 @@ export default defineRouter(function (/* { store, ssrContext } */) {
       : createWebHashHistory;
 
   const Router = createRouter({
-    scrollBehavior: (to, _from, savedPosition) => {
+    scrollBehavior: (to, from, savedPosition) => {
+      if (isConversationTabSwitch({ to, from })) {
+        return false;
+      }
+
       if (savedPosition) {
         return { left: 0, top: savedPosition.top };
       }
