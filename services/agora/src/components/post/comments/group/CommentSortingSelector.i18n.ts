@@ -21,7 +21,7 @@ export const commentSortingSelectorTranslations: Record<
   en: {
     filterTitle: "Filter statements by:",
     discover: "Discover",
-    discoverDescription: "Diverse and emerging statements to place you in a group and keep the analysis evolving",
+    discoverDescription: "Diverse and emerging statements to assign you to a group and keep the analysis evolving",
     new: "New",
     newDescription: "Most recent statements",
     moderationHistory: "Moderation History",
@@ -34,7 +34,7 @@ export const commentSortingSelectorTranslations: Record<
   ar: {
     filterTitle: "تصفية المقترحات حسب:",
     discover: "استكشف",
-    discoverDescription: "مقترحات متنوعة وناشئة لوضعك في مجموعة وإبقاء التحليل متطورًا",
+    discoverDescription: "مقترحات متنوعة وناشئة لتعيينك في مجموعة وإبقاء التحليل متطورًا",
     new: "جديد",
     newDescription: "أحدث المقترحات",
     moderationHistory: "تاريخ الإشراف",
@@ -60,7 +60,7 @@ export const commentSortingSelectorTranslations: Record<
   fr: {
     filterTitle: "Filtrer les propositions par :",
     discover: "Découvrir",
-    discoverDescription: "Propositions variées et émergentes pour vous assigner un groupe et faire évoluer l'analyse",
+    discoverDescription: "Propositions variées et émergentes pour vous assigner à un groupe et faire évoluer l'analyse",
     new: "Nouveau",
     newDescription: "Propositions les plus récentes",
     moderationHistory: "Historique de modération",
