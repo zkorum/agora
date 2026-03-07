@@ -10,6 +10,8 @@ export interface ReportGroupsTableTranslations {
   notEnoughGroups: string;
   noSummary: string;
   noGroup: string;
+  imbalanceNotice: string;
+  noGroupExplanation: string;
 }
 
 export const reportGroupsTableTranslations: Record<
@@ -27,6 +29,8 @@ export const reportGroupsTableTranslations: Record<
       "Not enough participation yet to form distinct opinion groups.",
     noSummary: "Summary not yet available.",
     noGroup: "No group",
+    imbalanceNotice: "Most participants are in the same group because they voted almost identically.",
+    noGroupExplanation: "Participants who voted on fewer than {minVotes} statements",
   },
   ar: {
     title: "مجموعات الرأي",
@@ -39,6 +43,8 @@ export const reportGroupsTableTranslations: Record<
       "لا توجد مشاركة كافية بعد لتشكيل مجموعات رأي متميزة.",
     noSummary: "الملخص غير متاح بعد.",
     noGroup: "بدون مجموعة",
+    imbalanceNotice: "معظم المشاركين في نفس المجموعة لأنهم صوّتوا بشكل شبه متطابق.",
+    noGroupExplanation: "المشاركون الذين صوّتوا على أقل من {minVotes} مقترحات",
   },
   es: {
     title: "Grupos de opinión",
@@ -51,6 +57,8 @@ export const reportGroupsTableTranslations: Record<
       "Aún no hay suficiente participación para formar grupos de opinión distintos.",
     noSummary: "Resumen aún no disponible.",
     noGroup: "Sin grupo",
+    imbalanceNotice: "La mayoría de los participantes están en el mismo grupo porque votaron de manera casi idéntica.",
+    noGroupExplanation: "Participantes que votaron en menos de {minVotes} proposiciones",
   },
   fr: {
     title: "Groupes d'opinion",
@@ -63,6 +71,8 @@ export const reportGroupsTableTranslations: Record<
       "Pas assez de participation pour former des groupes d'opinion distincts.",
     noSummary: "Résumé pas encore disponible.",
     noGroup: "Aucun groupe",
+    imbalanceNotice: "La plupart des participants sont dans le même groupe car ils ont voté de manière quasi identique.",
+    noGroupExplanation: "Participants ayant voté sur moins de {minVotes} propositions",
   },
   "zh-Hans": {
     title: "意见群体",
@@ -74,6 +84,8 @@ export const reportGroupsTableTranslations: Record<
     notEnoughGroups: "参与人数不足，无法形成不同的意见群体。",
     noSummary: "摘要尚不可用。",
     noGroup: "无群体",
+    imbalanceNotice: "大多数参与者在同一群组中，因为他们的投票几乎完全相同。",
+    noGroupExplanation: "投票少于 {minVotes} 条观点的参与者",
   },
   "zh-Hant": {
     title: "意見群體",
@@ -85,6 +97,8 @@ export const reportGroupsTableTranslations: Record<
     notEnoughGroups: "參與人數不足，無法形成不同的意見群體。",
     noSummary: "摘要尚不可用。",
     noGroup: "無群體",
+    imbalanceNotice: "大多數參與者在同一群組中，因為他們的投票幾乎完全相同。",
+    noGroupExplanation: "投票少於 {minVotes} 條觀點的參與者",
   },
   ja: {
     title: "意見グループ",
@@ -97,5 +111,7 @@ export const reportGroupsTableTranslations: Record<
       "異なる意見グループを形成するための十分な参加がまだありません。",
     noSummary: "要約はまだ利用できません。",
     noGroup: "グループなし",
+    imbalanceNotice: "ほとんどの参加者はほぼ同じ投票をしたため、同じグループに属しています。",
+    noGroupExplanation: "{minVotes} 件未満の意見に投票した参加者",
   },
 };
