@@ -911,6 +911,11 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
     'opinionCount': number;
     'voteCount': number;
     'participantCount': number;
+    'totalOpinionCount': number;
+    'totalVoteCount': number;
+    'totalParticipantCount': number;
+    'moderatedOpinionCount': number;
+    'hiddenOpinionCount': number;
     'authorUsername': string;
     'participationMode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum;
     'isIndexed': boolean;

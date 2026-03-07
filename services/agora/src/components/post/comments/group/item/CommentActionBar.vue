@@ -84,6 +84,7 @@ import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { formatPercentage } from "src/utils/common";
+import { MIN_VOTES_FOR_CLUSTER } from "src/utils/component/opinion";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, inject, type Ref,ref } from "vue";
 
@@ -335,7 +336,7 @@ const bannerMessage = computed(() => {
   }
 
   // Not clustered yet
-  return t("keepVotingToDiscoverGroup"); // "Keep voting to discover your group"
+  return t("keepVotingToDiscoverGroup", { minVotes: String(MIN_VOTES_FOR_CLUSTER) });
 });
 
 const showViewAnalysisLink = computed(() => {

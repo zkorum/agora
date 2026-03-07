@@ -11,6 +11,10 @@
         <div>
           {{ t("description2") }}
         </div>
+
+        <div>
+          {{ t("description3", { minVotes: String(MIN_VOTES_FOR_CLUSTER) }) }}
+        </div>
       </ZKBottomDialogContainer>
     </q-dialog>
   </div>
@@ -19,6 +23,7 @@
 <script setup lang="ts">
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { MIN_VOTES_FOR_CLUSTER } from "src/utils/component/opinion";
 
 import {
   type ClusterInformationDialogTranslations,

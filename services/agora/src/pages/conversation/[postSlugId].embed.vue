@@ -17,6 +17,8 @@
           "
           :participant-count="participantCountLocal"
           :vote-count="loadedConversationData.metadata.voteCount"
+          :total-participant-count="loadedConversationData.metadata.totalParticipantCount"
+          :total-vote-count="loadedConversationData.metadata.totalVoteCount"
           :is-loading="isCurrentTabLoading"
           :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
           :conversation-title="loadedConversationData.payload.title"
@@ -24,19 +26,21 @@
         />
 
         <!-- Child routes: only tab-specific content -->
-        <router-view v-slot="{ Component }">
-          <component
-            :is="Component"
-            :key="route.path"
-            :conversation-data="loadedConversationData"
-            :has-conversation-data="hasConversationData"
-            :moderation-history-trigger="moderationHistoryTrigger"
-            :comment-filter="commentFilter"
-            @update:comment-filter="
-              (filter: CommentFilterOptions) => { commentFilter = filter }
-            "
-          />
-        </router-view>
+        <div class="tab-content">
+          <router-view v-slot="{ Component }">
+            <component
+              :is="Component"
+              :key="route.path"
+              :conversation-data="loadedConversationData"
+              :has-conversation-data="hasConversationData"
+              :moderation-history-trigger="moderationHistoryTrigger"
+              :comment-filter="commentFilter"
+              @update:comment-filter="
+                (filter: CommentFilterOptions) => { commentFilter = filter }
+              "
+            />
+          </router-view>
+        </div>
       </div>
     </div>
   </EmbedLayout>
@@ -77,5 +81,9 @@ const {
   gap: 1rem;
   flex-direction: column;
   padding: 1rem;
+}
+
+.tab-content {
+  min-height: 100vh;
 }
 </style>

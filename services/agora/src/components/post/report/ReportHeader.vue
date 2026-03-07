@@ -4,15 +4,21 @@
       <div class="branding">Agora Citizen Network</div>
       <div class="stats-row">
         <div class="stat-item">
-          <span class="stat-value">{{ participantCount }}</span>
+          <span class="stat-value">
+            {{ formatAmount(participantCount) }}<span v-if="totalParticipantCount > participantCount" class="stat-of"> {{ t("of") }} {{ formatAmount(totalParticipantCount) }}*</span>
+          </span>
           <span class="stat-label">{{ t("participants") }}</span>
         </div>
         <div class="stat-item">
-          <span class="stat-value">{{ opinionCount }}</span>
+          <span class="stat-value">
+            {{ formatAmount(opinionCount) }}<span v-if="totalOpinionCount > opinionCount" class="stat-of"> {{ t("of") }} {{ formatAmount(totalOpinionCount) }}*</span>
+          </span>
           <span class="stat-label">{{ t("statements") }}</span>
         </div>
         <div class="stat-item">
-          <span class="stat-value">{{ voteCount }}</span>
+          <span class="stat-value">
+            {{ formatAmount(voteCount) }}<span v-if="totalVoteCount > voteCount" class="stat-of"> {{ t("of") }} {{ formatAmount(totalVoteCount) }}*</span>
+          </span>
           <span class="stat-label">{{ t("votes") }}</span>
         </div>
       </div>
@@ -25,11 +31,16 @@
       <span class="separator">·</span>
       <span>{{ formattedDate }}</span>
     </div>
+
+    <div v-if="hasModeration" class="footnote">
+      * {{ t("footnote") }}
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { formatAmount } from "src/utils/common";
 import { computed } from "vue";
 
 import {
@@ -44,10 +55,20 @@ const props = defineProps<{
   participantCount: number;
   opinionCount: number;
   voteCount: number;
+  totalParticipantCount: number;
+  totalOpinionCount: number;
+  totalVoteCount: number;
 }>();
 
 const { t, locale } = useComponentI18n<ReportHeaderTranslations>(
   reportHeaderTranslations,
+);
+
+const hasModeration = computed(
+  () =>
+    props.totalParticipantCount > props.participantCount ||
+    props.totalOpinionCount > props.opinionCount ||
+    props.totalVoteCount > props.voteCount,
 );
 
 const localeMap: Record<string, string> = {
@@ -113,19 +134,33 @@ const formattedDate = computed(() => {
 
 .stats-row {
   display: flex;
-  gap: 1.25rem;
+  gap: 2.5rem;
 }
 
 .stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-width: 5rem;
 }
 
 .stat-value {
+  position: relative;
   font-size: 1rem;
   font-weight: var(--font-weight-semibold);
   color: #333238;
+}
+
+.stat-of {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 0.3em;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-regular);
+  color: #b8b5bf;
 }
 
 .stat-label {
@@ -133,5 +168,12 @@ const formattedDate = computed(() => {
   color: #9e9ba5;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+.footnote {
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: #9e9ba5;
+  line-height: 1.4;
 }
 </style>

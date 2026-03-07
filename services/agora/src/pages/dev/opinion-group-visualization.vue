@@ -52,6 +52,32 @@
               />
             </div>
             <div class="control-item">
+              <label for="distribution" class="control-label">
+                {{ t("distributionLabel") }}
+              </label>
+              <PrimeSelect
+                id="distribution"
+                v-model="distributionMode"
+                :options="distributionOptions"
+                option-label="label"
+                option-value="value"
+                class="control-select"
+              />
+            </div>
+            <div class="control-item">
+              <label for="ungrouped" class="control-label">
+                {{ t("ungroupedLabel") }}
+              </label>
+              <PrimeSelect
+                id="ungrouped"
+                v-model="ungroupedMode"
+                :options="ungroupedOptions"
+                option-label="label"
+                option-value="value"
+                class="control-select"
+              />
+            </div>
+            <div class="control-item">
               <label for="empty-sections" class="control-label">
                 {{ t("emptySectionsLabel") }}
               </label>
@@ -87,7 +113,7 @@
               class="tab-component"
             >
               <OpinionGroupTab
-                :key="`groups-${selectedClusterCount}-${useAiLabels}`"
+                :key="`groups-${selectedClusterCount}-${useAiLabels}-${distributionMode}-${ungroupedMode}`"
                 :conversation-slug-id="mockConversationSlugId"
                 :clusters="mockClusters"
                 :total-participant-count="totalParticipantCount"
@@ -187,6 +213,8 @@ const mockConversationSlugId = "dev-test";
 const currentTab = ref<ShortcutItem>("Summary");
 const selectedClusterCount = ref(3);
 const useAiLabels = ref(true);
+const distributionMode = ref<"balanced" | "imbalanced">("balanced");
+const ungroupedMode = ref<"none" | "some" | "many">("none");
 const emptySectionsMode = ref<"none" | "all" | "agreements" | "disagreements" | "divisive">("none");
 
 const clusterCountOptions = computed(() => [
@@ -204,6 +232,17 @@ const aiLabelOptions = computed(() => [
   { label: t("withoutAiLabels"), value: false },
 ]);
 
+const distributionOptions = computed(() => [
+  { label: t("distributionBalanced"), value: "balanced" as const },
+  { label: t("distributionImbalanced"), value: "imbalanced" as const },
+]);
+
+const ungroupedOptions = computed(() => [
+  { label: t("ungroupedNone"), value: "none" as const },
+  { label: t("ungroupedSome"), value: "some" as const },
+  { label: t("ungroupedMany"), value: "many" as const },
+]);
+
 const emptySectionsOptions = computed(() => [
   { label: t("emptySectionsNone"), value: "none" as const },
   { label: t("emptySectionsAll"), value: "all" as const },
@@ -211,6 +250,12 @@ const emptySectionsOptions = computed(() => [
   { label: t("emptySectionsDisagreements"), value: "disagreements" as const },
   { label: t("emptySectionsDivisive"), value: "divisive" as const },
 ]);
+
+const ungroupedCounts: Record<"none" | "some" | "many", number> = {
+  none: 0,
+  some: 15,
+  many: 120,
+};
 
 // Mock data constants
 const longAiLabels = [
@@ -306,7 +351,9 @@ const mockClusters = computed<Partial<PolisClusters>>(() => {
   if (selectedClusterCount.value === 0) return {};
 
   const clusters: Partial<PolisClusters> = {};
-  const baseSizes = [145, 112, 87, 63, 48, 35];
+  const balancedSizes = [145, 112, 87, 63, 48, 35];
+  const imbalancedSizes = [145, 3, 2, 1, 1, 1];
+  const baseSizes = distributionMode.value === "imbalanced" ? imbalancedSizes : balancedSizes;
 
   for (let i = 0; i < selectedClusterCount.value; i++) {
     const key = polisKeys[i];
@@ -334,10 +381,11 @@ const mockClusters = computed<Partial<PolisClusters>>(() => {
 });
 
 const totalParticipantCount = computed(() => {
-  return Object.values(mockClusters.value).reduce(
+  const clustered = Object.values(mockClusters.value).reduce(
     (sum, cluster) => sum + (cluster?.numUsers ?? 0),
     0,
   );
+  return clustered + ungroupedCounts[ungroupedMode.value];
 });
 
 const clusterLabels = computed(() => {

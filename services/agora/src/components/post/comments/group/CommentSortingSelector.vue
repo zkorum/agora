@@ -54,6 +54,7 @@ import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
+import { formatAmount } from "src/utils/common";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { computed, ref } from "vue";
 
@@ -64,6 +65,8 @@ import {
 
 const props = defineProps<{
   filterValue: string;
+  moderatedOpinionCount: number;
+  hiddenOpinionCount: number;
 }>();
 
 const emit = defineEmits<{
@@ -85,11 +88,25 @@ interface OptionItem {
   value: CommentFilterOptions;
 }
 
+const moderationHistoryLabel = computed(() => {
+  const base = t("moderationHistory");
+  return props.moderatedOpinionCount > 0
+    ? `${base} (${formatAmount(props.moderatedOpinionCount)})`
+    : base;
+});
+
+const hiddenLabel = computed(() => {
+  const base = t("hidden");
+  return props.hiddenOpinionCount > 0
+    ? `${base} (${formatAmount(props.hiddenOpinionCount)})`
+    : base;
+});
+
 const baseOptions = computed((): OptionItem[] => {
   const options: OptionItem[] = [
     { name: t("discover"), description: t("discoverDescription"), value: "discover" },
     { name: t("new"), description: t("newDescription"), value: "new" },
-    { name: t("moderationHistory"), description: t("moderationHistoryDescription"), value: "moderated" },
+    { name: moderationHistoryLabel.value, description: t("moderationHistoryDescription"), value: "moderated" },
   ];
 
   // Add "My Votes" option only for logged in users
@@ -101,7 +118,7 @@ const baseOptions = computed((): OptionItem[] => {
 });
 
 const extendedOptions = computed((): OptionItem[] =>
-  baseOptions.value.concat([{ name: t("hidden"), description: t("hiddenDescription"), value: "hidden" }])
+  baseOptions.value.concat([{ name: hiddenLabel.value, description: t("hiddenDescription"), value: "hidden" }])
 );
 
 const currentOptionList = computed((): OptionItem[] => {

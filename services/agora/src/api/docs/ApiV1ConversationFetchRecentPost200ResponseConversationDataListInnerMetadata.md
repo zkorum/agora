@@ -12,6 +12,11 @@ Name | Type | Description | Notes
 **opinionCount** | **number** |  | [default to undefined]
 **voteCount** | **number** |  | [default to undefined]
 **participantCount** | **number** |  | [default to undefined]
+**totalOpinionCount** | **number** |  | [default to undefined]
+**totalVoteCount** | **number** |  | [default to undefined]
+**totalParticipantCount** | **number** |  | [default to undefined]
+**moderatedOpinionCount** | **number** |  | [default to undefined]
+**hiddenOpinionCount** | **number** |  | [default to undefined]
 **authorUsername** | **string** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
@@ -34,6 +39,11 @@ const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListI
     opinionCount,
     voteCount,
     participantCount,
+    totalOpinionCount,
+    totalVoteCount,
+    totalParticipantCount,
+    moderatedOpinionCount,
+    hiddenOpinionCount,
     authorUsername,
     participationMode,
     isIndexed,

@@ -15,11 +15,25 @@
         <div class="voteCountContainer">
           <ZKIcon color="#7D7A85" name="mdi:vote" size="1rem" />
           <span>{{ formatAmount(voteCount) }}</span>
+          <CountBreakdownTooltip
+            :total-count="totalVoteCount"
+            :analysis-count="voteCount"
+            :total-label="t('totalVotes')"
+            :analysis-label="t('usedForAnalysis')"
+            :explanation-text="t('moderatedVotesExplanation')"
+          />
         </div>
 
         <div class="participantCountContainer">
           <ZKIcon color="#7D7A85" name="ph:users-fill" size="1rem" />
           <span>{{ formatAmount(participantCount) }}</span>
+          <CountBreakdownTooltip
+            :total-count="totalParticipantCount"
+            :analysis-count="participantCount"
+            :total-label="t('totalParticipants')"
+            :analysis-label="t('usedForAnalysis')"
+            :explanation-text="t('moderatedParticipantsExplanation')"
+          />
         </div>
         <ZKButton
           button-type="compactButton"
@@ -59,6 +73,7 @@ import { useConversationUrl } from "src/utils/url/conversationUrl";
 import ZKActionDialog from "../../ui-library/ZKActionDialog.vue";
 import ZKButton from "../../ui-library/ZKButton.vue";
 import ZKIcon from "../../ui-library/ZKIcon.vue";
+import CountBreakdownTooltip from "./CountBreakdownTooltip.vue";
 import InteractionTab from "./InteractionTab.vue";
 import {
   type PostActionBarTranslations,
@@ -70,6 +85,8 @@ const props = defineProps<{
   opinionCount: number;
   participantCount: number;
   voteCount: number;
+  totalParticipantCount: number;
+  totalVoteCount: number;
   isLoading?: boolean;
   conversationSlugId: string;
   conversationTitle: string;

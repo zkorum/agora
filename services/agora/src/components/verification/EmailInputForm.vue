@@ -5,7 +5,10 @@
     <q-input
       v-model="emailData.email"
       type="email"
+      name="email"
+      autocomplete="email"
       outlined
+      autofocus
       :placeholder="t('emailPlaceholder')"
       @update:model-value="onEmailUpdate"
       @blur="onEmailBlur"

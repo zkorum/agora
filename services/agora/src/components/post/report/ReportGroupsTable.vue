@@ -3,6 +3,10 @@
     <h2 class="section-title">{{ t("title") }}</h2>
     <p class="section-subtitle">{{ hasAiLabels ? t("subtitle") : t("subtitleNoAi") }}</p>
 
+    <p v-if="isImbalanced && Object.keys(clusters).length > 1" class="imbalance-notice">
+      {{ t("imbalanceNotice") }}
+    </p>
+
     <div v-if="Object.keys(clusters).length <= 1" class="empty-state">
       {{ t("notEnoughGroups") }}
     </div>
@@ -42,7 +46,7 @@
             ({{ formatPercentage(calculatePercentage(noGroupUsers, totalParticipantCount)) }})
           </td>
           <td class="col-summary cell-summary cell-no-group-summary">
-            —
+            {{ t("noGroupExplanation", { minVotes: String(MIN_VOTES_FOR_CLUSTER) }) }}
           </td>
         </tr>
       </tbody>
@@ -55,7 +59,11 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import { calculatePercentage } from "src/shared/util";
 import { formatPercentage } from "src/utils/common";
-import { formatClusterLabel } from "src/utils/component/opinion";
+import {
+  formatClusterLabel,
+  isClustersImbalanced,
+  MIN_VOTES_FOR_CLUSTER,
+} from "src/utils/component/opinion";
 import { computed } from "vue";
 
 import {
@@ -85,6 +93,11 @@ const clusterEntries = computed(() => {
 });
 
 const useLetterCodes = computed(() => clusterEntries.value.length >= 4);
+
+const isImbalanced = computed(() => {
+  const sizes = clusterEntries.value.map((entry) => entry.cluster.numUsers);
+  return isClustersImbalanced(sizes);
+});
 
 const hasAiLabels = computed(() =>
   clusterEntries.value.some((entry) => Boolean(entry.cluster.aiLabel)),
@@ -118,6 +131,13 @@ const noGroupUsers = computed(() => {
   color: #6d6a74;
   margin: 0 0 0.75rem 0;
   font-weight: normal;
+}
+
+.imbalance-notice {
+  font-size: 0.85rem;
+  color: #6d6a74;
+  margin: 0 0 0.75rem 0;
+  font-style: italic;
 }
 
 .empty-state {

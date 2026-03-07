@@ -32,6 +32,11 @@
         />
 
         <template v-if="Object.keys(props.clusters).length > 1">
+          <p v-if="isImbalanced" class="imbalance-notice">
+            <q-icon name="mdi-information-outline" size="0.9rem" />
+            {{ t("imbalanceNotice") }}
+          </p>
+
           <OpinionGroupSelector
             v-if="drawerBehavior == 'desktop'"
             :cluster-metadata-list="props.clusters"
@@ -77,6 +82,7 @@ import VoteLegend from "src/components/ui/VoteLegend.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import { useNavigationStore } from "src/stores/navigation";
+import { isClustersImbalanced } from "src/utils/component/opinion";
 import { computed, ref } from "vue";
 
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
@@ -120,6 +126,11 @@ const hasUngroupedParticipants = computed(() => {
     0
   );
   return props.totalParticipantCount > totalGroupParticipants;
+});
+
+const isImbalanced = computed(() => {
+  const sizes = Object.values(props.clusters).map((c) => c.numUsers);
+  return isClustersImbalanced(sizes);
 });
 
 const hasAiLabels = computed(() =>
@@ -167,4 +178,13 @@ const clusterLabels = computed(() => {
   font-weight: normal;
 }
 
+.imbalance-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #9e9ba5;
+  margin: 0 0 0.5rem 0;
+  font-weight: normal;
+}
 </style>

@@ -27,7 +27,8 @@
                 color="primary"
                 no-caps
                 unelevated
-                :label="t('newConversationsButton')"
+                size="lg"
+                :label="t('retryButton')"
                 @click="refetch()"
               />
             </div>

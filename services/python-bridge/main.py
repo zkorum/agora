@@ -225,6 +225,8 @@ def should_scale_based_on_distribution(member_counts, total_members):
         return None
 
     # For larger populations, check distribution balance
+    # If changing the CV threshold (0.9) below, also update CLUSTER_IMBALANCE_CV_THRESHOLD
+    # in services/agora/src/utils/component/opinion.ts (and vice versa).
     imbalance = calculate_distribution_imbalance(member_counts)
 
     # Scale down if:

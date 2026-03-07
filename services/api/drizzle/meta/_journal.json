@@ -281,6 +281,13 @@
       "when": 1772725194591,
       "tag": "0039_cheerful_human_fly",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1772835766732,
+      "tag": "0040_small_virginia_dare",
+      "breakpoints": true
     }
   ]
 }

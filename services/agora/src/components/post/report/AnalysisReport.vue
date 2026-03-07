@@ -9,6 +9,9 @@
         :participant-count="participantCount"
         :opinion-count="opinionCount"
         :vote-count="voteCount"
+        :total-participant-count="totalParticipantCount"
+        :total-opinion-count="totalOpinionCount"
+        :total-vote-count="totalVoteCount"
       />
 
       <div v-if="clusterCount >= 2" class="cluster-viz-wrapper">
@@ -290,6 +293,9 @@ const props = defineProps<{
   participantCount: number;
   opinionCount: number;
   voteCount: number;
+  totalParticipantCount: number;
+  totalOpinionCount: number;
+  totalVoteCount: number;
   clusters: Partial<PolisClusters>;
   agreementItems: AnalysisOpinionItem[];
   disagreementItems: AnalysisOpinionItem[];
