@@ -21,6 +21,8 @@
           "
           :participant-count="participantCountLocal"
           :vote-count="props.conversationData.metadata.voteCount"
+          :total-participant-count="props.conversationData.metadata.totalParticipantCount"
+          :total-vote-count="props.conversationData.metadata.totalVoteCount"
           :is-loading="isCurrentTabLoading"
           :conversation-slug-id="conversationData.metadata.conversationSlugId"
           :conversation-title="conversationData.payload.title"
