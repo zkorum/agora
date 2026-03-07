@@ -19,7 +19,7 @@ export const reportHeaderTranslations: Record<
     participants: "Participants",
     statements: "Statements",
     votes: "Votes",
-    footnote: "Excludes votes on moderated statements and associated participants.",
+    footnote: "Votes on moderated statements are excluded from the analysis.",
   },
   ar: {
     by: "بواسطة",
@@ -27,7 +27,7 @@ export const reportHeaderTranslations: Record<
     participants: "المشاركون",
     statements: "البيانات",
     votes: "الأصوات",
-    footnote: "يستثني الأصوات على البيانات الخاضعة للإشراف والمشاركين المرتبطين بها.",
+    footnote: "الأصوات على البيانات الخاضعة للإشراف مستثناة من التحليل.",
   },
   es: {
     by: "Por",
@@ -35,7 +35,7 @@ export const reportHeaderTranslations: Record<
     participants: "Participantes",
     statements: "Proposiciones",
     votes: "Votos",
-    footnote: "Excluye los votos sobre proposiciones moderadas y los participantes asociados.",
+    footnote: "Los votos sobre las proposiciones moderadas están excluidos del análisis.",
   },
   fr: {
     by: "Par",
@@ -43,7 +43,7 @@ export const reportHeaderTranslations: Record<
     participants: "Participants",
     statements: "Propositions",
     votes: "Votes",
-    footnote: "Exclut les votes sur les propositions modérées et les participants associés.",
+    footnote: "Les votes sur les propositions modérées sont exclus de l'analyse.",
   },
   "zh-Hans": {
     by: "作者",
@@ -51,7 +51,7 @@ export const reportHeaderTranslations: Record<
     participants: "参与者",
     statements: "陈述",
     votes: "投票",
-    footnote: "不包括对已审核陈述的投票及相关参与者。",
+    footnote: "已审核陈述的投票不纳入分析。",
   },
   "zh-Hant": {
     by: "作者",
@@ -59,7 +59,7 @@ export const reportHeaderTranslations: Record<
     participants: "參與者",
     statements: "陳述",
     votes: "投票",
-    footnote: "不包括對已審核陳述的投票及相關參與者。",
+    footnote: "已審核陳述的投票不納入分析。",
   },
   ja: {
     by: "投稿者",
@@ -67,6 +67,6 @@ export const reportHeaderTranslations: Record<
     participants: "参加者",
     statements: "意見",
     votes: "投票",
-    footnote: "モデレート済み意見への投票と関連する参加者を除く。",
+    footnote: "モデレート済み意見への投票は分析から除外されています。",
   },
 };
