@@ -22,7 +22,7 @@
       v-if="profileData.dataLoaded && profileData.userCommentList.length == 0"
       class="emptyMessage"
     >
-      You have no opinions
+      {{ t("emptyStatements") }}
     </div>
   </div>
 </template>
@@ -30,8 +30,18 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import OpinionListItem from "src/components/post/list/OpinionListItem.vue";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useUserStore } from "src/stores/user";
 import { ref } from "vue";
+
+import {
+  type UserProfileTranslations,
+  userProfileTranslations,
+} from "../../user-profile.i18n";
+
+const { t } = useComponentI18n<UserProfileTranslations>(
+  userProfileTranslations
+);
 
 const { loadMoreUserComments } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
