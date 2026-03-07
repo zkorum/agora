@@ -64,6 +64,19 @@
                 class="control-select"
               />
             </div>
+            <div class="control-item">
+              <label for="number-scale" class="control-label">
+                {{ t("numberScaleLabel") }}
+              </label>
+              <PrimeSelect
+                id="number-scale"
+                v-model="numberScale"
+                :options="numberScaleOptions"
+                option-label="label"
+                option-value="value"
+                class="control-select"
+              />
+            </div>
           </div>
         </template>
       </PrimeCard>
@@ -86,7 +99,7 @@
       <div class="report-preview">
         <AnalysisReport
           ref="analysisReportRef"
-          :key="`${selectedClusterCount}-${useAiLabels}-${emptySectionsMode}`"
+          :key="`${selectedClusterCount}-${useAiLabels}-${emptySectionsMode}-${numberScale}`"
           :items-per-page="itemsPerPage"
           :conversation-slug-id="mockConversationSlugId"
           :conversation-title="mockConversationTitle"
@@ -95,9 +108,9 @@
           :participant-count="totalParticipantCount"
           :opinion-count="mockOpinionCount"
           :vote-count="mockVoteCount"
-          :total-participant-count="totalParticipantCount + 12"
-          :total-opinion-count="mockOpinionCount + 2"
-          :total-vote-count="mockVoteCount + 50"
+          :total-participant-count="Math.ceil(totalParticipantCount * 1.1)"
+          :total-opinion-count="Math.ceil(mockOpinionCount * 1.1)"
+          :total-vote-count="Math.ceil(mockVoteCount * 1.1)"
           :clusters="mockClusters"
           :agreement-items="mockAgreementItems"
           :disagreement-items="mockDisagreementItems"
@@ -146,14 +159,22 @@ const { t } = useComponentI18n<AnalysisReportTestTranslations>(
 const selectedClusterCount = ref(3);
 const useAiLabels = ref(true);
 const emptySectionsMode = ref<"none" | "all" | "agreements" | "disagreements" | "divisive">("none");
+const numberScale = ref<"normal" | "large" | "veryLarge">("large");
 
 const mockConversationSlugId = "dev-test-report";
 const mockConversationTitle =
   "Comment améliorer la gouvernance participative et renforcer l'engagement citoyen dans les décisions budgétaires et urbanistiques de notre commune ?";
 const mockAuthorUsername = "test-user";
 const mockCreatedAt = new Date("2025-11-15");
-const mockOpinionCount = 187;
-const mockVoteCount = 4280;
+
+const scaleFactors = {
+  normal: { opinions: 187, votes: 4280 },
+  large: { opinions: 300_000, votes: 300_000 },
+  veryLarge: { opinions: 300_000_000, votes: 300_000_000 },
+} as const;
+
+const mockOpinionCount = computed(() => scaleFactors[numberScale.value].opinions);
+const mockVoteCount = computed(() => scaleFactors[numberScale.value].votes);
 
 const clusterCountOptions = computed(() => [
   { label: t("clusterCount0"), value: 0 },
@@ -168,6 +189,12 @@ const clusterCountOptions = computed(() => [
 const aiLabelOptions = computed(() => [
   { label: t("withAiLabels"), value: true },
   { label: t("withoutAiLabels"), value: false },
+]);
+
+const numberScaleOptions = computed(() => [
+  { label: t("numberScaleNormal"), value: "normal" as const },
+  { label: t("numberScaleLarge"), value: "large" as const },
+  { label: t("numberScaleVeryLarge"), value: "veryLarge" as const },
 ]);
 
 const emptySectionsOptions = computed(() => [
@@ -271,7 +298,8 @@ const mockClusters = computed<Partial<PolisClusters>>(() => {
   if (selectedClusterCount.value === 0) return {};
 
   const clusters: Partial<PolisClusters> = {};
-  const baseSizes = [145, 112, 87, 63, 48, 35];
+  const scaleMultiplier = numberScale.value === "veryLarge" ? 600_000 : numberScale.value === "large" ? 600 : 1;
+  const baseSizes = [145, 112, 87, 63, 48, 35].map((s) => s * scaleMultiplier);
 
   for (let i = 0; i < selectedClusterCount.value; i++) {
     const key = polisKeys[i];

@@ -104,6 +104,8 @@ const formattedDate = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.5rem;
   margin-bottom: 1.25rem;
 }
 
@@ -134,30 +136,26 @@ const formattedDate = computed(() => {
 
 .stats-row {
   display: flex;
-  gap: 2.5rem;
+  gap: 1.5rem;
 }
 
 .stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 5rem;
+  white-space: nowrap;
 }
 
 .stat-value {
-  position: relative;
+  display: inline-flex;
+  align-items: baseline;
   font-size: 1rem;
   font-weight: var(--font-weight-semibold);
   color: #333238;
 }
 
 .stat-of {
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-left: 0.3em;
-  white-space: nowrap;
+  margin-left: 0.25em;
   font-size: 0.8rem;
   font-weight: var(--font-weight-regular);
   color: #b8b5bf;
