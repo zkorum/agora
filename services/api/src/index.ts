@@ -452,64 +452,71 @@ log.info(
 // Cleanup stuck imports/exports from previous server session
 // This runs once on startup to handle jobs that were interrupted by server restart
 const performStartupCleanup = async (): Promise<void> => {
-    // Cleanup stuck imports and send notifications
-    const importCleanupResult = await cleanupStuckImportsOnStartup({
-        db,
-    });
+    try {
+        // Cleanup stuck imports and send notifications
+        const importCleanupResult = await cleanupStuckImportsOnStartup({
+            db,
+        });
 
-    if (importCleanupResult.cleanedCount > 0) {
-        log.info(
-            `[Startup] Cleaned up ${String(importCleanupResult.cleanedCount)} stuck imports`,
-        );
+        if (importCleanupResult.cleanedCount > 0) {
+            log.info(
+                `[Startup] Cleaned up ${String(importCleanupResult.cleanedCount)} stuck imports`,
+            );
 
-        // Send notifications for failed imports
-        for (const stuckImport of importCleanupResult.stuckImports) {
-            try {
-                await createImportNotification({
-                    db,
-                    userId: stuckImport.userId,
-                    importId: stuckImport.id,
-                    conversationId: null,
-                    type: "import_failed",
-                    notificationSSEManager,
-                });
-            } catch (notificationError: unknown) {
-                log.error(
-                    notificationError,
-                    `[Startup] Failed to create import notification for import ${stuckImport.slugId}`,
-                );
+            // Send notifications for failed imports
+            for (const stuckImport of importCleanupResult.stuckImports) {
+                try {
+                    await createImportNotification({
+                        db,
+                        userId: stuckImport.userId,
+                        importId: stuckImport.id,
+                        conversationId: null,
+                        type: "import_failed",
+                        notificationSSEManager,
+                    });
+                } catch (notificationError: unknown) {
+                    log.error(
+                        notificationError,
+                        `[Startup] Failed to create import notification for import ${stuckImport.slugId}`,
+                    );
+                }
             }
         }
-    }
 
-    // Cleanup stuck exports and send notifications
-    const exportCleanupResult = await cleanupStuckExportsOnStartup({
-        db,
-    });
+        // Cleanup stuck exports and send notifications
+        const exportCleanupResult = await cleanupStuckExportsOnStartup({
+            db,
+        });
 
-    if (exportCleanupResult.cleanedCount > 0) {
-        log.info(
-            `[Startup] Cleaned up ${String(exportCleanupResult.cleanedCount)} stuck exports`,
-        );
+        if (exportCleanupResult.cleanedCount > 0) {
+            log.info(
+                `[Startup] Cleaned up ${String(exportCleanupResult.cleanedCount)} stuck exports`,
+            );
 
-        // Send notifications for failed exports
-        for (const stuckExport of exportCleanupResult.stuckExports) {
-            try {
-                await createExportNotification({
-                    db,
-                    userId: stuckExport.userId,
-                    exportId: stuckExport.id,
-                    conversationId: stuckExport.conversationId,
-                    type: "export_failed",
-                    notificationSSEManager,
-                });
-            } catch (notificationError: unknown) {
-                log.error(
-                    notificationError,
-                    `[Startup] Failed to create export notification for export ${stuckExport.slugId}`,
-                );
+            // Send notifications for failed exports
+            for (const stuckExport of exportCleanupResult.stuckExports) {
+                try {
+                    await createExportNotification({
+                        db,
+                        userId: stuckExport.userId,
+                        exportId: stuckExport.id,
+                        conversationId: stuckExport.conversationId,
+                        type: "export_failed",
+                        notificationSSEManager,
+                    });
+                } catch (notificationError: unknown) {
+                    log.error(
+                        notificationError,
+                        `[Startup] Failed to create export notification for export ${stuckExport.slugId}`,
+                    );
+                }
             }
         }
+    } catch (error: unknown) {
+        log.error(
+            error,
+            "[Startup] Failed to perform startup cleanup - will retry on next restart",
+        );
     }
 };
 
