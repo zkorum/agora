@@ -8,7 +8,7 @@
 
     <div class="otpDiv">
       <div class="codeInput" @keydown.enter="handleEnterKey">
-        <PrimeInputOtp
+        <ZKInputOtp
           v-model="verificationCode"
           :length="6"
           integer-only
@@ -58,7 +58,6 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import InputOtp from "primevue/inputotp";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useOtpTimers } from "src/composables/verification/useOtpTimers";
 import { useVerificationComplete } from "src/composables/verification/useVerificationComplete";
@@ -74,16 +73,11 @@ import { useNotify } from "src/utils/ui/notify";
 import { onMounted, ref, watchEffect } from "vue";
 
 import ZKButton from "../ui-library/ZKButton.vue";
+import ZKInputOtp from "../ui-library/ZKInputOtp.vue";
 import {
   type PhoneOtpFormTranslations,
   phoneOtpFormTranslations,
 } from "./PhoneOtpForm.i18n";
-
-defineOptions({
-  components: {
-    PrimeInputOtp: InputOtp,
-  },
-});
 
 const emit = defineEmits<{
   verified: [accountMerged: boolean];
