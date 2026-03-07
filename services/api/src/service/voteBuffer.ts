@@ -69,7 +69,7 @@
  */
 
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { eq, and, sql, isNotNull, isNull, type SQL } from "drizzle-orm";
+import { eq, and, sql, isNotNull, type SQL } from "drizzle-orm";
 import {
     voteTable,
     voteContentTable,
@@ -562,17 +562,27 @@ export function createVoteBuffer({
                     );
 
                     // Query existing participants BEFORE inserting new votes
+                    // Uses GROUP BY + bool_or to determine both unmoderated and total participant status in one query
                     const participantDeltasToApply = new Map<number, number>();
+                    const totalParticipantDeltasToApply = new Map<
+                        number,
+                        number
+                    >();
 
                     if (participantCountDeltas.size > 0) {
                         for (const [
                             conversationId,
                             potentialNewUsers,
                         ] of participantCountDeltas.entries()) {
-                            // Query: Check if these users already have any active votes in this conversation
-                            // Must match exact same WHERE clause as calculateConversationCounters
+                            // Single query returns both unmoderated and total participant info
                             const existingParticipants = await tx
-                                .select({ authorId: voteTable.authorId })
+                                .select({
+                                    authorId: voteTable.authorId,
+                                    hasUnmoderatedVote:
+                                        sql<boolean>`bool_or(${opinionModerationTable.id} IS NULL)`.as(
+                                            "has_unmoderated_vote",
+                                        ),
+                                })
                                 .from(voteTable)
                                 .innerJoin(
                                     opinionTable,
@@ -603,38 +613,60 @@ export function createVoteBuffer({
                                         )})`,
                                         isNotNull(
                                             opinionTable.currentContentId,
-                                        ), // don't count deleted opinions
-                                        isNotNull(voteTable.currentContentId), // don't count deleted votes
-                                        isNull(opinionModerationTable.id), // don't count moderated opinions
-                                        eq(userTable.isDeleted, false), // don't count deleted users
+                                        ),
+                                        isNotNull(voteTable.currentContentId),
+                                        eq(userTable.isDeleted, false),
                                     ),
-                                );
+                                )
+                                .groupBy(voteTable.authorId);
 
-                            const existingParticipantIds = new Set(
-                                existingParticipants.map((row) => row.authorId),
+                            // Existing unmoderated participants: have at least one vote on an unmoderated opinion
+                            const existingUnmodParticipantIds = new Set(
+                                existingParticipants
+                                    .filter(
+                                        (row) => row.hasUnmoderatedVote,
+                                    )
+                                    .map((row) => row.authorId),
+                            );
+                            // Existing total participants: have any active vote
+                            const existingTotalParticipantIds = new Set(
+                                existingParticipants.map(
+                                    (row) => row.authorId,
+                                ),
                             );
 
-                            // Count truly new participants (not in existing list)
-                            let newParticipantCount = 0;
+                            // Count truly new participants for each counter
+                            let newUnmodParticipantCount = 0;
+                            let newTotalParticipantCount = 0;
                             for (const userId of potentialNewUsers) {
-                                if (!existingParticipantIds.has(userId)) {
-                                    newParticipantCount++;
+                                if (
+                                    !existingUnmodParticipantIds.has(userId)
+                                ) {
+                                    newUnmodParticipantCount++;
+                                }
+                                if (
+                                    !existingTotalParticipantIds.has(userId)
+                                ) {
+                                    newTotalParticipantCount++;
                                 }
                             }
 
-                            if (newParticipantCount > 0) {
+                            if (newUnmodParticipantCount > 0) {
                                 participantDeltasToApply.set(
                                     conversationId,
-                                    newParticipantCount,
-                                );
-                                log.info(
-                                    `[VoteBuffer] Conversation ${String(conversationId)}: ${String(newParticipantCount)} new participant(s) confirmed`,
-                                );
-                            } else {
-                                log.info(
-                                    `[VoteBuffer] Conversation ${String(conversationId)}: 0 new participants (${String(potentialNewUsers.size)} user(s) already participating)`,
+                                    newUnmodParticipantCount,
                                 );
                             }
+                            if (newTotalParticipantCount > 0) {
+                                totalParticipantDeltasToApply.set(
+                                    conversationId,
+                                    newTotalParticipantCount,
+                                );
+                            }
+
+                            log.info(
+                                `[VoteBuffer] Conversation ${String(conversationId)}: ${String(newUnmodParticipantCount)} new unmod participant(s), ${String(newTotalParticipantCount)} new total participant(s) (${String(potentialNewUsers.size)} user(s) checked)`,
+                            );
                         }
                     }
 
@@ -947,10 +979,13 @@ export function createVoteBuffer({
                             sql`, `,
                         );
 
+                        const caseExpression = sql`(CASE ${sql.join(caseClauses, sql` `)} ELSE 0 END)`;
+
                         await tx
                             .update(conversationTable)
                             .set({
-                                voteCount: sql`${conversationTable.voteCount} + (CASE ${sql.join(caseClauses, sql` `)} ELSE 0 END)`,
+                                voteCount: sql`${conversationTable.voteCount} + ${caseExpression}`,
+                                totalVoteCount: sql`${conversationTable.totalVoteCount} + ${caseExpression}`,
                                 lastReactedAt: nowZeroMs(),
                             })
                             .where(
@@ -964,50 +999,69 @@ export function createVoteBuffer({
                             delta,
                         }));
                         log.info(
-                            `[VoteBuffer] Updated voteCount for ${String(voteCountDeltas.size)} conversation(s): ${JSON.stringify(voteCountChanges)}`,
+                            `[VoteBuffer] Updated voteCount + totalVoteCount for ${String(voteCountDeltas.size)} conversation(s): ${JSON.stringify(voteCountChanges)}`,
                         );
                     } else {
                         log.info("[VoteBuffer] No voteCount changes to apply");
                     }
 
-                    // Step 9: Apply participantCount deltas (calculated earlier in STEP 0)
+                    // Step 9: Apply participantCount + totalParticipantCount deltas (calculated earlier in STEP 0)
                     // ParticipantCount detection and querying happened BEFORE vote INSERTs
                     // to correctly identify first-time voters
-                    if (participantDeltasToApply.size > 0) {
-                        const participantCaseClauses: SQL[] = [];
-                        const conversationIdsToUpdateParticipant: number[] = [];
+                    {
+                        // Merge conversation IDs from both unmoderated and total deltas
+                        const allConversationIds = new Set([
+                            ...participantDeltasToApply.keys(),
+                            ...totalParticipantDeltasToApply.keys(),
+                        ]);
 
-                        for (const [
-                            conversationId,
-                            delta,
-                        ] of participantDeltasToApply.entries()) {
-                            conversationIdsToUpdateParticipant.push(
-                                conversationId,
+                        if (allConversationIds.size > 0) {
+                            const unmodCaseClauses: SQL[] = [];
+                            const totalCaseClauses: SQL[] = [];
+                            const conversationIdsToUpdateParticipant: number[] =
+                                [];
+
+                            for (const conversationId of allConversationIds) {
+                                conversationIdsToUpdateParticipant.push(
+                                    conversationId,
+                                );
+                                const unmodDelta =
+                                    participantDeltasToApply.get(
+                                        conversationId,
+                                    ) ?? 0;
+                                const totalDelta =
+                                    totalParticipantDeltasToApply.get(
+                                        conversationId,
+                                    ) ?? 0;
+                                unmodCaseClauses.push(
+                                    sql`WHEN ${conversationTable.id} = ${conversationId} THEN ${unmodDelta}`,
+                                );
+                                totalCaseClauses.push(
+                                    sql`WHEN ${conversationTable.id} = ${conversationId} THEN ${totalDelta}`,
+                                );
+                            }
+
+                            const participantInClause = sql.join(
+                                conversationIdsToUpdateParticipant.map(
+                                    (id) => sql`${id}`,
+                                ),
+                                sql`, `,
                             );
-                            participantCaseClauses.push(
-                                sql`WHEN ${conversationTable.id} = ${conversationId} THEN ${delta}`,
+
+                            await tx
+                                .update(conversationTable)
+                                .set({
+                                    participantCount: sql`${conversationTable.participantCount} + (CASE ${sql.join(unmodCaseClauses, sql` `)} ELSE 0 END)`,
+                                    totalParticipantCount: sql`${conversationTable.totalParticipantCount} + (CASE ${sql.join(totalCaseClauses, sql` `)} ELSE 0 END)`,
+                                })
+                                .where(
+                                    sql`${conversationTable.id} IN (${participantInClause})`,
+                                );
+
+                            log.info(
+                                `[VoteBuffer] Updated participantCount + totalParticipantCount for ${String(allConversationIds.size)} conversation(s)`,
                             );
                         }
-
-                        const participantInClause = sql.join(
-                            conversationIdsToUpdateParticipant.map(
-                                (id) => sql`${id}`,
-                            ),
-                            sql`, `,
-                        );
-
-                        await tx
-                            .update(conversationTable)
-                            .set({
-                                participantCount: sql`${conversationTable.participantCount} + (CASE ${sql.join(participantCaseClauses, sql` `)} ELSE 0 END)`,
-                            })
-                            .where(
-                                sql`${conversationTable.id} IN (${participantInClause})`,
-                            );
-
-                        log.info(
-                            `[VoteBuffer] Updated participantCount for ${String(participantDeltasToApply.size)} conversation(s)`,
-                        );
                     }
 
                     // UPDATE conversation queue (one UPSERT per conversation)

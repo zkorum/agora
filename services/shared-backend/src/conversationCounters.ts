@@ -2,16 +2,20 @@
  * Conversation Counter Management
  *
  * Provides modular functions for updating and reconciling conversation counters:
- * - voteCount: Number of active votes in conversation
- * - opinionCount: Number of active opinions in conversation
- * - participantCount: Number of unique users who have voted
+ * - voteCount / totalVoteCount: Active votes (unmoderated / all)
+ * - opinionCount / totalOpinionCount: Active opinions (unmoderated / all)
+ * - participantCount / totalParticipantCount: Unique voters (unmoderated / all)
+ * - moderatedOpinionCount / hiddenOpinionCount: Opinions by moderation action
  *
  * Each counter has:
  * - reconcile function: Recalculates accurate count from database
  * - update function: Applies delta changes (+1/-1)
+ *
+ * Uses PostgreSQL FILTER clauses to compute unmoderated and total counts
+ * in the same query (3 queries total, same as before).
  */
 
-import { eq, isNotNull, isNull, and, count, sql } from "drizzle-orm";
+import { eq, isNotNull, and, count, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     conversationTable,
@@ -23,9 +27,20 @@ import {
 } from "./schema.js";
 import { nowZeroMs } from "./util.js";
 
+interface AllConversationCounters {
+    opinionCount: number;
+    totalOpinionCount: number;
+    moderatedOpinionCount: number;
+    hiddenOpinionCount: number;
+    voteCount: number;
+    totalVoteCount: number;
+    participantCount: number;
+    totalParticipantCount: number;
+}
+
 /**
- * Reconcile all conversation counters from actual database records (internal helper)
- * Returns calculated counters without updating the database
+ * Reconcile all conversation counters from actual database records (internal helper).
+ * Returns both unmoderated and total counts using FILTER clauses — 3 queries total.
  */
 async function calculateConversationCounters({
     db,
@@ -33,14 +48,16 @@ async function calculateConversationCounters({
 }: {
     db: PostgresJsDatabase;
     conversationId: number;
-}): Promise<{
-    opinionCount: number;
-    voteCount: number;
-    participantCount: number;
-}> {
-    // Reconcile voteCount
+}): Promise<AllConversationCounters> {
+    // Vote counts: unmoderated (FILTER) + total (COUNT) in one query
     const voteCountResult = await db
-        .select({ count: count() })
+        .select({
+            voteCount:
+                sql<number>`count(*) FILTER (WHERE ${opinionModerationTable.id} IS NULL)`.as(
+                    "vote_count",
+                ),
+            totalVoteCount: count(),
+        })
         .from(voteTable)
         .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
         .innerJoin(userTable, eq(voteTable.authorId, userTable.id))
@@ -52,15 +69,28 @@ async function calculateConversationCounters({
             and(
                 eq(opinionTable.conversationId, conversationId),
                 isNotNull(opinionTable.currentContentId),
-                isNotNull(voteTable.currentContentId), // we don't count deleted votes
-                eq(userTable.isDeleted, false), // we don't count votes from deleted users
-                isNull(opinionModerationTable.id), // only votes on unmoderated opinions matters
+                isNotNull(voteTable.currentContentId),
+                eq(userTable.isDeleted, false),
             ),
         );
 
-    // Reconcile opinionCount
+    // Opinion counts: unmoderated + total + moderated + hidden in one query
     const opinionCountResult = await db
-        .select({ count: count() })
+        .select({
+            opinionCount:
+                sql<number>`count(*) FILTER (WHERE ${opinionModerationTable.id} IS NULL)`.as(
+                    "opinion_count",
+                ),
+            totalOpinionCount: count(),
+            moderatedOpinionCount:
+                sql<number>`count(*) FILTER (WHERE ${opinionModerationTable.moderationAction} = 'move')`.as(
+                    "moderated_opinion_count",
+                ),
+            hiddenOpinionCount:
+                sql<number>`count(*) FILTER (WHERE ${opinionModerationTable.moderationAction} = 'hide')`.as(
+                    "hidden_opinion_count",
+                ),
+        })
         .from(opinionTable)
         .innerJoin(userTable, eq(opinionTable.authorId, userTable.id))
         .leftJoin(
@@ -70,15 +100,20 @@ async function calculateConversationCounters({
         .where(
             and(
                 eq(opinionTable.conversationId, conversationId),
-                isNotNull(opinionTable.currentContentId), // only non-deleted opinions count
-                isNull(opinionModerationTable.id), // only unmoderated opinions matters
-                eq(userTable.isDeleted, false), // we don't count opinions from deleted users
+                isNotNull(opinionTable.currentContentId),
+                eq(userTable.isDeleted, false),
             ),
         );
 
-    // Reconcile participantCount
+    // Participant counts: GROUP BY authorId, then split by moderation status
     const participantResults = await db
-        .select({ authorId: voteTable.authorId })
+        .select({
+            authorId: voteTable.authorId,
+            hasUnmoderatedVote:
+                sql<boolean>`bool_or(${opinionModerationTable.id} IS NULL)`.as(
+                    "has_unmoderated_vote",
+                ),
+        })
         .from(voteTable)
         .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
         .innerJoin(userTable, eq(voteTable.authorId, userTable.id))
@@ -89,23 +124,32 @@ async function calculateConversationCounters({
         .where(
             and(
                 eq(opinionTable.conversationId, conversationId),
-                isNotNull(opinionTable.currentContentId), // we don't count deleted opinions
-                isNotNull(voteTable.currentContentId), // we don't count deleted votes
-                isNull(opinionModerationTable.id), // we don't count moderated opinions
-                eq(userTable.isDeleted, false), // we don't count votes from deleted users
+                isNotNull(opinionTable.currentContentId),
+                isNotNull(voteTable.currentContentId),
+                eq(userTable.isDeleted, false),
             ),
-        );
+        )
+        .groupBy(voteTable.authorId);
 
-    const participantUserIds = participantResults.map(
-        (result) => result.authorId,
-    );
-    const uniqueParticipantUserIds = new Set(participantUserIds);
+    const totalParticipantCount = participantResults.length;
+    const participantCount = participantResults.filter(
+        (row) => row.hasUnmoderatedVote,
+    ).length;
+
+    const voteRow =
+        voteCountResult.length === 0 ? undefined : voteCountResult[0];
+    const opinionRow =
+        opinionCountResult.length === 0 ? undefined : opinionCountResult[0];
 
     return {
-        opinionCount:
-            opinionCountResult.length === 0 ? 0 : opinionCountResult[0].count,
-        voteCount: voteCountResult.length === 0 ? 0 : voteCountResult[0].count,
-        participantCount: uniqueParticipantUserIds.size,
+        voteCount: voteRow?.voteCount ?? 0,
+        totalVoteCount: voteRow?.totalVoteCount ?? 0,
+        opinionCount: opinionRow?.opinionCount ?? 0,
+        totalOpinionCount: opinionRow?.totalOpinionCount ?? 0,
+        moderatedOpinionCount: opinionRow?.moderatedOpinionCount ?? 0,
+        hiddenOpinionCount: opinionRow?.hiddenOpinionCount ?? 0,
+        participantCount,
+        totalParticipantCount,
     };
 }
 
@@ -148,9 +192,10 @@ export async function updateVoteCount({
 }
 
 /**
- * Update opinionCount with a delta (+1 or -1)
+ * Update opinionCount and totalOpinionCount with a delta (+1 or -1)
  *
- * Use this for real-time updates when opinions are added/removed
+ * Both counters receive the same delta because new/deleted opinions are always
+ * unmoderated. Moderation actions use reconcileConversationCounters instead.
  */
 export async function updateOpinionCount({
     db,
@@ -168,6 +213,7 @@ export async function updateOpinionCount({
             .update(conversationTable)
             .set({
                 opinionCount: sql`${conversationTable.opinionCount} + ${delta}`,
+                totalOpinionCount: sql`${conversationTable.totalOpinionCount} + ${delta}`,
                 lastReactedAt: nowZeroMs(),
             })
             .where(eq(conversationTable.id, conversationId));
@@ -176,6 +222,7 @@ export async function updateOpinionCount({
             .update(conversationTable)
             .set({
                 opinionCount: sql`${conversationTable.opinionCount} + ${delta}`,
+                totalOpinionCount: sql`${conversationTable.totalOpinionCount} + ${delta}`,
             })
             .where(eq(conversationTable.id, conversationId));
     }
@@ -214,8 +261,9 @@ async function enqueueMathUpdate({
 /**
  * Reconcile all conversation counters by recalculating from database
  *
- * Automatically enqueues math update since voteCount changes affect clustering
- * Use this when actions affect multiple counters (e.g., moderation)
+ * Sets both unmoderated and total counts in a single UPDATE.
+ * Automatically enqueues math update since voteCount changes affect clustering.
+ * Use this when actions affect multiple counters (e.g., moderation).
  */
 export async function reconcileConversationCounters({
     db,
@@ -231,24 +279,29 @@ export async function reconcileConversationCounters({
         conversationId,
     });
 
+    const counterColumns = {
+        opinionCount: counters.opinionCount,
+        voteCount: counters.voteCount,
+        participantCount: counters.participantCount,
+        totalOpinionCount: counters.totalOpinionCount,
+        totalVoteCount: counters.totalVoteCount,
+        totalParticipantCount: counters.totalParticipantCount,
+        moderatedOpinionCount: counters.moderatedOpinionCount,
+        hiddenOpinionCount: counters.hiddenOpinionCount,
+    };
+
     if (doUpdateLastReactedAt) {
         await db
             .update(conversationTable)
             .set({
-                opinionCount: counters.opinionCount,
-                voteCount: counters.voteCount,
-                participantCount: counters.participantCount,
+                ...counterColumns,
                 lastReactedAt: nowZeroMs(),
             })
             .where(eq(conversationTable.id, conversationId));
     } else {
         await db
             .update(conversationTable)
-            .set({
-                opinionCount: counters.opinionCount,
-                voteCount: counters.voteCount,
-                participantCount: counters.participantCount,
-            })
+            .set(counterColumns)
             .where(eq(conversationTable.id, conversationId));
     }
 

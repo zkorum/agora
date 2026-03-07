@@ -1278,6 +1278,17 @@ export const conversationTable = pgTable(
         opinionCount: integer("opinion_count").notNull().default(0),
         voteCount: integer("vote_count").notNull().default(0),
         participantCount: integer("participant_count").notNull().default(0),
+        totalOpinionCount: integer("total_opinion_count").notNull().default(0), // includes moderated opinions
+        totalVoteCount: integer("total_vote_count").notNull().default(0), // includes votes on moderated opinions
+        totalParticipantCount: integer("total_participant_count")
+            .notNull()
+            .default(0), // includes participants who only voted on moderated opinions
+        moderatedOpinionCount: integer("moderated_opinion_count")
+            .notNull()
+            .default(0), // opinions with moderation action 'move'
+        hiddenOpinionCount: integer("hidden_opinion_count")
+            .notNull()
+            .default(0), // opinions with moderation action 'hide'
         importUrl: text("import_url"), // originally used for importing
         importConversationUrl: text("import_conversation_url"),
         importExportUrl: text("import_export_url"),

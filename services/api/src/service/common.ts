@@ -168,6 +168,13 @@ export function useCommonPost() {
                 opinionCount: conversationTable.opinionCount,
                 voteCount: conversationTable.voteCount,
                 participantCount: conversationTable.participantCount,
+                totalOpinionCount: conversationTable.totalOpinionCount,
+                totalVoteCount: conversationTable.totalVoteCount,
+                totalParticipantCount:
+                    conversationTable.totalParticipantCount,
+                moderatedOpinionCount:
+                    conversationTable.moderatedOpinionCount,
+                hiddenOpinionCount: conversationTable.hiddenOpinionCount,
                 authorName: userTable.username,
                 organizationName: organizationTable.name,
                 organizationImagePath: organizationTable.imagePath,
@@ -269,6 +276,11 @@ export function useCommonPost() {
                 opinionCount: postItem.opinionCount,
                 voteCount: postItem.voteCount,
                 participantCount: postItem.participantCount,
+                totalOpinionCount: postItem.totalOpinionCount,
+                totalVoteCount: postItem.totalVoteCount,
+                totalParticipantCount: postItem.totalParticipantCount,
+                moderatedOpinionCount: postItem.moderatedOpinionCount,
+                hiddenOpinionCount: postItem.hiddenOpinionCount,
                 authorUsername: postItem.authorName,
                 isIndexed: postItem.isIndexed,
                 participationMode: postItem.participationMode,
@@ -933,6 +945,11 @@ export function useCommonPost() {
         participantCount: number;
         opinionCount: number;
         voteCount: number;
+        totalParticipantCount: number;
+        totalOpinionCount: number;
+        totalVoteCount: number;
+        moderatedOpinionCount: number;
+        hiddenOpinionCount: number;
         isIndexed: boolean;
         participationMode: ParticipationMode;
         isClosed: boolean;
@@ -957,6 +974,13 @@ export function useCommonPost() {
                 participantCount: conversationTable.participantCount,
                 voteCount: conversationTable.voteCount,
                 opinionCount: conversationTable.opinionCount,
+                totalParticipantCount:
+                    conversationTable.totalParticipantCount,
+                totalVoteCount: conversationTable.totalVoteCount,
+                totalOpinionCount: conversationTable.totalOpinionCount,
+                moderatedOpinionCount:
+                    conversationTable.moderatedOpinionCount,
+                hiddenOpinionCount: conversationTable.hiddenOpinionCount,
                 isIndexed: conversationTable.isIndexed,
                 participationMode: conversationTable.participationMode,
                 isClosed: conversationTable.isClosed,
@@ -975,6 +999,13 @@ export function useCommonPost() {
             participantCount: postTableResponse[0].participantCount,
             voteCount: postTableResponse[0].voteCount,
             opinionCount: postTableResponse[0].opinionCount,
+            totalParticipantCount:
+                postTableResponse[0].totalParticipantCount,
+            totalVoteCount: postTableResponse[0].totalVoteCount,
+            totalOpinionCount: postTableResponse[0].totalOpinionCount,
+            moderatedOpinionCount:
+                postTableResponse[0].moderatedOpinionCount,
+            hiddenOpinionCount: postTableResponse[0].hiddenOpinionCount,
             isIndexed: postTableResponse[0].isIndexed,
             participationMode: postTableResponse[0].participationMode,
             isClosed: postTableResponse[0].isClosed,
