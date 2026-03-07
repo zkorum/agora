@@ -398,7 +398,7 @@ defineExpose({
 
 <style lang="scss" scoped>
 .report-container {
-  width: 210mm;
+  width: 260mm;
   max-width: 100%;
   margin: 0 auto;
   background: white;
@@ -412,7 +412,7 @@ defineExpose({
 }
 
 .report-section-block {
-  padding: 6mm;
+  padding: 6mm 4mm;
   background: white;
 }
 

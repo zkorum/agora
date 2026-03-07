@@ -21,6 +21,10 @@ export interface AnalysisReportTestTranslations {
   emptySectionsAgreements: string;
   emptySectionsDisagreements: string;
   emptySectionsDivisive: string;
+  numberScaleLabel: string;
+  numberScaleNormal: string;
+  numberScaleLarge: string;
+  numberScaleVeryLarge: string;
   downloadImagesZip: string;
   downloadPdf: string;
   generating: string;
@@ -51,6 +55,10 @@ export const analysisReportTestTranslations: Record<
     emptySectionsAgreements: "No agreements",
     emptySectionsDisagreements: "No disagreements",
     emptySectionsDivisive: "No divisive",
+    numberScaleLabel: "Number Scale",
+    numberScaleNormal: "Normal (~4K)",
+    numberScaleLarge: "Large (300K)",
+    numberScaleVeryLarge: "Very Large (300M)",
     downloadImagesZip: "Download Images (ZIP)",
     downloadPdf: "Download PDF",
     generating: "Generating...",
@@ -76,6 +84,10 @@ export const analysisReportTestTranslations: Record<
     emptySectionsAgreements: "لا توجد مقترحات معتمدة",
     emptySectionsDisagreements: "لا توجد مقترحات مرفوضة",
     emptySectionsDivisive: "لا توجد مقترحات مثيرة للجدل",
+    numberScaleLabel: "حجم الأرقام",
+    numberScaleNormal: "عادي (~4 آلاف)",
+    numberScaleLarge: "كبير (300 ألف)",
+    numberScaleVeryLarge: "كبير جداً (300 مليون)",
     downloadImagesZip: "تحميل الصور (ZIP)",
     downloadPdf: "تحميل PDF",
     generating: "جارٍ الإنشاء...",
@@ -101,6 +113,10 @@ export const analysisReportTestTranslations: Record<
     emptySectionsAgreements: "Sin proposiciones aprobadas",
     emptySectionsDisagreements: "Sin proposiciones rechazadas",
     emptySectionsDivisive: "Sin proposiciones divisivas",
+    numberScaleLabel: "Escala Numérica",
+    numberScaleNormal: "Normal (~4K)",
+    numberScaleLarge: "Grande (300K)",
+    numberScaleVeryLarge: "Muy Grande (300M)",
     downloadImagesZip: "Descargar Imágenes (ZIP)",
     downloadPdf: "Descargar PDF",
     generating: "Generando...",
@@ -126,6 +142,10 @@ export const analysisReportTestTranslations: Record<
     emptySectionsAgreements: "Aucune proposition approuvée",
     emptySectionsDisagreements: "Aucune proposition rejetée",
     emptySectionsDivisive: "Aucune proposition controversée",
+    numberScaleLabel: "Échelle Numérique",
+    numberScaleNormal: "Normal (~4K)",
+    numberScaleLarge: "Grand (300K)",
+    numberScaleVeryLarge: "Très Grand (300M)",
     downloadImagesZip: "Télécharger les Images (ZIP)",
     downloadPdf: "Télécharger le PDF",
     generating: "Génération...",
@@ -151,6 +171,10 @@ export const analysisReportTestTranslations: Record<
     emptySectionsAgreements: "无通过的观点",
     emptySectionsDisagreements: "无否决的观点",
     emptySectionsDivisive: "无分歧的观点",
+    numberScaleLabel: "数字规模",
+    numberScaleNormal: "普通 (~4K)",
+    numberScaleLarge: "大 (300K)",
+    numberScaleVeryLarge: "超大 (300M)",
     downloadImagesZip: "下载图片 (ZIP)",
     downloadPdf: "下载 PDF",
     generating: "生成中...",
@@ -176,6 +200,10 @@ export const analysisReportTestTranslations: Record<
     emptySectionsAgreements: "無通過的觀點",
     emptySectionsDisagreements: "無否決的觀點",
     emptySectionsDivisive: "無分歧的觀點",
+    numberScaleLabel: "數字規模",
+    numberScaleNormal: "普通 (~4K)",
+    numberScaleLarge: "大 (300K)",
+    numberScaleVeryLarge: "超大 (300M)",
     downloadImagesZip: "下載圖片 (ZIP)",
     downloadPdf: "下載 PDF",
     generating: "產生中...",
@@ -201,6 +229,10 @@ export const analysisReportTestTranslations: Record<
     emptySectionsAgreements: "承認された意見なし",
     emptySectionsDisagreements: "否決された意見なし",
     emptySectionsDivisive: "分断的な意見なし",
+    numberScaleLabel: "数値スケール",
+    numberScaleNormal: "通常 (~4K)",
+    numberScaleLarge: "大 (300K)",
+    numberScaleVeryLarge: "超大 (300M)",
     downloadImagesZip: "画像をダウンロード (ZIP)",
     downloadPdf: "PDFをダウンロード",
     generating: "生成中...",
