@@ -22,8 +22,8 @@
         "zod": "^4.3.6"
     },
     "devDependencies": {
-        "@types/node": "^25.3.3",
-        "@types/sanitize-html": "^2.16.0",
+        "@types/node": "^25.3.5",
+        "@types/sanitize-html": "^2.16.1",
         "prettier": "^3.8.1",
         "typescript": "^5.2.2"
     }
