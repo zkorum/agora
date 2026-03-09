@@ -50,7 +50,7 @@ dependencies = [
 	"platformdirs==4.3.8",
 	"pydantic==2.11.7",
 	"pydantic_core==2.33.2",
-	"pyparsing==3.2.3",
+	"pyparsing==3.3.2",
 	"pyproject_hooks==1.2.0",
 	"pyrate-limiter==2.10.0",
 	"python-dateutil==2.9.0.post0",
