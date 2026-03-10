@@ -16,5 +16,12 @@ RUN pnpm run build:production
 FROM nginx:stable-alpine
 COPY ./nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist/spa /usr/share/nginx/html
+# Stage new assets separately so entrypoint can merge them into a persistent volume.
+# This allows old chunk files from previous deployments to remain available,
+# preventing "Failed to fetch dynamically imported module" errors for users
+# whose browser loaded index.html before the deployment.
+COPY --from=build /app/dist/spa/assets /app/new-assets
+COPY ./entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/entrypoint.sh"]

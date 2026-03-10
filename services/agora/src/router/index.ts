@@ -1,3 +1,4 @@
+import { isChunkLoadError, reloadForChunkError } from "src/utils/error/chunkError";
 import { useRouterGuard } from "src/utils/router/guard";
 import {
   createMemoryHistory,
@@ -71,6 +72,9 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   const Router = createRouter({
     scrollBehavior: (to, from, savedPosition) => {
       if (isConversationTabSwitch({ to, from })) {
+        if (savedPosition) {
+          return { left: 0, top: savedPosition.top };
+        }
         return false;
       }
 
@@ -128,27 +132,12 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   });
 
   // Auto-reload when a stale chunk fails to load after deployment.
-  // @see https://stackoverflow.com/questions/69300341/typeerror-failed-to-fetch-dynamically-imported-module-on-vue-vite-vanilla-set
-  // @see https://github.com/vitejs/vite/issues/11804#issuecomment-1406182566
+  // Uses shared utility — the inline script in index.html and the
+  // chunkErrorRecovery boot file handle non-router chunk failures.
   Router.onError((error, to) => {
-    if (
-      error.message.includes("Failed to fetch dynamically imported module") ||
-      error.message.includes("Loading chunk") ||
-      error.message.includes("Loading CSS chunk") ||
-      error.message.includes("Unable to preload CSS")
-    ) {
-      const reloadKey = "chunk-reload";
-      const lastReload = sessionStorage.getItem(reloadKey);
-      const now = Date.now();
-      if (lastReload && now - Number(lastReload) < 10000) {
-        console.error(
-          "[Router] Chunk load failed after reload, giving up",
-          error
-        );
-        return;
-      }
-      sessionStorage.setItem(reloadKey, String(now));
-      window.location.href = to.fullPath;
+    if (isChunkLoadError(error)) {
+      // Navigate to the target path so the URL stays correct after reload
+      reloadForChunkError({ navigateTo: to.fullPath });
     }
   });
 
