@@ -12,6 +12,7 @@ export interface EmailOnboardingTranslations {
   throttled: string;
   unreachable: string;
   disposable: string;
+  credentialAlreadyLinked: string;
   somethingWrong: string;
 }
 
@@ -34,6 +35,8 @@ export const emailOnboardingTranslations: Record<
       "This email address doesn't seem to exist—please check and try again",
     disposable:
       "Temporary or disposable email addresses are not allowed",
+    credentialAlreadyLinked:
+      "This email address is already linked to another account",
     somethingWrong: "Oops! Something went wrong—please try again",
   },
   ar: {
@@ -49,6 +52,8 @@ export const emailOnboardingTranslations: Record<
     unreachable:
       "يبدو أن عنوان البريد الإلكتروني هذا غير موجود—يرجى التحقق والمحاولة مرة أخرى",
     disposable: "عناوين البريد الإلكتروني المؤقتة أو التي يمكن التخلص منها غير مسموح بها",
+    credentialAlreadyLinked:
+      "عنوان البريد الإلكتروني هذا مرتبط بالفعل بحساب آخر",
     somethingWrong: "عفواً! حدث خطأ—يرجى المحاولة مرة أخرى",
   },
   es: {
@@ -70,6 +75,8 @@ export const emailOnboardingTranslations: Record<
       "Esta dirección de correo electrónico no parece existir—verifique e intente de nuevo",
     disposable:
       "No se permiten direcciones de correo electrónico temporales o desechables",
+    credentialAlreadyLinked:
+      "Esta dirección de correo electrónico ya está vinculada a otra cuenta",
     somethingWrong: "¡Ups! Algo salió mal—intente de nuevo",
   },
   fr: {
@@ -89,6 +96,8 @@ export const emailOnboardingTranslations: Record<
       "Cette adresse e-mail ne semble pas exister—veuillez vérifier et réessayer",
     disposable:
       "Les adresses e-mail temporaires ou jetables ne sont pas autorisées",
+    credentialAlreadyLinked:
+      "Cette adresse e-mail est déjà associée à un autre compte",
     somethingWrong: "Oups ! Quelque chose a mal tourné—veuillez réessayer",
   },
   "zh-Hans": {
@@ -103,6 +112,7 @@ export const emailOnboardingTranslations: Record<
     throttled: "尝试次数过多—请稍后再试",
     unreachable: "此电子邮箱地址似乎不存在—请检查后重试",
     disposable: "不允许使用临时或一次性电子邮箱地址",
+    credentialAlreadyLinked: "此电子邮箱地址已关联到另一个账户",
     somethingWrong: "哎呀！出错了—请重试",
   },
   "zh-Hant": {
@@ -117,6 +127,7 @@ export const emailOnboardingTranslations: Record<
     throttled: "嘗試次數過多—請稍後再試",
     unreachable: "此電子郵箱地址似乎不存在—請檢查後重試",
     disposable: "不允許使用臨時或一次性電子郵箱地址",
+    credentialAlreadyLinked: "此電子郵箱地址已關聯到另一個帳戶",
     somethingWrong: "哎呀！出錯了—請重試",
   },
   ja: {
@@ -134,6 +145,8 @@ export const emailOnboardingTranslations: Record<
       "このメールアドレスは存在しないようです—確認してもう一度お試しください",
     disposable:
       "一時的または使い捨てのメールアドレスは許可されていません",
+    credentialAlreadyLinked:
+      "このメールアドレスはすでに別のアカウントにリンクされています",
     somethingWrong: "おっと！何かが間違っています—もう一度お試しください",
   },
 };

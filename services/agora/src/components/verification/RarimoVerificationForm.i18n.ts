@@ -16,7 +16,7 @@ export interface RarimoVerificationFormTranslations {
   verificationFailed: string;
   passportAlreadyLinked: string;
   unexpectedError: string;
-  syncHiccup: string;
+  credentialAlreadyLinked: string;
   copiedToClipboard: string;
   couldNotCopy: string;
 }
@@ -42,8 +42,8 @@ export const rarimoVerificationFormTranslations: Record<
     passportAlreadyLinked:
       "This passport is already linked to another Rarimo account. Please try a different one.",
     unexpectedError: "Oops! Unexpected error—try refreshing the page",
-    syncHiccup:
-      "Oops! Sync hiccup detected. We've refreshed your QR code—try scanning it again!",
+    credentialAlreadyLinked:
+      "This passport is already linked to another account",
     copiedToClipboard: "Copied link to clipboard",
     couldNotCopy: "Could not copy to clipboard",
   },
@@ -64,8 +64,8 @@ export const rarimoVerificationFormTranslations: Record<
     passportAlreadyLinked:
       "جواز السفر هذا مرتبط بالفعل بحساب رقمي آخر. يرجى تجربة جواز سفر آخر.",
     unexpectedError: "عفواً! خطأ غير متوقع - حاول تحديث الصفحة",
-    syncHiccup:
-      "عفواً! تم اكتشاف خلل في المزامنة. لقد حدثنا رمز الاستجابة السريعة - حاول مسحه مرة أخرى!",
+    credentialAlreadyLinked:
+      "جواز السفر هذا مرتبط بالفعل بحساب آخر",
     copiedToClipboard: "تم نسخ الرابط إلى الحافظة",
     couldNotCopy: "تعذر النسخ إلى الحافظة",
   },
@@ -87,8 +87,8 @@ export const rarimoVerificationFormTranslations: Record<
     passportAlreadyLinked:
       "Este pasaporte ya está vinculado a otra cuenta de Rarimo. Por favor, intente con uno diferente.",
     unexpectedError: "¡Ups! Error inesperado—intente refrescar la página",
-    syncHiccup:
-      "¡Ups! Detectamos un problema de sincronización. Hemos actualizado su código QR—¡intente escanearlo de nuevo!",
+    credentialAlreadyLinked:
+      "Este pasaporte ya está vinculado a otra cuenta",
     copiedToClipboard: "Enlace copiado al portapapeles",
     couldNotCopy: "No se pudo copiar al portapapeles",
   },
@@ -111,8 +111,8 @@ export const rarimoVerificationFormTranslations: Record<
     passportAlreadyLinked:
       "Ce passeport est déjà lié à un autre compte Rarimo. Veuillez en essayer un différent.",
     unexpectedError: "Oups ! Erreur inattendue—essayez de rafraîchir la page",
-    syncHiccup:
-      "Oups ! Problème de synchronisation détecté. Nous avons actualisé votre code QR—essayez de le scanner à nouveau !",
+    credentialAlreadyLinked:
+      "Ce passeport est déjà associé à un autre compte",
     copiedToClipboard: "Lien copié dans le presse-papiers",
     couldNotCopy: "Impossible de copier dans le presse-papiers",
   },
@@ -133,7 +133,7 @@ export const rarimoVerificationFormTranslations: Record<
     passportAlreadyLinked:
       "此护照已与另一个 Rarimo 账户关联。请尝试使用不同的护照。",
     unexpectedError: "哎呀！意外错误——请刷新页面",
-    syncHiccup: "哎呀！同步问题检测到。我们已经刷新了您的二维码——请再次扫描！",
+    credentialAlreadyLinked: "此护照已关联到另一个账户",
     copiedToClipboard: "已复制链接到剪贴板",
     couldNotCopy: "无法复制到剪贴板",
   },
@@ -154,7 +154,7 @@ export const rarimoVerificationFormTranslations: Record<
     passportAlreadyLinked:
       "此護照已與另一個 Rarimo 賬戶關聯。請嘗試使用不同的護照。",
     unexpectedError: "哎呀！意外錯誤——請刷新頁面",
-    syncHiccup: "哎呀！同步問題檢測到。我們已經刷新了您的二維碼——請再次掃描！",
+    credentialAlreadyLinked: "此護照已關聯到另一個帳戶",
     copiedToClipboard: "已複製連結到剪貼簿",
     couldNotCopy: "無法複製到剪貼簿",
   },
@@ -177,8 +177,8 @@ export const rarimoVerificationFormTranslations: Record<
       "このパスポートはすでに別の Rarimo アカウントにリンクされています。別のパスポートを試してください。",
     unexpectedError:
       "おっと！予期しないエラーが発生しました—ページを更新してください",
-    syncHiccup:
-      "おっと！同期の問題が検出されました。QR コードを更新しました—再スキャンしてください！",
+    credentialAlreadyLinked:
+      "このパスポートはすでに別のアカウントにリンクされています",
     copiedToClipboard: "リンクをクリップボードにコピーしました",
     couldNotCopy: "クリップボードにコピーできませんでした",
   },

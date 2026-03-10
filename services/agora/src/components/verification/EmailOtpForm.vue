@@ -67,8 +67,6 @@ import {
 } from "src/shared/types/dto-auth";
 import { emailVerificationStore } from "src/stores/onboarding/email";
 import { useAuthEmailApi } from "src/utils/api/auth-email";
-import type { KeyAction } from "src/utils/api/common";
-import { createDidOverwriteIfAlreadyExists } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
 import { onMounted, ref } from "vue";
 
@@ -179,8 +177,7 @@ async function nextButtonClicked() {
           break;
         }
         case "associated_with_another_user": {
-          showNotifyMessage(t("syncHiccupDetected"));
-          await createDidOverwriteIfAlreadyExists();
+          showNotifyMessage(t("credentialAlreadyLinked"));
           break;
         }
         case "auth_state_changed": {
@@ -196,14 +193,10 @@ async function nextButtonClicked() {
   }
 }
 
-async function requestCodeClicked(
-  isRequestingNewCode: boolean,
-  keyAction?: KeyAction
-) {
+async function requestCodeClicked(isRequestingNewCode: boolean) {
   const response = await sendEmailCode({
     isRequestingNewCode: isRequestingNewCode,
     email: verificationEmail.value,
-    keyAction: keyAction,
   });
   if (response.status == "success") {
     const data = authenticateEmail200.parse(response.data);
@@ -218,7 +211,7 @@ async function requestCodeClicked(
           break;
         }
         case "associated_with_another_user":
-          await requestCodeClicked(isRequestingNewCode, "overwrite");
+          showNotifyMessage(t("credentialAlreadyLinked"));
           break;
         case "throttled":
           showNotifyMessage(t("tooManyAttempts"));
