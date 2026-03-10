@@ -8,12 +8,16 @@ import {
   type RouteLocationNormalized,
   type RouteLocationNormalizedLoaded,
 } from "vue-router";
-import { routes } from "vue-router/auto-routes";
+import { type RouteNamedMap, routes } from "vue-router/auto-routes";
 import { z } from "zod";
 
 import { defineRouter } from "#q-app/wrappers";
 
-const conversationTabRouteNames: ReadonlySet<string> = new Set([
+// Construction uses keyof RouteNamedMap to catch typos at compile time.
+// ReadonlySet<string> allows .has(string) without casting route.name.
+const conversationTabRouteNames: ReadonlySet<string> = new Set<
+  keyof RouteNamedMap
+>([
   "/conversation/[postSlugId]/",
   "/conversation/[postSlugId]/analysis",
   "/conversation/[postSlugId].embed/",

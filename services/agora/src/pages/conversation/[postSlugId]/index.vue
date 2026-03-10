@@ -4,6 +4,7 @@
     :has-conversation-data="hasConversationData"
     :moderation-history-trigger="moderationHistoryTrigger"
     :comment-filter="commentFilter"
+    :on-view-analysis="onViewAnalysis"
     @update:comment-filter="
       (filter: CommentFilterOptions) => emit('update:commentFilter', filter)
     "
@@ -15,11 +16,12 @@ import ConversationCommentTab from "src/components/post/ConversationCommentTab.v
 import type { ExtendedConversation } from "src/shared/types/zod";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 
-defineProps<{
+const { onViewAnalysis } = defineProps<{
   conversationData: ExtendedConversation;
   hasConversationData: boolean;
   moderationHistoryTrigger: number;
   commentFilter: CommentFilterOptions;
+  onViewAnalysis: () => void;
 }>();
 
 const emit = defineEmits<{

@@ -4,23 +4,21 @@
       <ZKTab
         icon-code="meteor-icons:comment"
         :text="formatAmount(opinionCount)"
-        :is-highlighted="currentTab === 'comment' && !compactMode"
+        :is-highlighted="model === 'comment' && !compactMode"
         :should-underline-on-highlight="true"
-        :is-loading="isLoading && currentTab === 'comment'"
+        :is-loading="isLoading && model === 'comment'"
         :to="compactMode ? undefined : { name: commentRouteName, params: { postSlugId: conversationSlugId } }"
         :replace="true"
-        @click="clickedTab('comment')"
       />
       <ZKTab
         v-if="!compactMode"
         icon-code="ph:chart-donut"
         :text="t('analysis')"
-        :is-highlighted="currentTab === 'analysis'"
+        :is-highlighted="model === 'analysis'"
         :should-underline-on-highlight="true"
-        :is-loading="isLoading && currentTab === 'analysis'"
+        :is-loading="isLoading && model === 'analysis'"
         :to="{ name: analysisRouteName, params: { postSlugId: conversationSlugId } }"
         :replace="true"
-        @click="clickedTab('analysis')"
       />
     </div>
   </div>
@@ -38,7 +36,7 @@ import {
   interactionTabTranslations,
 } from "./InteractionTab.i18n";
 
-const props = defineProps<{
+defineProps<{
   opinionCount: number;
   compactMode: boolean;
   isLoading?: boolean;
@@ -65,24 +63,6 @@ const analysisRouteName = computed(() =>
     ? "/conversation/[postSlugId].embed/analysis"
     : "/conversation/[postSlugId]/analysis"
 );
-
-// Determine current tab from route path
-const currentTab = computed<"comment" | "analysis">(() => {
-  const pathSegments = route.path.split("/");
-  const lastSegment = pathSegments[pathSegments.length - 1];
-
-  if (lastSegment === "analysis") {
-    return "analysis";
-  }
-  return "comment";
-});
-
-function clickedTab(tabKey: "comment" | "analysis") {
-  if (props.compactMode) return;
-
-  // Sync with v-model (router-link handles navigation)
-  model.value = tabKey;
-}
 </script>
 
 <style lang="scss" scoped>

@@ -9,6 +9,12 @@
           @verified="(payload) => handleTicketVerified(payload)"
         />
 
+        <div ref="sentinelElement"></div>
+        <div
+          ref="actionBarElement"
+          class="sticky-below-header sticky-action-bar"
+          :style="{ '--header-height': headerHeight + 'px' }"
+        >
         <PostActionBar
           v-model="currentTab"
           :compact-mode="false"
@@ -24,21 +30,26 @@
           :conversation-title="loadedConversationData.payload.title"
           :author-username="loadedConversationData.metadata.authorUsername"
         />
+        </div>
 
         <!-- Child routes: only tab-specific content -->
         <div class="tab-content">
           <router-view v-slot="{ Component }">
-            <component
-              :is="Component"
-              :key="route.path"
-              :conversation-data="loadedConversationData"
-              :has-conversation-data="hasConversationData"
-              :moderation-history-trigger="moderationHistoryTrigger"
-              :comment-filter="commentFilter"
-              @update:comment-filter="
-                (filter: CommentFilterOptions) => { commentFilter = filter }
-              "
-            />
+            <KeepAlive :max="2">
+              <component
+                :is="Component"
+                :key="route.path"
+                :conversation-data="loadedConversationData"
+                :has-conversation-data="hasConversationData"
+                :moderation-history-trigger="moderationHistoryTrigger"
+                :comment-filter="commentFilter"
+                :on-view-analysis="onViewAnalysis"
+                :navigate-to-discover-tab="navigateToDiscoverTab"
+                @update:comment-filter="
+                  (filter: CommentFilterOptions) => { commentFilter = filter }
+                "
+              />
+            </KeepAlive>
           </router-view>
         </div>
       </div>
@@ -50,8 +61,11 @@
 import PostContent from "src/components/post/display/PostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import { useConversationParentState } from "src/composables/conversation/useConversationParentState";
+import { useStickyObserver } from "src/composables/ui/useStickyObserver";
 import EmbedLayout from "src/layouts/EmbedLayout.vue";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
+
+const { sentinelElement, headerHeight } = useStickyObserver();
 
 const {
   route,
@@ -63,6 +77,9 @@ const {
   moderationHistoryTrigger,
   commentFilter,
   participantCountLocal,
+  actionBarElement,
+  onViewAnalysis,
+  navigateToDiscoverTab,
   openModerationHistory,
   handleTicketVerified,
 } = useConversationParentState({
@@ -81,9 +98,5 @@ const {
   gap: 1rem;
   flex-direction: column;
   padding: 1rem;
-}
-
-.tab-content {
-  min-height: 100vh;
 }
 </style>

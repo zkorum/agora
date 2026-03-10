@@ -40,8 +40,12 @@
                 background-color="white"
                 hover-variant="medium"
               >
-                <div class="notificationItemBase">
+                <div
+                  class="notificationItemBase"
+                  :class="{ unreadNotification: !notificationItem.isRead }"
+                >
                   <div class="iconWrapper">
+                    <div v-if="!notificationItem.isRead" class="unreadDot"></div>
                     <ZKIcon
                       :name="getIconFromNotificationType(notificationItem.type)"
                       size="1.8rem"
@@ -57,7 +61,10 @@
                         :size="32"
                       />
                     </div>
-                    <div class="titleStyle">
+                    <div
+                      class="titleStyle"
+                      :class="{ unreadTitle: !notificationItem.isRead }"
+                    >
                       {{ getTitleFromNotification(notificationItem) }}
                     </div>
 
@@ -104,7 +111,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotificationStore } from "src/stores/notification";
 import { useNotificationApi } from "src/utils/api/notification/notification";
 import type { DisplayNotification } from "src/utils/notification/transform";
-import { onMounted, ref, watch } from "vue";
+import { onActivated, onDeactivated, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
 import {
@@ -112,45 +119,74 @@ import {
   notificationTranslations,
 } from "./index.i18n";
 
+defineOptions({ name: "NotificationPage" });
+
 const notificationStore = useNotificationStore();
 const { notificationList, numNewNotifications } =
   storeToRefs(notificationStore);
-const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
-const { loadNotificationData, markAllAsReadLocally } = notificationStore;
+const authStore = useAuthenticationStore();
+const { isAuthInitialized } = storeToRefs(authStore);
+const { loadNotificationData, markAllAsReadLocally, clearNotificationData } =
+  notificationStore;
 
 const { markAllNotificationsAsRead } = useNotificationApi();
 
 const hasMore = ref(true);
 const isLoading = ref(true);
+const hasLoadedOnce = ref(false);
 
 const { t } = useComponentI18n<NotificationTranslations>(
   notificationTranslations
 );
 
-onMounted(() => {
-  void loadInitialData();
+onActivated(() => {
+  if (!hasLoadedOnce.value) {
+    void loadInitialData();
+  } else {
+    void silentRefresh();
+  }
+});
+
+onDeactivated(() => {
+  markAllAsReadLocally();
 });
 
 // Watch for new notifications arriving via SSE while on this page
-watch(numNewNotifications, async (newCount, oldCount) => {
-  // Only react if count increases (new notifications arrived)
-  // and we're not in the initial loading phase
+watch(numNewNotifications, (newCount, oldCount) => {
   if (newCount > oldCount && !isLoading.value) {
-    await markAllNotificationsAsRead();
-    // Update local state to immediately clear the badge
-    markAllAsReadLocally();
+    void markAllNotificationsAsRead();
   }
 });
+
+// Reset cached state on logout so stale data isn't shown after re-login
+watch(
+  () => authStore.isLoggedIn,
+  (isLoggedIn) => {
+    if (!isLoggedIn) {
+      hasLoadedOnce.value = false;
+      clearNotificationData();
+    }
+  }
+);
 
 async function loadInitialData() {
   try {
     isLoading.value = true;
-    await markAllNotificationsAsRead();
     await loadNotificationData(false);
+    hasLoadedOnce.value = true;
+    void markAllNotificationsAsRead();
   } catch (error) {
     console.error("Failed to load notifications:", error);
   } finally {
     isLoading.value = false;
+  }
+}
+
+async function silentRefresh() {
+  try {
+    await markAllNotificationsAsRead();
+  } catch (error) {
+    console.error("Failed to refresh notifications:", error);
   }
 }
 
@@ -308,6 +344,25 @@ function getRouteFromTarget(
 .iconWrapper {
   flex-shrink: 0;
   align-self: center;
+  position: relative;
+}
+
+.unreadNotification {
+  background-color: #f0edff;
+}
+
+.unreadDot {
+  position: absolute;
+  top: 0;
+  left: -0.3rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: $primary;
+  border-radius: 50%;
+}
+
+.unreadTitle {
+  font-weight: var(--font-weight-semibold);
 }
 
 .notificationRightPortion {

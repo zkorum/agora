@@ -9,6 +9,8 @@
         conversationData.metadata.participationMode
       "
       :requires-event-ticket="conversationData.metadata.requiresEventTicket"
+      :on-view-analysis="props.onViewAnalysis"
+      :is-voting-disabled="isVotingDisabled"
       :preloaded-queries="{
         commentsDiscoverQuery,
         commentsNewQuery,
@@ -46,7 +48,7 @@ import {
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
-import { computed, inject, onMounted, provide, type Ref, ref, watch } from "vue";
+import { computed, inject, onMounted, type Ref, ref, watch } from "vue";
 
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
@@ -58,14 +60,12 @@ const props = defineProps<{
   hasConversationData: boolean;
   moderationHistoryTrigger: number;
   commentFilter: CommentFilterOptions;
+  onViewAnalysis: () => void;
 }>();
 
 const emit = defineEmits<{
   "update:commentFilter": [filter: CommentFilterOptions];
 }>();
-
-// Provide conversation data to all descendants (reactive)
-provide("conversationData", computed(() => props.conversationData));
 
 // Inject shared state from parent
 const opinionCountOffset = inject<Ref<number>>("opinionCountOffset", ref(0));
@@ -98,6 +98,15 @@ const conversationSlugId = computed(
   () => props.conversationData.metadata.conversationSlugId
 );
 const voteCount = computed(() => props.conversationData.metadata.voteCount);
+
+// Compute voting disabled state for drilling to CommentActionBar
+const isVotingDisabled = computed(() => {
+  const data = props.conversationData;
+  const isModeratedAndLocked =
+    data.metadata.moderation.status === "moderated" &&
+    data.metadata.moderation.action === "lock";
+  return isModeratedAndLocked || data.metadata.isClosed;
+});
 
 // Preload comment queries for all filter types
 const commentsDiscoverQuery = useCommentsQuery({

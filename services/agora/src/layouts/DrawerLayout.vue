@@ -75,9 +75,7 @@ setTimeout(() => {
 }, 500);
 
 function captureHeaderReveal(reveal: boolean) {
-  if (drawerBehavior.value == "mobile") {
-    revealHeader.value = reveal;
-  }
+  revealHeader.value = reveal;
 }
 </script>
 
