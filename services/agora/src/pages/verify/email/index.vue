@@ -77,6 +77,7 @@ const { isLoading, submitEmail } = useEmailSubmit({
     throttled: t("throttled"),
     unreachable: t("unreachable"),
     disposable: t("disposable"),
+    credentialAlreadyLinked: t("credentialAlreadyLinked"),
     somethingWrong: t("somethingWrong"),
   },
 });

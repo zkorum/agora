@@ -54,6 +54,28 @@ const emit = defineEmits<{
   blur: [];
 }>();
 
+function handleSearchEnter(event: KeyboardEvent) {
+  if (event.key === "Enter") {
+    const firstOption = document.querySelector<HTMLButtonElement>(
+      ".m-popover-panel .m-select-list-item"
+    );
+    if (firstOption) {
+      firstOption.click();
+    }
+  }
+}
+
+function handleSearchScroll() {
+  requestAnimationFrame(() => {
+    const firstOption = document.querySelector<HTMLElement>(
+      ".m-popover-panel .m-select-list-item"
+    );
+    if (firstOption) {
+      firstOption.scrollIntoView({ block: "nearest" });
+    }
+  });
+}
+
 function handleCountrySearchFocus() {
   setTimeout(() => {
     const searchInput = document.querySelector<HTMLInputElement>(
@@ -61,6 +83,8 @@ function handleCountrySearchFocus() {
     );
     if (searchInput) {
       searchInput.focus();
+      searchInput.addEventListener("keydown", handleSearchEnter);
+      searchInput.addEventListener("input", handleSearchScroll);
     }
   }, 100);
 }

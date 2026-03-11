@@ -131,7 +131,7 @@ import { Dto } from "src/shared/types/dto";
 import type { LinkType, RarimoStatusAttributes } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { api } from "src/utils/api/client";
-import { type KeyAction, useCommonApi } from "src/utils/api/common";
+import { useCommonApi } from "src/utils/api/common";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
 import { onMounted, ref, watch } from "vue";
@@ -190,7 +190,7 @@ if (quasar.platform.is.android) {
   rarimoStoreLink.value = "https://rarimo.com/";
 }
 
-async function generateVerificationLink(keyAction?: KeyAction) {
+async function generateVerificationLink() {
   const linkType: LinkType = "http";
   try {
     const params = { linkType: linkType };
@@ -198,7 +198,7 @@ async function generateVerificationLink(keyAction?: KeyAction) {
       await DefaultApiAxiosParamCreator().apiV1AuthZkpGenerateVerificationLinkPost(
         params
       );
-    const encodedUcan = await buildEncodedUcan(url, options, keyAction);
+    const encodedUcan = await buildEncodedUcan(url, options);
     const response = await DefaultApiFactory(
       undefined,
       undefined,
@@ -230,7 +230,7 @@ async function generateVerificationLink(keyAction?: KeyAction) {
           qrcodeVerificationStatus.value = "verified";
           break;
         case "associated_with_another_user":
-          await generateVerificationLink("overwrite");
+          showNotifyMessage(t("credentialAlreadyLinked"));
           break;
       }
     }
@@ -332,8 +332,7 @@ async function isDeviceLoggedIn() {
           break;
         case "associated_with_another_user":
           window.clearInterval(isDeviceLoggedInIntervalId);
-          showNotifyMessage(t("syncHiccup"));
-          await generateVerificationLink("overwrite");
+          showNotifyMessage(t("credentialAlreadyLinked"));
           break;
       }
     }

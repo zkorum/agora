@@ -12,7 +12,7 @@ export interface EmailOtpFormTranslations {
   accountMerged: string;
   codeExpiredResend: string;
   wrongCodeTryAgain: string;
-  syncHiccupDetected: string;
+  credentialAlreadyLinked: string;
   authStateChanged: string;
   somethingWrong: string;
   tooManyAttempts: string;
@@ -37,7 +37,7 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "Success! Your accounts have been merged",
     codeExpiredResend: "Code expired—resend a new code",
     wrongCodeTryAgain: "Wrong code—try again",
-    syncHiccupDetected: "Oops! Sync hiccup detected—resend a new code",
+    credentialAlreadyLinked: "This email address is already linked to another account",
     authStateChanged:
       "Authentication state changed—please request a new code",
     somethingWrong: "Oops! Something is wrong",
@@ -62,8 +62,8 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "نجح! تم دمج حساباتك",
     codeExpiredResend: "انتهت صلاحية الرمز - أرسل رمزاً جديداً",
     wrongCodeTryAgain: "رمز خاطئ - حاول مرة أخرى",
-    syncHiccupDetected:
-      "عفواً! تم اكتشاف خلل في المزامنة - أرسل رمزاً جديداً",
+    credentialAlreadyLinked:
+      "عنوان البريد الإلكتروني هذا مرتبط بالفعل بحساب آخر",
     authStateChanged: "تغيرت حالة المصادقة - يرجى طلب رمز جديد",
     somethingWrong: "عفواً! هناك خطأ ما",
     tooManyAttempts: "محاولات كثيرة جداً - يرجى الانتظار قبل طلب رمز جديد",
@@ -86,8 +86,8 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "¡Éxito! Sus cuentas han sido fusionadas",
     codeExpiredResend: "Código expirado—reenvíe un nuevo código",
     wrongCodeTryAgain: "Código incorrecto—intente de nuevo",
-    syncHiccupDetected:
-      "¡Ups! Error de sincronización detectado—reenvíe un nuevo código",
+    credentialAlreadyLinked:
+      "Esta dirección de correo electrónico ya está vinculada a otra cuenta",
     authStateChanged:
       "El estado de autenticación cambió—solicite un nuevo código",
     somethingWrong: "¡Ups! Algo salió mal",
@@ -113,8 +113,8 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "Succès ! Vos comptes ont été fusionnés",
     codeExpiredResend: "Code expiré—renvoyez un nouveau code",
     wrongCodeTryAgain: "Code incorrect—réessayez",
-    syncHiccupDetected:
-      "Oups ! Problème de synchronisation détecté—renvoyez un nouveau code",
+    credentialAlreadyLinked:
+      "Cette adresse e-mail est déjà associée à un autre compte",
     authStateChanged:
       "L'état d'authentification a changé—demandez un nouveau code",
     somethingWrong: "Oups ! Quelque chose ne va pas",
@@ -139,7 +139,7 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "成功！您的账户已合并",
     codeExpiredResend: "验证码已过期—重新发送一个新代码",
     wrongCodeTryAgain: "验证码错误—请重试",
-    syncHiccupDetected: "哎呀！同步问题检测到—重新发送一个新代码",
+    credentialAlreadyLinked: "此电子邮箱地址已关联到另一个账户",
     authStateChanged: "认证状态已更改—请请求新代码",
     somethingWrong: "哎呀！出错了",
     tooManyAttempts: "太多尝试—请等待重新请求一个新代码",
@@ -159,7 +159,7 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "成功！您的帳戶已合併",
     codeExpiredResend: "驗證碼已過期—重新發送一個新代碼",
     wrongCodeTryAgain: "驗證碼錯誤—請重試",
-    syncHiccupDetected: "哎呀！同步問題檢測到—重新發送一個新代碼",
+    credentialAlreadyLinked: "此電子郵箱地址已關聯到另一個帳戶",
     authStateChanged: "認證狀態已更改—請請求新代碼",
     somethingWrong: "哎呀！出錯了",
     tooManyAttempts: "太多嘗試—請等待重新請求一個新代碼",
@@ -179,8 +179,8 @@ export const emailOtpFormTranslations: Record<
     accountMerged: "成功！アカウントが統合されました",
     codeExpiredResend: "コードが期限切れです—新しいコードを再送信",
     wrongCodeTryAgain: "コードが間違っています—もう一度試してください",
-    syncHiccupDetected:
-      "おっと！同期の問題が検出されました—新しいコードを再送信",
+    credentialAlreadyLinked:
+      "このメールアドレスはすでに別のアカウントにリンクされています",
     authStateChanged:
       "認証状態が変更されました—新しいコードをリクエストしてください",
     somethingWrong: "おっと！何かが間違っています",

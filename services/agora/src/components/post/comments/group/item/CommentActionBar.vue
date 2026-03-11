@@ -73,7 +73,7 @@ import type { OpinionVotingUtilities } from "src/composables/opinion/types";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
 import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
-import type { EventSlug, ExtendedConversation, ParticipationMode } from "src/shared/types/zod";
+import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 import {
   type OpinionItem,
   type VotingAction,
@@ -86,7 +86,7 @@ import { useInvalidateConversationQuery } from "src/utils/api/post/useConversati
 import { formatPercentage } from "src/utils/common";
 import { MIN_VOTES_FOR_CLUSTER } from "src/utils/component/opinion";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, inject, type Ref,ref } from "vue";
+import { computed, ref } from "vue";
 
 import {
   type CommentActionBarTranslations,
@@ -99,6 +99,8 @@ const props = defineProps<{
   votingUtilities: OpinionVotingUtilities;
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
+  onViewAnalysis: () => void;
+  isVotingDisabled: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -119,25 +121,8 @@ const { hasStrongVerification, hasEmailVerification } = storeToRefs(authStore);
 const userStore = useUserStore();
 const { verifiedEventTickets } = storeToRefs(userStore);
 
-// Inject reactive conversation data from parent
-const conversationData = inject<Ref<ExtendedConversation> | undefined>("conversationData");
-
 // Query client for reading analysis cache
 const queryClient = useQueryClient();
-
-// Compute if voting should be disabled (closed OR locked by moderator)
-const isVotingDisabled = computed(() => {
-  const data = conversationData?.value;
-  if (!data) return false;
-
-  const isModeratedAndLocked =
-    data.metadata.moderation.status === "moderated" &&
-    data.metadata.moderation.action === "lock";
-
-  const isClosed = data.metadata.isClosed;
-
-  return isModeratedAndLocked || isClosed;
-});
 
 const { t } = useComponentI18n<CommentActionBarTranslations>(
   commentActionBarTranslations
@@ -146,9 +131,6 @@ const { t } = useComponentI18n<CommentActionBarTranslations>(
 // Zupass verification
 const { verifyTicket } = useTicketVerificationFlow();
 const { isVerifying: isVerifyingZupass } = useZupassVerification();
-
-// Inject parent state for vote unlock banner
-const navigateToAnalysis = inject<() => void>("navigateToAnalysis")!;
 
 // Track if user is clustered (from vote response during this mount)
 const userClusteredThisMount = ref(false);
@@ -351,8 +333,7 @@ const shouldShowBanner = computed(() => {
 });
 
 function handleViewAnalysisClick() {
-  // Call parent navigation function
-  navigateToAnalysis();
+  props.onViewAnalysis();
 }
 </script>
 

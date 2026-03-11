@@ -22,6 +22,10 @@ import {
 } from "./ShortcutBar.i18n";
 import ShortcutButton from "./ShortcutButton.vue";
 
+const emit = defineEmits<{
+  sameTabClick: [];
+}>();
+
 const currentTab = defineModel<ShortcutItem>({ required: true });
 
 const { t } = useComponentI18n<ShortcutBarTranslations>(
@@ -50,7 +54,11 @@ function getTranslatedLabel(item: ShortcutItem): string {
 }
 
 function clickedShortcutButton(shortcutName: ShortcutItem) {
-  currentTab.value = shortcutName;
+  if (shortcutName === currentTab.value) {
+    emit("sameTabClick");
+  } else {
+    currentTab.value = shortcutName;
+  }
 }
 </script>
 

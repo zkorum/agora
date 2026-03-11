@@ -26,7 +26,7 @@
               <div class="bannerMessage">{{ bannerMessage }}</div>
               <a
                 class="keepVotingLink"
-                @click="navigateToCommentTab()"
+                @click="props.navigateToDiscoverTab()"
               >
                 {{ t('voteMore') }}
               </a>
@@ -43,7 +43,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisKey } from "src/shared/types/zod";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import { formatClusterLabel } from "src/utils/component/opinion";
-import { computed, inject } from "vue";
+import { computed } from "vue";
 
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
@@ -54,14 +54,12 @@ const props = defineProps<{
   clusterKey: PolisKey | undefined; // happens when the user has not been found to belong to a given cluster
   aiLabel: string | undefined;
   aiSummary: string | undefined;
+  navigateToDiscoverTab: () => void;
 }>();
 
 const currentTab = defineModel<ShortcutItem>({ required: true });
 
 const { t } = useComponentI18n<MeTabTranslations>(meTabTranslations);
-
-// Inject parent state for navigation
-const navigateToCommentTab = inject<() => void>("navigateToCommentTab")!;
 
 function getUserAnalysis() {
   // User not assigned to any cluster

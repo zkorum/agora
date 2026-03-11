@@ -8,6 +8,7 @@ interface PhoneSubmitTranslations {
   throttled: string;
   invalidPhoneNumber: string;
   restrictedPhoneType: string;
+  credentialAlreadyLinked: string;
   somethingWrong: string;
 }
 
@@ -55,7 +56,7 @@ export function usePhoneSubmit({
               onAlreadyHasCredential();
               break;
             case "associated_with_another_user":
-              await submitPhoneWithOverwrite(phoneNumber);
+              showNotifyMessage(translations.credentialAlreadyLinked);
               break;
             case "throttled":
               showNotifyMessage(translations.throttled);
@@ -74,29 +75,6 @@ export function usePhoneSubmit({
       }
     } finally {
       isLoading.value = false;
-    }
-  }
-
-  async function submitPhoneWithOverwrite(phoneNumber: string) {
-    const response = await sendSmsCode({
-      phoneNumber,
-      defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
-      isRequestingNewCode: false,
-      keyAction: "overwrite",
-    });
-    if (response.status === "success") {
-      const data = authenticate200.parse(response.data);
-      if (data.success) {
-        pendingOtpData.value = {
-          codeExpiry: new Date(data.codeExpiry),
-          nextCodeSoonestTime: new Date(data.nextCodeSoonestTime),
-        };
-        await onNavigateToOtp();
-      } else {
-        showNotifyMessage(translations.somethingWrong);
-      }
-    } else {
-      showNotifyMessage(translations.somethingWrong);
     }
   }
 

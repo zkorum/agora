@@ -4,23 +4,23 @@
       <ZKTab
         icon-code="meteor-icons:comment"
         :text="formatAmount(opinionCount)"
-        :is-highlighted="currentTab === 'comment' && !compactMode"
+        :is-highlighted="model === 'comment' && !compactMode"
         :should-underline-on-highlight="true"
-        :is-loading="isLoading && currentTab === 'comment'"
-        :to="compactMode ? undefined : { name: commentRouteName, params: { postSlugId: conversationSlugId } }"
+        :is-loading="isLoading && model === 'comment'"
+        :to="model === 'comment' ? (compactMode ? undefined : { name: commentRouteName, params: { postSlugId: conversationSlugId } }) : undefined"
         :replace="true"
-        @click="clickedTab('comment')"
+        @click="handleCommentClick"
       />
       <ZKTab
         v-if="!compactMode"
         icon-code="ph:chart-donut"
         :text="t('analysis')"
-        :is-highlighted="currentTab === 'analysis'"
+        :is-highlighted="model === 'analysis'"
         :should-underline-on-highlight="true"
-        :is-loading="isLoading && currentTab === 'analysis'"
-        :to="{ name: analysisRouteName, params: { postSlugId: conversationSlugId } }"
-        :replace="true"
-        @click="clickedTab('analysis')"
+        :is-loading="isLoading && model === 'analysis'"
+        :to="model === 'analysis' ? undefined : { name: analysisRouteName, params: { postSlugId: conversationSlugId } }"
+        :replace="false"
+        @click="handleAnalysisClick"
       />
     </div>
   </div>
@@ -30,8 +30,8 @@
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { formatAmount } from "src/utils/common";
-import { computed } from "vue";
-import { useRoute } from "vue-router";
+import { computed, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 import {
   type InteractionTabTranslations,
@@ -43,6 +43,7 @@ const props = defineProps<{
   compactMode: boolean;
   isLoading?: boolean;
   conversationSlugId: string;
+  onSameTabClick?: () => void;
 }>();
 
 const model = defineModel<"comment" | "analysis">({ required: true });
@@ -51,6 +52,10 @@ const { t } = useComponentI18n<InteractionTabTranslations>(
 );
 
 const route = useRoute();
+const router = useRouter();
+
+// Track whether we can use router.back() to return to comment tab
+const canGoBackToComment = ref(false);
 
 const isEmbed = computed(() => route.path.includes("/embed"));
 
@@ -66,22 +71,30 @@ const analysisRouteName = computed(() =>
     : "/conversation/[postSlugId]/analysis"
 );
 
-// Determine current tab from route path
-const currentTab = computed<"comment" | "analysis">(() => {
-  const pathSegments = route.path.split("/");
-  const lastSegment = pathSegments[pathSegments.length - 1];
-
-  if (lastSegment === "analysis") {
-    return "analysis";
+function handleCommentClick(): void {
+  if (model.value === "comment") {
+    props.onSameTabClick?.();
+  } else {
+    // Going from analysis back to comment — pop the analysis history entry
+    if (canGoBackToComment.value) {
+      canGoBackToComment.value = false;
+      router.back();
+    } else {
+      // Fallback for deep links (entered directly on analysis)
+      void router.replace({
+        name: commentRouteName.value,
+        params: { postSlugId: props.conversationSlugId },
+      });
+    }
   }
-  return "comment";
-});
+}
 
-function clickedTab(tabKey: "comment" | "analysis") {
-  if (props.compactMode) return;
-
-  // Sync with v-model (router-link handles navigation)
-  model.value = tabKey;
+function handleAnalysisClick(): void {
+  if (model.value === "analysis") {
+    props.onSameTabClick?.();
+  } else {
+    canGoBackToComment.value = true;
+  }
 }
 </script>
 

@@ -9,7 +9,14 @@
     }"
   >
     <template #header>
-      <StandardMenuBar title="" :center-content="false" />
+      <DefaultMenuBar :center-content="false">
+        <template #left>
+          <ZKIconButton icon="ci:chevron-left" aria-label="Go back" @click="handleBack" />
+          <span v-if="isSticky && hasConversationData" class="navbar-title">
+            {{ loadedConversationData.payload.title }}
+          </span>
+        </template>
+      </DefaultMenuBar>
     </template>
 
     <q-pull-to-refresh @refresh="handleRefresh">
@@ -24,6 +31,12 @@
                 @verified="(payload) => handleTicketVerified(payload)"
               />
 
+              <div ref="sentinelElement"></div>
+              <div
+                ref="actionBarElement"
+                class="sticky-below-header sticky-action-bar"
+                :style="{ '--header-height': (headerRevealed ? headerHeight : 0) + 'px' }"
+              >
               <PostActionBar
                 v-model="currentTab"
                 :compact-mode="false"
@@ -38,35 +51,39 @@
                 :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
                 :conversation-title="loadedConversationData.payload.title"
                 :author-username="loadedConversationData.metadata.authorUsername"
-              >
-                <template #dropdown>
-                  <div v-if="currentTab === 'comment'" class="dropdownSlot">
-                    <CommentSortingSelector
-                      :filter-value="commentFilter"
-                      :moderated-opinion-count="loadedConversationData.metadata.moderatedOpinionCount"
-                      :hidden-opinion-count="loadedConversationData.metadata.hiddenOpinionCount"
-                      @changed-algorithm="
+                :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
+              />
+              </div>
+
+              <div v-if="currentTab === 'comment'" class="dropdownSlot">
+                <CommentSortingSelector
+                  :filter-value="commentFilter"
+                  :moderated-opinion-count="loadedConversationData.metadata.moderatedOpinionCount"
+                  :hidden-opinion-count="loadedConversationData.metadata.hiddenOpinionCount"
+                  @changed-algorithm="
+                    (filter: CommentFilterOptions) => { commentFilter = filter }
+                  "
+                />
+              </div>
+
+              <!-- Child routes: only tab-specific content -->
+              <div class="tab-content" :style="tabContentStyle">
+                <router-view v-slot="{ Component }">
+                  <KeepAlive :max="2">
+                    <component
+                      :is="Component"
+                      :key="route.path"
+                      :conversation-data="loadedConversationData"
+                      :has-conversation-data="hasConversationData"
+                      :moderation-history-trigger="moderationHistoryTrigger"
+                      :comment-filter="commentFilter"
+                      :on-view-analysis="onViewAnalysis"
+                      :navigate-to-discover-tab="navigateToDiscoverTab"
+                      @update:comment-filter="
                         (filter: CommentFilterOptions) => { commentFilter = filter }
                       "
                     />
-                  </div>
-                </template>
-              </PostActionBar>
-
-              <!-- Child routes: only tab-specific content -->
-              <div class="tab-content">
-                <router-view v-slot="{ Component }">
-                  <component
-                    :is="Component"
-                    :key="route.path"
-                    :conversation-data="loadedConversationData"
-                    :has-conversation-data="hasConversationData"
-                    :moderation-history-trigger="moderationHistoryTrigger"
-                    :comment-filter="commentFilter"
-                    @update:comment-filter="
-                      (filter: CommentFilterOptions) => { commentFilter = filter }
-                    "
-                  />
+                  </KeepAlive>
                 </router-view>
               </div>
             </div>
@@ -79,25 +96,48 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { StandardMenuBar } from "src/components/navigation/header/variants";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import CommentSortingSelector from "src/components/post/comments/group/CommentSortingSelector.vue";
 import PostContent from "src/components/post/display/PostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
-import { useConversationParentState } from "src/composables/conversation/useConversationParentState";
+import ZKIconButton from "src/components/ui-library/ZKIconButton.vue";
+import {
+  type ConversationParentConfig,
+  useConversationParentState,
+} from "src/composables/conversation/useConversationParentState";
+import { useTabScrollRestoration } from "src/composables/conversation/useTabScrollRestoration";
+import { useStickyObserver } from "src/composables/ui/useStickyObserver";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useLayoutHeaderStore } from "src/stores/layout/header";
 import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
+import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import { onBeforeUnmount, onMounted, watch } from "vue";
+import { useRouter } from "vue-router";
 
+const router = useRouter();
+const { sentinelElement, isSticky, headerHeight } = useStickyObserver();
 const navigationStore = useNavigationStore();
 const { resetDraft } = useNewPostDraftsStore();
+const { safeNavigateBack } = useGoBackButtonHandler();
 
 const authStore = useAuthenticationStore();
 const { userId } = storeToRefs(authStore);
+const { reveal: headerRevealed } = storeToRefs(useLayoutHeaderStore());
+
+const conversationConfig: ConversationParentConfig = {
+  analysisRouteName: "/conversation/[postSlugId]/analysis",
+  commentRouteNames: [
+    "/conversation/[postSlugId]/",
+    "/conversation/[postSlugId]",
+  ],
+  routePrefix: "/conversation/{id}",
+  headerHeight,
+};
 
 const {
   route,
@@ -111,18 +151,45 @@ const {
   moderationHistoryTrigger,
   commentFilter,
   participantCountLocal,
+  actionBarElement,
+  onViewAnalysis,
+  navigateToDiscoverTab,
   openModerationHistory,
   handleTicketVerified,
   handleRefresh,
   invalidateUserVotes,
-} = useConversationParentState({
-  analysisRouteName: "/conversation/[postSlugId]/analysis",
-  commentRouteNames: [
-    "/conversation/[postSlugId]/",
-    "/conversation/[postSlugId]",
-  ],
-  routePrefix: "/conversation/{id}",
+  scrollToActionBar,
+  pendingScrollOverride,
+} = useConversationParentState(conversationConfig);
+
+const { tabContentStyle } = useTabScrollRestoration({
+  analysisRouteName: conversationConfig.analysisRouteName,
+  pendingScrollOverride,
+  scrollToActionBar,
 });
+
+function handleBack(): void {
+  if (currentTab.value === "analysis") {
+    const back = window.history.state?.back;
+    const slugId = conversationData.value?.metadata.conversationSlugId;
+    // If previous history entry is the comment tab of this conversation, pop it
+    if (
+      typeof back === "string" &&
+      slugId !== undefined &&
+      back.startsWith(`/conversation/${slugId}`) &&
+      !back.includes("/analysis")
+    ) {
+      router.back();
+    } else if (slugId !== undefined) {
+      void router.replace({
+        name: "/conversation/[postSlugId]/",
+        params: { postSlugId: slugId },
+      });
+    }
+  } else {
+    void safeNavigateBack({ name: "/" });
+  }
+}
 
 // Handle conversation creation navigation
 onMounted(() => {
@@ -157,10 +224,7 @@ onBeforeUnmount(() => {
 }
 
 .standardStyle {
-  padding-top: 1rem;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  padding-bottom: 1rem;
+  padding: 1rem;
 }
 
 .dropdownSlot {
@@ -168,7 +232,17 @@ onBeforeUnmount(() => {
   justify-content: flex-end;
 }
 
-.tab-content {
-  min-height: 100vh;
+.navbar-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+  min-width: 0;
+  flex: 1;
+  color: black;
+  margin-right: 1rem;
 }
 </style>

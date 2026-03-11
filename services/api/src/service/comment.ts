@@ -14,7 +14,10 @@ import {
     voteTable,
 } from "@/shared-backend/schema.js";
 import type { NotificationSSEManager } from "./notificationSSE.js";
-import { createOpinionNotification } from "./notification.js";
+import {
+    createOpinionNotifications,
+    getNotificationRecipients,
+} from "./notification.js";
 import {
     updateOpinionCount,
     reconcileConversationCounters,
@@ -1119,7 +1122,6 @@ export async function postNewOpinion({
     // Use provided metadata if available (for seed opinions), otherwise fetch from DB
     let conversationId: number;
     let conversationContentId: number | null;
-    let conversationAuthorId: string;
     let participationMode: ParticipationMode;
     let conversationIsClosed: boolean;
     let requiresEventTicket: EventSlug | null;
@@ -1127,7 +1129,6 @@ export async function postNewOpinion({
     if (conversationMetadata) {
         conversationId = conversationMetadata.conversationId;
         conversationContentId = conversationMetadata.conversationContentId;
-        conversationAuthorId = conversationMetadata.conversationAuthorId;
         participationMode =
             conversationMetadata.conversationParticipationMode;
         conversationIsClosed = conversationMetadata.conversationIsClosed;
@@ -1140,7 +1141,6 @@ export async function postNewOpinion({
         });
         conversationId = metadata.id;
         conversationContentId = metadata.contentId;
-        conversationAuthorId = metadata.authorId;
         participationMode = metadata.participationMode;
         conversationIsClosed = metadata.isClosed;
         requiresEventTicket = metadata.requiresEventTicket;
@@ -1301,17 +1301,24 @@ export async function postNewOpinion({
         return { opinionId };
     });
 
-    // Create notification for conversation owner (outside transaction)
+    // Create notification for conversation owner + org members (outside transaction)
     // Skip for seed opinions
     if (!isSeed) {
-        await createOpinionNotification({
+        const { recipientUserIds } = await getNotificationRecipients({
             db,
-            conversationAuthorId,
-            opinionAuthorId: userId,
-            opinionId,
             conversationId,
-            notificationSSEManager,
+            excludeUserIds: [userId],
         });
+        if (recipientUserIds.length > 0) {
+            await createOpinionNotifications({
+                db,
+                recipientUserIds,
+                opinionAuthorId: userId,
+                opinionId,
+                conversationId,
+                notificationSSEManager,
+            });
+        }
     }
 
     // Auto-vote outside transaction to reduce lock duration

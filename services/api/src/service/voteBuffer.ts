@@ -69,7 +69,7 @@
  */
 
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { eq, and, sql, isNotNull, type SQL } from "drizzle-orm";
+import { eq, and, sql, isNotNull, inArray, type SQL } from "drizzle-orm";
 import {
     voteTable,
     voteContentTable,
@@ -87,6 +87,11 @@ import { nowZeroMs } from "@/shared/util.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 import { Script } from "@valkey/valkey-glide";
+import type { NotificationSSEManager } from "./notificationSSE.js";
+import {
+    createVoteNotifications,
+    getNotificationRecipients,
+} from "./notification.js";
 
 // ============================================================================
 // Lua Scripts (inline for bundling - no separate files needed)
@@ -184,6 +189,7 @@ interface CreateVoteBufferParams {
     valkey?: Valkey;
     flushIntervalMs: number;
     valkeyBatchLimit: number;
+    notificationSSEManager?: NotificationSSEManager;
 }
 
 // ============================================================================
@@ -213,6 +219,7 @@ export function createVoteBuffer({
     valkey,
     flushIntervalMs,
     valkeyBatchLimit,
+    notificationSSEManager,
 }: CreateVoteBufferParams): VoteBuffer {
     // Encapsulated mutable state (private to closure)
     const pendingVotes = new Map<string, BufferedVote>();
@@ -1091,6 +1098,104 @@ export function createVoteBuffer({
             log.info(
                 `[VoteBuffer] Successfully flushed ${String(batch.length)} votes across ${String(batches.length)} transaction(s)`,
             );
+
+            // Create vote notifications AFTER all transactions committed
+            // Wrapped in try/catch to never fail the flush
+            try {
+                // Group votes by opinionId → distinct voters per opinion
+                const votesPerOpinion = new Map<
+                    number,
+                    { voterIds: Set<string>; conversationId: number }
+                >();
+
+                for (const vote of batch) {
+                    if (vote.vote === "cancel") continue;
+                    const existing = votesPerOpinion.get(vote.opinionId);
+                    if (existing) {
+                        existing.voterIds.add(vote.userId);
+                    } else {
+                        votesPerOpinion.set(vote.opinionId, {
+                            voterIds: new Set([vote.userId]),
+                            conversationId: vote.conversationId,
+                        });
+                    }
+                }
+
+                if (votesPerOpinion.size > 0) {
+                    // Batch query opinion metadata (authorId + isSeed)
+                    const opinionIds = Array.from(votesPerOpinion.keys());
+                    const opinionMetadata = await db
+                        .select({
+                            id: opinionTable.id,
+                            authorId: opinionTable.authorId,
+                            isSeed: opinionTable.isSeed,
+                        })
+                        .from(opinionTable)
+                        .where(inArray(opinionTable.id, opinionIds));
+
+                    const opinionMetadataMap = new Map(
+                        opinionMetadata.map((o) => [o.id, o]),
+                    );
+
+                    for (const [
+                        opinionId,
+                        voteData,
+                    ] of votesPerOpinion.entries()) {
+                        const opinion = opinionMetadataMap.get(opinionId);
+                        if (!opinion) continue;
+
+                        const voterIdsArray = Array.from(voteData.voterIds);
+
+                        if (opinion.isSeed) {
+                            // Seed opinion: notify conversation owner + org members
+                            const { recipientUserIds } =
+                                await getNotificationRecipients({
+                                    db,
+                                    conversationId: voteData.conversationId,
+                                    excludeUserIds: voterIdsArray,
+                                });
+                            if (recipientUserIds.length > 0) {
+                                await createVoteNotifications({
+                                    db,
+                                    recipientUserIds,
+                                    opinionId,
+                                    conversationId: voteData.conversationId,
+                                    numVotes: voteData.voterIds.size,
+                                    isSeed: true,
+                                    notificationSSEManager,
+                                });
+                            }
+                        } else {
+                            // Regular opinion: notify opinion author only
+                            const selfVoted = voteData.voterIds.has(
+                                opinion.authorId,
+                            );
+                            const externalVoteCount =
+                                voteData.voterIds.size - (selfVoted ? 1 : 0);
+                            if (externalVoteCount > 0) {
+                                await createVoteNotifications({
+                                    db,
+                                    recipientUserIds: [opinion.authorId],
+                                    opinionId,
+                                    conversationId: voteData.conversationId,
+                                    numVotes: externalVoteCount,
+                                    isSeed: false,
+                                    notificationSSEManager,
+                                });
+                            }
+                        }
+                    }
+
+                    log.info(
+                        `[VoteBuffer] Created vote notifications for ${String(votesPerOpinion.size)} opinion(s)`,
+                    );
+                }
+            } catch (notifError: unknown) {
+                log.error(
+                    notifError,
+                    "[VoteBuffer] Failed to create vote notifications (votes were flushed successfully)",
+                );
+            }
 
             // At-least-once: Delete from Valkey only after successful processing
             // Use Lua script for conditional delete (only if score matches)

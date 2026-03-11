@@ -2,7 +2,7 @@
   <AsyncStateHandler :query="analysisQuery" :config="asyncStateConfig">
     <div class="container flexStyle">
       <div class="analysis-header">
-        <ShortcutBar v-model="currentTab" />
+        <ShortcutBar v-model="currentTab" @same-tab-click="handleSameSubtabClick" />
         <router-link
           v-if="showReportButton"
           :to="{
@@ -28,6 +28,7 @@
           :cluster-key="userClusterData.clusterKey"
           :ai-label="userClusterData.aiLabel"
           :ai-summary="userClusterData.aiSummary"
+          :navigate-to-discover-tab="props.navigateToDiscoverTab"
         />
       </div>
 
@@ -103,8 +104,9 @@ import type {
   PolisClusters,
   PolisKey,
 } from "src/shared/types/zod";
-import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
-import { computed, ref } from "vue";
+import { type ShortcutItem,shortcutItemSchema } from "src/utils/component/analysis/shortcutBar";
+import { computed, inject, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 import {
   type AnalysisPageTranslations,
@@ -122,6 +124,7 @@ const props = withDefaults(
     conversationSlugId: string;
     analysisQuery: UseQueryReturnType<AnalysisData, Error>;
     showReportButton?: boolean;
+    navigateToDiscoverTab: () => void;
   }>(),
   {
     showReportButton: true,
@@ -139,7 +142,38 @@ const { t } = useComponentI18n<AnalysisPageTranslations>(
   analysisPageTranslations
 );
 
-const currentTab = ref<ShortcutItem>("Summary");
+const route = useRoute();
+const router = useRouter();
+
+const scrollToActionBar = inject<
+  (options?: { behavior?: ScrollBehavior }) => void
+>("scrollToActionBar", () => {
+  /* noop */
+});
+
+// Read initial subtab from query param (e.g. ?tab=Me)
+const initialTab = shortcutItemSchema.safeParse(route.query.tab);
+const currentTab = ref<ShortcutItem>(initialTab.success ? initialTab.data : "Summary");
+
+// Sync subtab changes back to URL for shareable deep links
+watch(currentTab, (newTab, oldTab) => {
+  const currentQuery = { ...route.query };
+  if (newTab === "Summary") {
+    delete currentQuery.tab;
+  } else {
+    currentQuery.tab = newTab;
+  }
+  void router.replace({ query: currentQuery });
+
+  // Scroll to action bar when user switches subtabs (skip initial render)
+  if (oldTab !== undefined) {
+    scrollToActionBar();
+  }
+});
+
+function handleSameSubtabClick(): void {
+  scrollToActionBar({ behavior: "smooth" });
+}
 
 // Use the passed-in analysis query instead of creating our own
 const analysisQuery = props.analysisQuery;

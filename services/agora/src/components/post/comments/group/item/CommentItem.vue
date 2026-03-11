@@ -46,6 +46,8 @@
             :voting-utilities="votingUtilities"
             :participation-mode="participationMode"
             :requires-event-ticket="props.requiresEventTicket"
+            :on-view-analysis="props.onViewAnalysis"
+            :is-voting-disabled="props.isVotingDisabled"
             @ticket-verified="(payload) => emit('ticketVerified', payload)"
           />
         </div>
@@ -72,6 +74,8 @@ const props = defineProps<{
   votingUtilities: OpinionVotingUtilities;
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
+  onViewAnalysis: () => void;
+  isVotingDisabled: boolean;
 }>();
 
 const emit = defineEmits<{

@@ -19,6 +19,8 @@
             }"
             :participation-mode="props.participationMode"
             :requires-event-ticket="props.requiresEventTicket"
+            :on-view-analysis="props.onViewAnalysis"
+            :is-voting-disabled="props.isVotingDisabled"
             @deleted="(opinionSlugId) => handleOpinionDeleted(opinionSlugId)"
             @muted-comment="handleOpinionMuted()"
             @ticket-verified="(payload) => emit('ticketVerified', payload)"
@@ -57,6 +59,8 @@ const props = defineProps<{
   conversationOrganizationName: string;
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
+  onViewAnalysis: () => void;
+  isVotingDisabled: boolean;
   preloadedQueries: {
     commentsDiscoverQuery: UseQueryReturnType<OpinionItem[], Error>;
     commentsNewQuery: UseQueryReturnType<OpinionItem[], Error>;

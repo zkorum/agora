@@ -88,6 +88,7 @@ const { isLoading, submitPhone } = usePhoneSubmit({
     throttled: t("throttled"),
     invalidPhoneNumber: t("invalidPhoneNumber"),
     restrictedPhoneType: t("restrictedPhoneType"),
+    credentialAlreadyLinked: t("credentialAlreadyLinked"),
     somethingWrong: t("somethingWrong"),
   },
 });

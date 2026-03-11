@@ -6,6 +6,7 @@
       :participant-count="conversationData.metadata.participantCount"
       :analysis-query="analysisQuery"
       :show-report-button="showReportButton"
+      :navigate-to-discover-tab="props.navigateToDiscoverTab"
     />
   </div>
 </template>
@@ -22,6 +23,7 @@ const props = withDefaults(
     conversationData: ExtendedConversation;
     hasConversationData: boolean;
     showReportButton?: boolean;
+    navigateToDiscoverTab: () => void;
   }>(),
   {
     showReportButton: true,

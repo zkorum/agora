@@ -8,6 +8,7 @@ interface EmailSubmitTranslations {
   throttled: string;
   unreachable: string;
   disposable: string;
+  credentialAlreadyLinked: string;
   somethingWrong: string;
 }
 
@@ -54,7 +55,7 @@ export function useEmailSubmit({
               onAlreadyHasCredential();
               break;
             case "associated_with_another_user":
-              await submitEmailWithOverwrite(email);
+              showNotifyMessage(translations.credentialAlreadyLinked);
               break;
             case "throttled":
               showNotifyMessage(translations.throttled);
@@ -73,28 +74,6 @@ export function useEmailSubmit({
       }
     } finally {
       isLoading.value = false;
-    }
-  }
-
-  async function submitEmailWithOverwrite(email: string) {
-    const response = await sendEmailCode({
-      email,
-      isRequestingNewCode: false,
-      keyAction: "overwrite",
-    });
-    if (response.status === "success") {
-      const data = authenticateEmail200.parse(response.data);
-      if (data.success) {
-        pendingOtpData.value = {
-          codeExpiry: new Date(data.codeExpiry),
-          nextCodeSoonestTime: new Date(data.nextCodeSoonestTime),
-        };
-        await onNavigateToOtp();
-      } else {
-        showNotifyMessage(translations.somethingWrong);
-      }
-    } else {
-      showNotifyMessage(translations.somethingWrong);
     }
   }
 

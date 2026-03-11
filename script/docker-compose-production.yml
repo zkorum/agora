@@ -89,6 +89,8 @@ services:
   app:
     container_name: agora_app
     image: quay.io/zkorum/agora-app-production:4.0.1
+    volumes:
+      - agora-assets:/usr/share/nginx/html/assets
     expose:
       - "80"
     restart: unless-stopped
@@ -124,3 +126,6 @@ services:
       - ./certbot/conf/:/etc/letsencrypt/:rw
       - ./certbot/logs:/var/log/letsencrypt
     restart: unless-stopped
+
+volumes:
+  agora-assets:

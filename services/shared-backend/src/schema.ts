@@ -1793,6 +1793,7 @@ export const notificationOpinionVoteTable = pgTable(
             .references(() => conversationTable.id)
             .notNull(),
         numVotes: integer("num_votes").notNull().default(1),
+        isSeed: boolean("is_seed").notNull().default(false),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,

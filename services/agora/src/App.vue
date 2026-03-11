@@ -1,5 +1,9 @@
 <template>
-  <router-view />
+  <router-view v-slot="{ Component }">
+    <keep-alive :include="keepAliveRoutes">
+      <component :is="Component" />
+    </keep-alive>
+  </router-view>
   <PostSignupPreferencesDialog />
   <EmbeddedBrowserWarningDialog />
 
@@ -17,6 +21,8 @@ import { useNotificationSSE } from "./composables/useNotificationSSE";
 import { useZupassVerification } from "./composables/zupass/useZupassVerification";
 import { useBackendAuthApi } from "./utils/api/auth";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
+
+const keepAliveRoutes = ["NotificationPage"];
 
 const authenticationStore = useBackendAuthApi();
 

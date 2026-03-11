@@ -66,6 +66,17 @@ $gradient-hover: linear-gradient(#836bff, #5c9dff);
 $gradient-pressed: linear-gradient(#5c43dd, #4582dd);
 $container-padding: 1.5rem;
 
+// Red palette (from Figma design system)
+$red-lightest: #ffe5e5;
+$red-lighter: #ff9898;
+$red-light: #ff6d6d;
+$red-base: #ff5247;
+
+.text-red-light { color: $red-light; }
+.bg-red-light { background: $red-light; }
+.text-red-base { color: $red-base; }
+.bg-red-base { background: $red-base; }
+
 // Sentiment / vote colors (used in vote bars, legends, and voting buttons)
 $sentiment-positive: $primary;          // #6b4eff (agree)
 $sentiment-positive-end: #4f92f6;       // gradient end for analysis bars

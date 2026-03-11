@@ -11,6 +11,7 @@ import {
     opinionTable,
     notificationTable,
     userTable,
+    userOrganizationMappingTable,
 } from "@/shared-backend/schema.js";
 import type { FetchNotificationsResponse } from "@/shared/types/dto.js";
 import type { NotificationItem } from "@/shared/types/zod.js";
@@ -187,6 +188,7 @@ export async function getNotifications({
                 opinionSlugId: opinionTable.slugId,
                 opinionContent: opinionContentTable.content,
                 numVotes: notificationOpinionVoteTable.numVotes,
+                isSeed: notificationOpinionVoteTable.isSeed,
                 slugId: notificationTable.slugId,
             })
             .from(notificationTable)
@@ -238,6 +240,7 @@ export async function getNotifications({
                         opinionSlugId: notificationItem.opinionSlugId,
                     },
                     numVotes: numVotes,
+                    isSeed: notificationItem.isSeed ?? false,
                 };
 
                 notificationItemList.push(parsedItem);
@@ -613,6 +616,7 @@ async function buildVoteNotification(
     opinionId: number,
     conversationId: number,
     numVotes: number,
+    isSeed: boolean,
 ): Promise<NotificationItem | null> {
     try {
         const result = await db
@@ -656,6 +660,7 @@ async function buildVoteNotification(
                     opinionSlugId: result[0].opinionSlugId,
                 },
                 numVotes: numVotes,
+                isSeed: isSeed,
             };
         }
         return null;
@@ -736,12 +741,88 @@ async function buildOpinionNotification(
     }
 }
 
+interface GetNotificationRecipientsProps {
+    db: PostgresJsDatabase;
+    conversationId: number;
+    excludeUserIds?: string[];
+}
+
+interface NotificationRecipients {
+    recipientUserIds: string[];
+    conversationAuthorId: string;
+    organizationId: number | null;
+}
+
+export async function getNotificationRecipients({
+    db,
+    conversationId,
+    excludeUserIds,
+}: GetNotificationRecipientsProps): Promise<NotificationRecipients> {
+    const conversationResult = await db
+        .select({
+            authorId: conversationTable.authorId,
+            organizationId: conversationTable.organizationId,
+        })
+        .from(conversationTable)
+        .where(eq(conversationTable.id, conversationId))
+        .limit(1);
+
+    if (conversationResult.length === 0) {
+        return {
+            recipientUserIds: [],
+            conversationAuthorId: "",
+            organizationId: null,
+        };
+    }
+
+    const { authorId, organizationId } = conversationResult[0];
+    const recipientSet = new Set<string>([authorId]);
+
+    if (organizationId !== null) {
+        const orgMembers = await db
+            .select({ userId: userOrganizationMappingTable.userId })
+            .from(userOrganizationMappingTable)
+            .where(
+                eq(
+                    userOrganizationMappingTable.organizationId,
+                    organizationId,
+                ),
+            );
+        for (const member of orgMembers) {
+            recipientSet.add(member.userId);
+        }
+    }
+
+    if (excludeUserIds) {
+        for (const id of excludeUserIds) {
+            recipientSet.delete(id);
+        }
+    }
+
+    return {
+        recipientUserIds: Array.from(recipientSet),
+        conversationAuthorId: authorId,
+        organizationId,
+    };
+}
+
+interface CreateVoteNotificationsProps {
+    db: PostgresJsDatabase;
+    recipientUserIds: string[];
+    opinionId: number;
+    conversationId: number;
+    numVotes: number;
+    isSeed: boolean;
+    notificationSSEManager?: NotificationSSEManager;
+}
+
 interface InsertNewVoteNotificationProps {
     db: PostgresJsDatabase;
     userId: string;
     opinionId: number;
     conversationId: number;
     numVotes: number;
+    isSeed: boolean;
     notificationSSEManager?: NotificationSSEManager;
 }
 
@@ -757,6 +838,7 @@ async function broadcastVoteNotification(
     opinionId: number,
     conversationId: number,
     numVotes: number,
+    isSeed: boolean,
 ): Promise<void> {
     if (!notificationSSEManager) {
         return;
@@ -769,6 +851,7 @@ async function broadcastVoteNotification(
             opinionId,
             conversationId,
             numVotes,
+            isSeed,
         );
 
         if (notification) {
@@ -1061,12 +1144,13 @@ export async function broadcastImportNotification(
  * Create a vote notification and broadcast it via SSE
  * Returns the notification slug ID
  */
-export async function createVoteNotification({
+async function createVoteNotification({
     db,
     userId,
     opinionId,
     conversationId,
     numVotes,
+    isSeed,
     notificationSSEManager,
 }: InsertNewVoteNotificationProps): Promise<string> {
     const notificationSlugId = generateRandomSlugId();
@@ -1088,6 +1172,7 @@ export async function createVoteNotification({
         opinionId: opinionId,
         conversationId: conversationId,
         numVotes: numVotes,
+        isSeed: isSeed,
     });
 
     // Broadcast notification via SSE (don't await to avoid blocking)
@@ -1099,44 +1184,64 @@ export async function createVoteNotification({
         opinionId,
         conversationId,
         numVotes,
+        isSeed,
     );
 
     return notificationSlugId;
 }
 
-interface CreateOpinionNotificationProps {
+export async function createVoteNotifications({
+    db,
+    recipientUserIds,
+    opinionId,
+    conversationId,
+    numVotes,
+    isSeed,
+    notificationSSEManager,
+}: CreateVoteNotificationsProps): Promise<void> {
+    for (const userId of recipientUserIds) {
+        try {
+            await createVoteNotification({
+                db,
+                userId,
+                opinionId,
+                conversationId,
+                numVotes,
+                isSeed,
+                notificationSSEManager,
+            });
+        } catch (error) {
+            log.error(
+                error,
+                `Failed to create vote notification for user ${userId}`,
+            );
+        }
+    }
+}
+
+interface CreateOpinionNotificationForUserProps {
     db: PostgresJsDatabase;
-    conversationAuthorId: string;
+    recipientUserId: string;
     opinionAuthorId: string;
     opinionId: number;
     conversationId: number;
     notificationSSEManager?: NotificationSSEManager;
 }
 
-/**
- * Create a notification for a new opinion on a conversation and broadcast it via SSE
- * Returns the notification slug ID if a notification was created, undefined otherwise
- * No notification is created if the opinion author is the same as the conversation author
- */
-export async function createOpinionNotification({
+async function createOpinionNotificationForUser({
     db,
-    conversationAuthorId,
+    recipientUserId,
     opinionAuthorId,
     opinionId,
     conversationId,
     notificationSSEManager,
-}: CreateOpinionNotificationProps): Promise<string | undefined> {
-    // Don't create notification if user is commenting on their own conversation
-    if (opinionAuthorId === conversationAuthorId) {
-        return undefined;
-    }
-
+}: CreateOpinionNotificationForUserProps): Promise<string> {
     const notificationSlugId = generateRandomSlugId();
     const notificationTableResponse = await db
         .insert(notificationTable)
         .values({
             slugId: notificationSlugId,
-            userId: conversationAuthorId,
+            userId: recipientUserId,
             notificationType: "new_opinion",
         })
         .returning({
@@ -1156,7 +1261,7 @@ export async function createOpinionNotification({
     void broadcastOpinionNotification(
         notificationSSEManager,
         db,
-        conversationAuthorId,
+        recipientUserId,
         notificationSlugId,
         opinionId,
         conversationId,
@@ -1164,4 +1269,40 @@ export async function createOpinionNotification({
     );
 
     return notificationSlugId;
+}
+
+interface CreateOpinionNotificationsProps {
+    db: PostgresJsDatabase;
+    recipientUserIds: string[];
+    opinionAuthorId: string;
+    opinionId: number;
+    conversationId: number;
+    notificationSSEManager?: NotificationSSEManager;
+}
+
+export async function createOpinionNotifications({
+    db,
+    recipientUserIds,
+    opinionAuthorId,
+    opinionId,
+    conversationId,
+    notificationSSEManager,
+}: CreateOpinionNotificationsProps): Promise<void> {
+    for (const recipientUserId of recipientUserIds) {
+        try {
+            await createOpinionNotificationForUser({
+                db,
+                recipientUserId,
+                opinionAuthorId,
+                opinionId,
+                conversationId,
+                notificationSSEManager,
+            });
+        } catch (error) {
+            log.error(
+                error,
+                `Failed to create opinion notification for user ${recipientUserId}`,
+            );
+        }
+    }
 }

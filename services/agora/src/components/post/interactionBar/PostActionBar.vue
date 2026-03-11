@@ -8,6 +8,7 @@
           :opinion-count="opinionCount"
           :is-loading="isLoading"
           :conversation-slug-id="conversationSlugId"
+          :on-same-tab-click="props.onSameTabClick"
         />
       </div>
 
@@ -107,6 +108,7 @@ const props = defineProps<{
   conversationSlugId: string;
   conversationTitle: string;
   authorUsername: string;
+  onSameTabClick?: () => void;
 }>();
 
 const currentTab = defineModel<"comment" | "analysis">({

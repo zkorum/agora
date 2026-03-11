@@ -331,6 +331,7 @@ const zodOpinionVoteNotification = zodNotificationBase
         routeTarget: zodOpinionRouteTarget,
         numVotes: z.number().int().min(1),
         message: z.string(), // Opinion content
+        isSeed: z.boolean(),
     })
     .strict();
 

@@ -7,6 +7,8 @@ export interface NotificationTranslations {
   contributedOpinion: string;
   onePersonVoted: string;
   peopleVoted: string;
+  seedOnePersonVoted: string;
+  seedPeopleVoted: string;
   exportStarted: string;
   exportCompleted: string;
   exportFailed: string;
@@ -32,6 +34,8 @@ export const notificationTranslations: Record<
       "{username} contributed a statement to your conversation:",
     onePersonVoted: "1 person voted on your statement:",
     peopleVoted: "{count} people voted on your statement:",
+    seedOnePersonVoted: "1 person voted on a seed statement:",
+    seedPeopleVoted: "{count} people voted on a seed statement:",
     exportStarted: "Your conversation export has started",
     exportCompleted: "Your conversation export is ready",
     exportFailed: "Your conversation export failed",
@@ -50,6 +54,8 @@ export const notificationTranslations: Record<
     contributedOpinion: "{username} ساهم بمقترح في محادثتك:",
     onePersonVoted: "شخص واحد صوت على مقترحك:",
     peopleVoted: "{count} أشخاص صوتوا على مقترحك:",
+    seedOnePersonVoted: "شخص واحد صوت على مقترح أساسي:",
+    seedPeopleVoted: "{count} أشخاص صوتوا على مقترح أساسي:",
     exportStarted: "بدأ تصدير محادثتك",
     exportCompleted: "تصدير محادثتك جاهز",
     exportFailed: "فشل تصدير محادثتك",
@@ -69,6 +75,8 @@ export const notificationTranslations: Record<
       "{username} contribuyó con una proposición a su conversación:",
     onePersonVoted: "1 persona votó en su proposición:",
     peopleVoted: "{count} personas votaron en su proposición:",
+    seedOnePersonVoted: "1 persona votó en una proposición semilla:",
+    seedPeopleVoted: "{count} personas votaron en una proposición semilla:",
     exportStarted: "Su exportación de conversación ha comenzado",
     exportCompleted: "Su exportación de conversación está lista",
     exportFailed: "Su exportación de conversación falló",
@@ -88,6 +96,8 @@ export const notificationTranslations: Record<
       "{username} a contribué une proposition à votre conversation :",
     onePersonVoted: "1 personne a voté sur votre proposition :",
     peopleVoted: "{count} personnes ont voté sur votre proposition :",
+    seedOnePersonVoted: "1 personne a voté sur une proposition initiale :",
+    seedPeopleVoted: "{count} personnes ont voté sur une proposition initiale :",
     exportStarted: "Votre export de conversation a commencé",
     exportCompleted: "Votre export de conversation est prêt",
     exportFailed: "Votre export de conversation a échoué",
@@ -106,6 +116,8 @@ export const notificationTranslations: Record<
     contributedOpinion: "{username} 为您的对话贡献了观点：",
     onePersonVoted: "1 人为您的观点投票：",
     peopleVoted: "{count} 人为您的观点投票：",
+    seedOnePersonVoted: "1 人对种子观点投票：",
+    seedPeopleVoted: "{count} 人对种子观点投票：",
     exportStarted: "您的对话导出已开始",
     exportCompleted: "您的对话导出已准备就绪",
     exportFailed: "您的对话导出失败",
@@ -124,6 +136,8 @@ export const notificationTranslations: Record<
     contributedOpinion: "{username} 為您的對話貢獻了觀點：",
     onePersonVoted: "1 人為您的觀點投票：",
     peopleVoted: "{count} 人為您的觀點投票：",
+    seedOnePersonVoted: "1 人對種子觀點投票：",
+    seedPeopleVoted: "{count} 人對種子觀點投票：",
     exportStarted: "您的對話匯出已開始",
     exportCompleted: "您的對話匯出已準備就緒",
     exportFailed: "您的對話匯出失敗",
@@ -142,6 +156,8 @@ export const notificationTranslations: Record<
     contributedOpinion: "{username} があなたの会話に主張を投稿しました：",
     onePersonVoted: "1人があなたの主張に投票しました：",
     peopleVoted: "{count} 人があなたの主張に投票しました：",
+    seedOnePersonVoted: "1人がシード主張に投票しました：",
+    seedPeopleVoted: "{count} 人がシード主張に投票しました：",
     exportStarted: "会話のエクスポートが開始されました",
     exportCompleted: "会話のエクスポートの準備ができました",
     exportFailed: "会話のエクスポートに失敗しました",

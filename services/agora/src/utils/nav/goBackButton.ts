@@ -18,9 +18,10 @@ export function useGoBackButtonHandler() {
       return;
     }
 
-    const currentIndex = window.history.length - 1;
-
-    if (currentIndex > 1) {
+    // Vue Router 4 stores the previous path in window.history.state.back.
+    // It is null when the current page is the first in the session (direct
+    // URL entry, page refresh, or app opened via link).
+    if (window.history.state?.back != null) {
       router.go(-1);
     } else {
       await router.replace(fallbackRoute);

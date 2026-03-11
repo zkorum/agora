@@ -1411,6 +1411,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf
     'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfRouteTarget;
     'numVotes': number;
     'message': string;
+    'isSeed': boolean;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfTypeEnum = {

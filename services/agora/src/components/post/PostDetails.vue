@@ -40,6 +40,7 @@
               props.conversationData.metadata.participantCount
             "
             :analysis-query="analysisQuery"
+            :navigate-to-discover-tab="navigateToDiscoverTab"
           />
 
           <CommentSection
@@ -54,6 +55,8 @@
             :requires-event-ticket="
               conversationData.metadata.requiresEventTicket
             "
+            :on-view-analysis="viewAnalysisTab"
+            :is-voting-disabled="isVotingDisabled"
             :preloaded-queries="{
               commentsDiscoverQuery,
               commentsNewQuery,
@@ -96,7 +99,7 @@ import {
   useHiddenCommentsQuery,
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
-import { computed, onMounted, provide, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
@@ -116,12 +119,6 @@ const emit = defineEmits<{
     payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
   ];
 }>();
-
-// Provide conversation data to all descendants (reactive)
-provide(
-  "conversationData",
-  computed(() => props.conversationData)
-);
 
 const currentTab = ref<"comment" | "analysis">("comment");
 
@@ -194,6 +191,22 @@ const hiddenCommentsQuery = useHiddenCommentsQuery({
   voteCount: props.conversationData.metadata.voteCount,
   enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
+
+const isVotingDisabled = computed(() => {
+  const data = props.conversationData;
+  const isModeratedAndLocked =
+    data.metadata.moderation.status === "moderated" &&
+    data.metadata.moderation.action === "lock";
+  return isModeratedAndLocked || data.metadata.isClosed;
+});
+
+function viewAnalysisTab(): void {
+  currentTab.value = "analysis";
+}
+
+function navigateToDiscoverTab(): void {
+  currentTab.value = "comment";
+}
 
 // Track loading states from child components
 const isCurrentTabLoading = computed((): boolean => {

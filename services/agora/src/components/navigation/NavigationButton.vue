@@ -2,7 +2,6 @@
   <ZKIconButton
     :icon="icon"
     :disabled="disabled"
-    :to="fallbackRoute"
     v-bind="$attrs"
     @click="handleClick"
   />

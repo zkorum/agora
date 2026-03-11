@@ -3,6 +3,7 @@
     :conversation-data="conversationData"
     :has-conversation-data="hasConversationData"
     :show-report-button="false"
+    :navigate-to-discover-tab="navigateToDiscoverTab"
   />
 </template>
 
@@ -10,9 +11,10 @@
 import ConversationAnalysisTab from "src/components/post/ConversationAnalysisTab.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";
 
-defineProps<{
+const { navigateToDiscoverTab } = defineProps<{
   conversationData: ExtendedConversation;
   hasConversationData: boolean;
+  navigateToDiscoverTab: () => void;
 }>();
 </script>
 
