@@ -1,9 +1,9 @@
 <template>
-  <div>
+  <Teleport to="body">
     <div class="bottomBar">
       <slot />
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts"></script>
