@@ -51,6 +51,7 @@
                 :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
                 :conversation-title="loadedConversationData.payload.title"
                 :author-username="loadedConversationData.metadata.authorUsername"
+                :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
               />
               </div>
 
@@ -66,7 +67,7 @@
               </div>
 
               <!-- Child routes: only tab-specific content -->
-              <div class="tab-content">
+              <div class="tab-content" :style="tabContentStyle">
                 <router-view v-slot="{ Component }">
                   <KeepAlive :max="2">
                     <component
@@ -106,6 +107,7 @@ import {
   type ConversationParentConfig,
   useConversationParentState,
 } from "src/composables/conversation/useConversationParentState";
+import { useTabScrollRestoration } from "src/composables/conversation/useTabScrollRestoration";
 import { useStickyObserver } from "src/composables/ui/useStickyObserver";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -115,7 +117,7 @@ import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import { onBeforeUnmount, onMounted, watch } from "vue";
-import { onBeforeRouteUpdate, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 
 const router = useRouter();
 const { sentinelElement, isSticky, headerHeight } = useStickyObserver();
@@ -134,6 +136,7 @@ const conversationConfig: ConversationParentConfig = {
     "/conversation/[postSlugId]",
   ],
   routePrefix: "/conversation/{id}",
+  headerHeight,
 };
 
 const {
@@ -155,37 +158,32 @@ const {
   handleTicketVerified,
   handleRefresh,
   invalidateUserVotes,
+  scrollToActionBar,
+  pendingScrollOverride,
 } = useConversationParentState(conversationConfig);
 
-// Save/restore scroll position per tab so switching tabs preserves scroll.
-// Uses route names (not currentTab) because the route watcher in
-// useConversationParentState updates currentTab asynchronously.
-const tabScrollPositions = new Map<string, number>();
-
-onBeforeRouteUpdate((_to, from) => {
-  const fromTab = from.name === conversationConfig.analysisRouteName
-    ? "analysis" : "comment";
-  tabScrollPositions.set(fromTab, window.scrollY);
+const { tabContentStyle } = useTabScrollRestoration({
+  analysisRouteName: conversationConfig.analysisRouteName,
+  pendingScrollOverride,
+  scrollToActionBar,
 });
-
-watch(() => route.name, (newRouteName) => {
-  const newTab = newRouteName === conversationConfig.analysisRouteName
-    ? "analysis" : "comment";
-  const saved = tabScrollPositions.get(newTab);
-  if (saved !== undefined) {
-    requestAnimationFrame(() => {
-      window.scrollTo(0, saved);
-    });
-  }
-}, { flush: "post" });
 
 function handleBack(): void {
   if (currentTab.value === "analysis") {
-    const data = conversationData.value;
-    if (data) {
+    const back = window.history.state?.back;
+    const slugId = conversationData.value?.metadata.conversationSlugId;
+    // If previous history entry is the comment tab of this conversation, pop it
+    if (
+      typeof back === "string" &&
+      slugId !== undefined &&
+      back.startsWith(`/conversation/${slugId}`) &&
+      !back.includes("/analysis")
+    ) {
+      router.back();
+    } else if (slugId !== undefined) {
       void router.replace({
         name: "/conversation/[postSlugId]/",
-        params: { postSlugId: data.metadata.conversationSlugId },
+        params: { postSlugId: slugId },
       });
     }
   } else {

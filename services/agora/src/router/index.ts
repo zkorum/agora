@@ -76,9 +76,6 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   const Router = createRouter({
     scrollBehavior: (to, from, savedPosition) => {
       if (isConversationTabSwitch({ to, from })) {
-        if (savedPosition) {
-          return { left: 0, top: savedPosition.top };
-        }
         return false;
       }
 

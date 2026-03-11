@@ -1,5 +1,5 @@
 <template>
-  <EmbedLayout>
+  <EmbedLayout ref="embedLayoutRef">
     <div v-if="hasConversationData">
       <div class="container">
         <PostContent
@@ -29,11 +29,12 @@
           :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
           :conversation-title="loadedConversationData.payload.title"
           :author-username="loadedConversationData.metadata.authorUsername"
+          :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
         />
         </div>
 
         <!-- Child routes: only tab-specific content -->
-        <div class="tab-content">
+        <div class="tab-content" :style="tabContentStyle">
           <router-view v-slot="{ Component }">
             <KeepAlive :max="2">
               <component
@@ -61,9 +62,14 @@
 import PostContent from "src/components/post/display/PostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import { useConversationParentState } from "src/composables/conversation/useConversationParentState";
+import { useTabScrollRestoration } from "src/composables/conversation/useTabScrollRestoration";
 import { useStickyObserver } from "src/composables/ui/useStickyObserver";
 import EmbedLayout from "src/layouts/EmbedLayout.vue";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
+import { computed, ref } from "vue";
+
+const embedLayoutRef = ref<{ containerElement: HTMLElement | null } | null>(null);
+const scrollContainer = computed(() => embedLayoutRef.value?.containerElement ?? null);
 
 const { sentinelElement, headerHeight } = useStickyObserver();
 
@@ -82,6 +88,8 @@ const {
   navigateToDiscoverTab,
   openModerationHistory,
   handleTicketVerified,
+  scrollToActionBar,
+  pendingScrollOverride,
 } = useConversationParentState({
   analysisRouteName: "/conversation/[postSlugId].embed/analysis",
   commentRouteNames: [
@@ -89,6 +97,15 @@ const {
     "/conversation/[postSlugId].embed",
   ],
   routePrefix: "/conversation/{id}/embed",
+  headerHeight,
+  scrollContainer,
+});
+
+const { tabContentStyle } = useTabScrollRestoration({
+  analysisRouteName: "/conversation/[postSlugId].embed/analysis",
+  pendingScrollOverride,
+  scrollToActionBar,
+  scrollContainer,
 });
 </script>
 

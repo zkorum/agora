@@ -1,5 +1,6 @@
 import { storeToRefs } from "pinia";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useLayoutHeaderStore } from "src/stores/layout/header";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
@@ -7,7 +8,7 @@ import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { useInvalidateVoteQueries } from "src/utils/api/vote/useVoteQueries";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
-import { computed, provide, ref, watch } from "vue";
+import { computed, provide, type Ref, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { RouteNamedMap } from "vue-router/auto-routes";
 
@@ -17,12 +18,16 @@ export interface ConversationParentConfig {
   analysisRouteName: RouteName;
   commentRouteNames: RouteName[];
   routePrefix: string; // e.g. "/conversation/{id}" or "/conversation/{id}/embed"
+  headerHeight: Ref<number>; // from useStickyObserver — avoids duplicate querySelector
+  scrollContainer?: Ref<HTMLElement | null>; // embed pages use a container div instead of window
 }
 
 export function useConversationParentState({
   analysisRouteName,
   commentRouteNames,
   routePrefix,
+  headerHeight,
+  scrollContainer,
 }: ConversationParentConfig) {
   const route = useRoute();
   const router = useRouter();
@@ -92,6 +97,26 @@ export function useConversationParentState({
   // Ref for scroll targeting — bound to a wrapper div around PostActionBar in parent pages
   const actionBarElement = ref<HTMLElement | null>(null);
 
+  // When true, the tab scroll restoration watcher should skip
+  // restoring the saved position and let scrollToActionBar handle it instead.
+  const pendingScrollOverride = ref(false);
+
+  const headerStore = useLayoutHeaderStore();
+
+  function scrollToActionBar({ behavior }: { behavior?: ScrollBehavior } = {}): void {
+    const el = actionBarElement.value;
+    if (!el) return;
+    const container = scrollContainer?.value;
+    const effectiveHeight = headerStore.reveal ? headerHeight.value : 0;
+    if (container) {
+      const elTop = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
+      container.scrollTo({ top: elTop - effectiveHeight, behavior });
+    } else {
+      const elTop = el.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: elTop - effectiveHeight, behavior });
+    }
+  }
+
   // Filter state: owned here, displayed in PostActionBar slot, synced with child route via props
   const commentFilter = ref<CommentFilterOptions>("discover");
 
@@ -114,6 +139,7 @@ export function useConversationParentState({
   provide("decrementOpinionCount", () => {
     opinionCountOffset.value -= 1;
   });
+  provide("scrollToActionBar", scrollToActionBar);
 
   // Navigation functions for banner actions (parameterized by route prefix)
   function navigateToAnalysis({ initialTab }: { initialTab?: ShortcutItem } = {}) {
@@ -123,11 +149,12 @@ export function useConversationParentState({
     // Invalidate analysis cache to ensure fresh data when user navigates
     void invalidateAnalysisQuery(data.metadata.conversationSlugId);
 
+    pendingScrollOverride.value = true;
     void router.push({
       path: `${routePrefix.replace("{id}", data.metadata.conversationSlugId)}/analysis`,
       query: initialTab ? { tab: initialTab } : undefined,
     }).then(() => {
-      actionBarElement.value?.scrollIntoView({ block: "start" });
+      scrollToActionBar();
     });
   }
 
@@ -152,10 +179,11 @@ export function useConversationParentState({
     // Invalidate comments cache to ensure fresh data when user navigates
     void invalidateComments(data.metadata.conversationSlugId);
 
+    pendingScrollOverride.value = true;
     void router.push(
       `${routePrefix.replace("{id}", data.metadata.conversationSlugId)}/`
     ).then(() => {
-      actionBarElement.value?.scrollIntoView({ block: "start" });
+      scrollToActionBar();
     });
   }
 
@@ -237,5 +265,8 @@ export function useConversationParentState({
     handleTicketVerified,
     handleRefresh,
     invalidateUserVotes,
+    scrollToActionBar,
+    pendingScrollOverride,
+    scrollContainer,
   };
 }

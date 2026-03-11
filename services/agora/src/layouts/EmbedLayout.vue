@@ -1,5 +1,5 @@
 <template>
-  <div class="embed-container">
+  <div ref="containerElement" class="embed-container">
     <WidthWrapper :enable="true">
       <div class="content-wrapper">
         <EmbedAccountWidget />
@@ -12,6 +12,11 @@
 <script setup lang="ts">
 import EmbedAccountWidget from "src/components/account/EmbedAccountWidget.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
+import { ref } from "vue";
+
+const containerElement = ref<HTMLElement | null>(null);
+
+defineExpose({ containerElement });
 </script>
 
 <style scoped lang="scss">
