@@ -398,20 +398,21 @@ log.info(
     }`,
 );
 
+// Initialize Notification SSE Manager for real-time notifications
+const notificationSSEManager = new NotificationSSEManager();
+notificationSSEManager.initialize();
+
 // Initialize VoteBuffer (batches votes to reduce DB contention)
 const voteBuffer = createVoteBuffer({
     db,
     valkey: queueValkey,
     flushIntervalMs: config.VOTE_BUFFER_FLUSH_INTERVAL_MS,
     valkeyBatchLimit: config.VOTE_BUFFER_VALKEY_BATCH_LIMIT,
+    notificationSSEManager,
 });
 log.info(
     `[API] Vote buffer initialized (flush interval: ${String(config.VOTE_BUFFER_FLUSH_INTERVAL_MS)}ms, batch limit: ${String(config.VOTE_BUFFER_VALKEY_BATCH_LIMIT)}, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
-
-// Initialize Notification SSE Manager for real-time notifications
-const notificationSSEManager = new NotificationSSEManager();
-notificationSSEManager.initialize();
 
 // Initialize ExportBuffer (batches export requests to reduce system load)
 const exportBuffer = createExportBuffer({

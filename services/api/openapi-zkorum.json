@@ -6629,6 +6629,9 @@
                                                             },
                                                             "message": {
                                                                 "type": "string"
+                                                            },
+                                                            "isSeed": {
+                                                                "type": "boolean"
                                                             }
                                                         },
                                                         "required": [
@@ -6638,7 +6641,8 @@
                                                             "type",
                                                             "routeTarget",
                                                             "numVotes",
-                                                            "message"
+                                                            "message",
+                                                            "isSeed"
                                                         ],
                                                         "additionalProperties": false
                                                     },

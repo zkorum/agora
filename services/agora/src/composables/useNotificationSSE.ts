@@ -4,32 +4,18 @@ import type {
   SSENotificationData,
   SSEShutdownData,
 } from "src/shared/types/dto";
-import type { NotificationItem } from "src/shared/types/zod";
 import { zodNotificationItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotificationStore } from "src/stores/notification";
 import { useCommonApi } from "src/utils/api/common";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
-import { useNotify } from "src/utils/ui/notify";
 import { onUnmounted, ref, watch } from "vue";
-import { useRoute } from "vue-router";
-
-import { useComponentI18n } from "./ui/useComponentI18n";
-import {
-  type NotificationSSETranslations,
-  notificationSSETranslations,
-} from "./useNotificationSSE.i18n";
 
 export function useNotificationSSE() {
   const { buildEncodedUcan } = useCommonApi();
   const notificationStore = useNotificationStore();
   const authStore = useAuthenticationStore();
-  const { showNotifyMessage } = useNotify();
-  const route = useRoute();
-  const { t } = useComponentI18n<NotificationSSETranslations>(
-    notificationSSETranslations
-  );
 
   const isConnected = ref(false);
   const isConnecting = ref(false);
@@ -152,7 +138,6 @@ export function useNotificationSSE() {
           });
           if (parsedNotification.success) {
             notificationStore.addNewNotification(parsedNotification.data);
-            showNotificationToast(parsedNotification.data);
           } else {
             console.error(
               "[SSE] Failed to parse notification:",
@@ -174,39 +159,6 @@ export function useNotificationSSE() {
       }
     } catch (error) {
       console.error(`[SSE] Error processing ${event} event:`, error);
-    }
-  }
-
-  function showNotificationToast(notification: NotificationItem): void {
-    // Don't show toast when user is already viewing notifications
-    if (route.name === "/notification/") {
-      return;
-    }
-
-    const message = getToastMessage(notification);
-    showNotifyMessage(message);
-  }
-
-  function getToastMessage(notification: NotificationItem): string {
-    switch (notification.type) {
-      case "new_opinion":
-        return t("newStatement");
-      case "opinion_vote":
-        return t("someoneVoted");
-      case "export_started":
-        return t("exportStarted");
-      case "export_completed":
-        return t("exportReady");
-      case "export_failed":
-        return t("exportFailed");
-      case "export_cancelled":
-        return t("exportCancelled");
-      case "import_started":
-        return t("importStarted");
-      case "import_completed":
-        return t("importComplete");
-      case "import_failed":
-        return t("importFailed");
     }
   }
 

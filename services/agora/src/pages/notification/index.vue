@@ -134,12 +134,14 @@ const { markAllNotificationsAsRead } = useNotificationApi();
 const hasMore = ref(true);
 const isLoading = ref(true);
 const hasLoadedOnce = ref(false);
+const isActive = ref(false);
 
 const { t } = useComponentI18n<NotificationTranslations>(
   notificationTranslations
 );
 
 onActivated(() => {
+  isActive.value = true;
   if (!hasLoadedOnce.value) {
     void loadInitialData();
   } else {
@@ -148,12 +150,15 @@ onActivated(() => {
 });
 
 onDeactivated(() => {
+  isActive.value = false;
   markAllAsReadLocally();
 });
 
 // Watch for new notifications arriving via SSE while on this page
+// Guard with isActive to prevent keep-alive watcher from marking notifications
+// as read when the user is on a different page
 watch(numNewNotifications, (newCount, oldCount) => {
-  if (newCount > oldCount && !isLoading.value) {
+  if (newCount > oldCount && !isLoading.value && isActive.value) {
     void markAllNotificationsAsRead();
   }
 });
@@ -243,13 +248,23 @@ function getTitleFromNotification(
       );
       break;
     case "opinion_vote":
-      title =
-        notificationItem.numVotes === 1
-          ? t("onePersonVoted")
-          : t("peopleVoted").replace(
-              "{count}",
-              notificationItem.numVotes.toString()
-            );
+      if (notificationItem.isSeed) {
+        title =
+          notificationItem.numVotes === 1
+            ? t("seedOnePersonVoted")
+            : t("seedPeopleVoted").replace(
+                "{count}",
+                notificationItem.numVotes.toString()
+              );
+      } else {
+        title =
+          notificationItem.numVotes === 1
+            ? t("onePersonVoted")
+            : t("peopleVoted").replace(
+                "{count}",
+                notificationItem.numVotes.toString()
+              );
+      }
       break;
     case "export_started":
       title = t("exportStarted");
