@@ -97,7 +97,6 @@ const {
     "/conversation/[postSlugId].embed",
   ],
   routePrefix: "/conversation/{id}/embed",
-  headerHeight,
   scrollContainer,
 });
 
