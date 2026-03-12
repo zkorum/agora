@@ -196,20 +196,20 @@ export function useNotificationSSE() {
     isConnecting.value = false;
   }
 
-  // Watch for authentication state changes
+  // Watch for authentication state changes (guests + logged-in users)
   watch(
-    () => authStore.isLoggedIn,
-    async (isLoggedIn, wasLoggedIn) => {
-      if (isLoggedIn && !wasLoggedIn) {
-        // User just logged in, connect to SSE
+    () => authStore.isGuestOrLoggedIn,
+    async (isAuthenticated, wasAuthenticated) => {
+      if (isAuthenticated && !wasAuthenticated) {
+        // User became guest or logged in — connect to SSE
         shouldReconnect = true;
         await connect();
-      } else if (!isLoggedIn && wasLoggedIn) {
-        // User just logged out, disconnect from SSE
+      } else if (!isAuthenticated && wasAuthenticated) {
+        // User logged out or cleared state — disconnect from SSE
         disconnect();
       }
     },
-    { immediate: true } // Connect immediately if already logged in
+    { immediate: true } // Connect immediately if already authenticated
   );
 
   // Cleanup on unmount

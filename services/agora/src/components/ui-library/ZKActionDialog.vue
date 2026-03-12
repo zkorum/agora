@@ -1,39 +1,45 @@
 <template>
-  <q-dialog v-model="showDialog" position="bottom">
-    <ZKBottomDialogContainer>
-      <div class="action-dialog">
-        <div v-if="title || message" class="dialog-header">
-          <h3 v-if="title" class="dialog-title">{{ title }}</h3>
-          <p v-if="message" class="dialog-message">{{ message }}</p>
-        </div>
-
-        <div class="action-list">
-          <template v-for="(action, index) in actions" :key="action.id">
-            <!-- Separator before destructive actions -->
-            <div
-              v-if="action.variant === 'destructive' && index > 0"
-              class="action-separator"
-            />
-            <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
-            <!-- Action dialog items should be keyboard navigable for users with motor disabilities -->
-            <div
-              class="action-item"
-              :class="getActionVariantClass(action)"
-              @click="handleActionClick(action)"
-            >
-              <q-icon :name="action.icon" size="20px" class="action-icon" />
-              <div class="action-content">
-                <div class="action-label">{{ action.label }}</div>
-                <div v-if="action.description" class="action-description">
-                  {{ action.description }}
-                </div>
-              </div>
+  <Teleport to="body">
+    <Transition name="action-dialog">
+      <div v-if="showDialog" class="action-dialog-overlay" @click.self="showDialog = false">
+        <div class="action-dialog-sheet">
+          <ZKBottomDialogContainer>
+          <div class="action-dialog">
+            <div v-if="title || message" class="dialog-header">
+              <h3 v-if="title" class="dialog-title">{{ title }}</h3>
+              <p v-if="message" class="dialog-message">{{ message }}</p>
             </div>
-          </template>
+
+            <div class="action-list">
+              <template v-for="(action, index) in actions" :key="action.id">
+                <!-- Separator before destructive actions -->
+                <div
+                  v-if="action.variant === 'destructive' && index > 0"
+                  class="action-separator"
+                />
+                <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
+                <!-- Action dialog items should be keyboard navigable for users with motor disabilities -->
+                <div
+                  class="action-item"
+                  :class="getActionVariantClass(action)"
+                  @click="handleActionClick(action)"
+                >
+                  <q-icon :name="action.icon" size="20px" class="action-icon" />
+                  <div class="action-content">
+                    <div class="action-label">{{ action.label }}</div>
+                    <div v-if="action.description" class="action-description">
+                      {{ action.description }}
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+          </ZKBottomDialogContainer>
         </div>
       </div>
-    </ZKBottomDialogContainer>
-  </q-dialog>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -95,6 +101,48 @@ watch(showDialog, (newValue) => {
 </script>
 
 <style scoped lang="scss">
+.action-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 6000;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.action-dialog-sheet {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+// Backdrop fades, sheet slides up from below
+.action-dialog-enter-active {
+  transition: opacity 0.3s ease;
+
+  .action-dialog-sheet {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+.action-dialog-leave-active {
+  transition: opacity 0.2s ease;
+
+  .action-dialog-sheet {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+.action-dialog-enter-from,
+.action-dialog-leave-to {
+  opacity: 0;
+
+  .action-dialog-sheet {
+    transform: translateY(100%);
+  }
+}
+
 .action-dialog {
   display: flex;
   flex-direction: column;
