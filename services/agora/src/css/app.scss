@@ -141,9 +141,10 @@ html {
 .sticky-below-header {
   position: sticky;
   top: var(--header-height, 0px);
+  padding-top: max(0.5rem - var(--header-height, 0px), 0px);
   z-index: 10;
   background-color: $app-background-color;
-  transition: top 0.3s ease;
+  transition: top 0.3s ease, padding-top 0.3s ease;
 }
 
 /* Sticky action bar — extends to container edges via negative margin */
