@@ -136,7 +136,6 @@ const conversationConfig: ConversationParentConfig = {
     "/conversation/[postSlugId]",
   ],
   routePrefix: "/conversation/{id}",
-  headerHeight,
 };
 
 const {

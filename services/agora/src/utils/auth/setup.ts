@@ -1,3 +1,4 @@
+import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useRouter } from "vue-router";
 
 import { useBackendAuthApi } from "../api/auth";
@@ -6,6 +7,7 @@ import { useNotify } from "../ui/notify";
 export function useAuthSetup() {
   const { logoutFromServer, updateAuthState } = useBackendAuthApi();
   const { showNotifyMessage } = useNotify();
+  const { setActiveUserIntention } = useLoginIntentionStore();
 
   const router = useRouter();
 
@@ -13,6 +15,7 @@ export function useAuthSetup() {
     try {
       await logoutFromServer();
       await updateAuthState({ partialLoginStatus: { isLoggedIn: false } });
+      setActiveUserIntention("none");
       showNotifyMessage("Logged out");
       if (shouldRedirect) {
         await router.push({ name: "/welcome/" });

@@ -40,7 +40,14 @@ export function useStickyObserver(): UseStickyObserverReturn {
       }
       observer = new IntersectionObserver(
         (entries) => {
-          isSticky.value = !entries[0].isIntersecting;
+          const entry = entries[0];
+          if (entry.isIntersecting) {
+            isSticky.value = false;
+          } else {
+            // Only sticky when sentinel scrolled ABOVE the header,
+            // not when it's below the visible viewport (long content)
+            isSticky.value = entry.boundingClientRect.top < headerHeight.value;
+          }
         },
         { rootMargin: `-${headerHeight.value}px 0px 0px 0px` },
       );

@@ -1,6 +1,5 @@
 import { storeToRefs } from "pinia";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useLayoutHeaderStore } from "src/stores/layout/header";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
@@ -18,7 +17,6 @@ export interface ConversationParentConfig {
   analysisRouteName: RouteName;
   commentRouteNames: RouteName[];
   routePrefix: string; // e.g. "/conversation/{id}" or "/conversation/{id}/embed"
-  headerHeight: Ref<number>; // from useStickyObserver — avoids duplicate querySelector
   scrollContainer?: Ref<HTMLElement | null>; // embed pages use a container div instead of window
 }
 
@@ -26,7 +24,6 @@ export function useConversationParentState({
   analysisRouteName,
   commentRouteNames,
   routePrefix,
-  headerHeight,
   scrollContainer,
 }: ConversationParentConfig) {
   const route = useRoute();
@@ -101,19 +98,18 @@ export function useConversationParentState({
   // restoring the saved position and let scrollToActionBar handle it instead.
   const pendingScrollOverride = ref(false);
 
-  const headerStore = useLayoutHeaderStore();
-
   function scrollToActionBar({ behavior }: { behavior?: ScrollBehavior } = {}): void {
     const el = actionBarElement.value;
     if (!el) return;
+    // Just scroll to the element's document position.
+    // The sticky CSS (top: var(--header-height)) handles the header offset.
     const container = scrollContainer?.value;
-    const effectiveHeight = headerStore.reveal ? headerHeight.value : 0;
     if (container) {
       const elTop = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
-      container.scrollTo({ top: elTop - effectiveHeight, behavior });
+      container.scrollTo({ top: elTop, behavior });
     } else {
       const elTop = el.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: elTop - effectiveHeight, behavior });
+      window.scrollTo({ top: elTop, behavior });
     }
   }
 
