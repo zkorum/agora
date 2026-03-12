@@ -28,10 +28,11 @@ export const useNotificationStore = defineStore("notification", () => {
       const transformed = transformNotifications(response.notificationList);
       if (loadMore) {
         notificationList.value.push(...transformed);
+        numNewNotifications.value += response.numNewNotifications;
       } else {
         notificationList.value = transformed;
+        numNewNotifications.value = response.numNewNotifications;
       }
-      calculateNumNewNotification();
 
       if (response.notificationList.length > 0) {
         return true;
@@ -41,17 +42,6 @@ export const useNotificationStore = defineStore("notification", () => {
     } else {
       return false;
     }
-  }
-
-  function calculateNumNewNotification() {
-    let newNotificationCount = 0;
-    notificationList.value.forEach((notificationItem) => {
-      if (!notificationItem.isRead) {
-        newNotificationCount += 1;
-      }
-    });
-
-    numNewNotifications.value = newNotificationCount;
   }
 
   function hasNotification(slugId: string): boolean {
