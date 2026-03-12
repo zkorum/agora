@@ -167,7 +167,7 @@ watch(currentTab, (newTab, oldTab) => {
 
   // Scroll to action bar when user switches subtabs (skip initial render)
   if (oldTab !== undefined) {
-    scrollToActionBar();
+    scrollToActionBar({ behavior: "smooth" });
   }
 });
 
