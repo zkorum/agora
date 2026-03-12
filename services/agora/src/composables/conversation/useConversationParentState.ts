@@ -101,15 +101,15 @@ export function useConversationParentState({
   function scrollToActionBar({ behavior }: { behavior?: ScrollBehavior } = {}): void {
     const el = actionBarElement.value;
     if (!el) return;
-    // Just scroll to the element's document position.
-    // The sticky CSS (top: var(--header-height)) handles the header offset.
+    const headerEl = document.querySelector(".q-header");
+    const headerOffset = headerEl?.clientHeight ?? 0;
     const container = scrollContainer?.value;
     if (container) {
       const elTop = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
-      container.scrollTo({ top: elTop, behavior });
+      container.scrollTo({ top: elTop - headerOffset, behavior });
     } else {
       const elTop = el.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: elTop, behavior });
+      window.scrollTo({ top: elTop - headerOffset, behavior });
     }
   }
 
