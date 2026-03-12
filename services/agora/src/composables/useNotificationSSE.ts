@@ -25,7 +25,13 @@ export function useNotificationSSE() {
   let shouldReconnect = true;
 
   async function connect() {
+    console.log("[SSE] connect() called", {
+      isConnecting: isConnecting.value,
+      isConnected: isConnected.value,
+    });
+
     if (isConnecting.value || isConnected.value) {
+      console.log("[SSE] connect() blocked by guard — already connecting or connected");
       return;
     }
 
@@ -63,6 +69,7 @@ export function useNotificationSSE() {
 
       isConnected.value = true;
       isConnecting.value = false;
+      console.log("[SSE] Stream opened successfully");
 
       // Read and parse SSE stream
       const reader = response.body.getReader();
@@ -200,6 +207,7 @@ export function useNotificationSSE() {
   watch(
     () => authStore.isGuestOrLoggedIn,
     async (isAuthenticated, wasAuthenticated) => {
+      console.log("[SSE] Auth watcher fired", { isAuthenticated, wasAuthenticated });
       if (isAuthenticated && !wasAuthenticated) {
         // User became guest or logged in — connect to SSE
         shouldReconnect = true;

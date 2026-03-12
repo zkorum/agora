@@ -455,6 +455,14 @@ export function createVoteBuffer({
             `[VoteBuffer] Processing ${String(batch.length)} votes in ${String(batches.length)} transaction(s)`,
         );
 
+        // Track genuinely new voters per opinion across all transaction batches.
+        // Only first-time voters (no prior vote on the opinion) trigger notifications.
+        // Vote changes (agree→disagree) are excluded.
+        const newVotersPerOpinion = new Map<
+            number,
+            { voterIds: Set<string>; conversationId: number }
+        >();
+
         try {
             for (const [batchIndex, voteBatch] of batches.entries()) {
                 log.info(
@@ -1088,6 +1096,28 @@ export function createVoteBuffer({
                                 },
                             });
                     }
+
+                    // Track genuinely new voters for notification purposes.
+                    // A voter is "new" only if they had no prior vote on this opinion
+                    // (existingVotesMap has no entry). Vote changes are excluded.
+                    for (const vote of voteBatch) {
+                        if (vote.vote === "cancel") continue;
+                        const key = getVoteKey(vote.userId, vote.opinionId);
+                        const existingVoteData = existingVotesMap.get(key);
+                        if (existingVoteData === undefined) {
+                            const existing = newVotersPerOpinion.get(
+                                vote.opinionId,
+                            );
+                            if (existing) {
+                                existing.voterIds.add(vote.userId);
+                            } else {
+                                newVotersPerOpinion.set(vote.opinionId, {
+                                    voterIds: new Set([vote.userId]),
+                                    conversationId: vote.conversationId,
+                                });
+                            }
+                        }
+                    }
                 });
 
                 log.info(
@@ -1102,24 +1132,10 @@ export function createVoteBuffer({
             // Create vote notifications AFTER all transactions committed
             // Wrapped in try/catch to never fail the flush
             try {
-                // Group votes by opinionId → distinct voters per opinion
-                const votesPerOpinion = new Map<
-                    number,
-                    { voterIds: Set<string>; conversationId: number }
-                >();
-
-                for (const vote of batch) {
-                    if (vote.vote === "cancel") continue;
-                    const existing = votesPerOpinion.get(vote.opinionId);
-                    if (existing) {
-                        existing.voterIds.add(vote.userId);
-                    } else {
-                        votesPerOpinion.set(vote.opinionId, {
-                            voterIds: new Set([vote.userId]),
-                            conversationId: vote.conversationId,
-                        });
-                    }
-                }
+                // Use newVotersPerOpinion (collected during transactions) instead
+                // of re-scanning the batch. This ensures only genuinely first-time
+                // voters trigger notifications — vote changes are excluded.
+                const votesPerOpinion = newVotersPerOpinion;
 
                 if (votesPerOpinion.size > 0) {
                     // Batch query opinion metadata (authorId + isSeed)
