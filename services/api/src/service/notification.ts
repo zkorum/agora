@@ -16,7 +16,7 @@ import {
 import type { FetchNotificationsResponse } from "@/shared/types/dto.js";
 import type { NotificationItem } from "@/shared/types/zod.js";
 import { zodNotificationItem } from "@/shared/types/zod.js";
-import { and, desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq, inArray, lt } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
@@ -96,14 +96,23 @@ export async function getNotifications({
         lastSlugId: lastSlugId,
     });
 
-    const whereClause = lastSlugId
-        ? and(
-              eq(notificationTable.userId, userId),
-              lt(notificationTable.createdAt, lastCreatedAt),
-          )
-        : eq(notificationTable.userId, userId);
-
     const orderByClause = desc(notificationTable.createdAt);
+
+    // Build per-type WHERE clauses to ensure LIMIT only counts rows of the
+    // correct notification type. Without a type filter, the LIMIT can be filled
+    // by wrong-type notifications (which are then skipped by NULL checks),
+    // causing valid notifications and their unread counts to be missed.
+    function buildWhereClause(
+        typeFilter: ReturnType<typeof eq>,
+    ) {
+        return lastSlugId
+            ? and(
+                  eq(notificationTable.userId, userId),
+                  lt(notificationTable.createdAt, lastCreatedAt),
+                  typeFilter,
+              )
+            : and(eq(notificationTable.userId, userId), typeFilter);
+    }
 
     {
         const notificationTableResponse = await db
@@ -143,7 +152,14 @@ export async function getNotifications({
                 userTable,
                 eq(userTable.id, notificationNewOpinionTable.authorId),
             )
-            .where(whereClause)
+            .where(
+                buildWhereClause(
+                    eq(
+                        notificationTable.notificationType,
+                        "new_opinion",
+                    ),
+                ),
+            )
             .orderBy(orderByClause)
             .limit(fetchLimit);
 
@@ -214,7 +230,14 @@ export async function getNotifications({
                     notificationOpinionVoteTable.conversationId,
                 ),
             )
-            .where(whereClause)
+            .where(
+                buildWhereClause(
+                    eq(
+                        notificationTable.notificationType,
+                        "opinion_vote",
+                    ),
+                ),
+            )
             .orderBy(orderByClause)
             .limit(fetchLimit);
 
@@ -295,7 +318,16 @@ export async function getNotifications({
                     conversationTable.currentContentId,
                 ),
             )
-            .where(whereClause)
+            .where(
+                buildWhereClause(
+                    inArray(notificationTable.notificationType, [
+                        "export_started",
+                        "export_completed",
+                        "export_failed",
+                        "export_cancelled",
+                    ]),
+                ),
+            )
             .orderBy(orderByClause)
             .limit(fetchLimit);
 
@@ -411,7 +443,15 @@ export async function getNotifications({
                     conversationTable.currentContentId,
                 ),
             )
-            .where(whereClause)
+            .where(
+                buildWhereClause(
+                    inArray(notificationTable.notificationType, [
+                        "import_started",
+                        "import_completed",
+                        "import_failed",
+                    ]),
+                ),
+            )
             .orderBy(orderByClause)
             .limit(fetchLimit);
 
