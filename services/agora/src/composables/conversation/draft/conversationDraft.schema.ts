@@ -11,7 +11,7 @@ import {
   MAX_LENGTH_OPTION,
   MAX_LENGTH_TITLE,
 } from "src/shared/shared";
-import { zodEventSlug, zodParticipationMode } from "src/shared/types/zod";
+import { zodConversationType, zodEventSlug, zodParticipationMode } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { z } from "zod";
 
@@ -146,6 +146,9 @@ export const zodSerializableConversationDraft = z.object({
   title: z.string().max(MAX_LENGTH_TITLE),
   content: z.string(), // Body length validation happens in validateHtmlStringCharacterCount
   seedOpinions: z.array(z.string()),
+
+  // Conversation type
+  conversationType: zodConversationType.default("polis"),
 
   // Poll configuration
   poll: zodPollSettings,

@@ -139,6 +139,39 @@ const configSchema = sharedConfigSchema.extend({
         .int()
         .min(1)
         .default(60), // Run stale cleanup every N flushes (~1 minute at 1s flush)
+    MAXDIFF_ENABLED: z
+        .string()
+        .default("false")
+        .transform((value, ctx) => {
+            if (value.toLowerCase().trim() === "true") {
+                return true;
+            } else if (value.toLowerCase().trim() === "false") {
+                return false;
+            } else {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Value must be true or false",
+                });
+                return z.NEVER;
+            }
+        }),
+    IS_MAXDIFF_ORG_ONLY: z
+        .string()
+        .default("true")
+        .transform((value, ctx) => {
+            if (value.toLowerCase().trim() === "true") {
+                return true;
+            } else if (value.toLowerCase().trim() === "false") {
+                return false;
+            } else {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Value must be true or false",
+                });
+                return z.NEVER;
+            }
+        }),
+    MAXDIFF_ALLOWED_ORGS: z.string().default("Agora"), // Comma-separated org names allowed to create MaxDiff conversations (empty = all orgs allowed)
     IS_ORG_IMPORT_ONLY: z
         .string()
         .default("false")

@@ -13,7 +13,7 @@ import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import type { ExtendedConversation, EventSlug, ParticipationMode } from "@/shared/types/zod.js";
+import type { ExtendedConversation, EventSlug, ParticipationMode, ConversationType } from "@/shared/types/zod.js";
 import type {
     CloseConversationResponse,
     OpenConversationResponse,
@@ -40,6 +40,7 @@ interface CreateNewPostProps {
     indexConversationAt?: string;
     isIndexed: boolean;
     participationMode: ParticipationMode;
+    conversationType: ConversationType;
     isImporting: boolean;
     seedOpinionList: string[];
     requiresEventTicket?: EventSlug;
@@ -63,6 +64,7 @@ export async function createNewPost({
     postAsOrganization,
     indexConversationAt,
     participationMode,
+    conversationType,
     isIndexed,
     isImporting,
     seedOpinionList,
@@ -118,6 +120,7 @@ export async function createNewPost({
                     organizationId: organizationId,
                     isIndexed: isIndexed,
                     participationMode: participationMode,
+                    conversationType: conversationType,
                     isImporting: isImporting,
                     requiresEventTicket: requiresEventTicket,
                     indexConversationAt:

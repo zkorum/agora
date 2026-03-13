@@ -157,6 +157,7 @@ export async function loadImportedPolisConversation({
             postAsOrganization: postAsOrganization,
             isIndexed: isIndexed,
             participationMode: participationMode,
+            conversationType: "polis",
             seedOpinionList: [],
             requiresEventTicket: requiresEventTicket,
             importUrl:

@@ -584,6 +584,11 @@ export const participationModeEnum = pgEnum("participation_mode", [
     "guest",
 ]);
 
+export const conversationTypeEnum = pgEnum("conversation_type", [
+    "polis",
+    "maxdiff",
+]);
+
 // Export status for CSV exports
 export const exportStatusEnum = pgEnum("export_status_enum", [
     "processing",
@@ -1270,6 +1275,7 @@ export const conversationTable = pgTable(
         }),
         isIndexed: boolean("is_indexed").notNull().default(true), // if true, the conversation can be fetched in the feed and search engine, else it is hidden, unless users have the link
         participationMode: participationModeEnum("participation_mode").notNull().default("strong_verification"), // Determines who can vote/post opinions: "strong_verification" requires phone or Rarimo passport, "email_verification" requires email credential specifically, "guest" allows anyone.
+        conversationType: conversationTypeEnum("conversation_type").notNull().default("polis"), // "polis" = standard agree/disagree/unsure voting with clustering, "maxdiff" = best-worst scaling for prioritization
         isImporting: boolean("is_importing").notNull().default(false), // if true, the conversation is being imported from CSV and should not be visible in feed until import completes
         isClosed: boolean("is_closed").notNull().default(false), // if true, the conversation was closed by owner and users cannot post opinions or vote
         isEdited: boolean("is_edited").notNull().default(false), // if true, the conversation content was edited after creation. Used for "Edited" badge in UI. Use this field (not updatedAt) to determine if a conversation was edited — updatedAt can be accidentally bumped by migration scripts.
@@ -1323,6 +1329,23 @@ export const conversationTable = pgTable(
     (table) => [
         index("conversation_createdAt_idx").on(table.createdAt),
         index("conversation_authorId_idx").on(table.authorId),
+        // Partial index for feed query: filters isIndexed=true + isImporting=false, sorts by createdAt
+        index("conversation_feed_idx")
+            .on(table.createdAt)
+            .where(
+                sql`${table.isIndexed} = true AND ${table.isImporting} = false`,
+            ),
+        // Composite for math-updater scan: filters on isImporting + conversationType
+        index("conversation_type_importing_idx").on(
+            table.isImporting,
+            table.conversationType,
+        ),
+        // Composite for user conversation timeline: filters authorId + isImporting, sorts by createdAt
+        index("conversation_author_timeline_idx").on(
+            table.authorId,
+            table.isImporting,
+            table.createdAt,
+        ),
     ],
 );
 
@@ -1506,6 +1529,11 @@ export const opinionTable = pgTable(
         index("opinion_slugId_idx").on(table.slugId),
         index("opinion_conversationId_idx").on(table.conversationId),
         index("opinion_authorId_idx").on(table.authorId),
+        // Composite for counter reconciliation: filters conversationId + non-deleted (currentContentId IS NOT NULL)
+        index("opinion_conversation_active_idx").on(
+            table.conversationId,
+            table.currentContentId,
+        ),
         check(
             "check_polis_majority",
             sql`(
@@ -1583,6 +1611,11 @@ export const voteTable = pgTable(
         unique().on(t.authorId, t.opinionId),
         index("vote_opinionId_idx").on(t.opinionId),
         index("vote_authorId_idx").on(t.authorId),
+        // Composite for counter reconciliation: filters opinionId + non-deleted (currentContentId IS NOT NULL)
+        index("vote_opinion_active_idx").on(
+            t.opinionId,
+            t.currentContentId,
+        ),
     ],
 );
 
@@ -2185,5 +2218,49 @@ export const conversationImportTable = pgTable(
         index("conversation_import_created_idx").on(t.createdAt),
         index("conversation_import_user_idx").on(t.userId),
         index("conversation_import_conversation_idx").on(t.conversationId),
+    ],
+);
+
+// MaxDiff (Best-Worst Scaling) results per user per conversation.
+// Stores both the final ranking and the individual comparisons made,
+// so the adaptive MaxDiff session can be resumed from saved state.
+export const maxdiffResultTable = pgTable(
+    "maxdiff_result",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        participantId: uuid("participant_id")
+            .notNull()
+            .references(() => userTable.id),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
+        // Final ordered ranking as JSON array of opinionSlugIds (best→worst).
+        // Null while the session is in progress.
+        ranking: jsonb("ranking"), // string[] | null
+        // Individual comparisons made during the MaxDiff session.
+        // Each entry: { best: slugId, worst: slugId, set: slugId[] }
+        comparisons: jsonb("comparisons").notNull(), // MaxDiffComparison[]
+        isComplete: boolean("is_complete").notNull().default(false),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        unique().on(t.participantId, t.conversationId),
+        index("maxdiff_result_conversation_idx").on(t.conversationId),
+        // Composite for aggregated results query: filters conversationId + isComplete
+        index("maxdiff_result_complete_idx").on(
+            t.conversationId,
+            t.isComplete,
+        ),
     ],
 );

@@ -37,6 +37,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       authorUsername: "",
       lastReactedAt: new Date(),
       participationMode: "strong_verification",
+      conversationType: "polis",
       isIndexed: true,
       conversationSlugId: "",
       isClosed: false,
