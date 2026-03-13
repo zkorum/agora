@@ -36,24 +36,6 @@ import { imagePathToUrl } from "@/utils/organizationLogic.js";
 import { getConversationEngagementScore } from "./recommendationSystem.js";
 import { log } from "@/app.js";
 
-/**
- * Validates that public conversations have either login requirement or event ticket verification.
- * Returns false if validation fails (public conversation without login or ticket requirement).
- */
-export function isValidPublicConversationAccess({
-    isIndexed,
-    participationMode,
-    requiresEventTicket,
-}: {
-    isIndexed: boolean;
-    participationMode: ParticipationMode;
-    requiresEventTicket?: EventSlug;
-}): boolean {
-    if (isIndexed && participationMode === "guest" && !requiresEventTicket) {
-        return false;
-    }
-    return true;
-}
 
 export function useCommonUser() {
     interface GetUserIdFromUsernameProps {

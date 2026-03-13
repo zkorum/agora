@@ -14,8 +14,6 @@
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
-import { useNotify } from "src/utils/ui/notify";
 
 import {
   type VisibilityOptionsDialogTranslations,
@@ -24,19 +22,10 @@ import {
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
 const isPrivate = defineModel<boolean>("isPrivate", { required: true });
-const participationMode = defineModel<ParticipationMode>("participationMode", {
-  required: true,
-});
-const requiresEventTicket = defineModel<EventSlug | undefined>(
-  "requiresEventTicket",
-  { required: true }
-);
 
 const { t } = useComponentI18n<VisibilityOptionsDialogTranslations>(
   visibilityOptionsDialogTranslations
 );
-
-const { showNotifyMessage } = useNotify();
 
 const visibilityOptions = [
   {
@@ -56,16 +45,6 @@ function handleOptionSelected(option: {
   description: string;
   value: string;
 }): void {
-  const isPublic = option.value === "public";
-  const hasGuestParticipation = participationMode.value === "guest";
-  const hasTicketVerification = requiresEventTicket.value !== undefined;
-
-  // Cross-cutting validation: public + guest participation requires event ticket
-  if (isPublic && hasGuestParticipation && !hasTicketVerification) {
-    participationMode.value = "strong_verification";
-    showNotifyMessage(t("guestParticipationDisabledForPublic"));
-  }
-
   isPrivate.value = option.value === "private";
   showDialog.value = false;
 }

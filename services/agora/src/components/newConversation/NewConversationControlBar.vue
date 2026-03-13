@@ -40,15 +40,11 @@
   <VisibilityOptionsDialog
     v-model:show-dialog="showVisibilityDialog"
     v-model:is-private="isPrivate"
-    v-model:participation-mode="participationMode"
-    v-model:requires-event-ticket="requiresEventTicket"
   />
 
   <LoginRequirementDialog
     v-model:show-dialog="showLoginRequirementDialog"
     v-model:participation-mode="participationMode"
-    v-model:is-private="isPrivate"
-    v-model:requires-event-ticket="requiresEventTicket"
   />
 
   <MakePublicTimerDialog
@@ -59,8 +55,6 @@
   <EventTicketRequirementDialog
     v-model:show-dialog="showEventTicketRequirementDialog"
     v-model:requires-event-ticket="requiresEventTicket"
-    v-model:participation-mode="participationMode"
-    v-model:is-private="isPrivate"
   />
 </template>
 
