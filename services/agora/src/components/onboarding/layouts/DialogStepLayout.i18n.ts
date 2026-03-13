@@ -29,4 +29,10 @@ export const dialogStepLayoutTranslations: Record<
   ja: {
     welcomeTitle: "Agora へようこそ！",
   },
+  ky: {
+    welcomeTitle: "Agora'га кош келиңиз!",
+  },
+  ru: {
+    welcomeTitle: "Добро пожаловать в Agora!",
+  },
 };

@@ -69,4 +69,20 @@ export const reportHeaderTranslations: Record<
     votes: "投票",
     footnote: "モデレート済み意見への投票は分析から除外されています。",
   },
+  ky: {
+    by: "Автор",
+    of: "/",
+    participants: "Катышуучулар",
+    statements: "Пикирлер",
+    votes: "Добуштар",
+    footnote: "Модерацияланган пикирлерге берилген добуштар анализден чыгарылган.",
+  },
+  ru: {
+    by: "Автор",
+    of: "из",
+    participants: "Участники",
+    statements: "Высказывания",
+    votes: "Голоса",
+    footnote: "Голоса за модерированные высказывания исключены из анализа.",
+  },
 };

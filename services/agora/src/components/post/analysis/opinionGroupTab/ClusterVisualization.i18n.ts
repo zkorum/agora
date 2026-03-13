@@ -37,4 +37,12 @@ export const clusterVisualizationTranslations: Record<
     groupsTitle: "意見グループ",
     meLabel: "私",
   },
+  ky: {
+    groupsTitle: "Пикир топтору",
+    meLabel: "Мен",
+  },
+  ru: {
+    groupsTitle: "Группы мнений",
+    meLabel: "Я",
+  },
 };

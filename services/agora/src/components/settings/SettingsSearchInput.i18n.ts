@@ -29,4 +29,10 @@ export const settingsSearchInputTranslations: Record<
   ja: {
     searchPlaceholder: "検索...",
   },
+  ky: {
+    searchPlaceholder: "Издөө...",
+  },
+  ru: {
+    searchPlaceholder: "Поиск...",
+  },
 };

@@ -34,4 +34,12 @@ export const mutedUsersTranslations: Record<SupportedDisplayLanguageCodes, Muted
     title: "ミュートされたユーザー",
     emptyMessage: "ミュートされたユーザーはいません",
   },
+  ky: {
+    title: "Үнү өчүрүлгөн колдонуучулар",
+    emptyMessage: "Сиздин үнү өчүрүлгөн колдонуучуларыңыз жок",
+  },
+  ru: {
+    title: "Заглушённые пользователи",
+    emptyMessage: "У вас нет заглушённых пользователей",
+  },
 };

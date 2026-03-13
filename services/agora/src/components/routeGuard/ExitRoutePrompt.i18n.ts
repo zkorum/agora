@@ -37,4 +37,12 @@ export const exitRoutePromptTranslations: Record<
     saveAsDraft: "下書きとして保存",
     discard: "破棄",
   },
+  ky: {
+    saveAsDraft: "Карала катары сактоо",
+    discard: "Жокко чыгаруу",
+  },
+  ru: {
+    saveAsDraft: "Сохранить как черновик",
+    discard: "Удалить",
+  },
 };

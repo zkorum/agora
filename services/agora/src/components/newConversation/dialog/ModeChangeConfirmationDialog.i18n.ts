@@ -93,4 +93,26 @@ export const modeChangeConfirmationDialogTranslations: Record<
     cancel: "キャンセル",
     continue: "続ける",
   },
+  ky: {
+    switchToImportMode: "Импорт режимине которуласызбы?",
+    switchingWillClear:
+      "Импорт режимине которуу талкуу черновигинен төмөнкү талааларды тазалайт:",
+    title: "Аталышы",
+    bodyText: "Негизги текст",
+    pollOptions: "Сурамжылоо параметрлери",
+    settingsPreserved: "Купуялык жөндөөлөрүңүз жана уюм тандооңуз сакталат.",
+    cancel: "Жокко чыгаруу",
+    continue: "Улантуу",
+  },
+  ru: {
+    switchToImportMode: "Переключиться в режим импорта?",
+    switchingWillClear:
+      "Переключение в режим импорта очистит следующие поля черновика обсуждения:",
+    title: "Заголовок",
+    bodyText: "Основной текст",
+    pollOptions: "Варианты опроса",
+    settingsPreserved: "Ваши настройки приватности и выбор организации будут сохранены.",
+    cancel: "Отмена",
+    continue: "Продолжить",
+  },
 };

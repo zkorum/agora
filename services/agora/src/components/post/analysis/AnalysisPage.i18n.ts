@@ -91,4 +91,26 @@ export const analysisPageTranslations: Record<
     generateReport: "レポートを生成",
     report: "レポート",
   },
+  ky: {
+    loadingAnalysis: "Анализ жүктөлүүдө...",
+    retryingAnalysis: "Анализ кайра жүктөлүүдө...",
+    analysisErrorTitle: "Анализди жүктөө ишке ашкан жок",
+    analysisErrorMessage:
+      "Анализ маалыматтарын жүктөө мүмкүн болбоду. Кайра аракет кылыңыз.",
+    noAnalysisData: "Бул талкуу үчүн анализ маалыматтары жеткиликтүү эмес",
+    retryAnalysis: "Кайра жүктөө",
+    generateReport: "Отчёт түзүү",
+    report: "Отчёт",
+  },
+  ru: {
+    loadingAnalysis: "Загрузка анализа...",
+    retryingAnalysis: "Повторная загрузка анализа...",
+    analysisErrorTitle: "Не удалось загрузить анализ",
+    analysisErrorMessage:
+      "Не удалось загрузить данные анализа. Пожалуйста, попробуйте снова.",
+    noAnalysisData: "Данные анализа недоступны для этого обсуждения",
+    retryAnalysis: "Повторить загрузку",
+    generateReport: "Сформировать отчёт",
+    report: "Отчёт",
+  },
 };

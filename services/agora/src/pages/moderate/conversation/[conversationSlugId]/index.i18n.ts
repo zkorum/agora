@@ -77,4 +77,22 @@ export const conversationModerationTranslations: Record<
     moderate: "管理",
     withdraw: "取り下げ",
   },
+  ky: {
+    moderateConversation: "Талкууну модерациялоо",
+    action: "Аракет",
+    reason: "Себеп",
+    explanationOptional: "Түшүндүрмө (милдеттүү эмес)",
+    modify: "Өзгөртүү",
+    moderate: "Модерациялоо",
+    withdraw: "Кайтарып алуу",
+  },
+  ru: {
+    moderateConversation: "Модерировать обсуждение",
+    action: "Действие",
+    reason: "Причина",
+    explanationOptional: "Пояснение (необязательно)",
+    modify: "Изменить",
+    moderate: "Модерировать",
+    withdraw: "Отозвать",
+  },
 };

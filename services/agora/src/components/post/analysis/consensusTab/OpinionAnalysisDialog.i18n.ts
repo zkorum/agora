@@ -77,4 +77,22 @@ export const opinionAnalysisDialogTranslations: Record<
     noGroup: "グループなし",
     viewOriginal: "元の主張を見る",
   },
+  ky: {
+    title: "Пикир анализи",
+    agree: "Макулмун",
+    pass: "Белгисиз",
+    disagree: "Макул эмесмин",
+    total: "Жалпы",
+    noGroup: "Топ жок",
+    viewOriginal: "Түпнуска пикирди көрүү",
+  },
+  ru: {
+    title: "Анализ высказывания",
+    agree: "Согласен",
+    pass: "Не уверен",
+    disagree: "Не согласен",
+    total: "Всего",
+    noGroup: "Без группы",
+    viewOriginal: "Посмотреть исходное высказывание",
+  },
 };

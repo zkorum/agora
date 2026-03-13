@@ -63,4 +63,19 @@ export const asyncStateHandlerTranslations: Record<
     emptyMessage: "利用可能なデータがありません",
     retry: "再試行",
   },
+  ky: {
+    loading: "Жүктөлүүдө...",
+    errorTitle: "Бир нерсе туура эмес болду",
+    defaultErrorMessage: "Күтүлбөгөн ката кетти. Кайра аракет кылыңыз.",
+    emptyMessage: "Маалыматтар жеткиликтүү эмес",
+    retry: "Кайра аракет",
+  },
+  ru: {
+    loading: "Загрузка...",
+    errorTitle: "Что-то пошло не так",
+    defaultErrorMessage:
+      "Произошла непредвиденная ошибка. Пожалуйста, попробуйте снова.",
+    emptyMessage: "Данные недоступны",
+    retry: "Повторить",
+  },
 };

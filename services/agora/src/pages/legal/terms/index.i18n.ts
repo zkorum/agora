@@ -29,4 +29,10 @@ export const termsOfServiceTranslations: Record<
   ja: {
     termsOfService: "利用規約",
   },
+  ky: {
+    termsOfService: "Кызмат көрсөтүү шарттары",
+  },
+  ru: {
+    termsOfService: "Условия использования",
+  },
 };

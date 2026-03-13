@@ -37,4 +37,12 @@ export const embedAccountWidgetTranslations: Record<
     logoutButton: "ログアウト",
     logoutTooltip: "ログアウト",
   },
+  ky: {
+    logoutButton: "Чыгуу",
+    logoutTooltip: "Чыгуу",
+  },
+  ru: {
+    logoutButton: "Выйти",
+    logoutTooltip: "Выйти",
+  },
 };

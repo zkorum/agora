@@ -97,4 +97,26 @@ export const newConversationDraftsTranslations: Record<
     pollMinOptionsError: (minOptions: number) =>
       `最低${minOptions}つのオプションが必要です`,
   },
+  ky: {
+    titleRequired: "Улантуу үчүн аталыш талап кылынат",
+    bodyExceedsLimit: (characterCount: number, maxLength: number) =>
+      `Текст ${maxLength} белги чегинен ашып кетти (${characterCount}/${maxLength})`,
+    polisUrlInvalid: "Жарактуу Polis URL киргизиңиз.",
+    polisUrlRequired: "Импорттоо үчүн Polis URL киргизиңиз",
+    pollMaxOptionsError: (maxOptions: number) =>
+      `Сурамжылоодо эң көп ${maxOptions} вариант уруксат берилет`,
+    pollMinOptionsError: (minOptions: number) =>
+      `Эң аз ${minOptions} вариант талап кылынат`,
+  },
+  ru: {
+    titleRequired: "Для продолжения необходим заголовок",
+    bodyExceedsLimit: (characterCount: number, maxLength: number) =>
+      `Текст превышает лимит в ${maxLength} символов (${characterCount}/${maxLength})`,
+    polisUrlInvalid: "Пожалуйста, введите корректный URL Polis.",
+    polisUrlRequired: "Пожалуйста, введите URL Polis для импорта",
+    pollMaxOptionsError: (maxOptions: number) =>
+      `Максимум ${maxOptions} вариантов опроса`,
+    pollMinOptionsError: (minOptions: number) =>
+      `Минимум ${minOptions} вариантов опроса`,
+  },
 };

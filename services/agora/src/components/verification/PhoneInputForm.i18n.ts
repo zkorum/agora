@@ -80,4 +80,22 @@ export const phoneInputFormTranslations: Record<
     phoneTypeNotSupported: "この電話番号のタイプはまだサポートされていません",
     pleaseEnterPhoneNumber: "電話番号を入力してください",
   },
+  ky: {
+    smsDescription: "SMS аркылуу 6 орундуу бир жолку код аласыз",
+    phoneNumberPlaceholder: "Телефон номери",
+    developmentNumbers: "Иштеп чыгуу номерлери:",
+    pleaseEnterValidPhone: "Жарактуу телефон номерин киргизиңиз",
+    countryNotSupported: "Бул өлкө азырынча колдоого алынбайт",
+    phoneTypeNotSupported: "Бул телефон номеринин түрү колдоого алынбайт",
+    pleaseEnterPhoneNumber: "Телефон номерин киргизиңиз",
+  },
+  ru: {
+    smsDescription: "Вы получите одноразовый 6-значный код по SMS",
+    phoneNumberPlaceholder: "Номер телефона",
+    developmentNumbers: "Номера для разработки:",
+    pleaseEnterValidPhone: "Пожалуйста, введите действительный номер телефона",
+    countryNotSupported: "Эта страна пока не поддерживается",
+    phoneTypeNotSupported: "Этот тип номера телефона не поддерживается",
+    pleaseEnterPhoneNumber: "Пожалуйста, введите номер телефона",
+  },
 };

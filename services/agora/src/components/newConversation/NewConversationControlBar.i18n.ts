@@ -16,6 +16,8 @@ export interface NewConversationControlBarTranslations {
   addPoll: string;
   noVerification: string;
   devconnect2025: string;
+  typeStandard: string;
+  typeMaxDiff: string;
 }
 
 export const newConversationControlBarTranslations: Record<
@@ -38,6 +40,8 @@ export const newConversationControlBarTranslations: Record<
     addPoll: "Add poll",
     noVerification: "No verification",
     devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "MaxDiff",
   },
   ar: {
     asLabel: "باسم {name}",
@@ -55,6 +59,8 @@ export const newConversationControlBarTranslations: Record<
     addPoll: "إضافة استطلاع",
     noVerification: "بدون تحقق",
     devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "MaxDiff",
   },
   es: {
     asLabel: "Como {name}",
@@ -72,6 +78,8 @@ export const newConversationControlBarTranslations: Record<
     addPoll: "Agregar encuesta",
     noVerification: "Sin verificación",
     devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "MaxDiff",
   },
   fr: {
     asLabel: "En tant que {name}",
@@ -89,6 +97,8 @@ export const newConversationControlBarTranslations: Record<
     addPoll: "Ajouter un sondage",
     noVerification: "Pas de vérification",
     devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "MaxDiff",
   },
   "zh-Hans": {
     asLabel: "作为 {name}",
@@ -106,6 +116,8 @@ export const newConversationControlBarTranslations: Record<
     addPoll: "添加投票",
     noVerification: "无需验证",
     devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "MaxDiff",
   },
   "zh-Hant": {
     asLabel: "作為 {name}",
@@ -123,6 +135,8 @@ export const newConversationControlBarTranslations: Record<
     addPoll: "新增投票",
     noVerification: "無需驗證",
     devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "MaxDiff",
   },
   ja: {
     asLabel: "{name} として",
@@ -140,5 +154,45 @@ export const newConversationControlBarTranslations: Record<
     addPoll: "投票を追加",
     noVerification: "検証不要",
     devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "MaxDiff",
+  },
+  ky: {
+    asLabel: "{name} катары",
+    importFromPolisUrl: "Polis URL'ден импорттоо",
+    importFromCsv: "CSV'ден импорттоо",
+    newConversation: "Жаңы талкуу",
+    private: "Жеке",
+    public: "Ачык",
+    requiresLogin: "Күчтүү текшерүү талап кылынат",
+    requiresEmailVerification: "Электрондук почта текшерүүсү талап кылынат",
+    guestParticipation: "Конок катышуу",
+    makePublicNever: "Ачык кылуу: Эч качан",
+    makePublic: "Ачык кылуу: {date}",
+    removePoll: "Сурамжылоону алып салуу",
+    addPoll: "Сурамжылоо кошуу",
+    noVerification: "Текшерүүсүз",
+    devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "MaxDiff",
+  },
+  ru: {
+    asLabel: "От имени {name}",
+    importFromPolisUrl: "Импорт из URL Polis",
+    importFromCsv: "Импорт из CSV",
+    newConversation: "Новое обсуждение",
+    private: "Приватное",
+    public: "Публичное",
+    requiresLogin: "Требуется усиленная проверка",
+    requiresEmailVerification: "Требуется подтверждение электронной почты",
+    guestParticipation: "Гостевое участие",
+    makePublicNever: "Сделать публичным: Никогда",
+    makePublic: "Сделать публичным: {date}",
+    removePoll: "Удалить опрос",
+    addPoll: "Добавить опрос",
+    noVerification: "Без проверки",
+    devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "MaxDiff",
   },
 };

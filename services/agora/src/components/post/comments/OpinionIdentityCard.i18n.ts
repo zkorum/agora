@@ -29,4 +29,10 @@ export const opinionIdentityCardTranslations: Record<
   ja: {
     seedOpinion: "主張の種",
   },
+  ky: {
+    seedOpinion: "Баштапкы пикир",
+  },
+  ru: {
+    seedOpinion: "Начальное высказывание",
+  },
 };

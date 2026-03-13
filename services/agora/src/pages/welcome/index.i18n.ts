@@ -61,4 +61,18 @@ export const welcomeTranslations: Record<
     launchApp: "アプリを起動",
     logOut: "ログアウト",
   },
+  ky: {
+    signUp: "Каттоо",
+    login: "Кирүү",
+    skipAuthentication: "Аутентификацияны өткөрүп жиберүү",
+    launchApp: "Тиркемени ачуу",
+    logOut: "Чыгуу",
+  },
+  ru: {
+    signUp: "Регистрация",
+    login: "Вход",
+    skipAuthentication: "Пропустить аутентификацию",
+    launchApp: "Запустить приложение",
+    logOut: "Выйти",
+  },
 };

@@ -77,4 +77,22 @@ export const opinionModerationTranslations: Record<
     modifyButton: "修正",
     withdrawButton: "取り下げ",
   },
+  ky: {
+    title: "Пикирди модерациялоо",
+    actionLabel: "Аракет",
+    reasonLabel: "Себеп",
+    explanationLabel: "Түшүндүрмө (милдеттүү эмес)",
+    moderateButton: "Модерациялоо",
+    modifyButton: "Өзгөртүү",
+    withdrawButton: "Кайтарып алуу",
+  },
+  ru: {
+    title: "Модерировать высказывание",
+    actionLabel: "Действие",
+    reasonLabel: "Причина",
+    explanationLabel: "Пояснение (необязательно)",
+    moderateButton: "Модерировать",
+    modifyButton: "Изменить",
+    withdrawButton: "Отозвать",
+  },
 };

@@ -106,4 +106,30 @@ export const conversationReviewTranslations: Record<
     opinionDuplicate: "この主張は重複しています",
     errorCreatingConversation: "新しい会話を作成する際にエラーが発生しました",
   },
+  ky: {
+    posting: "Жарыяланууда...",
+    post: "Жарыялоо",
+    addSeedOpinions: "Баштапкы пикирлерди кошуу",
+    seedOpinionsDescription:
+      "Ар кандай көз караштардан 8ден 15ке чейин пикир кошуу сунушталат. Бул эрте катышууга күчтүү таасир тийгизет.",
+    addOpinion: "Пикир кошуу",
+    opinionCannotBeEmpty: "Пикир бош болушу мүмкүн эмес",
+    opinionExceedsLimit:
+      "Пикир {limit} белги чегинен ашып кетти ({count}/{limit})",
+    opinionDuplicate: "Бул пикир кайталанган",
+    errorCreatingConversation: "Жаңы талкуу түзүүдө ката кетти",
+  },
+  ru: {
+    posting: "Публикация...",
+    post: "Опубликовать",
+    addSeedOpinions: "Добавить начальные высказывания",
+    seedOpinionsDescription:
+      "Рекомендуется добавить от 8 до 15 высказываний с разных точек зрения. Это значительно стимулирует раннее участие.",
+    addOpinion: "Добавить высказывание",
+    opinionCannotBeEmpty: "Высказывание не может быть пустым",
+    opinionExceedsLimit:
+      "Высказывание превышает лимит в {limit} символов ({count}/{limit})",
+    opinionDuplicate: "Это высказывание дублируется",
+    errorCreatingConversation: "Ошибка при создании нового обсуждения",
+  },
 };

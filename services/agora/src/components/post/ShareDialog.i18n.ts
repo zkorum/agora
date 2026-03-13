@@ -50,4 +50,14 @@ export const shareDialogTranslations: Record<
     copiedToClipboard: "リンクをクリップボードにコピーしました",
     couldNotCopy: "クリップボードにコピーできませんでした",
   },
+  ky: {
+    copyLink: "Шилтемени көчүрүү",
+    copiedToClipboard: "Шилтеме алмашуу буферине көчүрүлдү",
+    couldNotCopy: "Алмашуу буферине көчүрүү мүмкүн болбоду",
+  },
+  ru: {
+    copyLink: "Копировать ссылку",
+    copiedToClipboard: "Ссылка скопирована в буфер обмена",
+    couldNotCopy: "Не удалось скопировать в буфер обмена",
+  },
 };

@@ -29,4 +29,10 @@ export const startConversationButtonLongTranslations: Record<
   ja: {
     buttonText: "会話を開始",
   },
+  ky: {
+    buttonText: "Талкуу баштоо",
+  },
+  ru: {
+    buttonText: "Начать обсуждение",
+  },
 };

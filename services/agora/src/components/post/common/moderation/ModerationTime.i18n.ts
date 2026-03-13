@@ -29,4 +29,10 @@ export const moderationTimeTranslations: Record<
   ja: {
     edited: "(編集済み)",
   },
+  ky: {
+    edited: "(түзөтүлгөн)",
+  },
+  ru: {
+    edited: "(отредактировано)",
+  },
 };

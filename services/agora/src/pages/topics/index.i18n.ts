@@ -42,4 +42,14 @@ export const topicsTranslations: Record<SupportedDisplayLanguageCodes, TopicsTra
     following: "フォロー中",
     follow: "フォロー",
   },
+  ky: {
+    exploreTopics: "Темаларды изилдөө",
+    following: "Жазылган",
+    follow: "Жазылуу",
+  },
+  ru: {
+    exploreTopics: "Обзор тем",
+    following: "Подписки",
+    follow: "Подписаться",
+  },
 };

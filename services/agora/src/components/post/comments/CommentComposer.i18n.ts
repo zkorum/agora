@@ -134,4 +134,38 @@ export const commentComposerTranslations: Record<
     validationWarningMultipleIdeas:
       "ヒント：これには複数のアイデアが含まれている可能性があります - 投票者が明確に賛成または反対できることを確認してください",
   },
+  ky: {
+    placeholder: "Өз пикириңизди кошуңуз",
+    placeholderExpanded: "Макулдашуу же макул эмес болуу оңой болгон бир пунктка көңүл буруңуз",
+    postButton: "Жарыялоо",
+    conversationLockedError:
+      "Талкуу кулпуланганы үчүн пикир түзүү мүмкүн эмес",
+    conversationClosedError:
+      "Бул талкуу жабылган",
+    createOpinionError: "Жаңы пикир түзүүдө ката кетти",
+    eventTicketRequiredTitle: "Иш-чара билети талап кылынат",
+    eventTicketRequiredMessage:
+      "Бул талкууга катышуу үчүн Devconnect 2025 билетиңизди текшерүү керек.",
+    exitPromptTitle: "Пикирди карала катары сактоо?",
+    exitPromptDescription: "Кайтканыңызда каралаңыз бул жерде болот.",
+    validationWarningMultipleIdeas:
+      "Кеңеш: Бул бир нече идеяны камтышы мүмкүн — добуш берүүчүлөр ачык макулдашып же макул болбой аларына ынаныңыз",
+  },
+  ru: {
+    placeholder: "Добавьте своё высказывание",
+    placeholderExpanded: "Сосредоточьтесь на одном тезисе, с которым легко согласиться или не согласиться",
+    postButton: "Опубликовать",
+    conversationLockedError:
+      "Невозможно создать высказывание, так как обсуждение заблокировано",
+    conversationClosedError:
+      "Это обсуждение закрыто",
+    createOpinionError: "Ошибка при создании нового высказывания",
+    eventTicketRequiredTitle: "Требуется билет на мероприятие",
+    eventTicketRequiredMessage:
+      "Для участия в этом обсуждении необходимо подтвердить билет Devconnect 2025.",
+    exitPromptTitle: "Сохранить высказывание как черновик?",
+    exitPromptDescription: "Ваш черновик будет здесь, когда вы вернётесь.",
+    validationWarningMultipleIdeas:
+      "Совет: Это может содержать несколько идей — убедитесь, что голосующие смогут чётко согласиться или не согласиться",
+  },
 };

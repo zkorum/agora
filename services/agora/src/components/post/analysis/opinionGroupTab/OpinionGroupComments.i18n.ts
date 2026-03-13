@@ -69,4 +69,20 @@ export const opinionGroupCommentsTranslations: Record<
     allOthers: "すべての他の",
     allOtherGroups: "すべての他のグループ",
   },
+  ky: {
+    opinionsTitle: "Пикирлер",
+    opinionsTitleLong: "Өкүлчүлүктүү пикирлер",
+    noOpinionsMessage: "Бул топ үчүн пикирлер жок.",
+    thisGroup: "Бул топ",
+    allOthers: "Бардык башкалар",
+    allOtherGroups: "Бардык башка топтор",
+  },
+  ru: {
+    opinionsTitle: "Высказывания",
+    opinionsTitleLong: "Характерные высказывания",
+    noOpinionsMessage: "Для этой группы нет высказываний.",
+    thisGroup: "Эта группа",
+    allOthers: "Все остальные",
+    allOtherGroups: "Все остальные группы",
+  },
 };

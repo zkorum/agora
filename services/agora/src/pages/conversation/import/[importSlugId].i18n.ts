@@ -29,4 +29,10 @@ export const importStatusPageTranslations: Record<
   ja: {
     pageTitle: "インポートステータス",
   },
+  ky: {
+    pageTitle: "Импорттун абалы",
+  },
+  ru: {
+    pageTitle: "Статус импорта",
+  },
 };

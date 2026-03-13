@@ -176,4 +176,49 @@ export const editConversationTranslations: Record<
       "投票を削除すると、すべての既存の投票が削除されます。この操作は元に戻せません。続行しますか？",
     removePollWarningConfirm: "はい、投票を削除",
   },
+  ky: {
+    saveButton: "Өзгөртүүлөрдү сактоо",
+    titlePlaceholder: "Эмнени сурагыңыз келет?",
+    bodyPlaceholder:
+      "Негизги текст. Контекст же тиешелүү ресурстарды бериңиз. Негизги суроого шайкеш экенин текшериңиз!",
+    pageTitle: "Талкууну түзөтүү",
+    notFoundError: "Талкуу табылган жок",
+    notAuthorError: "Бул талкууну түзөтүүгө укугуңуз жок",
+    loadingError: "Талкуу маалыматтарын жүктөө ишке ашкан жок",
+    pollChangeWarningTitle: "Эскертүү: Сурамжылоону өзгөртүү",
+    pollChangeWarningMessage:
+      "Сурамжылоо варианттарын өзгөртүү бардык учурдагы добуштарды тазалайт. Бул аракетти кайтаруу мүмкүн эмес. Улантасызбы?",
+    pollChangeWarningConfirm: "Ооба, добуштарды тазалоо",
+    pollChangeWarningCancel: "Жокко чыгаруу",
+    updateSuccess: "Талкуу ийгиликтүү жаңыланды",
+    updateError: "Талкууну жаңылоо ишке ашкан жок",
+    conversationLockedError: "Бул талкуу кулпуланган жана түзөтүлбөйт",
+    removePollWarningTitle: "Эскертүү: Сурамжылоону жок кылуу",
+    removePollWarningMessage:
+      "Сурамжылоону жок кылуу бардык учурдагы добуштарды жок кылат. Бул аракетти кайтаруу мүмкүн эмес. Улантасызбы?",
+    removePollWarningConfirm: "Ооба, сурамжылоону жок кылуу",
+  },
+  ru: {
+    saveButton: "Сохранить изменения",
+    titlePlaceholder: "Что вы хотите спросить?",
+    bodyPlaceholder:
+      "Основной текст. Предоставьте контекст или полезные ресурсы. Убедитесь, что он соответствует главному вопросу!",
+    pageTitle: "Редактировать обсуждение",
+    notFoundError: "Обсуждение не найдено",
+    notAuthorError: "У вас нет прав для редактирования этого обсуждения",
+    loadingError: "Не удалось загрузить данные обсуждения",
+    pollChangeWarningTitle: "Предупреждение: изменение опроса",
+    pollChangeWarningMessage:
+      "Изменение вариантов опроса очистит все существующие голоса. Это действие нельзя отменить. Продолжить?",
+    pollChangeWarningConfirm: "Да, очистить голоса",
+    pollChangeWarningCancel: "Отмена",
+    updateSuccess: "Обсуждение успешно обновлено",
+    updateError: "Не удалось обновить обсуждение",
+    conversationLockedError:
+      "Это обсуждение заблокировано и не может быть отредактировано",
+    removePollWarningTitle: "Предупреждение: удаление опроса",
+    removePollWarningMessage:
+      "Удаление опроса приведёт к удалению всех существующих голосов. Это действие нельзя отменить. Продолжить?",
+    removePollWarningConfirm: "Да, удалить опрос",
+  },
 };

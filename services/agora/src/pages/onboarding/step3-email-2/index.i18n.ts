@@ -163,4 +163,46 @@ export const step3Email2Translations: Record<
     tooManyAttempts:
       "試行回数が多すぎます—新しいコードを要求する前に、少し待ってください",
   },
+  ky: {
+    title: "6 орундуу кодду киргизиңиз",
+    instructions: "Биз жөнөткөн 6 орундуу кодду киргизиңиз",
+    expiresIn: "Мөөнөтү бүтөт",
+    codeExpired: "Коддун мөөнөтү бүттү",
+    changeEmail: "Электрондук почтаны өзгөртүү",
+    resendCodeIn: "Кодду кайра жөнөтүү",
+    resendCode: "Кодду кайра жөнөтүү",
+    pleaseEnterValidCode: "Жарактуу 6 орундуу кодду киргизиңиз",
+    verificationSuccessful: "Кирүү ийгиликтүү!",
+    accountMerged: "Ийгилик! Каттоо эсептериңиз бириктирилди",
+    codeExpiredResend: "Коддун мөөнөтү бүттү—жаңы код жөнөтүңүз",
+    wrongCodeTryAgain: "Туура эмес код—кайра аракет кылыңыз",
+    credentialAlreadyLinked:
+      "Бул электрондук почта дареги башка каттоо эсебине байланышкан",
+    authStateChanged:
+      "Аутентификация абалы өзгөрдү—жаңы код сураңыз",
+    somethingWrong: "Ой! Бир нерсе туура эмес",
+    tooManyAttempts:
+      "Аракеттер өтө көп—жаңы код сурадан мурун күтүңүз",
+  },
+  ru: {
+    title: "Введите 6-значный код",
+    instructions: "Введите 6-значный код, отправленный на",
+    expiresIn: "Истекает через",
+    codeExpired: "Код истёк",
+    changeEmail: "Изменить email",
+    resendCodeIn: "Повторная отправка через",
+    resendCode: "Отправить код повторно",
+    pleaseEnterValidCode: "Пожалуйста, введите корректный 6-значный код",
+    verificationSuccessful: "Вход выполнен успешно!",
+    accountMerged: "Аккаунты успешно объединены",
+    codeExpiredResend: "Код истёк — отправьте новый код",
+    wrongCodeTryAgain: "Неверный код — попробуйте ещё раз",
+    credentialAlreadyLinked:
+      "Этот адрес электронной почты уже привязан к другому аккаунту",
+    authStateChanged:
+      "Состояние аутентификации изменилось — запросите новый код",
+    somethingWrong: "Ой! Что-то пошло не так",
+    tooManyAttempts:
+      "Слишком много попыток — подождите перед запросом нового кода",
+  },
 };

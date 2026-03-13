@@ -86,4 +86,24 @@ export const divisiveTabTranslations: Record<
     noDivisiveOpinionsMessage: "有意な分断的主張はまだ見つかりません。",
     lowerRankedDivider: "統計的有意性が低い",
   },
+  ky: {
+    divisiveTitle: "Талаштуу",
+    divisiveLongTitle: "Топтор аралык катышуучуларды эмне {keyword}?",
+    divisiveKeyword: "бөлөт",
+    subtitle:
+      "Пикир топторун бири-бирине каршы коюучу пикирлер. Статистикалык жактан эң маанилүүлөрү гана көрсөтүлөт.",
+    loadMore: "Баарын жүктөө",
+    noDivisiveOpinionsMessage: "Азырынча маанилүү талаштуу пикирлер табылган жок.",
+    lowerRankedDivider: "Статистикалык маанилүүлүгү төмөн",
+  },
+  ru: {
+    divisiveTitle: "Спорные",
+    divisiveLongTitle: "Что {keyword} участников между группами?",
+    divisiveKeyword: "разделяет",
+    subtitle:
+      "Высказывания, по которым группы мнений расходятся друг с другом. Показаны только наиболее статистически значимые.",
+    loadMore: "Загрузить все",
+    noDivisiveOpinionsMessage: "Значимых спорных высказываний пока не найдено.",
+    lowerRankedDivider: "Менее статистически значимые",
+  },
 };

@@ -45,4 +45,14 @@ export const footerBarTranslations: Record<
     explore: "探索",
     dings: "Dings",
   },
+  ky: {
+    home: "Башкы бет",
+    explore: "Изилдөө",
+    dings: "Dings",
+  },
+  ru: {
+    home: "Главная",
+    explore: "Обзор",
+    dings: "Dings",
+  },
 };

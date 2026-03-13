@@ -69,4 +69,20 @@ export const userReportsTranslations: Record<
     sexual: "性的",
     spam: "スパム",
   },
+  ky: {
+    misleading: "Адаштыруучу",
+    antisocial: "Коомго каршы",
+    illegal: "Мыйзамсыз",
+    doxing: "Жеке маалыматты ачыктоо",
+    sexual: "Жыныстык",
+    spam: "Спам",
+  },
+  ru: {
+    misleading: "Вводящее в заблуждение",
+    antisocial: "Антисоциальное",
+    illegal: "Незаконное",
+    doxing: "Раскрытие личных данных",
+    sexual: "Сексуальное",
+    spam: "Спам",
+  },
 };

@@ -182,4 +182,52 @@ export const rarimoVerificationFormTranslations: Record<
     copiedToClipboard: "リンクをクリップボードにコピーしました",
     couldNotCopy: "クリップボードにコピーできませんでした",
   },
+  ky: {
+    download: "Жүктөп алуу",
+    claimAnonymousId: "Анонимдүү ID алыңыз",
+    comeBackAndVerify: "Бул жерге кайтып, Текшерүү баскычын басыңыз",
+    scanQrCode: "Өзүңүздү тастыктоо үчүн Rarimo менен QR кодду сканерлеңиз",
+    failedToGenerateLink: "Текшерүү шилтемесин түзүү ишке ашкан жок",
+    loadingVerificationLink: "Текшерүү шилтемеси жүктөлүүдө",
+    openLinkOnMobile:
+      "Же мобилдик браузериңизде төмөнкү шилтемени ачыңыз:",
+    copy: "Көчүрүү",
+    waitingForVerification: "Текшерүү күтүлүүдө...",
+    verify: "Текшерүү",
+    verificationSuccessful: "Текшерүү ийгиликтүү",
+    accountMerged: "Ийгилик! Аккаунттарыңыз бириктирилди",
+    verificationFailed: "Текшерүү аракети ишке ашкан жок. Кайра аракет кылыңыз.",
+    passportAlreadyLinked:
+      "Бул паспорт башка Rarimo аккаунтуна мурунтан эле байланган. Башка паспортту колдонуңуз.",
+    unexpectedError:
+      "Ой! Күтүлбөгөн ката — баракчаны жаңылаңыз",
+    credentialAlreadyLinked:
+      "Бул паспорт башка аккаунтка мурунтан эле байланган",
+    copiedToClipboard: "Шилтеме алмашуу буферине көчүрүлдү",
+    couldNotCopy: "Алмашуу буферине көчүрүү мүмкүн болбоду",
+  },
+  ru: {
+    download: "Скачать",
+    claimAnonymousId: "Получите анонимный ID",
+    comeBackAndVerify: "Вернитесь сюда и нажмите «Подтвердить»",
+    scanQrCode: "Отсканируйте QR-код с помощью Rarimo для подтверждения личности",
+    failedToGenerateLink: "Не удалось сгенерировать ссылку для проверки",
+    loadingVerificationLink: "Загрузка ссылки для проверки",
+    openLinkOnMobile:
+      "Или откройте ссылку ниже в мобильном браузере:",
+    copy: "Копировать",
+    waitingForVerification: "Ожидание проверки...",
+    verify: "Подтвердить",
+    verificationSuccessful: "Проверка успешна",
+    accountMerged: "Успешно! Ваши аккаунты объединены",
+    verificationFailed: "Попытка проверки не удалась. Попробуйте снова.",
+    passportAlreadyLinked:
+      "Этот паспорт уже привязан к другому аккаунту Rarimo. Попробуйте другой.",
+    unexpectedError:
+      "Ой! Непредвиденная ошибка — попробуйте обновить страницу",
+    credentialAlreadyLinked:
+      "Этот паспорт уже привязан к другому аккаунту",
+    copiedToClipboard: "Ссылка скопирована в буфер обмена",
+    couldNotCopy: "Не удалось скопировать в буфер обмена",
+  },
 };

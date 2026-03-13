@@ -37,4 +37,12 @@ export const commentModerationTranslations: Record<
     edit: "編集",
     moderatorFlaggedMessage: "モデレーターがこの回答を",
   },
+  ky: {
+    edit: "Түзөтүү",
+    moderatorFlaggedMessage: "Модератор бул жоопту белгиледи:",
+  },
+  ru: {
+    edit: "Редактировать",
+    moderatorFlaggedMessage: "Модератор отметил этот ответ как",
+  },
 };

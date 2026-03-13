@@ -5,6 +5,8 @@ import en from "./en";
 import es from "./es";
 import fr from "./fr";
 import ja from "./ja";
+import ky from "./ky";
+import ru from "./ru";
 import type { TranslationSchema } from "./types";
 import zh_Hans from "./zh-Hans";
 import zh_Hant from "./zh-Hant";
@@ -17,6 +19,8 @@ const translations: Record<SupportedDisplayLanguageCodes, TranslationSchema> = {
   "zh-Hant": zh_Hant,
   ja: ja,
   ar: ar,
+  ky: ky,
+  ru: ru,
 };
 
 export default translations;

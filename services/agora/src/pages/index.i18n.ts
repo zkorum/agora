@@ -45,4 +45,14 @@ export const homeTranslations: Record<
     popular: "人気",
     new: "新着",
   },
+  ky: {
+    following: "Жазылуулар",
+    popular: "Популярдуу",
+    new: "Жаңы",
+  },
+  ru: {
+    following: "Подписки",
+    popular: "Популярное",
+    new: "Новое",
+  },
 };

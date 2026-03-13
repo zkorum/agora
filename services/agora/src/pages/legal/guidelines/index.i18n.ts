@@ -29,4 +29,10 @@ export const guidelinesTranslations: Record<
   ja: {
     guidelines: "コミュニティガイドライン",
   },
+  ky: {
+    guidelines: "Коомчулук эрежелери",
+  },
+  ru: {
+    guidelines: "Правила сообщества",
+  },
 };

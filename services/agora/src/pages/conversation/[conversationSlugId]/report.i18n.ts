@@ -90,4 +90,26 @@ export const reportPageTranslations: Record<
       "このレポートは大きな画面用に設計されています。デスクトップまたはタブレットで開いてください。",
     goBack: "戻る",
   },
+  ky: {
+    pageTitle: "Анализ отчету",
+    downloadImages: "Сүрөттөрдү жүктөп алуу (ZIP)",
+    downloadPdf: "PDF жүктөп алуу",
+    generating: "Түзүлүүдө...",
+    loadingError: "Талкуу маалыматтарын жүктөө ишке ашкан жок",
+    narrowScreenTitle: "Чоңураак экран талап кылынат",
+    narrowScreenMessage:
+      "Бул отчет чоң экрандар үчүн иштелип чыккан. Компьютерде же планшетте ачыңыз.",
+    goBack: "Артка",
+  },
+  ru: {
+    pageTitle: "Аналитический отчёт",
+    downloadImages: "Скачать изображения (ZIP)",
+    downloadPdf: "Скачать PDF",
+    generating: "Генерация...",
+    loadingError: "Не удалось загрузить данные обсуждения",
+    narrowScreenTitle: "Требуется экран большего размера",
+    narrowScreenMessage:
+      "Этот отчёт предназначен для больших экранов. Пожалуйста, откройте его на компьютере или планшете.",
+    goBack: "Назад",
+  },
 };

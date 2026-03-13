@@ -26,4 +26,10 @@ export const staticIconTranslations: Record<SupportedDisplayLanguageCodes, Stati
   ja: {
     stars: "スター",
   },
+  ky: {
+    stars: "Жылдыздар",
+  },
+  ru: {
+    stars: "Звёзды",
+  },
 };

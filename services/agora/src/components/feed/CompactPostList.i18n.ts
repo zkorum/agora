@@ -69,4 +69,20 @@ export const compactPostListTranslations: Record<
     newConversationsButton: "新しい会話",
     retryButton: "再試行",
   },
+  ky: {
+    emptyStateTitle: "Бул жерде өтө тынч...",
+    emptyStateDescription: "Жаңы талкуу түзүү үчүн",
+    completedTitle: "Баарын карап чыктыңыз",
+    completedDescription: "Бардык жаңы талкууларды көрдүңүз.",
+    newConversationsButton: "Жаңы талкуулар",
+    retryButton: "Кайра аракет",
+  },
+  ru: {
+    emptyStateTitle: "Здесь слишком тихо...",
+    emptyStateDescription: "Создайте новое обсуждение с помощью",
+    completedTitle: "Вы всё просмотрели",
+    completedDescription: "Вы просмотрели все новые обсуждения.",
+    newConversationsButton: "Новые обсуждения",
+    retryButton: "Повторить",
+  },
 };

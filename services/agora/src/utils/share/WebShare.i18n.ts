@@ -34,4 +34,10 @@ export const webShareTranslations: Record<
   ja: {
     copiedToClipboard: "リンクをクリップボードにコピーしました",
   },
+  ky: {
+    copiedToClipboard: "Шилтеме алмашуу буферине көчүрүлдү",
+  },
+  ru: {
+    copiedToClipboard: "Ссылка скопирована в буфер обмена",
+  },
 };

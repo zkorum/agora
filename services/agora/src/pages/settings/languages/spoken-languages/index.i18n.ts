@@ -29,4 +29,10 @@ export const spokenLanguagesSettingsTranslations: Record<
   ja: {
     pageTitle: "話される言語",
   },
+  ky: {
+    pageTitle: "Сүйлөгөн тилдер",
+  },
+  ru: {
+    pageTitle: "Языки общения",
+  },
 };

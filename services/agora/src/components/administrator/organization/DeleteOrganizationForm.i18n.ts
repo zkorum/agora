@@ -30,4 +30,10 @@ export const deleteOrganizationFormTranslations: Record<
   ja: {
     noOrganizationsMessage: "システムに登録された組織はありません",
   },
+  ky: {
+    noOrganizationsMessage: "Системада катталган уюмдар жок",
+  },
+  ru: {
+    noOrganizationsMessage: "В системе нет зарегистрированных организаций",
+  },
 };

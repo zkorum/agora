@@ -37,4 +37,12 @@ export const reportFooterTranslations: Record<
     generatedOn: "レポート生成日",
     poweredBy: "Agora Citizen Network 提供",
   },
+  ky: {
+    generatedOn: "Отчёт түзүлгөн күн",
+    poweredBy: "Agora Citizen Network тарабынан иштетилет",
+  },
+  ru: {
+    generatedOn: "Отчёт сформирован",
+    poweredBy: "Работает на Agora Citizen Network",
+  },
 };

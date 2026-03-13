@@ -29,4 +29,10 @@ export const verifyPhoneCodeTranslations: Record<
   ja: {
     title: "コードを入力",
   },
+  ky: {
+    title: "Кодду киргизиңиз",
+  },
+  ru: {
+    title: "Введите код",
+  },
 };

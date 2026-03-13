@@ -76,4 +76,22 @@ export const pollComponentTranslations: Record<
     inputOptionText: "オプションのテキストを入力",
     addOption: "オプションを追加",
   },
+  ky: {
+    addPoll: "Сурамжылоо кошуу",
+    existingPoll: "Учурдагы сурамжылоо",
+    readonlyExplanation:
+      "Добуш берилгенден кийин сурамжылоо параметрлерин түзөтүүгө болбойт. Жаңысын түзүү үчүн адегенде бул сурамжылоону алып салыңыз.",
+    option: "Параметр",
+    inputOptionText: "Параметр текстин киргизиңиз",
+    addOption: "Параметр кошуу",
+  },
+  ru: {
+    addPoll: "Добавить опрос",
+    existingPoll: "Существующий опрос",
+    readonlyExplanation:
+      "Варианты опроса нельзя изменить после голосования. Чтобы создать новый опрос, сначала удалите этот.",
+    option: "Вариант",
+    inputOptionText: "Введите текст варианта",
+    addOption: "Добавить вариант",
+  },
 };
