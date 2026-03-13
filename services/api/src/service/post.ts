@@ -11,7 +11,7 @@ import {
 import { eq, sql, and } from "drizzle-orm";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
-import { useCommonPost, isValidPublicConversationAccess } from "./common.js";
+import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import type { ExtendedConversation, EventSlug, ParticipationMode } from "@/shared/types/zod.js";
 import type {
@@ -105,18 +105,6 @@ export async function createNewPost({
                 );
             }
         }
-    }
-
-    if (
-        !isValidPublicConversationAccess({
-            isIndexed,
-            participationMode,
-            requiresEventTicket,
-        })
-    ) {
-        throw httpErrors.forbidden(
-            "Public conversations must either require login or event ticket verification",
-        );
     }
 
     const { conversationId, conversationContentId } = await db.transaction(

@@ -7,7 +7,6 @@ export interface LoginRequirementDialogTranslations {
   requiresEmailVerificationDescription: string;
   guestParticipationTitle: string;
   guestParticipationDescription: string;
-  conversationSwitchedToPrivate: string;
 }
 
 export const loginRequirementDialogTranslations: Record<
@@ -24,8 +23,6 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationTitle: "Guest participation",
     guestParticipationDescription:
       "Anyone with the link can view the conversation, vote and contribute statements",
-    conversationSwitchedToPrivate:
-      "Conversation switched to private. Guest participation without event ticket verification is only available for private conversations.",
   },
   ar: {
     requiresLoginTitle: "يتطلب تحققًا قويًا",
@@ -37,8 +34,6 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationTitle: "مشاركة الضيوف",
     guestParticipationDescription:
       "يمكن لأي شخص لديه الرابط عرض المحادثة والتصويت وإضافة مقترحات",
-    conversationSwitchedToPrivate:
-      "تم تحويل المحادثة إلى خاصة. مشاركة الضيوف بدون التحقق من تذكرة الحدث متاحة فقط للمحادثات الخاصة.",
   },
   es: {
     requiresLoginTitle: "Requiere verificación fuerte",
@@ -50,8 +45,6 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationTitle: "Participación de invitados",
     guestParticipationDescription:
       "Cualquiera con el enlace puede ver la conversación, votar y contribuir proposiciones",
-    conversationSwitchedToPrivate:
-      "Conversación cambiada a privada. La participación de invitados sin verificación de entrada solo está disponible para conversaciones privadas.",
   },
   fr: {
     requiresLoginTitle: "Vérification renforcée requise",
@@ -63,8 +56,6 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationTitle: "Participation d'invités",
     guestParticipationDescription:
       "Toute personne ayant le lien peut voir la conversation, voter et contribuer des propositions",
-    conversationSwitchedToPrivate:
-      "Conversation basculée en privé. La participation des invités sans vérification de billet est uniquement disponible pour les conversations privées.",
   },
   "zh-Hans": {
     requiresLoginTitle: "需要强验证",
@@ -76,8 +67,6 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationTitle: "访客参与",
     guestParticipationDescription:
       "任何有链接的人都可以查看对话、投票和贡献观点",
-    conversationSwitchedToPrivate:
-      "对话已切换为私密。没有活动门票验证的访客参与仅适用于私密对话。",
   },
   "zh-Hant": {
     requiresLoginTitle: "需要強驗證",
@@ -89,8 +78,6 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationTitle: "訪客參與",
     guestParticipationDescription:
       "任何有連結的人都可以查看對話、投票和貢獻觀點",
-    conversationSwitchedToPrivate:
-      "對話已切換為私密。沒有活動門票驗證的訪客參與僅適用於私密對話。",
   },
   ja: {
     requiresLoginTitle: "強力な認証が必要",
@@ -102,7 +89,5 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationTitle: "ゲスト参加",
     guestParticipationDescription:
       "リンクを持つ人は誰でも会話を閲覧、投票、主張の投稿ができます",
-    conversationSwitchedToPrivate:
-      "会話がプライベートに切り替わりました。イベントチケット検証なしのゲスト参加はプライベート会話でのみ利用可能です。",
   },
 };

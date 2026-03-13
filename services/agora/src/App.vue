@@ -22,7 +22,7 @@ import { useZupassVerification } from "./composables/zupass/useZupassVerificatio
 import { useBackendAuthApi } from "./utils/api/auth";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
 
-const keepAliveRoutes = ["NotificationPage"];
+const keepAliveRoutes = ["NotificationPage", "UserProfilePage"];
 
 const authenticationStore = useBackendAuthApi();
 

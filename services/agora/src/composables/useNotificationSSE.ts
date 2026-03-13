@@ -12,6 +12,10 @@ import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
 import { onUnmounted, ref, watch } from "vue";
 
+const SSE_CONNECTION_TIMEOUT_MS = 15_000;
+const SSE_INITIAL_RETRY_DELAY_MS = 2_000;
+const SSE_MAX_RETRY_DELAY_MS = 300_000;
+
 export function useNotificationSSE() {
   const { buildEncodedUcan } = useCommonApi();
   const notificationStore = useNotificationStore();
@@ -23,6 +27,7 @@ export function useNotificationSSE() {
   let abortController: AbortController | null = null;
   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   let shouldReconnect = true;
+  let currentRetryDelay = SSE_INITIAL_RETRY_DELAY_MS;
 
   async function connect() {
     console.log("[SSE] connect() called", {
@@ -35,8 +40,18 @@ export function useNotificationSSE() {
       return;
     }
 
+    let connectionTimeout: ReturnType<typeof setTimeout> | null = null;
+
     try {
       isConnecting.value = true;
+
+      abortController = new AbortController();
+
+      // Abort if connection doesn't establish within timeout
+      connectionTimeout = setTimeout(() => {
+        console.warn("[SSE] Connection timed out");
+        abortController?.abort();
+      }, SSE_CONNECTION_TIMEOUT_MS);
 
       // Fresh UCAN for each connection attempt — prevents replay guard rejection
       const encodedUcan = await buildEncodedUcan(
@@ -48,8 +63,6 @@ export function useNotificationSSE() {
       const baseUrl = processEnv.VITE_API_BASE_URL || "";
       const url = `${baseUrl}/api/v1/notification/stream`;
 
-      abortController = new AbortController();
-
       const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -58,6 +71,9 @@ export function useNotificationSSE() {
         },
         signal: abortController.signal,
       });
+
+      clearTimeout(connectionTimeout);
+      connectionTimeout = null;
 
       if (!response.ok) {
         throw new Error(`SSE connection failed: ${String(response.status)}`);
@@ -69,6 +85,7 @@ export function useNotificationSSE() {
 
       isConnected.value = true;
       isConnecting.value = false;
+      currentRetryDelay = SSE_INITIAL_RETRY_DELAY_MS;
       console.log("[SSE] Stream opened successfully");
 
       // Read and parse SSE stream
@@ -95,7 +112,11 @@ export function useNotificationSSE() {
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
-          return; // Intentional disconnect — don't reconnect
+          if (!shouldReconnect) {
+            return; // Intentional disconnect — don't reconnect
+          }
+          // Timeout or other abort while shouldReconnect is true — fall through to reconnect
+          throw error;
         }
         throw error;
       }
@@ -106,6 +127,9 @@ export function useNotificationSSE() {
         scheduleReconnect();
       }
     } catch (error) {
+      if (connectionTimeout) {
+        clearTimeout(connectionTimeout);
+      }
       console.error("[SSE] Connection error:", error);
       isConnected.value = false;
       isConnecting.value = false;
@@ -174,8 +198,7 @@ export function useNotificationSSE() {
       clearTimeout(reconnectTimeout);
     }
 
-    // Try reconnecting after 10 seconds
-    const delay = 10000;
+    console.log(`[SSE] Reconnecting in ${currentRetryDelay / 1000}s`);
 
     reconnectTimeout = setTimeout(() => {
       if (shouldReconnect) {
@@ -183,11 +206,15 @@ export function useNotificationSSE() {
           console.error("[SSE] Reconnection failed:", error);
         });
       }
-    }, delay);
+    }, currentRetryDelay);
+
+    // Exponential backoff: double delay each time, capped at max
+    currentRetryDelay = Math.min(currentRetryDelay * 2, SSE_MAX_RETRY_DELAY_MS);
   }
 
   function disconnect() {
     shouldReconnect = false;
+    currentRetryDelay = SSE_INITIAL_RETRY_DELAY_MS;
 
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout);

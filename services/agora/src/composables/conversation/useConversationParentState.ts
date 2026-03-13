@@ -7,6 +7,11 @@ import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { useInvalidateVoteQueries } from "src/utils/api/vote/useVoteQueries";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
+import {
+  getElementScrollTop,
+  getHeaderHeight,
+  scrollTo,
+} from "src/utils/html/scroll";
 import { computed, provide, type Ref, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { RouteNamedMap } from "vue-router/auto-routes";
@@ -101,16 +106,9 @@ export function useConversationParentState({
   function scrollToActionBar({ behavior }: { behavior?: ScrollBehavior } = {}): void {
     const el = actionBarElement.value;
     if (!el) return;
-    const headerEl = document.querySelector(".q-header");
-    const headerOffset = headerEl?.clientHeight ?? 0;
     const container = scrollContainer?.value;
-    if (container) {
-      const elTop = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
-      container.scrollTo({ top: elTop - headerOffset, behavior });
-    } else {
-      const elTop = el.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: elTop - headerOffset, behavior });
-    }
+    const elTop = getElementScrollTop({ element: el, scrollContainer: container });
+    scrollTo({ top: elTop - getHeaderHeight(), behavior, scrollContainer: container });
   }
 
   // Filter state: owned here, displayed in PostActionBar slot, synced with child route via props

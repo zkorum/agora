@@ -1975,17 +1975,6 @@ server.after(() => {
                 }
             }
 
-            // Validate public conversation access requirements
-            if (
-                request.body.isIndexed &&
-                request.body.participationMode === "guest" &&
-                !request.body.requiresEventTicket
-            ) {
-                throw server.httpErrors.forbidden(
-                    "Public conversations must either require login or event ticket verification",
-                );
-            }
-
             // Queue URL import for async processing
             return await conversationImportService.requestUrlImport({
                 db,
@@ -2126,17 +2115,6 @@ server.after(() => {
                         `User '${deviceStatus.userId}' is not part of the organization: '${parsedFields.postAsOrganization}'`,
                     );
                 }
-            }
-
-            // Validate public conversation access requirements
-            if (
-                parsedFields.isIndexed &&
-                parsedFields.participationMode === "guest" &&
-                !parsedFields.requiresEventTicket
-            ) {
-                throw server.httpErrors.forbidden(
-                    "Public conversations must either require login or event ticket verification",
-                );
             }
 
             // Request CSV import (creates record and queues for async processing)

@@ -20,6 +20,10 @@
       </HomeMenuBar>
 
       <WidthWrapper :enable="true">
+        <FeaturedConversationBanner />
+      </WidthWrapper>
+
+      <WidthWrapper :enable="true">
         <div class="tabCluster">
           <div class="tabItem" @click="selectedTab('following')">
             <ZKTab
@@ -53,6 +57,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import CompactPostList from "src/components/feed/CompactPostList.vue";
+import FeaturedConversationBanner from "src/components/feed/FeaturedConversationBanner.vue";
 import { HomeMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import NewPostButtonWrapper from "src/components/post/NewPostButtonWrapper.vue";

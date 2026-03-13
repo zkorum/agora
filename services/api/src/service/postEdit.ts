@@ -12,7 +12,6 @@ import { log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
 import { toUnionUndefined } from "@/shared/shared.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
-import { isValidPublicConversationAccess } from "./common.js";
 import type {
     GetConversationForEditResponse,
     UpdateConversationRequest,
@@ -181,17 +180,6 @@ export async function updateConversation({
         requiresEventTicket,
         indexConversationAt,
     } = data;
-
-    // Validate public conversation access rules
-    if (
-        !isValidPublicConversationAccess({
-            isIndexed,
-            participationMode,
-            requiresEventTicket,
-        })
-    ) {
-        return { success: false, reason: "invalid_access_settings" };
-    }
 
     // Sanitize HTML body if provided (backend security layer)
     let sanitizedBody = conversationBody;
