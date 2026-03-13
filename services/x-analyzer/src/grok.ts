@@ -289,6 +289,15 @@ export function createGrokClient({ apiKey }: { apiKey: string }): GrokClient {
             );
         }
 
+        // Strip Grok inline citation markup (e.g. <grok:render type="render_inline_citation">...</grok:render>)
+        const beforeStripLen = jsonStr.length;
+        jsonStr = jsonStr.replace(/<grok:render[^>]*>[\s\S]*?<\/grok:render>/g, "");
+        if (jsonStr.length !== beforeStripLen) {
+            console.log(
+                `  [Grok] parseJsonResponse(${label}): stripped ${beforeStripLen - jsonStr.length} chars of grok:render markup`,
+            );
+        }
+
         try {
             const parsed: unknown = JSON.parse(jsonStr);
             const result = schema.parse(parsed);
@@ -422,8 +431,15 @@ Scout this thread and return your structured JSON assessment.`;
             const highReplyCount = author.repliesInThread >= 5;
             const lowTweetCount =
                 author.tweetCount !== undefined && author.tweetCount < 10;
+            const signalCount =
+                (noBio ? 1 : 0) +
+                (suspiciousRatio ? 1 : 0) +
+                (highReplyCount ? 1 : 0) +
+                (lowTweetCount ? 1 : 0);
+            // Require at least 2 signals to flag as suspicious —
+            // no_bio alone is too common among legitimate users
             const suspicious =
-                noBio || suspiciousRatio || highReplyCount || lowTweetCount;
+                suspiciousRatio || signalCount >= 2;
 
             if (!suspicious) {
                 skippedCount++;
@@ -498,32 +514,72 @@ Return ONLY valid JSON:
   "totalFlagged": N
 }`;
 
-        const userPrompt = `Assess these ${authorSummaries.length} suspicious accounts for bot likelihood:\n\n${authorSummaries.join("\n")}`;
-
-        const raw = await callGrok({ systemPrompt, userPrompt });
-        const result = parseJsonResponse(
-            raw,
-            botDetectionResultSchema,
-            "bot detection",
-        );
-
-        if (result) {
-            console.log(
-                `  [Grok] Bot detection: ${result.totalFlagged}/${result.totalAssessed} flagged as bots`,
-            );
-            for (const assessment of result.assessments) {
-                console.log(
-                    `  [Grok] Bot assessment: @${assessment.username} (id:${assessment.authorId}) → isBot=${assessment.isBot}, confidence=${assessment.confidence}, reason="${assessment.reasoning}"`,
-                );
-            }
-            console.log(
-                `  [Grok] Bot author IDs to exclude: ${JSON.stringify(result.botAuthorIds)}`,
-            );
-        } else {
-            console.warn("  [Grok] Bot detection returned null result");
+        // Batch suspicious accounts to avoid response truncation
+        const BATCH_SIZE = 50;
+        const batches: string[][] = [];
+        for (let i = 0; i < authorSummaries.length; i += BATCH_SIZE) {
+            batches.push(authorSummaries.slice(i, i + BATCH_SIZE));
         }
 
-        return result;
+        console.log(
+            `  [Grok] Bot detection: splitting ${authorSummaries.length} suspicious accounts into ${batches.length} batch(es) of up to ${BATCH_SIZE}`,
+        );
+
+        const allAssessments: z.infer<typeof botAssessmentSchema>[] = [];
+        const allBotIds: string[] = [];
+
+        for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
+            const batch = batches[batchIdx];
+            console.log(
+                `  [Grok] Bot detection batch ${batchIdx + 1}/${batches.length}: ${batch.length} accounts`,
+            );
+
+            const userPrompt = `Assess these ${batch.length} suspicious accounts for bot likelihood:\n\n${batch.join("\n")}`;
+
+            const raw = await callGrok({ systemPrompt, userPrompt });
+            const result = parseJsonResponse(
+                raw,
+                botDetectionResultSchema,
+                `bot detection batch ${batchIdx + 1}`,
+            );
+
+            if (result) {
+                allAssessments.push(...result.assessments);
+                allBotIds.push(...result.botAuthorIds);
+                console.log(
+                    `  [Grok] Batch ${batchIdx + 1}: ${result.totalFlagged}/${result.totalAssessed} flagged`,
+                );
+                for (const assessment of result.assessments) {
+                    if (assessment.isBot) {
+                        console.log(
+                            `  [Grok] Bot: @${assessment.username} (id:${assessment.authorId}), confidence=${assessment.confidence}, reason="${assessment.reasoning}"`,
+                        );
+                    }
+                }
+            } else {
+                console.warn(
+                    `  [Grok] Bot detection batch ${batchIdx + 1} returned null — skipping ${batch.length} accounts`,
+                );
+            }
+        }
+
+        const combined: BotDetectionResult = {
+            assessments: allAssessments,
+            botAuthorIds: allBotIds,
+            totalAssessed: allAssessments.length,
+            totalFlagged: allBotIds.length,
+        };
+
+        console.log(
+            `  [Grok] Bot detection complete: ${combined.totalFlagged}/${combined.totalAssessed} flagged as bots`,
+        );
+        if (allBotIds.length > 0) {
+            console.log(
+                `  [Grok] Bot author IDs to exclude: ${JSON.stringify(allBotIds)}`,
+            );
+        }
+
+        return combined;
     };
 
     const enrich: GrokClient["enrich"] = async ({

@@ -5,6 +5,7 @@
     "type": "module",
     "scripts": {
         "x-fetch": "tsx src/fetch.ts",
+        "to-csv": "tsx src/to-csv.ts",
         "test": "vitest run",
         "lint": "eslint .",
         "format:write": "prettier --write \"**/*.{js,ts,jsx,tsx,json}\"",
