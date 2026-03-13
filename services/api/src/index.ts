@@ -145,22 +145,22 @@ import { nowZeroMs } from "./shared/util.js";
 server.register(fastifySensible);
 server.register(fastifyAuth);
 server.register(fastifyCors, {
-    // put your options here
     origin: (origin, cb) => {
-        //TODO: allow https and enforcing CORS during dev?
         if (config.NODE_ENV === "development") {
             cb(null, true);
             return;
         }
-        if (origin !== undefined) {
-            if (config.CORS_ORIGIN_LIST.includes(origin)) {
-                //  Request from localhost will pass
-                cb(null, true);
-                return;
-            }
-            // Generate an error on other origins, disabling access
-            cb(new Error("Not allowed"), false);
+        if (origin === undefined) {
+            // Same-origin request: browser omits Origin header for same-origin GET/HEAD.
+            // Allow through — no CORS headers needed for same-origin.
+            cb(null, true);
+            return;
         }
+        if (config.CORS_ORIGIN_LIST.includes(origin)) {
+            cb(null, true);
+            return;
+        }
+        cb(new Error("Not allowed"), false);
     },
 });
 
