@@ -1,3 +1,4 @@
+import { getHeaderHeight } from "src/utils/html/scroll";
 import { onBeforeUnmount, onMounted, type Ref, ref, watch } from "vue";
 
 interface UseStickyObserverReturn {
@@ -23,20 +24,14 @@ export function useStickyObserver(): UseStickyObserverReturn {
   let observer: IntersectionObserver | undefined;
 
   onMounted(() => {
-    const headerEl = document.querySelector(".q-header");
-    if (headerEl) {
-      headerHeight.value = headerEl.clientHeight;
-    }
+    headerHeight.value = getHeaderHeight();
   });
 
   watch(sentinelElement, (el) => {
     observer?.disconnect();
     if (el) {
       if (headerHeight.value === 0) {
-        const headerEl = document.querySelector(".q-header");
-        if (headerEl) {
-          headerHeight.value = headerEl.clientHeight;
-        }
+        headerHeight.value = getHeaderHeight();
       }
       observer = new IntersectionObserver(
         (entries) => {
