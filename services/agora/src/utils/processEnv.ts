@@ -41,6 +41,7 @@ export const envSchema = z.object({
   // direct type cast of import.meta.env without runtime parsing. Code using this variable
   // must use !== "false" checks to treat undefined as enabled by default.
   VITE_EXPORT_CONVOS_ENABLED: z.enum(["true", "false"]).optional(), // Enable/disable conversation export feature (must match backend)
+  VITE_FEATURED_CONVERSATION_SLUG: z.string().optional(), // Slug of a conversation to feature in a banner on the home page (empty or unset = no banner)
 });
 
 export type ProcessEnv = z.infer<typeof envSchema>;
