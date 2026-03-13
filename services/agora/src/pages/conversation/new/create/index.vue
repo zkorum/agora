@@ -28,6 +28,7 @@
         v-model:requires-event-ticket="requiresEventTicket"
         v-model:private-conversation-settings="privateConversationSettings"
         v-model:post-as="postAs"
+        v-model:conversation-type="conversationType"
         v-model:import-settings="importSettings"
         v-model:title="title"
         v-model:content="content"
@@ -185,6 +186,7 @@ const {
   content,
   pollEnabled,
   pollOptions,
+  conversationType,
   isPrivate,
   participationMode,
   requiresEventTicket,

@@ -27,6 +27,7 @@
           :conversation-slug-id="conversationData.metadata.conversationSlugId"
           :conversation-title="conversationData.payload.title"
           :author-username="conversationData.metadata.authorUsername"
+          :conversation-type="conversationData.metadata.conversationType"
         />
 
         <div v-if="!compactMode">

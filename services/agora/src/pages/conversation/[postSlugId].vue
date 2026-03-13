@@ -52,10 +52,11 @@
                 :conversation-title="loadedConversationData.payload.title"
                 :author-username="loadedConversationData.metadata.authorUsername"
                 :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
+                :conversation-type="loadedConversationData.metadata.conversationType"
               />
               </div>
 
-              <div v-if="currentTab === 'comment'" class="dropdownSlot">
+              <div v-if="currentTab === 'comment' && loadedConversationData.metadata.conversationType !== 'maxdiff'" class="dropdownSlot">
                 <CommentSortingSelector
                   :filter-value="commentFilter"
                   :moderated-opinion-count="loadedConversationData.metadata.moderatedOpinionCount"

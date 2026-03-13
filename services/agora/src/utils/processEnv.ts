@@ -42,6 +42,15 @@ export const envSchema = z.object({
   // must use !== "false" checks to treat undefined as enabled by default.
   VITE_EXPORT_CONVOS_ENABLED: z.enum(["true", "false"]).optional(), // Enable/disable conversation export feature (must match backend)
   VITE_FEATURED_CONVERSATION_SLUG: z.string().optional(), // Slug of a conversation to feature in a banner on the home page (empty or unset = no banner)
+  // Note: We use z.enum instead of transform because import.meta.env contains raw strings at runtime.
+  // The processEnv object is just a type cast of import.meta.env, so transforms don't run at runtime.
+  // Compare with string "true"/"false" when using this value.
+  // DO NOT use .default() here - it only applies during Zod parsing, but processEnv is a
+  // direct type cast of import.meta.env without runtime parsing. Code using this variable
+  // must use === "true" checks to treat undefined as disabled by default.
+  VITE_MAXDIFF_ENABLED: z.enum(["true", "false"]).optional(), // Enable/disable MaxDiff conversation type (must match backend)
+  VITE_IS_MAXDIFF_ORG_ONLY: z.enum(["true", "false"]).optional(), // If "true", MaxDiff is restricted to organization conversations (must match backend)
+  VITE_MAXDIFF_ALLOWED_ORGS: z.string().optional(), // Comma-separated org names allowed to create MaxDiff conversations (empty = all orgs allowed)
 });
 
 export type ProcessEnv = z.infer<typeof envSchema>;

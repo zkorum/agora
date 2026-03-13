@@ -21,7 +21,7 @@ export const featuredConversationBannerTranslations: Record<
   },
   fr: {
     message:
-      "Aidez-nous a faconner l'avenir d'Agora — votez pour les fonctionnalites a developper",
+      "Aidez-nous à façonner l'avenir d'Agora — votez pour les fonctionnalités à développer",
   },
   "zh-Hans": {
     message: "帮助塑造 Agora 的未来 - 投票决定我们接下来要构建的功能",

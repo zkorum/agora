@@ -59,6 +59,11 @@ import {
 } from "./service/comment.js";
 import { getUserPollResponse, submitPollResponse } from "./service/poll.js";
 import {
+    saveMaxdiffResult,
+    loadMaxdiffResult,
+    getMaxdiffResults,
+} from "./service/maxdiff.js";
+import {
     castVoteForOpinionSlugId,
     getUserVotesForPostSlugIds as getUserVotesByConversations,
 } from "./service/voting.js";
@@ -812,6 +817,14 @@ function checkConversationExportEnabled(): void {
     if (!config.EXPORT_CONVOS_ENABLED) {
         throw server.httpErrors.serviceUnavailable(
             "Conversation export feature is currently disabled",
+        );
+    }
+}
+
+function checkMaxdiffEnabled(): void {
+    if (!config.MAXDIFF_ENABLED) {
+        throw server.httpErrors.serviceUnavailable(
+            "MaxDiff feature is currently disabled",
         );
     }
 }
@@ -1595,6 +1608,74 @@ server.after(() => {
         },
     });
 
+    // --- MaxDiff (Best-Worst Scaling) ---
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/maxdiff/save`,
+        schema: {
+            body: Dto.maxdiffSaveRequest,
+        },
+        handler: async (request, reply) => {
+            checkMaxdiffEnabled();
+            const { deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                });
+            await saveMaxdiffResult({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
+                ranking: request.body.ranking,
+                comparisons: request.body.comparisons,
+                isComplete: request.body.isComplete,
+                isMaxdiffOrgOnly: config.IS_MAXDIFF_ORG_ONLY,
+            });
+            reply.send({});
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/maxdiff/load`,
+        schema: {
+            body: Dto.maxdiffLoadRequest,
+            response: {
+                200: Dto.maxdiffLoadResponse,
+            },
+        },
+        handler: async (request) => {
+            checkMaxdiffEnabled();
+            const { deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                });
+            return await loadMaxdiffResult({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/maxdiff/results`,
+        schema: {
+            body: Dto.maxdiffResultsRequest,
+            response: {
+                200: Dto.maxdiffResultsResponse,
+            },
+        },
+        handler: async (request) => {
+            checkMaxdiffEnabled();
+            return await getMaxdiffResults({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+            });
+        },
+    });
+
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/opinion/delete`,
@@ -1897,6 +1978,38 @@ server.after(() => {
                     },
                 });
 
+            if (request.body.conversationType === "maxdiff") {
+                checkMaxdiffEnabled();
+                if (
+                    config.IS_MAXDIFF_ORG_ONLY &&
+                    !request.body.postAsOrganization
+                ) {
+                    throw server.httpErrors.forbidden(
+                        "MaxDiff is restricted to organization conversations",
+                    );
+                }
+                const allowedOrgs = config.MAXDIFF_ALLOWED_ORGS;
+                if (allowedOrgs.trim() !== "") {
+                    if (!request.body.postAsOrganization) {
+                        throw server.httpErrors.forbidden(
+                            "MaxDiff is restricted to specific organizations",
+                        );
+                    }
+                    const orgList = allowedOrgs
+                        .split(",")
+                        .map((s) => s.trim());
+                    if (
+                        !orgList.includes(
+                            request.body.postAsOrganization,
+                        )
+                    ) {
+                        throw server.httpErrors.forbidden(
+                            "This organization is not allowed to create MaxDiff conversations",
+                        );
+                    }
+                }
+            }
+
             const { conversationSlugId } = await postService.createNewPost({
                 db: db,
                 voteBuffer: voteBuffer,
@@ -1910,6 +2023,7 @@ server.after(() => {
                 postAsOrganization: request.body.postAsOrganization,
                 isIndexed: request.body.isIndexed,
                 participationMode: request.body.participationMode,
+                conversationType: request.body.conversationType,
                 isImporting: false,
                 seedOpinionList: request.body.seedOpinionList,
                 requiresEventTicket: request.body.requiresEventTicket,

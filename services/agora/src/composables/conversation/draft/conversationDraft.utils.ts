@@ -19,6 +19,9 @@ export function createEmptyDraft(): ConversationDraft {
     content: "",
     seedOpinions: [],
 
+    // Conversation Type
+    conversationType: "polis",
+
     // Polling Configuration
     poll: {
       enabled: false,

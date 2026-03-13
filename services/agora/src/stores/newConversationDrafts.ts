@@ -138,6 +138,10 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       JSON.stringify(current.poll.options) !==
         JSON.stringify(emptyDraft.poll.options);
 
+    // Check conversation type changes
+    const hasConversationTypeChanges =
+      current.conversationType !== emptyDraft.conversationType;
+
     // Check post-as settings changes
     const hasPostAsChanges =
       current.postAs.postAsOrganization !==
@@ -168,6 +172,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     return (
       hasContentChanges ||
       hasSeedOpinionsChanges ||
+      hasConversationTypeChanges ||
       hasPollChanges ||
       hasPostAsChanges ||
       hasPrivacyChanges ||
