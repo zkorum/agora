@@ -40,8 +40,14 @@ import {
     computeThreadStats,
     createAuthorAccumulator,
     computeTopReplyChains,
+    fetchTweet,
 } from "./fetch.js";
-import type { Reply, FetchOptions, AuthorData } from "./fetch.js";
+import type {
+    Reply,
+    FetchOptions,
+    AuthorData,
+    FetchTweetResult,
+} from "./fetch.js";
 
 // Suppress console output in tests without eslint-disable
 function noop(): void {
@@ -2928,6 +2934,734 @@ describe("E2E: full fetch flow", () => {
             );
         });
     });
+
+    // ============================================================
+    // Retweet filtering in quote tweets
+    // ============================================================
+
+    describe("retweet filtering in quotes", () => {
+        const RT_TEST_TWEET_ID = "9900000000000001";
+        const RT_TEST_AUTHOR_ID = "rt_test_author";
+
+        beforeEach(() => {
+            server.use(
+                // Single tweet endpoint
+                http.get(
+                    "https://api.x.com/2/tweets/:id",
+                    ({ params }) => {
+                        const id = String(params.id);
+                        if (id !== RT_TEST_TWEET_ID) {
+                            return HttpResponse.json(
+                                { errors: [{ message: "Not found" }] },
+                                { status: 404, headers: RATE_LIMIT_HEADERS },
+                            );
+                        }
+                        return HttpResponse.json(
+                            {
+                                data: {
+                                    id: RT_TEST_TWEET_ID,
+                                    text: "Original tweet for RT test",
+                                    author_id: RT_TEST_AUTHOR_ID,
+                                    created_at: "2024-06-15T10:00:00.000Z",
+                                    edit_history_tweet_ids: [RT_TEST_TWEET_ID],
+                                    public_metrics: {
+                                        like_count: 100,
+                                        reply_count: 5,
+                                        retweet_count: 10,
+                                        quote_count: 6,
+                                        impression_count: 1000,
+                                    },
+                                },
+                                includes: {
+                                    users: [
+                                        {
+                                            id: RT_TEST_AUTHOR_ID,
+                                            name: "RT Test Author",
+                                            username: "rttestauthor",
+                                        },
+                                    ],
+                                },
+                            },
+                            { headers: RATE_LIMIT_HEADERS },
+                        );
+                    },
+                ),
+
+                // Search endpoint (replies) — return empty
+                http.get(
+                    "https://api.x.com/2/tweets/search/recent",
+                    () => {
+                        return HttpResponse.json(
+                            { meta: { result_count: 0 } },
+                            { headers: RATE_LIMIT_HEADERS },
+                        );
+                    },
+                ),
+
+                // Quotes endpoint — return mix of originals and retweets
+                http.get(
+                    "https://api.x.com/2/tweets/:id/quote_tweets",
+                    () => {
+                        const originalQuote1 = {
+                            id: "orig_quote_1",
+                            text: "My original take on this",
+                            author_id: "orig_quoter_1",
+                            created_at: "2024-06-16T10:00:00.000Z",
+                            edit_history_tweet_ids: ["orig_quote_1"],
+                            public_metrics: {
+                                like_count: 5,
+                                reply_count: 1,
+                                retweet_count: 0,
+                                quote_count: 0,
+                                impression_count: 50,
+                            },
+                            referenced_tweets: [
+                                { type: "quoted", id: RT_TEST_TWEET_ID },
+                            ],
+                        };
+
+                        const originalQuote2 = {
+                            id: "orig_quote_2",
+                            text: "Another thoughtful response",
+                            author_id: "orig_quoter_2",
+                            created_at: "2024-06-16T11:00:00.000Z",
+                            edit_history_tweet_ids: ["orig_quote_2"],
+                            public_metrics: {
+                                like_count: 3,
+                                reply_count: 0,
+                                retweet_count: 0,
+                                quote_count: 0,
+                                impression_count: 30,
+                            },
+                            referenced_tweets: [
+                                { type: "quoted", id: RT_TEST_TWEET_ID },
+                            ],
+                        };
+
+                        const rtOfQuote1 = {
+                            id: "rt_of_quote_1",
+                            text: "RT @orig_quoter_1: My original take on this",
+                            author_id: "retweeter_1",
+                            created_at: "2024-06-16T12:00:00.000Z",
+                            edit_history_tweet_ids: ["rt_of_quote_1"],
+                            public_metrics: {
+                                like_count: 0,
+                                reply_count: 0,
+                                retweet_count: 0,
+                                quote_count: 0,
+                                impression_count: 5,
+                            },
+                            referenced_tweets: [
+                                { type: "retweeted", id: "orig_quote_1" },
+                                { type: "quoted", id: RT_TEST_TWEET_ID },
+                            ],
+                        };
+
+                        const rtOfQuote2 = {
+                            id: "rt_of_quote_2",
+                            text: "RT @orig_quoter_1: My original take on this",
+                            author_id: "retweeter_2",
+                            created_at: "2024-06-16T13:00:00.000Z",
+                            edit_history_tweet_ids: ["rt_of_quote_2"],
+                            public_metrics: {
+                                like_count: 0,
+                                reply_count: 0,
+                                retweet_count: 0,
+                                quote_count: 0,
+                                impression_count: 3,
+                            },
+                            referenced_tweets: [
+                                { type: "retweeted", id: "orig_quote_2" },
+                                { type: "quoted", id: RT_TEST_TWEET_ID },
+                            ],
+                        };
+
+                        const rtOfQuote3 = {
+                            id: "rt_of_quote_3",
+                            text: "RT @orig_quoter_2: Another thoughtful response",
+                            author_id: "retweeter_3",
+                            created_at: "2024-06-16T14:00:00.000Z",
+                            edit_history_tweet_ids: ["rt_of_quote_3"],
+                            public_metrics: {
+                                like_count: 0,
+                                reply_count: 0,
+                                retweet_count: 0,
+                                quote_count: 0,
+                                impression_count: 2,
+                            },
+                            referenced_tweets: [
+                                { type: "retweeted", id: "orig_quote_1" },
+                                { type: "quoted", id: RT_TEST_TWEET_ID },
+                            ],
+                        };
+
+                        return HttpResponse.json(
+                            {
+                                data: [
+                                    originalQuote1,
+                                    rtOfQuote1,
+                                    originalQuote2,
+                                    rtOfQuote2,
+                                    rtOfQuote3,
+                                ],
+                                includes: {
+                                    users: [
+                                        {
+                                            id: "orig_quoter_1",
+                                            name: "Quoter 1",
+                                            username: "quoter1",
+                                        },
+                                        {
+                                            id: "orig_quoter_2",
+                                            name: "Quoter 2",
+                                            username: "quoter2",
+                                        },
+                                        {
+                                            id: "retweeter_1",
+                                            name: "Retweeter 1",
+                                            username: "retweeter1",
+                                        },
+                                        {
+                                            id: "retweeter_2",
+                                            name: "Retweeter 2",
+                                            username: "retweeter2",
+                                        },
+                                        {
+                                            id: "retweeter_3",
+                                            name: "Retweeter 3",
+                                            username: "retweeter3",
+                                        },
+                                    ],
+                                },
+                                meta: {
+                                    result_count: 5,
+                                    next_token: undefined,
+                                },
+                            },
+                            { headers: RATE_LIMIT_HEADERS },
+                        );
+                    },
+                ),
+            );
+        });
+
+        it("filters out retweets from quote tweets, keeping only originals", async () => {
+            const originalArgv = process.argv;
+            process.argv = [
+                "node",
+                "fetch.ts",
+                `https://x.com/rttestauthor/status/${RT_TEST_TWEET_ID}`,
+                "--no-quality-stop",
+            ];
+
+            try {
+                await main();
+            } finally {
+                process.argv = originalArgv;
+            }
+
+            const outputFile = join(tempDir, `${RT_TEST_TWEET_ID}.json`);
+            expect(existsSync(outputFile)).toBe(true);
+
+            const raw = readFileSync(outputFile, "utf-8");
+            const data = rawThreadDataSchema.parse(JSON.parse(raw));
+
+            // Should have 2 original quotes, not 5
+            const quotes = data.quotes ?? [];
+            expect(quotes.length).toBe(2);
+
+            // Verify the kept quotes are the originals
+            const quoteIds = quotes.map((q) => q.id);
+            expect(quoteIds).toContain("orig_quote_1");
+            expect(quoteIds).toContain("orig_quote_2");
+
+            // Verify retweets were filtered out
+            expect(quoteIds).not.toContain("rt_of_quote_1");
+            expect(quoteIds).not.toContain("rt_of_quote_2");
+            expect(quoteIds).not.toContain("rt_of_quote_3");
+        });
+    });
+
+    // ============================================================
+    // fetchTweet quoted tweet detection
+    // ============================================================
+
+    describe("fetchTweet quoted tweet detection", () => {
+        const QUOTE_TWEET_ID = "9900000000000010";
+        const QUOTED_ORIGINAL_ID = "9900000000000099";
+
+        beforeEach(() => {
+            server.use(
+                http.get(
+                    "https://api.x.com/2/tweets/:id",
+                    ({ params }) => {
+                        const id = String(params.id);
+
+                        if (id === QUOTE_TWEET_ID) {
+                            return HttpResponse.json(
+                                {
+                                    data: {
+                                        id: QUOTE_TWEET_ID,
+                                        text: "My quote of the original",
+                                        author_id: "qt_author",
+                                        created_at:
+                                            "2024-06-15T10:00:00.000Z",
+                                        edit_history_tweet_ids: [
+                                            QUOTE_TWEET_ID,
+                                        ],
+                                        public_metrics: {
+                                            like_count: 50,
+                                            reply_count: 10,
+                                            retweet_count: 5,
+                                            quote_count: 2,
+                                            impression_count: 500,
+                                        },
+                                        referenced_tweets: [
+                                            {
+                                                type: "quoted",
+                                                id: QUOTED_ORIGINAL_ID,
+                                            },
+                                        ],
+                                    },
+                                    includes: {
+                                        users: [
+                                            {
+                                                id: "qt_author",
+                                                name: "QT Author",
+                                                username: "qtauthor",
+                                            },
+                                        ],
+                                    },
+                                },
+                                { headers: RATE_LIMIT_HEADERS },
+                            );
+                        }
+
+                        if (id === QUOTED_ORIGINAL_ID) {
+                            return HttpResponse.json(
+                                {
+                                    data: {
+                                        id: QUOTED_ORIGINAL_ID,
+                                        text: "The original tweet being quoted",
+                                        author_id: "original_author",
+                                        created_at:
+                                            "2024-06-14T10:00:00.000Z",
+                                        edit_history_tweet_ids: [
+                                            QUOTED_ORIGINAL_ID,
+                                        ],
+                                        public_metrics: {
+                                            like_count: 200,
+                                            reply_count: 50,
+                                            retweet_count: 30,
+                                            quote_count: 10,
+                                            impression_count: 5000,
+                                        },
+                                    },
+                                    includes: {
+                                        users: [
+                                            {
+                                                id: "original_author",
+                                                name: "Original Author",
+                                                username: "originalauthor",
+                                            },
+                                        ],
+                                    },
+                                },
+                                { headers: RATE_LIMIT_HEADERS },
+                            );
+                        }
+
+                        if (id === "plain_tweet_001") {
+                            return HttpResponse.json(
+                                {
+                                    data: {
+                                        id: "plain_tweet_001",
+                                        text: "A regular tweet",
+                                        author_id: "plain_author",
+                                        created_at:
+                                            "2024-06-15T10:00:00.000Z",
+                                        edit_history_tweet_ids: [
+                                            "plain_tweet_001",
+                                        ],
+                                        public_metrics: {
+                                            like_count: 10,
+                                            reply_count: 2,
+                                            retweet_count: 1,
+                                            quote_count: 0,
+                                            impression_count: 100,
+                                        },
+                                    },
+                                    includes: {
+                                        users: [
+                                            {
+                                                id: "plain_author",
+                                                name: "Plain Author",
+                                                username: "plainauthor",
+                                            },
+                                        ],
+                                    },
+                                },
+                                { headers: RATE_LIMIT_HEADERS },
+                            );
+                        }
+
+                        return HttpResponse.json(
+                            { errors: [{ message: "Not found" }] },
+                            { status: 404, headers: RATE_LIMIT_HEADERS },
+                        );
+                    },
+                ),
+            );
+        });
+
+        it("returns quotedTweetId when tweet quotes another", async () => {
+            const result: FetchTweetResult =
+                await fetchTweet(QUOTE_TWEET_ID);
+
+            expect(result.tweet.id).toBe(QUOTE_TWEET_ID);
+            expect(result.quotedTweetId).toBe(QUOTED_ORIGINAL_ID);
+        });
+
+        it("returns undefined quotedTweetId for non-quote tweets", async () => {
+            const result: FetchTweetResult =
+                await fetchTweet(QUOTED_ORIGINAL_ID);
+
+            expect(result.tweet.id).toBe(QUOTED_ORIGINAL_ID);
+            expect(result.quotedTweetId).toBeUndefined();
+        });
+
+        it("returns undefined quotedTweetId for plain tweets", async () => {
+            const result: FetchTweetResult =
+                await fetchTweet("plain_tweet_001");
+
+            expect(result.quotedTweetId).toBeUndefined();
+        });
+    });
+
+    // ============================================================
+    // Quoted tweet auto-analysis (depth 1 cap, circular guard)
+    // ============================================================
+
+    describe("quoted tweet auto-analysis", () => {
+        const QT_MAIN_ID = "9900000000000020";
+        const QT_QUOTED_ID = "9900000000000021";
+
+        beforeEach(() => {
+            server.use(
+                // Single tweet endpoint
+                http.get(
+                    "https://api.x.com/2/tweets/:id",
+                    ({ params }) => {
+                        const id = String(params.id);
+
+                        if (id === QT_MAIN_ID) {
+                            return HttpResponse.json(
+                                {
+                                    data: {
+                                        id: QT_MAIN_ID,
+                                        text: "My take on the original thread",
+                                        author_id: "main_author",
+                                        created_at:
+                                            "2024-06-15T10:00:00.000Z",
+                                        edit_history_tweet_ids: [QT_MAIN_ID],
+                                        public_metrics: {
+                                            like_count: 50,
+                                            reply_count: 3,
+                                            retweet_count: 2,
+                                            quote_count: 1,
+                                            impression_count: 500,
+                                        },
+                                        referenced_tweets: [
+                                            {
+                                                type: "quoted",
+                                                id: QT_QUOTED_ID,
+                                            },
+                                        ],
+                                    },
+                                    includes: {
+                                        users: [
+                                            {
+                                                id: "main_author",
+                                                name: "Main Author",
+                                                username: "mainauthor",
+                                            },
+                                        ],
+                                    },
+                                },
+                                { headers: RATE_LIMIT_HEADERS },
+                            );
+                        }
+
+                        if (id === QT_QUOTED_ID) {
+                            return HttpResponse.json(
+                                {
+                                    data: {
+                                        id: QT_QUOTED_ID,
+                                        text: "The original controversial take",
+                                        author_id: "quoted_author",
+                                        created_at:
+                                            "2024-06-14T10:00:00.000Z",
+                                        edit_history_tweet_ids: [
+                                            QT_QUOTED_ID,
+                                        ],
+                                        public_metrics: {
+                                            like_count: 200,
+                                            reply_count: 20,
+                                            retweet_count: 15,
+                                            quote_count: 5,
+                                            impression_count: 3000,
+                                        },
+                                        referenced_tweets: [
+                                            {
+                                                type: "quoted",
+                                                id: "deeper_tweet_should_not_follow",
+                                            },
+                                        ],
+                                    },
+                                    includes: {
+                                        users: [
+                                            {
+                                                id: "quoted_author",
+                                                name: "Quoted Author",
+                                                username: "quotedauthor",
+                                            },
+                                        ],
+                                    },
+                                },
+                                { headers: RATE_LIMIT_HEADERS },
+                            );
+                        }
+
+                        return HttpResponse.json(
+                            { errors: [{ message: "Not found" }] },
+                            { status: 404, headers: RATE_LIMIT_HEADERS },
+                        );
+                    },
+                ),
+
+                // Search endpoint (replies) — return empty for all
+                http.get(
+                    "https://api.x.com/2/tweets/search/recent",
+                    () => {
+                        return HttpResponse.json(
+                            { meta: { result_count: 0 } },
+                            { headers: RATE_LIMIT_HEADERS },
+                        );
+                    },
+                ),
+
+                // Quotes endpoint — return empty for all
+                http.get(
+                    "https://api.x.com/2/tweets/:id/quote_tweets",
+                    () => {
+                        return HttpResponse.json(
+                            {
+                                data: [],
+                                includes: { users: [] },
+                                meta: { result_count: 0 },
+                            },
+                            { headers: RATE_LIMIT_HEADERS },
+                        );
+                    },
+                ),
+            );
+        });
+
+        it("auto-analyzes quoted tweet and stores in _quotedThread", async () => {
+            const originalArgv = process.argv;
+            process.argv = [
+                "node",
+                "fetch.ts",
+                `https://x.com/mainauthor/status/${QT_MAIN_ID}`,
+                "--no-quality-stop",
+            ];
+
+            try {
+                await main();
+            } finally {
+                process.argv = originalArgv;
+            }
+
+            const outputFile = join(tempDir, `${QT_MAIN_ID}.json`);
+            expect(existsSync(outputFile)).toBe(true);
+
+            const raw = readFileSync(outputFile, "utf-8");
+            const data = rawThreadDataSchema.parse(JSON.parse(raw));
+
+            // Main tweet data is correct
+            expect(data.originalTweet.id).toBe(QT_MAIN_ID);
+            expect(data.originalTweet.authorUsername).toBe("mainauthor");
+
+            // _quotedTweetId should be persisted
+            expect(data._quotedTweetId).toBe(QT_QUOTED_ID);
+
+            // _quotedThread should exist and contain the quoted tweet's analysis
+            const quotedThread = data._quotedThread;
+            expect(quotedThread).toBeDefined();
+            expect(quotedThread?.originalTweet.id).toBe(QT_QUOTED_ID);
+            expect(quotedThread?.originalTweet.authorUsername).toBe(
+                "quotedauthor",
+            );
+
+            // The quoted tweet itself quotes "deeper_tweet_should_not_follow",
+            // but depth-1 cap should prevent following it
+            expect(quotedThread?._quotedThread).toBeUndefined();
+        });
+
+        it("does not follow circular quotes (self-quote)", async () => {
+            // Override the handler so QT_MAIN_ID quotes itself
+            server.use(
+                http.get(
+                    "https://api.x.com/2/tweets/:id",
+                    ({ params }) => {
+                        const id = String(params.id);
+                        if (id === QT_MAIN_ID) {
+                            return HttpResponse.json(
+                                {
+                                    data: {
+                                        id: QT_MAIN_ID,
+                                        text: "I quote myself",
+                                        author_id: "main_author",
+                                        created_at:
+                                            "2024-06-15T10:00:00.000Z",
+                                        edit_history_tweet_ids: [QT_MAIN_ID],
+                                        public_metrics: {
+                                            like_count: 10,
+                                            reply_count: 1,
+                                            retweet_count: 0,
+                                            quote_count: 0,
+                                            impression_count: 100,
+                                        },
+                                        // Circular: quotes itself
+                                        referenced_tweets: [
+                                            {
+                                                type: "quoted",
+                                                id: QT_MAIN_ID,
+                                            },
+                                        ],
+                                    },
+                                    includes: {
+                                        users: [
+                                            {
+                                                id: "main_author",
+                                                name: "Main Author",
+                                                username: "mainauthor",
+                                            },
+                                        ],
+                                    },
+                                },
+                                { headers: RATE_LIMIT_HEADERS },
+                            );
+                        }
+                        return HttpResponse.json(
+                            { errors: [{ message: "Not found" }] },
+                            { status: 404, headers: RATE_LIMIT_HEADERS },
+                        );
+                    },
+                ),
+            );
+
+            const originalArgv = process.argv;
+            process.argv = [
+                "node",
+                "fetch.ts",
+                `https://x.com/mainauthor/status/${QT_MAIN_ID}`,
+                "--no-quality-stop",
+            ];
+
+            try {
+                await main();
+            } finally {
+                process.argv = originalArgv;
+            }
+
+            const outputFile = join(tempDir, `${QT_MAIN_ID}.json`);
+            const raw = readFileSync(outputFile, "utf-8");
+            const data = rawThreadDataSchema.parse(JSON.parse(raw));
+
+            // Should NOT have _quotedThread (circular quote was detected)
+            expect(data._quotedThread).toBeUndefined();
+
+            // But _quotedTweetId should still reflect the circular reference
+            expect(data._quotedTweetId).toBe(QT_MAIN_ID);
+        });
+
+        it("resume picks up missing _quotedThread", async () => {
+            // Write a partial file that has _quotedTweetId but no _quotedThread
+            const partialData = {
+                originalTweet: {
+                    id: QT_MAIN_ID,
+                    text: "My take on the original thread",
+                    authorId: "main_author",
+                    authorUsername: "mainauthor",
+                    createdAt: "2024-06-15T10:00:00.000Z",
+                    likeCount: 50,
+                    replyCount: 3,
+                    retweetCount: 2,
+                    quoteCount: 1,
+                },
+                replies: [],
+                fetchedAt: "2024-06-15T12:00:00.000Z",
+                tweetUrl: `https://x.com/mainauthor/status/${QT_MAIN_ID}`,
+                _quotedTweetId: QT_QUOTED_ID,
+                // No _quotedThread — this is what resume should fill
+            };
+            const outputFile = join(tempDir, `${QT_MAIN_ID}.json`);
+            writeFileSync(outputFile, JSON.stringify(partialData));
+
+            const originalArgv = process.argv;
+            process.argv = [
+                "node",
+                "fetch.ts",
+                "--resume",
+                `https://x.com/mainauthor/status/${QT_MAIN_ID}`,
+            ];
+
+            try {
+                await main();
+            } finally {
+                process.argv = originalArgv;
+            }
+
+            const raw = readFileSync(outputFile, "utf-8");
+            const data = rawThreadDataSchema.parse(JSON.parse(raw));
+
+            // Resume should have fetched the quoted thread
+            expect(data._quotedThread).toBeDefined();
+            expect(data._quotedThread?.originalTweet.id).toBe(QT_QUOTED_ID);
+            expect(data._quotedThread?.originalTweet.authorUsername).toBe(
+                "quotedauthor",
+            );
+        });
+
+        it("budget exhaustion skips quoted thread but persists _quotedTweetId", async () => {
+            const originalArgv = process.argv;
+            process.argv = [
+                "node",
+                "fetch.ts",
+                `https://x.com/mainauthor/status/${QT_MAIN_ID}`,
+                "--no-quality-stop",
+                "--max-cost",
+                "0.001",
+            ];
+
+            try {
+                await main();
+            } finally {
+                process.argv = originalArgv;
+            }
+
+            const outputFile = join(tempDir, `${QT_MAIN_ID}.json`);
+            const raw = readFileSync(outputFile, "utf-8");
+            const data = rawThreadDataSchema.parse(JSON.parse(raw));
+
+            // _quotedTweetId should be persisted for later resume
+            expect(data._quotedTweetId).toBe(QT_QUOTED_ID);
+
+            // _quotedThread should NOT exist (budget was 0)
+            expect(data._quotedThread).toBeUndefined();
+        });
+    });
 });
 
 // ============================================================
@@ -2991,6 +3725,39 @@ describe("annotateReplyDepths", () => {
         const replies: Reply[] = [];
         annotateReplyDepths({ replies, rootTweetId: "root" });
         expect(replies).toHaveLength(0);
+    });
+
+    it("handles self-referencing reply (cycle of 1) without crashing", () => {
+        const replies = [
+            makeReply({ id: "r1", inReplyToTweetId: "r1" }),
+        ];
+        annotateReplyDepths({ replies, rootTweetId: "root" });
+        // Cycle is broken: the recursive call sees inProgress and returns 0,
+        // so the outer call computes depth = 0 + 1 = 1
+        expect(replies[0]._depth).toBe(1);
+    });
+
+    it("handles mutual cycle (A -> B -> A) without crashing", () => {
+        const replies = [
+            makeReply({ id: "r1", inReplyToTweetId: "r2" }),
+            makeReply({ id: "r2", inReplyToTweetId: "r1" }),
+        ];
+        annotateReplyDepths({ replies, rootTweetId: "root" });
+        // Both should get finite depths (cycle broken at 0)
+        expect(replies[0]._depth).toBeTypeOf("number");
+        expect(replies[1]._depth).toBeTypeOf("number");
+    });
+
+    it("handles longer cycle (A -> B -> C -> A) without crashing", () => {
+        const replies = [
+            makeReply({ id: "r1", inReplyToTweetId: "r3" }),
+            makeReply({ id: "r2", inReplyToTweetId: "r1" }),
+            makeReply({ id: "r3", inReplyToTweetId: "r2" }),
+        ];
+        annotateReplyDepths({ replies, rootTweetId: "root" });
+        for (const r of replies) {
+            expect(r._depth).toBeTypeOf("number");
+        }
     });
 });
 
@@ -3350,6 +4117,56 @@ describe("computeTopReplyChains", () => {
 
         expect(chains[0].depth).toBe(2);
     });
+
+    it("handles self-referencing reply without crashing", () => {
+        const replies = [
+            makeReply({ id: "r1", inReplyToTweetId: "r1", likeCount: 5, replyCount: 1, _depth: 0 }),
+        ];
+        // r1 is not a direct reply to root, but inReplyToTweetId is itself.
+        // computeTopReplyChains filters for direct replies (inReplyToTweetId === rootTweetId || null),
+        // so this returns no chains. The key is it doesn't crash.
+        const chains = computeTopReplyChains({ replies, rootTweetId: "root" });
+        expect(chains).toHaveLength(0);
+    });
+
+    it("handles mutual cycle (A -> B -> A) in subtree without crashing", () => {
+        // r1 is a direct reply. r2 and r3 form a cycle in r1's subtree.
+        const replies = [
+            makeReply({ id: "r1", inReplyToTweetId: "root", likeCount: 10, replyCount: 2, _depth: 0 }),
+            makeReply({ id: "r2", inReplyToTweetId: "r3", likeCount: 3, replyCount: 1, _depth: 1 }),
+            makeReply({ id: "r3", inReplyToTweetId: "r2", likeCount: 2, replyCount: 1, _depth: 1 }),
+        ];
+
+        const chains = computeTopReplyChains({ replies, rootTweetId: "root" });
+
+        expect(chains).toHaveLength(1);
+        expect(chains[0].rootReplyId).toBe("r1");
+        // Engagement should be finite (cycle doesn't cause infinite accumulation)
+        expect(chains[0].totalEngagement).toBeGreaterThan(0);
+        expect(Number.isFinite(chains[0].totalEngagement)).toBe(true);
+    });
+
+    it("handles 3-node cycle (A -> B -> C -> A) in subtree without crashing", () => {
+        const replies = [
+            makeReply({ id: "r1", inReplyToTweetId: "root", likeCount: 5, replyCount: 1, _depth: 0 }),
+            // r2 -> r4 -> r3 -> r2 forms a cycle under r1
+            makeReply({ id: "r2", inReplyToTweetId: "r1", likeCount: 3, replyCount: 1, _depth: 1 }),
+            makeReply({ id: "r3", inReplyToTweetId: "r2", likeCount: 1, replyCount: 1, _depth: 2 }),
+            makeReply({ id: "r4", inReplyToTweetId: "r3", likeCount: 1, replyCount: 1, _depth: 3 }),
+        ];
+        // Create cycle: make r2's parent be r4 (r2 -> r4 instead of r2 -> r1)
+        // But keep r1 as direct reply so chains are found.
+        // childrenOf will have: r1 -> [r2 (via original)], but r2.inReplyToTweetId = r4
+        // Actually childrenOf is built from inReplyToTweetId, so:
+        // r2.parent = r4 means childrenOf(r4) = [r2], childrenOf(r1) = [], childrenOf(r2) = [r3], childrenOf(r3) = [r4]
+        // Cycle: r2 -> r3 -> r4 -> r2
+        replies[1] = makeReply({ id: "r2", inReplyToTweetId: "r4", likeCount: 3, replyCount: 1, _depth: 1 });
+
+        const chains = computeTopReplyChains({ replies, rootTweetId: "root" });
+        // r1 is the only direct reply; the cyclic nodes are orphaned from r1's subtree
+        expect(chains).toHaveLength(1);
+        expect(Number.isFinite(chains[0].totalEngagement)).toBe(true);
+    });
 });
 
 // ============================================================
@@ -3642,3 +4459,4 @@ describe("filterRepliesByEngagement with Grok params", () => {
         );
     });
 });
+
