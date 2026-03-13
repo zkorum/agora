@@ -1,5 +1,11 @@
 <template>
+  <MaxDiffVotingTab
+    v-if="conversationData.metadata.conversationType === 'maxdiff'"
+    :conversation-data="conversationData"
+    :has-conversation-data="hasConversationData"
+  />
   <ConversationCommentTab
+    v-else
     :conversation-data="conversationData"
     :has-conversation-data="hasConversationData"
     :moderation-history-trigger="moderationHistoryTrigger"
@@ -13,6 +19,7 @@
 
 <script setup lang="ts">
 import ConversationCommentTab from "src/components/post/ConversationCommentTab.vue";
+import MaxDiffVotingTab from "src/components/post/maxdiff/MaxDiffVotingTab.vue";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 

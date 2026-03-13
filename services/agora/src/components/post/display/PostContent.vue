@@ -22,6 +22,7 @@
           :is-private="!extendedPostData.metadata.isIndexed"
           :title="extendedPostData.payload.title"
           size="medium"
+          :conversation-type="extendedPostData.metadata.conversationType"
         />
 
         <EventTicketRequirementBanner

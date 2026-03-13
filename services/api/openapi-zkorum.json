@@ -982,6 +982,13 @@
                                                                     "guest"
                                                                 ]
                                                             },
+                                                            "conversationType": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "polis",
+                                                                    "maxdiff"
+                                                                ]
+                                                            },
                                                             "isIndexed": {
                                                                 "type": "boolean"
                                                             },
@@ -1105,6 +1112,7 @@
                                                             "hiddenOpinionCount",
                                                             "authorUsername",
                                                             "participationMode",
+                                                            "conversationType",
                                                             "isIndexed",
                                                             "isClosed",
                                                             "isEdited",
@@ -1839,6 +1847,13 @@
                                                             "guest"
                                                         ]
                                                     },
+                                                    "conversationType": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "polis",
+                                                            "maxdiff"
+                                                        ]
+                                                    },
                                                     "isIndexed": {
                                                         "type": "boolean"
                                                     },
@@ -1962,6 +1977,7 @@
                                                     "hiddenOpinionCount",
                                                     "authorUsername",
                                                     "participationMode",
+                                                    "conversationType",
                                                     "isIndexed",
                                                     "isClosed",
                                                     "isEdited",
@@ -2151,6 +2167,13 @@
                                                                     "guest"
                                                                 ]
                                                             },
+                                                            "conversationType": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "polis",
+                                                                    "maxdiff"
+                                                                ]
+                                                            },
                                                             "isIndexed": {
                                                                 "type": "boolean"
                                                             },
@@ -2274,6 +2297,7 @@
                                                             "hiddenOpinionCount",
                                                             "authorUsername",
                                                             "participationMode",
+                                                            "conversationType",
                                                             "isIndexed",
                                                             "isClosed",
                                                             "isEdited",
@@ -2768,6 +2792,228 @@
                                         ],
                                         "additionalProperties": false
                                     }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/maxdiff/save": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string"
+                                    },
+                                    "ranking": {
+                                        "nullable": true,
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "comparisons": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "best": {
+                                                    "type": "string"
+                                                },
+                                                "worst": {
+                                                    "type": "string"
+                                                },
+                                                "set": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "best",
+                                                "worst",
+                                                "set"
+                                            ]
+                                        }
+                                    },
+                                    "isComplete": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId",
+                                    "ranking",
+                                    "comparisons",
+                                    "isComplete"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/maxdiff/load": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "ranking": {
+                                            "nullable": true,
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "comparisons": {
+                                            "nullable": true,
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "best": {
+                                                        "type": "string"
+                                                    },
+                                                    "worst": {
+                                                        "type": "string"
+                                                    },
+                                                    "set": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                },
+                                                "required": [
+                                                    "best",
+                                                    "worst",
+                                                    "set"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "isComplete": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "required": [
+                                        "ranking",
+                                        "comparisons",
+                                        "isComplete"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/maxdiff/results": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "rankings": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "opinionSlugId": {
+                                                        "type": "string"
+                                                    },
+                                                    "opinionContent": {
+                                                        "type": "string"
+                                                    },
+                                                    "avgRank": {
+                                                        "type": "number"
+                                                    },
+                                                    "score": {
+                                                        "type": "number"
+                                                    },
+                                                    "participantCount": {
+                                                        "type": "number"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "opinionSlugId",
+                                                    "opinionContent",
+                                                    "avgRank",
+                                                    "score",
+                                                    "participantCount"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "totalParticipants": {
+                                            "type": "number"
+                                        }
+                                    },
+                                    "required": [
+                                        "rankings",
+                                        "totalParticipants"
+                                    ],
+                                    "additionalProperties": false
                                 }
                             }
                         }
@@ -4532,6 +4778,13 @@
                                             "guest"
                                         ]
                                     },
+                                    "conversationType": {
+                                        "type": "string",
+                                        "enum": [
+                                            "polis",
+                                            "maxdiff"
+                                        ]
+                                    },
                                     "pollingOptionList": {
                                         "type": "array",
                                         "items": {
@@ -4559,6 +4812,7 @@
                                     "conversationTitle",
                                     "isIndexed",
                                     "participationMode",
+                                    "conversationType",
                                     "seedOpinionList"
                                 ],
                                 "additionalProperties": false
@@ -5051,6 +5305,13 @@
                                                                 "guest"
                                                             ]
                                                         },
+                                                        "conversationType": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "polis",
+                                                                "maxdiff"
+                                                            ]
+                                                        },
                                                         "isIndexed": {
                                                             "type": "boolean"
                                                         },
@@ -5174,6 +5435,7 @@
                                                         "hiddenOpinionCount",
                                                         "authorUsername",
                                                         "participationMode",
+                                                        "conversationType",
                                                         "isIndexed",
                                                         "isClosed",
                                                         "isEdited",
@@ -7224,7 +7486,9 @@
                                             "zh-Hant",
                                             "zh-Hans",
                                             "ja",
-                                            "ar"
+                                            "ar",
+                                            "ky",
+                                            "ru"
                                         ]
                                     }
                                 },
@@ -7278,6 +7542,7 @@
                                                     "ja",
                                                     "kn",
                                                     "ko",
+                                                    "ky",
                                                     "ms",
                                                     "mr",
                                                     "no",
@@ -7309,7 +7574,9 @@
                                                 "zh-Hant",
                                                 "zh-Hans",
                                                 "ja",
-                                                "ar"
+                                                "ar",
+                                                "ky",
+                                                "ru"
                                             ]
                                         }
                                     },
@@ -7368,6 +7635,7 @@
                                                 "ja",
                                                 "kn",
                                                 "ko",
+                                                "ky",
                                                 "ms",
                                                 "mr",
                                                 "no",
@@ -7399,7 +7667,9 @@
                                             "zh-Hant",
                                             "zh-Hans",
                                             "ja",
-                                            "ar"
+                                            "ar",
+                                            "ky",
+                                            "ru"
                                         ]
                                     }
                                 },

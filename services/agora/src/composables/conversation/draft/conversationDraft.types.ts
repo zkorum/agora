@@ -7,7 +7,7 @@
  * - Conversation form components
  */
 
-import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
+import type { ConversationType, EventSlug, ParticipationMode } from "src/shared/types/zod";
 
 // ============================================================================
 // Draft Data Structures
@@ -71,6 +71,10 @@ export interface ConversationDraft {
   content: string;
   /** Initial opinion responses to seed the conversation */
   seedOpinions: string[];
+
+  // Conversation Type
+  /** The type of conversation: "polis" for standard agree/disagree voting, "maxdiff" for best-worst scaling */
+  conversationType: ConversationType;
 
   // Polling Configuration
   poll: PollSettings;
