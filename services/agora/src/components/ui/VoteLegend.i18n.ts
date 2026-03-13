@@ -53,4 +53,16 @@ export const voteLegendTranslations: Record<
     disagree: "同意しない",
     noVote: "投票しない",
   },
+  ky: {
+    agree: "Макулмун",
+    unsure: "Белгисиз",
+    disagree: "Макул эмесмин",
+    noVote: "Добуш жок",
+  },
+  ru: {
+    agree: "Согласен",
+    unsure: "Не уверен",
+    disagree: "Не согласен",
+    noVote: "Нет голоса",
+  },
 };

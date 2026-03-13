@@ -29,4 +29,10 @@ export const userMetadataTranslations: Record<
   ja: {
     idVerified: "ID が確認されました",
   },
+  ky: {
+    idVerified: "ID текшерилди",
+  },
+  ru: {
+    idVerified: "Личность подтверждена",
+  },
 };

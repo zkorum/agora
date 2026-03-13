@@ -61,4 +61,18 @@ export const signupAgreementTranslations: Record<
     and: "と",
     privacyPolicy: "プライバシーポリシー",
   },
+  ky: {
+    agreementText: "Кирүү менен сиз биздин",
+    agreementTextVerify: "Текшерүү менен сиз биздин",
+    termsOfService: "Кызмат көрсөтүү шарттарына",
+    and: "жана",
+    privacyPolicy: "Купуялык саясатына макулдугуңузду билдиресиз",
+  },
+  ru: {
+    agreementText: "Входя в систему, вы соглашаетесь с нашими",
+    agreementTextVerify: "Подтверждая, вы соглашаетесь с нашими",
+    termsOfService: "Условиями использования",
+    and: "и",
+    privacyPolicy: "Политикой конфиденциальности",
+  },
 };

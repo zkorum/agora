@@ -73,4 +73,20 @@ export const useConversationDraftTranslations: Record<
     pollMinOptionsError: "至少需要 {min} 個投票選項",
     titleRequired: "需要標題才能繼續",
   },
+  ky: {
+    bodyExceedsLimit: "Текст максималдуу узундуктан ашып кетти ({count}/{max})",
+    polisUrlRequired: "Polis URL талап кылынат",
+    polisUrlInvalid: "Жарактуу Polis URL киргизиңиз.",
+    pollMaxOptionsError: "Сурамжылоодо эң көп {max} вариант уруксат берилет",
+    pollMinOptionsError: "Сурамжылоодо эң аз {min} вариант талап кылынат",
+    titleRequired: "Улантуу үчүн аталыш талап кылынат",
+  },
+  ru: {
+    bodyExceedsLimit: "Текст превышает максимальную длину ({count}/{max})",
+    polisUrlRequired: "Требуется URL Polis",
+    polisUrlInvalid: "Пожалуйста, введите корректный URL Polis.",
+    pollMaxOptionsError: "Максимум {max} вариантов опроса",
+    pollMinOptionsError: "Минимум {min} вариантов опроса",
+    titleRequired: "Для продолжения необходим заголовок",
+  },
 };

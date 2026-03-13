@@ -53,4 +53,16 @@ export const customTimerDialogTranslations: Record<
     back: "戻る",
     confirm: "確認",
   },
+  ky: {
+    selectCustomTime: "Өзгөчө убакыт тандоо",
+    chooseWhenPublic: "Талкууңуз качан ачык болорун тандаңыз",
+    back: "Артка",
+    confirm: "Ырастоо",
+  },
+  ru: {
+    selectCustomTime: "Выбрать своё время",
+    chooseWhenPublic: "Выберите, когда ваше обсуждение станет публичным",
+    back: "Назад",
+    confirm: "Подтвердить",
+  },
 };

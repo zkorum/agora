@@ -29,4 +29,10 @@ export const requestExportButtonTranslations: Record<
   ja: {
     requestNewExport: "新しいエクスポートをリクエスト",
   },
+  ky: {
+    requestNewExport: "Жаңы экспорт суроо",
+  },
+  ru: {
+    requestNewExport: "Запросить новый экспорт",
+  },
 };

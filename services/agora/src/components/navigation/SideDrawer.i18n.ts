@@ -61,4 +61,18 @@ export const sideDrawerTranslations: Record<
     profile: "プロフィール",
     settings: "設定",
   },
+  ky: {
+    home: "Башкы бет",
+    explore: "Изилдөө",
+    dings: "Dings",
+    profile: "Профиль",
+    settings: "Жөндөөлөр",
+  },
+  ru: {
+    home: "Главная",
+    explore: "Обзор",
+    dings: "Dings",
+    profile: "Профиль",
+    settings: "Настройки",
+  },
 };

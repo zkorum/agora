@@ -53,4 +53,16 @@ export const verifyIdentityTranslations: Record<
     verifyWithRarimo: "Rarimoで確認",
     verifyWithPhone: "電話番号で確認",
   },
+  ky: {
+    title: "Инсандыгыңызды текшериңиз",
+    description: "Текшерүү ыкмасын тандаңыз",
+    verifyWithRarimo: "Rarimo менен текшерүү",
+    verifyWithPhone: "Телефон номери менен текшерүү",
+  },
+  ru: {
+    title: "Подтвердите личность",
+    description: "Выберите способ верификации",
+    verifyWithRarimo: "Подтвердить через Rarimo",
+    verifyWithPhone: "Подтвердить по номеру телефона",
+  },
 };

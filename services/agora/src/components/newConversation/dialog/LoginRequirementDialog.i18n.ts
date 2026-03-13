@@ -90,4 +90,26 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationDescription:
       "リンクを持つ人は誰でも会話を閲覧、投票、主張の投稿ができます",
   },
+  ky: {
+    requiresLoginTitle: "Күчтүү текшерүү талап кылынат",
+    requiresLoginDescription:
+      "Шилтемеси бар ар бир адам талкууну көрө алат, бирок добуш берүү жана пикир жазуу үчүн телефон же паспорт текшерүүсү талап кылынат",
+    requiresEmailVerificationTitle: "Электрондук почта текшерүүсү талап кылынат",
+    requiresEmailVerificationDescription:
+      "Шилтемеси бар ар бир адам талкууну көрө алат, бирок добуш берүү жана пикир жазуу үчүн электрондук почтасын текшерүүсү керек",
+    guestParticipationTitle: "Конок катышуу",
+    guestParticipationDescription:
+      "Шилтемеси бар ар бир адам талкууну көрө, добуш бере жана пикир жаза алат",
+  },
+  ru: {
+    requiresLoginTitle: "Требуется усиленная проверка",
+    requiresLoginDescription:
+      "Любой, у кого есть ссылка, может просматривать обсуждение, но для голосования и добавления высказываний потребуется проверка по телефону или паспорту",
+    requiresEmailVerificationTitle: "Требуется подтверждение электронной почты",
+    requiresEmailVerificationDescription:
+      "Любой, у кого есть ссылка, может просматривать обсуждение, но для голосования и добавления высказываний необходимо подтвердить электронную почту",
+    guestParticipationTitle: "Гостевое участие",
+    guestParticipationDescription:
+      "Любой, у кого есть ссылка, может просматривать обсуждение, голосовать и добавлять высказывания",
+  },
 };

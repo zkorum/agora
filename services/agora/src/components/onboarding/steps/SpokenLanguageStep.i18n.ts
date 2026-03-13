@@ -37,4 +37,12 @@ export const spokenLanguageStepTranslations: Record<
     title: "あなたはどの言語を話しますか？",
     nextButton: "次へ",
   },
+  ky: {
+    title: "Сиз кайсы тилдерде сүйлөйсүз?",
+    nextButton: "Кийинки",
+  },
+  ru: {
+    title: "На каких языках вы говорите?",
+    nextButton: "Далее",
+  },
 };

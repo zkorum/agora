@@ -58,4 +58,16 @@ export const emailInputFormTranslations: Record<
     pleaseEnterValidEmail: "有効なメールアドレスを入力してください",
     pleaseEnterEmail: "メールアドレスを入力してください",
   },
+  ky: {
+    emailDescription: "Электрондук почта аркылуу 6 орундуу бир жолку код аласыз",
+    emailPlaceholder: "Электрондук почта дареги",
+    pleaseEnterValidEmail: "Жарактуу электрондук почта дарегин киргизиңиз",
+    pleaseEnterEmail: "Электрондук почта дарегин киргизиңиз",
+  },
+  ru: {
+    emailDescription: "Вы получите одноразовый 6-значный код по электронной почте",
+    emailPlaceholder: "Адрес электронной почты",
+    pleaseEnterValidEmail: "Пожалуйста, введите действительный адрес электронной почты",
+    pleaseEnterEmail: "Пожалуйста, введите адрес электронной почты",
+  },
 };

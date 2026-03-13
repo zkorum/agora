@@ -129,6 +129,8 @@ export default defineBoot(({ app }) => {
   const fallbackLocale = {
     "zh-Hant": ["zh-Hans", "en"],
     "zh-Hans": ["zh-Hant", "en"],
+    ky: ["ru", "en"],
+    ru: ["en"],
     default: ["en"],
   };
 

@@ -29,4 +29,10 @@ export const defaultMenuBarTranslations: Record<
   ja: {
     logIn: "ログイン",
   },
+  ky: {
+    logIn: "Кирүү",
+  },
+  ru: {
+    logIn: "Войти",
+  },
 };

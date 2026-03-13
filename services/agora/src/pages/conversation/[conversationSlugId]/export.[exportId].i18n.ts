@@ -37,4 +37,12 @@ export const exportStatusPageTranslations: Record<
     pageTitle: "エクスポートステータス",
     exportFeatureDisabled: "エクスポート機能は無効です",
   },
+  ky: {
+    pageTitle: "Экспорттун абалы",
+    exportFeatureDisabled: "Экспорт функциясы өчүрүлгөн",
+  },
+  ru: {
+    pageTitle: "Статус экспорта",
+    exportFeatureDisabled: "Функция экспорта отключена",
+  },
 };

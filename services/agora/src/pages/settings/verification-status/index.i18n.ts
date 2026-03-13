@@ -45,4 +45,14 @@ export const verificationStatusTranslations: Record<
     detectedSex: "検出された性別",
     citizenship: "国籍",
   },
+  ky: {
+    pageTitle: "Текшерүү абалы",
+    detectedSex: "Аныкталган жынысы",
+    citizenship: "Жарандыгы",
+  },
+  ru: {
+    pageTitle: "Статус верификации",
+    detectedSex: "Определённый пол",
+    citizenship: "Гражданство",
+  },
 };

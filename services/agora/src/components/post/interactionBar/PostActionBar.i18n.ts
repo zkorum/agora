@@ -89,4 +89,26 @@ export const postActionBarTranslations: Record<
     moderatedParticipantsExplanation:
       "モデレートされた声明にのみ投票した参加者は分析から除外されます。",
   },
+  ky: {
+    share: "Бөлүшүү",
+    copiedToClipboard: "Шилтеме алмашуу буферине көчүрүлдү",
+    totalVotes: "Жалпы добуштар",
+    totalParticipants: "Жалпы катышуучулар",
+    usedForAnalysis: "Анализ үчүн колдонулат",
+    moderatedVotesExplanation:
+      "Модерацияланган пикирлерге берилген добуштар анализден чыгарылат.",
+    moderatedParticipantsExplanation:
+      "Модерацияланган пикирлерге гана добуш берген катышуучулар анализден чыгарылат.",
+  },
+  ru: {
+    share: "Поделиться",
+    copiedToClipboard: "Ссылка скопирована в буфер обмена",
+    totalVotes: "Всего голосов",
+    totalParticipants: "Всего участников",
+    usedForAnalysis: "Используются для анализа",
+    moderatedVotesExplanation:
+      "Голоса за модерированные высказывания исключены из анализа.",
+    moderatedParticipantsExplanation:
+      "Участники, голосовавшие только за модерированные высказывания, исключены из анализа.",
+  },
 };

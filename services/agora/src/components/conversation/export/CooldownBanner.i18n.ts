@@ -62,4 +62,16 @@ export const cooldownBannerTranslations: Record<
       "クールダウンが終了しました。新しいエクスポートをリクエストできます。",
     viewLast: "前回のエクスポートを表示",
   },
+  ky: {
+    cooldownSeconds: "Кийинки экспорт {seconds} секунддан кийин",
+    cooldownMinutes: "Кийинки экспорт {minutes} мүнөттөн кийин",
+    cooldownEnded: "Күтүү мөөнөтү аяктады. Эми жаңы экспорт сурай аласыз.",
+    viewLast: "Акыркы экспортту көрүү",
+  },
+  ru: {
+    cooldownSeconds: "Следующий экспорт через {seconds} сек.",
+    cooldownMinutes: "Следующий экспорт через {minutes} мин.",
+    cooldownEnded: "Период ожидания завершён. Теперь можно запросить новый экспорт.",
+    viewLast: "Просмотреть последний экспорт",
+  },
 };

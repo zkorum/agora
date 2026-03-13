@@ -37,4 +37,12 @@ export const commentLoadingErrorTranslations: Record<
     defaultRetryLabel: "再試行",
     defaultErrorMessage: "何らかの問題が発生しました。もう一度お試しください。",
   },
+  ky: {
+    defaultRetryLabel: "Кайра аракет кылуу",
+    defaultErrorMessage: "Бир нерсе туура эмес болду. Кайра аракет кылыңыз.",
+  },
+  ru: {
+    defaultRetryLabel: "Попробовать снова",
+    defaultErrorMessage: "Что-то пошло не так. Пожалуйста, попробуйте снова.",
+  },
 };

@@ -29,4 +29,10 @@ export const displayUsernameTranslations: Record<
   ja: {
     guest: "ゲスト",
   },
+  ky: {
+    guest: "Конок",
+  },
+  ru: {
+    guest: "Гость",
+  },
 };

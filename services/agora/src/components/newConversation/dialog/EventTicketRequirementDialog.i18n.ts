@@ -65,4 +65,20 @@ export const eventTicketRequirementDialogTranslations: Record<
     requiresEventTicketDescription:
       "検証済みのイベントチケット保有者のみが投票と主張の投稿ができます",
   },
+  ky: {
+    noVerificationTitle: "Текшерүү талап кылынбайт",
+    noVerificationDescription:
+      "Иш-чара билетин текшерүүсүз каалаган адам катыша алат",
+    requiresEventTicketTitle: "Иш-чара билети талап кылынат",
+    requiresEventTicketDescription:
+      "Текшерилген иш-чара билеттеринин ээлери гана добуш берип, пикир жаза алат",
+  },
+  ru: {
+    noVerificationTitle: "Без проверки",
+    noVerificationDescription:
+      "Любой может участвовать без проверки билета мероприятия",
+    requiresEventTicketTitle: "Требуется билет мероприятия",
+    requiresEventTicketDescription:
+      "Только подтверждённые владельцы билетов могут голосовать и добавлять высказывания",
+  },
 };

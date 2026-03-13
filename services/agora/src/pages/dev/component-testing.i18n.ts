@@ -29,4 +29,10 @@ export const componentTestingTranslations: Record<
   ja: {
     componentTesting: "コンポーネントテスト",
   },
+  ky: {
+    componentTesting: "Компоненттерди тестирлөө",
+  },
+  ru: {
+    componentTesting: "Тестирование компонентов",
+  },
 };

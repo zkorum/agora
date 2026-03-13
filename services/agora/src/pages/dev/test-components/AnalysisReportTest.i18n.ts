@@ -52,4 +52,16 @@ export const analysisReportTestTranslations: Record<
       "異なる意見グループ数とAIラベル設定で分析レポートのレイアウトをテスト。",
     openReportTestButton: "レポートテストを開く",
   },
+  ky: {
+    analysisReportTest: "Анализ отчету",
+    analysisReportTestDescription:
+      "Пикир топторунун ар кандай саны жана AI энбелги конфигурациялары менен анализ отчетунун макетин тестирлөө.",
+    openReportTestButton: "Отчет тестин ачуу",
+  },
+  ru: {
+    analysisReportTest: "Аналитический отчёт",
+    analysisReportTestDescription:
+      "Тестирование макета аналитического отчёта с разным количеством групп мнений и конфигурациями меток ИИ.",
+    openReportTestButton: "Открыть тест отчёта",
+  },
 };

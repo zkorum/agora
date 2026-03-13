@@ -21,6 +21,8 @@ function convertToGoogleLanguageCode(bcp47Code: string): string {
         fr: "fr",
         ja: "ja",
         ar: "ar",
+        ky: "ky",
+        ru: "ru",
     };
 
     const googleCode = codeMap[bcp47Code];

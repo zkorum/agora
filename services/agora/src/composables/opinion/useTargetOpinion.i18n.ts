@@ -29,4 +29,10 @@ export const useTargetOpinionTranslations: Record<
   ja: {
     statementNotFound: "リクエストされた主張が見つかりませんでした。",
   },
+  ky: {
+    statementNotFound: "Суралган пикир табылган жок.",
+  },
+  ru: {
+    statementNotFound: "Запрошенное высказывание не найдено.",
+  },
 };

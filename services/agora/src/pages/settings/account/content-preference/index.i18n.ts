@@ -29,4 +29,10 @@ export const contentPreferenceTranslations: Record<
   ja: {
     contentPreference: "コンテンツ設定",
   },
+  ky: {
+    contentPreference: "Мазмун тандоолору",
+  },
+  ru: {
+    contentPreference: "Настройки контента",
+  },
 };

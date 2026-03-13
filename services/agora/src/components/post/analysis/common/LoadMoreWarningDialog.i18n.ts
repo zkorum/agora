@@ -68,4 +68,20 @@ export const loadMoreWarningDialogTranslations: Record<
     cancelButton: "キャンセル",
     loadMoreButton: "すべて読み込む",
   },
+  ky: {
+    title: "Бардык пикирлерди жүктөө",
+    description:
+      "Бардык пикирлер статистикалык маанилүүлүгү боюнча кемүү тартибинде көрсөтүлөт, анын ичинде {emphasis} маанилүү эмес болушу мүмкүн болгондору да.",
+    descriptionEmphasis: "такыр",
+    cancelButton: "Жокко чыгаруу",
+    loadMoreButton: "Баарын жүктөө",
+  },
+  ru: {
+    title: "Загрузить все высказывания",
+    description:
+      "Все высказывания будут показаны в порядке убывания статистической значимости, включая те, которые могут быть {emphasis} незначимыми.",
+    descriptionEmphasis: "совершенно",
+    cancelButton: "Отмена",
+    loadMoreButton: "Загрузить все",
+  },
 };

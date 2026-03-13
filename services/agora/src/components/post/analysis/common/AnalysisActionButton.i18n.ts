@@ -45,4 +45,14 @@ export const analysisActionButtonTranslations: Record<
     viewMore: "もっと見る",
     informationIconAriaLabel: "情報",
   },
+  ky: {
+    learnMore: "Кененирээк",
+    viewMore: "Дагы көрүү",
+    informationIconAriaLabel: "Маалымат",
+  },
+  ru: {
+    learnMore: "Подробнее",
+    viewMore: "Показать ещё",
+    informationIconAriaLabel: "Информация",
+  },
 };

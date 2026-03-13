@@ -71,4 +71,20 @@ export const reportRepresentativeOpinionsTranslations: Record<
     overall: "全体",
     noStatements: "代表的な意見はありません。",
   },
+  ky: {
+    title: "Өкүлчүлүктүү пикирлер",
+    groupSubtitle: "Бул топту уникалдуу кылган пикирлер, алардын добуштары боюнча:",
+    participants: "катышуучу",
+    statement: "Пикир",
+    overall: "Жалпы",
+    noStatements: "Өкүлчүлүктүү пикирлер жок.",
+  },
+  ru: {
+    title: "Характерные высказывания",
+    groupSubtitle: "Высказывания, которые делают эту группу уникальной, по их голосам:",
+    participants: "участников",
+    statement: "Высказывание",
+    overall: "Общий",
+    noStatements: "Характерные высказывания отсутствуют.",
+  },
 };

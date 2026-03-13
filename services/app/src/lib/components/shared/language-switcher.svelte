@@ -11,6 +11,8 @@
     { code: "es", label: "ES", name: "Español" },
     { code: "ar", label: "AR", name: "العربية" },
     { code: "ja", label: "JA", name: "日本語" },
+    { code: "ky", label: "KY", name: "Кыргызча" },
+    { code: "ru", label: "RU", name: "Русский" },
     { code: "zh-hans", label: "中简", name: "简体中文" },
     { code: "zh-hant", label: "中繁", name: "繁體中文" },
   ];

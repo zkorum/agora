@@ -67,4 +67,20 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       divisive: "分断",
       groups: "グループ",
     },
+    ky: {
+      summary: "Корутунду",
+      me: "Мен",
+      agreements: "Жактырылган",
+      disagreements: "Четке кагылган",
+      divisive: "Талаштуу",
+      groups: "Топтор",
+    },
+    ru: {
+      summary: "Сводка",
+      me: "Я",
+      agreements: "Одобрено",
+      disagreements: "Отклонено",
+      divisive: "Спорные",
+      groups: "Группы",
+    },
   };

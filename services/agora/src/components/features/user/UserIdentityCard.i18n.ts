@@ -55,4 +55,16 @@ export const userIdentityCardTranslations: Record<
     strongVerificationTooltip: "電話またはパスポート認証が必要",
     edited: "編集済み",
   },
+  ky: {
+    guestParticipationTooltip: "Конок катышуу иштетилген",
+    emailVerificationTooltip: "Электрондук почта текшерүүсү талап кылынат",
+    strongVerificationTooltip: "Телефон же паспорт текшерүүсү талап кылынат",
+    edited: "Түзөтүлгөн",
+  },
+  ru: {
+    guestParticipationTooltip: "Гостевое участие включено",
+    emailVerificationTooltip: "Требуется подтверждение электронной почты",
+    strongVerificationTooltip: "Требуется подтверждение по телефону или паспорту",
+    edited: "Изменено",
+  },
 };

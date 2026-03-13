@@ -55,4 +55,16 @@ export const userOrganizationMappingsTranslations: Record<
     noOrganizationsMessage: "ユーザーは組織に属していません",
     removeUserOrganizationMappingButton: "ユーザーと組織の紐付けを削除する",
   },
+  ky: {
+    usernameLabel: "Колдонуучу аты",
+    fetchButton: "Алуу",
+    noOrganizationsMessage: "Колдонуучу эч бир уюмга кирбейт",
+    removeUserOrganizationMappingButton: "Колдонуучу-уюм байланышын алып салуу",
+  },
+  ru: {
+    usernameLabel: "Имя пользователя",
+    fetchButton: "Получить",
+    noOrganizationsMessage: "Пользователь не принадлежит ни к одной организации",
+    removeUserOrganizationMappingButton: "Удалить привязку пользователя к организации",
+  },
 };

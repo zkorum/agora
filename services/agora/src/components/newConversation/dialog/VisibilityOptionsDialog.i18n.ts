@@ -61,4 +61,18 @@ export const visibilityOptionsDialogTranslations: Record<
     privateTitle: "プライベート",
     privateDescription: "リンクまたはQRコードを共有した人のみが見れます",
   },
+  ky: {
+    publicTitle: "Ачык",
+    publicDescription:
+      "Бул талкуу негизги Agora лентасында бардык колдонуучуларга көрүнөт",
+    privateTitle: "Жеке",
+    privateDescription: "Шилтеме же QR код менен бөлүшкөн адамдарга гана көрүнөт",
+  },
+  ru: {
+    publicTitle: "Публичное",
+    publicDescription:
+      "Это обсуждение будет видно всем пользователям в основной ленте Agora",
+    privateTitle: "Приватное",
+    privateDescription: "Видно только тем, с кем вы поделитесь ссылкой или QR-кодом",
+  },
 };

@@ -57,4 +57,20 @@ export const meTabTranslations: Record<string, MeTabTranslations> = {
     keepVotingToRefineAnalysis: "投票を続けて分析を改善する",
     voteMore: "もっと投票する",
   },
+  ky: {
+    whereDoIStandTitle: "Менин позициям",
+    notAssignedToGroup: "Сиз эч бир топко дайындалган жоксуз",
+    youAgreeWith: "Сиз макулсуз",
+    voteToUnlock: "Ачуу үчүн көбүрөөк пикирлерге добуш бериңиз",
+    keepVotingToRefineAnalysis: "Анализди тактоо үчүн добуш берүүнү улантыңыз",
+    voteMore: "Көбүрөөк добуш бериңиз",
+  },
+  ru: {
+    whereDoIStandTitle: "Моя позиция",
+    notAssignedToGroup: "Вы не распределены ни в одну группу",
+    youAgreeWith: "Вы согласны с",
+    voteToUnlock: "Голосуйте за больше высказываний, чтобы разблокировать",
+    keepVotingToRefineAnalysis: "Продолжайте голосовать для уточнения анализа",
+    voteMore: "Голосовать ещё",
+  },
 };

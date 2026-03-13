@@ -270,4 +270,77 @@ export const editConversationTranslations: Record<
     pollChangeWarningConfirm: "نعم، تابع",
     pollChangeWarningCancel: "إلغاء",
   },
+  ky: {
+    saveButton: "Сактоо",
+    titlePlaceholder: "Талкуунун аталышы",
+    bodyPlaceholder: "Эмне жөнүндө ойлонуп жатасыз?",
+    updateSuccess: "Талкуу ийгиликтүү жаңыланды",
+    updateError: "Талкууну жаңылоо ишке ашкан жок",
+    notFoundError: "Талкуу табылган жок",
+    notAuthorError: "Сиз бул талкуунун автору эмессиз",
+    conversationLockedError: "Бул талкуу кулпуланган жана түзөтүлбөйт",
+    notFoundErrorTitle: "Талкуу табылган жок",
+    notFoundErrorMessage: "Талкууну жүктөө ишке ашкан жок",
+    notAuthorErrorTitle: "Сиз бул талкуунун автору эмессиз",
+    notAuthorErrorMessage: "Бул талкууну баштапкы автору гана түзөтө алат",
+    conversationLockedErrorTitle: "Бул талкуу кулпуланган жана түзөтүлбөйт",
+    conversationLockedErrorMessage:
+      "Бул талкуунун кулпусун ачуу керек болсо, модераторго кайрылыңыз",
+    invalidAccessSettingsError:
+      "Жеткиликтүүлүк жөндөөлөрү жараксыз. Жеке талкуулар үчүн кирүүнү талап кылуу мүмкүн эмес.",
+    pollAlreadyExistsError:
+      "Сурамжылоо түзүү мүмкүн эмес: бул талкууда сурамжылоо бар",
+    noPollToRemoveError:
+      "Сурамжылоону жок кылуу мүмкүн эмес: бул талкууда сурамжылоо жок",
+    noPollToKeepError:
+      "Сурамжылоону сактоо мүмкүн эмес: бул талкууда сурамжылоо жок",
+    noPollToReplaceError:
+      "Сурамжылоону алмаштыруу мүмкүн эмес: бул талкууда сурамжылоо жок",
+    loadingErrorTitle: "Талкууну жүктөө ишке ашкан жок",
+    loadingErrorMessage: "Талкууну жүктөөдө ката кетти",
+    pollChangeWarningMessage:
+      "Сурамжылоо варианттарын өзгөртүү бардык учурдагы добуштарды баштапкы абалга келтирет. Улантасызбы?",
+    removePollWarningMessage:
+      "Сурамжылоону жок кылуу бардык учурдагы добуштарды жок кылат. Улантасызбы?",
+    pollChangeWarningConfirm: "Ооба, улантуу",
+    pollChangeWarningCancel: "Жокко чыгаруу",
+  },
+  ru: {
+    saveButton: "Сохранить",
+    titlePlaceholder: "Заголовок обсуждения",
+    bodyPlaceholder: "О чём вы думаете?",
+    updateSuccess: "Обсуждение успешно обновлено",
+    updateError: "Не удалось обновить обсуждение",
+    notFoundError: "Обсуждение не найдено",
+    notAuthorError: "Вы не являетесь автором этого обсуждения",
+    conversationLockedError:
+      "Это обсуждение заблокировано и не может быть отредактировано",
+    notFoundErrorTitle: "Обсуждение не найдено",
+    notFoundErrorMessage: "Не удалось загрузить обсуждение",
+    notAuthorErrorTitle: "Вы не являетесь автором этого обсуждения",
+    notAuthorErrorMessage:
+      "Только автор может редактировать это обсуждение",
+    conversationLockedErrorTitle:
+      "Это обсуждение заблокировано и не может быть отредактировано",
+    conversationLockedErrorMessage:
+      "Свяжитесь с модератором, если вам нужно разблокировать это обсуждение",
+    invalidAccessSettingsError:
+      "Недопустимые настройки доступа. Для приватных обсуждений нельзя требовать авторизацию.",
+    pollAlreadyExistsError:
+      "Невозможно создать опрос: в этом обсуждении уже есть опрос",
+    noPollToRemoveError:
+      "Невозможно удалить опрос: в этом обсуждении нет опроса",
+    noPollToKeepError:
+      "Невозможно сохранить опрос: в этом обсуждении нет опроса",
+    noPollToReplaceError:
+      "Невозможно заменить опрос: в этом обсуждении нет опроса",
+    loadingErrorTitle: "Не удалось загрузить обсуждение",
+    loadingErrorMessage: "Произошла ошибка при загрузке обсуждения",
+    pollChangeWarningMessage:
+      "Изменение вариантов опроса сбросит все существующие голоса. Вы уверены, что хотите продолжить?",
+    removePollWarningMessage:
+      "Удаление опроса приведёт к удалению всех существующих голосов. Вы уверены, что хотите продолжить?",
+    pollChangeWarningConfirm: "Да, продолжить",
+    pollChangeWarningCancel: "Отмена",
+  },
 };

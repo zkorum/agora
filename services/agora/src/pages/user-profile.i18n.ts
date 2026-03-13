@@ -67,4 +67,20 @@ export const userProfileTranslations: Record<SupportedDisplayLanguageCodes, User
       emptyConversations: "会話がありません",
       emptyStatements: "主張がありません",
     },
+    ky: {
+      userProfile: "Колдонуучу профили",
+      conversations: "талкуулар",
+      conversationTab: "Талкуу",
+      opinionTab: "Пикир",
+      emptyConversations: "Сизде талкуулар жок",
+      emptyStatements: "Сизде пикирлер жок",
+    },
+    ru: {
+      userProfile: "Профиль пользователя",
+      conversations: "обсуждения",
+      conversationTab: "Обсуждение",
+      opinionTab: "Высказывание",
+      emptyConversations: "У вас нет обсуждений",
+      emptyStatements: "У вас нет высказываний",
+    },
   };

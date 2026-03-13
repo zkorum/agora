@@ -61,4 +61,18 @@ export const loginOnboardingTranslations: Record<
     loginWithPhone: "携帯電話でログイン",
     loginWithEmail: "自分のメールでログイン",
   },
+  ky: {
+    pageTitle: "Кирүү",
+    description: "Кирүү ыкмасын тандаңыз.",
+    loginWithRarimo: "Rarimo менен кирүү",
+    loginWithPhone: "Телефон номери менен кирүү",
+    loginWithEmail: "Электрондук почта менен кирүү",
+  },
+  ru: {
+    pageTitle: "Вход",
+    description: "Пожалуйста, выберите способ входа.",
+    loginWithRarimo: "Войти через Rarimo",
+    loginWithPhone: "Войти по номеру телефона",
+    loginWithEmail: "Войти по электронной почте",
+  },
 };

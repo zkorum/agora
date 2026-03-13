@@ -37,4 +37,12 @@ export const zkHtmlContentTranslations: Record<
     postContentPreview: "投稿内容プレビュー",
     postContent: "投稿内容",
   },
+  ky: {
+    postContentPreview: "Жазуу мазмунун алдын ала көрүү",
+    postContent: "Жазуу мазмуну",
+  },
+  ru: {
+    postContentPreview: "Предпросмотр содержимого публикации",
+    postContent: "Содержимое публикации",
+  },
 };

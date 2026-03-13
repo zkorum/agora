@@ -37,4 +37,12 @@ export const newConversationRouteGuardTranslations: Record<
     saveConversationDraft: "会話を下書きとして保存しますか？",
     draftWillBeHere: "戻ってきたら、下書きした会話がここに表示されます。",
   },
+  ky: {
+    saveConversationDraft: "Талкууну черновик катары сактайсызбы?",
+    draftWillBeHere: "Кайтып келгениңизде черновик талкууңуз бул жерде болот.",
+  },
+  ru: {
+    saveConversationDraft: "Сохранить обсуждение как черновик?",
+    draftWillBeHere: "Ваш черновик обсуждения будет здесь, когда вы вернётесь.",
+  },
 };

@@ -29,4 +29,10 @@ export const privacyPolicyTranslations: Record<
   ja: {
     privacyPolicy: "プライバシーポリシー",
   },
+  ky: {
+    privacyPolicy: "Купуялык саясаты",
+  },
+  ru: {
+    privacyPolicy: "Политика конфиденциальности",
+  },
 };

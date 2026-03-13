@@ -29,4 +29,10 @@ export const displayLanguageSettingsTranslations: Record<
   ja: {
     pageTitle: "表示言語",
   },
+  ky: {
+    pageTitle: "Көрсөтүү тили",
+  },
+  ru: {
+    pageTitle: "Язык интерфейса",
+  },
 };

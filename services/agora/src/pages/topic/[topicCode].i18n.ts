@@ -26,4 +26,10 @@ export const topicPageTranslations: Record<SupportedDisplayLanguageCodes, TopicP
   ja: {
     loadPostsHere: "投稿を読み込む",
   },
+  ky: {
+    loadPostsHere: "Посттарды жүктөө",
+  },
+  ru: {
+    loadPostsHere: "Загрузить публикации",
+  },
 };

@@ -29,4 +29,10 @@ export const conversationTitleWithPrivacyLabelTranslations: Record<
   ja: {
     privateLabel: "プライベート",
   },
+  ky: {
+    privateLabel: "Жеке",
+  },
+  ru: {
+    privateLabel: "Приватное",
+  },
 };

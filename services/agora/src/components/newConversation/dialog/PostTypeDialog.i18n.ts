@@ -79,4 +79,22 @@ export const postTypeDialogTranslations: Record<
     importFromCsvDescription:
       "エクスポートされた CSV ファイルから Polis 会話をインポートします。",
   },
+  ky: {
+    newConversation: "Жаңы талкуу",
+    newConversationDescription: "Талкуулоо үчүн жаңы тема түзүңүз.",
+    importFromPolis: "Polis URL'ден импорттоо",
+    importFromPolisDescription: "Учурдагы Polis талкууну импорттоп улантыңыз.",
+    importFromCsv: "CSV'ден импорттоо",
+    importFromCsvDescription:
+      "Экспорттолгон CSV файлдарынан Polis талкууну импорттоо.",
+  },
+  ru: {
+    newConversation: "Новое обсуждение",
+    newConversationDescription: "Создайте новую тему для обсуждения.",
+    importFromPolis: "Импорт из URL Polis",
+    importFromPolisDescription: "Импортируйте и продолжите существующее обсуждение Polis.",
+    importFromCsv: "Импорт из CSV",
+    importFromCsvDescription:
+      "Импортируйте обсуждение Polis из экспортированных CSV-файлов.",
+  },
 };

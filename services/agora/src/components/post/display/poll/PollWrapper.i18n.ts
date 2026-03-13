@@ -43,4 +43,14 @@ export const pollWrapperTranslations: Record<SupportedDisplayLanguageCodes, Poll
       vote: "投票",
       votes: "票",
     },
+    ky: {
+      results: "Жыйынтыктар",
+      vote: "Добуш берүү",
+      votes: "добуш",
+    },
+    ru: {
+      results: "Результаты",
+      vote: "Голосовать",
+      votes: "голосов",
+    },
   };

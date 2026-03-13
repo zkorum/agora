@@ -152,4 +152,42 @@ export const importStatusViewTranslations: Record<
     failureReasonTimeout: "操作がタイムアウトしました",
     failureReasonInvalidDataFormat: "データ形式が無効です",
   },
+  ky: {
+    loadingStatus: "Импорт абалы жүктөлүүдө...",
+    errorLoadingStatus: "Импорт абалын жүктөө ишке ашкан жок",
+    importId: "Импорт ID",
+    status: "Абал",
+    createdAt: "Түзүлгөн күн",
+    status_processing: "Иштетилүүдө",
+    status_completed: "Аяктады",
+    status_failed: "Ишке ашкан жок",
+    processingMessage:
+      "Импортуңуз иштетилүүдө. Импорттун көлөмүнө жараша бир нече секунддан бир нече мүнөткө чейин убакыт кетиши мүмкүн.",
+    completedMessage: "Импорт ийгиликтүү аяктады!",
+    failedMessage:
+      "Импорт ишке ашкан жок. Кайра аракет кылыңыз же колдоо кызматына кайрылыңыз.",
+    viewConversation: "Талкууну көрүү",
+    failureReasonProcessingError: "Иштетүүдө ката кетти",
+    failureReasonTimeout: "Операция убактысы бүттү",
+    failureReasonInvalidDataFormat: "Маалымат форматы жараксыз",
+  },
+  ru: {
+    loadingStatus: "Загрузка статуса импорта...",
+    errorLoadingStatus: "Не удалось загрузить статус импорта",
+    importId: "ID импорта",
+    status: "Статус",
+    createdAt: "Дата создания",
+    status_processing: "Обработка",
+    status_completed: "Завершено",
+    status_failed: "Ошибка",
+    processingMessage:
+      "Ваш импорт обрабатывается. Это может занять от нескольких секунд до нескольких минут в зависимости от объёма данных.",
+    completedMessage: "Импорт успешно завершён!",
+    failedMessage:
+      "Импорт не удался. Попробуйте снова или обратитесь в службу поддержки.",
+    viewConversation: "Перейти к обсуждению",
+    failureReasonProcessingError: "Произошла ошибка обработки",
+    failureReasonTimeout: "Время операции истекло",
+    failureReasonInvalidDataFormat: "Неверный формат данных",
+  },
 };

@@ -48,4 +48,14 @@ export const reportOpinionListTranslations: Record<
     noItems:
       "このセクションで統計的に有意な項目は見つかりませんでした。",
   },
+  ky: {
+    statement: "Пикир",
+    overall: "Жалпы",
+    noItems: "Бул бөлүм үчүн статистикалык маанилүү элементтер табылган жок.",
+  },
+  ru: {
+    statement: "Высказывание",
+    overall: "Общий",
+    noItems: "Статистически значимые элементы для этого раздела не найдены.",
+  },
 };

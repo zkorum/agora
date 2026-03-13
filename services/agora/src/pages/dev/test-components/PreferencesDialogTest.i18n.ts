@@ -52,4 +52,16 @@ export const preferencesDialogTestTranslations: Record<
       "ユーザーがアカウントを作成した後、言語とトピックの設定を選択できるダイアログをテストします。",
     openPreferencesDialogButton: "設定ダイアログを開く",
   },
+  ky: {
+    preferencesDialog: "Тандоолор диалогу",
+    preferencesDialogDescription:
+      "Каттоодон кийинки тандоолор диалогун тестирлөө — колдонуучулар аккаунт түзгөндөн кийин тил жана тема тандоолорун тандай алышат.",
+    openPreferencesDialogButton: "Тандоолор диалогун ачуу",
+  },
+  ru: {
+    preferencesDialog: "Диалог настроек",
+    preferencesDialogDescription:
+      "Тестирование диалога настроек после регистрации, позволяющего пользователям выбрать языковые и тематические предпочтения после создания аккаунта.",
+    openPreferencesDialogButton: "Открыть диалог настроек",
+  },
 };
