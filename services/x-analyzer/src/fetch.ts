@@ -169,22 +169,50 @@ const replyChainSchema = z.object({
     messages: z.array(replyChainMessageSchema),
 });
 
-export const rawThreadDataSchema = z.object({
-    originalTweet: tweetDataSchema,
-    replies: z.array(replySchema),
-    quotes: z.array(quoteThreadSchema).optional(),
-    fetchedAt: z.string(),
-    tweetUrl: z.string(),
-    _nextToken: z.string().optional(),
-    _fetchStats: fetchStatsSchema.optional(),
-    _threadStats: threadStatsSchema.optional(),
-    _authors: z.record(z.string(), authorEntrySchema).optional(),
-    _topReplyChains: z.array(replyChainSchema).optional(),
-    // Grok x_search intelligence (optional — present when XAI_API_KEY is set)
-    _scout: scoutResultSchema.optional(),
-    _botDetection: botDetectionResultSchema.optional(),
-    _grokContext: enrichResultSchema.optional(),
-});
+// Use z.lazy for self-referential _quotedThread field
+export const rawThreadDataSchema: z.ZodType<RawThreadDataInput> = z.lazy(
+    () =>
+        z.object({
+            originalTweet: tweetDataSchema,
+            replies: z.array(replySchema),
+            quotes: z.array(quoteThreadSchema).optional(),
+            fetchedAt: z.string(),
+            tweetUrl: z.string(),
+            _nextToken: z.string().optional(),
+            _fetchStats: fetchStatsSchema.optional(),
+            _threadStats: threadStatsSchema.optional(),
+            _authors: z.record(z.string(), authorEntrySchema).optional(),
+            _topReplyChains: z.array(replyChainSchema).optional(),
+            // Grok x_search intelligence (optional — present when XAI_API_KEY is set)
+            _scout: scoutResultSchema.optional(),
+            _botDetection: botDetectionResultSchema.optional(),
+            _grokContext: enrichResultSchema.optional(),
+            // If the analyzed tweet is itself a quote tweet, persist the quoted
+            // tweet ID so resume can fetch it even if the process crashes before step 10
+            _quotedTweetId: z.string().optional(),
+            // The quoted tweet's full thread analysis (max depth 1 — no recursion)
+            _quotedThread: z.lazy(() => rawThreadDataSchema).optional(),
+        }),
+);
+
+// Explicit interface needed for z.lazy self-reference
+interface RawThreadDataInput {
+    originalTweet: z.infer<typeof tweetDataSchema>;
+    replies: z.infer<typeof replySchema>[];
+    quotes?: QuoteThread[];
+    fetchedAt: string;
+    tweetUrl: string;
+    _nextToken?: string;
+    _fetchStats?: z.infer<typeof fetchStatsSchema>;
+    _threadStats?: z.infer<typeof threadStatsSchema>;
+    _authors?: Record<string, z.infer<typeof authorEntrySchema>>;
+    _topReplyChains?: z.infer<typeof replyChainSchema>[];
+    _scout?: z.infer<typeof scoutResultSchema>;
+    _botDetection?: z.infer<typeof botDetectionResultSchema>;
+    _grokContext?: z.infer<typeof enrichResultSchema>;
+    _quotedTweetId?: string;
+    _quotedThread?: RawThreadDataInput;
+}
 
 // --- Types (derived from schemas) ---
 
@@ -763,26 +791,35 @@ export function annotateReplyDepths({
     }
 
     const depthCache = new Map<string, number>();
+    const inProgress = new Set<string>();
 
     const computeDepth = (replyId: string): number => {
         const cached = depthCache.get(replyId);
         if (cached !== undefined) return cached;
+        if (inProgress.has(replyId)) {
+            depthCache.set(replyId, 0);
+            return 0;
+        }
+        inProgress.add(replyId);
         const reply = replyById.get(replyId);
         if (
             !reply?.inReplyToTweetId ||
             reply.inReplyToTweetId === rootTweetId
         ) {
             depthCache.set(replyId, 0);
+            inProgress.delete(replyId);
             return 0;
         }
-        // Guard against cycles: if parent isn't in replyById, treat as depth 0
+        // Guard against missing parents: if parent isn't in replyById, treat as depth 0
         if (!replyById.has(reply.inReplyToTweetId)) {
             depthCache.set(replyId, 0);
+            inProgress.delete(replyId);
             return 0;
         }
         const parentDepth = computeDepth(reply.inReplyToTweetId);
         const depth = parentDepth + 1;
         depthCache.set(replyId, depth);
+        inProgress.delete(replyId);
         return depth;
     };
 
@@ -1073,14 +1110,29 @@ function makeFetchStats({
     };
 }
 
-export async function fetchTweet(tweetId: string): Promise<TweetData> {
+export interface FetchTweetResult {
+    tweet: TweetData;
+    quotedTweetId: string | undefined;
+}
+
+export async function fetchTweet(tweetId: string): Promise<FetchTweetResult> {
     console.log(`Fetching tweet ${tweetId}...`);
+
+    const fetchFields = {
+        ...TWEET_API_FIELDS,
+        expansions: [...TWEET_API_FIELDS.expansions, "referenced_tweets.id"],
+        "tweet.fields": [
+            ...TWEET_API_FIELDS["tweet.fields"],
+            "referenced_tweets",
+        ],
+    };
+
     console.log(
-        `  [API] singleTweet(${tweetId}) with fields: ${JSON.stringify(TWEET_API_FIELDS)}`,
+        `  [API] singleTweet(${tweetId}) with fields: ${JSON.stringify(fetchFields)}`,
     );
 
     const result = await withRetry(() =>
-        client.v2.singleTweet(tweetId, TWEET_API_FIELDS),
+        client.v2.singleTweet(tweetId, fetchFields),
     );
 
     const userCount = result.includes?.users?.length ?? 0;
@@ -1099,10 +1151,28 @@ export async function fetchTweet(tweetId: string): Promise<TweetData> {
         logInlineErrors(result.errors);
     }
 
-    return mapTweetToData({
-        tweet: result.data,
-        users: usersMapFromIncludes(result.includes?.users),
-    });
+    const quotedTweetId = result.data.referenced_tweets?.find(
+        (r) => r.type === "quoted",
+    )?.id;
+
+    if (result.data.referenced_tweets?.length) {
+        console.log(
+            `  [API] referenced_tweets: ${JSON.stringify(result.data.referenced_tweets)}`,
+        );
+    }
+    if (quotedTweetId) {
+        console.log(`  [API] Tweet quotes another tweet: ${quotedTweetId}`);
+    } else {
+        console.log(`  [API] Tweet does not quote another tweet`);
+    }
+
+    return {
+        tweet: mapTweetToData({
+            tweet: result.data,
+            users: usersMapFromIncludes(result.includes?.users),
+        }),
+        quotedTweetId,
+    };
 }
 
 interface FetchConversationParams {
@@ -1368,13 +1438,47 @@ export async function exploreQuoteTree({
     // Fetch flat list of all quote tweets (paginated)
     const quotes: QuoteThread[] = [];
     const paginator = await withRetry(() =>
-        client.v2.quotes(tweetId, { ...TWEET_API_FIELDS, max_results: 100 }),
+        client.v2.quotes(tweetId, {
+            ...TWEET_API_FIELDS,
+            expansions: [...TWEET_API_FIELDS.expansions, "referenced_tweets.id"],
+            "tweet.fields": [
+                ...TWEET_API_FIELDS["tweet.fields"],
+                "referenced_tweets",
+            ],
+            max_results: 100,
+        }),
     );
 
     let processedCount = 0;
     const processQuotePage = (): void => {
         const users = usersMapFromIncludes(paginator.includes.users);
-        const newTweets = paginator.tweets.slice(processedCount);
+        const allNewTweets = paginator.tweets.slice(processedCount);
+
+        // Filter out retweets — the quotes endpoint returns RT'd quote tweets
+        // which are duplicates that waste budget and pollute clustering data
+        const newTweets = allNewTweets.filter(
+            (tweet) =>
+                !tweet.referenced_tweets?.some(
+                    (r) => r.type === "retweeted",
+                ),
+        );
+        if (newTweets.length < allNewTweets.length) {
+            const filteredIds = allNewTweets
+                .filter((tweet) =>
+                    tweet.referenced_tweets?.some(
+                        (r) => r.type === "retweeted",
+                    ),
+                )
+                .map((t) => t.id);
+            console.log(
+                `  [Quotes] Filtered ${filteredIds.length}/${allNewTweets.length} retweets from quote page: [${filteredIds.join(", ")}]`,
+            );
+        } else {
+            console.log(
+                `  [Quotes] All ${allNewTweets.length} tweets on this page are original quotes (no retweets)`,
+            );
+        }
+
         const newQuotes: QuoteThread[] = [];
         for (const tweet of newTweets) {
             newQuotes.push(
@@ -1388,7 +1492,7 @@ export async function exploreQuoteTree({
             authorAccumulator.ingestQuotes({ users, quotes: newQuotes });
         }
 
-        // Track cost: each page costs per-post + per-user
+        // Track cost: each page costs per-post + per-user (only non-RT tweets)
         const pageUserCount = new Set(
             newTweets.map((t) => t.author_id ?? "unknown"),
         ).size;
@@ -1798,11 +1902,12 @@ export function filterRepliesByEngagement({
         }
     }
 
+    const ancestorsPreserved = Math.max(0, ancestorsAdded - engagementKept - priorityKept);
     console.log(
         `  [Filter] Results: ${keptIds.size}/${replies.length} kept — ` +
             `botExcluded=${botExcluded}, depthExcluded=${depthExcluded}, ` +
             `priorityKept=${priorityKept}, engagementKept=${engagementKept}, ` +
-            `engagementExcluded=${engagementExcluded}, ancestorsPreserved=${ancestorsAdded - engagementKept - priorityKept}`,
+            `engagementExcluded=${engagementExcluded}, ancestorsPreserved=${ancestorsPreserved}`,
     );
 
     return replies.filter((r) => keptIds.has(r.id));
@@ -2341,13 +2446,14 @@ export function computeTopReplyChains({
     }
 
     // Compute total engagement for each subtree rooted at a direct reply
-    const subtreeEngagement = (replyId: string): number => {
+    const subtreeEngagement = (replyId: string, visited: Set<string>): number => {
         const reply = replyById.get(replyId);
-        if (!reply) return 0;
+        if (!reply || visited.has(replyId)) return 0;
+        visited.add(replyId);
         let total = reply.likeCount + reply.replyCount;
         const children = childrenOf.get(replyId) ?? [];
         for (const childId of children) {
-            total += subtreeEngagement(childId);
+            total += subtreeEngagement(childId, visited);
         }
         return total;
     };
@@ -2361,7 +2467,7 @@ export function computeTopReplyChains({
 
     const scored = directReplies.map((r) => ({
         reply: r,
-        engagement: subtreeEngagement(r.id),
+        engagement: subtreeEngagement(r.id, new Set()),
     }));
     scored.sort((a, b) => b.engagement - a.engagement);
 
@@ -2373,9 +2479,11 @@ export function computeTopReplyChains({
         let maxChainDepth = 0;
 
         // DFS to collect all messages in the chain
+        const visited = new Set<string>();
         const collect = (replyId: string): void => {
             const reply = replyById.get(replyId);
-            if (!reply) return;
+            if (!reply || visited.has(replyId)) return;
+            visited.add(replyId);
             const depth = reply._depth ?? 0;
             if (depth > maxChainDepth) maxChainDepth = depth;
             messages.push({
@@ -2570,6 +2678,260 @@ function tryCreateGrokClient(): GrokClient | null {
     return createGrokClient({ apiKey });
 }
 
+// --- Reusable thread analysis pipeline ---
+
+interface AnalyzeThreadParams {
+    tweetId: string;
+    tweetUrl: string;
+    options: FetchOptions;
+    grokClient: GrokClient | null;
+    followQuotedTweet: boolean;
+}
+
+async function analyzeThread({
+    tweetId,
+    tweetUrl,
+    options: inputOptions,
+    grokClient,
+    followQuotedTweet,
+}: AnalyzeThreadParams): Promise<RawThreadData> {
+    // Clone options so budget mutations don't leak to the caller
+    const options = { ...inputOptions };
+
+    console.log(
+        `  [analyzeThread] Starting for ${tweetId} (followQuotedTweet=${followQuotedTweet})`,
+    );
+
+    // 1. Fetch original tweet
+    const { tweet: originalTweet, quotedTweetId } = await fetchTweet(tweetId);
+    console.log(
+        `  [analyzeThread] @${originalTweet.authorUsername}: "${originalTweet.text.slice(0, 80)}..."`,
+    );
+    console.log(
+        `  ${originalTweet.likeCount} likes, ${originalTweet.replyCount} replies, ${originalTweet.quoteCount} quotes`,
+    );
+
+    const result: RawThreadData = {
+        originalTweet,
+        replies: [],
+        fetchedAt: new Date().toISOString(),
+        tweetUrl,
+        _quotedTweetId: quotedTweetId,
+    };
+    saveProgress({ data: result, tweetId });
+
+    // 2. Scout phase
+    let scoutResult: ScoutResult | null = null;
+    if (grokClient) {
+        scoutResult = await grokClient.scout({ tweetUrl, originalTweet });
+        if (scoutResult) {
+            result._scout = scoutResult;
+            saveProgress({ data: result, tweetId });
+        }
+    }
+
+    // Auto-budget
+    const hasCaps =
+        options.maxCost !== undefined || options.maxTweets !== undefined;
+    if (!hasCaps && !options.noLimit) {
+        if (scoutResult) {
+            options.maxCost = scoutResult.suggestedBudget;
+            options.autoPct = scoutResult.suggestedAutoPct;
+        } else {
+            const smartBudget = calculateSmartBudget({
+                replyCount: originalTweet.replyCount,
+                quoteCount: originalTweet.quoteCount,
+                includeQuotes: options.includeQuotes,
+            });
+            if (smartBudget !== undefined) {
+                options.maxCost = smartBudget;
+            }
+        }
+    }
+
+    const authorAccumulator = createAuthorAccumulator();
+    let prioritySets: GrokPrioritySets = {
+        priorityAuthorIds: new Set(),
+        priorityReplyIds: new Set(),
+        priorityQuoteIds: new Set(),
+    };
+
+    // 3. First page of replies
+    const phase1Ctrl = await fetchConversation({
+        conversationId: tweetId,
+        result,
+        options,
+        singlePage: true,
+        authorAccumulator,
+    });
+
+    if (scoutResult) {
+        prioritySets = buildPrioritySetsFromScout({
+            scout: scoutResult,
+            replies: result.replies,
+        });
+    }
+
+    // 4. Quote exploration
+    let quoteCost = 0;
+    if (options.includeQuotes) {
+        const costRef = { value: phase1Ctrl.estimatedCost() };
+        result.quotes = await exploreQuoteTree({
+            tweetId,
+            options,
+            depth: 0,
+            autoThreshold: undefined,
+            costRef,
+            saveContext: { result, rootTweetId: tweetId },
+            authorAccumulator,
+            priorityQuoteIds: prioritySets.priorityQuoteIds.size > 0
+                ? prioritySets.priorityQuoteIds
+                : undefined,
+        });
+        saveProgress({ data: result, tweetId });
+        quoteCost = costRef.value - phase1Ctrl.estimatedCost();
+    }
+
+    // 5. Remaining reply pages
+    let finalCtrl = phase1Ctrl;
+    if (result._nextToken) {
+        finalCtrl = await fetchConversation({
+            conversationId: tweetId,
+            result,
+            startToken: result._nextToken,
+            options,
+            costOffset: quoteCost,
+            authorAccumulator,
+            priorityReplyIds: prioritySets.priorityReplyIds.size > 0
+                ? prioritySets.priorityReplyIds
+                : undefined,
+        });
+    }
+
+    if (scoutResult) {
+        prioritySets = buildPrioritySetsFromScout({
+            scout: scoutResult,
+            replies: result.replies,
+        });
+    }
+
+    // 6. Enrich with computed fields
+    enrichAndSave({ result, tweetId, authorAccumulator });
+
+    // 7. Bot detection
+    let botAuthorIds: Set<string> | undefined;
+    if (grokClient && result._authors) {
+        const authorsMap = new Map(
+            Object.entries(result._authors).map(([id, data]) => [id, data]),
+        );
+        const botResult = await grokClient.detectBots({
+            authors: authorsMap,
+            replies: result.replies,
+        });
+        if (botResult) {
+            result._botDetection = botResult;
+            botAuthorIds = new Set(botResult.botAuthorIds);
+            saveProgress({ data: result, tweetId });
+        }
+    }
+
+    // 8. Engagement filtering
+    const filtered = applyFilterAndSave({
+        result,
+        tweetId,
+        controller: finalCtrl,
+        maxDepth: options.maxDepth,
+        priorityAuthorIds: prioritySets.priorityAuthorIds.size > 0
+            ? prioritySets.priorityAuthorIds
+            : undefined,
+        priorityReplyIds: prioritySets.priorityReplyIds.size > 0
+            ? prioritySets.priorityReplyIds
+            : undefined,
+        botAuthorIds,
+    });
+
+    // 9. Grok enrichment
+    if (grokClient) {
+        const filteredOutReplies = filtered
+            ? result.replies.filter(
+                  (r) => !filtered.replies.some((fr) => fr.id === r.id),
+              )
+            : undefined;
+
+        const enrichResult = await grokClient.enrich({
+            originalTweet: result.originalTweet,
+            topAuthors: result._threadStats?.topAuthors,
+            topReplyChains: result._topReplyChains,
+            filteredOutReplies,
+        });
+        if (enrichResult) {
+            result._grokContext = enrichResult;
+            saveProgress({ data: result, tweetId });
+        }
+    }
+
+    // 10. Auto-analyze quoted tweet (depth 1 guard — no infinite recursion)
+    console.log(
+        `  [analyzeThread] Quoted tweet check: followQuotedTweet=${followQuotedTweet}, quotedTweetId=${quotedTweetId ?? "none"}, tweetId=${tweetId}`,
+    );
+    if (
+        followQuotedTweet &&
+        quotedTweetId &&
+        quotedTweetId !== tweetId
+    ) {
+        // Compute shared remaining budget for the nested analysis
+        const nestedOptions = { ...inputOptions };
+        // Use the live cost from the pagination controller + quote exploration,
+        // NOT result._fetchStats which may not be set yet (singlePage mode skips it)
+        const parentCost = finalCtrl.estimatedCost() + quoteCost;
+        // options.maxCost may differ from inputOptions.maxCost if auto-budget was applied
+        const effectiveCap = options.maxCost ?? inputOptions.maxCost;
+
+        if (effectiveCap !== undefined) {
+            const remaining = Math.max(0, effectiveCap - parentCost);
+            nestedOptions.maxCost = remaining;
+            console.log(
+                `  [analyzeThread] Budget for quoted thread: $${remaining.toFixed(3)} remaining (parent spent $${parentCost.toFixed(3)} of $${effectiveCap})`,
+            );
+            if (remaining <= 0) {
+                console.log(
+                    `  [analyzeThread] Budget exhausted — skipping quoted thread (resume can fetch later with --resume)`,
+                );
+                return result;
+            }
+        }
+
+        console.log(
+            `  [analyzeThread] Auto-analyzing quoted tweet ${quotedTweetId} (depth-1 cap: nested call will NOT follow further quotes)`,
+        );
+        result._quotedThread = await analyzeThread({
+            tweetId: quotedTweetId,
+            tweetUrl: `https://x.com/i/status/${quotedTweetId}`,
+            options: nestedOptions,
+            grokClient,
+            followQuotedTweet: false,
+        });
+        console.log(
+            `  [analyzeThread] Quoted thread analysis complete: ${result._quotedThread.replies.length} replies, ${result._quotedThread.quotes?.length ?? 0} quotes`,
+        );
+        saveProgress({ data: result, tweetId });
+    } else if (followQuotedTweet && quotedTweetId === tweetId) {
+        console.log(
+            `  [analyzeThread] CIRCULAR QUOTE DETECTED: tweet ${tweetId} quotes itself — skipping to prevent infinite loop`,
+        );
+    } else if (!followQuotedTweet && quotedTweetId) {
+        console.log(
+            `  [analyzeThread] Depth-1 cap reached: not following quoted tweet ${quotedTweetId} (already inside a nested analysis)`,
+        );
+    } else if (!quotedTweetId) {
+        console.log(
+            `  [analyzeThread] No quoted tweet to follow`,
+        );
+    }
+
+    return result;
+}
+
 // --- Main ---
 
 export async function main(): Promise<void> {
@@ -2608,26 +2970,37 @@ export async function main(): Promise<void> {
             process.exit(1);
         }
 
-        // Check if there's anything to resume (replies, quotes, or Grok phases)
+        // Check if there's anything to resume (replies, quotes, enrichment, or Grok phases)
         const hasIncompleteReplies = !!existing._nextToken;
         const hasIncompleteQuotes =
             options.includeQuotes &&
             needsQuoteExploration({ existing, options });
+        const needsEnrichment =
+            existing.replies.length > 0 &&
+            (!existing._threadStats || !existing._authors);
         const grokClient = tryCreateGrokClient();
         const needsBotDetection = grokClient && !existing._botDetection;
-        const needsEnrich = grokClient && !existing._grokContext;
+        const needsGrokEnrich = grokClient && !existing._grokContext;
+        const needsQuotedThread =
+            !existing._quotedThread &&
+            existing._quotedTweetId !== undefined &&
+            existing._quotedTweetId !== tweetId;
 
         console.log(
             `  [Resume] State: incompleteReplies=${hasIncompleteReplies}, incompleteQuotes=${hasIncompleteQuotes}, ` +
-                `needsBotDetection=${!!needsBotDetection}, needsEnrich=${!!needsEnrich}, ` +
+                `needsEnrichment=${needsEnrichment}, ` +
+                `needsBotDetection=${!!needsBotDetection}, needsGrokEnrich=${!!needsGrokEnrich}, ` +
+                `needsQuotedThread=${needsQuotedThread}, ` +
                 `grokClient=${grokClient ? "available" : "null"}`,
         );
 
         if (
             !hasIncompleteReplies &&
             !hasIncompleteQuotes &&
+            !needsEnrichment &&
             !needsBotDetection &&
-            !needsEnrich
+            !needsGrokEnrich &&
+            !needsQuotedThread
         ) {
             console.log(
                 `Fetch for ${tweetId} already completed — nothing to resume.`,
@@ -2818,6 +3191,21 @@ export async function main(): Promise<void> {
             }
         }
 
+        // 7. Fetch quoted thread if missing
+        if (needsQuotedThread && existing._quotedTweetId) {
+            console.log(
+                `  [Resume] Fetching quoted thread ${existing._quotedTweetId}...`,
+            );
+            existing._quotedThread = await analyzeThread({
+                tweetId: existing._quotedTweetId,
+                tweetUrl: `https://x.com/i/status/${existing._quotedTweetId}`,
+                options,
+                grokClient,
+                followQuotedTweet: false,
+            });
+            saveProgress({ data: existing, tweetId });
+        }
+
         printSummary({ result: existing, filtered, tweetId, options });
         return;
     }
@@ -2855,229 +3243,17 @@ export async function main(): Promise<void> {
     const grokClient = tryCreateGrokClient();
     const fetchStart = Date.now();
 
-    // 1. Fetch original tweet and save immediately
-    console.log("  [Phase 1] Fetching original tweet...");
-    const originalTweet = await fetchTweet(tweetId);
-    console.log(
-        `Original tweet by @${originalTweet.authorUsername}: "${originalTweet.text.slice(0, 80)}..."`,
-    );
-    console.log(
-        `  ${originalTweet.likeCount} likes, ${originalTweet.replyCount} replies, ${originalTweet.quoteCount} quotes`,
-    );
-
-    const result: RawThreadData = {
-        originalTweet,
-        replies: [],
-        fetchedAt: new Date().toISOString(),
-        tweetUrl,
-    };
-
-    const path = outputPath(tweetId);
-    saveProgress({ data: result, tweetId });
-    console.log(`Saved original tweet to ${path}`);
-
-    // 2. Scout phase (Grok x_search) — understand the thread before spending API credits
-    console.log(
-        `  [Phase 2] Scout phase: grokClient=${grokClient ? "available" : "null (skipping)"}`,
-    );
-    let scoutResult: ScoutResult | null = null;
-    if (grokClient) {
-        scoutResult = await grokClient.scout({ tweetUrl, originalTweet });
-        if (scoutResult) {
-            result._scout = scoutResult;
-            saveProgress({ data: result, tweetId });
-        }
-    }
-
-    // Auto-budget: use scout's recommendation when available, otherwise
-    // fall back to sqrt-scaled formula ($3-$25).
-    const hasCaps =
-        options.maxCost !== undefined || options.maxTweets !== undefined;
-    if (!hasCaps && !options.noLimit) {
-        if (scoutResult) {
-            options.maxCost = scoutResult.suggestedBudget;
-            options.autoPct = scoutResult.suggestedAutoPct;
-            console.log(
-                `  Scout-informed budget: $${scoutResult.suggestedBudget} (quality: ${scoutResult.qualityScore}/10)`,
-            );
-            console.log(
-                `  Scout-informed autoPct: ${scoutResult.suggestedAutoPct}`,
-            );
-        } else {
-            const smartBudget = calculateSmartBudget({
-                replyCount: originalTweet.replyCount,
-                quoteCount: originalTweet.quoteCount,
-                includeQuotes: options.includeQuotes,
-            });
-            if (smartBudget !== undefined) {
-                options.maxCost = smartBudget;
-                console.log(
-                    `  Auto-budget: $${smartBudget} (use --max-cost to override)`,
-                );
-            }
-        }
-    }
-
-    // Create author accumulator to collect user profile data across all pages
-    const authorAccumulator = createAuthorAccumulator();
-
-    // Build priority sets from scout data (empty if no scout)
-    let prioritySets: GrokPrioritySets = {
-        priorityAuthorIds: new Set(),
-        priorityReplyIds: new Set(),
-        priorityQuoteIds: new Set(),
-    };
-
-    // 3. Fetch Phase 1: First page of replies (calibrate thresholds, always cheap)
-    console.log("  [Phase 3] Fetching first page of replies (calibration)...");
-    const phase1Ctrl = await fetchConversation({
-        conversationId: tweetId,
-        result,
-        options,
-        singlePage: true,
-        authorAccumulator,
-    });
-
-    // Now that we have replies, resolve scout priority usernames to author IDs
-    if (scoutResult) {
-        prioritySets = buildPrioritySetsFromScout({
-            scout: scoutResult,
-            replies: result.replies,
-        });
-        if (prioritySets.priorityAuthorIds.size > 0) {
-            console.log(
-                `  Scout priorities resolved: ${prioritySets.priorityAuthorIds.size} authors, ` +
-                    `${prioritySets.priorityReplyIds.size} replies, ${prioritySets.priorityQuoteIds.size} quotes`,
-            );
-        }
-    }
-
-    // 4. Fetch Phase 2: Quote exploration (budget-gated, threshold-gated)
-    // Runs BEFORE remaining reply pages so a tight budget gets the best of
-    // both content types. Each explored thread is saved immediately.
-    console.log(
-        `  [Phase 4] Quote exploration: includeQuotes=${options.includeQuotes}, ` +
-            `phase1Cost=$${phase1Ctrl.estimatedCost().toFixed(3)}`,
-    );
-    let quoteCost = 0;
-    if (options.includeQuotes) {
-        const costRef = { value: phase1Ctrl.estimatedCost() };
-        result.quotes = await exploreQuoteTree({
-            tweetId,
-            options,
-            depth: 0,
-            autoThreshold: undefined,
-            costRef,
-            saveContext: { result, rootTweetId: tweetId },
-            authorAccumulator,
-            priorityQuoteIds: prioritySets.priorityQuoteIds.size > 0
-                ? prioritySets.priorityQuoteIds
-                : undefined,
-        });
-        saveProgress({ data: result, tweetId });
-        quoteCost = costRef.value - phase1Ctrl.estimatedCost();
-    }
-
-    // 5. Fetch Phase 3: Remaining reply pages (quality-drop + budget gated)
-    // costOffset accounts for Phase 2 spending so budget checks are accurate.
-    // Pass priority reply IDs so quality-drop doesn't stop before finding them.
-    console.log(
-        `  [Phase 5] Remaining reply pages: nextToken=${result._nextToken ? "present" : "none"}, ` +
-            `quoteCost=$${quoteCost.toFixed(3)}`,
-    );
-    let finalCtrl = phase1Ctrl;
-    if (result._nextToken) {
-        finalCtrl = await fetchConversation({
-            conversationId: tweetId,
-            result,
-            startToken: result._nextToken,
-            options,
-            costOffset: quoteCost,
-            authorAccumulator,
-            priorityReplyIds: prioritySets.priorityReplyIds.size > 0
-                ? prioritySets.priorityReplyIds
-                : undefined,
-        });
-    }
-
-    // Update priority author IDs with newly discovered authors from later pages
-    if (scoutResult) {
-        prioritySets = buildPrioritySetsFromScout({
-            scout: scoutResult,
-            replies: result.replies,
-        });
-    }
-
-    // 6. Enrich with computed fields (depths, stats, authors, reply chains)
-    console.log(
-        `  [Phase 6] Computing enrichments (depths, stats, authors, reply chains)...`,
-    );
-    enrichAndSave({ result, tweetId, authorAccumulator });
-
-    // 7. Bot detection (Grok) — before engagement filtering
-    console.log(
-        `  [Phase 7] Bot detection: grokClient=${grokClient ? "available" : "null (skipping)"}, ` +
-            `authors=${result._authors ? Object.keys(result._authors).length : 0}`,
-    );
-    let botAuthorIds: Set<string> | undefined;
-    if (grokClient && result._authors) {
-        const authorsMap = new Map(
-            Object.entries(result._authors).map(([id, data]) => [id, data]),
-        );
-        const botResult = await grokClient.detectBots({
-            authors: authorsMap,
-            replies: result.replies,
-        });
-        if (botResult) {
-            result._botDetection = botResult;
-            botAuthorIds = new Set(botResult.botAuthorIds);
-            saveProgress({ data: result, tweetId });
-        }
-    }
-
-    // 8. Apply engagement filtering (scout-informed priorities + bot exclusion)
-    console.log("  [Phase 8] Applying engagement filtering...");
-    const filtered = applyFilterAndSave({
-        result,
+    const result = await analyzeThread({
         tweetId,
-        controller: finalCtrl,
-        maxDepth: options.maxDepth,
-        priorityAuthorIds: prioritySets.priorityAuthorIds.size > 0
-            ? prioritySets.priorityAuthorIds
-            : undefined,
-        priorityReplyIds: prioritySets.priorityReplyIds.size > 0
-            ? prioritySets.priorityReplyIds
-            : undefined,
-        botAuthorIds,
+        tweetUrl,
+        options,
+        grokClient,
+        followQuotedTweet: true,
     });
-
-    // 9. Enrich with Grok context (cross-thread, author profiles, minority salvage)
-    console.log(
-        `  [Phase 9] Grok enrichment: grokClient=${grokClient ? "available" : "null (skipping)"}`,
-    );
-    if (grokClient) {
-        // Determine which replies were filtered out (for minority opinion salvage)
-        const filteredOutReplies = filtered
-            ? result.replies.filter(
-                  (r) => !filtered.replies.some((fr) => fr.id === r.id),
-              )
-            : undefined;
-
-        const enrichResult = await grokClient.enrich({
-            originalTweet: result.originalTweet,
-            topAuthors: result._threadStats?.topAuthors,
-            topReplyChains: result._topReplyChains,
-            filteredOutReplies,
-        });
-        if (enrichResult) {
-            result._grokContext = enrichResult;
-            saveProgress({ data: result, tweetId });
-        }
-    }
 
     const elapsed = ((Date.now() - fetchStart) / 1000).toFixed(1);
     console.log(`  [Timing] Total fetch time: ${elapsed}s`);
-    printSummary({ result, filtered, tweetId, options });
+    printSummary({ result, filtered: null, tweetId, options });
 }
 
 function countQuoteTree(quotes: QuoteThread[]): {
@@ -3139,9 +3315,30 @@ function printSummary({
     if (result._fetchStats) {
         const stats = result._fetchStats;
         console.log(`  Estimated cost: $${stats.estimatedCost.toFixed(3)}`);
+        if (result._quotedThread?._fetchStats) {
+            const qtCost = result._quotedThread._fetchStats.estimatedCost;
+            console.log(`  Quoted thread cost: $${qtCost.toFixed(3)}`);
+            console.log(
+                `  Total cost (main + quoted): $${(stats.estimatedCost + qtCost).toFixed(3)}`,
+            );
+        }
         if (stats.stoppedEarly) {
             console.log(`  Stopped early: ${stats.stopReason}`);
         }
+    }
+
+    if (result._quotedThread) {
+        console.log(
+            `\nQuoted thread (@${result._quotedThread.originalTweet.authorUsername}):`,
+        );
+        console.log(`  Replies: ${result._quotedThread.replies.length}`);
+        if (result._quotedThread.quotes?.length) {
+            console.log(`  Quotes: ${result._quotedThread.quotes.length}`);
+        }
+    } else if (result._quotedTweetId) {
+        console.log(
+            `\nQuoted tweet ${result._quotedTweetId} not yet analyzed (use --resume to fetch)`,
+        );
     }
 
     if (filtered) {
@@ -3175,7 +3372,12 @@ function printSummary({
     }
 }
 
-if (process.env.VITEST !== "true") {
+// Only run main when this file is the entry point (not when imported by to-csv etc.)
+const isEntryPoint =
+    process.env.VITEST !== "true" &&
+    import.meta.url === `file://${process.argv[1]}`;
+
+if (isEntryPoint) {
     main().catch((err: unknown) => {
         console.error("\nFatal error:", err);
         console.error(
