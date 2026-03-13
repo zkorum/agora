@@ -164,7 +164,8 @@ const {
 const { tabContentStyle } = useTabScrollRestoration({
   analysisRouteName: conversationConfig.analysisRouteName,
   pendingScrollOverride,
-  scrollToActionBar,
+  sentinelElement,
+  actionBarElement,
 });
 
 function handleBack(): void {

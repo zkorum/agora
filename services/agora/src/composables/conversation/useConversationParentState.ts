@@ -104,6 +104,7 @@ export function useConversationParentState({
     const headerEl = document.querySelector(".q-header");
     const headerOffset = headerEl?.clientHeight ?? 0;
     const container = scrollContainer?.value;
+
     if (container) {
       const elTop = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
       container.scrollTo({ top: elTop - headerOffset, behavior });
