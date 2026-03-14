@@ -1,0 +1,31 @@
+auth:
+  addr: http://rarimo-auth
+  enabled: false
+callback:
+  url: https://taraaz.jomhoor.org
+cop:
+  disabled: true
+  endpoint: http://localhost:8000
+  service_name: verificator-svc
+  service_port: 80
+  upstream: http://localhost:8000
+db:
+  url: postgres://agora:CHANGEME@agora-postgres:5432/agora?sslmode=disable
+listener:
+  addr: :8000
+log:
+  disable_sentry: true
+  level: info
+poseidonsmt_root_verifier:
+  contract: "0x479F84502Db545FA8d2275372E0582425204A879"
+  request_timeout: 10s
+  rpc: https://l2.rarimo.com
+signature_verification:
+  pub_key: 04e29323ad356ab524fa5dbe3e490244e741b4d445ac7d2ee5f321556b3fda616bb9d2f2216fc27e099ab3019103cca872679e130629b2b90ea16cedb2b2136371
+verifier:
+  allowed_identity_timestamp: 1741972260
+  erc_1155: "0x0000000000000000000000000000000000000000"
+  event_id: "63957849393154643868"
+  multiproof: true
+  preserve_user_id_case: true
+  verification_key_path: ./proof_keys/passport.json

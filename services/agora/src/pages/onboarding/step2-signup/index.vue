@@ -52,8 +52,8 @@ import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useRouter } from "vue-router";
 
 import {
-  type Step2SignupOnboardingTranslations,
-  step2SignupOnboardingTranslations,
+    type Step2SignupOnboardingTranslations,
+    step2SignupOnboardingTranslations,
 } from "./index.i18n";
 
 const { t } = useComponentI18n<Step2SignupOnboardingTranslations>(
@@ -63,13 +63,11 @@ const { t } = useComponentI18n<Step2SignupOnboardingTranslations>(
 const router = useRouter();
 
 async function goToNextRoute() {
-  // Jomhoor-only mode: always use wallet auth
-  await router.push({ name: "/onboarding/step3-wallet/" });
+  await router.push({ name: "/onboarding/step3-passport/" });
 }
 
 async function verifyPhone() {
-  // Jomhoor-only mode: redirect to wallet auth instead of phone
-  await router.push({ name: "/onboarding/step3-wallet/" });
+  await router.push({ name: "/onboarding/step3-phone-1/" });
 }
 </script>
 

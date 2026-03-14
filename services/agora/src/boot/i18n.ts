@@ -1,7 +1,7 @@
-// Import only English translations for initial load
+// Import English and Farsi translations for initial load
 import en from "src/i18n/en";
+import fa from "src/i18n/fa";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
-import { parseDisplayLanguage } from "src/shared/languages";
 import { nextTick } from "vue";
 import type { I18n } from "vue-i18n";
 import { createI18n } from "vue-i18n";
@@ -25,13 +25,6 @@ declare module "vue-i18n" {
   export interface DefineNumberFormat {}
 }
 /* eslint-enable @typescript-eslint/no-empty-object-type */
-
-// Detect browser language
-function detectBrowserLanguage(): MessageLanguages {
-  const browserLang = navigator.language;
-  const displayLanguage = parseDisplayLanguage(browserLang);
-  return displayLanguage;
-}
 
 // Global i18n instance reference
 let i18nInstance: I18n<
@@ -106,10 +99,10 @@ export function getI18nInstance(): I18n<
 }
 
 export default defineBoot(({ app }) => {
-  // Get stored language preference or detect from browser
+  // Get stored language preference or detect from browser, default to Farsi
   const storedLocale = localStorage.getItem("displayLanguage");
   const defaultLocale =
-    (storedLocale as MessageLanguages) || detectBrowserLanguage();
+    (storedLocale as MessageLanguages) || "fa";
 
   const fallbackLocale = {
     "zh-Hant": ["zh-Hans", "en"],
@@ -117,14 +110,15 @@ export default defineBoot(({ app }) => {
     default: ["en"],
   };
 
-  // Create i18n instance with only English loaded initially
+  // Create i18n instance with English and Farsi loaded initially
   const i18n = createI18n<{ message: MessageSchema }, MessageLanguages>({
     locale: defaultLocale,
     fallbackLocale,
     legacy: false,
-    // @ts-expect-error: Only English loaded initially, others loaded lazily
+    // @ts-expect-error: Only English and Farsi loaded initially, others loaded lazily
     messages: {
-      en, // Only English is loaded initially
+      en,
+      fa,
     },
   });
 
@@ -132,8 +126,8 @@ export default defineBoot(({ app }) => {
   // @ts-expect-error: Type inference issue with lazy loading
   i18nInstance = i18n;
 
-  // Load the initial locale if it's not English
-  if (defaultLocale !== "en") {
+  // Load the initial locale if it's not pre-loaded (en or fa)
+  if (defaultLocale !== "en" && defaultLocale !== "fa") {
     void loadLocaleMessages(defaultLocale).then(() => {
       setI18nLanguage(defaultLocale);
     });

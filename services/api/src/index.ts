@@ -160,6 +160,9 @@ server.register(fastifyCors, {
             }
             // Generate an error on other origins, disabling access
             cb(new Error("Not allowed"), false);
+        } else {
+            // origin is undefined for same-origin requests and non-browser clients
+            cb(null, true);
         }
     },
 });
@@ -201,7 +204,13 @@ export const axiosPolis: AxiosInstance | undefined =
         : undefined;
 
 
-const mustSendActualSms = config.NODE_ENV === "production";
+// Initialize Twilio when credentials are available (any environment),
+// or require them in production mode
+const hasTwilioCreds =
+    config.TWILIO_ACCOUNT_SID !== undefined &&
+    config.TWILIO_AUTH_TOKEN !== undefined &&
+    config.TWILIO_SERVICE_SID !== undefined;
+const mustSendActualSms = config.NODE_ENV === "production" || hasTwilioCreds;
 const isImportDisabled = config.IMPORT_BUFFER_MAX_BATCH_SIZE === 0;
 let twilioClient: twilio.Twilio | undefined;
 if (mustSendActualSms) {
@@ -217,6 +226,7 @@ if (mustSendActualSms) {
             config.TWILIO_ACCOUNT_SID,
             config.TWILIO_AUTH_TOKEN,
         );
+        log.info("[API] Twilio SMS client initialized");
     }
 }
 

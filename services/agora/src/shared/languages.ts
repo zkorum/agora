@@ -381,7 +381,7 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
 export function parseDisplayLanguage(
     code: string,
 ): SupportedDisplayLanguageCodes {
-    if (!code) return "en";
+    if (!code) return "fa";
 
     // Try specific exact match first
     const exactMatch = ZodSupportedDisplayLanguageCodes.safeParse(code);
@@ -398,8 +398,8 @@ export function parseDisplayLanguage(
     const result = ZodSupportedDisplayLanguageCodes.safeParse(primary);
     if (result.success) return result.data;
 
-    // Else default to English
-    return "en";
+    // Else default to Farsi
+    return "fa";
 }
 
 export function parseSpokenLanguage(

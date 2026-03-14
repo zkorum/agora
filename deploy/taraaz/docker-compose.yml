@@ -1,0 +1,105 @@
+services:
+  agora-postgres:
+    container_name: agora-postgres
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: agora
+      POSTGRES_PASSWORD: "${AGORA_DB_PASSWORD}"
+      POSTGRES_DB: agora
+    volumes:
+      - agora_pgdata:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    networks:
+      - agora-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agora"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  polis-server:
+    container_name: agora-polis
+    image: quay.io/zkorum/agora-python-bridge:2.0.2
+    environment:
+      TOTAL_VCPUS: "2"
+    expose:
+      - "8004"
+    networks:
+      - agora-network
+    restart: unless-stopped
+
+  api:
+    container_name: agora-api
+    image: jomhoor/agora-api:latest
+    environment:
+      CONNECTION_STRING: "postgres://agora:${AGORA_DB_PASSWORD}@agora-postgres:5432/agora"
+      CORS_ORIGIN_LIST: "https://taraaz.jomhoor.org,https://www.taraaz.jomhoor.org"
+      PEPPERS: "${AGORA_PEPPERS}"
+      NODE_ENV: "production"
+      VERIFICATOR_SVC_BASE_URL: "http://agora-verificator:8000"
+      POLIS_BASE_URL: "http://agora-polis:8004"
+      SERVER_DID_PROD: "did:web:taraaz.jomhoor.org"
+      # Twilio — leave empty to disable SMS auth initially
+      TWILIO_ACCOUNT_SID: "${TWILIO_ACCOUNT_SID:-}"
+      TWILIO_AUTH_TOKEN: "${TWILIO_AUTH_TOKEN:-}"
+      TWILIO_SERVICE_SID: "${TWILIO_SERVICE_SID:-}"
+      # S3 exports — disabled by default
+      EXPORT_CONVOS_ENABLED: "false"
+    ports:
+      - "127.0.0.1:8180:8080"
+    networks:
+      - agora-network
+    depends_on:
+      agora-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  math-updater:
+    container_name: agora-math-updater
+    image: jomhoor/agora-math-updater:latest
+    environment:
+      CONNECTION_STRING: "postgres://agora:${AGORA_DB_PASSWORD}@agora-postgres:5432/agora"
+      NODE_ENV: "production"
+      POLIS_BASE_URL: "http://agora-polis:8004"
+      TOTAL_VCPUS: "2"
+    networks:
+      - agora-network
+    depends_on:
+      agora-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  verificator-svc:
+    container_name: agora-verificator
+    image: ghcr.io/rarimo/verificator-svc:v0.2.13
+    command: run service
+    environment:
+      KV_VIPER_FILE: "/config/config.yaml"
+    volumes:
+      - ./rarimo:/config
+    ports:
+      - "127.0.0.1:8100:8000"
+    networks:
+      - agora-network
+    depends_on:
+      agora-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  app:
+    container_name: agora-app
+    image: jomhoor/agora-frontend:latest
+    ports:
+      - "127.0.0.1:8190:80"
+    networks:
+      - agora-network
+    restart: unless-stopped
+
+volumes:
+  agora_pgdata:
+
+networks:
+  agora-network:
+    name: agora-network

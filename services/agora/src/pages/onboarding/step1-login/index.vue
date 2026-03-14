@@ -26,6 +26,13 @@
             @click="goToWalletLogin()"
           />
 
+          <ZKGradientButton
+            :label="t('loginWithPhone')"
+            gradient-background="#E7E7FF"
+            label-color="#6B4EFF"
+            @click="goToPhoneLogin()"
+          />
+
           <p><SignupAgreement /></p>
         </template>
       </StepperLayout>
@@ -56,6 +63,10 @@ const router = useRouter();
 
 async function goToWalletLogin() {
   await router.push({ name: "/onboarding/step3-wallet/" });
+}
+
+async function goToPhoneLogin() {
+  await router.push({ name: "/onboarding/step3-phone-1/" });
 }
 </script>
 
