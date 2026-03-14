@@ -553,14 +553,16 @@ describe("createGrokClient", () => {
                 ],
             });
 
-            // Will return null because the API call fails with fake key
-            // But this validates the suspicious detection path is entered
-            expect(result).toBeNull();
+            // API call fails with fake key, but batching returns a combined
+            // result with empty assessments (individual batch failures are skipped)
+            expect(result).not.toBeNull();
+            expect(result?.assessments).toHaveLength(0);
+            expect(result?.totalFlagged).toBe(0);
         });
 
         it("identifies suspicious authors by various signals", async () => {
-            // Author with no bio
-            const noBioAuthor = {
+            // Author with no bio only (1 signal — not enough alone)
+            const noBioOnlyAuthor = {
                 username: "noname",
                 followerCount: 100,
                 followingCount: 100,
@@ -570,7 +572,7 @@ describe("createGrokClient", () => {
                 replyIds: ["r1"],
             };
 
-            // Author with suspicious follower ratio (50k following, <50 followers)
+            // Author with suspicious follower ratio (always flagged)
             const susRatioAuthor = {
                 username: "followbot",
                 bio: "Hi",
@@ -582,10 +584,9 @@ describe("createGrokClient", () => {
                 replyIds: ["r2"],
             };
 
-            // Author who posted >=5 replies in thread
-            const spammyAuthor = {
+            // Author with no bio + high reply count (2 signals — flagged)
+            const noBioSpammyAuthor = {
                 username: "chatty",
-                bio: "Normal person",
                 followerCount: 500,
                 followingCount: 200,
                 tweetCount: 3000,
@@ -594,8 +595,8 @@ describe("createGrokClient", () => {
                 replyIds: ["r3", "r4", "r5", "r6", "r7"],
             };
 
-            // Author with very few tweets
-            const newAuthor = {
+            // Author with only low tweet count (1 signal — not enough alone)
+            const lowTweetOnlyAuthor = {
                 username: "newuser",
                 bio: "Just joined",
                 followerCount: 100,
@@ -619,27 +620,32 @@ describe("createGrokClient", () => {
             };
 
             const authors = new Map([
-                ["a1", noBioAuthor],
+                ["a1", noBioOnlyAuthor],
                 ["a2", susRatioAuthor],
-                ["a3", spammyAuthor],
-                ["a4", newAuthor],
+                ["a3", noBioSpammyAuthor],
+                ["a4", lowTweetOnlyAuthor],
                 ["a5", normalAuthor],
             ]);
 
-            // Capture what would be sent to Grok by intercepting the API call
-            // The client will try to call API and fail, but we verify the path
             const client = createGrokClient({ apiKey: "fake-key" });
             const result = await client.detectBots({
                 authors,
                 replies: [],
             });
 
-            // Result is null because API call fails, but the function was
-            // called (meaning suspicious authors were identified).
-            // We can verify via console.log mock that it attempted detection.
-            expect(result).toBeNull();
+            // Batching returns a combined result even if individual API calls fail
+            expect(result).not.toBeNull();
+            expect(result?.assessments).toHaveLength(0);
             expect(console.log).toHaveBeenCalledWith(
                 expect.stringContaining("[Grok] Running bot detection on 5 authors"),
+            );
+            // Only susRatioAuthor and noBioSpammyAuthor should be flagged as suspicious
+            // (noBioOnlyAuthor and lowTweetOnlyAuthor have only 1 signal each)
+            expect(console.log).toHaveBeenCalledWith(
+                expect.stringContaining("Suspicious: @followbot"),
+            );
+            expect(console.log).toHaveBeenCalledWith(
+                expect.stringContaining("Suspicious: @chatty"),
             );
         });
     });
