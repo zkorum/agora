@@ -70,5 +70,10 @@ dependencies = [
 	"urllib3==2.6.3",
 	"Werkzeug==3.1.6",
 	"gunicorn==23.0.0",
-	"red-dwarf @ git+https://github.com/nicobao/red-dwarf.git@6f59da64bc0c66403eb82e727b27892e28517c79",
+	"red-dwarf @ git+https://github.com/nicobao/red-dwarf.git@123307d63745aaa6c1a8f50bdcf631173ace784f",
+]
+
+[project.optional-dependencies]
+dev = [
+	"pytest>=8.0.0",
 ]
