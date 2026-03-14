@@ -30,6 +30,7 @@
           :conversation-title="loadedConversationData.payload.title"
           :author-username="loadedConversationData.metadata.authorUsername"
           :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
+          :conversation-type="loadedConversationData.metadata.conversationType"
         />
         </div>
 

@@ -9,11 +9,13 @@
           :is-loading="isLoading"
           :conversation-slug-id="conversationSlugId"
           :on-same-tab-click="props.onSameTabClick"
+          :conversation-type="props.conversationType"
         />
       </div>
 
       <div class="rightSection">
         <ZKButton
+          v-if="conversationType !== 'maxdiff'"
           button-type="compactButton"
           @click.stop.prevent="showVoteBreakdown = true"
         >
@@ -24,6 +26,7 @@
         </ZKButton>
 
         <ZKButton
+          v-if="conversationType !== 'maxdiff'"
           button-type="compactButton"
           @click.stop.prevent="showParticipantBreakdown = true"
         >
@@ -81,6 +84,7 @@
 import { copyToClipboard, useQuasar } from "quasar";
 import { useShareActions } from "src/composables/share/useShareActions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { ConversationType } from "src/shared/types/zod";
 import type { ContentAction } from "src/utils/actions/core/types";
 import { formatAmount } from "src/utils/common";
 import { useNotify } from "src/utils/ui/notify";
@@ -97,7 +101,7 @@ import {
   postActionBarTranslations,
 } from "./PostActionBar.i18n";
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   compactMode: boolean;
   opinionCount: number;
   participantCount: number;
@@ -109,7 +113,11 @@ const props = defineProps<{
   conversationTitle: string;
   authorUsername: string;
   onSameTabClick?: () => void;
-}>();
+  conversationType?: ConversationType;
+}>(), {
+  onSameTabClick: undefined,
+  conversationType: "polis",
+});
 
 const currentTab = defineModel<"comment" | "analysis">({
   required: true,

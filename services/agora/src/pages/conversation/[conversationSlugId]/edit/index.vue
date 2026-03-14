@@ -42,6 +42,7 @@
         v-model:title="title"
         v-model:content="content"
         v-model:poll-options="pollOptions"
+        v-model:conversation-type="conversationType"
         :is-edit-mode="true"
       />
 
@@ -291,6 +292,7 @@ const {
   privateConversationSettings,
   postAs,
   importSettings,
+  conversationType,
   validationState,
   validateTitle,
   validateBody,

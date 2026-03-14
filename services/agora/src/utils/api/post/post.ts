@@ -1,5 +1,4 @@
 import type {
-  ApiV1ConversationCreatePost200Response,
   ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner,
   ApiV1ConversationImportPost200Response,
   ApiV1ConversationImportPostRequest,
@@ -20,6 +19,7 @@ import type {
 } from "src/shared/types/dto";
 import { Dto } from "src/shared/types/dto";
 import type {
+  ConversationType,
   EventSlug,
   ExtendedConversation,
   FeedSortAlgorithm,
@@ -185,12 +185,13 @@ export function useBackendPostApi() {
     targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
     participationMode: ParticipationMode;
+    conversationType: ConversationType;
     seedOpinionList: string[];
     requiresEventTicket?: EventSlug;
   }
 
   type CreateNewPostSuccessResponse =
-    AxiosSuccessResponse<ApiV1ConversationCreatePost200Response>;
+    AxiosSuccessResponse<{ conversationSlugId: string }>;
   type CreateNewPostResponse =
     | CreateNewPostSuccessResponse
     | AxiosErrorResponse;
@@ -318,6 +319,7 @@ export function useBackendPostApi() {
     targetIsoConvertDateString,
     isIndexed,
     participationMode,
+    conversationType,
     seedOpinionList,
     requiresEventTicket,
   }: CreateNewPostProps): Promise<CreateNewPostResponse> {
@@ -328,6 +330,7 @@ export function useBackendPostApi() {
         pollingOptionList: pollingOptionList,
         isIndexed: isIndexed,
         participationMode: participationMode,
+        conversationType: conversationType,
         postAsOrganization: postAsOrganizationName,
         indexConversationAt: targetIsoConvertDateString,
         seedOpinionList: seedOpinionList,

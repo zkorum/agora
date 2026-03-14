@@ -19,6 +19,7 @@ Name | Type | Description | Notes
 **hiddenOpinionCount** | **number** |  | [default to undefined]
 **authorUsername** | **string** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
+**conversationType** | **string** |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **isClosed** | **boolean** |  | [default to undefined]
 **isEdited** | **boolean** |  | [default to undefined]
@@ -46,6 +47,7 @@ const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListI
     hiddenOpinionCount,
     authorUsername,
     participationMode,
+    conversationType,
     isIndexed,
     isClosed,
     isEdited,
