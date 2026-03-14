@@ -75,6 +75,12 @@ export function useNotificationSSE() {
       clearTimeout(connectionTimeout);
       connectionTimeout = null;
 
+      console.log("[SSE] Response received", {
+        status: response.status,
+        contentType: response.headers.get("content-type"),
+        hasBody: !!response.body,
+      });
+
       if (!response.ok) {
         throw new Error(`SSE connection failed: ${String(response.status)}`);
       }
