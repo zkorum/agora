@@ -116,7 +116,7 @@
         "@types/pg": "^8.18.0",
         "@types/sanitize-html": "^2.16.1",
         "drizzle-kit": "^0.31.9",
-        "eslint": "^9.27.0",
+        "eslint": "^10.0.3",
         "eslint-config-prettier": "^10.1.8",
         "globals": "^17.4.0",
         "pino": "10.3.1",
