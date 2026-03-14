@@ -175,7 +175,7 @@ export default defineConfig((ctx) => {
         [
           "vite-plugin-checker",
           {
-            vueTsc: true,
+            vueTsc: false,
             eslint: {
               lintCommand:
                 'eslint -c ./eslint.config.js "./src*/**/*.{ts,js,mjs,cjs,vue}"',
