@@ -15,11 +15,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
 function getDefaultDisplayLanguage(): SupportedDisplayLanguageCodes {
-  // Use browser detection for smart default
-  const browserDetection = parseBrowserLanguage({
-    browserLang: navigator.language,
-  });
-  return browserDetection.displayLanguage;
+  return "fa";
 }
 
 function getDefaultSpokenLanguages(): SupportedSpokenLanguageCodes[] {
