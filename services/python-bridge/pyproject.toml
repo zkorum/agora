@@ -49,7 +49,7 @@ dependencies = [
 	"pillow==12.1.1",
 	"platformdirs==4.3.8",
 	"pydantic==2.12.5",
-	"pydantic_core==2.33.2",
+	"pydantic_core==2.41.5",
 	"pyparsing==3.3.2",
 	"pyproject_hooks==1.2.0",
 	"pyrate-limiter==2.10.0",
@@ -63,7 +63,7 @@ dependencies = [
 	"seaborn==0.13.2",
 	"six==1.17.0",
 	"threadpoolctl==3.6.0",
-	"typing-inspection==0.4.1",
+	"typing-inspection==0.4.2",
 	"typing_extensions==4.15.0",
 	"tzdata==2025.2",
 	"url-normalize==2.2.1",
@@ -72,6 +72,9 @@ dependencies = [
 	"gunicorn==23.0.0",
 	"red-dwarf @ git+https://github.com/nicobao/red-dwarf.git@123307d63745aaa6c1a8f50bdcf631173ace784f",
 ]
+
+[tool.setuptools]
+py-modules = ["main"]
 
 [project.optional-dependencies]
 dev = [
