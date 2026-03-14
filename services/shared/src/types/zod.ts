@@ -41,6 +41,7 @@ export const zodModerationReason = z.enum([
 ]);
 export const zodFeedSortAlgorithm = z.enum(["following", "new"]);
 export const zodParticipationMode = z.enum(["strong_verification", "email_verification", "guest"]);
+export const zodConversationType = z.enum(["polis", "maxdiff"]);
 export const zodConversationModerationAction = z.enum(["lock"]);
 export const zodOpinionModerationAction = z.enum(["move", "hide"]);
 export const zodExportStatus = z.enum([
@@ -470,6 +471,7 @@ export const zodConversationMetadata = z
         hiddenOpinionCount: zodCount,
         authorUsername: z.string(),
         participationMode: zodParticipationMode,
+        conversationType: zodConversationType,
         isIndexed: z.boolean(),
         isClosed: z.boolean(),
         isEdited: z.boolean(),
@@ -495,6 +497,7 @@ export const zodConversationMetadataWithId = z
         hiddenOpinionCount: zodCount,
         authorUsername: z.string(),
         participationMode: zodParticipationMode,
+        conversationType: zodConversationType,
         isIndexed: z.boolean(),
         isClosed: z.boolean(),
         isEdited: z.boolean(),
@@ -1237,3 +1240,19 @@ export const zodStatusResponse = z.object({
 export type ProofData = z.infer<typeof zodProofData>;
 export type ZKProof = z.infer<typeof zodZKProof>;
 export type StatusResponse = z.infer<typeof zodStatusResponse>;
+export type ConversationType = z.infer<typeof zodConversationType>;
+
+// MaxDiff (Best-Worst Scaling) types
+export const zodMaxdiffComparison = z.object({
+    best: z.string(),
+    worst: z.string(),
+    set: z.array(z.string()),
+});
+export type MaxDiffComparison = z.infer<typeof zodMaxdiffComparison>;
+
+export const zodMaxdiffState = z.object({
+    ranking: z.array(z.string()).nullable(),
+    comparisons: z.array(zodMaxdiffComparison),
+    isComplete: z.boolean(),
+});
+export type MaxDiffState = z.infer<typeof zodMaxdiffState>;

@@ -632,9 +632,6 @@ export const ApiV1ConversationClosePost200ResponseOneOfReasonEnum = {
 
 export type ApiV1ConversationClosePost200ResponseOneOfReasonEnum = typeof ApiV1ConversationClosePost200ResponseOneOfReasonEnum[keyof typeof ApiV1ConversationClosePost200ResponseOneOfReasonEnum];
 
-export interface ApiV1ConversationCreatePost200Response {
-    'conversationSlugId': string;
-}
 export interface ApiV1ConversationCreatePostRequest {
     'conversationTitle': string;
     'conversationBody'?: string;
@@ -642,6 +639,7 @@ export interface ApiV1ConversationCreatePostRequest {
     'indexConversationAt'?: string;
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationCreatePostRequestParticipationModeEnum;
+    'conversationType': ApiV1ConversationCreatePostRequestConversationTypeEnum;
     'pollingOptionList'?: Array<string>;
     'seedOpinionList': Array<string>;
     'requiresEventTicket'?: ApiV1ConversationCreatePostRequestRequiresEventTicketEnum;
@@ -654,6 +652,12 @@ export const ApiV1ConversationCreatePostRequestParticipationModeEnum = {
 } as const;
 
 export type ApiV1ConversationCreatePostRequestParticipationModeEnum = typeof ApiV1ConversationCreatePostRequestParticipationModeEnum[keyof typeof ApiV1ConversationCreatePostRequestParticipationModeEnum];
+export const ApiV1ConversationCreatePostRequestConversationTypeEnum = {
+    Polis: 'polis',
+    Maxdiff: 'maxdiff'
+} as const;
+
+export type ApiV1ConversationCreatePostRequestConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestConversationTypeEnum];
 export const ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = {
     Devconnect2025: 'devconnect-2025'
 } as const;
@@ -918,6 +922,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
     'hiddenOpinionCount': number;
     'authorUsername': string;
     'participationMode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum;
+    'conversationType': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum;
     'isIndexed': boolean;
     'isClosed': boolean;
     'isEdited': boolean;
@@ -933,6 +938,12 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum = {
+    Polis: 'polis',
+    Maxdiff: 'maxdiff'
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum];
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum = {
     Devconnect2025: 'devconnect-2025'
 } as const;
@@ -1285,6 +1296,41 @@ export interface ApiV1ConversationValidateCsvPost200Response {
 export interface ApiV1ConversationValidateCsvPost200ResponseSummaryFile {
     'isValid': boolean;
     'error'?: string;
+}
+export interface ApiV1MaxdiffLoadPost200Response {
+    'ranking': Array<string> | null;
+    'comparisons': Array<ApiV1MaxdiffLoadPost200ResponseComparisonsInner> | null;
+    'isComplete': boolean;
+}
+export interface ApiV1MaxdiffLoadPost200ResponseComparisonsInner {
+    'best': string;
+    'worst': string;
+    'set': Array<string>;
+}
+export interface ApiV1MaxdiffLoadPostRequest {
+    'conversationSlugId': string;
+}
+export interface ApiV1MaxdiffResultsPost200Response {
+    'rankings': Array<ApiV1MaxdiffResultsPost200ResponseRankingsInner>;
+    'totalParticipants': number;
+}
+export interface ApiV1MaxdiffResultsPost200ResponseRankingsInner {
+    'opinionSlugId': string;
+    'opinionContent': string;
+    'avgRank': number;
+    'score': number;
+    'participantCount': number;
+}
+export interface ApiV1MaxdiffSavePostRequest {
+    'conversationSlugId': string;
+    'ranking': Array<string> | null;
+    'comparisons': Array<ApiV1MaxdiffSavePostRequestComparisonsInner>;
+    'isComplete': boolean;
+}
+export interface ApiV1MaxdiffSavePostRequestComparisonsInner {
+    'best': string;
+    'worst': string;
+    'set': Array<string>;
 }
 export interface ApiV1ModerationConversationCreatePostRequest {
     'conversationSlugId': string;
@@ -1833,6 +1879,7 @@ export const ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum =
     Ja: 'ja',
     Kn: 'kn',
     Ko: 'ko',
+    Ky: 'ky',
     Ms: 'ms',
     Mr: 'mr',
     No: 'no',
@@ -1862,7 +1909,9 @@ export const ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum =
     ZhHant: 'zh-Hant',
     ZhHans: 'zh-Hans',
     Ja: 'ja',
-    Ar: 'ar'
+    Ar: 'ar',
+    Ky: 'ky',
+    Ru: 'ru'
 } as const;
 
 export type ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum];
@@ -1878,7 +1927,9 @@ export const ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnu
     ZhHant: 'zh-Hant',
     ZhHans: 'zh-Hans',
     Ja: 'ja',
-    Ar: 'ar'
+    Ar: 'ar',
+    Ky: 'ky',
+    Ru: 'ru'
 } as const;
 
 export type ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum];
@@ -1917,6 +1968,7 @@ export const ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum = 
     Ja: 'ja',
     Kn: 'kn',
     Ko: 'ko',
+    Ky: 'ky',
     Ms: 'ms',
     Mr: 'mr',
     No: 'no',
@@ -1946,7 +1998,9 @@ export const ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum = 
     ZhHant: 'zh-Hant',
     ZhHans: 'zh-Hans',
     Ja: 'ja',
-    Ar: 'ar'
+    Ar: 'ar',
+    Ky: 'ky',
+    Ru: 'ru'
 } as const;
 
 export type ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum];
@@ -3332,6 +3386,119 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffLoadPost: async (apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1MaxdiffLoadPostRequest' is not null or undefined
+            assertParamExists('apiV1MaxdiffLoadPost', 'apiV1MaxdiffLoadPostRequest', apiV1MaxdiffLoadPostRequest)
+            const localVarPath = `/api/v1/maxdiff/load`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffLoadPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffResultsPost: async (apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1MaxdiffLoadPostRequest' is not null or undefined
+            assertParamExists('apiV1MaxdiffResultsPost', 'apiV1MaxdiffLoadPostRequest', apiV1MaxdiffLoadPostRequest)
+            const localVarPath = `/api/v1/maxdiff/results`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffLoadPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffSavePostRequest} apiV1MaxdiffSavePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffSavePost: async (apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1MaxdiffSavePostRequest' is not null or undefined
+            assertParamExists('apiV1MaxdiffSavePost', 'apiV1MaxdiffSavePostRequest', apiV1MaxdiffSavePostRequest)
+            const localVarPath = `/api/v1/maxdiff/save`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffSavePostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -4882,7 +5049,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationCreatePost200Response>> {
+        async apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffLoadPostRequest>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationCreatePost']?.[localVarOperationServerIndex]?.url;
@@ -5075,6 +5242,42 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationValidateCsvPost(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationValidateCsvPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffLoadPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffLoadPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffResultsPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffResultsPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffSavePostRequest} apiV1MaxdiffSavePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffSavePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -5674,7 +5877,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationCreatePost200Response> {
+        apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffLoadPostRequest> {
             return localVarFp.apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
@@ -5817,6 +6020,33 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1ConversationValidateCsvPost(options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationValidateCsvPost200Response> {
             return localVarFp.apiV1ConversationValidateCsvPost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffLoadPost200Response> {
+            return localVarFp.apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffResultsPost200Response> {
+            return localVarFp.apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffSavePostRequest} apiV1MaxdiffSavePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -6482,6 +6712,36 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1ConversationValidateCsvPost(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ConversationValidateCsvPost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1MaxdiffSavePostRequest} apiV1MaxdiffSavePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

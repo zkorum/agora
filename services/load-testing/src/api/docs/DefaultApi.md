@@ -39,6 +39,9 @@ All URIs are relative to *http://localhost*
 |[**apiV1ConversationOpenPost**](#apiv1conversationopenpost) | **POST** /api/v1/conversation/open | |
 |[**apiV1ConversationUpdatePost**](#apiv1conversationupdatepost) | **POST** /api/v1/conversation/update | |
 |[**apiV1ConversationValidateCsvPost**](#apiv1conversationvalidatecsvpost) | **POST** /api/v1/conversation/validate-csv | |
+|[**apiV1MaxdiffLoadPost**](#apiv1maxdiffloadpost) | **POST** /api/v1/maxdiff/load | |
+|[**apiV1MaxdiffResultsPost**](#apiv1maxdiffresultspost) | **POST** /api/v1/maxdiff/results | |
+|[**apiV1MaxdiffSavePost**](#apiv1maxdiffsavepost) | **POST** /api/v1/maxdiff/save | |
 |[**apiV1ModerationConversationCreatePost**](#apiv1moderationconversationcreatepost) | **POST** /api/v1/moderation/conversation/create | |
 |[**apiV1ModerationConversationGetPost**](#apiv1moderationconversationgetpost) | **POST** /api/v1/moderation/conversation/get | |
 |[**apiV1ModerationConversationWithdrawPost**](#apiv1moderationconversationwithdrawpost) | **POST** /api/v1/moderation/conversation/withdraw | |
@@ -955,7 +958,7 @@ const { status, data } = await apiInstance.apiV1ConversationClosePost(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1ConversationCreatePost**
-> ApiV1ConversationCreatePost200Response apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest)
+> ApiV1MaxdiffLoadPostRequest apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest)
 
 
 ### Example
@@ -986,7 +989,7 @@ const { status, data } = await apiInstance.apiV1ConversationCreatePost(
 
 ### Return type
 
-**ApiV1ConversationCreatePost200Response**
+**ApiV1MaxdiffLoadPostRequest**
 
 ### Authorization
 
@@ -1788,6 +1791,159 @@ This endpoint does not have any parameters.
 
  - **Content-Type**: Not defined
  - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1MaxdiffLoadPost**
+> ApiV1MaxdiffLoadPost200Response apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1MaxdiffLoadPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest; //
+
+const { status, data } = await apiInstance.apiV1MaxdiffLoadPost(
+    apiV1MaxdiffLoadPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1MaxdiffLoadPostRequest** | **ApiV1MaxdiffLoadPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1MaxdiffLoadPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1MaxdiffResultsPost**
+> ApiV1MaxdiffResultsPost200Response apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1MaxdiffLoadPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest; //
+
+const { status, data } = await apiInstance.apiV1MaxdiffResultsPost(
+    apiV1MaxdiffLoadPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1MaxdiffLoadPostRequest** | **ApiV1MaxdiffLoadPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1MaxdiffResultsPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1MaxdiffSavePost**
+> apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1MaxdiffSavePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest; //
+
+const { status, data } = await apiInstance.apiV1MaxdiffSavePost(
+    apiV1MaxdiffSavePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1MaxdiffSavePostRequest** | **ApiV1MaxdiffSavePostRequest**|  | |
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
 
 
 ### HTTP response details

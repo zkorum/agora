@@ -7,6 +7,13 @@
     >
       {{ t("privateLabel") }}
     </div>
+    <div
+      v-if="conversationType === 'maxdiff'"
+      class="type-label"
+      :class="`type-label--${size}`"
+    >
+      {{ t("prioritizationLabel") }}
+    </div>
     <h1 class="conversation-title" :class="`conversation-title--${size}`">
       {{ title }}
     </h1>
@@ -15,6 +22,7 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { ConversationType } from "src/shared/types/zod";
 
 import {
   type ConversationTitleWithPrivacyLabelTranslations,
@@ -25,9 +33,12 @@ interface Props {
   isPrivate: boolean; // Meaning the conversation is not indexed
   title: string;
   size: "medium" | "large";
+  conversationType?: ConversationType;
 }
 
-defineProps<Props>();
+withDefaults(defineProps<Props>(), {
+  conversationType: "polis",
+});
 
 const { t } = useComponentI18n<ConversationTitleWithPrivacyLabelTranslations>(
   conversationTitleWithPrivacyLabelTranslations
@@ -79,6 +90,28 @@ const { t } = useComponentI18n<ConversationTitleWithPrivacyLabelTranslations>(
 }
 
 .privacy-label--large {
+  font-size: 0.9rem;
+}
+
+.type-label {
+  background-color: $primary;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-semibold);
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.3rem;
+}
+
+.type-label--medium {
+  font-size: 0.8rem;
+}
+
+.type-label--large {
   font-size: 0.9rem;
 }
 </style>

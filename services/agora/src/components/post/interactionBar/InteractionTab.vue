@@ -2,8 +2,8 @@
   <div>
     <div class="container">
       <ZKTab
-        icon-code="meteor-icons:comment"
-        :text="formatAmount(opinionCount)"
+        :icon-code="props.conversationType === 'maxdiff' ? 'mdi:sort-numeric-ascending' : 'meteor-icons:comment'"
+        :text="props.conversationType === 'maxdiff' ? t('rank') : formatAmount(opinionCount)"
         :is-highlighted="model === 'comment' && !compactMode"
         :should-underline-on-highlight="true"
         :is-loading="isLoading && model === 'comment'"
@@ -29,6 +29,7 @@
 <script setup lang="ts">
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { ConversationType } from "src/shared/types/zod";
 import { formatAmount } from "src/utils/common";
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -38,13 +39,17 @@ import {
   interactionTabTranslations,
 } from "./InteractionTab.i18n";
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   opinionCount: number;
   compactMode: boolean;
   isLoading?: boolean;
   conversationSlugId: string;
   onSameTabClick?: () => void;
-}>();
+  conversationType?: ConversationType;
+}>(), {
+  onSameTabClick: undefined,
+  conversationType: "polis",
+});
 
 const model = defineModel<"comment" | "analysis">({ required: true });
 const { t } = useComponentI18n<InteractionTabTranslations>(

@@ -11,6 +11,7 @@ Name | Type | Description | Notes
 **indexConversationAt** | **string** |  | [optional] [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
+**conversationType** | **string** |  | [default to undefined]
 **pollingOptionList** | **Array&lt;string&gt;** |  | [optional] [default to undefined]
 **seedOpinionList** | **Array&lt;string&gt;** |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
@@ -27,6 +28,7 @@ const instance: ApiV1ConversationCreatePostRequest = {
     indexConversationAt,
     isIndexed,
     participationMode,
+    conversationType,
     pollingOptionList,
     seedOpinionList,
     requiresEventTicket,

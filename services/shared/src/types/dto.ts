@@ -43,6 +43,8 @@ import {
     zodExportFailureReason,
     zodImportFailureReason,
     zodParticipationMode,
+    zodMaxdiffComparison,
+    zodConversationType,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
@@ -109,6 +111,7 @@ export class Dto {
             indexConversationAt: z.iso.datetime().optional(),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
+            conversationType: zodConversationType,
             pollingOptionList: zodPollOptionTitle.array().optional(),
             seedOpinionList: z.array(zodOpinionContentInput),
             requiresEventTicket: zodEventSlug.optional(),
@@ -912,6 +915,42 @@ export class Dto {
             exportSlugId: zodSlugId,
         })
         .strict();
+
+    // MaxDiff (Best-Worst Scaling)
+    static maxdiffSaveRequest = z
+        .object({
+            conversationSlugId: z.string(),
+            ranking: z.array(z.string()).nullable(),
+            comparisons: z.array(zodMaxdiffComparison),
+            isComplete: z.boolean(),
+        })
+        .strict();
+    static maxdiffLoadRequest = z
+        .object({
+            conversationSlugId: z.string(),
+        })
+        .strict();
+    static maxdiffLoadResponse = z.object({
+        ranking: z.array(z.string()).nullable(),
+        comparisons: z.array(zodMaxdiffComparison).nullable(),
+        isComplete: z.boolean(),
+    });
+    static maxdiffResultsRequest = z
+        .object({
+            conversationSlugId: z.string(),
+        })
+        .strict();
+    static maxdiffResultItem = z.object({
+        opinionSlugId: z.string(),
+        opinionContent: z.string(),
+        avgRank: z.number(),
+        score: z.number(),
+        participantCount: z.number(),
+    });
+    static maxdiffResultsResponse = z.object({
+        rankings: z.array(Dto.maxdiffResultItem),
+        totalParticipants: z.number(),
+    });
 }
 
 export type PostFetch200 = z.infer<typeof Dto.postFetch200>;
@@ -1060,6 +1099,12 @@ export type DeleteConversationExportRequest = z.infer<
 >;
 export type ConversationExportHistoryItem = z.infer<
     typeof Dto.conversationExportHistoryItem
+>;
+export type MaxDiffSaveRequest = z.infer<typeof Dto.maxdiffSaveRequest>;
+export type MaxDiffLoadResponse = z.infer<typeof Dto.maxdiffLoadResponse>;
+export type MaxDiffResultItem = z.infer<typeof Dto.maxdiffResultItem>;
+export type MaxDiffResultsResponse = z.infer<
+    typeof Dto.maxdiffResultsResponse
 >;
 
 // Export SSE types
