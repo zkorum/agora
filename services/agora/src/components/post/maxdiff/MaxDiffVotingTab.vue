@@ -376,6 +376,7 @@ function handleRedoRanking(): void {
 </script>
 
 <style scoped lang="scss">
+@use "sass:color";
 .maxdiff-container {
   display: flex;
   flex-direction: column;
@@ -518,7 +519,7 @@ function handleRedoRanking(): void {
   min-height: 80px;
 
   &:hover {
-    border-color: darken($color-border-weak, 10%);
+    border-color: color.adjust($color-border-weak, $lightness: -10%);
   }
 
   &.selected-best {
@@ -545,7 +546,7 @@ function handleRedoRanking(): void {
 }
 
 .label-best {
-  color: darken($positive, 10%);
+  color: color.adjust($positive, $lightness: -10%);
 }
 
 .label-worst {
