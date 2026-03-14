@@ -1328,8 +1328,6 @@ export const conversationTable = pgTable(
             .notNull(),
     },
     (table) => [
-        index("conversation_createdAt_idx").on(table.createdAt),
-        index("conversation_authorId_idx").on(table.authorId),
         // Partial index for feed query: filters isIndexed=true + isImporting=false, sorts by createdAt
         index("conversation_feed_idx")
             .on(table.createdAt)
@@ -1528,7 +1526,6 @@ export const opinionTable = pgTable(
     (table) => [
         index("opinion_createdAt_idx").on(table.createdAt),
         index("opinion_slugId_idx").on(table.slugId),
-        index("opinion_conversationId_idx").on(table.conversationId),
         index("opinion_authorId_idx").on(table.authorId),
         // Composite for counter reconciliation: filters conversationId + non-deleted (currentContentId IS NOT NULL)
         index("opinion_conversation_active_idx").on(
@@ -1610,7 +1607,6 @@ export const voteTable = pgTable(
     },
     (t) => [
         unique().on(t.authorId, t.opinionId),
-        index("vote_opinionId_idx").on(t.opinionId),
         index("vote_authorId_idx").on(t.authorId),
         // Composite for counter reconciliation: filters opinionId + non-deleted (currentContentId IS NOT NULL)
         index("vote_opinion_active_idx").on(
@@ -1996,10 +1992,6 @@ export const polisClusterTranslationTable = pgTable(
     },
     (t) => [
         unique("unique_cluster_language").on(t.polisClusterId, t.languageCode),
-        index("polis_cluster_translation_lookup_idx").on(
-            t.polisClusterId,
-            t.languageCode,
-        ),
     ],
 );
 
@@ -2257,7 +2249,6 @@ export const maxdiffResultTable = pgTable(
     },
     (t) => [
         unique().on(t.participantId, t.conversationId),
-        index("maxdiff_result_conversation_idx").on(t.conversationId),
         // Composite for aggregated results query: filters conversationId + isComplete
         index("maxdiff_result_complete_idx").on(
             t.conversationId,

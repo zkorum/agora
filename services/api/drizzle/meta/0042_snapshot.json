@@ -1,5 +1,5 @@
 {
-  "id": "02779c59-1b33-4ce4-89b6-d7fa68802145",
+  "id": "c3e0767f-f836-4635-87b2-11678182b60e",
   "prevId": "a03b8946-7e00-4e12-a374-d9293b2fb042",
   "version": "7",
   "dialect": "postgresql",
@@ -1412,36 +1412,6 @@
         }
       },
       "indexes": {
-        "conversation_createdAt_idx": {
-          "name": "conversation_createdAt_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "conversation_authorId_idx": {
-          "name": "conversation_authorId_idx",
-          "columns": [
-            {
-              "expression": "author_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "conversation_feed_idx": {
           "name": "conversation_feed_idx",
           "columns": [
@@ -2400,21 +2370,6 @@
         }
       },
       "indexes": {
-        "maxdiff_result_conversation_idx": {
-          "name": "maxdiff_result_conversation_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "maxdiff_result_complete_idx": {
           "name": "maxdiff_result_complete_idx",
           "columns": [
@@ -3732,21 +3687,6 @@
           "method": "btree",
           "with": {}
         },
-        "opinion_conversationId_idx": {
-          "name": "opinion_conversationId_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "opinion_authorId_idx": {
           "name": "opinion_authorId_idx",
           "columns": [
@@ -4466,29 +4406,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "polis_cluster_translation_lookup_idx": {
-          "name": "polis_cluster_translation_lookup_idx",
-          "columns": [
-            {
-              "expression": "polis_cluster_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "language_code",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "polis_cluster_translation_polis_cluster_id_polis_cluster_id_fk": {
           "name": "polis_cluster_translation_polis_cluster_id_polis_cluster_id_fk",
@@ -6008,21 +5926,6 @@
         }
       },
       "indexes": {
-        "vote_opinionId_idx": {
-          "name": "vote_opinionId_idx",
-          "columns": [
-            {
-              "expression": "opinion_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "vote_authorId_idx": {
           "name": "vote_authorId_idx",
           "columns": [
