@@ -1,7 +1,7 @@
 {
   "name": "@zkorum/agora-app",
   "version": "0.0.8",
-  "description": "جایی که شهروندان برای گفتگو و تصمیم‌گیری جمعی گرد هم می‌آیند",
+  "description": "گردهمایی جمهور برای تصمیم‌سازی",
   "productName": "Taraaz تراز",
   "author": "ZKorum SAS <hello@zkorum.com>",
   "license": "MPL-2.0",
