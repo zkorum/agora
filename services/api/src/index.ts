@@ -242,8 +242,8 @@ if (mustSendActualSms) {
 server.register(fastifySwagger, {
     openapi: {
         info: {
-            title: "Agora Citizen Network",
-            description: "Agora API",
+            title: "Taraaz تراز",
+            description: "Taraaz API",
             version: "1.0.0",
         },
         servers: [],

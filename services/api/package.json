@@ -1,7 +1,7 @@
 {
     "name": "@zkorum/agora-api",
     "version": "1.0.0",
-    "description": "API for Agora Citizen Network",
+    "description": "API for Taraaz تراز",
     "exports": "./index.js",
     "scripts": {
         "build": "NODE_ENV=production rm -rf dist && tsc --sourceMap -p tsconfig.json",

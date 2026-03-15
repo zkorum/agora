@@ -10,7 +10,7 @@ import { ref, shallowRef } from "vue";
 
 // Parcnet app configuration
 const ZAPP_CONFIG: Zapp = {
-  name: "Agora Citizen Network",
+  name: "Taraaz تراز",
   permissions: {
     REQUEST_PROOF: { collections: ["Devconnect ARG"] },
     READ_POD: { collections: ["Devconnect ARG"] },

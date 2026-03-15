@@ -1,8 +1,8 @@
 {
   "name": "@zkorum/agora-app",
   "version": "0.0.8",
-  "description": "Where citizens converge to exchange and debate ideas.",
-  "productName": "Agora Citizen Network",
+  "description": "جایی که شهروندان برای گفتگو و تصمیم‌گیری جمعی گرد هم می‌آیند",
+  "productName": "Taraaz تراز",
   "author": "ZKorum SAS <hello@zkorum.com>",
   "license": "MPL-2.0",
   "type": "module",

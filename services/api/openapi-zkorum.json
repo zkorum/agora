@@ -1,8 +1,8 @@
 {
     "openapi": "3.0.3",
     "info": {
-        "title": "Agora Citizen Network",
-        "description": "Agora API",
+        "title": "Taraaz تراز",
+        "description": "Taraaz API",
         "version": "1.0.0"
     },
     "components": {
