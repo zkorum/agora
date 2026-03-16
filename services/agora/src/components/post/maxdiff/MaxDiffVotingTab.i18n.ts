@@ -12,13 +12,14 @@ export interface MaxDiffVotingTabTranslations {
   redoRanking: string;
   redoConfirmTitle: string;
   redoConfirmMessage: string;
-  accountRequired: string;
-  verificationRequired: string;
-  emailVerificationRequired: string;
   noStatements: string;
   needMoreStatements: string;
   savingError: string;
   loadingError: string;
+  statementDetail: string;
+  cancelSelection: string;
+  undoLastVote: string;
+  undoError: string;
 }
 
 export const maxDiffVotingTabTranslations: Record<
@@ -37,13 +38,14 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "Redo ranking",
     redoConfirmTitle: "Redo ranking?",
     redoConfirmMessage: "This will reset all your comparisons. You'll start from the beginning.",
-    accountRequired: "An account is required to participate",
-    verificationRequired: "Phone or identity verification required to participate",
-    emailVerificationRequired: "Email verification required to participate",
     noStatements: "No statements to rank yet.",
     needMoreStatements: "At least 4 statements are needed for ranking.",
     savingError: "Failed to save your ranking. Please try again.",
     loadingError: "Failed to load your ranking data.",
+    statementDetail: "Statement",
+    cancelSelection: "Cancel selection",
+    undoLastVote: "Undo",
+    undoError: "Failed to undo. Please try again.",
   },
   ar: {
     title: "رتّب العبارات حسب الأولوية",
@@ -57,13 +59,14 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "إعادة الترتيب",
     redoConfirmTitle: "إعادة الترتيب؟",
     redoConfirmMessage: "سيؤدي هذا إلى إعادة تعيين جميع مقارناتك. ستبدأ من البداية.",
-    accountRequired: "يلزم حساب للمشاركة",
-    verificationRequired: "التحقق من الهاتف أو الهوية مطلوب للمشاركة",
-    emailVerificationRequired: "التحقق من البريد الإلكتروني مطلوب للمشاركة",
     noStatements: "لا توجد عبارات للترتيب بعد.",
     needMoreStatements: "يلزم 4 عبارات على الأقل للترتيب.",
     savingError: "فشل حفظ ترتيبك. يرجى المحاولة مرة أخرى.",
     loadingError: "فشل تحميل بيانات ترتيبك.",
+    statementDetail: "العبارة",
+    cancelSelection: "إلغاء الاختيار",
+    undoLastVote: "تراجع",
+    undoError: "فشل التراجع. يرجى المحاولة مرة أخرى.",
   },
   es: {
     title: "Priorizar declaraciones",
@@ -77,13 +80,14 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "Rehacer clasificación",
     redoConfirmTitle: "¿Rehacer clasificación?",
     redoConfirmMessage: "Esto restablecerá todas tus comparaciones. Empezarás desde el principio.",
-    accountRequired: "Se requiere una cuenta para participar",
-    verificationRequired: "Se requiere verificación por teléfono o identidad para participar",
-    emailVerificationRequired: "Se requiere verificación por correo electrónico para participar",
     noStatements: "Aún no hay declaraciones para clasificar.",
     needMoreStatements: "Se necesitan al menos 4 declaraciones para la clasificación.",
     savingError: "Error al guardar tu clasificación. Inténtalo de nuevo.",
     loadingError: "Error al cargar tus datos de clasificación.",
+    statementDetail: "Proposición",
+    cancelSelection: "Cancelar selección",
+    undoLastVote: "Deshacer",
+    undoError: "Error al deshacer. Inténtalo de nuevo.",
   },
   fr: {
     title: "Hiérarchiser les propositions",
@@ -97,13 +101,14 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "Refaire le classement",
     redoConfirmTitle: "Refaire le classement ?",
     redoConfirmMessage: "Cela réinitialisera toutes vos comparaisons. Vous recommencerez depuis le début.",
-    accountRequired: "Un compte est requis pour participer",
-    verificationRequired: "Vérification par téléphone ou identité requise pour participer",
-    emailVerificationRequired: "Vérification par e-mail requise pour participer",
     noStatements: "Pas encore de propositions à classer.",
     needMoreStatements: "Au moins 4 propositions sont nécessaires pour le classement.",
     savingError: "Échec de la sauvegarde de votre classement. Veuillez réessayer.",
     loadingError: "Échec du chargement de vos données de classement.",
+    statementDetail: "Proposition",
+    cancelSelection: "Annuler la sélection",
+    undoLastVote: "Annuler",
+    undoError: "Échec de l'annulation. Veuillez réessayer.",
   },
   "zh-Hans": {
     title: "优先排列陈述",
@@ -117,13 +122,14 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "重新排名",
     redoConfirmTitle: "重新排名？",
     redoConfirmMessage: "这将重置所有比较。您将从头开始。",
-    accountRequired: "需要账户才能参与",
-    verificationRequired: "需要手机或身份验证才能参与",
-    emailVerificationRequired: "需要邮箱验证才能参与",
     noStatements: "暂无可排名的陈述。",
     needMoreStatements: "至少需要4条陈述才能排名。",
     savingError: "保存排名失败，请重试。",
     loadingError: "加载排名数据失败。",
+    statementDetail: "陈述",
+    cancelSelection: "取消选择",
+    undoLastVote: "撤销",
+    undoError: "撤销失败，请重试。",
   },
   "zh-Hant": {
     title: "優先排列陳述",
@@ -137,13 +143,14 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "重新排名",
     redoConfirmTitle: "重新排名？",
     redoConfirmMessage: "這將重置所有比較。您將從頭開始。",
-    accountRequired: "需要帳戶才能參與",
-    verificationRequired: "需要手機或身份驗證才能參與",
-    emailVerificationRequired: "需要電子郵件驗證才能參與",
     noStatements: "暫無可排名的陳述。",
     needMoreStatements: "至少需要4條陳述才能排名。",
     savingError: "保存排名失敗，請重試。",
     loadingError: "載入排名資料失敗。",
+    statementDetail: "陳述",
+    cancelSelection: "取消選擇",
+    undoLastVote: "復原",
+    undoError: "復原失敗，請重試。",
   },
   ja: {
     title: "ステートメントの優先順位付け",
@@ -157,13 +164,14 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "ランキングをやり直す",
     redoConfirmTitle: "ランキングをやり直しますか？",
     redoConfirmMessage: "すべての比較がリセットされます。最初からやり直します。",
-    accountRequired: "参加するにはアカウントが必要です",
-    verificationRequired: "参加するには電話番号または本人確認が必要です",
-    emailVerificationRequired: "参加するにはメール認証が必要です",
     noStatements: "まだランク付けするステートメントがありません。",
     needMoreStatements: "ランク付けには少なくとも4つのステートメントが必要です。",
     savingError: "ランキングの保存に失敗しました。もう一度お試しください。",
     loadingError: "ランキングデータの読み込みに失敗しました。",
+    statementDetail: "ステートメント",
+    cancelSelection: "選択を取り消す",
+    undoLastVote: "元に戻す",
+    undoError: "元に戻せませんでした。もう一度お試しください。",
   },
   ky: {
     title: "Билдирүүлөрдү артыкчылыктуу кылуу",
@@ -177,13 +185,14 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "Рейтингди кайра жасоо",
     redoConfirmTitle: "Рейтингди кайра жасоо?",
     redoConfirmMessage: "Бул бардык салыштырууларыңызды кайра баштайт. Башынан баштайсыз.",
-    accountRequired: "Катышуу үчүн аккаунт керек",
-    verificationRequired: "Катышуу үчүн телефон же жеке тастыктоо керек",
-    emailVerificationRequired: "Катышуу үчүн электрондук почта тастыктоосу керек",
     noStatements: "Рейтинг үчүн билдирүүлөр жок.",
     needMoreStatements: "Рейтинг үчүн кеминде 4 билдирүү керек.",
     savingError: "Рейтингди сактоо ишке ашкан жок. Кайра аракет кылыңыз.",
     loadingError: "Рейтинг маалыматын жүктөө ишке ашкан жок.",
+    statementDetail: "Билдирүү",
+    cancelSelection: "Тандоону жокко чыгаруу",
+    undoLastVote: "Артка кайтаруу",
+    undoError: "Артка кайтаруу ишке ашкан жок. Кайра аракет кылыңыз.",
   },
   ru: {
     title: "Расставьте приоритеты",
@@ -197,12 +206,13 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "Повторить ранжирование",
     redoConfirmTitle: "Повторить ранжирование?",
     redoConfirmMessage: "Это сбросит все ваши сравнения. Вы начнёте сначала.",
-    accountRequired: "Для участия требуется аккаунт",
-    verificationRequired: "Для участия требуется верификация по телефону или удостоверению личности",
-    emailVerificationRequired: "Для участия требуется верификация по электронной почте",
     noStatements: "Пока нет утверждений для ранжирования.",
     needMoreStatements: "Для ранжирования необходимо минимум 4 утверждения.",
     savingError: "Не удалось сохранить ваш рейтинг. Попробуйте ещё раз.",
     loadingError: "Не удалось загрузить данные рейтинга.",
+    statementDetail: "Утверждение",
+    cancelSelection: "Отменить выбор",
+    undoLastVote: "Отменить",
+    undoError: "Не удалось отменить. Попробуйте ещё раз.",
   },
 };

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
     aggregateMaxDiffResults,
     createMaxDiff,
+    derivePartialRanking,
     recordMaxDiffVote,
     restoreMaxDiff,
 } from "./maxdiff";
@@ -276,6 +277,114 @@ describe("exportState and restoreMaxDiff", () => {
     });
 });
 
+describe("undo via restoreMaxDiff", () => {
+    it("restoring with fewer comparisons reverts progress", () => {
+        const instance = createMaxDiff(["a", "b", "c", "d"]);
+
+        // First vote
+        const candidates1 = instance.getCandidates(4);
+        recordMaxDiffVote({
+            instance,
+            candidates: candidates1,
+            best: candidates1[0],
+            worst: candidates1[candidates1.length - 1],
+        });
+        const progressAfterFirst = instance.progress;
+        const stateAfterFirst = instance.exportState();
+
+        // Second vote
+        const candidates2 = instance.getCandidates(4);
+        if (candidates2.length >= 2) {
+            recordMaxDiffVote({
+                instance,
+                candidates: candidates2,
+                best: candidates2[0],
+                worst: candidates2[candidates2.length - 1],
+            });
+        }
+
+        // Undo second vote by restoring with only first comparison
+        const restored = restoreMaxDiff({
+            items: stateAfterFirst.items,
+            comparisons: stateAfterFirst.comparisons,
+        });
+
+        expect(restored.progress).toBeCloseTo(progressAfterFirst, 5);
+        expect(restored.complete).toBe(false);
+    });
+
+    it("restoring with empty comparisons gives fresh state", () => {
+        const instance = createMaxDiff(["a", "b", "c", "d"]);
+
+        const candidates = instance.getCandidates(4);
+        recordMaxDiffVote({
+            instance,
+            candidates,
+            best: candidates[0],
+            worst: candidates[candidates.length - 1],
+        });
+
+        // Undo all by restoring with no comparisons
+        const restored = restoreMaxDiff({
+            items: instance.items,
+            comparisons: [],
+        });
+
+        expect(restored.progress).toBe(0);
+        expect(restored.complete).toBe(false);
+        expect(restored.getUnorderedPairs().length).toBe(6); // 4*(4-1)/2
+    });
+
+    it("removed comparison set field contains valid candidates", () => {
+        const instance = createMaxDiff(["a", "b", "c", "d", "e"]);
+
+        const candidates = instance.getCandidates(4);
+        recordMaxDiffVote({
+            instance,
+            candidates,
+            best: candidates[0],
+            worst: candidates[candidates.length - 1],
+        });
+
+        const state = instance.exportState();
+        const lastComparison = state.comparisons[state.comparisons.length - 1];
+
+        // The set should contain all candidates from the round
+        expect(lastComparison.set.length).toBe(4);
+        for (const item of lastComparison.set) {
+            expect(instance.items).toContain(item);
+        }
+    });
+
+    it("undo from completed state returns to incomplete", () => {
+        const instance = createMaxDiff(["a", "b", "c"]);
+
+        while (!instance.complete) {
+            const candidates = instance.getCandidates(4);
+            if (candidates.length < 2) break;
+            recordMaxDiffVote({
+                instance,
+                candidates,
+                best: candidates[0],
+                worst: candidates[candidates.length - 1],
+            });
+        }
+
+        expect(instance.complete).toBe(true);
+
+        // Undo last vote
+        const state = instance.exportState();
+        const remaining = state.comparisons.slice(0, -1);
+        const restored = restoreMaxDiff({
+            items: state.items,
+            comparisons: remaining,
+        });
+
+        expect(restored.complete).toBe(false);
+        expect(restored.result).toBeUndefined();
+    });
+});
+
 describe("aggregateMaxDiffResults", () => {
     it("ranks items by average rank across users", () => {
         const allItems = ["a", "b", "c"];
@@ -353,5 +462,78 @@ describe("aggregateMaxDiffResults", () => {
         // With no rankings, avgRank defaults to N (worst)
         expect(results[0].avgRank).toBe(2);
         expect(results[0].participantCount).toBe(0);
+    });
+});
+
+describe("derivePartialRanking", () => {
+    it("returns empty array for no comparisons", () => {
+        const result = derivePartialRanking({
+            comparisons: [],
+            items: ["a", "b", "c"],
+        });
+        expect(result).toEqual([]);
+    });
+
+    it("ranks best before worst for single comparison", () => {
+        const result = derivePartialRanking({
+            comparisons: [
+                { best: "a", worst: "d", set: ["a", "b", "c", "d"] },
+            ],
+            items: ["a", "b", "c", "d"],
+        });
+        expect(result[0]).toBe("a");
+        expect(result[result.length - 1]).toBe("d");
+        expect(result.length).toBe(4);
+    });
+
+    it("uses transitive closure for multi-comparison ordering", () => {
+        const result = derivePartialRanking({
+            comparisons: [
+                { best: "a", worst: "b", set: ["a", "b", "c", "d"] },
+                { best: "c", worst: "d", set: ["b", "c", "d", "e"] },
+            ],
+            items: ["a", "b", "c", "d", "e"],
+        });
+        // a > b,c,d; c > b,d,e; transitive: a > e
+        expect(result.indexOf("a")).toBeLessThan(result.indexOf("b"));
+        expect(result.indexOf("c")).toBeLessThan(result.indexOf("d"));
+    });
+
+    it("only includes items that appeared in comparisons", () => {
+        const result = derivePartialRanking({
+            comparisons: [{ best: "a", worst: "b", set: ["a", "b"] }],
+            items: ["a", "b", "c"],
+        });
+        expect(result).toContain("a");
+        expect(result).toContain("b");
+        expect(result).not.toContain("c");
+    });
+
+    it("matches complete engine result when fully compared", () => {
+        const instance = createMaxDiff(["a", "b", "c", "d"]);
+        while (!instance.complete) {
+            const candidates = instance.getCandidates(4);
+            if (candidates.length < 2) break;
+            recordMaxDiffVote({
+                instance,
+                candidates,
+                best: candidates[0],
+                worst: candidates[candidates.length - 1],
+            });
+        }
+        const state = instance.exportState();
+        const derived = derivePartialRanking({
+            comparisons: state.comparisons,
+            items: state.items,
+        });
+        expect(derived).toEqual(instance.result);
+    });
+
+    it("handles single item in comparisons", () => {
+        const result = derivePartialRanking({
+            comparisons: [{ best: "a", worst: "b", set: ["a", "b"] }],
+            items: ["a", "b"],
+        });
+        expect(result).toEqual(["a", "b"]);
     });
 });

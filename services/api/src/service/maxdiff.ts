@@ -7,6 +7,7 @@ import {
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
+import { updateMaxdiffCounters } from "@/shared-backend/conversationCounters.js";
 import { eq, and } from "drizzle-orm";
 import type {
     MaxDiffLoadResponse,
@@ -14,6 +15,60 @@ import type {
 } from "@/shared/types/dto.js";
 import { z } from "zod";
 import { zodMaxdiffComparison, type MaxDiffComparison } from "@/shared/types/zod.js";
+
+// --- Partial ranking derivation ---
+
+/**
+ * Derive a partial ranking from comparisons.
+ * Builds a "beats" relation with transitive closure, then sorts
+ * by win count. Only includes items that appeared in comparisons.
+ */
+function derivePartialRanking({
+    comparisons,
+    items,
+}: {
+    comparisons: MaxDiffComparison[];
+    items: string[];
+}): string[] {
+    if (comparisons.length === 0) return [];
+
+    const comparedItems = new Set<string>();
+    for (const { set } of comparisons) {
+        for (const item of set) comparedItems.add(item);
+    }
+
+    const comparedList = items.filter((item) => comparedItems.has(item));
+    if (comparedList.length < 2) return comparedList;
+
+    const beats = new Map<string, Set<string>>();
+    for (const item of comparedList) beats.set(item, new Set());
+
+    for (const { best, worst, set } of comparisons) {
+        for (const other of set) {
+            if (other !== best) beats.get(best)?.add(other);
+        }
+        for (const other of set) {
+            if (other !== worst) beats.get(other)?.add(worst);
+        }
+    }
+
+    // Transitive closure (Floyd-Warshall)
+    for (const k of comparedList) {
+        for (const i of comparedList) {
+            for (const j of comparedList) {
+                if (beats.get(i)?.has(k) && beats.get(k)?.has(j)) {
+                    beats.get(i)?.add(j);
+                }
+            }
+        }
+    }
+
+    return [...comparedList].sort((a, b) => {
+        const aWins = beats.get(a)?.size ?? 0;
+        const bWins = beats.get(b)?.size ?? 0;
+        return bWins - aWins;
+    });
+}
 
 // --- Save / Upsert ---
 
@@ -66,6 +121,19 @@ export async function saveMaxdiffResult({
         );
     }
 
+    // Check previous isComplete status (fast PK lookup) to avoid
+    // unnecessary counter recalculation on every comparison round
+    const previousState = await db
+        .select({ isComplete: maxdiffResultTable.isComplete })
+        .from(maxdiffResultTable)
+        .where(
+            and(
+                eq(maxdiffResultTable.participantId, userId),
+                eq(maxdiffResultTable.conversationId, conversationId),
+            ),
+        );
+    const wasComplete = previousState[0]?.isComplete ?? false;
+
     const now = new Date();
 
     await db
@@ -91,6 +159,12 @@ export async function saveMaxdiffResult({
                 updatedAt: now,
             },
         });
+
+    // Only reconcile counters when completion status changes
+    // (completion or redo — at most twice per user per conversation)
+    if (isComplete !== wasComplete) {
+        await updateMaxdiffCounters({ db, conversationId });
+    }
 }
 
 // --- Load ---
@@ -167,17 +241,15 @@ export async function getMaxdiffResults({
             conversationSlugId,
         });
 
-    // Fetch all completed rankings for this conversation
+    // Fetch all results (including partial) for this conversation
     const allResults = await db
         .select({
             ranking: maxdiffResultTable.ranking,
+            comparisons: maxdiffResultTable.comparisons,
         })
         .from(maxdiffResultTable)
         .where(
-            and(
-                eq(maxdiffResultTable.conversationId, conversationId),
-                eq(maxdiffResultTable.isComplete, true),
-            ),
+            eq(maxdiffResultTable.conversationId, conversationId),
         );
 
     // Fetch all opinion slugIds and content for this conversation
@@ -198,12 +270,26 @@ export async function getMaxdiffResults({
         opinions.map((o) => [o.slugId, o.content]),
     );
 
-    // Parse and aggregate rankings
+    // Parse and aggregate rankings (including partial rankings from comparisons)
     const parsedRankings: string[][] = [];
     for (const row of allResults) {
         if (row.ranking !== null) {
             const ranking = z.array(z.string()).parse(row.ranking);
             parsedRankings.push(ranking);
+        } else {
+            // Derive partial ranking from comparisons
+            const comparisons = z
+                .array(zodMaxdiffComparison)
+                .parse(row.comparisons);
+            if (comparisons.length > 0) {
+                const partialRanking = derivePartialRanking({
+                    comparisons,
+                    items: allItems,
+                });
+                if (partialRanking.length > 0) {
+                    parsedRankings.push(partialRanking);
+                }
+            }
         }
     }
 
@@ -244,6 +330,5 @@ export async function getMaxdiffResults({
 
     return {
         rankings,
-        totalParticipants: parsedRankings.length,
     };
 }

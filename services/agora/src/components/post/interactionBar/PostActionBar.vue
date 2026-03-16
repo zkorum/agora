@@ -15,7 +15,6 @@
 
       <div class="rightSection">
         <ZKButton
-          v-if="conversationType !== 'maxdiff'"
           button-type="compactButton"
           @click.stop.prevent="showVoteBreakdown = true"
         >
@@ -26,7 +25,6 @@
         </ZKButton>
 
         <ZKButton
-          v-if="conversationType !== 'maxdiff'"
           button-type="compactButton"
           @click.stop.prevent="showParticipantBreakdown = true"
         >

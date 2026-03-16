@@ -3009,14 +3009,10 @@
                                                 ],
                                                 "additionalProperties": false
                                             }
-                                        },
-                                        "totalParticipants": {
-                                            "type": "number"
                                         }
                                     },
                                     "required": [
-                                        "rankings",
-                                        "totalParticipants"
+                                        "rankings"
                                     ],
                                     "additionalProperties": false
                                 }

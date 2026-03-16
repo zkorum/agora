@@ -20,6 +20,7 @@ import { eq, isNotNull, and, count, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     conversationTable,
+    maxdiffResultTable,
     opinionTable,
     voteTable,
     userTable,
@@ -257,6 +258,45 @@ async function enqueueMathUpdate({
                 processedAt: null,
             },
         });
+}
+
+/**
+ * Update participantCount and voteCount for MaxDiff conversations.
+ *
+ * Counts all participants who have at least one comparison (not just completed rankings).
+ * Vote count is the total number of comparison rounds across all participants.
+ * No moderation distinction for MaxDiff — participantCount = totalParticipantCount,
+ * voteCount = totalVoteCount.
+ */
+export async function updateMaxdiffCounters({
+    db,
+    conversationId,
+}: {
+    db: PostgresJsDatabase;
+    conversationId: number;
+}): Promise<void> {
+    const result = await db
+        .select({
+            participantCount: sql<number>`count(*) FILTER (WHERE jsonb_array_length(${maxdiffResultTable.comparisons}) > 0)`,
+            voteCount: sql<number>`COALESCE(SUM(jsonb_array_length(${maxdiffResultTable.comparisons})), 0)`,
+        })
+        .from(maxdiffResultTable)
+        .where(
+            eq(maxdiffResultTable.conversationId, conversationId),
+        );
+
+    const participantCount = result[0]?.participantCount ?? 0;
+    const voteCount = result[0]?.voteCount ?? 0;
+
+    await db
+        .update(conversationTable)
+        .set({
+            participantCount,
+            totalParticipantCount: participantCount,
+            voteCount,
+            totalVoteCount: voteCount,
+        })
+        .where(eq(conversationTable.id, conversationId));
 }
 
 /**

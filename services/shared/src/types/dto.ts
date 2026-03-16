@@ -952,7 +952,6 @@ export class Dto {
     });
     static maxdiffResultsResponse = z.object({
         rankings: z.array(Dto.maxdiffResultItem),
-        totalParticipants: z.number(),
     });
 }
 

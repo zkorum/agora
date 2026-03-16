@@ -1317,7 +1317,6 @@ export interface ApiV1MaxdiffLoadPostRequest {
 }
 export interface ApiV1MaxdiffResultsPost200Response {
     'rankings': Array<ApiV1MaxdiffResultsPost200ResponseRankingsInner>;
-    'totalParticipants': number;
 }
 export interface ApiV1MaxdiffResultsPost200ResponseRankingsInner {
     'opinionSlugId': string;

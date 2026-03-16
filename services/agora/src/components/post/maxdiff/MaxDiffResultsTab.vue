@@ -18,9 +18,6 @@
     <!-- Results list -->
     <div v-else class="results-section">
       <div class="section-header">{{ t("title") }}</div>
-      <div class="participant-count">
-        {{ t("participants").replace("{count}", totalParticipants.toString()) }}
-      </div>
 
       <div class="method-row">
         <span class="method-subtitle">{{ t("subtitle") }}</span>
@@ -56,13 +53,14 @@
           v-for="(item, index) in rankings"
           :key="item.opinionSlugId"
           class="result-item"
+          @click="openStatementDialog(item.opinionContent)"
         >
           <span class="rank-number">{{ index + 1 }}</span>
           <div class="result-details">
             <ZKHtmlContent
               class="result-content"
               :html-body="item.opinionContent"
-              :compact-mode="false"
+              :compact-mode="true"
               :enable-links="false"
             />
             <div class="result-meta">
@@ -82,6 +80,11 @@
         </li>
       </ol>
     </div>
+
+    <MaxDiffStatementDialog
+      v-model="showStatementDialog"
+      :html-body="expandedContent"
+    />
   </div>
 </template>
 
@@ -90,12 +93,13 @@ import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
-import { computed, onMounted, ref } from "vue";
+import { onMounted, ref } from "vue";
 
 import {
   type MaxDiffResultsTabTranslations,
   maxDiffResultsTabTranslations,
 } from "./MaxDiffResultsTab.i18n";
+import MaxDiffStatementDialog from "./MaxDiffStatementDialog.vue";
 
 const props = defineProps<{
   conversationData: ExtendedConversation;
@@ -119,11 +123,13 @@ const isLoading = ref(true);
 const hasError = ref(false);
 const rankings = ref<RankingItem[]>([]);
 const showInfoDialog = ref(false);
+const showStatementDialog = ref(false);
+const expandedContent = ref("");
 
-const totalParticipants = computed(() => {
-  if (rankings.value.length === 0) return 0;
-  return Math.max(...rankings.value.map((r) => r.participantCount));
-});
+function openStatementDialog(htmlBody: string): void {
+  expandedContent.value = htmlBody;
+  showStatementDialog.value = true;
+}
 
 onMounted(async () => {
   await fetchResults();
@@ -183,11 +189,6 @@ async function fetchResults(): Promise<void> {
   color: $color-text-strong;
 }
 
-.participant-count {
-  font-size: 0.85rem;
-  color: $color-text-weak;
-}
-
 .results-list {
   list-style: none;
   padding: 0;
@@ -204,6 +205,12 @@ async function fetchResults(): Promise<void> {
   padding: 0.75rem 1rem;
   background: $app-background-color;
   border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
 }
 
 .rank-number {
@@ -216,6 +223,7 @@ async function fetchResults(): Promise<void> {
 
 .result-details {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;

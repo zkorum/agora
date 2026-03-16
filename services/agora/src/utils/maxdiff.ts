@@ -373,6 +373,59 @@ export function recordMaxDiffVote({
 }
 
 /**
+ * Derive a partial ranking from comparisons.
+ * Builds a "beats" relation with transitive closure, then sorts
+ * by win count. Only includes items that appeared in comparisons.
+ */
+export function derivePartialRanking({
+    comparisons,
+    items,
+}: {
+    comparisons: MaxDiffComparison[];
+    items: string[];
+}): string[] {
+    if (comparisons.length === 0) return [];
+
+    const comparedItems = new Set<string>();
+    for (const { set } of comparisons) {
+        for (const item of set) comparedItems.add(item);
+    }
+
+    const comparedList = items.filter((item) => comparedItems.has(item));
+    if (comparedList.length < 2) return comparedList;
+
+    // Build "beats" relation: beats[i] = set of items i is known to beat
+    const beats = new Map<string, Set<string>>();
+    for (const item of comparedList) beats.set(item, new Set());
+
+    for (const { best, worst, set } of comparisons) {
+        for (const other of set) {
+            if (other !== best) beats.get(best)?.add(other);
+        }
+        for (const other of set) {
+            if (other !== worst) beats.get(other)?.add(worst);
+        }
+    }
+
+    // Transitive closure (Floyd-Warshall)
+    for (const k of comparedList) {
+        for (const i of comparedList) {
+            for (const j of comparedList) {
+                if (beats.get(i)?.has(k) && beats.get(k)?.has(j)) {
+                    beats.get(i)?.add(j);
+                }
+            }
+        }
+    }
+
+    return [...comparedList].sort((a, b) => {
+        const aWins = beats.get(a)?.size ?? 0;
+        const bWins = beats.get(b)?.size ?? 0;
+        return bWins - aWins;
+    });
+}
+
+/**
  * Aggregate MaxDiff results across multiple users.
  * Each user's ranking is a list of opinionSlugIds from best to worst.
  */
