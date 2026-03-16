@@ -131,7 +131,7 @@ defineOptions({
 });
 
 const { t } = useComponentI18n(embeddedBrowserWarningTranslations);
-const { showNotifyMessage } = useNotify();
+const { showNotifyMessage, showCopiedToClipboard } = useNotify();
 
 const store = useEmbeddedBrowserWarningStore();
 const { showWarning, appName, appKey } = storeToRefs(store);
@@ -151,7 +151,7 @@ async function copyUrl() {
   try {
     await navigator.clipboard.writeText(window.location.href);
     copied.value = true;
-    showNotifyMessage(t("urlCopiedNotification"));
+    showCopiedToClipboard();
 
     setTimeout(() => {
       copied.value = false;

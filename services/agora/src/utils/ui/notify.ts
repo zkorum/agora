@@ -1,5 +1,11 @@
 import { useQuasar } from "quasar";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { isNetworkOffline } from "src/composables/useNetworkStatus";
+
+import {
+  type NotifyTranslations,
+  notifyTranslations,
+} from "./notify.i18n";
 
 interface NotifyOptions {
   message: string;
@@ -40,7 +46,15 @@ export const useNotify = () => {
       classes: "zk-toast-alert",
       spinner: options.showSpinner === true ? true : undefined,
       icon: options.icon,
-      group: options.group ?? false,
+      group: options.group ?? true,
+      badgeColor: "white",
+      badgeTextColor: "primary",
+      badgeClass: "zk-toast-badge",
+      badgeStyle: {
+        top: "50%",
+        marginTop: "-13px",
+        marginLeft: "-15px",
+      },
       actions: options.actionLabel
         ? [
             {
@@ -95,5 +109,14 @@ export const useNotify = () => {
     return dismiss;
   }
 
-  return { showNotifyMessage, showPersistentNotifyMessage };
+  const { t } = useComponentI18n<NotifyTranslations>(notifyTranslations);
+
+  function showCopiedToClipboard(): (() => void) | undefined {
+    return showNotifyMessage({
+      message: t("copiedToClipboard"),
+      icon: "mdi-check-circle-outline",
+    });
+  }
+
+  return { showNotifyMessage, showPersistentNotifyMessage, showCopiedToClipboard };
 };

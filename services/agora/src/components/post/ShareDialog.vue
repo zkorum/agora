@@ -50,7 +50,7 @@ defineEmits<{
 }>();
 
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent();
-const { showNotifyMessage } = useNotify();
+const { showNotifyMessage, showCopiedToClipboard } = useNotify();
 const { t } = useComponentI18n<ShareDialogTranslations>(
   shareDialogTranslations
 );
@@ -67,7 +67,7 @@ const qrCodeDataUrl = useQRCode(toRef(props, "url"), {
 async function copyUrl(): Promise<void> {
   try {
     await copyToClipboard(props.url);
-    showNotifyMessage(t("copiedToClipboard"));
+    showCopiedToClipboard();
   } catch (error) {
     console.error("Failed to copy to clipboard:", error);
     showNotifyMessage(t("couldNotCopy"));
