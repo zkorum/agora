@@ -41,7 +41,7 @@
             />
           </div>
 
-          <p v-if="!isLoggedIn"><SignupAgreement variant="verify" /></p>
+          <p v-if="!isLoggedIn"><SignupAgreement variant="login" /></p>
         </template>
       </StepperLayout>
     </template>

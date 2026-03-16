@@ -348,8 +348,15 @@ async function onLoginCallback() {
   }
 }
 
-function onBeforeRouteLeaveCallback(_to: RouteLocationNormalized): boolean {
+function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
   if (characterCount.value > 0 && isRouteLockedCheck()) {
+    // Auto-save draft when navigating to login/verify pages
+    // (triggered by voting on gated conversations via PollWrapper/CommentActionBar)
+    const routeName = typeof to.name === "string" ? to.name : "";
+    if (routeName.startsWith("/verify/") || routeName === "/welcome/") {
+      saveOpinionDraft(props.postSlugId, opinionBody.value);
+      return true;
+    }
     return false;
   } else {
     return true;
