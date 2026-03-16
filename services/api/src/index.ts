@@ -114,7 +114,7 @@ import { createVoteBuffer } from "./service/voteBuffer.js";
 import { createExportBuffer } from "./service/exportBuffer.js";
 import { createImportBuffer } from "./service/importBuffer.js";
 import { createUcanReplayGuard } from "./service/ucanReplayGuard.js";
-import { NotificationSSEManager } from "./service/notificationSSE.js";
+import { RealtimeSSEManager } from "./service/realtimeSSE.js";
 import {
     addUserOrganizationMapping,
     createOrganization,
@@ -405,8 +405,37 @@ log.info(
 );
 
 // Initialize Notification SSE Manager for real-time notifications
-const notificationSSEManager = new NotificationSSEManager();
-notificationSSEManager.initialize();
+const realtimeSSEManager = new RealtimeSSEManager();
+realtimeSSEManager.initialize();
+
+// Periodic engagement ranking check for "Following" tab.
+// Every 60s, computes top 10 engagement slug IDs and broadcasts
+// "popular_conversation" to all clients if the ranking changed.
+let cachedTopEngagementSlugIds: string[] = [];
+const popularConversationCheckInterval = setInterval(() => {
+    void (async () => {
+        try {
+            const topSlugIds = await feedService.getTopEngagementSlugIds({
+                db,
+            });
+            const changed =
+                topSlugIds.length !== cachedTopEngagementSlugIds.length ||
+                topSlugIds.some(
+                    (id, i) => id !== cachedTopEngagementSlugIds[i],
+                );
+            if (changed) {
+                cachedTopEngagementSlugIds = topSlugIds;
+                realtimeSSEManager.broadcastToAll({
+                    event: "popular_conversation",
+                    data: { topConversationSlugIdList: topSlugIds },
+                });
+            }
+        } catch (error) {
+            log.error(error, "[API] Popular conversation check failed");
+        }
+    })();
+}, 60_000);
+popularConversationCheckInterval.unref();
 
 // Initialize VoteBuffer (batches votes to reduce DB contention)
 const voteBuffer = createVoteBuffer({
@@ -414,7 +443,7 @@ const voteBuffer = createVoteBuffer({
     valkey: queueValkey,
     flushIntervalMs: config.VOTE_BUFFER_FLUSH_INTERVAL_MS,
     valkeyBatchLimit: config.VOTE_BUFFER_VALKEY_BATCH_LIMIT,
-    notificationSSEManager,
+    realtimeSSEManager,
 });
 log.info(
     `[API] Vote buffer initialized (flush interval: ${String(config.VOTE_BUFFER_FLUSH_INTERVAL_MS)}ms, batch limit: ${String(config.VOTE_BUFFER_VALKEY_BATCH_LIMIT)}, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
@@ -424,7 +453,7 @@ log.info(
 const exportBuffer = createExportBuffer({
     db,
     valkey: queueValkey,
-    notificationSSEManager,
+    realtimeSSEManager,
     flushIntervalMs: 1000,
     maxBatchSize: config.EXPORT_CONVOS_BUFFER_MAX_BATCH_SIZE,
     maxConcurrency: config.EXPORT_CONVOS_BUFFER_MAX_CONCURRENCY,
@@ -442,7 +471,7 @@ log.info(
 const importBuffer = createImportBuffer({
     db,
     valkey: queueValkey,
-    notificationSSEManager,
+    realtimeSSEManager,
     voteBuffer,
     axiosPolis,
     flushIntervalMs: config.IMPORT_BUFFER_FLUSH_INTERVAL_MS,
@@ -479,7 +508,7 @@ const performStartupCleanup = async (): Promise<void> => {
                         importId: stuckImport.id,
                         conversationId: null,
                         type: "import_failed",
-                        notificationSSEManager,
+                        realtimeSSEManager,
                     });
                 } catch (notificationError: unknown) {
                     log.error(
@@ -509,7 +538,7 @@ const performStartupCleanup = async (): Promise<void> => {
                         exportId: stuckExport.id,
                         conversationId: stuckExport.conversationId,
                         type: "export_failed",
-                        notificationSSEManager,
+                        realtimeSSEManager,
                     });
                 } catch (notificationError: unknown) {
                     log.error(
@@ -1721,7 +1750,7 @@ server.after(() => {
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: now,
                 isSeed: false,
-                notificationSSEManager: notificationSSEManager,
+                realtimeSSEManager: realtimeSSEManager,
             });
             reply.send(newOpinionResponse);
         },
@@ -2025,6 +2054,13 @@ server.after(() => {
                 seedOpinionList: request.body.seedOpinionList,
                 requiresEventTicket: request.body.requiresEventTicket,
             });
+
+            // Broadcast to all connected clients that a new conversation exists
+            realtimeSSEManager.broadcastToAll({
+                event: "new_conversation",
+                data: { timestamp: Date.now() },
+            });
+
             reply.send({ conversationSlugId });
         },
     });
@@ -2101,7 +2137,7 @@ server.after(() => {
                 proof: encodedUcan,
                 didWrite,
                 importBuffer,
-                notificationSSEManager,
+                realtimeSSEManager,
             });
         },
     });
@@ -2244,7 +2280,7 @@ server.after(() => {
                     proof: encodedUcan,
                     didWrite,
                     importBuffer,
-                    notificationSSEManager,
+                    realtimeSSEManager,
                 });
 
             reply.send({ importSlugId });
@@ -2994,61 +3030,70 @@ server.after(() => {
         },
     });
 
-    // SSE endpoint for real-time notifications
-    // Accepts auth from Authorization header (new fetch-based frontend)
-    // or query param ?auth= (legacy EventSource fallback)
+    // SSE endpoint for real-time events (notifications + global broadcasts).
+    // Auth is optional: authenticated users receive personal notifications +
+    // global events; anonymous users receive only global events.
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "GET",
-        url: `/api/${apiVersion}/notification/stream`,
+        url: `/api/${apiVersion}/realtime/stream`,
         sse: true, // Enable SSE mode - provides reply.sse.* methods
         handler: async (request, reply) => {
-            // Authenticate BEFORE initializing SSE to allow proper HTTP error responses
-            let deviceStatus;
-            try {
-                // Accept auth from Authorization header (fetch) or query param (EventSource fallback)
-                if (!request.headers.authorization) {
-                    const auth = (
-                        request.query as Record<string, string>
-                    ).auth;
-                    if (auth) {
-                        request.headers.authorization = `Bearer ${auth}`;
-                    }
+            const authHeader = request.headers.authorization;
+
+            if (authHeader !== undefined) {
+                // Authenticated connection — validate UCAN, register by userId
+                let deviceStatus;
+                try {
+                    const result = await verifyUcanAndKnownDeviceStatus(
+                        db,
+                        request,
+                        {
+                            expectedKnownDeviceStatus: {
+                                isGuestOrLoggedIn: true,
+                            },
+                        },
+                    );
+                    deviceStatus = result.deviceStatus;
+                } catch (error) {
+                    log.error(error, "[SSE] Authentication failed");
+                    return reply.code(401).send("Authentication failed");
                 }
 
-                const result = await verifyUcanAndKnownDeviceStatus(
-                    db,
-                    request,
-                    {
-                        expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                    },
-                );
-                deviceStatus = result.deviceStatus;
-            } catch (error) {
-                log.error(error, "[SSE] Authentication failed");
-                // Send HTTP error response before any SSE operations
-                // Use string response instead of object for SSE-enabled routes
-                return reply.code(401).send("Authentication failed");
-            }
+                try {
+                    reply.sse.keepAlive();
+                    realtimeSSEManager.connect(
+                        deviceStatus.userId,
+                        reply,
+                    );
 
-            // Only proceed with SSE initialization after successful authentication
-            try {
-                // Keep connection alive (prevents automatic close after handler returns)
-                reply.sse.keepAlive();
-
-                // Register this connection with the SSE manager
-                // The manager will use reply.sse.send() to broadcast notifications
-                notificationSSEManager.connect(deviceStatus.userId, reply);
-
-                // Keep the handler alive by waiting for socket close event
-                // This is necessary to prevent Fastify from closing the connection
-                await new Promise<void>((resolve) => {
-                    request.raw.on("close", () => {
-                        resolve();
+                    await new Promise<void>((resolve) => {
+                        request.raw.on("close", () => {
+                            resolve();
+                        });
                     });
-                });
-            } catch (error) {
-                log.error(error, "[SSE] Error during SSE connection");
-                // At this point SSE is active, connection will be cleaned up by disconnect handler
+                } catch (error) {
+                    log.error(
+                        error,
+                        "[SSE] Error during authenticated SSE connection",
+                    );
+                }
+            } else {
+                // Anonymous connection — no auth required
+                try {
+                    reply.sse.keepAlive();
+                    realtimeSSEManager.connectAnonymous(reply);
+
+                    await new Promise<void>((resolve) => {
+                        request.raw.on("close", () => {
+                            resolve();
+                        });
+                    });
+                } catch (error) {
+                    log.error(
+                        error,
+                        "[SSE] Error during anonymous SSE connection",
+                    );
+                }
             }
         },
     });
@@ -3294,8 +3339,11 @@ const shutdown = async (signal: string) => {
         // Stop UCAN replay guard cleanup interval
         ucanReplayGuard.shutdown();
 
+        // Stop popular conversation periodic check
+        clearInterval(popularConversationCheckInterval);
+
         // Close SSE connections before shutdown
-        await notificationSSEManager.shutdown();
+        await realtimeSSEManager.shutdown();
 
         // Close Valkey connection
         if (queueValkey !== undefined) {

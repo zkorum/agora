@@ -87,7 +87,7 @@ import { nowZeroMs } from "@/shared/util.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 import { Script } from "@valkey/valkey-glide";
-import type { NotificationSSEManager } from "./notificationSSE.js";
+import type { RealtimeSSEManager } from "./realtimeSSE.js";
 import {
     createVoteNotifications,
     getNotificationRecipients,
@@ -189,7 +189,7 @@ interface CreateVoteBufferParams {
     valkey?: Valkey;
     flushIntervalMs: number;
     valkeyBatchLimit: number;
-    notificationSSEManager?: NotificationSSEManager;
+    realtimeSSEManager?: RealtimeSSEManager;
 }
 
 // ============================================================================
@@ -219,7 +219,7 @@ export function createVoteBuffer({
     valkey,
     flushIntervalMs,
     valkeyBatchLimit,
-    notificationSSEManager,
+    realtimeSSEManager,
 }: CreateVoteBufferParams): VoteBuffer {
     // Encapsulated mutable state (private to closure)
     const pendingVotes = new Map<string, BufferedVote>();
@@ -1178,7 +1178,7 @@ export function createVoteBuffer({
                                     conversationId: voteData.conversationId,
                                     numVotes: voteData.voterIds.size,
                                     isSeed: true,
-                                    notificationSSEManager,
+                                    realtimeSSEManager,
                                 });
                             }
                         } else {
@@ -1196,7 +1196,7 @@ export function createVoteBuffer({
                                     conversationId: voteData.conversationId,
                                     numVotes: externalVoteCount,
                                     isSeed: false,
-                                    notificationSSEManager,
+                                    realtimeSSEManager,
                                 });
                             }
                         }

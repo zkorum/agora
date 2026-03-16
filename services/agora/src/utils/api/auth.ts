@@ -7,7 +7,7 @@ import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useNotificationStore } from "src/stores/notification";
 import { useTopicStore } from "src/stores/topic";
 import { useUserStore } from "src/stores/user";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import { resetZupassModuleState } from "../../composables/zupass/useZupassVerification";
 import { useNewPostDraftsStore } from "../../stores/newConversationDrafts";
@@ -32,6 +32,7 @@ export function useBackendAuthApi() {
     useLanguageStore();
 
   const route = useRoute();
+  const router = useRouter();
 
   const { firstLoadGuard } = useRouterGuard();
 
@@ -105,7 +106,7 @@ export function useBackendAuthApi() {
             oldIsGuestOrLoggedIn && !newIsGuestOrLoggedIn,
         });
         if (route.name) {
-          await firstLoadGuard(route.name);
+          await firstLoadGuard({ toName: route.name, router });
         }
         return { authStateChanged: true, needsCacheRefresh: false };
       }
@@ -167,7 +168,7 @@ export function useBackendAuthApi() {
               oldIsGuestOrLoggedIn && !newIsGuestOrLoggedIn,
           });
           if (route.name) {
-            await firstLoadGuard(route.name);
+            await firstLoadGuard({ toName: route.name, router });
           }
           return { authStateChanged: true, needsCacheRefresh: false };
         }

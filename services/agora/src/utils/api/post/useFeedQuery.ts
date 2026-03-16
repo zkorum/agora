@@ -32,7 +32,7 @@ export function useFeedQuery({
       return response.data;
     },
     enabled: computed(() => toValue(enabled)),
-    staleTime: 30 * 1000,
+    staleTime: Infinity,
     placeholderData: keepPreviousData,
   });
 }

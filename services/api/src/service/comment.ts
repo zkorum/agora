@@ -13,7 +13,7 @@ import {
     polisContentTable,
     voteTable,
 } from "@/shared-backend/schema.js";
-import type { NotificationSSEManager } from "./notificationSSE.js";
+import type { RealtimeSSEManager } from "./realtimeSSE.js";
 import {
     createOpinionNotifications,
     getNotificationRecipients,
@@ -1094,7 +1094,7 @@ interface PostNewOpinionProps {
     userAgent: string;
     now: Date;
     isSeed: boolean;
-    notificationSSEManager?: NotificationSSEManager;
+    realtimeSSEManager?: RealtimeSSEManager;
     conversationMetadata?: {
         conversationId: number;
         conversationContentId: number;
@@ -1116,7 +1116,7 @@ export async function postNewOpinion({
     userAgent,
     now,
     isSeed,
-    notificationSSEManager,
+    realtimeSSEManager,
     conversationMetadata,
 }: PostNewOpinionProps): Promise<CreateCommentResponse> {
     // Use provided metadata if available (for seed opinions), otherwise fetch from DB
@@ -1316,7 +1316,7 @@ export async function postNewOpinion({
                 opinionAuthorId: userId,
                 opinionId,
                 conversationId,
-                notificationSSEManager,
+                realtimeSSEManager,
             });
         }
     }

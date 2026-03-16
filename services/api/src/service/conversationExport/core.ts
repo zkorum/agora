@@ -89,7 +89,7 @@ export async function processConversationExport({
     conversationId,
     conversationSlugId,
     userId,
-    notificationSSEManager,
+    realtimeSSEManager,
 }: ProcessConversationExportParams): Promise<void> {
     try {
         // Find the processing export record for this user+conversation
@@ -272,7 +272,7 @@ export async function processConversationExport({
             exportId,
             conversationId,
             type: "export_completed",
-            notificationSSEManager,
+            realtimeSSEManager,
         });
     } catch (error: unknown) {
         if (error instanceof Error) {
@@ -331,7 +331,7 @@ export async function processConversationExport({
                     exportId: failedExportId,
                     conversationId,
                     type: "export_failed",
-                    notificationSSEManager,
+                    realtimeSSEManager,
                 });
             }
         } catch (notificationError: unknown) {

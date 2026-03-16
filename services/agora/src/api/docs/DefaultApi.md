@@ -52,7 +52,6 @@ All URIs are relative to *http://localhost*
 |[**apiV1MuteUserGetPost**](#apiv1muteusergetpost) | **POST** /api/v1/mute/user/get | |
 |[**apiV1NotificationFetchPost**](#apiv1notificationfetchpost) | **POST** /api/v1/notification/fetch | |
 |[**apiV1NotificationMarkAllReadPost**](#apiv1notificationmarkallreadpost) | **POST** /api/v1/notification/mark-all-read | |
-|[**apiV1NotificationStreamGet**](#apiv1notificationstreamget) | **GET** /api/v1/notification/stream | |
 |[**apiV1OpinionCreatePost**](#apiv1opinioncreatepost) | **POST** /api/v1/opinion/create | |
 |[**apiV1OpinionDeletePost**](#apiv1opiniondeletepost) | **POST** /api/v1/opinion/delete | |
 |[**apiV1OpinionFetchAnalysisByConversationPost**](#apiv1opinionfetchanalysisbyconversationpost) | **POST** /api/v1/opinion/fetch-analysis-by-conversation | |
@@ -60,6 +59,7 @@ All URIs are relative to *http://localhost*
 |[**apiV1OpinionFetchBySlugIdListPost**](#apiv1opinionfetchbyslugidlistpost) | **POST** /api/v1/opinion/fetch-by-slug-id-list | |
 |[**apiV1OpinionFetchHiddenByConversationPost**](#apiv1opinionfetchhiddenbyconversationpost) | **POST** /api/v1/opinion/fetch-hidden-by-conversation | |
 |[**apiV1PollRespondPost**](#apiv1pollrespondpost) | **POST** /api/v1/poll/respond | |
+|[**apiV1RealtimeStreamGet**](#apiv1realtimestreamget) | **GET** /api/v1/realtime/stream | |
 |[**apiV1ReportConversationCreatePost**](#apiv1reportconversationcreatepost) | **POST** /api/v1/report/conversation/create | |
 |[**apiV1ReportConversationFetchPost**](#apiv1reportconversationfetchpost) | **POST** /api/v1/report/conversation/fetch | |
 |[**apiV1ReportOpinionCreatePost**](#apiv1reportopinioncreatepost) | **POST** /api/v1/report/opinion/create | |
@@ -2447,49 +2447,6 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **apiV1NotificationStreamGet**
-> apiV1NotificationStreamGet()
-
-
-### Example
-
-```typescript
-import {
-    DefaultApi,
-    Configuration
-} from './api';
-
-const configuration = new Configuration();
-const apiInstance = new DefaultApi(configuration);
-
-const { status, data } = await apiInstance.apiV1NotificationStreamGet();
-```
-
-### Parameters
-This endpoint does not have any parameters.
-
-
-### Return type
-
-void (empty response body)
-
-### Authorization
-
-[BearerAuth](../README.md#BearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: Not defined
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Default Response |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
 # **apiV1OpinionCreatePost**
 > ApiV1OpinionCreatePost200Response apiV1OpinionCreatePost(apiV1OpinionCreatePostRequest)
 
@@ -2838,6 +2795,49 @@ const { status, data } = await apiInstance.apiV1PollRespondPost(
 
  - **Content-Type**: application/json
  - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1RealtimeStreamGet**
+> apiV1RealtimeStreamGet()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+const { status, data } = await apiInstance.apiV1RealtimeStreamGet();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
 
 
 ### HTTP response details

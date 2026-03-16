@@ -1,12 +1,8 @@
 import { useAuthenticationStore } from "src/stores/authentication";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
-import type { RouteRecordName } from "vue-router";
-import { useRouter } from "vue-router";
+import type { Router,RouteRecordName } from "vue-router";
 
-export function useRouterGuard() {
-  const router = useRouter();
-
-  const onboardingRoutes: RouteRecordName[] = [
+const onboardingRoutes: RouteRecordName[] = [
     "/onboarding/step1-login/",
     "/onboarding/step1-signup/",
     "/onboarding/step2-signup/",
@@ -24,10 +20,10 @@ export function useRouterGuard() {
     "/verify/passport/",
   ];
 
-  // Login/onboarding pages that logged-in users should never see.
-  // Excludes step4-username (reached right after isLoggedIn becomes true during signup)
-  // and /verify/* pages (used for credential upgrades on gated conversations).
-  const loginAndOnboardingRoutes: RouteRecordName[] = [
+// Login/onboarding pages that logged-in users should never see.
+// Excludes step4-username (reached right after isLoggedIn becomes true during signup)
+// and /verify/* pages (used for credential upgrades on gated conversations).
+const loginAndOnboardingRoutes: RouteRecordName[] = [
     "/welcome/",
     "/onboarding/step1-login/",
     "/onboarding/step1-signup/",
@@ -39,7 +35,14 @@ export function useRouterGuard() {
     "/onboarding/step3-phone-2/",
   ];
 
-  async function firstLoadGuard(toName: RouteRecordName) {
+export function useRouterGuard() {
+  async function firstLoadGuard({
+    toName,
+    router,
+  }: {
+    toName: RouteRecordName;
+    router: Router;
+  }) {
     const unauthenticatedRoutes: RouteRecordName[] = [
       ...onboardingRoutes,
       "/",

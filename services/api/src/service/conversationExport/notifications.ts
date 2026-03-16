@@ -6,7 +6,7 @@ import {
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import type { NotificationType } from "@/shared/types/zod.js";
-import type { NotificationSSEManager } from "../notificationSSE.js";
+import type { RealtimeSSEManager } from "../realtimeSSE.js";
 import { broadcastExportNotification } from "../notification.js";
 
 interface CreateExportNotificationParams {
@@ -15,7 +15,7 @@ interface CreateExportNotificationParams {
     exportId: number;
     conversationId: number;
     type: NotificationType;
-    notificationSSEManager?: NotificationSSEManager;
+    realtimeSSEManager?: RealtimeSSEManager;
 }
 
 /**
@@ -27,7 +27,7 @@ export async function createExportNotification({
     exportId,
     conversationId,
     type,
-    notificationSSEManager,
+    realtimeSSEManager,
 }: CreateExportNotificationParams): Promise<void> {
     try {
         // Create notification record
@@ -59,7 +59,7 @@ export async function createExportNotification({
 
         // Broadcast notification via SSE (don't await to avoid blocking)
         void broadcastExportNotification(
-            notificationSSEManager,
+            realtimeSSEManager,
             db,
             userId,
             notificationSlugId,

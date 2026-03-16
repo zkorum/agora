@@ -90,7 +90,7 @@ import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import type { EventSlug, ExtendedConversation, ParticipationMode } from "src/shared/types/zod";
+import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
@@ -102,10 +102,8 @@ import { useNotify } from "src/utils/ui/notify";
 import {
   computed,
   defineAsyncComponent,
-  inject,
   nextTick,
   onMounted,
-  type Ref,
   ref,
   useTemplateRef,
   watch,
@@ -128,6 +126,7 @@ const props = defineProps<{
   postSlugId: string;
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
+  isComposerDisabled: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -158,25 +157,6 @@ const authStore = useAuthenticationStore();
 const { hasStrongVerification, hasEmailVerification } = storeToRefs(authStore);
 const userStore = useUserStore();
 const { verifiedEventTickets } = storeToRefs(userStore);
-
-// Inject reactive conversation data from parent
-const conversationData = inject<Ref<ExtendedConversation> | undefined>(
-  "conversationData"
-);
-
-// Compute if composer should be disabled (closed OR locked by moderator)
-const isComposerDisabled = computed(() => {
-  const data = conversationData?.value;
-  if (!data) return false;
-
-  const isModeratedAndLocked =
-    data.metadata.moderation.status === "moderated" &&
-    data.metadata.moderation.action === "lock";
-
-  const isClosed = data.metadata.isClosed;
-
-  return isModeratedAndLocked || isClosed;
-});
 
 const { createNewOpinionIntention, clearNewOpinionIntention } =
   useLoginIntentionStore();

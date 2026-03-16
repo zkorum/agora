@@ -26,21 +26,29 @@
       <WidthWrapper :enable="true">
         <div class="tabCluster">
           <div class="tabItem" @click="selectedTab('following')">
-            <ZKTab
-              :text="isLoggedIn ? t('following') : t('popular')"
-              :is-highlighted="currentHomeFeedTab === 'following'"
-              :should-underline-on-highlight="false"
-            />
+            <ZKBadge
+              :visible="hasPendingFollowingTab && currentHomeFeedTab !== 'following'"
+            >
+              <ZKTab
+                :text="isLoggedIn ? t('following') : t('popular')"
+                :is-highlighted="currentHomeFeedTab === 'following'"
+                :should-underline-on-highlight="false"
+              />
+            </ZKBadge>
           </div>
 
           <!-- TODO: ACCESSIBILITY - Change <div> wrapper to semantic <button> or add proper ARIA attributes -->
           <!-- Tab navigation should be keyboard accessible for users with motor disabilities -->
           <div class="tabItem" @click="selectedTab('new')">
-            <ZKTab
-              :text="t('new')"
-              :is-highlighted="currentHomeFeedTab === 'new'"
-              :should-underline-on-highlight="false"
-            />
+            <ZKBadge
+              :visible="hasPendingNewTab && currentHomeFeedTab !== 'new'"
+            >
+              <ZKTab
+                :text="t('new')"
+                :is-highlighted="currentHomeFeedTab === 'new'"
+                :should-underline-on-highlight="false"
+              />
+            </ZKBadge>
           </div>
         </div>
       </WidthWrapper>
@@ -61,6 +69,7 @@ import FeaturedConversationBanner from "src/components/feed/FeaturedConversation
 import { HomeMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import NewPostButtonWrapper from "src/components/post/NewPostButtonWrapper.vue";
+import ZKBadge from "src/components/ui-library/ZKBadge.vue";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
@@ -71,16 +80,24 @@ import { useNavigationStore } from "src/stores/navigation";
 
 import { type HomeTranslations, homeTranslations } from "./index.i18n";
 
+defineOptions({ name: "HomePage" });
+
 const { t } = useComponentI18n<HomeTranslations>(homeTranslations);
 
 const { drawerBehavior } = storeToRefs(useNavigationStore());
 
-const { currentHomeFeedTab } = storeToRefs(useHomeFeedStore());
+const { currentHomeFeedTab, hasPendingNewTab, hasPendingFollowingTab } =
+  storeToRefs(useHomeFeedStore());
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 function selectedTab(tab: HomeFeedSortOption) {
   window.scrollTo({ top: 0, behavior: "smooth" });
   currentHomeFeedTab.value = tab;
+  if (tab === "new") {
+    hasPendingNewTab.value = false;
+  } else {
+    hasPendingFollowingTab.value = false;
+  }
 }
 </script>
 

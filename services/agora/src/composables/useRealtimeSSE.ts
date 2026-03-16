@@ -2,10 +2,12 @@ import type {
   SSEConnectedData,
   SSEHeartbeatData,
   SSENotificationData,
+  SSEPopularConversationData,
   SSEShutdownData,
 } from "src/shared/types/dto";
 import { zodNotificationItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useNotificationStore } from "src/stores/notification";
 import { useCommonApi } from "src/utils/api/common";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
@@ -16,9 +18,18 @@ const SSE_CONNECTION_TIMEOUT_MS = 15_000;
 const SSE_INITIAL_RETRY_DELAY_MS = 2_000;
 const SSE_MAX_RETRY_DELAY_MS = 300_000;
 
-export function useNotificationSSE() {
+/**
+ * Single composable for ALL real-time server events.
+ * Always maintains an SSE connection regardless of auth state:
+ * - Authenticated (guest/logged-in): connects with UCAN headers → receives
+ *   personal notifications + global events (new_conversation)
+ * - Anonymous: connects without auth → receives only global events
+ * On auth state change: disconnects from old mode → reconnects with new headers.
+ */
+export function useRealtimeSSE() {
   const { buildEncodedUcan } = useCommonApi();
   const notificationStore = useNotificationStore();
+  const homeFeedStore = useHomeFeedStore();
   const authStore = useAuthenticationStore();
 
   const isConnected = ref(false);
@@ -28,6 +39,7 @@ export function useNotificationSSE() {
   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   let shouldReconnect = true;
   let currentRetryDelay = SSE_INITIAL_RETRY_DELAY_MS;
+  let connectionId = 0;
 
   async function connect() {
     console.log("[SSE] connect() called", {
@@ -40,6 +52,11 @@ export function useNotificationSSE() {
       return;
     }
 
+    // Claim a new generation — all prior connections are now stale.
+    // Placed AFTER the guard so a blocked connect() doesn't invalidate the active connection.
+    connectionId++;
+    const thisConnectionId = connectionId;
+
     let connectionTimeout: ReturnType<typeof setTimeout> | null = null;
 
     try {
@@ -49,26 +66,31 @@ export function useNotificationSSE() {
 
       // Abort if connection doesn't establish within timeout
       connectionTimeout = setTimeout(() => {
+        if (thisConnectionId !== connectionId) return;
         console.warn("[SSE] Connection timed out");
         abortController?.abort();
       }, SSE_CONNECTION_TIMEOUT_MS);
 
-      // Fresh UCAN for each connection attempt — prevents replay guard rejection
-      const encodedUcan = await buildEncodedUcan(
-        "/api/v1/notification/stream",
-        { method: "GET" },
-      );
-      const authHeader = buildAuthorizationHeader(encodedUcan);
-
       const baseUrl = processEnv.VITE_API_BASE_URL || "";
-      const url = `${baseUrl}/api/v1/notification/stream`;
+      const url = `${baseUrl}/api/v1/realtime/stream`;
+      const headers: Record<string, string> = {
+        Accept: "text/event-stream",
+      };
+
+      // Add auth headers when authenticated
+      // Future: replace buildEncodedUcan with Bearer token when migrating to JWT
+      if (authStore.isGuestOrLoggedIn) {
+        const encodedUcan = await buildEncodedUcan(
+          "/api/v1/realtime/stream",
+          { method: "GET" },
+        );
+        const authHeader = buildAuthorizationHeader(encodedUcan);
+        Object.assign(headers, authHeader);
+      }
 
       const response = await fetch(url, {
         method: "GET",
-        headers: {
-          ...authHeader,
-          Accept: "text/event-stream",
-        },
+        headers,
         signal: abortController.signal,
       });
 
@@ -99,35 +121,26 @@ export function useNotificationSSE() {
       const decoder = new TextDecoder();
       let buffer = "";
 
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
+        buffer += decoder.decode(value, { stream: true });
 
-          // SSE events are separated by double newlines
-          const parts = buffer.split("\n\n");
-          buffer = parts.pop() ?? "";
+        // SSE events are separated by double newlines
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() ?? "";
 
-          for (const part of parts) {
-            if (!part.trim()) continue;
-            const parsed = parseSSEEvent(part);
-            handleSSEEvent(parsed.event, parsed.data);
-          }
+        for (const part of parts) {
+          if (!part.trim()) continue;
+          const parsed = parseSSEEvent(part);
+          handleSSEEvent(parsed.event, parsed.data);
         }
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          if (!shouldReconnect) {
-            return; // Intentional disconnect — don't reconnect
-          }
-          // Timeout or other abort while shouldReconnect is true — fall through to reconnect
-          throw error;
-        }
-        throw error;
       }
 
-      // Stream ended normally — reconnect
+      // Stream ended normally — check staleness before touching shared state
+      if (thisConnectionId !== connectionId) return;
+
       isConnected.value = false;
       if (shouldReconnect) {
         scheduleReconnect();
@@ -136,6 +149,11 @@ export function useNotificationSSE() {
       if (connectionTimeout) {
         clearTimeout(connectionTimeout);
       }
+
+      // Stale connection — a newer connect() has taken over.
+      // Don't touch shared state or schedule reconnects.
+      if (thisConnectionId !== connectionId) return;
+
       console.error("[SSE] Connection error:", error);
       isConnected.value = false;
       isConnecting.value = false;
@@ -181,6 +199,17 @@ export function useNotificationSSE() {
               parsedNotification.error
             );
           }
+          break;
+        }
+        case "new_conversation": {
+          homeFeedStore.hasPendingNewTab = true;
+          break;
+        }
+        case "popular_conversation": {
+          const data: SSEPopularConversationData = JSON.parse(rawData);
+          homeFeedStore.onPopularConversationUpdate(
+            data.topConversationSlugIdList
+          );
           break;
         }
         case "heartbeat": {
@@ -236,21 +265,21 @@ export function useNotificationSSE() {
     isConnecting.value = false;
   }
 
-  // Watch for authentication state changes (guests + logged-in users)
+  // Watch for authentication state changes — reconnect to switch auth mode.
+  // Always connected: authenticated users get personal notifications + global
+  // events; anonymous users get only global events.
   watch(
     () => authStore.isGuestOrLoggedIn,
     async (isAuthenticated, wasAuthenticated) => {
       console.log("[SSE] Auth watcher fired", { isAuthenticated, wasAuthenticated });
-      if (isAuthenticated && !wasAuthenticated) {
-        // User became guest or logged in — connect to SSE
+      if (isAuthenticated !== wasAuthenticated) {
+        // Auth state changed — disconnect and reconnect with appropriate headers
+        disconnect();
         shouldReconnect = true;
         await connect();
-      } else if (!isAuthenticated && wasAuthenticated) {
-        // User logged out or cleared state — disconnect from SSE
-        disconnect();
       }
     },
-    { immediate: true } // Connect immediately if already authenticated
+    { immediate: true } // Connect on mount regardless of auth state
   );
 
   // Cleanup on unmount

@@ -7418,7 +7418,7 @@
                 }
             }
         },
-        "/api/v1/notification/stream": {
+        "/api/v1/realtime/stream": {
             "get": {
                 "responses": {
                     "200": {

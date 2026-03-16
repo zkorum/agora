@@ -17,12 +17,12 @@ import { onMounted } from "vue";
 
 import EmbeddedBrowserWarningDialog from "./components/embeddedBrowser/EmbeddedBrowserWarningDialog.vue";
 import PostSignupPreferencesDialog from "./components/onboarding/dialogs/PostSignupPreferencesDialog.vue";
-import { useNotificationSSE } from "./composables/useNotificationSSE";
+import { useRealtimeSSE } from "./composables/useRealtimeSSE";
 import { useZupassVerification } from "./composables/zupass/useZupassVerification";
 import { useBackendAuthApi } from "./utils/api/auth";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
 
-const keepAliveRoutes = ["NotificationPage", "UserProfilePage"];
+const keepAliveRoutes = ["HomePage", "NotificationPage", "UserProfilePage"];
 
 const authenticationStore = useBackendAuthApi();
 
@@ -31,9 +31,10 @@ useHtmlNodeCssPatch();
 // Initialize global Zupass iframe container
 const { zupassIframeContainer } = useZupassVerification();
 
-// Initialize SSE for real-time notifications
-// The composable automatically handles connecting/disconnecting based on auth state
-useNotificationSSE();
+// Initialize SSE for real-time events (notifications + feed updates).
+// Always connected: authenticated users get personal notifications + global
+// events; anonymous users get only global events (e.g. new_conversation).
+useRealtimeSSE();
 
 onMounted(async () => {
   try {

@@ -2,7 +2,7 @@ import { defineStore, storeToRefs } from "pinia";
 import type { FetchFeedResponse } from "src/shared/types/dto";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useBackendPostApi } from "src/utils/api/post/post";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 import { useAuthenticationStore } from "./authentication";
 
@@ -15,7 +15,14 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
 
   const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
 
-  const hasPendingNewPosts = ref(false);
+  const hasPendingNewTab = ref(false);
+  const hasPendingFollowingTab = ref(false);
+
+  const hasPendingCurrentTab = computed(() =>
+    currentHomeFeedTab.value === "new"
+      ? hasPendingNewTab.value
+      : hasPendingFollowingTab.value
+  );
 
   const canLoadMore = ref(true);
 
@@ -63,7 +70,11 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
   function setFeedData(data: FetchFeedResponse) {
     fullHomeFeedList = [...data.conversationDataList];
     partialHomeFeedList.value = [];
-    hasPendingNewPosts.value = false;
+    if (currentHomeFeedTab.value === "new") {
+      hasPendingNewTab.value = false;
+    } else {
+      hasPendingFollowingTab.value = false;
+    }
     localTopConversationSlugIdList = [...data.topConversationSlugIdList];
 
     canLoadMore.value = true;
@@ -71,13 +82,18 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
   }
 
   async function hasNewPostCheck(): Promise<void> {
-    if (hasPendingNewPosts.value == true) {
+    if (hasPendingCurrentTab.value) {
       return;
     }
 
     if (localTopConversationSlugIdList.length === 0) {
       return;
     }
+
+    const pendingRef =
+      currentHomeFeedTab.value === "new"
+        ? hasPendingNewTab
+        : hasPendingFollowingTab;
 
     try {
       const response = await fetchRecentPost({
@@ -89,23 +105,22 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
         response.status == "success" &&
         response.data.topConversationSlugIdList.length > 0
       ) {
-        // Check for any new slug IDs
         const newItems = response.data.topConversationSlugIdList.filter(
           (slugId: string) => !localTopConversationSlugIdList.includes(slugId)
         );
         if (newItems.length > 0) {
           localTopConversationSlugIdList =
             response.data.topConversationSlugIdList;
-          hasPendingNewPosts.value = true;
+          pendingRef.value = true;
         } else {
-          hasPendingNewPosts.value = false;
+          pendingRef.value = false;
         }
       } else {
-        hasPendingNewPosts.value = false;
+        pendingRef.value = false;
       }
     } catch (error) {
       console.error("Error checking for new posts:", error);
-      hasPendingNewPosts.value = false;
+      pendingRef.value = false;
     }
   }
 
@@ -122,10 +137,20 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     return hasMore;
   }
 
+  function onPopularConversationUpdate(topSlugIds: string[]): void {
+    const changed =
+      topSlugIds.length !== localTopConversationSlugIdList.length ||
+      topSlugIds.some((id, i) => id !== localTopConversationSlugIdList[i]);
+    if (changed) {
+      hasPendingFollowingTab.value = true;
+    }
+  }
+
   function clearFeedData() {
     fullHomeFeedList = [];
     partialHomeFeedList.value = [];
-    hasPendingNewPosts.value = false;
+    hasPendingNewTab.value = false;
+    hasPendingFollowingTab.value = false;
     localTopConversationSlugIdList = [];
     canLoadMore.value = true;
   }
@@ -134,10 +159,13 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     setFeedData,
     clearFeedData,
     hasNewPostCheck,
+    onPopularConversationUpdate,
     loadMore,
     partialHomeFeedList,
     emptyPost,
-    hasPendingNewPosts,
+    hasPendingNewTab,
+    hasPendingFollowingTab,
+    hasPendingCurrentTab,
     currentHomeFeedTab,
     canLoadMore,
   };
