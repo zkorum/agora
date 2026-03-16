@@ -100,7 +100,7 @@
     </div>
 
     <!-- Character count footer (shown when maxLength is provided) -->
-    <div v-if="maxLength !== undefined && (showCharacterCount ?? true)" class="character-count-footer">
+    <div v-if="maxLength !== undefined && showCharacterCount" class="character-count-footer">
       <span :class="{ 'character-count-over-limit': isOverLimit }">
         {{ internalCharacterCount }}
       </span>
@@ -130,7 +130,7 @@ defineOptions({
   },
 });
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   showToolbar: boolean;
   placeholder: string;
   minHeight: string;
@@ -138,7 +138,10 @@ const props = defineProps<{
   singleLine: boolean;
   maxLength?: number;
   showCharacterCount?: boolean;
-}>();
+}>(), {
+  maxLength: undefined,
+  showCharacterCount: true,
+});
 const emit = defineEmits<{
   manuallyFocused: [];
   blur: [];
@@ -408,6 +411,7 @@ watch(
   line-height: normal;
   max-height: 40vh;
   overflow-y: auto;
+  overflow-wrap: break-word;
 }
 
 .editor :deep(.ProseMirror p) {

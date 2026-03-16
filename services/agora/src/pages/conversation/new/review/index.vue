@@ -48,7 +48,6 @@
             @update:model-value="
               (val) => {
                 conversationDraft.seedOpinions[index] = val;
-                checkOpinionWordCount(index);
               }
             "
             @focus="
@@ -199,21 +198,6 @@ function clearOpinionError(index: number) {
   }
 }
 
-function checkOpinionWordCount(index: number) {
-  const opinion = conversationDraft.value.seedOpinions[index];
-  const validation = validateHtmlStringCharacterCount(opinion, "opinion");
-
-  if (!validation.isValid) {
-    opinionErrors.value[index] = t("opinionExceedsLimit")
-      .replace("{limit}", MAX_LENGTH_OPINION.toString())
-      .replace("{count}", validation.characterCount.toString());
-  } else {
-    // Clear word count error if it exists, but keep other errors
-    if (opinionErrors.value[index]?.includes("character limit")) {
-      clearOpinionError(index);
-    }
-  }
-}
 
 async function addNewOpinion(): Promise<void> {
   conversationDraft.value.seedOpinions.push("");
@@ -288,12 +272,12 @@ function removeOpinion(index: number): void {
 }
 
 function validateSeedOpinions(): boolean {
-  // MaxDiff requires minimum 6 seed opinions
+  // MaxDiff requires minimum 4 seed opinions
   if (
     conversationDraft.value.conversationType === "maxdiff" &&
     conversationDraft.value.seedOpinions.filter(
       (s: string) => s.trim().length > 0
-    ).length < 6
+    ).length < 4
   ) {
     showNotifyMessage(t("needMinimumForMaxDiff"));
     return false;
@@ -322,8 +306,8 @@ function validateSeedOpinions(): boolean {
       const validation = validateHtmlStringCharacterCount(opinion, "opinion");
       if (!validation.isValid) {
         opinionErrors.value[index] = t("opinionExceedsLimit")
-          .replace("{limit}", MAX_LENGTH_OPINION.toString())
-          .replace("{count}", validation.characterCount.toString());
+          .replaceAll("{limit}", MAX_LENGTH_OPINION.toString())
+          .replaceAll("{count}", validation.characterCount.toString());
         hasErrors = true;
         if (firstErrorIndex === -1) firstErrorIndex = index;
         return;

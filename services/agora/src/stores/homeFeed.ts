@@ -61,10 +61,10 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
   const partialHomeFeedList = ref<ExtendedConversation[]>([]);
 
   function setFeedData(data: FetchFeedResponse) {
-    fullHomeFeedList = data.conversationDataList;
+    fullHomeFeedList = [...data.conversationDataList];
     partialHomeFeedList.value = [];
     hasPendingNewPosts.value = false;
-    localTopConversationSlugIdList = data.topConversationSlugIdList;
+    localTopConversationSlugIdList = [...data.topConversationSlugIdList];
 
     canLoadMore.value = true;
     loadMore();
@@ -122,8 +122,17 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     return hasMore;
   }
 
+  function clearFeedData() {
+    fullHomeFeedList = [];
+    partialHomeFeedList.value = [];
+    hasPendingNewPosts.value = false;
+    localTopConversationSlugIdList = [];
+    canLoadMore.value = true;
+  }
+
   return {
     setFeedData,
+    clearFeedData,
     hasNewPostCheck,
     loadMore,
     partialHomeFeedList,

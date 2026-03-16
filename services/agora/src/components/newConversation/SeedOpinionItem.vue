@@ -40,8 +40,17 @@
       rounded
       severity="secondary"
       class="delete-button"
-      @click.stop="emit('remove')"
+      @click.stop="showDeleteConfirm = true"
       @mousedown.stop
+    />
+
+    <ZKConfirmDialog
+      v-model="showDeleteConfirm"
+      :message="t('confirmDeleteMessage')"
+      :confirm-text="t('confirmDeleteConfirm')"
+      :cancel-text="t('confirmDeleteCancel')"
+      variant="destructive"
+      @confirm="emit('remove')"
     />
   </div>
 </template>
@@ -49,6 +58,7 @@
 <script setup lang="ts">
 import Button from "primevue/button";
 import Card from "primevue/card";
+import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_OPINION } from "src/shared/shared";
 import { defineAsyncComponent, ref } from "vue";
@@ -90,6 +100,7 @@ const { t } = useComponentI18n<SeedOpinionItemTranslations>(
 );
 
 const editorRef = ref<InstanceType<typeof Editor>>();
+const showDeleteConfirm = ref(false);
 
 function onCharacterCountUpdate(count: number) {
   emit("update:characterCount", count);
@@ -126,6 +137,7 @@ defineExpose({
 
 .opinion-card {
   flex: 1;
+  min-width: 0;
   &:deep(.p-card-body) {
     padding-top: 1rem;
     padding-left: 0rem;
@@ -152,6 +164,7 @@ defineExpose({
 
 .opinion-input-container {
   width: 100%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
