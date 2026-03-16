@@ -53,7 +53,7 @@ const showBadge = computed(() =>
   align-items: center;
 }
 
-.zkBadgeWrapper :deep(.q-badge--floating) {
+.zkBadgeWrapper :deep(.q-badge--floating.dot-only) {
   top: 5px;
   right: 0;
 }

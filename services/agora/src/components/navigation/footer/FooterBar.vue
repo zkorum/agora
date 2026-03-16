@@ -15,8 +15,9 @@
         @click="handleNavigationClick($event, iconItem.route)"
       >
         <div class="iconDiv">
-          <NewNotificationIndicator
+          <ZKBadge
             v-if="iconItem.route === '/notification/'"
+            :count="numNewNotifications"
           />
           <ZKStyledIcon
             class="icon-container"
@@ -41,11 +42,13 @@
 </template>
 
 <script setup lang="ts">
-import NewNotificationIndicator from "src/components/notification/NewNotificationIndicator.vue";
+import { storeToRefs } from "pinia";
+import ZKBadge from "src/components/ui-library/ZKBadge.vue";
 import ZKStyledIcon from "src/components/ui-library/ZKStyledIcon.vue";
 import ZKStyledText from "src/components/ui-library/ZKStyledText.vue";
 import { useAuthenticatedNavigation } from "src/composables/navigation/useAuthenticatedNavigation";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useNotificationStore } from "src/stores/notification";
 import { navigationIcons } from "src/utils/ui/navigationIcons";
 import { computed } from "vue";
 import { useRoute } from "vue-router";
@@ -57,6 +60,7 @@ import {
 } from "./FooterBar.i18n";
 
 const { isRouteVisible } = useAuthenticatedNavigation();
+const { numNewNotifications } = storeToRefs(useNotificationStore());
 
 const { t } = useComponentI18n<FooterBarTranslations>(footerBarTranslations);
 
