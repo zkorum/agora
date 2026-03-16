@@ -14,6 +14,8 @@ import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
 import { onUnmounted, ref, watch } from "vue";
 
+import { setNetworkOffline } from "./useNetworkStatus";
+
 const SSE_CONNECTION_TIMEOUT_MS = 15_000;
 const SSE_INITIAL_RETRY_DELAY_MS = 2_000;
 const SSE_MAX_RETRY_DELAY_MS = 300_000;
@@ -40,6 +42,8 @@ export function useRealtimeSSE() {
   let shouldReconnect = true;
   let currentRetryDelay = SSE_INITIAL_RETRY_DELAY_MS;
   let connectionId = 0;
+  let hasEverConnected = false;
+  let offlineTimer: ReturnType<typeof setTimeout> | null = null;
 
   async function connect() {
     console.log("[SSE] connect() called", {
@@ -116,6 +120,18 @@ export function useRealtimeSSE() {
       currentRetryDelay = SSE_INITIAL_RETRY_DELAY_MS;
       console.log("[SSE] Stream opened successfully");
 
+      // Clear offline timer if SSE reconnected quickly (< 3s)
+      if (offlineTimer) {
+        clearTimeout(offlineTimer);
+        offlineTimer = null;
+      }
+
+      if (hasEverConnected) {
+        console.log("[SSE] Reconnected — clearing offline state");
+        setNetworkOffline(false);
+      }
+      hasEverConnected = true;
+
       // Read and parse SSE stream
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -142,6 +158,7 @@ export function useRealtimeSSE() {
       if (thisConnectionId !== connectionId) return;
 
       isConnected.value = false;
+      scheduleOfflineTimer();
       if (shouldReconnect) {
         scheduleReconnect();
       }
@@ -157,6 +174,7 @@ export function useRealtimeSSE() {
       console.error("[SSE] Connection error:", error);
       isConnected.value = false;
       isConnecting.value = false;
+      scheduleOfflineTimer();
 
       if (shouldReconnect) {
         scheduleReconnect();
@@ -247,7 +265,37 @@ export function useRealtimeSSE() {
     currentRetryDelay = Math.min(currentRetryDelay * 2, SSE_MAX_RETRY_DELAY_MS);
   }
 
+  function scheduleOfflineTimer() {
+    if (offlineTimer) {
+      return;
+    }
+    console.log("[SSE] Scheduling offline timer (3s)");
+    // Delay 3 seconds before marking offline (avoids flash on brief disconnects)
+    offlineTimer = setTimeout(() => {
+      offlineTimer = null;
+      console.log("[SSE] Offline timer fired — marking offline");
+      setNetworkOffline(true);
+    }, 3000);
+  }
+
+  function forceReconnect() {
+    console.log("[SSE] forceReconnect() — aborting current connection and reconnecting");
+    currentRetryDelay = SSE_INITIAL_RETRY_DELAY_MS;
+    if (reconnectTimeout) {
+      clearTimeout(reconnectTimeout);
+      reconnectTimeout = null;
+    }
+    if (abortController) {
+      abortController.abort();
+      abortController = null;
+    }
+    isConnected.value = false;
+    isConnecting.value = false;
+    void connect();
+  }
+
   function disconnect() {
+    connectionId++; // Invalidate any in-flight connect() catch handler
     shouldReconnect = false;
     currentRetryDelay = SSE_INITIAL_RETRY_DELAY_MS;
 
@@ -259,6 +307,13 @@ export function useRealtimeSSE() {
     if (abortController) {
       abortController.abort();
       abortController = null;
+    }
+
+    // Only clear the pending offline timer — don't touch global offline state.
+    // The new connection will call setNetworkOffline(false) when it succeeds.
+    if (offlineTimer) {
+      clearTimeout(offlineTimer);
+      offlineTimer = null;
     }
 
     isConnected.value = false;
@@ -290,6 +345,7 @@ export function useRealtimeSSE() {
   return {
     connect,
     disconnect,
+    forceReconnect,
     isConnected,
     isConnecting,
     lastHeartbeat,

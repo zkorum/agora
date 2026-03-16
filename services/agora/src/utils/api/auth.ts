@@ -133,32 +133,39 @@ export function useBackendAuthApi() {
             return { authStateChanged: true, needsCacheRefresh: true };
           }
 
-          console.log(
-            "Clearing query cache and loading authenticated modules upon detecting new login, guest user, or userId change"
-          );
+          // Only clear/invalidate cache when auth actually changed.
+          // On HMR remounts, forceRefresh is true but Pinia state persists
+          // (oldIsGuestOrLoggedIn === newIsGuestOrLoggedIn), so we skip cache
+          // clearing to avoid wiping the feed and causing a "..." spinner.
+          if (authStateChanged) {
+            console.log(
+              "Clearing query cache upon detecting new login, guest user, or userId change"
+            );
 
-          // Detect if this is a new guest creation (anonymous → guest)
-          const newIsGuest = newLoginStatus.isKnown && !newLoginStatus.isRegistered;
-          const isNewGuestCreation = !oldIsGuestOrLoggedIn && newIsGuest;
+            // Detect if this is a new guest creation (anonymous → guest)
+            const newIsGuest = newLoginStatus.isKnown && !newLoginStatus.isRegistered;
+            const isNewGuestCreation = !oldIsGuestOrLoggedIn && newIsGuest;
 
-          if (isNewGuestCreation) {
-            // For new guests: preserve vote/comment caches, invalidate everything else
-            console.log("New guest detected - preserving vote/comment caches");
-            await queryClient.invalidateQueries({
-              predicate: (query) => {
-                const queryKey = query.queryKey[0];
-                // Preserve vote and comment caches (optimistic updates)
-                if (queryKey === 'userVotes') return false;
-                if (queryKey === 'comments') return false;
-                // Invalidate everything else (user profile, etc.)
-                return true;
-              }
-            });
-          } else {
-            // For other transitions (login, logout, account switch): clear everything
-            queryClient.clear();
+            if (isNewGuestCreation) {
+              // For new guests: preserve vote/comment caches, invalidate everything else
+              console.log("New guest detected - preserving vote/comment caches");
+              await queryClient.invalidateQueries({
+                predicate: (query) => {
+                  const queryKey = query.queryKey[0];
+                  // Preserve vote and comment caches (optimistic updates)
+                  if (queryKey === 'userVotes') return false;
+                  if (queryKey === 'comments') return false;
+                  // Invalidate everything else (user profile, etc.)
+                  return true;
+                }
+              });
+            } else {
+              // For other transitions (login, logout, account switch): clear everything
+              queryClient.clear();
+            }
           }
 
+          console.log("Loading authenticated modules");
           await loadAuthenticatedModules();
           return { authStateChanged: true, needsCacheRefresh: false };
         } else {
