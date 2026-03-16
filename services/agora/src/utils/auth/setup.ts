@@ -18,7 +18,7 @@ export function useAuthSetup() {
       setActiveUserIntention("none");
       showNotifyMessage("Logged out");
       if (shouldRedirect) {
-        await router.push({ name: "/welcome/" });
+        await router.push({ name: "/" });
       }
     } catch (e) {
       console.error("Unexpected error when logging out", e);

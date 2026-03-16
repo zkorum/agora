@@ -65,7 +65,7 @@ export function useRouterGuard() {
     ];
 
     if (!unauthenticatedRoutes.includes(toName)) {
-      await router.push({ name: "/welcome/" });
+      await router.push({ name: "/" });
     }
   }
 
