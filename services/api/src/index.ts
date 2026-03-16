@@ -36,6 +36,7 @@ import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
 import * as postEditService from "@/service/postEdit.js";
 import { MAX_CSV_FILE_SIZE } from "@/shared-app-api/csvUpload.js";
+import { checkMaxDiffAllowed } from "@/shared-app-api/maxdiffLogic.js";
 import { zodCsvFiles } from "@/service/csvImport.js";
 import * as conversationExportService from "@/service/conversationExport/index.js";
 import * as conversationImportService from "@/service/conversationImport/index.js";
@@ -1979,33 +1980,29 @@ server.after(() => {
                 });
 
             if (request.body.conversationType === "maxdiff") {
-                checkMaxdiffEnabled();
-                if (
-                    config.IS_MAXDIFF_ORG_ONLY &&
-                    !request.body.postAsOrganization
-                ) {
-                    throw server.httpErrors.forbidden(
-                        "MaxDiff is restricted to organization conversations",
-                    );
-                }
-                const allowedOrgs = config.MAXDIFF_ALLOWED_ORGS;
-                if (allowedOrgs.trim() !== "") {
-                    if (!request.body.postAsOrganization) {
-                        throw server.httpErrors.forbidden(
-                            "MaxDiff is restricted to specific organizations",
-                        );
-                    }
-                    const orgList = allowedOrgs
-                        .split(",")
-                        .map((s) => s.trim());
-                    if (
-                        !orgList.includes(
-                            request.body.postAsOrganization,
-                        )
-                    ) {
-                        throw server.httpErrors.forbidden(
-                            "This organization is not allowed to create MaxDiff conversations",
-                        );
+                const maxdiffCheck = checkMaxDiffAllowed({
+                    maxdiffEnabled: config.MAXDIFF_ENABLED,
+                    isMaxdiffOrgOnly: config.IS_MAXDIFF_ORG_ONLY,
+                    maxdiffAllowedOrgs: config.MAXDIFF_ALLOWED_ORGS,
+                    postAsOrganization:
+                        !!request.body.postAsOrganization,
+                    organizationName:
+                        request.body.postAsOrganization ?? "",
+                });
+                if (!maxdiffCheck.allowed) {
+                    switch (maxdiffCheck.reason) {
+                        case "disabled":
+                            throw server.httpErrors.serviceUnavailable(
+                                "MaxDiff feature is currently disabled",
+                            );
+                        case "org_required":
+                            throw server.httpErrors.forbidden(
+                                "MaxDiff is restricted to organization conversations",
+                            );
+                        case "org_not_in_whitelist":
+                            throw server.httpErrors.forbidden(
+                                "This organization is not allowed to create MaxDiff conversations",
+                            );
                     }
                 }
             }

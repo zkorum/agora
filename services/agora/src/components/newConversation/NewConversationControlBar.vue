@@ -78,6 +78,10 @@ import {
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ConversationType, EventSlug, ParticipationMode } from "src/shared/types/zod";
+import {
+  checkMaxDiffAllowed,
+  DEFAULT_MAXDIFF_ALLOWED_ORGS,
+} from "src/shared-app-api/maxdiffLogic";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { processEnv } from "src/utils/processEnv";
@@ -283,22 +287,15 @@ const toggleEventTicketRequirement = (): void => {
 };
 
 const isMaxDiffAllowed = computed(() => {
-  if (processEnv.VITE_MAXDIFF_ENABLED !== "true") return false;
-
-  // Default to "Agora" if not set (must match backend MAXDIFF_ALLOWED_ORGS default)
-  const allowedOrgs = processEnv.VITE_MAXDIFF_ALLOWED_ORGS ?? "Agora";
-  if (allowedOrgs.trim() !== "") {
-    if (!postAs.value.postAsOrganization) return false;
-    const orgList = allowedOrgs.split(",").map((s) => s.trim());
-    return orgList.includes(postAs.value.organizationName);
-  }
-
-  // If org-only mode, any org can create MaxDiff
-  if (processEnv.VITE_IS_MAXDIFF_ORG_ONLY === "true") {
-    return postAs.value.postAsOrganization;
-  }
-
-  return true;
+  const result = checkMaxDiffAllowed({
+    maxdiffEnabled: processEnv.VITE_MAXDIFF_ENABLED === "true",
+    isMaxdiffOrgOnly: processEnv.VITE_IS_MAXDIFF_ORG_ONLY === "true",
+    maxdiffAllowedOrgs:
+      processEnv.VITE_MAXDIFF_ALLOWED_ORGS ?? DEFAULT_MAXDIFF_ALLOWED_ORGS,
+    postAsOrganization: postAs.value.postAsOrganization,
+    organizationName: postAs.value.organizationName,
+  });
+  return result.allowed;
 });
 
 const getMakePublicLabel = (): string => {
