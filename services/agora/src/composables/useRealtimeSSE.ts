@@ -19,7 +19,16 @@ import { setNetworkOffline } from "./useNetworkStatus";
 const SSE_CONNECTION_TIMEOUT_MS = 15_000;
 const SSE_INITIAL_RETRY_DELAY_MS = 2_000;
 const SSE_MAX_RETRY_DELAY_MS = 300_000;
-const SSE_HEARTBEAT_TIMEOUT_MS = 45_000; // 1.5x server heartbeat interval (30s)
+// Server sends heartbeats every 30s (see services/api/src/service/realtimeSSE.ts).
+// When the API stops ungracefully, reader.read() can hang indefinitely on a dead
+// TCP connection. This watchdog aborts the connection after 45s of silence (1.5x
+// the server interval), triggering the normal reconnect + offline detection flow.
+// 1.5x is comparable to Socket.IO (~1.8x); RabbitMQ uses 2.0x for reference.
+// References:
+// - Socket.IO heartbeat: https://socket.io/docs/v4/how-it-works/
+// - RabbitMQ heartbeat: https://www.rabbitmq.com/docs/heartbeats
+// - Python websockets keepalive: https://websockets.readthedocs.io/en/stable/topics/keepalive.html
+const SSE_HEARTBEAT_TIMEOUT_MS = 45_000;
 
 /**
  * Single composable for ALL real-time server events.

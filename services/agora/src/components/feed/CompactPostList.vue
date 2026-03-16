@@ -22,15 +22,24 @@
           >
             <div class="centerMessage">
               <div>
-                <q-icon name="mdi-alert-circle-outline" size="4rem" />
+                <q-icon
+                  :name="isOffline ? 'mdi-wifi-off' : 'mdi-alert-circle-outline'"
+                  size="4rem"
+                />
               </div>
 
               <div :style="{ fontSize: '1.3rem' }">
-                {{ t("emptyStateTitle") }}
+                {{ isOffline ? t("networkErrorTitle") : t("errorStateTitle") }}
+              </div>
+
+              <div v-if="isOffline">
+                {{ t("networkErrorDescription") }}
               </div>
 
               <ZKButton
+                v-if="!isOffline"
                 button-type="standardButton"
+                outline
                 color="primary"
                 no-caps
                 unelevated
@@ -117,6 +126,7 @@
 import { useDocumentVisibility, useWindowScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { isNetworkOffline } from "src/composables/useNetworkStatus";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useFeedQuery } from "src/utils/api/post/useFeedQuery";
@@ -150,12 +160,14 @@ const { t } = useComponentI18n<CompactPostListTranslations>(
 
 // isPending: query has never resolved (waiting for auth init or first fetch).
 // isFetching: any fetch is in flight (first load or refetch).
-const { data, isPending, isFetching, isError, refetch } = useFeedQuery({
+const { data, isPending, isError, refetch } = useFeedQuery({
   enabled: isAuthInitialized,
 });
 
+const isOffline = isNetworkOffline;
+
 const showLoading = computed(() =>
-  (isPending.value || isFetching.value) && !isError.value
+  isPending.value && !isError.value
 );
 
 const isActive = ref(true);
