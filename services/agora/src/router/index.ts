@@ -65,7 +65,7 @@ function isConversationTabSwitch({
  */
 
 export default defineRouter(function (/* { store, ssrContext } */) {
-  const { conversationGuard } = useRouterGuard();
+  const { conversationGuard, loggedInGuard } = useRouterGuard();
 
   const createHistory = process.env.SERVER
     ? createMemoryHistory
@@ -124,6 +124,11 @@ export default defineRouter(function (/* { store, ssrContext } */) {
         query: to.query,
         hash: to.hash,
       };
+    }
+
+    const loggedInTarget = loggedInGuard(to.name);
+    if (loggedInTarget === "home") {
+      return { name: "/" };
     }
 
     const target = conversationGuard(to.name, from.name);

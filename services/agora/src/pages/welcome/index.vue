@@ -116,7 +116,6 @@ function checkForActiveEmbedIntention(): {
 }
 
 async function gotoNextRoute(isLogin: boolean) {
-  loginIntentionStore.setActiveUserIntention("none");
   if (isLogin) {
     onboardingMode.value = "LOGIN";
     await router.push({ name: "/onboarding/step1-login/" });

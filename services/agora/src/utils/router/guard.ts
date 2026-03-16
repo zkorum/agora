@@ -1,3 +1,4 @@
+import { useAuthenticationStore } from "src/stores/authentication";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import type { RouteRecordName } from "vue-router";
 import { useRouter } from "vue-router";
@@ -15,13 +16,27 @@ export function useRouterGuard() {
     "/onboarding/step3-phone-1/",
     "/onboarding/step3-phone-2/",
     "/onboarding/step4-username/",
-    "/onboarding/step5-experience-deprecated/",
     "/verify/identity/",
     "/verify/email/",
     "/verify/email-code/",
     "/verify/phone/",
     "/verify/phone-code/",
     "/verify/passport/",
+  ];
+
+  // Login/onboarding pages that logged-in users should never see.
+  // Excludes step4-username (reached right after isLoggedIn becomes true during signup)
+  // and /verify/* pages (used for credential upgrades on gated conversations).
+  const loginAndOnboardingRoutes: RouteRecordName[] = [
+    "/welcome/",
+    "/onboarding/step1-login/",
+    "/onboarding/step1-signup/",
+    "/onboarding/step2-signup/",
+    "/onboarding/step3-email-1/",
+    "/onboarding/step3-email-2/",
+    "/onboarding/step3-passport/",
+    "/onboarding/step3-phone-1/",
+    "/onboarding/step3-phone-2/",
   ];
 
   async function firstLoadGuard(toName: RouteRecordName) {
@@ -79,5 +94,13 @@ export function useRouterGuard() {
     return "ignore";
   }
 
-  return { firstLoadGuard, conversationGuard };
+  function loggedInGuard(toName: RouteRecordName): "home" | "ignore" {
+    const authStore = useAuthenticationStore();
+    if (authStore.isLoggedIn && loginAndOnboardingRoutes.includes(toName)) {
+      return "home";
+    }
+    return "ignore";
+  }
+
+  return { firstLoadGuard, conversationGuard, loggedInGuard };
 }
