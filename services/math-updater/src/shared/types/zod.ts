@@ -41,7 +41,7 @@ export const zodModerationReason = z.enum([
     "spam",
 ]);
 export const zodFeedSortAlgorithm = z.enum(["following", "new"]);
-export const zodParticipationMode = z.enum(["strong_verification", "email_verification", "guest"]);
+export const zodParticipationMode = z.enum(["account_required", "strong_verification", "email_verification", "guest"]);
 export const zodConversationType = z.enum(["polis", "maxdiff"]);
 export const zodConversationModerationAction = z.enum(["lock"]);
 export const zodOpinionModerationAction = z.enum(["move", "hide"]);

@@ -977,6 +977,7 @@
                                                             "participationMode": {
                                                                 "type": "string",
                                                                 "enum": [
+                                                                    "account_required",
                                                                     "strong_verification",
                                                                     "email_verification",
                                                                     "guest"
@@ -1842,6 +1843,7 @@
                                                     "participationMode": {
                                                         "type": "string",
                                                         "enum": [
+                                                            "account_required",
                                                             "strong_verification",
                                                             "email_verification",
                                                             "guest"
@@ -2162,6 +2164,7 @@
                                                             "participationMode": {
                                                                 "type": "string",
                                                                 "enum": [
+                                                                    "account_required",
                                                                     "strong_verification",
                                                                     "email_verification",
                                                                     "guest"
@@ -2656,6 +2659,7 @@
                                                         "conversation_locked",
                                                         "conversation_closed",
                                                         "event_ticket_required",
+                                                        "account_required",
                                                         "strong_verification_required",
                                                         "email_verification_required"
                                                     ]
@@ -2734,6 +2738,7 @@
                                                 "reason": {
                                                     "type": "string",
                                                     "enum": [
+                                                        "account_required",
                                                         "strong_verification_required",
                                                         "email_verification_required"
                                                     ]
@@ -3118,6 +3123,7 @@
                                                         "conversation_locked",
                                                         "conversation_closed",
                                                         "event_ticket_required",
+                                                        "account_required",
                                                         "strong_verification_required",
                                                         "email_verification_required"
                                                     ]
@@ -4773,6 +4779,7 @@
                                     "participationMode": {
                                         "type": "string",
                                         "enum": [
+                                            "account_required",
                                             "strong_verification",
                                             "email_verification",
                                             "guest"
@@ -4870,6 +4877,7 @@
                                     "participationMode": {
                                         "type": "string",
                                         "enum": [
+                                            "account_required",
                                             "strong_verification",
                                             "email_verification",
                                             "guest"
@@ -5300,6 +5308,7 @@
                                                         "participationMode": {
                                                             "type": "string",
                                                             "enum": [
+                                                                "account_required",
                                                                 "strong_verification",
                                                                 "email_verification",
                                                                 "guest"
@@ -5593,6 +5602,7 @@
                                                 "participationMode": {
                                                     "type": "string",
                                                     "enum": [
+                                                        "account_required",
                                                         "strong_verification",
                                                         "email_verification",
                                                         "guest"
@@ -5796,6 +5806,7 @@
                                     "participationMode": {
                                         "type": "string",
                                         "enum": [
+                                            "account_required",
                                             "strong_verification",
                                             "email_verification",
                                             "guest"

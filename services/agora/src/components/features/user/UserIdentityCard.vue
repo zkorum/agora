@@ -40,6 +40,12 @@
             <q-icon name="mdi-account-plus" class="access-icon" />
           </span>
           <span
+            v-else-if="participationMode === 'account_required'"
+            :title="t('accountRequiredTooltip')"
+          >
+            <q-icon name="mdi-account-check" class="access-icon" />
+          </span>
+          <span
             v-else-if="participationMode === 'email_verification'"
             :title="t('emailVerificationTooltip')"
           >

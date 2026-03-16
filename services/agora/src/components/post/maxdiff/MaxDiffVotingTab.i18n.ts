@@ -12,6 +12,7 @@ export interface MaxDiffVotingTabTranslations {
   redoRanking: string;
   redoConfirmTitle: string;
   redoConfirmMessage: string;
+  accountRequired: string;
   verificationRequired: string;
   emailVerificationRequired: string;
   noStatements: string;
@@ -36,6 +37,7 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "Redo ranking",
     redoConfirmTitle: "Redo ranking?",
     redoConfirmMessage: "This will reset all your comparisons. You'll start from the beginning.",
+    accountRequired: "An account is required to participate",
     verificationRequired: "Phone or identity verification required to participate",
     emailVerificationRequired: "Email verification required to participate",
     noStatements: "No statements to rank yet.",
@@ -55,6 +57,7 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "إعادة الترتيب",
     redoConfirmTitle: "إعادة الترتيب؟",
     redoConfirmMessage: "سيؤدي هذا إلى إعادة تعيين جميع مقارناتك. ستبدأ من البداية.",
+    accountRequired: "يلزم حساب للمشاركة",
     verificationRequired: "التحقق من الهاتف أو الهوية مطلوب للمشاركة",
     emailVerificationRequired: "التحقق من البريد الإلكتروني مطلوب للمشاركة",
     noStatements: "لا توجد عبارات للترتيب بعد.",
@@ -74,6 +77,7 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "Rehacer clasificación",
     redoConfirmTitle: "¿Rehacer clasificación?",
     redoConfirmMessage: "Esto restablecerá todas tus comparaciones. Empezarás desde el principio.",
+    accountRequired: "Se requiere una cuenta para participar",
     verificationRequired: "Se requiere verificación por teléfono o identidad para participar",
     emailVerificationRequired: "Se requiere verificación por correo electrónico para participar",
     noStatements: "Aún no hay declaraciones para clasificar.",
@@ -93,6 +97,7 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "Refaire le classement",
     redoConfirmTitle: "Refaire le classement ?",
     redoConfirmMessage: "Cela réinitialisera toutes vos comparaisons. Vous recommencerez depuis le début.",
+    accountRequired: "Un compte est requis pour participer",
     verificationRequired: "Vérification par téléphone ou identité requise pour participer",
     emailVerificationRequired: "Vérification par e-mail requise pour participer",
     noStatements: "Pas encore de propositions à classer.",
@@ -112,6 +117,7 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "重新排名",
     redoConfirmTitle: "重新排名？",
     redoConfirmMessage: "这将重置所有比较。您将从头开始。",
+    accountRequired: "需要账户才能参与",
     verificationRequired: "需要手机或身份验证才能参与",
     emailVerificationRequired: "需要邮箱验证才能参与",
     noStatements: "暂无可排名的陈述。",
@@ -131,6 +137,7 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "重新排名",
     redoConfirmTitle: "重新排名？",
     redoConfirmMessage: "這將重置所有比較。您將從頭開始。",
+    accountRequired: "需要帳戶才能參與",
     verificationRequired: "需要手機或身份驗證才能參與",
     emailVerificationRequired: "需要電子郵件驗證才能參與",
     noStatements: "暫無可排名的陳述。",
@@ -150,6 +157,7 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "ランキングをやり直す",
     redoConfirmTitle: "ランキングをやり直しますか？",
     redoConfirmMessage: "すべての比較がリセットされます。最初からやり直します。",
+    accountRequired: "参加するにはアカウントが必要です",
     verificationRequired: "参加するには電話番号または本人確認が必要です",
     emailVerificationRequired: "参加するにはメール認証が必要です",
     noStatements: "まだランク付けするステートメントがありません。",
@@ -169,6 +177,7 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "Рейтингди кайра жасоо",
     redoConfirmTitle: "Рейтингди кайра жасоо?",
     redoConfirmMessage: "Бул бардык салыштырууларыңызды кайра баштайт. Башынан баштайсыз.",
+    accountRequired: "Катышуу үчүн аккаунт керек",
     verificationRequired: "Катышуу үчүн телефон же жеке тастыктоо керек",
     emailVerificationRequired: "Катышуу үчүн электрондук почта тастыктоосу керек",
     noStatements: "Рейтинг үчүн билдирүүлөр жок.",
@@ -188,6 +197,7 @@ export const maxDiffVotingTabTranslations: Record<
     redoRanking: "Повторить ранжирование",
     redoConfirmTitle: "Повторить ранжирование?",
     redoConfirmMessage: "Это сбросит все ваши сравнения. Вы начнёте сначала.",
+    accountRequired: "Для участия требуется аккаунт",
     verificationRequired: "Для участия требуется верификация по телефону или удостоверению личности",
     emailVerificationRequired: "Для участия требуется верификация по электронной почте",
     noStatements: "Пока нет утверждений для ранжирования.",

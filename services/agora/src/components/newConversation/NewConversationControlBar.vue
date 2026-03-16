@@ -375,11 +375,13 @@ const controlButtons = computed((): ControlButton[] => [
   {
     id: "login-requirement",
     label:
-      participationMode.value === "strong_verification"
-        ? t("requiresLogin")
-        : participationMode.value === "email_verification"
-          ? t("requiresEmailVerification")
-          : t("guestParticipation"),
+      participationMode.value === "account_required"
+        ? t("requiresAccount")
+        : participationMode.value === "strong_verification"
+          ? t("requiresLogin")
+          : participationMode.value === "email_verification"
+            ? t("requiresEmailVerification")
+            : t("guestParticipation"),
     icon: showLoginRequirementDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",

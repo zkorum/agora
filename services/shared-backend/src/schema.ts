@@ -579,6 +579,7 @@ export const eventSlugEnum = pgEnum("event_slug", ["devconnect-2025"]);
 export const importMethodType = pgEnum("import_method", ["url", "csv"]);
 
 export const participationModeEnum = pgEnum("participation_mode", [
+    "account_required",
     "strong_verification",
     "email_verification",
     "guest",
@@ -1274,7 +1275,7 @@ export const conversationTable = pgTable(
             precision: 0,
         }),
         isIndexed: boolean("is_indexed").notNull().default(true), // if true, the conversation can be fetched in the feed and search engine, else it is hidden, unless users have the link
-        participationMode: participationModeEnum("participation_mode").notNull().default("strong_verification"), // Determines who can vote/post opinions: "strong_verification" requires phone or Rarimo passport, "email_verification" requires email credential specifically, "guest" allows anyone.
+        participationMode: participationModeEnum("participation_mode").notNull().default("account_required"), // Determines who can vote/post opinions: "account_required" requires any account, "strong_verification" requires phone or Rarimo passport, "email_verification" requires email credential specifically, "guest" allows anyone.
         conversationType: conversationTypeEnum("conversation_type").notNull().default("polis"), // "polis" = standard agree/disagree/unsure voting with clustering, "maxdiff" = best-worst scaling for prioritization
         isImporting: boolean("is_importing").notNull().default(false), // if true, the conversation is being imported from CSV and should not be visible in feed until import completes
         isClosed: boolean("is_closed").notNull().default(false), // if true, the conversation was closed by owner and users cannot post opinions or vote

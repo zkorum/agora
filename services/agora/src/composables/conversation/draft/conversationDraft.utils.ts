@@ -36,7 +36,7 @@ export function createEmptyDraft(): ConversationDraft {
 
     // Privacy and Advanced Settings
     isPrivate: false,
-    participationMode: "strong_verification",
+    participationMode: "account_required",
     privateConversationSettings: {
       hasScheduledConversion: false,
       conversionDate: tomorrow,

@@ -149,7 +149,7 @@ const { t } = useComponentI18n<MaxDiffVotingTabTranslations>(
   maxDiffVotingTabTranslations
 );
 
-const { hasStrongVerification, hasEmailVerification } =
+const { isLoggedIn, hasStrongVerification, hasEmailVerification } =
   storeToRefs(useAuthenticationStore());
 const { saveMaxDiffResult, loadMaxDiffResult } = useMaxDiffApi();
 const $q = useQuasar();
@@ -157,6 +157,7 @@ const { showNotifyMessage } = useNotify();
 
 const canParticipate = computed(() => {
   const mode = props.conversationData.metadata.participationMode;
+  if (mode === "account_required") return isLoggedIn.value;
   if (mode === "strong_verification") return hasStrongVerification.value;
   if (mode === "email_verification") return hasEmailVerification.value;
   return true; // guest mode
@@ -164,6 +165,7 @@ const canParticipate = computed(() => {
 
 const participationMessage = computed(() => {
   const mode = props.conversationData.metadata.participationMode;
+  if (mode === "account_required") return t("accountRequired");
   if (mode === "strong_verification") return t("verificationRequired");
   return t("emailVerificationRequired");
 });

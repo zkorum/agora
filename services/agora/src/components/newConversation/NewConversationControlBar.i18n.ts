@@ -7,6 +7,7 @@ export interface NewConversationControlBarTranslations {
   newConversation: string;
   private: string;
   public: string;
+  requiresAccount: string;
   requiresLogin: string;
   requiresEmailVerification: string;
   guestParticipation: string;
@@ -31,6 +32,7 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "New Conversation",
     private: "Private",
     public: "Public",
+    requiresAccount: "Requires account",
     requiresLogin: "Requires strong verification",
     requiresEmailVerification: "Requires email verification",
     guestParticipation: "Guest participation",
@@ -50,6 +52,7 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "محادثة جديدة",
     private: "خاص",
     public: "عام",
+    requiresAccount: "يتطلب حسابًا",
     requiresLogin: "يتطلب تحققًا قويًا",
     requiresEmailVerification: "يتطلب التحقق من البريد الإلكتروني",
     guestParticipation: "مشاركة الضيوف",
@@ -69,6 +72,7 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "Nueva Conversación",
     private: "Privado",
     public: "Público",
+    requiresAccount: "Requiere cuenta",
     requiresLogin: "Requiere verificación fuerte",
     requiresEmailVerification: "Requiere verificación por correo electrónico",
     guestParticipation: "Participación de invitados",
@@ -88,6 +92,7 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "Nouvelle Conversation",
     private: "Privé",
     public: "Public",
+    requiresAccount: "Compte requis",
     requiresLogin: "Vérification renforcée requise",
     requiresEmailVerification: "Vérification par email requise",
     guestParticipation: "Participation d'invités",
@@ -107,6 +112,7 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "新对话",
     private: "私密",
     public: "公开",
+    requiresAccount: "需要账户",
     requiresLogin: "需要强验证",
     requiresEmailVerification: "需要邮箱验证",
     guestParticipation: "访客参与",
@@ -126,6 +132,7 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "新對話",
     private: "私密",
     public: "公開",
+    requiresAccount: "需要帳戶",
     requiresLogin: "需要強驗證",
     requiresEmailVerification: "需要電郵驗證",
     guestParticipation: "訪客參與",
@@ -145,6 +152,7 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "新しい会話",
     private: "プライベート",
     public: "パブリック",
+    requiresAccount: "アカウントが必要",
     requiresLogin: "強力な認証が必要",
     requiresEmailVerification: "メール認証が必要",
     guestParticipation: "ゲスト参加",
@@ -164,6 +172,7 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "Жаңы талкуу",
     private: "Жеке",
     public: "Ачык",
+    requiresAccount: "Аккаунт талап кылынат",
     requiresLogin: "Күчтүү текшерүү талап кылынат",
     requiresEmailVerification: "Электрондук почта текшерүүсү талап кылынат",
     guestParticipation: "Конок катышуу",
@@ -183,6 +192,7 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "Новое обсуждение",
     private: "Приватное",
     public: "Публичное",
+    requiresAccount: "Требуется аккаунт",
     requiresLogin: "Требуется усиленная проверка",
     requiresEmailVerification: "Требуется подтверждение электронной почты",
     guestParticipation: "Гостевое участие",

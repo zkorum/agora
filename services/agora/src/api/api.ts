@@ -646,6 +646,7 @@ export interface ApiV1ConversationCreatePostRequest {
 }
 
 export const ApiV1ConversationCreatePostRequestParticipationModeEnum = {
+    AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
     Guest: 'guest'
@@ -932,6 +933,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
 }
 
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum = {
+    AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
     Guest: 'guest'
@@ -1044,6 +1046,7 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
 }
 
 export const ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum = {
+    AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
     Guest: 'guest'
@@ -1097,6 +1100,7 @@ export interface ApiV1ConversationImportPostRequest {
 }
 
 export const ApiV1ConversationImportPostRequestParticipationModeEnum = {
+    AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
     Guest: 'guest'
@@ -1219,6 +1223,7 @@ export interface ApiV1ConversationUpdatePostRequest {
 }
 
 export const ApiV1ConversationUpdatePostRequestParticipationModeEnum = {
+    AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
     Guest: 'guest'
@@ -1766,6 +1771,7 @@ export interface ApiV1PollRespondPost200ResponseOneOf1 {
 }
 
 export const ApiV1PollRespondPost200ResponseOneOf1ReasonEnum = {
+    AccountRequired: 'account_required',
     StrongVerificationRequired: 'strong_verification_required',
     EmailVerificationRequired: 'email_verification_required'
 } as const;
@@ -2082,6 +2088,7 @@ export const ApiV1VoteCastPost200ResponseOneOf1ReasonEnum = {
     ConversationLocked: 'conversation_locked',
     ConversationClosed: 'conversation_closed',
     EventTicketRequired: 'event_ticket_required',
+    AccountRequired: 'account_required',
     StrongVerificationRequired: 'strong_verification_required',
     EmailVerificationRequired: 'email_verification_required'
 } as const;

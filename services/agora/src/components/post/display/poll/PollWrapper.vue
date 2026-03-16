@@ -122,7 +122,7 @@ const dataLoaded = ref(false);
 
 const backendPollApi = useBackendPollApi();
 const authStore = useAuthenticationStore();
-const { hasStrongVerification, hasEmailVerification } = storeToRefs(authStore);
+const { isLoggedIn, hasStrongVerification, hasEmailVerification } = storeToRefs(authStore);
 const userStore = useUserStore();
 const { verifiedEventTickets } = storeToRefs(userStore);
 const { invalidateFeed } = useInvalidateFeedQuery();
@@ -134,6 +134,7 @@ const { isVerifying: isVerifyingZupass } = useZupassVerification();
 
 // Check if user needs login/verification based on participation mode
 const needsLogin = computed(() => {
+  if (props.participationMode === "account_required") return !isLoggedIn.value;
   if (props.participationMode === "strong_verification") return !hasStrongVerification.value;
   if (props.participationMode === "email_verification") return !hasEmailVerification.value;
   return false; // guest

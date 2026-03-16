@@ -1,0 +1,2 @@
+-- SET DEFAULT is in V0044.1 because PostgreSQL requires new enum values to be committed before they can be referenced.
+ALTER TYPE "public"."participation_mode" ADD VALUE 'account_required' BEFORE 'strong_verification';

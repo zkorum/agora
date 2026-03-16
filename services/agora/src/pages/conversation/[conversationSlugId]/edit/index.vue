@@ -189,7 +189,7 @@ const originalState = ref<{
   title: "",
   content: "",
   isPrivate: false,
-  participationMode: "strong_verification",
+  participationMode: "account_required",
   requiresEventTicket: undefined,
   privateConversationSettings: {
     hasScheduledConversion: false,

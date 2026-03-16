@@ -372,6 +372,7 @@ export class Dto {
                     "conversation_locked",
                     "conversation_closed",
                     "event_ticket_required",
+                    "account_required",
                     "strong_verification_required",
                     "email_verification_required",
                 ]),
@@ -390,6 +391,7 @@ export class Dto {
             .object({
                 success: z.literal(false),
                 reason: z.enum([
+                    "account_required",
                     "strong_verification_required",
                     "email_verification_required",
                 ]),
@@ -433,6 +435,7 @@ export class Dto {
                     "conversation_locked",
                     "conversation_closed",
                     "event_ticket_required",
+                    "account_required",
                     "strong_verification_required",
                     "email_verification_required",
                 ]),

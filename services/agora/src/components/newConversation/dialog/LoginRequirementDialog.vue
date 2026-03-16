@@ -33,19 +33,28 @@ const { t } = useComponentI18n<LoginRequirementDialogTranslations>(
 
 const loginRequirementOptions = computed(() => [
   {
+    title: t("requiresAccountTitle"),
+    description: t("requiresAccountDescription"),
+    value: "account_required" satisfies ParticipationMode,
+    icon: "mdi-account-check",
+  },
+  {
     title: t("requiresLoginTitle"),
     description: t("requiresLoginDescription"),
     value: "strong_verification" satisfies ParticipationMode,
+    icon: "mdi-shield-check",
   },
   {
     title: t("requiresEmailVerificationTitle"),
     description: t("requiresEmailVerificationDescription"),
     value: "email_verification" satisfies ParticipationMode,
+    icon: "mdi-email-check",
   },
   {
     title: t("guestParticipationTitle"),
     description: t("guestParticipationDescription"),
     value: "guest" satisfies ParticipationMode,
+    icon: "mdi-account-plus",
   },
 ]);
 

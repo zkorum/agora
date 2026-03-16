@@ -98,6 +98,9 @@ function getTitle(): string {
   const hasZupassRequirement = props.requiresZupassEventSlug !== undefined;
 
   if (hasCredentialUpgradeMode()) {
+    if (props.participationMode === "account_required") {
+      return t("titleAccountRequired");
+    }
     if (props.participationMode === "email_verification") {
       return t("titleEmailRequired");
     }
@@ -115,6 +118,9 @@ function getMessage(): string {
   const hasZupassRequirement = props.requiresZupassEventSlug !== undefined;
 
   if (hasCredentialUpgradeMode()) {
+    if (props.participationMode === "account_required") {
+      return t("messageAccountRequired");
+    }
     if (props.participationMode === "email_verification") {
       return t("messageEmailRequired");
     }
@@ -134,6 +140,9 @@ function getLabelOk(): string {
   const hasZupassRequirement = props.requiresZupassEventSlug !== undefined;
 
   if (hasCredentialUpgradeMode()) {
+    if (props.participationMode === "account_required") {
+      return t("labelOkAccount");
+    }
     if (props.participationMode === "email_verification") {
       return t("labelOkEmail");
     }
@@ -154,7 +163,11 @@ async function okButtonClicked() {
     props.okCallback();
     setActiveUserIntention(props.activeIntention);
 
-    if (props.participationMode === "email_verification") {
+    if (props.participationMode === "account_required") {
+      flowStore.credentialUpgradeTarget = "any";
+      flowStore.onboardingMode = "LOGIN";
+      await router.push({ name: "/verify/any/" });
+    } else if (props.participationMode === "email_verification") {
       flowStore.credentialUpgradeTarget = "email";
       flowStore.onboardingMode = "LOGIN";
       await router.push({ name: "/verify/email/" });
