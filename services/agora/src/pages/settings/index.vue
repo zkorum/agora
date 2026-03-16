@@ -23,6 +23,10 @@
 
       <ListSection :settings-item-list="aboutSettings" />
 
+      <div v-if="roadmapSettings.length > 0">
+        <ListSection :settings-item-list="roadmapSettings" />
+      </div>
+
       <div v-if="isGuestOrLoggedIn">
         <ListSection :settings-item-list="deleteAccountSettings" />
       </div>
@@ -47,6 +51,7 @@ import { storeToRefs } from "pinia";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ListSection from "src/components/ui-library/ListSection.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useFeaturedBannerVisibility } from "src/composables/useFeaturedBannerVisibility";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
@@ -56,6 +61,7 @@ import { useBackendAccountApi } from "src/utils/api/account";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useAuthSetup } from "src/utils/auth/setup";
 import type { SettingsInterface } from "src/utils/component/settings/settings";
+import { processEnv } from "src/utils/processEnv";
 import { useDialog } from "src/utils/ui/dialog";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
@@ -149,6 +155,33 @@ const accountSettings: SettingsInterface[] = [
     style: "none",
   },
 ];
+
+const featuredSlug = processEnv.VITE_FEATURED_CONVERSATION_SLUG;
+const { hasCompletedRanking } = useFeaturedBannerVisibility();
+
+const roadmapSettings = computed<SettingsInterface[]>(() => {
+  if (!featuredSlug) return [];
+  return [
+    {
+      type: "action",
+      label: t("roadmap"),
+      action: () => {
+        if (hasCompletedRanking.value) {
+          void router.push({
+            name: "/conversation/[postSlugId]/analysis",
+            params: { postSlugId: featuredSlug },
+          });
+        } else {
+          void router.push({
+            name: "/conversation/[postSlugId]/",
+            params: { postSlugId: featuredSlug },
+          });
+        }
+      },
+      style: "none",
+    },
+  ];
+});
 
 const aboutSettings: SettingsInterface[] = [
   {

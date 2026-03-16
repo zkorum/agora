@@ -12,6 +12,7 @@ export interface SettingsTranslations {
   deleteGuestAccount: string;
   profile: string;
   contentPreference: string;
+  roadmap: string;
   language: string;
   privacyPolicy: string;
   termsOfService: string;
@@ -44,6 +45,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "Delete Guest Account",
     profile: "Profile",
     contentPreference: "Content Preference",
+    roadmap: "Product Roadmap",
     language: "Language",
     privacyPolicy: "Privacy Policy",
     termsOfService: "Terms of Service",
@@ -71,6 +73,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "حذف حساب الضيف",
     profile: "الملف الشخصي",
     contentPreference: "تفضيلات المحتوى",
+    roadmap: "خارطة طريق المنتج",
     language: "اللغة",
     privacyPolicy: "سياسة الخصوصية",
     termsOfService: "شروط الخدمة",
@@ -98,6 +101,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "Eliminar cuenta de invitado",
     profile: "Perfil",
     contentPreference: "Preferencia de contenido",
+    roadmap: "Roadmap del producto",
     language: "Idioma",
     privacyPolicy: "Política de privacidad",
     termsOfService: "Términos de servicio",
@@ -126,6 +130,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "Supprimer le compte invité",
     profile: "Profil",
     contentPreference: "Préférence de contenu",
+    roadmap: "Roadmap Produit",
     language: "Langue",
     privacyPolicy: "Politique de confidentialité",
     termsOfService: "Conditions d'utilisation",
@@ -154,6 +159,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "删除访客账户",
     profile: "个人资料",
     contentPreference: "内容偏好",
+    roadmap: "产品路线图",
     language: "语言",
     privacyPolicy: "隐私政策",
     termsOfService: "服务条款",
@@ -181,6 +187,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "刪除訪客帳戶",
     profile: "個人資料",
     contentPreference: "內容偏好",
+    roadmap: "產品路線圖",
     language: "語言",
     privacyPolicy: "隱私政策",
     termsOfService: "服務條款",
@@ -208,6 +215,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "ゲストアカウントを削除",
     profile: "プロフィール",
     contentPreference: "コンテンツ設定",
+    roadmap: "製品ロードマップ",
     language: "言語",
     privacyPolicy: "プライバシーポリシー",
     termsOfService: "利用規約",
@@ -236,6 +244,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "Конок каттоо эсебин жок кылуу",
     profile: "Профиль",
     contentPreference: "Мазмун тандоолору",
+    roadmap: "Продукт жол картасы",
     language: "Тил",
     privacyPolicy: "Купуялык саясаты",
     termsOfService: "Кызмат көрсөтүү шарттары",
@@ -263,6 +272,7 @@ export const settingsTranslations: Record<
     deleteGuestAccount: "Удалить гостевой аккаунт",
     profile: "Профиль",
     contentPreference: "Настройки контента",
+    roadmap: "Дорожная карта продукта",
     language: "Язык",
     privacyPolicy: "Политика конфиденциальности",
     termsOfService: "Условия использования",
