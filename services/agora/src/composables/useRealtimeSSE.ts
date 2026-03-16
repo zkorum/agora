@@ -19,6 +19,7 @@ import { setNetworkOffline } from "./useNetworkStatus";
 const SSE_CONNECTION_TIMEOUT_MS = 15_000;
 const SSE_INITIAL_RETRY_DELAY_MS = 2_000;
 const SSE_MAX_RETRY_DELAY_MS = 300_000;
+const SSE_HEARTBEAT_TIMEOUT_MS = 45_000; // 1.5x server heartbeat interval (30s)
 
 /**
  * Single composable for ALL real-time server events.
@@ -44,6 +45,7 @@ export function useRealtimeSSE() {
   let connectionId = 0;
   let hasEverConnected = false;
   let offlineTimer: ReturnType<typeof setTimeout> | null = null;
+  let heartbeatWatchdog: ReturnType<typeof setTimeout> | null = null;
 
   async function connect() {
     console.log("[SSE] connect() called", {
@@ -119,6 +121,7 @@ export function useRealtimeSSE() {
       isConnecting.value = false;
       currentRetryDelay = SSE_INITIAL_RETRY_DELAY_MS;
       console.log("[SSE] Stream opened successfully");
+      resetHeartbeatWatchdog();
 
       // Clear offline timer if SSE reconnected quickly (< 3s)
       if (offlineTimer) {
@@ -128,8 +131,8 @@ export function useRealtimeSSE() {
 
       if (hasEverConnected) {
         console.log("[SSE] Reconnected — clearing offline state");
-        setNetworkOffline(false);
       }
+      setNetworkOffline(false);
       hasEverConnected = true;
 
       // Read and parse SSE stream
@@ -140,6 +143,7 @@ export function useRealtimeSSE() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+        resetHeartbeatWatchdog();
 
         buffer += decoder.decode(value, { stream: true });
 
@@ -155,6 +159,7 @@ export function useRealtimeSSE() {
       }
 
       // Stream ended normally — check staleness before touching shared state
+      clearHeartbeatWatchdog();
       if (thisConnectionId !== connectionId) return;
 
       isConnected.value = false;
@@ -163,6 +168,7 @@ export function useRealtimeSSE() {
         scheduleReconnect();
       }
     } catch (error) {
+      clearHeartbeatWatchdog();
       if (connectionTimeout) {
         clearTimeout(connectionTimeout);
       }
@@ -246,6 +252,24 @@ export function useRealtimeSSE() {
     }
   }
 
+  function resetHeartbeatWatchdog() {
+    if (heartbeatWatchdog) clearTimeout(heartbeatWatchdog);
+    heartbeatWatchdog = setTimeout(() => {
+      heartbeatWatchdog = null;
+      console.warn("[SSE] Heartbeat timeout — aborting connection");
+      if (abortController) {
+        abortController.abort();
+      }
+    }, SSE_HEARTBEAT_TIMEOUT_MS);
+  }
+
+  function clearHeartbeatWatchdog() {
+    if (heartbeatWatchdog) {
+      clearTimeout(heartbeatWatchdog);
+      heartbeatWatchdog = null;
+    }
+  }
+
   function scheduleReconnect() {
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout);
@@ -280,6 +304,7 @@ export function useRealtimeSSE() {
 
   function forceReconnect() {
     console.log("[SSE] forceReconnect() — aborting current connection and reconnecting");
+    clearHeartbeatWatchdog();
     currentRetryDelay = SSE_INITIAL_RETRY_DELAY_MS;
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout);
@@ -298,6 +323,7 @@ export function useRealtimeSSE() {
     connectionId++; // Invalidate any in-flight connect() catch handler
     shouldReconnect = false;
     currentRetryDelay = SSE_INITIAL_RETRY_DELAY_MS;
+    clearHeartbeatWatchdog();
 
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout);

@@ -184,17 +184,19 @@ export function useBackendAuthApi() {
     } catch (e) {
       console.error("Failed to update authentication state", e);
       return { authStateChanged: false, needsCacheRefresh: false };
-    } finally {
-      isAuthInitialized.value = true;
     }
   }
 
   async function initializeAuthState() {
-    const deviceLoginStatus = await getDeviceLoginStatus();
-    await updateAuthState({
-      partialLoginStatus: deviceLoginStatus,
-      forceRefresh: true,
-    });
+    try {
+      const deviceLoginStatus = await getDeviceLoginStatus();
+      await updateAuthState({
+        partialLoginStatus: deviceLoginStatus,
+        forceRefresh: true,
+      });
+    } finally {
+      isAuthInitialized.value = true;
+    }
   }
 
   async function logoutDataCleanup({
