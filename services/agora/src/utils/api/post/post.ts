@@ -59,7 +59,7 @@ export function useBackendPostApi() {
   async function fetchPostBySlugId(
     postSlugId: string,
     loadUserPollResponse: boolean
-  ): Promise<ExtendedConversation | null> {
+  ): Promise<ExtendedConversation> {
     try {
       const params: ApiV1ModerationConversationWithdrawPostRequest = {
         conversationSlugId: postSlugId,
@@ -90,21 +90,11 @@ export function useBackendPostApi() {
         return createInternalPostData(response.data.conversationData);
       }
     } catch (error) {
-      const DEFAULT_ERROR = "Failed to fetch conversation by slug ID.";
-      console.error(error);
-      if (axiosInstance.isAxiosError(error)) {
-        if (error.status == 400) {
-          showNotifyMessage("Conversation resource not found.");
-        } else {
-          showNotifyMessage(DEFAULT_ERROR);
-        }
-      } else {
-        showNotifyMessage(DEFAULT_ERROR);
+      if (axiosInstance.isAxiosError(error) && error.status === 404) {
+        showNotifyMessage("Conversation resource not found.");
+        await router.push({ name: "/" });
       }
-
-      await router.push({ name: "/" });
-
-      return null;
+      throw error;
     }
   }
 

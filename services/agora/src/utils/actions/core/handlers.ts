@@ -42,10 +42,10 @@ export function useActionHandlers() {
         invalidateFeed();
         await loadUserProfile();
 
-        // Navigate to home if we're currently viewing this post
+        const slugPrefix = `/conversation/${context.targetId}`;
         if (
-          route.name === "/conversation/[postSlugId]" ||
-          route.name === "/conversation/[postSlugId]/"
+          route.path === slugPrefix ||
+          route.path.startsWith(`${slugPrefix}/`)
         ) {
           await router.push({ name: "/" });
         }

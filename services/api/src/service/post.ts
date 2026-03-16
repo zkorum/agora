@@ -273,38 +273,31 @@ export async function fetchPostBySlugId({
     personalizedUserId,
     baseImageServiceUrl,
 }: FetchPostBySlugIdProps): Promise<ExtendedConversation> {
-    try {
-        const { fetchPostItems } = useCommonPost();
-        const postData = await fetchPostItems({
-            db: db,
-            where: eq(conversationTable.slugId, conversationSlugId),
-            enableCompactBody: false,
-            personalizedUserId: personalizedUserId,
-            excludeLockedPosts: false,
-            removeMutedAuthors: false,
-            baseImageServiceUrl,
-            sortAlgorithm: "new",
-        });
+    const { fetchPostItems } = useCommonPost();
+    const postData = await fetchPostItems({
+        db: db,
+        where: eq(conversationTable.slugId, conversationSlugId),
+        enableCompactBody: false,
+        personalizedUserId: personalizedUserId,
+        excludeLockedPosts: false,
+        removeMutedAuthors: false,
+        baseImageServiceUrl,
+        sortAlgorithm: "new",
+    });
 
-        if (postData.size == 1) {
-            const [firstPost] = postData.values();
-            return firstPost;
-        } else if (postData.size > 1) {
-            const [firstPost] = postData.values();
-            log.warn(
-                `Multiple conversations hold the same slugId: ${firstPost.metadata.conversationSlugId}`,
-            );
-            return firstPost;
-        } else {
-            throw httpErrors.notFound(
-                "Failed to locate conversation slug ID in the database: " +
-                    conversationSlugId,
-            );
-        }
-    } catch (err: unknown) {
-        log.error(err);
-        throw httpErrors.internalServerError(
-            "Failed to fetch conversation by slug ID: " + conversationSlugId,
+    if (postData.size == 1) {
+        const [firstPost] = postData.values();
+        return firstPost;
+    } else if (postData.size > 1) {
+        const [firstPost] = postData.values();
+        log.warn(
+            `Multiple conversations hold the same slugId: ${firstPost.metadata.conversationSlugId}`,
+        );
+        return firstPost;
+    } else {
+        throw httpErrors.notFound(
+            "Failed to locate conversation slug ID in the database: " +
+                conversationSlugId,
         );
     }
 }
