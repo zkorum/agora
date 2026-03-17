@@ -67,6 +67,7 @@ export const sideDrawerTranslations: Record<
     dings: "اعلان‌ها",
     profile: "نمایه",
     settings: "تنظیمات",
+  },
   ky: {
     home: "Башкы бет",
     explore: "Изилдөө",

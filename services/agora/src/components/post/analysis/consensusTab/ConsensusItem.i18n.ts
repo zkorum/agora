@@ -58,6 +58,7 @@ export const consensusItemTranslations: Record<
     pass: "مطمئن نیستم",
     disagree: "مخالفم",
     noVote: "بدون رای",
+  },
   ky: {
     agree: "Макулмун",
     pass: "Белгисиз",

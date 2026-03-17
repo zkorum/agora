@@ -77,6 +77,7 @@ export const usernameChangeTranslations: Record<
     usernameAlreadyInUse: "نام کاربری قبلن استفاده شده است",
     usernameCurrentlyInUse: "این نام کاربری در حال حاضر استفاده می‌شود",
     submitError: "خطا در ارسال تغییر نام کاربری",
+  },
   ky: {
     usernameLabel: "Колдонуучу аты",
     updateButton: "Жаңыртуу",

@@ -133,6 +133,7 @@ export const postMetadataTranslations: Record<
     openNotAllowed: "شما اجازه باز کردن این گفتگو را ندارید",
     alreadyClosed: "این گفتگو از قبل بسته شده است",
     alreadyOpen: "این گفتگو از قبل باز است",
+  },
   ky: {
     closeConfirmMessage:
       "Бул талкууну жабууну каалайсызбы? Колдонуучулар жаңы пикирлерди же добуштарды жарыялай алышпайт.",

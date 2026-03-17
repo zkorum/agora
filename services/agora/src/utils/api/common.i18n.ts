@@ -167,6 +167,7 @@ export const commonApiTranslations: Record<
     invalidUrl: "آدرس درخواست نامعتبر است. لطفاً با پشتیبانی تماس بگیرید.",
     unexpectedError: "خطای غیرمنتظره‌ای رخ داد. لطفاً دوباره تلاش کنید.",
     noInternetConnection: "اتصال اینترنت برقرار نیست",
+  },
   ky: {
     timeoutError:
       "Суроо-талап убактысы бүттү. Сервер күтүлгөндөн көп убакыт жооп берип жатат.",

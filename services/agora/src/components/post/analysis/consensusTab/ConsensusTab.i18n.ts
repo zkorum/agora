@@ -158,6 +158,7 @@ export const consensusTabTranslations: Record<
     noAgreementsMessage: "هنوز اجماعی شکل نگرفته است.",
     noDisagreementsMessage: "هنوز اجماعی شکل نگرفته است.",
     lowerRankedDivider: "از نظر آماری کم‌اهمیت‌تر",
+  },
   ky: {
     agreementsTitle: "Жактырылган",
     disagreementsTitle: "Четке кагылган",

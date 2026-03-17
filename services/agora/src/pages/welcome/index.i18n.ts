@@ -67,6 +67,7 @@ export const welcomeTranslations: Record<
     skipAuthentication: "رد شدن احراز هویت",
     launchApp: "شروع برنامه",
     logOut: "خروج",
+  },
   ky: {
     signUp: "Каттоо",
     login: "Кирүү",

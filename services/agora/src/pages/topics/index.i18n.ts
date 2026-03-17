@@ -46,6 +46,7 @@ export const topicsTranslations: Record<SupportedDisplayLanguageCodes, TopicsTra
     exploreTopics: "کاوش موضوعات",
     following: "دنبال می‌کنید",
     follow: "دنبال کنید",
+  },
   ky: {
     exploreTopics: "Темаларды изилдөө",
     following: "Жазылган",

@@ -49,6 +49,7 @@ export const analysisActionButtonTranslations: Record<
     learnMore: "بیشتر بدانید",
     viewMore: "مشاهده بیشتر",
     informationIconAriaLabel: "اطلاعات",
+  },
   ky: {
     learnMore: "Кененирээк",
     viewMore: "Дагы көрүү",

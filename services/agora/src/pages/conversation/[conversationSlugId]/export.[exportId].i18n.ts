@@ -40,6 +40,7 @@ export const exportStatusPageTranslations: Record<
   fa: {
     pageTitle: "وضعیت خروجی",
     exportFeatureDisabled: "قابلیت خروجی غیرفعال است",
+  },
   ky: {
     pageTitle: "Экспорттун абалы",
     exportFeatureDisabled: "Экспорт функциясы өчүрүлгөн",

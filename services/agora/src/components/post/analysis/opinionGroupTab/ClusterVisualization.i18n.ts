@@ -40,6 +40,7 @@ export const clusterVisualizationTranslations: Record<
   fa: {
     groupsTitle: "گروه‌ها",
     meLabel: "من",
+  },
   ky: {
     groupsTitle: "Пикир топтору",
     meLabel: "Мен",

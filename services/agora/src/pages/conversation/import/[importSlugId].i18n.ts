@@ -31,6 +31,7 @@ export const importStatusPageTranslations: Record<
   },
   fa: {
     pageTitle: "وضعیت واردسازی",
+  },
   ky: {
     pageTitle: "Импорттун абалы",
   },

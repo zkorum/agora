@@ -57,6 +57,7 @@ export const preferencesDialogTestTranslations: Record<
     preferencesDialogDescription:
       "Test the post-signup preferences dialog that allows users to select their language and topic preferences after creating an account.",
     openPreferencesDialogButton: "باز کردن دیالوگ ترجیحات",
+  },
   ky: {
     preferencesDialog: "Тандоолор диалогу",
     preferencesDialogDescription:

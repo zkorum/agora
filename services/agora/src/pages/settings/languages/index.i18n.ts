@@ -142,6 +142,7 @@ export const languagesSettingsTranslations: Record<
     and: "and",
     other: "other",
     others: "others",
+  },
   ky: {
     pageTitle: "Тил",
     displayLanguageLabel: "Көрсөтүү тили",

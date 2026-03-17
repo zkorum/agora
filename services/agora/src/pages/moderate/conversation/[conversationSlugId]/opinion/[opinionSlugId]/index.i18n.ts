@@ -85,6 +85,7 @@ export const opinionModerationTranslations: Record<
     moderateButton: "مدیریت",
     modifyButton: "اصلاح",
     withdrawButton: "بازپس‌گیری",
+  },
   ky: {
     title: "Пикирди модерациялоо",
     actionLabel: "Аракет",

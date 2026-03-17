@@ -28,6 +28,7 @@ export const topicPageTranslations: Record<SupportedDisplayLanguageCodes, TopicP
   },
   fa: {
     loadPostsHere: "بارگذاری پست‌ها در اینجا",
+  },
   ky: {
     loadPostsHere: "Посттарды жүктөө",
   },

@@ -84,6 +84,7 @@ export const pollComponentTranslations: Record<
     option: "گزینه",
     inputOptionText: "متن گزینه را وارد کنید",
     addOption: "افزودن گزینه",
+  },
   ky: {
     addPoll: "Сурамжылоо кошуу",
     existingPoll: "Учурдагы сурамжылоо",

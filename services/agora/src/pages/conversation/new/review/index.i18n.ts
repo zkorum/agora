@@ -165,6 +165,7 @@ export const conversationReviewTranslations: Record<
     opinionDuplicate: "این نظر تکراری است",
     errorCreatingConversation:
       "Error while trying to create a new conversation",
+  },
   ky: {
     posting: "Жарыяланууда...",
     post: "Жарыялоо",

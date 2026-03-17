@@ -392,6 +392,7 @@ export const exportStatusViewTranslations: Record<
     deleteError: "حذف خروجی ناموفق بود",
     failureReasonProcessingError: "خطای پردازش رخ داد",
     failureReasonTimeout: "عملیات از زمان مجاز فراتر رفت",
+  },
   ky: {
     loadingStatus: "Экспорт абалы жүктөлүүдө...",
     errorLoadingStatus: "Экспорт абалын жүктөө ишке ашкан жок",

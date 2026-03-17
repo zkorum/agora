@@ -31,6 +31,7 @@ export const guidelinesTranslations: Record<
   },
   fa: {
     guidelines: "قوانین جامعه",
+  },
   ky: {
     guidelines: "Коомчулук эрежелери",
   },

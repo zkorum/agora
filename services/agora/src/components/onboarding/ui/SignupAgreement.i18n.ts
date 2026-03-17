@@ -66,6 +66,7 @@ export const signupAgreementTranslations: Record<
     termsOfService: "شرایط خدمات",
     and: "و",
     privacyPolicy: "سیاست حفظ حریم خصوصی",
+  },
   ky: {
     agreementText: "Кирүү менен сиз биздин",
     agreementTextVerify: "Текшерүү менен сиз биздин",

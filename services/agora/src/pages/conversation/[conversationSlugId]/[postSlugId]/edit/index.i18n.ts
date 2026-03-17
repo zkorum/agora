@@ -197,6 +197,7 @@ export const editConversationTranslations: Record<
     removePollWarningMessage:
       "Removing the poll will delete all existing votes. This action cannot be undone. Do you want to continue?",
     removePollWarningConfirm: "بله، نظرسنجی حذف شود",
+  },
   ky: {
     saveButton: "Өзгөртүүлөрдү сактоо",
     titlePlaceholder: "Эмнени сурагыңыз келет?",

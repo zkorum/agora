@@ -58,6 +58,7 @@ export const customTimerDialogTranslations: Record<
     chooseWhenPublic: "انتخاب کنید گفتگوی شما چه زمانی عمومی شود",
     back: "بازگشت",
     confirm: "تأیید",
+  },
   ky: {
     selectCustomTime: "Өзгөчө убакыт тандоо",
     chooseWhenPublic: "Талкууңуз качан ачык болорун тандаңыз",

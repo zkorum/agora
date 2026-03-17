@@ -247,6 +247,7 @@ export const passportOnboardingTranslations: Record<
       "مشکلی در همگام‌سازی پیش آمد. کد QR شما بازآوری شد — دوباره اسکن کنید!",
     copiedToClipboard: "لینک در کلیپ‌بورد کپی شد",
     couldNotCopy: "کپی در کلیپ‌بورد ممکن نبود",
+  },
   ky: {
     pageTitle: "Купуялыгыңызды коргоңуз",
     description:

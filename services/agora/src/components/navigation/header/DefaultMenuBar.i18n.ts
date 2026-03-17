@@ -31,6 +31,7 @@ export const defaultMenuBarTranslations: Record<
   },
   fa: {
     logIn: "ورود",
+  },
   ky: {
     logIn: "Кирүү",
   },

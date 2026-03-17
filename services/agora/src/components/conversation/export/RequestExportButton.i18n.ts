@@ -31,6 +31,7 @@ export const requestExportButtonTranslations: Record<
   },
   fa: {
     requestNewExport: "درخواست خروجی جدید",
+  },
   ky: {
     requestNewExport: "Жаңы экспорт суроо",
   },

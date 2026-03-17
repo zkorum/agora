@@ -205,6 +205,7 @@ export const step3Phone2Translations: Record<SupportedDisplayLanguageCodes, Step
         "متأسفانه این شماره تلفن نامعتبر است. لطفاً بررسی کرده و دوباره امتحان کنید.",
       restrictedPhoneType:
         "متأسفانه این شماره تلفن به دلایل امنیتی پشتیبانی نمی‌شود. لطفاً شماره دیگری امتحان کنید.",
+  },
     ky: {
       title: "6 орундуу кодду киргизиңиз",
       instructions: "Телефон номериңизге жөнөтүлгөн 6 орундуу кодду киргизиңиз",

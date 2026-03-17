@@ -40,6 +40,7 @@ export const newConversationRouteGuardTranslations: Record<
   fa: {
     saveConversationDraft: "گفتگو به عنوان پیش‌نویس ذخیره شود؟",
     draftWillBeHere: "پیش‌نویس گفتگوی شما پس از بازگشت اینجا خواهد بود.",
+  },
   ky: {
     saveConversationDraft: "Талкууну черновик катары сактайсызбы?",
     draftWillBeHere: "Кайтып келгениңизде черновик талкууңуз бул жерде болот.",

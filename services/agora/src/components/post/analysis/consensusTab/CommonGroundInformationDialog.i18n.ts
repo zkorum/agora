@@ -74,6 +74,7 @@ export const commonGroundInformationDialogTranslations: Record<
     disagreementsTitle: "رد شد",
     disagreementsDescription:
       "These are statements all opinion groups agree to disagree on.\n\nThis goes beyond a simple majority: even if most individuals reject, a single group's approval — no matter how small the group — is enough to exclude a statement.\n\nOnly statements that reflect true cross-group consensus appear here, not those based on majority rule alone.\n\nOnly the most statistically significant are shown first.",
+  },
   ky: {
     agreementsTitle: "Жактырылган",
     agreementsDescription:

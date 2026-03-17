@@ -46,6 +46,7 @@ export const activeImportBannerTranslations: Record<
     message:
       "You have an import in progress. Please wait for it to complete before starting a new one.",
     viewStatus: "مشاهده وضعیت واردسازی",
+  },
   ky: {
     message:
       "Импорттоо жүрүп жатат. Жаңысын баштоодон мурун аяктаганын күтүңүз.",

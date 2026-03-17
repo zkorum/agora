@@ -85,6 +85,7 @@ export const opinionAnalysisDialogTranslations: Record<
     total: "مجموع",
     noGroup: "بدون گروه",
     viewOriginal: "مشاهده نظر اصلی",
+  },
   ky: {
     title: "Пикир анализи",
     agree: "Макулмун",

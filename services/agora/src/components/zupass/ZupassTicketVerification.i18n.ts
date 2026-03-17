@@ -155,6 +155,7 @@ export const zupassTicketVerificationTranslations: Record<
     errorWrongEvent: 'Wrong event ticket. Devconnect 2025 ticket required.',
     errorTicketAlreadyUsed: 'This ticket has already been verified by another account.',
     errorUnknown: 'An unknown error occurred. Please try again.',
+  },
   ky: {
     title: 'Devconnect 2025 билетиңизди текшериңиз',
     description:

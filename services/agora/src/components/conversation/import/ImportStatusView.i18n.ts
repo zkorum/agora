@@ -169,6 +169,7 @@ export const importStatusViewTranslations: Record<
     failureReasonProcessingError: "خطای پردازش رخ داد",
     failureReasonTimeout: "عملیات از زمان مجاز فراتر رفت",
     failureReasonInvalidDataFormat: "قالب داده‌ها نامعتبر بود",
+  },
   ky: {
     loadingStatus: "Импорт абалы жүктөлүүдө...",
     errorLoadingStatus: "Импорт абалын жүктөө ишке ашкан жок",

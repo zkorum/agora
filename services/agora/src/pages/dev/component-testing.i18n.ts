@@ -31,6 +31,7 @@ export const componentTestingTranslations: Record<
   },
   fa: {
     componentTesting: "تست اجزا",
+  },
   ky: {
     componentTesting: "Компоненттерди тестирлөө",
   },

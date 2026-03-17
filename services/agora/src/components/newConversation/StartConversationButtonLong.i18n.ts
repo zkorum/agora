@@ -31,6 +31,7 @@ export const startConversationButtonLongTranslations: Record<
   },
   fa: {
     buttonText: "شروع گفتگو",
+  },
   ky: {
     buttonText: "Талкуу баштоо",
   },

@@ -31,6 +31,7 @@ export const displayLanguageSettingsTranslations: Record<
   },
   fa: {
     pageTitle: "زبان نمایش",
+  },
   ky: {
     pageTitle: "Көрсөтүү тили",
   },

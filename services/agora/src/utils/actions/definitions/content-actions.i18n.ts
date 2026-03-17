@@ -173,6 +173,7 @@ export const actionsTranslations: Record<
     confirmMuteUser:
       "آیا مطمئنید که می‌خواهید این کاربر را بی‌صدا کنید؟ دیگر گفتگوها و نظرات ایشان را نخواهید دید.",
     confirmGenericAction: "آیا مطمئنید که می‌خواهید این عمل را انجام دهید؟",
+  },
   ky: {
     report: "Кабарлоо",
     muteUser: "Колдонуучуну тындыруу",

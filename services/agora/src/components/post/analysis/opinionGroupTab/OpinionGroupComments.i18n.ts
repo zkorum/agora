@@ -76,6 +76,7 @@ export const opinionGroupCommentsTranslations: Record<
     thisGroup: "این گروه",
     allOthers: "سایرین",
     allOtherGroups: "سایر گروه‌ها",
+  },
   ky: {
     opinionsTitle: "Пикирлер",
     opinionsTitleLong: "Өкүлчүлүктүү пикирлер",

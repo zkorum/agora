@@ -81,6 +81,7 @@ export const step5ExperienceTranslations: Record<
     braveSpaceTitle: "فضای شجاعانه",
     braveSpaceDescription:
       "Content flagged as antisocial is shown to me with a warning.",
+  },
   ky: {
     title: "Agora'ны кантип колдонгуңуз келерин тандаңыз",
     safeSpaceTitle: "Коопсуз мейкиндик",

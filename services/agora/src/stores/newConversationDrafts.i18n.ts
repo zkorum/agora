@@ -107,6 +107,7 @@ export const newConversationDraftsTranslations: Record<
       `Maximum ${maxOptions} poll options allowed`,
     pollMinOptionsError: (minOptions: number) =>
       `Minimum ${minOptions} poll options required`,
+  },
   ky: {
     titleRequired: "Улантуу үчүн аталыш талап кылынат",
     bodyExceedsLimit: (characterCount: number, maxLength: number) =>

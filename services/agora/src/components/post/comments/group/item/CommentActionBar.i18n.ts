@@ -150,6 +150,7 @@ export const commentActionBarTranslations: Record<
     keepVotingToRefineAnalysis: "به رای دادن ادامه دهید تا تحلیل دقیق‌تر شود",
     assignedGroup: "شما به یک گروه اختصاص داده شدید!",
     viewAnalysis: "مشاهده تحلیل",
+  },
   ky: {
     disagree: "Макул эмесмин",
     pass: "Белгисиз",

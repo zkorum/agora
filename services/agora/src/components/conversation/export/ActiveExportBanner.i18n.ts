@@ -46,6 +46,7 @@ export const activeExportBannerTranslations: Record<
     message:
       "You have an export in progress. Please wait for it to complete before starting a new one.",
     viewStatus: "مشاهده وضعیت خروجی",
+  },
   ky: {
     message:
       "Экспорттоо жүрүп жатат. Жаңысын баштоодон мурун аяктаганын күтүңүз.",

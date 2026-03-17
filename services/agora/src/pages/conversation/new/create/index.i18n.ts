@@ -95,6 +95,7 @@ export const createConversationTranslations: Record<
     activeImportMessage:
       "You have an import in progress. Please wait for it to complete before starting a new one.",
     viewImportStatus: "مشاهده وضعیت واردسازی",
+  },
   ky: {
     importButton: "Импорттоо",
     nextButton: "Кийинки",

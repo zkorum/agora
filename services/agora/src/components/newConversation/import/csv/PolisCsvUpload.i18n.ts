@@ -213,6 +213,7 @@ export const polisCsvUploadTranslations: Record<
     commentsDropZoneLabel: "۲. CSV نظرات",
     votesDropZoneLabel: "۳. CSV آرا",
     dropOrClickText: "اینجا رها کنید یا کلیک کنید",
+  },
   ky: {
     uploadTitle: "Polis CSV файлдарынан импорттоо",
     description:

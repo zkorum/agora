@@ -74,6 +74,7 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       disagreements: "رد شد",
       divisive: "بحث‌برانگیز",
       groups: "گروه‌ها",
+  },
     ky: {
       summary: "Корутунду",
       me: "Мен",

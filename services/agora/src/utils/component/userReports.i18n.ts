@@ -76,6 +76,7 @@ export const userReportsTranslations: Record<
     doxing: "افشاگری هویت",
     sexual: "جنسی",
     spam: "اسپم",
+  },
   ky: {
     misleading: "Адаштыруучу",
     antisocial: "Коомго каршы",

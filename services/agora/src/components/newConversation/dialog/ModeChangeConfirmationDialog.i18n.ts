@@ -104,6 +104,7 @@ export const modeChangeConfirmationDialogTranslations: Record<
       "Your privacy settings and organization selection will be preserved.",
     cancel: "لغو",
     continue: "ادامه",
+  },
   ky: {
     switchToImportMode: "Импорт режимине которуласызбы?",
     switchingWillClear:

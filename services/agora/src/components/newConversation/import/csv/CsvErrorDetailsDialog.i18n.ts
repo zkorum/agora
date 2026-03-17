@@ -95,6 +95,7 @@ export const csvErrorDetailsDialogTranslations: Record<
     copyError: "کپی خطا",
     errorCopied: "پیام خطا در کلیپ‌بورد کپی شد",
     close: "بستن",
+  },
   ky: {
     dialogTitle: "Ката чоо-жайы",
     helpText: "CSV файлыңыздын форматын кайра текшериңиз.",

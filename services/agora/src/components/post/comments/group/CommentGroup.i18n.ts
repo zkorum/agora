@@ -78,6 +78,7 @@ export const commentGroupTranslations: Record<
     opinionsLoadFailed: "بارگذاری نظرات ممکن نبود",
     unexpectedErrorRetry: "مشکلی پیش آمد. لطفاً دوباره تلاش کنید.",
     retryLoadOpinions: "تلاش مجدد بارگذاری نظرات",
+  },
   ky: {
     noOpinionsMessage: "Бул талкуу чыпкасында пикирлер жок.",
     loadingOpinions: "Пикирлер жүктөлүүдө...",

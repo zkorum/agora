@@ -139,6 +139,7 @@ export const eventTicketRequirementBannerTranslations: Record<
     errorWrongEvent: 'بلیت رویداد اشتباه است. بلیت {eventName} الزامی است.',
     errorTicketAlreadyUsed: 'این بلیت قبلن توسط حساب دیگری تأیید شده است.',
     errorUnknown: 'خطای ناشناخته‌ای رخ داد. لطفاً دوباره تلاش کنید.',
+  },
   ky: {
     verifyButton: 'Текшерүү',
     verifyButtonRequirement: '{eventName} билети талап кылынат',

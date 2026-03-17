@@ -75,6 +75,7 @@ export const loadMoreWarningDialogTranslations: Record<
     descriptionEmphasis: "اصلاً",
     cancelButton: "لغو",
     loadMoreButton: "بارگذاری همه",
+  },
   ky: {
     title: "Бардык пикирлерди жүктөө",
     description:

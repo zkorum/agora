@@ -150,6 +150,7 @@ export const commentComposerTranslations: Record<
     exitPromptDescription: "پیش‌نویس شما هنگام بازگشت اینجا خواهد بود.",
     validationWarningMultipleIdeas:
       "نکته: ممکن است شامل چند ایده باشد - مطمئن شوید رای‌دهندگان بتوانند به‌وضوح موافقت یا مخالفت کنند",
+  },
   ky: {
     placeholder: "Өз пикириңизди кошуңуз",
     placeholderExpanded: "Макулдашуу же макул эмес болуу оңой болгон бир пунктка көңүл буруңуз",

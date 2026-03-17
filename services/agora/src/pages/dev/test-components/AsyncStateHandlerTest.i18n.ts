@@ -201,6 +201,7 @@ export const asyncStateHandlerTestTranslations: Record<
     customLoadingText: "پیام بارگذاری سفارشی",
     customEmptyText: "پیام وضعیت خالی سفارشی",
     customRetryText: "دوباره تلاش کنید",
+  },
   ky: {
     asyncStateHandler: "Асинхрондук абал иштеткич",
     asyncStateHandlerDescription:

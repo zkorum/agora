@@ -31,6 +31,7 @@ export const spokenLanguagesSettingsTranslations: Record<
   },
   fa: {
     pageTitle: "زبان‌های مکالمه",
+  },
   ky: {
     pageTitle: "Сүйлөгөн тилдер",
   },

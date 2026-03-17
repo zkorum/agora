@@ -244,6 +244,7 @@ export const settingsTranslations: Record<
     deleteGuestAccountDialogMessage: "حساب مهمان شما بلافاصله به طور دائمی حذف خواهد شد. این عمل قابل بازگشت نیست. داده‌ها ممکن است تا ۳۰ روز در پشتیبان‌ها باقی بمانند.\n\nبرای تأیید، DELETE را در زیر تایپ کنید:",
     deleteAccountDialogPlaceholder: "برای تأیید DELETE را تایپ کنید",
     deleteAccountDialogError: "درخواست حذف حساب ناموفق بود. بعداً دوباره تلاش کنید.",
+  },
   ky: {
     pageTitle: "Жөндөөлөр",
     verificationStatus: "Текшерүү абалы",

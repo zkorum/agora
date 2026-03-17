@@ -87,6 +87,7 @@ export const polisUrlInputTranslations: Record<
     urlPlaceholder: "e.g., https://pol.is/xxxxx",
     polisTerms: "شرایط Pol.is",
     termsOfUse: "شرایط استفاده",
+  },
   ky: {
     importTitle: "Polis'тен талкуу импорттоо",
     description: "Талкууну импорттоо үчүн төмөнгө Polis URL чаптаңыз.",

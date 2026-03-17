@@ -32,6 +32,7 @@ export const deleteOrganizationFormTranslations: Record<
   },
   fa: {
     noOrganizationsMessage: "هیچ سازمانی در سیستم ثبت نشده است",
+  },
   ky: {
     noOrganizationsMessage: "Системада катталган уюмдар жок",
   },

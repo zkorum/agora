@@ -48,6 +48,7 @@ export const signupOnboardingTranslations: Record<
     pageTitle: "چرا جمهور وجود دارد؟",
     description:
       "در جهانی که قطب‌بندی‌ها روزافزون افزایش می‌یابد، جمهور تلاش می‌کند گفتگوهای شهروندی را درباره مسائل کلیدی جامعه انسانی‌تر کند.",
+  },
   ky: {
     pageTitle: "Agora эмне үчүн бар?",
     description:

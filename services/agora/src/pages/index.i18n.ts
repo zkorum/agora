@@ -67,6 +67,7 @@ export const homeTranslations: Record<
     following: "دنبال‌شده",
     popular: "محبوب",
     new: "جدید",
+  },
   ky: {
     following: "Жазылуулар",
     popular: "Популярдуу",

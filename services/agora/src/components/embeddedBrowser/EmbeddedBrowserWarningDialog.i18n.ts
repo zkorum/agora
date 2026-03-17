@@ -188,6 +188,7 @@ export const embeddedBrowserWarningTranslations: Record<
     copyFailedNotification: "کپی آدرس ناموفق بود",
     continueAnyway: "با این حال ادامه دهید",
     notInAppBrowser: "من از قبل در مرورگرم هستم (Chrome، Safari و غیره)",
+  },
   ky: {
     title: "Сиз {app} браузериндесиз",
     titleGeneric: "Сиз колдонмо ичиндеги браузердесиз",

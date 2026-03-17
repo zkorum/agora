@@ -57,6 +57,7 @@ export const groupConsensusSummaryTranslations: Record<
     aiSummaryTitle: "خلاصه هوش مصنوعی",
     aiSummaryDescription:
       "We use Mistral Large (LLM model) to generate the summary & labels for each consensus group.",
+  },
   ky: {
     groupSummaryTitle: "Топтун корутундусу",
     aiSummaryTitle: "AI корутундусу",

@@ -60,6 +60,7 @@ export const userOrganizationMappingsTranslations: Record<
     fetchButton: "دریافت",
     noOrganizationsMessage: "کاربر به هیچ سازمانی تعلق ندارد",
     removeUserOrganizationMappingButton: "حذف نگاشت سازمان کاربر",
+  },
   ky: {
     usernameLabel: "Колдонуучу аты",
     fetchButton: "Алуу",

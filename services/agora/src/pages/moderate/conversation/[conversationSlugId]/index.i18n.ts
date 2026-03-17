@@ -85,6 +85,7 @@ export const conversationModerationTranslations: Record<
     modify: "اصلاح",
     moderate: "مدیریت",
     withdraw: "بازپس‌گیری",
+  },
   ky: {
     moderateConversation: "Талкууну модерациялоо",
     action: "Аракет",

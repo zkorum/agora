@@ -95,6 +95,7 @@ export const divisiveTabTranslations: Record<
     loadMore: "بارگذاری همه",
     noDivisiveOpinionsMessage: "هنوز نظرات بحث‌برانگیز معناداری یافت نشده است.",
     lowerRankedDivider: "از نظر آماری کم‌اهمیت‌تر",
+  },
   ky: {
     divisiveTitle: "Талаштуу",
     divisiveLongTitle: "Топтор аралык катышуучуларды эмне {keyword}?",

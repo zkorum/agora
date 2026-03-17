@@ -31,6 +31,7 @@ export const administratorOrganizationTranslations: Record<
   },
   fa: {
     administrator: "مدیر",
+  },
   ky: {
     administrator: "Администратор",
   },

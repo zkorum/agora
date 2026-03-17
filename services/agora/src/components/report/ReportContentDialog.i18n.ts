@@ -117,6 +117,7 @@ export const reportContentDialogTranslations: Record<
     submitButton: "ارسال",
     reportTypeConversation: "conversation",
     reportTypeOpinion: "statement",
+  },
   ky: {
     submitReportTitle: "Кабар жөнөтүү",
     improveCommunityText:

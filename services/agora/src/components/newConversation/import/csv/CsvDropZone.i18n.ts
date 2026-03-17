@@ -94,6 +94,7 @@ export const csvDropZoneTranslations: Record<
     remove: "حذف",
     ariaViewDetails: "مشاهده جزئیات خطا برای {fileName}",
     ariaRemove: "حذف فایل {fileName}",
+  },
   ky: {
     statusPending: "Күтүүдө",
     statusUploaded: "Жүктөлдү",

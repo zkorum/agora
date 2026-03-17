@@ -180,6 +180,7 @@ export const exportPageTranslations: Record<
     errorNoOpinions:
       "This conversation has no statements to export. Add some statements first.",
     exportFeatureDisabled: "قابلیت خروجی غیرفعال است",
+  },
   ky: {
     pageTitle: "Талкууну экспорттоо",
     pageDescription:

@@ -274,6 +274,7 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
       "We need universal healthcare and free college tuition",
     dontCombineExampleGood1: "خدمات بهداشتی باید در نقطه ارائه رایگان باشد",
     dontCombineExampleGood2: "شهریه دانشگاه باید رایگان باشد",
+  },
   ky: {
     title: "Жакшы пикир жазуу боюнча кеңештер",
     singleIdeaTitle: "Бир конкреттүү идея",

@@ -77,6 +77,7 @@ export const conversationMutationsTranslations: Record<
     openNotAllowed: "شما اجازه باز کردن این گفتگو را ندارید",
     alreadyClosed: "این گفتگو از قبل بسته شده است",
     alreadyOpen: "این گفتگو از قبل باز است",
+  },
   ky: {
     closeError: "Талкууну жабуу ишке ашкан жок. Кайра аракет кылыңыз.",
     openError: "Талкууну ачуу ишке ашкан жок. Кайра аракет кылыңыз.",

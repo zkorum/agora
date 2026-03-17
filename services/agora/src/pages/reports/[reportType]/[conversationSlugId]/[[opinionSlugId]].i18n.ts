@@ -157,6 +157,7 @@ export const userReportsViewerTranslations: Record<
     invalidReportType: "نوع گزارش نامعتبر",
     invalidSlugIdParam: "پارامتر شناسه نامعتبر",
     unknownReportType: "نوع گزارش ناشناخته",
+  },
   ky: {
     userReportsViewer: "Колдонуучу кабарлоолорун көрүүчү",
     openConversation: "Талкууну ачуу",

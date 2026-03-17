@@ -40,6 +40,7 @@ export const spokenLanguageStepTranslations: Record<
   fa: {
     title: "به چه زبان‌هایی صحبت می‌کنید؟",
     nextButton: "بعدی",
+  },
   ky: {
     title: "Сиз кайсы тилдерде сүйлөйсүз?",
     nextButton: "Кийинки",

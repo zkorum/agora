@@ -47,6 +47,7 @@ export const pollWrapperTranslations: Record<SupportedDisplayLanguageCodes, Poll
       results: "نتایج",
       vote: "رای",
       votes: "رای",
+  },
     ky: {
       results: "Жыйынтыктар",
       vote: "Добуш берүү",

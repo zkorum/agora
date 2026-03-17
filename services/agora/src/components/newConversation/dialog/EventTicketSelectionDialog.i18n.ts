@@ -30,6 +30,7 @@ export const eventTicketSelectionDialogTranslations: Record<
     devconnect2025: "Devconnect 2025",
   },
   fa: {
+  },
   ky: {
     devconnect2025: "Devconnect 2025",
   },

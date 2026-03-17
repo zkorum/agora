@@ -67,6 +67,7 @@ export const cooldownBannerTranslations: Record<
     cooldownMinutes: "خروجی بعدی در {minutes} دقیقه",
     cooldownEnded: "زمان انتظار تمام شد. اکنون می‌توانید خروجی جدید درخواست کنید.",
     viewLast: "مشاهده آخرین خروجی",
+  },
   ky: {
     cooldownSeconds: "Кийинки экспорт {seconds} секунддан кийин",
     cooldownMinutes: "Кийинки экспорт {minutes} мүнөттөн кийин",

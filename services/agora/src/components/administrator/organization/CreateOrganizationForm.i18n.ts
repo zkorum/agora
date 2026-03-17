@@ -93,6 +93,7 @@ export const createOrganizationFormTranslations: Record<
       "Full path: https://agoracitizen.network/images/big_logo_agora.png",
     websiteUrlLabel: "آدرس وب‌سایت",
     addOrganizationButton: "افزودن سازمان",
+  },
   ky: {
     nameLabel: "Аты",
     descriptionLabel: "Сүрөттөмө",

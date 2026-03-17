@@ -58,6 +58,7 @@ export const userIdentityCardTranslations: Record<
   fa: {
     guestParticipationTooltip: "مشارکت مهمان فعال است",
     edited: "ویرایش شده",
+  },
   ky: {
     guestParticipationTooltip: "Конок катышуу иштетилген",
     emailVerificationTooltip: "Электрондук почта текшерүүсү талап кылынат",

@@ -75,6 +75,7 @@ export const welcomeTranslations: Record<
     agreement: "پس از بازگشت به این نظر برمی‌گردید.",
     reportUserContent: "برای گزارش محتوا به حساب کاربری نیاز است.",
     voting: "پس از بازگشت به این گفتگو برمی‌گردید.",
+  },
   ky: {
     newOpinion: "Жазган пикириңиздин черновиги кайтып келгенде калыбына келтирилет.",
     newConversation:

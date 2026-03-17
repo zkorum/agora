@@ -105,6 +105,7 @@ export const spokenLanguageSelectorTranslations: Record<
     cannotRemoveLastLanguage: "باید حداقل یک زبان انتخاب شده باشد",
     failedToSaveLanguages: "ذخیره ترجیحات زبان ناموفق بود",
     failedToLoadLanguages: "بارگذاری ترجیحات زبان ناموفق بود",
+  },
   ky: {
     selectedLanguages: "Тандалган тилдер",
     addMoreLanguages: "Дагы тил кошуу",

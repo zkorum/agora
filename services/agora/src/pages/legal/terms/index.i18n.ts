@@ -31,6 +31,7 @@ export const termsOfServiceTranslations: Record<
   },
   fa: {
     termsOfService: "شرایط خدمات",
+  },
   ky: {
     termsOfService: "Кызмат көрсөтүү шарттары",
   },

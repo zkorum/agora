@@ -58,6 +58,7 @@ export const postLockedMessageTranslations: Record<
     closedMessage:
       "این گفتگو توسط مالک بسته شده است. نظرات و رای‌های جدید قابل ارسال نیست.",
     editButton: "ویرایش",
+  },
   ky: {
     lockedMessage: "Жазуу \"{reason}\" катары кулпуланган. Жаңы пикирлерди жарыялоого болбойт.",
     closedMessage:

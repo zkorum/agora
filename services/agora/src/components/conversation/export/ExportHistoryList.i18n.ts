@@ -88,6 +88,7 @@ export const exportHistoryListTranslations: Record<
     statusCompleted: "تکمیل شد",
     statusFailed: "ناموفق",
     statusCancelled: "لغو شد",
+  },
   ky: {
     loadingExports: "Экспорттор жүктөлүүдө...",
     noExportsYet: "Азырынча экспорттор жок. Жогорудан биринчи экспортуңузду сураңыз!",
