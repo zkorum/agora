@@ -58,10 +58,12 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
   };
 
   let fullHomeFeedList: ExtendedConversation[] = [];
+  let fullHomeFeedIndex = 0;
   const partialHomeFeedList = ref<ExtendedConversation[]>([]);
 
   function setFeedData(data: FetchFeedResponse) {
-    fullHomeFeedList = data.conversationDataList;
+    fullHomeFeedList = [...data.conversationDataList];
+    fullHomeFeedIndex = 0;
     partialHomeFeedList.value = [];
     hasPendingNewPosts.value = false;
     localTopConversationSlugIdList = data.topConversationSlugIdList;
@@ -110,16 +112,18 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
   }
 
   function loadMore(): boolean {
-    if (fullHomeFeedList.length > 0) {
-      const itemsToLoad: ExtendedConversation[] = fullHomeFeedList.splice(
-        0,
-        Math.min(POSTS_PER_PAGE, fullHomeFeedList.length)
+    if (fullHomeFeedIndex < fullHomeFeedList.length) {
+      const end = Math.min(
+        fullHomeFeedIndex + POSTS_PER_PAGE,
+        fullHomeFeedList.length
       );
-      partialHomeFeedList.value = partialHomeFeedList.value.concat(itemsToLoad);
+      const itemsToLoad = fullHomeFeedList.slice(fullHomeFeedIndex, end);
+      fullHomeFeedIndex = end;
+      partialHomeFeedList.value =
+        partialHomeFeedList.value.concat(itemsToLoad);
     }
 
-    const hasMore = fullHomeFeedList.length > 0;
-    return hasMore;
+    return fullHomeFeedIndex < fullHomeFeedList.length;
   }
 
   return {
