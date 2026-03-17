@@ -14,12 +14,13 @@ export interface PassportOnboardingTranslations {
   waitingForVerification: string;
   verify: string;
   preferPhoneVerification: string;
+  preferEmailLogin: string;
   verificationSuccessful: string;
   accountMerged: string;
   verificationFailed: string;
   passportAlreadyLinked: string;
   unexpectedError: string;
-  syncHiccup: string;
+  credentialAlreadyLinked: string;
   copiedToClipboard: string;
   couldNotCopy: string;
 }
@@ -43,14 +44,15 @@ export const passportOnboardingTranslations: Record<
     waitingForVerification: "Waiting for verification...",
     verify: "Verify",
     preferPhoneVerification: "I'd rather verify with my phone number",
+    preferEmailLogin: "I prefer to use my email address",
     verificationSuccessful: "Verification successful 🎉",
     accountMerged: "Success! Your accounts have been merged 🎉",
     verificationFailed: "Verification attempt failed. Please retry.",
     passportAlreadyLinked:
       "This passport is already linked to another Rarimo account. Please try a different one.",
     unexpectedError: "Oops! Unexpected error—try refreshing the page",
-    syncHiccup:
-      "Oops! Sync hiccup detected. We've refreshed your QR code—try scanning it again!",
+    credentialAlreadyLinked:
+      "This passport is already linked to another account",
     copiedToClipboard: "Copied link to clipboard",
     couldNotCopy: "Could not copy to clipboard",
   },
@@ -69,14 +71,15 @@ export const passportOnboardingTranslations: Record<
     waitingForVerification: "في انتظار التحقق...",
     verify: "تحقق",
     preferPhoneVerification: "أفضل التحقق برقم الهاتف",
+    preferEmailLogin: "أفضل استخدام بريدي الإلكتروني",
     verificationSuccessful: "تم التحقق بنجاح 🎉",
     accountMerged: "نجح! تم دمج حساباتك 🎉",
     verificationFailed: "فشلت محاولة التحقق. يرجى المحاولة مرة أخرى.",
     passportAlreadyLinked:
       "جواز السفر هذا مرتبط بالفعل بحساب رقمي آخر. يرجى تجربة جواز سفر آخر.",
     unexpectedError: "عفواً! خطأ غير متوقع - حاول تحديث الصفحة",
-    syncHiccup:
-      "عفواً! تم اكتشاف خلل في المزامنة. لقد حدثنا رمز الاستجابة السريعة - حاول مسحه مرة أخرى!",
+    credentialAlreadyLinked:
+      "جواز السفر هذا مرتبط بالفعل بحساب آخر",
     copiedToClipboard: "تم نسخ الرابط إلى الحافظة",
     couldNotCopy: "تعذر النسخ إلى الحافظة",
   },
@@ -96,6 +99,7 @@ export const passportOnboardingTranslations: Record<
     waitingForVerification: "Esperando verificación...",
     verify: "Verificar",
     preferPhoneVerification: "Prefiero verificar con mi número de teléfono",
+    preferEmailLogin: "Prefiero usar mi correo electrónico",
     verificationSuccessful: "Verificación exitosa 🎉",
     accountMerged: "¡Éxito! Sus cuentas han sido fusionadas 🎉",
     verificationFailed:
@@ -103,8 +107,8 @@ export const passportOnboardingTranslations: Record<
     passportAlreadyLinked:
       "Este pasaporte ya está vinculado a otra cuenta de Rarimo. Por favor, intente con uno diferente.",
     unexpectedError: "¡Ups! Error inesperado—intente refrescar la página",
-    syncHiccup:
-      "¡Ups! Detectamos un problema de sincronización. Hemos actualizado su código QR—¡intente escanearlo de nuevo!",
+    credentialAlreadyLinked:
+      "Este pasaporte ya está vinculado a otra cuenta",
     copiedToClipboard: "Enlace copiado al portapapeles",
     couldNotCopy: "No se pudo copiar al portapapeles",
   },
@@ -124,6 +128,7 @@ export const passportOnboardingTranslations: Record<
     waitingForVerification: "En attente de vérification...",
     verify: "Vérifier",
     preferPhoneVerification: "Je préfère vérifier avec mon numéro de téléphone",
+    preferEmailLogin: "Je préfère utiliser mon adresse e-mail",
     verificationSuccessful: "Vérification réussie 🎉",
     accountMerged: "Succès ! Vos comptes ont été fusionnés 🎉",
     verificationFailed:
@@ -131,8 +136,8 @@ export const passportOnboardingTranslations: Record<
     passportAlreadyLinked:
       "Ce passeport est déjà lié à un autre compte Rarimo. Veuillez en essayer un différent.",
     unexpectedError: "Oups ! Erreur inattendue—essayez de rafraîchir la page",
-    syncHiccup:
-      "Oups ! Problème de synchronisation détecté. Nous avons actualisé votre code QR—essayez de le scanner à nouveau !",
+    credentialAlreadyLinked:
+      "Ce passeport est déjà associé à un autre compte",
     copiedToClipboard: "Lien copié dans le presse-papiers",
     couldNotCopy: "Impossible de copier dans le presse-papiers",
   },
@@ -151,13 +156,14 @@ export const passportOnboardingTranslations: Record<
     waitingForVerification: "等待验证...",
     verify: "验证",
     preferPhoneVerification: "我更喜欢使用手机号验证",
+    preferEmailLogin: "我更想用邮箱",
     verificationSuccessful: "验证成功 🎉",
     accountMerged: "成功！您的账户已合并 🎉",
     verificationFailed: "验证尝试失败。请重试。",
     passportAlreadyLinked:
       "此护照已与另一个 Rarimo 账户关联。请尝试使用不同的护照。",
     unexpectedError: "哎呀！意外错误——请刷新页面",
-    syncHiccup: "哎呀！同步问题检测到。我们已经刷新了您的二维码——请再次扫描！",
+    credentialAlreadyLinked: "此护照已关联到另一个账户",
     copiedToClipboard: "已复制链接到剪贴板",
     couldNotCopy: "无法复制到剪贴板",
   },
@@ -176,13 +182,14 @@ export const passportOnboardingTranslations: Record<
     waitingForVerification: "等待驗證...",
     verify: "驗證",
     preferPhoneVerification: "我更喜歡使用手機號驗證",
+    preferEmailLogin: "我更想用郵箱",
     verificationSuccessful: "驗證成功 🎉",
     accountMerged: "成功！您的帳戶已合併 🎉",
     verificationFailed: "驗證嘗試失敗。請重試。",
     passportAlreadyLinked:
       "此護照已與另一個 Rarimo 賬戶關聯。請嘗試使用不同的護照。",
     unexpectedError: "哎呀！意外錯誤——請刷新頁面",
-    syncHiccup: "哎呀！同步問題檢測到。我們已經刷新了您的二維碼——請再次掃描！",
+    credentialAlreadyLinked: "此護照已關聯到另一個帳戶",
     copiedToClipboard: "已複製連結到剪貼簿",
     couldNotCopy: "無法複製到剪貼簿",
   },
@@ -202,6 +209,7 @@ export const passportOnboardingTranslations: Record<
     waitingForVerification: "検証待ち...",
     verify: "検証",
     preferPhoneVerification: "携帯電話で検証したい",
+    preferEmailLogin: "メールアドレスを使いたい",
     verificationSuccessful: "検証成功 🎉",
     accountMerged: "成功！アカウントが統合されました 🎉",
     verificationFailed: "検証試行に失敗しました。再試行してください。",
@@ -209,8 +217,8 @@ export const passportOnboardingTranslations: Record<
       "このパスポートはすでに別の Rarimo アカウントにリンクされています。別のパスポートを試してください。",
     unexpectedError:
       "おっと！予期しないエラーが発生しました—ページを更新してください",
-    syncHiccup:
-      "おっと！同期の問題が検出されました。QR コードを更新しました—再スキャンしてください！",
+    credentialAlreadyLinked:
+      "このパスポートはすでに別のアカウントにリンクされています",
     copiedToClipboard: "リンクをクリップボードにコピーしました",
     couldNotCopy: "クリップボードにコピーできませんでした",
   },
@@ -239,5 +247,58 @@ export const passportOnboardingTranslations: Record<
       "مشکلی در همگام‌سازی پیش آمد. کد QR شما بازآوری شد — دوباره اسکن کنید!",
     copiedToClipboard: "لینک در کلیپ‌بورد کپی شد",
     couldNotCopy: "کپی در کلیپ‌بورد ممکن نبود",
+  ky: {
+    pageTitle: "Купуялыгыңызды коргоңуз",
+    description:
+      "Rarimo — бул ZK технологиясына негизделген инсандык капчык, ал паспортуңузду анонимдүү санариптик IDге айландырат жана түзмөгүңүздө сактайт, ошондуктан сиз жеке маалыматыңызды эч ким менен бөлүшпөстөн, уникалдуу адам экениңизди далилдей аласыз.",
+    download: "Жүктөп алуу",
+    claimAnonymousId: "Анонимдүү IDңизди алыңыз",
+    comeBackAndVerify: "Бул жакка кайтып келип, Текшерүүнү басыңыз",
+    scanQrCode: "Инсандыгыңызды текшерүү үчүн Rarimo менен QR кодду скандаңыз",
+    failedToGenerateLink: "Текшерүү шилтемесин түзүү ишке ашкан жок",
+    loadingVerificationLink: "Текшерүү шилтемеси жүктөлүүдө",
+    openLinkOnMobile: "Же төмөнкү шилтемени мобилдик браузериңизде ачыңыз:",
+    copy: "Көчүрүү",
+    waitingForVerification: "Текшерүү күтүлүүдө...",
+    verify: "Текшерүү",
+    preferPhoneVerification: "Телефон номерим менен текшерүүнү каалайм",
+    preferEmailLogin: "Электрондук почтамды колдонгум келет",
+    verificationSuccessful: "Текшерүү ийгиликтүү 🎉",
+    accountMerged: "Ийгилик! Каттоо эсептериңиз бириктирилди 🎉",
+    verificationFailed: "Текшерүү аракети ишке ашкан жок. Кайра аракет кылыңыз.",
+    passportAlreadyLinked:
+      "Бул паспорт башка Rarimo каттоо эсебине байланышкан. Башкасын колдонуп көрүңүз.",
+    unexpectedError: "Ой! Күтүлбөгөн ката—баракты жаңылаңыз",
+    credentialAlreadyLinked:
+      "Бул паспорт башка каттоо эсебине байланышкан",
+    copiedToClipboard: "Шилтеме алмашуу буферине көчүрүлдү",
+    couldNotCopy: "Алмашуу буферине көчүрүү мүмкүн болгон жок",
+  },
+  ru: {
+    pageTitle: "Защитите свою приватность",
+    description:
+      "Rarimo — это кошелёк идентификации на основе ZK-доказательств, который преобразует ваш паспорт в анонимный цифровой ID, хранящийся на вашем устройстве, позволяя доказать свою уникальность без раскрытия персональных данных.",
+    download: "Скачать",
+    claimAnonymousId: "Получить анонимный ID",
+    comeBackAndVerify: "Вернитесь сюда и нажмите Подтвердить",
+    scanQrCode: "Отсканируйте QR-код с помощью Rarimo для подтверждения личности",
+    failedToGenerateLink: "Не удалось сгенерировать ссылку для верификации",
+    loadingVerificationLink: "Загрузка ссылки для верификации",
+    openLinkOnMobile: "Или откройте ссылку ниже в мобильном браузере:",
+    copy: "Копировать",
+    waitingForVerification: "Ожидание верификации...",
+    verify: "Подтвердить",
+    preferPhoneVerification: "Предпочитаю верификацию по номеру телефона",
+    preferEmailLogin: "Предпочитаю использовать электронную почту",
+    verificationSuccessful: "Верификация прошла успешно 🎉",
+    accountMerged: "Аккаунты успешно объединены 🎉",
+    verificationFailed: "Попытка верификации не удалась. Попробуйте ещё раз.",
+    passportAlreadyLinked:
+      "Этот паспорт уже привязан к другому аккаунту Rarimo. Попробуйте другой.",
+    unexpectedError: "Ой! Непредвиденная ошибка — попробуйте обновить страницу",
+    credentialAlreadyLinked:
+      "Этот паспорт уже привязан к другому аккаунту",
+    copiedToClipboard: "Ссылка скопирована в буфер обмена",
+    couldNotCopy: "Не удалось скопировать в буфер обмена",
   },
 };

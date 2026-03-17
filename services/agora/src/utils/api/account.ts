@@ -1,9 +1,9 @@
 import type { ApiV1UserUsernameUpdatePostRequest } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
-import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useUserStore } from "src/stores/user";
 
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
+import { queryClient } from "../query/client";
 import { useNotify } from "../ui/notify";
 import { api } from "./client";
 import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
@@ -16,7 +16,6 @@ export function useBackendAccountApi() {
     createRawAxiosRequestConfig,
   } = useCommonApi();
 
-  const { loadPostData } = useHomeFeedStore();
   const { loadUserProfile } = useUserStore();
 
   const { showNotifyMessage } = useNotify();
@@ -54,7 +53,7 @@ export function useBackendAccountApi() {
         params,
         createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
       );
-      await loadPostData();
+      void queryClient.invalidateQueries({ queryKey: ["feed"] });
       await loadUserProfile();
       return {
         status: "success",

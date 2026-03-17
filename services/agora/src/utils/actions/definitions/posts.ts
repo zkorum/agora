@@ -88,7 +88,7 @@ export function getPostActions(
       variant: "warning",
       handler: moderatePostCallback,
       isVisible: (context: ContentActionContext) =>
-        context.isModerator && !context.isEmbeddedMode,
+        context.isSiteModerator && !context.isEmbeddedMode,
     },
     {
       id: "userReports",
@@ -96,7 +96,7 @@ export function getPostActions(
       icon: "mdi-account-alert",
       handler: openUserReportsCallback,
       isVisible: (context: ContentActionContext) =>
-        context.isModerator && !context.isEmbeddedMode,
+        context.isSiteModerator && !context.isEmbeddedMode,
     },
     {
       id: "report",

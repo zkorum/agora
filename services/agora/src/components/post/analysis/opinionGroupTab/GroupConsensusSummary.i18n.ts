@@ -57,5 +57,16 @@ export const groupConsensusSummaryTranslations: Record<
     aiSummaryTitle: "خلاصه هوش مصنوعی",
     aiSummaryDescription:
       "We use Mistral Large (LLM model) to generate the summary & labels for each consensus group.",
+  ky: {
+    groupSummaryTitle: "Топтун корутундусу",
+    aiSummaryTitle: "AI корутундусу",
+    aiSummaryDescription:
+      "Биз ар бир консенсус тобу үчүн корутунду жана энбелгилерди түзүү үчүн Mistral Large (LLM модели) колдонобуз.",
+  },
+  ru: {
+    groupSummaryTitle: "Сводка группы",
+    aiSummaryTitle: "Сводка ИИ",
+    aiSummaryDescription:
+      "Мы используем Mistral Large (модель LLM) для генерации сводки и меток для каждой группы консенсуса.",
   },
 };

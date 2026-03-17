@@ -26,8 +26,8 @@ export const activeImportBannerTranslations: Record<
   },
   fr: {
     message:
-      "Vous avez une importation en cours. Veuillez attendre qu'elle soit terminée avant d'en démarrer une nouvelle.",
-    viewStatus: "Voir l'État de l'Importation",
+      "Vous avez un import en cours. Veuillez attendre qu'il soit terminé avant d'en démarrer un nouveau.",
+    viewStatus: "Voir l'État de l'Import",
   },
   "zh-Hans": {
     message: "您有一个正在进行的导入。请等待完成后再开始新的导入。",
@@ -46,5 +46,14 @@ export const activeImportBannerTranslations: Record<
     message:
       "You have an import in progress. Please wait for it to complete before starting a new one.",
     viewStatus: "مشاهده وضعیت واردسازی",
+  ky: {
+    message:
+      "Импорттоо жүрүп жатат. Жаңысын баштоодон мурун аяктаганын күтүңүз.",
+    viewStatus: "Импорт абалын көрүү",
+  },
+  ru: {
+    message:
+      "У вас есть незавершённый импорт. Пожалуйста, дождитесь его завершения перед запуском нового.",
+    viewStatus: "Просмотреть статус импорта",
   },
 };

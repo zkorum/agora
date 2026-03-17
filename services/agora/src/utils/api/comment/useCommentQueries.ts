@@ -255,13 +255,21 @@ export function useInvalidateCommentQueries() {
         refetchType: "none", // Mark as stale but don't refetch immediately
       });
     },
-    invalidateAll: (conversationSlugId: string) => {
-      void queryClient.invalidateQueries({
+    markCommentsAsStale: (conversationSlugId: string) => {
+      return queryClient.invalidateQueries({
         queryKey: ["comments", conversationSlugId],
+        refetchType: "none", // Mark as stale but don't refetch immediately
       });
-      void queryClient.invalidateQueries({
-        queryKey: ["analysis", conversationSlugId],
-      });
+    },
+    invalidateAll: (conversationSlugId: string) => {
+      return Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["comments", conversationSlugId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["analysis", conversationSlugId],
+        }),
+      ]);
     },
   };
 }

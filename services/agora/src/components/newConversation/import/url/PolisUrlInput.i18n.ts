@@ -87,6 +87,22 @@ export const polisUrlInputTranslations: Record<
     urlPlaceholder: "e.g., https://pol.is/xxxxx",
     polisTerms: "شرایط Pol.is",
     termsOfUse: "شرایط استفاده",
+  ky: {
+    importTitle: "Polis'тен талкуу импорттоо",
+    description: "Талкууну импорттоо үчүн төмөнгө Polis URL чаптаңыз.",
+    validUrlExamples: "Жарактуу URL мисалдары:",
+    urlPlaceholder: "мис., https://pol.is/xxxxx",
+    polisTerms: "Pol.is шарттары",
+    termsOfUse: "Колдонуу шарттары",
+    ccLicense: "CC BY 4.0",
+  },
+  ru: {
+    importTitle: "Импорт обсуждения из Polis",
+    description: "Вставьте URL Polis ниже, чтобы импортировать обсуждение.",
+    validUrlExamples: "Примеры допустимых URL:",
+    urlPlaceholder: "напр., https://pol.is/xxxxx",
+    polisTerms: "Условия Pol.is",
+    termsOfUse: "Условия использования",
     ccLicense: "CC BY 4.0",
   },
 };

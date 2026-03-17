@@ -36,5 +36,10 @@ export const webShareTranslations: Record<
   },
   fa: {
     copiedToClipboard: "لینک در کلیپ‌بورد کپی شد",
+  ky: {
+    copiedToClipboard: "Шилтеме алмашуу буферине көчүрүлдү",
+  },
+  ru: {
+    copiedToClipboard: "Ссылка скопирована в буфер обмена",
   },
 };

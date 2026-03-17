@@ -54,5 +54,14 @@ export const shareActionsTranslations: Record<
     copyLink: "کپی لینک",
     showQrCode: "نمایش کد QR",
     shareVia: "اشتراک‌گذاری از طریق...",
+  ky: {
+    copyLink: "Шилтемени көчүрүү",
+    showQrCode: "QR кодду көрсөтүү",
+    shareVia: "Бөлүшүү...",
+  },
+  ru: {
+    copyLink: "Копировать ссылку",
+    showQrCode: "Показать QR-код",
+    shareVia: "Поделиться через...",
   },
 };

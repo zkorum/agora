@@ -88,7 +88,11 @@ export function useAuthPhoneApi() {
     phoneNumber,
     defaultCallingCode,
   }: VerifyPhoneOtpProps): Promise<VerifyPhoneOtpResponse> {
-    if (processEnv.VITE_DEV_AUTHORIZED_PHONES) {
+    const authorizedPhones =
+      processEnv.VITE_DEV_AUTHORIZED_PHONES?.split(",").map((p) =>
+        p.trim()
+      ) ?? [];
+    if (authorizedPhones.includes(phoneNumber)) {
       code = 0;
     }
 

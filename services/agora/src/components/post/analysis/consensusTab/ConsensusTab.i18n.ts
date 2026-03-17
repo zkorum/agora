@@ -158,5 +158,40 @@ export const consensusTabTranslations: Record<
     noAgreementsMessage: "هنوز اجماعی شکل نگرفته است.",
     noDisagreementsMessage: "هنوز اجماعی شکل نگرفته است.",
     lowerRankedDivider: "از نظر آماری کم‌اهمیت‌تر",
+  ky: {
+    agreementsTitle: "Жактырылган",
+    disagreementsTitle: "Четке кагылган",
+    agreementsLongTitle:
+      "Кайсы пикирлер бардык топтор тарабынан {keyword}?",
+    disagreementsLongTitle:
+      "Кайсы пикирлер бардык топтор тарабынан {keyword}?",
+    agreementsKeyword: "жактырылган",
+    disagreementsKeyword: "четке кагылган",
+    subtitleAgree:
+      "Бардык пикир топтору бир добуштан жактырган пикирлер — жөнөкөй көпчүлүк эмес, топтор аралык консенсус. Статистикалык жактан эң маанилүүлөрү гана көрсөтүлөт.",
+    subtitleDisagree:
+      "Бардык пикир топтору бир добуштан четке каккан пикирлер — жөнөкөй көпчүлүк эмес, топтор аралык консенсус. Статистикалык жактан эң маанилүүлөрү гана көрсөтүлөт.",
+    loadMore: "Баарын жүктөө",
+    noAgreementsMessage: "Азырынча консенсус түзүлө элек.",
+    noDisagreementsMessage: "Азырынча консенсус түзүлө элек.",
+    lowerRankedDivider: "Статистикалык маанилүүлүгү төмөн",
+  },
+  ru: {
+    agreementsTitle: "Одобрено",
+    disagreementsTitle: "Отклонено",
+    agreementsLongTitle:
+      "Какие высказывания {keyword} всеми группами?",
+    disagreementsLongTitle:
+      "Какие высказывания {keyword} всеми группами?",
+    agreementsKeyword: "одобрены",
+    disagreementsKeyword: "отклонены",
+    subtitleAgree:
+      "Высказывания, единогласно одобренные всеми группами мнений — не простое большинство, а межгрупповой консенсус. Показаны только наиболее статистически значимые.",
+    subtitleDisagree:
+      "Высказывания, единогласно отклонённые всеми группами мнений — не простое большинство, а межгрупповой консенсус. Показаны только наиболее статистически значимые.",
+    loadMore: "Загрузить все",
+    noAgreementsMessage: "Консенсус пока не сформирован.",
+    noDisagreementsMessage: "Консенсус пока не сформирован.",
+    lowerRankedDivider: "Менее статистически значимые",
   },
 };

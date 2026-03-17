@@ -8,7 +8,7 @@ const translations: TranslationSchema = {
     loading: "Chargement...",
   },
   importConversation: {
-    legalNotice: `En cliquant sur "Importer", vous confirmez que l'importation du contenu respecte les {polisTerms} et nos {termsOfUse}. Notez que les données originales de Polis sont sous licence {ccLicense}. N'importez pas de contenu illégal ou abusif. Utilisez l'API d'importation de manière responsable. Les abus sont interdits.`,
+    legalNotice: `En cliquant sur "Importer", vous confirmez que l'import du contenu respecte les {polisTerms} et nos {termsOfUse}. Notez que les données originales de Polis sont sous licence {ccLicense}. N'importez pas de contenu illégal ou abusif. Utilisez l'API d'import de manière responsable. Les abus sont interdits.`,
   },
 };
 

@@ -3,7 +3,7 @@
     <ZKBottomDialogContainer>
       <ZKDialogOptionsList
         :options="loginRequirementOptions"
-        :selected-value="requiresLogin ? 'requiresLogin' : 'guestParticipation'"
+        :selected-value="participationMode"
         @option-selected="handleOptionSelected"
       />
     </ZKBottomDialogContainer>
@@ -14,8 +14,7 @@
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKDialogOptionsList from "src/components/ui-library/ZKDialogOptionsList.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { EventSlug } from "src/shared/types/zod";
-import { useNotify } from "src/utils/ui/notify";
+import type { ParticipationMode } from "src/shared/types/zod";
 import { computed } from "vue";
 
 import {
@@ -24,29 +23,29 @@ import {
 } from "./LoginRequirementDialog.i18n";
 
 const showDialog = defineModel<boolean>("showDialog", { required: true });
-const requiresLogin = defineModel<boolean>("requiresLogin", { required: true });
-const isPrivate = defineModel<boolean>("isPrivate", { required: true });
-const requiresEventTicket = defineModel<EventSlug | undefined>(
-  "requiresEventTicket",
-  { required: true }
-);
+const participationMode = defineModel<ParticipationMode>("participationMode", {
+  required: true,
+});
 
 const { t } = useComponentI18n<LoginRequirementDialogTranslations>(
   loginRequirementDialogTranslations
 );
 
-const { showNotifyMessage } = useNotify();
-
 const loginRequirementOptions = computed(() => [
   {
     title: t("requiresLoginTitle"),
     description: t("requiresLoginDescription"),
-    value: "requiresLogin",
+    value: "strong_verification" satisfies ParticipationMode,
+  },
+  {
+    title: t("requiresEmailVerificationTitle"),
+    description: t("requiresEmailVerificationDescription"),
+    value: "email_verification" satisfies ParticipationMode,
   },
   {
     title: t("guestParticipationTitle"),
     description: t("guestParticipationDescription"),
-    value: "guestParticipation",
+    value: "guest" satisfies ParticipationMode,
   },
 ]);
 
@@ -55,17 +54,7 @@ function handleOptionSelected(option: {
   description: string;
   value: string;
 }): void {
-  const isSelectingGuest = option.value === "guestParticipation";
-  const isPublic = !isPrivate.value;
-  const hasTicketVerification = requiresEventTicket.value !== undefined;
-
-  // Cross-cutting validation: guest + public requires event ticket
-  if (isSelectingGuest && isPublic && !hasTicketVerification) {
-    isPrivate.value = true;
-    showNotifyMessage(t("conversationSwitchedToPrivate"));
-  }
-
-  requiresLogin.value = option.value === "requiresLogin";
+  participationMode.value = option.value as ParticipationMode;
   showDialog.value = false;
 }
 </script>

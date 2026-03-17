@@ -93,5 +93,24 @@ export const createOrganizationFormTranslations: Record<
       "Full path: https://agoracitizen.network/images/big_logo_agora.png",
     websiteUrlLabel: "آدرس وب‌سایت",
     addOrganizationButton: "افزودن سازمان",
+  ky: {
+    nameLabel: "Аты",
+    descriptionLabel: "Сүрөттөмө",
+    imagePathLabel: "Сүрөт жолу (файлдын аты же https жолу)",
+    fileNameExample: "Файлдын аты: avatar_default_0.png",
+    fullPathExample:
+      "Толук жол: https://agoracitizen.network/images/big_logo_agora.png",
+    websiteUrlLabel: "Веб-сайттын URL дареги",
+    addOrganizationButton: "Уюм кошуу",
+  },
+  ru: {
+    nameLabel: "Название",
+    descriptionLabel: "Описание",
+    imagePathLabel: "Путь к изображению (имя файла или https-путь)",
+    fileNameExample: "Имя файла: avatar_default_0.png",
+    fullPathExample:
+      "Полный путь: https://agoracitizen.network/images/big_logo_agora.png",
+    websiteUrlLabel: "URL веб-сайта",
+    addOrganizationButton: "Добавить организацию",
   },
 };

@@ -16,4 +16,6 @@ export const notFoundTranslations: Record<
   "zh-Hant": { pageNotFound: "頁面未找到。" },
   ja: { pageNotFound: "ページが見つかりません。" },
   fa: { pageNotFound: "صفحه یافت نشد." },
+  ky: { pageNotFound: "Барак табылган жок." },
+  ru: { pageNotFound: "Страница не найдена." },
 };

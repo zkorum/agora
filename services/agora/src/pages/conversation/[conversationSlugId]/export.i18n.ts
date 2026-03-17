@@ -86,25 +86,25 @@ export const exportPageTranslations: Record<
   fr: {
     pageTitle: "Exporter la Conversation",
     pageDescription:
-      "Téléchargez une exportation CSV de toutes les propositions et votes pour cette conversation.",
-    previousExports: "Exportations Précédentes",
+      "Téléchargez un export CSV de toutes les propositions et votes pour cette conversation.",
+    previousExports: "Exports Précédents",
     conversationLoadError:
       "Échec du chargement des détails de la conversation. Veuillez réessayer.",
     exportRequestError:
-      "Échec de la création de l'exportation. Veuillez réessayer.",
+      "Échec de la création de l'export. Veuillez réessayer.",
     exportCooldownMinutes:
-      "Période d'attente active. Vous pouvez demander une autre exportation dans {minutes} minute(s).",
+      "Période d'attente active. Vous pouvez demander un autre export dans {minutes} minute(s).",
     exportCooldownSeconds:
-      "Période d'attente active. Vous pouvez demander une autre exportation dans {seconds} seconde(s).",
+      "Période d'attente active. Vous pouvez demander un autre export dans {seconds} seconde(s).",
     viewConversation: "Voir la conversation",
     requestExportAriaLabel:
-      "Demander l'exportation des données de conversation",
+      "Demander l'export des données de conversation",
     errorActiveExportInProgress:
-      "Une exportation est déjà en cours. Veuillez attendre qu'elle soit terminée.",
+      "Un export est déjà en cours. Veuillez attendre qu'il soit terminé.",
     errorConversationNotFound: "Conversation introuvable.",
     errorNoOpinions:
       "Cette conversation n'a pas de propositions à exporter. Ajoutez d'abord quelques propositions.",
-    exportFeatureDisabled: "La fonction d'exportation est désactivée",
+    exportFeatureDisabled: "La fonction d'export est désactivée",
   },
   "zh-Hans": {
     pageTitle: "导出对话",
@@ -180,5 +180,47 @@ export const exportPageTranslations: Record<
     errorNoOpinions:
       "This conversation has no statements to export. Add some statements first.",
     exportFeatureDisabled: "قابلیت خروجی غیرفعال است",
+  ky: {
+    pageTitle: "Талкууну экспорттоо",
+    pageDescription:
+      "Бул талкуунун бардык пикирлери жана добуштарынын CSV экспортун жүктөп алыңыз.",
+    previousExports: "Мурунку экспорттор",
+    conversationLoadError:
+      "Талкуу маалыматтарын жүктөө ишке ашкан жок. Кайра аракет кылыңыз.",
+    exportRequestError: "Экспортту түзүү ишке ашкан жок. Кайра аракет кылыңыз.",
+    exportCooldownMinutes:
+      "Экспорт күтүү режиминде. {minutes} мүнөттөн кийин башка экспорт сурай аласыз.",
+    exportCooldownSeconds:
+      "Экспорт күтүү режиминде. {seconds} секунддан кийин башка экспорт сурай аласыз.",
+    viewConversation: "Талкууну көрүү",
+    requestExportAriaLabel: "Талкуу маалыматтарын экспорттоону суроо",
+    errorActiveExportInProgress:
+      "Экспорт мурунтан эле жүрүп жатат. Аяктаганча күтүңүз.",
+    errorConversationNotFound: "Талкуу табылган жок.",
+    errorNoOpinions:
+      "Бул талкууда экспорттоого пикирлер жок. Алгач пикирлерди кошуңуз.",
+    exportFeatureDisabled: "Экспорт функциясы өчүрүлгөн",
+  },
+  ru: {
+    pageTitle: "Экспорт обсуждения",
+    pageDescription:
+      "Скачайте CSV-экспорт всех высказываний и голосов этого обсуждения.",
+    previousExports: "Предыдущие экспорты",
+    conversationLoadError:
+      "Не удалось загрузить данные обсуждения. Пожалуйста, попробуйте ещё раз.",
+    exportRequestError:
+      "Не удалось создать экспорт. Пожалуйста, попробуйте ещё раз.",
+    exportCooldownMinutes:
+      "Период ожидания экспорта. Вы сможете запросить новый экспорт через {minutes} мин.",
+    exportCooldownSeconds:
+      "Период ожидания экспорта. Вы сможете запросить новый экспорт через {seconds} сек.",
+    viewConversation: "Просмотреть обсуждение",
+    requestExportAriaLabel: "Запросить экспорт данных обсуждения",
+    errorActiveExportInProgress:
+      "Экспорт уже выполняется. Пожалуйста, дождитесь его завершения.",
+    errorConversationNotFound: "Обсуждение не найдено.",
+    errorNoOpinions:
+      "В этом обсуждении нет высказываний для экспорта. Сначала добавьте высказывания.",
+    exportFeatureDisabled: "Функция экспорта отключена",
   },
 };

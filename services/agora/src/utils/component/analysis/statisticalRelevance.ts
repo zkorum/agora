@@ -3,6 +3,9 @@ import { computed, type ComputedRef, type Ref, ref } from "vue";
 /**
  * Display threshold for analysis tabs.
  *
+ * DIVERGENCE FROM POLIS: Polis does not apply score-based display thresholds
+ * or participation-dampened scoring. We add both for better quality control.
+ *
  * The backend ranks items using participation-dampened scoring:
  *   weighted_score = raw_score × totalVotes / GREATEST(totalVotes + participantCount × 0.1, 1)
  * (see services/api/src/utils/sqlLogic.ts — participationWeight)

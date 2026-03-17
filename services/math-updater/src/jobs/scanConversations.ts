@@ -61,9 +61,12 @@ export async function scanConversations({
         )
         .where(
             and(
-                // Condition 0: Exclude conversations still being imported
+                // Condition 0a: Exclude conversations still being imported
                 // These have isImporting=true until all data is inserted
                 eq(conversationTable.isImporting, false),
+                // Condition 0b: Only process polis conversations
+                // MaxDiff conversations don't need Polis clustering
+                eq(conversationTable.conversationType, "polis"),
                 // Condition 1: New data arrived since last math update
                 // (or never processed)
                 or(

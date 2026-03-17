@@ -44,4 +44,14 @@ export const useCommentQueriesTranslations: Record<
     commentDeletedSuccessfully: "تم حذف المقترح بنجاح",
     failedToDeleteComment: "فشل في حذف المقترح. يرجى المحاولة مرة أخرى.",
   },
+  ky: {
+    commentDeletedSuccessfully: "Пикир ийгиликтүү жок кылынды",
+    failedToDeleteComment:
+      "Пикирди жок кылуу ишке ашкан жок. Кайра аракет кылыңыз.",
+  },
+  ru: {
+    commentDeletedSuccessfully: "Высказывание успешно удалено",
+    failedToDeleteComment:
+      "Не удалось удалить высказывание. Пожалуйста, попробуйте снова.",
+  },
 };

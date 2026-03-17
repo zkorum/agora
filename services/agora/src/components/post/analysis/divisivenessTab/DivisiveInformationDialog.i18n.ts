@@ -48,5 +48,14 @@ export const divisiveInformationDialogTranslations: Record<
     title: "نظرات بحث‌برانگیز",
     description:
       "Statements where opinion groups disagree with each other. One group approves while another rejects.\n\nThese reveal the key dividing lines in the conversation.\n\nOnly the most statistically significant are shown first.",
+  ky: {
+    title: "Талаштуу пикирлер",
+    description:
+      "Пикир топтору бири-бири менен макул болбогон пикирлер. Бир топ жактырат, экинчиси четке кагат.\n\nБулар талкуудагы негизги бөлүнүү сызыктарын ачып берет.\n\nАлгач статистикалык жактан эң маанилүүлөрү көрсөтүлөт.",
+  },
+  ru: {
+    title: "Спорные высказывания",
+    description:
+      "Высказывания, по которым группы мнений расходятся друг с другом. Одна группа одобряет, а другая отклоняет.\n\nОни выявляют ключевые линии разделения в обсуждении.\n\nСначала показаны наиболее статистически значимые.",
   },
 };

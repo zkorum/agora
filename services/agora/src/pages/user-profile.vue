@@ -48,6 +48,7 @@
             :is-highlighted="currentTab === tabItem.value"
             :should-underline-on-highlight="true"
             :to="{ name: tabItem.route }"
+            :replace="true"
           />
         </div>
       </div>
@@ -68,8 +69,7 @@ import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { getDateString } from "src/utils/common";
-import { onMounted, ref, watch } from "vue";
-import type { RouteRecordName } from "vue-router";
+import { onActivated, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 import {
@@ -77,11 +77,14 @@ import {
   userProfileTranslations,
 } from "./user-profile.i18n";
 
+defineOptions({ name: "UserProfilePage" });
+
 const { loadUserProfile } = useUserStore();
-const { isGuest } = storeToRefs(useAuthenticationStore());
+const authStore = useAuthenticationStore();
+const { isGuest, isAuthInitialized } = storeToRefs(authStore);
 
 interface CustomTab {
-  route: RouteRecordName;
+  route: "/user-profile/conversations/" | "/user-profile/opinions/";
   label: string;
   value: number;
 }
@@ -104,22 +107,37 @@ const tabList: CustomTab[] = [
 ];
 
 const { profileData } = storeToRefs(useUserStore());
-const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 
 const currentTab = ref(0);
 const isLoading = ref(true);
+const hasLoadedOnce = ref(false);
 
 const route = useRoute();
 
 applyCurrentTab();
 
-onMounted(() => {
-  void initialize();
+onActivated(() => {
+  if (!hasLoadedOnce.value && isAuthInitialized.value) {
+    void initialize();
+  }
 });
 
-watch(isAuthInitialized, () => {
-  void initialize();
+watch(isAuthInitialized, (initialized) => {
+  if (initialized && !hasLoadedOnce.value) {
+    void initialize();
+  }
 });
+
+// Reset cached state on logout so stale data isn't shown after re-login
+watch(
+  () => authStore.isLoggedIn,
+  (isLoggedIn) => {
+    if (!isLoggedIn) {
+      hasLoadedOnce.value = false;
+      isLoading.value = true;
+    }
+  }
+);
 
 watch(route, () => {
   applyCurrentTab();
@@ -130,6 +148,7 @@ async function initialize() {
     try {
       isLoading.value = true;
       await loadUserProfile();
+      hasLoadedOnce.value = true;
     } catch (error) {
       console.error("Failed to load user profile:", error);
     } finally {

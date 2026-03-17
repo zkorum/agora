@@ -1,0 +1,2 @@
+CREATE TYPE "public"."participation_mode" AS ENUM('strong_verification', 'email_verification', 'guest');--> statement-breakpoint
+ALTER TABLE "conversation" ADD COLUMN "participation_mode" "participation_mode" DEFAULT 'strong_verification' NOT NULL;

@@ -16,6 +16,9 @@
       </template>
 
       <template #body>
+        <p v-if="!compactMode" class="groups-subtitle">
+          {{ hasAiLabels ? t('groupsSubtitle') : t('groupsSubtitleNoAi') }}
+        </p>
         <EmptyStateMessage
           v-if="Object.keys(props.clusters).length <= 1"
           :message="t('notEnoughGroupsMessage')"
@@ -29,6 +32,11 @@
         />
 
         <template v-if="Object.keys(props.clusters).length > 1">
+          <p v-if="isImbalanced" class="imbalance-notice">
+            <q-icon name="mdi-information-outline" size="0.9rem" />
+            {{ t("imbalanceNotice") }}
+          </p>
+
           <OpinionGroupSelector
             v-if="drawerBehavior == 'desktop'"
             :cluster-metadata-list="props.clusters"
@@ -47,7 +55,15 @@
             :current-cluster-tab="currentClusterTab"
             :has-ungrouped-participants="hasUngroupedParticipants"
             :cluster-labels="clusterLabels"
-          />
+          >
+            <template #after-header>
+              <VoteLegend
+                v-if="Object.keys(props.clusters).length > 1"
+                :items="analysisLegendItems"
+
+              />
+            </template>
+          </OpinionGroupComments>
         </template>
       </template>
     </AnalysisSectionWrapper>
@@ -58,9 +74,15 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import {
+  type VoteLegendTranslations,
+  voteLegendTranslations,
+} from "src/components/ui/VoteLegend.i18n";
+import VoteLegend from "src/components/ui/VoteLegend.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import { useNavigationStore } from "src/stores/navigation";
+import { isClustersImbalanced } from "src/utils/component/opinion";
 import { computed, ref } from "vue";
 
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
@@ -77,11 +99,17 @@ import {
   opinionGroupTabTranslations,
 } from "./OpinionGroupTab.i18n";
 
-const props = defineProps<{
-  conversationSlugId: string;
-  clusters: Partial<PolisClusters>;
-  totalParticipantCount: number;
-}>();
+const props = withDefaults(
+  defineProps<{
+    conversationSlugId: string;
+    clusters: Partial<PolisClusters>;
+    totalParticipantCount: number;
+    compactMode?: boolean;
+  }>(),
+  {
+    compactMode: false,
+  },
+);
 
 const { t } = useComponentI18n<OpinionGroupTabTranslations>(
   opinionGroupTabTranslations
@@ -99,6 +127,26 @@ const hasUngroupedParticipants = computed(() => {
   );
   return props.totalParticipantCount > totalGroupParticipants;
 });
+
+const isImbalanced = computed(() => {
+  const sizes = Object.values(props.clusters).map((c) => c.numUsers);
+  return isClustersImbalanced(sizes);
+});
+
+const hasAiLabels = computed(() =>
+  Object.values(props.clusters).some((cluster) => Boolean(cluster?.aiLabel)),
+);
+
+const { t: tLegend } = useComponentI18n<VoteLegendTranslations>(
+  voteLegendTranslations
+);
+
+const analysisLegendItems = computed(() => [
+  { label: tLegend("agree"), type: "agree" as const },
+  { label: tLegend("unsure"), type: "unsure" as const },
+  { label: tLegend("disagree"), type: "disagree" as const },
+  { label: tLegend("noVote"), type: "noVote" as const },
+]);
 
 const currentClusterTab = ref<PolisKey>("0");
 const showClusterInformation = ref(false);
@@ -121,3 +169,22 @@ const clusterLabels = computed(() => {
   return labels;
 });
 </script>
+
+<style lang="scss" scoped>
+.groups-subtitle {
+  font-size: 0.85rem;
+  color: #6d6a74;
+  margin: 0 0 0.5rem 0;
+  font-weight: normal;
+}
+
+.imbalance-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #9e9ba5;
+  margin: 0 0 0.5rem 0;
+  font-weight: normal;
+}
+</style>

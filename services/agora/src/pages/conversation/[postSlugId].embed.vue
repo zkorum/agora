@@ -1,62 +1,120 @@
 <template>
-  <EmbedLayout>
-    <PostDetails
-      v-if="hasConversationData"
-      :conversation-data="loadedConversationData"
-      :compact-mode="false"
-    />
+  <EmbedLayout ref="embedLayoutRef">
+    <div v-if="hasConversationData">
+      <div class="container">
+        <PostContent
+          :extended-post-data="loadedConversationData"
+          :compact-mode="false"
+          @open-moderation-history="openModerationHistory()"
+          @verified="(payload) => handleTicketVerified(payload)"
+        />
+
+        <div ref="sentinelElement"></div>
+        <div
+          ref="actionBarElement"
+          class="sticky-below-header sticky-action-bar"
+          :style="{ '--header-height': headerHeight + 'px' }"
+        >
+        <PostActionBar
+          v-model="currentTab"
+          :compact-mode="false"
+          :opinion-count="
+            loadedConversationData.metadata.opinionCount + opinionCountOffset
+          "
+          :participant-count="participantCountLocal"
+          :vote-count="loadedConversationData.metadata.voteCount"
+          :total-participant-count="loadedConversationData.metadata.totalParticipantCount"
+          :total-vote-count="loadedConversationData.metadata.totalVoteCount"
+          :is-loading="isCurrentTabLoading"
+          :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
+          :conversation-title="loadedConversationData.payload.title"
+          :author-username="loadedConversationData.metadata.authorUsername"
+          :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
+          :conversation-type="loadedConversationData.metadata.conversationType"
+        />
+        </div>
+
+        <!-- Child routes: only tab-specific content -->
+        <div class="tab-content" :style="tabContentStyle">
+          <router-view v-slot="{ Component }">
+            <KeepAlive :max="2">
+              <component
+                :is="Component"
+                :key="route.path"
+                :conversation-data="loadedConversationData"
+                :has-conversation-data="hasConversationData"
+                :moderation-history-trigger="moderationHistoryTrigger"
+                :comment-filter="commentFilter"
+                :on-view-analysis="onViewAnalysis"
+                :navigate-to-discover-tab="navigateToDiscoverTab"
+                @update:comment-filter="
+                  (filter: CommentFilterOptions) => { commentFilter = filter }
+                "
+              />
+            </KeepAlive>
+          </router-view>
+        </div>
+      </div>
+    </div>
   </EmbedLayout>
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
-import PostDetails from "src/components/post/PostDetails.vue";
+import PostContent from "src/components/post/display/PostContent.vue";
+import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
+import { useConversationParentState } from "src/composables/conversation/useConversationParentState";
+import { useTabScrollRestoration } from "src/composables/conversation/useTabScrollRestoration";
+import { useStickyObserver } from "src/composables/ui/useStickyObserver";
 import EmbedLayout from "src/layouts/EmbedLayout.vue";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { useLoginIntentionStore } from "src/stores/loginIntention";
-import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
-import { computed } from "vue";
-import { useRoute } from "vue-router";
+import type { CommentFilterOptions } from "src/utils/component/opinion";
+import { computed, ref } from "vue";
 
-const route = useRoute();
-const authStore = useAuthenticationStore();
-const { isAuthInitialized } = storeToRefs(authStore);
+const embedLayoutRef = ref<{ containerElement: HTMLElement | null } | null>(null);
+const scrollContainer = computed(() => embedLayoutRef.value?.containerElement ?? null);
 
-// Clear login intentions immediately (before query setup)
-const loginIntentionStore = useLoginIntentionStore();
-loginIntentionStore.clearVotingIntention();
-loginIntentionStore.clearOpinionAgreementIntention();
-loginIntentionStore.clearReportUserContentIntention();
+const { sentinelElement, headerHeight } = useStickyObserver();
 
-// Use TanStack Query for conversation data
-const conversationQuery = useConversationQuery({
-  conversationSlugId: computed(
-    () => (route.params as { postSlugId: string }).postSlugId
-  ),
-  enabled: computed(() => isAuthInitialized.value),
+const {
+  route,
+  hasConversationData,
+  loadedConversationData,
+  opinionCountOffset,
+  currentTab,
+  isCurrentTabLoading,
+  moderationHistoryTrigger,
+  commentFilter,
+  participantCountLocal,
+  actionBarElement,
+  onViewAnalysis,
+  navigateToDiscoverTab,
+  openModerationHistory,
+  handleTicketVerified,
+  scrollToActionBar,
+  pendingScrollOverride,
+} = useConversationParentState({
+  analysisRouteName: "/conversation/[postSlugId].embed/analysis",
+  commentRouteNames: [
+    "/conversation/[postSlugId].embed/",
+    "/conversation/[postSlugId].embed",
+  ],
+  routePrefix: "/conversation/{id}/embed",
+  scrollContainer,
 });
 
-const conversationData = computed(() => {
-  const data = conversationQuery.data.value;
-  if (!data || data.metadata.conversationSlugId === "") {
-    return undefined;
-  }
-  return data;
-});
-
-const hasConversationData = computed(
-  () => conversationData.value !== undefined
-);
-
-// Type-safe version for template use (guaranteed non-undefined)
-const loadedConversationData = computed(() => {
-  const data = conversationData.value;
-  if (!data) {
-    // This should never happen inside v-if="hasConversationData" block
-    throw new Error("[EmbedPage] Accessed conversation data before loaded");
-  }
-  return data;
+const { tabContentStyle } = useTabScrollRestoration({
+  analysisRouteName: "/conversation/[postSlugId].embed/analysis",
+  pendingScrollOverride,
+  sentinelElement,
+  actionBarElement,
+  scrollContainer,
 });
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.container {
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+  padding: 1rem;
+}
+</style>

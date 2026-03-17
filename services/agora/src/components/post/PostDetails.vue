@@ -21,10 +21,13 @@
           "
           :participant-count="participantCountLocal"
           :vote-count="props.conversationData.metadata.voteCount"
+          :total-participant-count="props.conversationData.metadata.totalParticipantCount"
+          :total-vote-count="props.conversationData.metadata.totalVoteCount"
           :is-loading="isCurrentTabLoading"
           :conversation-slug-id="conversationData.metadata.conversationSlugId"
           :conversation-title="conversationData.payload.title"
           :author-username="conversationData.metadata.authorUsername"
+          :conversation-type="conversationData.metadata.conversationType"
         />
 
         <div v-if="!compactMode">
@@ -38,18 +41,23 @@
               props.conversationData.metadata.participantCount
             "
             :analysis-query="analysisQuery"
+            :navigate-to-discover-tab="navigateToDiscoverTab"
           />
 
           <CommentSection
             v-if="currentTab == 'comment'"
             ref="opinionSectionRef"
             :post-slug-id="conversationData.metadata.conversationSlugId"
-            :login-required-to-participate="
-              conversationData.metadata.isLoginRequired
+            :conversation-author-username="conversationData.metadata.authorUsername"
+            :conversation-organization-name="conversationData.metadata.organization?.name ?? ''"
+            :participation-mode="
+              conversationData.metadata.participationMode
             "
             :requires-event-ticket="
               conversationData.metadata.requiresEventTicket
             "
+            :on-view-analysis="viewAnalysisTab"
+            :is-voting-disabled="isVotingDisabled"
             :preloaded-queries="{
               commentsDiscoverQuery,
               commentsNewQuery,
@@ -70,8 +78,8 @@
     <FloatingBottomContainer v-if="!compactMode">
       <CommentComposer
         :post-slug-id="conversationData.metadata.conversationSlugId"
-        :login-required-to-participate="
-          conversationData.metadata.isLoginRequired
+        :participation-mode="
+          conversationData.metadata.participationMode
         "
         :requires-event-ticket="conversationData.metadata.requiresEventTicket"
         @submitted-comment="submittedComment"
@@ -92,7 +100,7 @@ import {
   useHiddenCommentsQuery,
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
-import { computed, onMounted, provide, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
@@ -112,12 +120,6 @@ const emit = defineEmits<{
     payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
   ];
 }>();
-
-// Provide conversation data to all descendants (reactive)
-provide(
-  "conversationData",
-  computed(() => props.conversationData)
-);
 
 const currentTab = ref<"comment" | "analysis">("comment");
 
@@ -147,7 +149,7 @@ const isAnalysisEnabled = computed(
 );
 
 // Create a computed property to ensure reactivity for the query's enabled parameter
-const isModerator = computed(() => profileData.value.isModerator);
+const isSiteModerator = computed(() => profileData.value.isSiteModerator);
 
 // Preload both analysis and comment data immediately when component mounts (only if not in compact mode)
 const analysisQuery = useAnalysisQuery({
@@ -168,28 +170,44 @@ const commentsNewQuery = useCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   filter: "new",
   voteCount: props.conversationData.metadata.voteCount,
-  enabled: !props.compactMode,
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
 
 const commentsModeratedQuery = useCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   filter: "moderated",
   voteCount: props.conversationData.metadata.voteCount,
-  enabled: !props.compactMode,
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
 
 const commentsMyVotesQuery = useCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   filter: "my_votes",
   voteCount: props.conversationData.metadata.voteCount,
-  enabled: !props.compactMode,
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
 
 const hiddenCommentsQuery = useHiddenCommentsQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   voteCount: props.conversationData.metadata.voteCount,
-  enabled: !props.compactMode && isModerator.value,
+  enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
+
+const isVotingDisabled = computed(() => {
+  const data = props.conversationData;
+  const isModeratedAndLocked =
+    data.metadata.moderation.status === "moderated" &&
+    data.metadata.moderation.action === "lock";
+  return isModeratedAndLocked || data.metadata.isClosed;
+});
+
+function viewAnalysisTab(): void {
+  currentTab.value = "analysis";
+}
+
+function navigateToDiscoverTab(): void {
+  currentTab.value = "comment";
+}
 
 // Track loading states from child components
 const isCurrentTabLoading = computed((): boolean => {
@@ -289,14 +307,14 @@ watch(currentTab, async (newTab) => {
       ];
 
       // Only include hiddenCommentsQuery if user is a moderator
-      if (isModerator.value) {
+      if (isSiteModerator.value) {
         commentQueries.push(hiddenCommentsQuery);
       }
 
-      const staleQueries = commentQueries.filter(
-        (query) => query.isStale.value
+      const staleOrUnfetchedQueries = commentQueries.filter(
+        (query) => query.isStale.value || !query.data.value
       );
-      await Promise.all(staleQueries.map((query) => query.refetch()));
+      await Promise.all(staleOrUnfetchedQueries.map((query) => query.refetch()));
     } else if (newTab === "analysis") {
       // Check and refetch analysis query if it is stale
       if (analysisQuery.isStale.value) {
@@ -318,7 +336,7 @@ async function refreshAllData(): Promise<void> {
   invalidateComments(slugId);
   invalidateAnalysis(slugId);
 
-  if (isModerator.value) {
+  if (isSiteModerator.value) {
     invalidateHiddenComments(slugId);
   }
 

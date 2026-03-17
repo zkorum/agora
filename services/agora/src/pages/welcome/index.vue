@@ -65,7 +65,7 @@ async function skipAuthentication() {
 
   if (hasEmbedIntention.hasIntention && hasEmbedIntention.conversationSlugId) {
     await router.push({
-      name: "/conversation/[postSlugId].embed",
+      name: "/conversation/[postSlugId].embed/",
       params: { postSlugId: hasEmbedIntention.conversationSlugId },
       ...(hasEmbedIntention.opinionSlugId && {
         query: { opinion: hasEmbedIntention.opinionSlugId },
@@ -116,6 +116,7 @@ function checkForActiveEmbedIntention(): {
 }
 
 async function gotoNextRoute(isLogin: boolean) {
+  loginIntentionStore.setActiveUserIntention("none");
   if (isLogin) {
     onboardingMode.value = "LOGIN";
     await router.push({ name: "/onboarding/step1-login/" });
@@ -130,7 +131,7 @@ async function gotoNextRoute(isLogin: boolean) {
 .buttonFlex {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
   width: min(15rem, 100%);
 }
 

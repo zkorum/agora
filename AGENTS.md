@@ -21,15 +21,15 @@ When the user mentions needing to understand an external library or repository, 
 
 Agora Citizen Network is a privacy-preserving social platform using zero-knowledge proofs and bridging-based ranking algorithms. The monorepo contains:
 
-- **`services/app`** (SvelteKit) - New frontend, progressively replacing agora
-- **`services/agora`** (Vue/Quasar) - Legacy frontend, being phased out
+- **`services/app`** (SvelteKit) - Landing page
+- **`services/agora`** (Vue/Quasar) - Main frontend application
 - **`services/api`** (Fastify) - Backend API
 - **`services/math-updater`** - Background worker for clustering
 - **`services/python-bridge`** - Python clustering service
 
-### Why SvelteKit for the New Frontend?
+### Why SvelteKit for the Landing Page?
 
-`services/app` is replacing `services/agora` for these reasons:
+`services/app` is the landing page, built with SvelteKit for these reasons:
 
 - **Better first paint**: SSR + CSR hydration for faster initial load
 - **Per-route flexibility**: Configure prerendering, SSR, or CSR per route
@@ -69,7 +69,7 @@ The frontend (`services/agora`) uses a comprehensive environment variable valida
 The build **fails immediately** if required variables are missing or validation fails.
 
 **Environment file structure:**
-- `.env.dev` - Development configuration (automatically loaded by `yarn dev`)
+- `.env.dev` - Development configuration (automatically loaded by `pnpm dev`)
 - `.env.staging` - Staging configuration (must include `VITE_STAGING=true`)
 - `.env.production` - Production configuration (must include `VITE_STAGING=false`)
 
@@ -85,10 +85,10 @@ For details, see [services/agora/README.md](services/agora/README.md#environment
 ### Running Services
 
 ```bash
-# Frontend (Vue/Quasar) - legacy
+# Frontend (Vue/Quasar)
 make dev-app
 
-# Frontend (SvelteKit) - new
+# Landing page (SvelteKit)
 make dev-app-new
 
 # Backend API (Fastify)
@@ -120,10 +120,10 @@ make dev-generate
 ### Testing & Linting
 
 ```bash
-# Frontend (Vue/Quasar) - legacy
+# Frontend (Vue/Quasar)
 cd services/agora && pnpm lint:fix && pnpm test
 
-# Frontend (SvelteKit) - new
+# Landing page (SvelteKit)
 cd services/app && pnpm lint:fix       # ESLint (strictTypeChecked) + Prettier, auto-fix
 cd services/app && pnpm check          # Type checking
 cd services/app && pnpm test:unit      # Vitest (logic tests)
@@ -197,7 +197,7 @@ Deploy: math-updater"
 - Reference issue numbers, design decisions, or related PRs in the body or footer
 - **ALWAYS include a deployment footer** listing which services need to be redeployed:
   - Format: `Deploy: <service1>, <service2>, ...`
-  - Services: `app` (new frontend), `agora` (legacy frontend), `api` (backend), `math-updater` (worker), `python-bridge` (clustering)
+  - Services: `app` (landing page), `agora` (main frontend), `api` (backend), `math-updater` (worker), `python-bridge` (clustering)
   - Example: `Deploy: agora, api` or `Deploy: none` (for docs-only changes)
 - Do NOT mention AI assistants or tools in commit messages (e.g., "Claude", "AI-generated", "with assistance from")
   - This restriction applies ONLY to commit messages - code comments can mention tools/AI if helpful for context
@@ -253,8 +253,8 @@ Python-bridge (Flask/reddwarf clustering)
 
 ### Services
 
-- **app** (`services/app/`): SvelteKit frontend (Svelte 5, Bits UI, Tailwind CSS v4) — replacing agora
-- **agora** (`services/agora/`): Vue 3 + Quasar frontend with Pinia state management (legacy, being replaced by app)
+- **app** (`services/app/`): SvelteKit landing page (Svelte 5, Bits UI, Tailwind CSS v4)
+- **agora** (`services/agora/`): Vue 3 + Quasar main frontend with Pinia state management
 - **api** (`services/api/`): Fastify backend with Drizzle ORM, handles auth/conversations/voting
 - **math-updater** (`services/math-updater/`): Background worker using pg-boss for clustering updates and AI label generation
 - **python-bridge** (`services/python-bridge/`): Flask service wrapping reddwarf clustering algorithms
@@ -369,7 +369,7 @@ Authorization headers built via `buildAuthorizationHeader(encodedUcan)` in front
 
 ## Key Files
 
-- `services/app/src/routes/`: SvelteKit pages and layouts (new frontend)
+- `services/app/src/routes/`: SvelteKit pages and layouts (landing page)
 - `services/app/src/lib/logic/`: Pure TypeScript functions with colocated tests
 - `services/app/src/lib/components/`: Reusable Svelte components
 - `services/app/vite.config.ts`: Vite plugins (Tailwind, SvelteKit, Tidewave)
@@ -377,12 +377,26 @@ Authorization headers built via `buildAuthorizationHeader(encodedUcan)` in front
 - `services/api/src/index.ts`: Main backend entry point, route registration
 - `services/shared-backend/src/schema.ts`: Database schema (all tables)
 - `services/shared-backend/src/db.ts`: Database connection with read replica routing
-- `services/agora/src/stores/`: Pinia state management (legacy)
-- `services/agora/src/utils/api/`: Frontend API wrapper layer (legacy)
+- `services/agora/src/stores/`: Pinia state management
+- `services/agora/src/utils/api/`: Frontend API wrapper layer
 - `services/math-updater/src/index.ts`: Background job worker
 - `Makefile`: Build orchestration and dev commands
 
 ## Code Quality Principles
+
+### Avoid Unsafe TypeScript Escape Hatches
+
+Avoid `as` type assertions, `!` non-null assertions, `@ts-ignore`, `@ts-expect-error`, and `eslint-disable` / `eslint-ignore` directives. Write typesafe code instead.
+
+- **Instead of `as`**: Narrow types with type guards, discriminated unions, or `satisfies`. If the type system can't prove it, restructure the code so it can.
+- **Instead of `!`**: Use explicit null checks, optional chaining, or refactor to eliminate the nullable path.
+- **Instead of `@ts-ignore` / `@ts-expect-error`**: Fix the underlying type error.
+- **Instead of `eslint-disable`**: Fix the lint violation. If a rule is genuinely wrong for this codebase, disable it in the ESLint config, not inline.
+
+**When escape hatches ARE acceptable** (rare):
+- Working around a confirmed TypeScript compiler bug (with a comment linking to the issue)
+
+**Untyped third-party libraries**: Use `zod.parse()` or `zod.safeParse()` to validate and parse untyped data into typed values (see "Parse, Don't Validate" below). Do not use `as` to cast untyped results.
 
 ### Favor Static Type Safety Over Defensive Programming
 
@@ -576,6 +590,24 @@ export function getUserById(userId: string): User {
 }
 ```
 
+### Avoid `!important` in CSS/SCSS
+
+Do not use `!important` in CSS or SCSS. It makes styles hard to override and debug. Instead, use more specific selectors or restructure the CSS to achieve the desired specificity.
+
+### Props Drilling Over Inject/Provide (Vue)
+
+In Vue components, prefer **explicit props drilling** over `inject`/`provide` for passing data through the component tree. All drilled props must be **required** (not optional) and **typesafe**.
+
+**Why:**
+- Explicit data flow is easier to trace and debug
+- TypeScript catches missing props at compile time
+- No hidden dependencies or magic string keys
+
+**Rules:**
+- Use required props with explicit types — never optional props for data that must exist
+- Thread props through every intermediate component in the chain
+- Convert nullable upstream data to a concrete type at the source (e.g., `organization?.name ?? ""`)
+
 ### Logging Guidelines
 
 **Important:** Do NOT use `log.debug()` in this codebase. Always use `log.info()`, `log.warn()`, or `log.error()` instead.
@@ -641,7 +673,7 @@ The frontend has a dedicated component testing page at `/dev/component-testing` 
 
 ```bash
 # Frontend component tests
-cd services/agora && yarn test
+cd services/agora && pnpm test
 
 # Backend service tests
 cd services/api && pnpm test
@@ -714,8 +746,7 @@ cd services/app && pnpm test:e2e    # Playwright
 ## Prerequisites
 
 - Node.js 20+ (frontend uses 22/24)
-- pnpm (all services including new frontend)
-- yarn (legacy frontend only — services/agora)
+- pnpm (all services)
 - Python 3.11+ (python-bridge)
 - Docker (for Flyway migrations and production builds)
 - watchman (for file watching during development)

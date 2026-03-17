@@ -12,7 +12,6 @@ import { log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
 import { toUnionUndefined } from "@/shared/shared.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
-import { isValidPublicConversationAccess } from "./common.js";
 import type {
     GetConversationForEditResponse,
     UpdateConversationRequest,
@@ -73,7 +72,7 @@ export async function getConversationForEdit({
             conversationTitle: conversationContentTable.title,
             conversationBody: conversationContentTable.body,
             isIndexed: conversationTable.isIndexed,
-            isLoginRequired: conversationTable.isLoginRequired,
+            participationMode: conversationTable.participationMode,
             requiresEventTicket: conversationTable.requiresEventTicket,
             indexConversationAt: conversationTable.indexConversationAt,
             createdAt: conversationTable.createdAt,
@@ -144,7 +143,7 @@ export async function getConversationForEdit({
         conversationBody: toUnionUndefined(conversation.conversationBody),
         pollingOptionList,
         isIndexed: conversation.isIndexed,
-        isLoginRequired: conversation.isLoginRequired,
+        participationMode: conversation.participationMode,
         requiresEventTicket: toUnionUndefined(conversation.requiresEventTicket),
         indexConversationAt: conversation.indexConversationAt ?? undefined,
         createdAt: conversation.createdAt,
@@ -177,21 +176,10 @@ export async function updateConversation({
         conversationBody,
         pollAction,
         isIndexed,
-        isLoginRequired,
+        participationMode,
         requiresEventTicket,
         indexConversationAt,
     } = data;
-
-    // Validate public conversation access rules
-    if (
-        !isValidPublicConversationAccess({
-            isIndexed,
-            isLoginRequired,
-            requiresEventTicket,
-        })
-    ) {
-        return { success: false, reason: "invalid_access_settings" };
-    }
 
     // Sanitize HTML body if provided (backend security layer)
     let sanitizedBody = conversationBody;
@@ -379,13 +367,14 @@ export async function updateConversation({
                 .set({
                     currentContentId: newContentId,
                     isIndexed: isIndexed,
-                    isLoginRequired: isLoginRequired,
+                    participationMode: participationMode,
                     requiresEventTicket: requiresEventTicket ?? null,
                     indexConversationAt:
                         indexConversationAt !== undefined
                             ? new Date(indexConversationAt)
                             : null,
                     updatedAt: new Date(),
+                    isEdited: true,
                 })
                 .where(eq(conversationTable.id, conversationId));
 

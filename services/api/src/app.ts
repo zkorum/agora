@@ -40,6 +40,30 @@ const configSchema = sharedConfigSchema.extend({
     TWILIO_SERVICE_SID: z.string().optional(),
     TEST_CODE: z.coerce.number().int().min(0).max(999999).default(0),
     SPECIALLY_AUTHORIZED_PHONES: z.string().optional(),
+    THROTTLE_EMAIL_SECONDS_INTERVAL: z.number().int().min(5).default(30),
+    MINUTES_BEFORE_EMAIL_OTP_EXPIRY: z
+        .number()
+        .int()
+        .min(3)
+        .max(60)
+        .default(10),
+    AWS_SES_REGION: z.string().default("eu-west-1"),
+    EMAIL_FROM_ADDRESS: z
+        .email()
+        .default("noreply@notify.agoracitizen.network"),
+    SPECIALLY_AUTHORIZED_EMAILS: z.string().optional(),
+    AUTH_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(10),
+    AUTH_RATE_LIMIT_WINDOW_MS: z.coerce
+        .number()
+        .int()
+        .min(1000)
+        .default(60000),
+    SESSION_LIFETIME_DAYS: z.coerce.number().int().min(1).default(90),
+    SESSION_REFRESH_THRESHOLD_DAYS: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .default(45),
     PEPPERS: z
         .string()
         .transform((value) =>
@@ -57,6 +81,7 @@ const configSchema = sharedConfigSchema.extend({
         .string()
         .default("YwahfUdUYehkGMaWh0+q3F8itx2h8mybjPmt8CmTJSs"),
     POLIS_BASE_URL: z.url().optional(),
+    REACHER_BASE_URL: z.url().optional(),
     VOTE_NOTIF_MILESTONES: z
         .string()
         .default(
@@ -114,6 +139,39 @@ const configSchema = sharedConfigSchema.extend({
         .int()
         .min(1)
         .default(60), // Run stale cleanup every N flushes (~1 minute at 1s flush)
+    MAXDIFF_ENABLED: z
+        .string()
+        .default("false")
+        .transform((value, ctx) => {
+            if (value.toLowerCase().trim() === "true") {
+                return true;
+            } else if (value.toLowerCase().trim() === "false") {
+                return false;
+            } else {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Value must be true or false",
+                });
+                return z.NEVER;
+            }
+        }),
+    IS_MAXDIFF_ORG_ONLY: z
+        .string()
+        .default("true")
+        .transform((value, ctx) => {
+            if (value.toLowerCase().trim() === "true") {
+                return true;
+            } else if (value.toLowerCase().trim() === "false") {
+                return false;
+            } else {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Value must be true or false",
+                });
+                return z.NEVER;
+            }
+        }),
+    MAXDIFF_ALLOWED_ORGS: z.string().default("Agora"), // Comma-separated org names allowed to create MaxDiff conversations (empty = all orgs allowed)
     IS_ORG_IMPORT_ONLY: z
         .string()
         .default("false")

@@ -1,7 +1,7 @@
 import type { UseQueryReturnType } from "@tanstack/vue-query";
 import type { OpinionItem } from "src/shared/types/zod";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
-import { computed, type ComputedRef, type Ref, ref } from "vue";
+import { computed, type ComputedRef, type Ref, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { z } from "zod";
 
@@ -114,14 +114,25 @@ export function useOpinionFiltering({
     }
   }
 
+  // Auto-fetch lazy queries when they become active.
+  // This catches ALL filter change paths: user clicks, programmatic changes
+  // (openModerationHistory, onModeratedOpinionDetected), and route ?filter= params.
+  // No isFetching guard: TanStack Query deduplicates concurrent fetches internally,
+  // and the guard can fail during transient QueryObserver initialization states.
+  watch(activeQuery, (query) => {
+    if (!query.data.value) {
+      void query.refetch();
+    }
+  }, { immediate: true });
+
   function handleUserFilterChange(filterValue: CommentFilterOptions): void {
     currentFilter.value = filterValue;
 
-    // Always refetch "My Votes" when switching to it
-    // This ensures users see their most recent voting state immediately
-    // (especially important after cancelling votes)
-    if (filterValue === "my_votes") {
-      const targetQuery = getQueryForFilter(filterValue);
+    const targetQuery = getQueryForFilter(filterValue);
+    // Always refetch "My Votes" to show latest voting state (e.g., after cancelling votes).
+    // For other lazy queries, refetch if no data loaded yet to ensure switching tabs
+    // always loads data (guards against watch race conditions with TanStack Query).
+    if (filterValue === "my_votes" || !targetQuery.data.value) {
       void targetQuery.refetch();
     }
   }

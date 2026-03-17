@@ -57,7 +57,8 @@
       :ok-callback="onLoginCallback"
       active-intention="agreement"
       :requires-zupass-event-slug="props.requiresEventTicket"
-      :login-required-to-participate="props.loginRequiredToParticipate"
+      :needs-auth="needsLogin"
+      :participation-mode="props.participationMode"
     />
   </div>
 </template>
@@ -72,7 +73,7 @@ import type { OpinionVotingUtilities } from "src/composables/opinion/types";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
 import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
-import type { EventSlug, ExtendedConversation } from "src/shared/types/zod";
+import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 import {
   type OpinionItem,
   type VotingAction,
@@ -83,8 +84,9 @@ import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { formatPercentage } from "src/utils/common";
+import { MIN_VOTES_FOR_CLUSTER } from "src/utils/component/opinion";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, inject, type Ref,ref } from "vue";
+import { computed, ref } from "vue";
 
 import {
   type CommentActionBarTranslations,
@@ -95,8 +97,10 @@ const props = defineProps<{
   commentItem: OpinionItem;
   postSlugId: string;
   votingUtilities: OpinionVotingUtilities;
-  loginRequiredToParticipate: boolean;
+  participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
+  onViewAnalysis: () => void;
+  isVotingDisabled: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -113,29 +117,12 @@ const { showNotifyMessage } = useNotify();
 const { updateAuthState } = useBackendAuthApi();
 const { invalidateConversation } = useInvalidateConversationQuery();
 const authStore = useAuthenticationStore();
-const { isLoggedIn } = storeToRefs(authStore);
+const { hasStrongVerification, hasEmailVerification } = storeToRefs(authStore);
 const userStore = useUserStore();
 const { verifiedEventTickets } = storeToRefs(userStore);
 
-// Inject reactive conversation data from parent
-const conversationData = inject<Ref<ExtendedConversation> | undefined>("conversationData");
-
 // Query client for reading analysis cache
 const queryClient = useQueryClient();
-
-// Compute if voting should be disabled (closed OR locked by moderator)
-const isVotingDisabled = computed(() => {
-  const data = conversationData?.value;
-  if (!data) return false;
-
-  const isModeratedAndLocked =
-    data.metadata.moderation.status === "moderated" &&
-    data.metadata.moderation.action === "lock";
-
-  const isClosed = data.metadata.isClosed;
-
-  return isModeratedAndLocked || isClosed;
-});
 
 const { t } = useComponentI18n<CommentActionBarTranslations>(
   commentActionBarTranslations
@@ -144,9 +131,6 @@ const { t } = useComponentI18n<CommentActionBarTranslations>(
 // Zupass verification
 const { verifyTicket } = useTicketVerificationFlow();
 const { isVerifying: isVerifyingZupass } = useZupassVerification();
-
-// Inject parent state for vote unlock banner
-const navigateToAnalysis = inject<() => void>("navigateToAnalysis")!;
 
 // Track if user is clustered (from vote response during this mount)
 const userClusteredThisMount = ref(false);
@@ -164,6 +148,13 @@ const userIsClusteredFromCache = computed(() => {
       (cluster) => cluster?.isUserInCluster === true
     )
   );
+});
+
+// Check if user needs login/verification based on participation mode
+const needsLogin = computed(() => {
+  if (props.participationMode === "strong_verification") return !hasStrongVerification.value;
+  if (props.participationMode === "email_verification") return !hasEmailVerification.value;
+  return false; // guest
 });
 
 // Check if opinion is locked due to missing event ticket
@@ -215,11 +206,10 @@ async function onLoginCallback() {
     props.requiresEventTicket
   );
 
-  const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
   const hasZupassRequirement = props.requiresEventTicket !== undefined;
 
   // If user just needs Zupass verification (no login required), trigger it inline
-  if (!needsLogin && hasZupassRequirement) {
+  if (!needsLogin.value && hasZupassRequirement) {
     await handleZupassVerification();
   }
   // Otherwise, dialog will route user to login via PreLoginIntentionDialog
@@ -257,11 +247,10 @@ async function castPersonalVote(
     return;
   }
 
-  // Check if user needs login or Zupass verification
-  const needsLogin = props.loginRequiredToParticipate && !isLoggedIn.value;
+  // Check if user needs login/verification or Zupass verification
   const needsZupass = isOpinionLocked.value;
 
-  if (needsLogin || needsZupass) {
+  if (needsLogin.value || needsZupass) {
     showLoginDialog.value = true;
     return;
   }
@@ -299,6 +288,10 @@ async function castPersonalVote(
         showNotifyMessage(t("conversationClosed"));
       } else if (result.reason === "conversation_locked") {
         showNotifyMessage(t("voteFailed"));
+      } else if (result.reason === "event_ticket_required" || result.reason === "strong_verification_required" || result.reason === "email_verification_required") {
+        // User lacks required verification for this conversation
+        await userStore.loadUserProfile();
+        showLoginDialog.value = true;
       } else {
         showNotifyMessage(t("voteFailed"));
       }
@@ -325,7 +318,7 @@ const bannerMessage = computed(() => {
   }
 
   // Not clustered yet
-  return t("keepVotingToDiscoverGroup"); // "Keep voting to discover your group"
+  return t("keepVotingToDiscoverGroup", { minVotes: String(MIN_VOTES_FOR_CLUSTER) });
 });
 
 const showViewAnalysisLink = computed(() => {
@@ -340,8 +333,7 @@ const shouldShowBanner = computed(() => {
 });
 
 function handleViewAnalysisClick() {
-  // Call parent navigation function
-  navigateToAnalysis();
+  props.onViewAnalysis();
 }
 </script>
 

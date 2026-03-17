@@ -13,7 +13,7 @@ import {
   MAX_LENGTH_OPTION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import type { EventSlug } from "src/shared/types/zod";
+import type { ConversationType, EventSlug, ParticipationMode } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { computed, type ComputedRef, type Ref, ref, watch } from "vue";
@@ -49,8 +49,9 @@ export interface UseConversationDraftReturn {
   pollEnabled: Ref<boolean>;
   pollOptions: Ref<string[]>;
   seedOpinions: Ref<string[]>;
+  conversationType: Ref<ConversationType>;
   isPrivate: Ref<boolean>;
-  requiresLogin: Ref<boolean>;
+  participationMode: Ref<ParticipationMode>;
   requiresEventTicket: Ref<EventSlug | undefined>;
   privateConversationSettings: Ref<PrivateConversationSettings>;
   postAs: Ref<PostAsSettings>;
@@ -124,8 +125,9 @@ export function useConversationDraft(
   const pollEnabled = ref(initialDraft.poll.enabled);
   const pollOptions = ref<string[]>([...initialDraft.poll.options]);
   const seedOpinions = ref<string[]>([...initialDraft.seedOpinions]);
+  const conversationType = ref<ConversationType>(initialDraft.conversationType);
   const isPrivate = ref(initialDraft.isPrivate);
-  const requiresLogin = ref(initialDraft.requiresLogin);
+  const participationMode = ref<ParticipationMode>(initialDraft.participationMode);
   const requiresEventTicket = ref<EventSlug | undefined>(
     initialDraft.requiresEventTicket
   );
@@ -156,8 +158,9 @@ export function useConversationDraft(
       pollEnabled: pollEnabled.value,
       pollOptions: [...pollOptions.value],
       seedOpinions: [...seedOpinions.value],
+      conversationType: conversationType.value,
       isPrivate: isPrivate.value,
-      requiresLogin: requiresLogin.value,
+      participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
       privateConversationSettings: { ...privateConversationSettings.value },
       postAs: { ...postAs.value },
@@ -173,8 +176,9 @@ export function useConversationDraft(
         store.conversationDraft.poll.enabled = newSnapshot.pollEnabled;
         store.conversationDraft.poll.options = newSnapshot.pollOptions;
         store.conversationDraft.seedOpinions = newSnapshot.seedOpinions;
+        store.conversationDraft.conversationType = newSnapshot.conversationType;
         store.conversationDraft.isPrivate = newSnapshot.isPrivate;
-        store.conversationDraft.requiresLogin = newSnapshot.requiresLogin;
+        store.conversationDraft.participationMode = newSnapshot.participationMode;
         store.conversationDraft.requiresEventTicket =
           newSnapshot.requiresEventTicket;
         store.conversationDraft.privateConversationSettings =
@@ -526,6 +530,10 @@ export function useConversationDraft(
       JSON.stringify(pollOptions.value) !==
         JSON.stringify(emptyDraft.poll.options);
 
+    // Check conversation type changes
+    const hasConversationTypeChanges =
+      conversationType.value !== emptyDraft.conversationType;
+
     // Check post-as settings changes
     const hasPostAsChanges =
       postAs.value.postAsOrganization !==
@@ -535,7 +543,7 @@ export function useConversationDraft(
     // Check privacy settings changes
     const hasPrivacyChanges =
       isPrivate.value !== emptyDraft.isPrivate ||
-      requiresLogin.value !== emptyDraft.requiresLogin;
+      participationMode.value !== emptyDraft.participationMode;
 
     // Check private conversation settings changes
     const hasPrivateSettingsChanges =
@@ -553,6 +561,7 @@ export function useConversationDraft(
     return (
       hasContentChanges ||
       hasSeedOpinionsChanges ||
+      hasConversationTypeChanges ||
       hasPollChanges ||
       hasPostAsChanges ||
       hasPrivacyChanges ||
@@ -584,8 +593,9 @@ export function useConversationDraft(
     pollEnabled.value = emptyDraft.poll.enabled;
     pollOptions.value = [...emptyDraft.poll.options];
     seedOpinions.value = [];
+    conversationType.value = emptyDraft.conversationType;
     isPrivate.value = emptyDraft.isPrivate;
-    requiresLogin.value = emptyDraft.requiresLogin;
+    participationMode.value = emptyDraft.participationMode;
     requiresEventTicket.value = emptyDraft.requiresEventTicket;
     privateConversationSettings.value = {
       ...emptyDraft.privateConversationSettings,
@@ -609,7 +619,7 @@ export function useConversationDraft(
     pollEnabled.value = data.pollEnabled;
     pollOptions.value = [...data.pollOptions];
     isPrivate.value = data.isPrivate;
-    requiresLogin.value = data.requiresLogin;
+    participationMode.value = data.participationMode;
     requiresEventTicket.value = data.requiresEventTicket;
     privateConversationSettings.value = {
       ...data.privateConversationSettings,
@@ -628,7 +638,7 @@ export function useConversationDraft(
       pollEnabled: pollEnabled.value,
       pollOptions: [...pollOptions.value],
       isPrivate: isPrivate.value,
-      requiresLogin: requiresLogin.value,
+      participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
       privateConversationSettings: {
         ...privateConversationSettings.value,
@@ -663,8 +673,9 @@ export function useConversationDraft(
     pollEnabled,
     pollOptions,
     seedOpinions,
+    conversationType,
     isPrivate,
-    requiresLogin,
+    participationMode,
     requiresEventTicket,
     privateConversationSettings,
     postAs,

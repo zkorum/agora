@@ -18,21 +18,28 @@
       <ZKBottomDialogContainer>
         <div class="titleStyle">{{ t("filterTitle") }}</div>
 
-        <div class="optionFlexStyle">
-          <ZKGradientButton
+        <div class="optionListStyle">
+          <div
             v-for="optionItem in currentOptionList"
             :key="optionItem.name"
-            :label="optionItem.name"
-            :label-color="
-              currentFilterAlgorithm == optionItem.name ? '#FFFFFF' : '#6B4EFF'
-            "
-            :gradient-background="
-              currentFilterAlgorithm == optionItem.name
-                ? 'linear-gradient(114.81deg, #6B4EFF 76.45%, #4F92F6 100.1%)'
-                : 'linear-gradient(114.81deg, #e7e4f7 76.45%, #E8F1FF 100.1%)'
-            "
-            @click="selectedAlgorithm(optionItem.value)"
-          />
+            class="optionItemStyle"
+          >
+            <ZKGradientButton
+              :label="optionItem.name"
+              :label-color="
+                currentFilterAlgorithm == optionItem.name ? '#FFFFFF' : '#6B4EFF'
+              "
+              :gradient-background="
+                currentFilterAlgorithm == optionItem.name
+                  ? 'linear-gradient(114.81deg, #6B4EFF 76.45%, #4F92F6 100.1%)'
+                  : 'linear-gradient(114.81deg, #e7e4f7 76.45%, #E8F1FF 100.1%)'
+              "
+              @click="selectedAlgorithm(optionItem.value)"
+            />
+            <div class="optionDescriptionStyle">
+              {{ optionItem.description }}
+            </div>
+          </div>
         </div>
       </ZKBottomDialogContainer>
     </q-dialog>
@@ -47,6 +54,7 @@ import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
+import { formatAmount } from "src/utils/common";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { computed, ref } from "vue";
 
@@ -57,6 +65,8 @@ import {
 
 const props = defineProps<{
   filterValue: string;
+  moderatedOpinionCount: number;
+  hiddenOpinionCount: number;
 }>();
 
 const emit = defineEmits<{
@@ -74,30 +84,45 @@ const { t } = useComponentI18n<CommentSortingSelectorTranslations>(
 
 interface OptionItem {
   name: string;
+  description: string;
   value: CommentFilterOptions;
 }
 
+const moderationHistoryLabel = computed(() => {
+  const base = t("moderationHistory");
+  return props.moderatedOpinionCount > 0
+    ? `${base} (${formatAmount(props.moderatedOpinionCount)})`
+    : base;
+});
+
+const hiddenLabel = computed(() => {
+  const base = t("hidden");
+  return props.hiddenOpinionCount > 0
+    ? `${base} (${formatAmount(props.hiddenOpinionCount)})`
+    : base;
+});
+
 const baseOptions = computed((): OptionItem[] => {
   const options: OptionItem[] = [
-    { name: t("discover"), value: "discover" },
-    { name: t("new"), value: "new" },
-    { name: t("moderationHistory"), value: "moderated" },
+    { name: t("discover"), description: t("discoverDescription"), value: "discover" },
+    { name: t("new"), description: t("newDescription"), value: "new" },
+    { name: moderationHistoryLabel.value, description: t("moderationHistoryDescription"), value: "moderated" },
   ];
 
   // Add "My Votes" option only for logged in users
   if (isGuestOrLoggedIn.value) {
-    options.push({ name: t("myVotes"), value: "my_votes" });
+    options.push({ name: t("myVotes"), description: t("myVotesDescription"), value: "my_votes" });
   }
 
   return options;
 });
 
 const extendedOptions = computed((): OptionItem[] =>
-  baseOptions.value.concat([{ name: t("hidden"), value: "hidden" }])
+  baseOptions.value.concat([{ name: hiddenLabel.value, description: t("hiddenDescription"), value: "hidden" }])
 );
 
 const currentOptionList = computed((): OptionItem[] => {
-  if (profileData.value.isModerator) {
+  if (profileData.value.isSiteModerator) {
     return extendedOptions.value;
   } else {
     return baseOptions.value;
@@ -132,10 +157,24 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
   padding-left: 0.2rem;
 }
 
-.optionFlexStyle {
+.optionListStyle {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.optionItemStyle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.optionDescriptionStyle {
+  font-size: 0.8rem;
+  line-height: 1.3;
+  min-height: calc(2 * 0.8rem * 1.3);
+  color: $color-text-weak;
+  padding-left: 0.5rem;
 }
 
 .titleStyle {

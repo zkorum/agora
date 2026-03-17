@@ -49,5 +49,14 @@ export const topicSelectionStepTranslations: Record<
     title: "موضوعات مورد علاقه خود را برای شروع انتخاب کنید",
     backButton: "بازگشت",
     closeButton: "بستن",
+  ky: {
+    title: "Баштоо үчүн сизди кызыктырган темаларды тандаңыз",
+    backButton: "Артка",
+    closeButton: "Жабуу",
+  },
+  ru: {
+    title: "Выберите интересующие вас темы, чтобы начать",
+    backButton: "Назад",
+    closeButton: "Закрыть",
   },
 };

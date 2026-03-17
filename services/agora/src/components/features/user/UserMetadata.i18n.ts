@@ -31,5 +31,10 @@ export const userMetadataTranslations: Record<
   },
   fa: {
     idVerified: "هویت تأیید شده",
+  ky: {
+    idVerified: "ID текшерилди",
+  },
+  ru: {
+    idVerified: "Личность подтверждена",
   },
 };

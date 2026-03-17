@@ -40,5 +40,12 @@ export const commentModerationTranslations: Record<
   fa: {
     edit: "ویرایش",
     moderatorFlaggedMessage: "مدیر این پاسخ را علامت‌گذاری کرد به‌عنوان",
+  ky: {
+    edit: "Түзөтүү",
+    moderatorFlaggedMessage: "Модератор бул жоопту белгиледи:",
+  },
+  ru: {
+    edit: "Редактировать",
+    moderatorFlaggedMessage: "Модератор отметил этот ответ как",
   },
 };

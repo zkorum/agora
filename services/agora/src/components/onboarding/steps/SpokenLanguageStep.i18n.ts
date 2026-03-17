@@ -40,5 +40,12 @@ export const spokenLanguageStepTranslations: Record<
   fa: {
     title: "به چه زبان‌هایی صحبت می‌کنید؟",
     nextButton: "بعدی",
+  ky: {
+    title: "Сиз кайсы тилдерде сүйлөйсүз?",
+    nextButton: "Кийинки",
+  },
+  ru: {
+    title: "На каких языках вы говорите?",
+    nextButton: "Далее",
   },
 };

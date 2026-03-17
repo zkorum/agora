@@ -7,7 +7,7 @@
  * - Conversation form components
  */
 
-import type { EventSlug } from "src/shared/types/zod";
+import type { ConversationType, EventSlug, ParticipationMode } from "src/shared/types/zod";
 
 // ============================================================================
 // Draft Data Structures
@@ -72,6 +72,10 @@ export interface ConversationDraft {
   /** Initial opinion responses to seed the conversation */
   seedOpinions: string[];
 
+  // Conversation Type
+  /** The type of conversation: "polis" for standard agree/disagree voting, "maxdiff" for best-worst scaling */
+  conversationType: ConversationType;
+
   // Polling Configuration
   poll: PollSettings;
 
@@ -81,8 +85,8 @@ export interface ConversationDraft {
   // Privacy and Advanced Settings
   /** Whether this is a private conversation (enables advanced settings) */
   isPrivate: boolean;
-  /** Whether users must be logged in to participate (applies to both public and private conversations) */
-  requiresLogin: boolean;
+  /** Controls the participation mode for this conversation (applies to both public and private conversations) */
+  participationMode: ParticipationMode;
   /** Advanced settings for private conversations (only relevant when isPrivate is true) */
   privateConversationSettings: PrivateConversationSettings;
 
@@ -179,7 +183,7 @@ export interface ConversationFormState {
 
   // Privacy settings
   isPrivate: boolean;
-  requiresLogin: boolean;
+  participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
 
   // Private conversation settings

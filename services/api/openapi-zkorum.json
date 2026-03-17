@@ -47,12 +47,42 @@
                                                             "enum": [
                                                                 false
                                                             ]
+                                                        },
+                                                        "credentials": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "email": {
+                                                                    "type": "null",
+                                                                    "enum": [
+                                                                        null
+                                                                    ]
+                                                                },
+                                                                "phone": {
+                                                                    "type": "null",
+                                                                    "enum": [
+                                                                        null
+                                                                    ]
+                                                                },
+                                                                "rarimo": {
+                                                                    "type": "null",
+                                                                    "enum": [
+                                                                        null
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "email",
+                                                                "phone",
+                                                                "rarimo"
+                                                            ],
+                                                            "additionalProperties": false
                                                         }
                                                     },
                                                     "required": [
                                                         "isKnown",
                                                         "isRegistered",
-                                                        "isLoggedIn"
+                                                        "isLoggedIn",
+                                                        "credentials"
                                                     ],
                                                     "additionalProperties": false
                                                 },
@@ -73,13 +103,63 @@
                                                         },
                                                         "userId": {
                                                             "type": "string"
+                                                        },
+                                                        "credentials": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "email": {
+                                                                    "nullable": true,
+                                                                    "type": "string"
+                                                                },
+                                                                "phone": {
+                                                                    "nullable": true,
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "lastTwoDigits": {
+                                                                            "type": "number"
+                                                                        },
+                                                                        "countryCallingCode": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "lastTwoDigits",
+                                                                        "countryCallingCode"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                "rarimo": {
+                                                                    "nullable": true,
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "citizenship": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "sex": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "citizenship",
+                                                                        "sex"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "email",
+                                                                "phone",
+                                                                "rarimo"
+                                                            ],
+                                                            "additionalProperties": false
                                                         }
                                                     },
                                                     "required": [
                                                         "isKnown",
                                                         "isRegistered",
                                                         "isLoggedIn",
-                                                        "userId"
+                                                        "userId",
+                                                        "credentials"
                                                     ],
                                                     "additionalProperties": false
                                                 }
@@ -325,7 +405,7 @@
                                                 "reason": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "already_logged_in",
+                                                        "already_has_credential",
                                                         "associated_with_another_user",
                                                         "throttled",
                                                         "invalid_phone_number",
@@ -577,7 +657,195 @@
                                                         "expired_code",
                                                         "wrong_guess",
                                                         "too_many_wrong_guess",
-                                                        "already_logged_in",
+                                                        "already_has_credential",
+                                                        "associated_with_another_user",
+                                                        "auth_state_changed"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/email/authenticate": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "maxLength": 254,
+                                        "format": "email",
+                                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                    },
+                                    "isRequestingNewCode": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "required": [
+                                    "email",
+                                    "isRequestingNewCode"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "codeExpiry": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "nextCodeSoonestTime": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "codeExpiry",
+                                                "nextCodeSoonestTime"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "already_has_credential",
+                                                        "associated_with_another_user",
+                                                        "throttled",
+                                                        "unreachable",
+                                                        "disposable"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/email/verify-otp": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "code": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 999999
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "maxLength": 254,
+                                        "format": "email",
+                                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                    }
+                                },
+                                "required": [
+                                    "code",
+                                    "email"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "accountMerged": {
+                                                    "type": "boolean"
+                                                },
+                                                "userId": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "accountMerged",
+                                                "userId"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "expired_code",
+                                                        "wrong_guess",
+                                                        "too_many_wrong_guess",
+                                                        "already_has_credential",
                                                         "associated_with_another_user",
                                                         "auth_state_changed"
                                                     ]
@@ -678,16 +946,56 @@
                                                                 "minimum": 0,
                                                                 "maximum": 9007199254740991
                                                             },
+                                                            "totalOpinionCount": {
+                                                                "type": "integer",
+                                                                "minimum": 0,
+                                                                "maximum": 9007199254740991
+                                                            },
+                                                            "totalVoteCount": {
+                                                                "type": "integer",
+                                                                "minimum": 0,
+                                                                "maximum": 9007199254740991
+                                                            },
+                                                            "totalParticipantCount": {
+                                                                "type": "integer",
+                                                                "minimum": 0,
+                                                                "maximum": 9007199254740991
+                                                            },
+                                                            "moderatedOpinionCount": {
+                                                                "type": "integer",
+                                                                "minimum": 0,
+                                                                "maximum": 9007199254740991
+                                                            },
+                                                            "hiddenOpinionCount": {
+                                                                "type": "integer",
+                                                                "minimum": 0,
+                                                                "maximum": 9007199254740991
+                                                            },
                                                             "authorUsername": {
                                                                 "type": "string"
                                                             },
-                                                            "isLoginRequired": {
-                                                                "type": "boolean"
+                                                            "participationMode": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "strong_verification",
+                                                                    "email_verification",
+                                                                    "guest"
+                                                                ]
+                                                            },
+                                                            "conversationType": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "polis",
+                                                                    "maxdiff"
+                                                                ]
                                                             },
                                                             "isIndexed": {
                                                                 "type": "boolean"
                                                             },
                                                             "isClosed": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "isEdited": {
                                                                 "type": "boolean"
                                                             },
                                                             "organization": {
@@ -793,15 +1101,21 @@
                                                         "required": [
                                                             "conversationSlugId",
                                                             "createdAt",
-                                                            "updatedAt",
                                                             "lastReactedAt",
                                                             "opinionCount",
                                                             "voteCount",
                                                             "participantCount",
+                                                            "totalOpinionCount",
+                                                            "totalVoteCount",
+                                                            "totalParticipantCount",
+                                                            "moderatedOpinionCount",
+                                                            "hiddenOpinionCount",
                                                             "authorUsername",
-                                                            "isLoginRequired",
+                                                            "participationMode",
+                                                            "conversationType",
                                                             "isIndexed",
                                                             "isClosed",
+                                                            "isEdited",
                                                             "moderation"
                                                         ],
                                                         "additionalProperties": false
@@ -1373,7 +1687,10 @@
                                             "type": "string",
                                             "pattern": "^[a-z0-9_]*$"
                                         },
-                                        "isModerator": {
+                                        "isSiteModerator": {
+                                            "type": "boolean"
+                                        },
+                                        "isSiteOrgAdmin": {
                                             "type": "boolean"
                                         },
                                         "organizationList": {
@@ -1418,7 +1735,8 @@
                                         "activePostCount",
                                         "createdAt",
                                         "username",
-                                        "isModerator",
+                                        "isSiteModerator",
+                                        "isSiteOrgAdmin",
                                         "organizationList",
                                         "verifiedEventTickets"
                                     ],
@@ -1493,16 +1811,56 @@
                                                         "minimum": 0,
                                                         "maximum": 9007199254740991
                                                     },
+                                                    "totalOpinionCount": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 9007199254740991
+                                                    },
+                                                    "totalVoteCount": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 9007199254740991
+                                                    },
+                                                    "totalParticipantCount": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 9007199254740991
+                                                    },
+                                                    "moderatedOpinionCount": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 9007199254740991
+                                                    },
+                                                    "hiddenOpinionCount": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 9007199254740991
+                                                    },
                                                     "authorUsername": {
                                                         "type": "string"
                                                     },
-                                                    "isLoginRequired": {
-                                                        "type": "boolean"
+                                                    "participationMode": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "strong_verification",
+                                                            "email_verification",
+                                                            "guest"
+                                                        ]
+                                                    },
+                                                    "conversationType": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "polis",
+                                                            "maxdiff"
+                                                        ]
                                                     },
                                                     "isIndexed": {
                                                         "type": "boolean"
                                                     },
                                                     "isClosed": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "isEdited": {
                                                         "type": "boolean"
                                                     },
                                                     "organization": {
@@ -1608,15 +1966,21 @@
                                                 "required": [
                                                     "conversationSlugId",
                                                     "createdAt",
-                                                    "updatedAt",
                                                     "lastReactedAt",
                                                     "opinionCount",
                                                     "voteCount",
                                                     "participantCount",
+                                                    "totalOpinionCount",
+                                                    "totalVoteCount",
+                                                    "totalParticipantCount",
+                                                    "moderatedOpinionCount",
+                                                    "hiddenOpinionCount",
                                                     "authorUsername",
-                                                    "isLoginRequired",
+                                                    "participationMode",
+                                                    "conversationType",
                                                     "isIndexed",
                                                     "isClosed",
+                                                    "isEdited",
                                                     "moderation"
                                                 ],
                                                 "additionalProperties": false
@@ -1767,16 +2131,56 @@
                                                                 "minimum": 0,
                                                                 "maximum": 9007199254740991
                                                             },
+                                                            "totalOpinionCount": {
+                                                                "type": "integer",
+                                                                "minimum": 0,
+                                                                "maximum": 9007199254740991
+                                                            },
+                                                            "totalVoteCount": {
+                                                                "type": "integer",
+                                                                "minimum": 0,
+                                                                "maximum": 9007199254740991
+                                                            },
+                                                            "totalParticipantCount": {
+                                                                "type": "integer",
+                                                                "minimum": 0,
+                                                                "maximum": 9007199254740991
+                                                            },
+                                                            "moderatedOpinionCount": {
+                                                                "type": "integer",
+                                                                "minimum": 0,
+                                                                "maximum": 9007199254740991
+                                                            },
+                                                            "hiddenOpinionCount": {
+                                                                "type": "integer",
+                                                                "minimum": 0,
+                                                                "maximum": 9007199254740991
+                                                            },
                                                             "authorUsername": {
                                                                 "type": "string"
                                                             },
-                                                            "isLoginRequired": {
-                                                                "type": "boolean"
+                                                            "participationMode": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "strong_verification",
+                                                                    "email_verification",
+                                                                    "guest"
+                                                                ]
+                                                            },
+                                                            "conversationType": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "polis",
+                                                                    "maxdiff"
+                                                                ]
                                                             },
                                                             "isIndexed": {
                                                                 "type": "boolean"
                                                             },
                                                             "isClosed": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "isEdited": {
                                                                 "type": "boolean"
                                                             },
                                                             "organization": {
@@ -1882,15 +2286,21 @@
                                                         "required": [
                                                             "conversationSlugId",
                                                             "createdAt",
-                                                            "updatedAt",
                                                             "lastReactedAt",
                                                             "opinionCount",
                                                             "voteCount",
                                                             "participantCount",
+                                                            "totalOpinionCount",
+                                                            "totalVoteCount",
+                                                            "totalParticipantCount",
+                                                            "moderatedOpinionCount",
+                                                            "hiddenOpinionCount",
                                                             "authorUsername",
-                                                            "isLoginRequired",
+                                                            "participationMode",
+                                                            "conversationType",
                                                             "isIndexed",
                                                             "isClosed",
+                                                            "isEdited",
                                                             "moderation"
                                                         ],
                                                         "additionalProperties": false
@@ -2245,7 +2655,9 @@
                                                     "enum": [
                                                         "conversation_locked",
                                                         "conversation_closed",
-                                                        "event_ticket_required"
+                                                        "event_ticket_required",
+                                                        "strong_verification_required",
+                                                        "email_verification_required"
                                                     ]
                                                 }
                                             },
@@ -2290,7 +2702,53 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Default Response"
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "strong_verification_required",
+                                                        "email_verification_required"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -2334,6 +2792,228 @@
                                         ],
                                         "additionalProperties": false
                                     }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/maxdiff/save": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string"
+                                    },
+                                    "ranking": {
+                                        "nullable": true,
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "comparisons": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "best": {
+                                                    "type": "string"
+                                                },
+                                                "worst": {
+                                                    "type": "string"
+                                                },
+                                                "set": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "best",
+                                                "worst",
+                                                "set"
+                                            ]
+                                        }
+                                    },
+                                    "isComplete": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId",
+                                    "ranking",
+                                    "comparisons",
+                                    "isComplete"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/maxdiff/load": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "ranking": {
+                                            "nullable": true,
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "comparisons": {
+                                            "nullable": true,
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "best": {
+                                                        "type": "string"
+                                                    },
+                                                    "worst": {
+                                                        "type": "string"
+                                                    },
+                                                    "set": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                },
+                                                "required": [
+                                                    "best",
+                                                    "worst",
+                                                    "set"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "isComplete": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "required": [
+                                        "ranking",
+                                        "comparisons",
+                                        "isComplete"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/maxdiff/results": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "rankings": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "opinionSlugId": {
+                                                        "type": "string"
+                                                    },
+                                                    "opinionContent": {
+                                                        "type": "string"
+                                                    },
+                                                    "avgRank": {
+                                                        "type": "number"
+                                                    },
+                                                    "score": {
+                                                        "type": "number"
+                                                    },
+                                                    "participantCount": {
+                                                        "type": "number"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "opinionSlugId",
+                                                    "opinionContent",
+                                                    "avgRank",
+                                                    "score",
+                                                    "participantCount"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "totalParticipants": {
+                                            "type": "number"
+                                        }
+                                    },
+                                    "required": [
+                                        "rankings",
+                                        "totalParticipants"
+                                    ],
+                                    "additionalProperties": false
                                 }
                             }
                         }
@@ -2437,7 +3117,9 @@
                                                     "enum": [
                                                         "conversation_locked",
                                                         "conversation_closed",
-                                                        "event_ticket_required"
+                                                        "event_ticket_required",
+                                                        "strong_verification_required",
+                                                        "email_verification_required"
                                                     ]
                                                 }
                                             },
@@ -4088,8 +4770,20 @@
                                     "isIndexed": {
                                         "type": "boolean"
                                     },
-                                    "isLoginRequired": {
-                                        "type": "boolean"
+                                    "participationMode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "strong_verification",
+                                            "email_verification",
+                                            "guest"
+                                        ]
+                                    },
+                                    "conversationType": {
+                                        "type": "string",
+                                        "enum": [
+                                            "polis",
+                                            "maxdiff"
+                                        ]
                                     },
                                     "pollingOptionList": {
                                         "type": "array",
@@ -4117,7 +4811,8 @@
                                 "required": [
                                     "conversationTitle",
                                     "isIndexed",
-                                    "isLoginRequired",
+                                    "participationMode",
+                                    "conversationType",
                                     "seedOpinionList"
                                 ],
                                 "additionalProperties": false
@@ -4172,8 +4867,13 @@
                                     "isIndexed": {
                                         "type": "boolean"
                                     },
-                                    "isLoginRequired": {
-                                        "type": "boolean"
+                                    "participationMode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "strong_verification",
+                                            "email_verification",
+                                            "guest"
+                                        ]
                                     },
                                     "requiresEventTicket": {
                                         "type": "string",
@@ -4185,7 +4885,7 @@
                                 "required": [
                                     "polisUrl",
                                     "isIndexed",
-                                    "isLoginRequired"
+                                    "participationMode"
                                 ],
                                 "additionalProperties": false
                             }
@@ -4569,16 +5269,56 @@
                                                             "minimum": 0,
                                                             "maximum": 9007199254740991
                                                         },
+                                                        "totalOpinionCount": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "totalVoteCount": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "totalParticipantCount": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "moderatedOpinionCount": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "hiddenOpinionCount": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
                                                         "authorUsername": {
                                                             "type": "string"
                                                         },
-                                                        "isLoginRequired": {
-                                                            "type": "boolean"
+                                                        "participationMode": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "strong_verification",
+                                                                "email_verification",
+                                                                "guest"
+                                                            ]
+                                                        },
+                                                        "conversationType": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "polis",
+                                                                "maxdiff"
+                                                            ]
                                                         },
                                                         "isIndexed": {
                                                             "type": "boolean"
                                                         },
                                                         "isClosed": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "isEdited": {
                                                             "type": "boolean"
                                                         },
                                                         "organization": {
@@ -4684,15 +5424,21 @@
                                                     "required": [
                                                         "conversationSlugId",
                                                         "createdAt",
-                                                        "updatedAt",
                                                         "lastReactedAt",
                                                         "opinionCount",
                                                         "voteCount",
                                                         "participantCount",
+                                                        "totalOpinionCount",
+                                                        "totalVoteCount",
+                                                        "totalParticipantCount",
+                                                        "moderatedOpinionCount",
+                                                        "hiddenOpinionCount",
                                                         "authorUsername",
-                                                        "isLoginRequired",
+                                                        "participationMode",
+                                                        "conversationType",
                                                         "isIndexed",
                                                         "isClosed",
+                                                        "isEdited",
                                                         "moderation"
                                                     ],
                                                     "additionalProperties": false
@@ -4844,8 +5590,13 @@
                                                 "isIndexed": {
                                                     "type": "boolean"
                                                 },
-                                                "isLoginRequired": {
-                                                    "type": "boolean"
+                                                "participationMode": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "strong_verification",
+                                                        "email_verification",
+                                                        "guest"
+                                                    ]
                                                 },
                                                 "requiresEventTicket": {
                                                     "type": "string",
@@ -4877,7 +5628,7 @@
                                                 "conversationSlugId",
                                                 "conversationTitle",
                                                 "isIndexed",
-                                                "isLoginRequired",
+                                                "participationMode",
                                                 "createdAt",
                                                 "updatedAt",
                                                 "hasPoll",
@@ -5042,8 +5793,13 @@
                                     "isIndexed": {
                                         "type": "boolean"
                                     },
-                                    "isLoginRequired": {
-                                        "type": "boolean"
+                                    "participationMode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "strong_verification",
+                                            "email_verification",
+                                            "guest"
+                                        ]
                                     },
                                     "requiresEventTicket": {
                                         "type": "string",
@@ -5062,7 +5818,7 @@
                                     "conversationTitle",
                                     "pollAction",
                                     "isIndexed",
-                                    "isLoginRequired"
+                                    "participationMode"
                                 ],
                                 "additionalProperties": false
                             }
@@ -5192,7 +5948,7 @@
                                                 "reason": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "already_logged_in",
+                                                        "already_has_credential",
                                                         "associated_with_another_user"
                                                     ]
                                                 }
@@ -5286,7 +6042,7 @@
                                                 "reason": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "already_logged_in",
+                                                        "already_has_credential",
                                                         "associated_with_another_user"
                                                     ]
                                                 }
@@ -6375,6 +7131,9 @@
                                                             },
                                                             "message": {
                                                                 "type": "string"
+                                                            },
+                                                            "isSeed": {
+                                                                "type": "boolean"
                                                             }
                                                         },
                                                         "required": [
@@ -6384,7 +7143,8 @@
                                                             "type",
                                                             "routeTarget",
                                                             "numVotes",
-                                                            "message"
+                                                            "message",
+                                                            "isSeed"
                                                         ],
                                                         "additionalProperties": false
                                                     },
@@ -6900,16 +7660,6 @@
         },
         "/api/v1/notification/stream": {
             "get": {
-                "parameters": [
-                    {
-                        "schema": {
-                            "type": "string"
-                        },
-                        "in": "query",
-                        "name": "auth",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Default Response"
@@ -6977,7 +7727,9 @@
                                             "zh-Hans",
                                             "ja",
                                             "ar",
-                                            "fa"
+                                            "fa",
+                                            "ky",
+                                            "ru"
                                         ]
                                     }
                                 },
@@ -7031,6 +7783,7 @@
                                                     "ja",
                                                     "kn",
                                                     "ko",
+                                                    "ky",
                                                     "ms",
                                                     "mr",
                                                     "no",
@@ -7063,7 +7816,9 @@
                                                 "zh-Hans",
                                                 "ja",
                                                 "ar",
-                                                "fa"
+                                                "fa",
+                                                "ky",
+                                                "ru"
                                             ]
                                         }
                                     },
@@ -7122,6 +7877,7 @@
                                                 "ja",
                                                 "kn",
                                                 "ko",
+                                                "ky",
                                                 "ms",
                                                 "mr",
                                                 "no",
@@ -7154,7 +7910,9 @@
                                             "zh-Hans",
                                             "ja",
                                             "ar",
-                                            "fa"
+                                            "fa",
+                                            "ky",
+                                            "ru"
                                         ]
                                     }
                                 },

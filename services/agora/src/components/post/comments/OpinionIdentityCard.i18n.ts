@@ -31,5 +31,10 @@ export const opinionIdentityCardTranslations: Record<
   },
   fa: {
     seedOpinion: "نظر اولیه",
+  ky: {
+    seedOpinion: "Баштапкы пикир",
+  },
+  ru: {
+    seedOpinion: "Начальное высказывание",
   },
 };

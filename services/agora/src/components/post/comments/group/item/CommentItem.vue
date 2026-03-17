@@ -6,7 +6,6 @@
         <OpinionIdentityCard
           :author-verified="false"
           :created-at="commentItem.createdAt"
-          :updated-at="commentItem.updatedAt"
           :user-identity="commentItem.username"
           :show-verified-text="false"
           organization-image-url=""
@@ -16,6 +15,8 @@
         <CommentActionOptions
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
+          :conversation-author-username="conversationAuthorUsername"
+          :conversation-organization-name="conversationOrganizationName"
           @deleted="deletedComment()"
           @muted-comment="mutedComment()"
         />
@@ -34,6 +35,8 @@
           v-if="commentItem.moderation?.status == 'moderated'"
           :comment-item="commentItem"
           :post-slug-id="postSlugId"
+          :conversation-author-username="conversationAuthorUsername"
+          :conversation-organization-name="conversationOrganizationName"
         />
 
         <div>
@@ -41,8 +44,10 @@
             :comment-item="commentItem"
             :post-slug-id="postSlugId"
             :voting-utilities="votingUtilities"
-            :login-required-to-participate="loginRequiredToParticipate"
+            :participation-mode="participationMode"
             :requires-event-ticket="props.requiresEventTicket"
+            :on-view-analysis="props.onViewAnalysis"
+            :is-voting-disabled="props.isVotingDisabled"
             @ticket-verified="(payload) => emit('ticketVerified', payload)"
           />
         </div>
@@ -64,9 +69,13 @@ import CommentModeration from "./CommentModeration.vue";
 const props = defineProps<{
   commentItem: OpinionItem;
   postSlugId: string;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
   votingUtilities: OpinionVotingUtilities;
-  loginRequiredToParticipate: boolean;
+  participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
+  onViewAnalysis: () => void;
+  isVotingDisabled: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -77,7 +86,7 @@ const emit = defineEmits<{
   ];
 }>();
 
-import type { EventSlug } from "src/shared/types/zod";
+import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 
 function deletedComment() {
   emit("deleted", props.commentItem.opinionSlugId);

@@ -72,10 +72,10 @@ defineEmits<{
   // Agree button styles
   &--agree {
     background: linear-gradient(114.81deg, #f1eeff 46.45%, #e8f1ff 100.1%);
-    color: #6b4eff;
+    color: $sentiment-positive;
 
     &.voting-button--selected {
-      background: linear-gradient(114.81deg, #6b4eff 46.45%, #4f92f6 100.1%);
+      background: linear-gradient(114.81deg, $sentiment-positive 46.45%, $sentiment-positive-end 100.1%);
       color: #ffffff;
     }
   }
@@ -83,10 +83,10 @@ defineEmits<{
   // Disagree button styles
   &--disagree {
     background: linear-gradient(93.21deg, #ffefd7 4.56%, #fff9d7 97.67%);
-    color: #a05e03;
+    color: $sentiment-negative-text;
 
     &.voting-button--selected {
-      background: linear-gradient(107.6deg, #ffb323 31.49%, #ffdd1c 100.22%);
+      background: linear-gradient(107.6deg, $sentiment-negative 31.49%, $sentiment-negative-end 100.22%);
       color: #ffffff;
     }
   }
@@ -108,11 +108,11 @@ defineEmits<{
   font-weight: var(--font-weight-medium);
 
   &--agree {
-    color: #6b4eff;
+    color: $sentiment-positive;
   }
 
   &--disagree {
-    color: #a05e03;
+    color: $sentiment-negative-text;
   }
 
   &--pass {

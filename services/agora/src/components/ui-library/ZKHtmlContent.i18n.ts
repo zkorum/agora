@@ -40,5 +40,12 @@ export const zkHtmlContentTranslations: Record<
   fa: {
     postContentPreview: "پیش‌نمایش محتوای پست",
     postContent: "محتوای پست",
+  ky: {
+    postContentPreview: "Жазуу мазмунун алдын ала көрүү",
+    postContent: "Жазуу мазмуну",
+  },
+  ru: {
+    postContentPreview: "Предпросмотр содержимого публикации",
+    postContent: "Содержимое публикации",
   },
 };

@@ -22,8 +22,8 @@ export const exportStatusPageTranslations: Record<
     exportFeatureDisabled: "La función de exportación está deshabilitada",
   },
   fr: {
-    pageTitle: "État de l'Exportation",
-    exportFeatureDisabled: "La fonction d'exportation est désactivée",
+    pageTitle: "État de l'Export",
+    exportFeatureDisabled: "La fonction d'export est désactivée",
   },
   "zh-Hans": {
     pageTitle: "导出状态",
@@ -40,5 +40,12 @@ export const exportStatusPageTranslations: Record<
   fa: {
     pageTitle: "وضعیت خروجی",
     exportFeatureDisabled: "قابلیت خروجی غیرفعال است",
+  ky: {
+    pageTitle: "Экспорттун абалы",
+    exportFeatureDisabled: "Экспорт функциясы өчүрүлгөн",
+  },
+  ru: {
+    pageTitle: "Статус экспорта",
+    exportFeatureDisabled: "Функция экспорта отключена",
   },
 };

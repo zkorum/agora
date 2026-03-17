@@ -43,10 +43,10 @@ export const exportHistoryListTranslations: Record<
     statusCancelled: "Cancelado",
   },
   fr: {
-    loadingExports: "Chargement des exportations...",
+    loadingExports: "Chargement des exports...",
     noExportsYet:
-      "Aucune exportation pour le moment. Demandez votre première exportation ci-dessus.",
-    errorLoadingExports: "Échec du chargement de l'historique des exportations",
+      "Aucun export pour le moment. Demandez votre premier export ci-dessus.",
+    errorLoadingExports: "Échec du chargement de l'historique des exports",
     statusProcessing: "En cours",
     statusCompleted: "Terminé",
     statusFailed: "Échoué",
@@ -88,5 +88,22 @@ export const exportHistoryListTranslations: Record<
     statusCompleted: "تکمیل شد",
     statusFailed: "ناموفق",
     statusCancelled: "لغو شد",
+  ky: {
+    loadingExports: "Экспорттор жүктөлүүдө...",
+    noExportsYet: "Азырынча экспорттор жок. Жогорудан биринчи экспортуңузду сураңыз!",
+    errorLoadingExports: "Экспорт тарыхын жүктөө ишке ашкан жок",
+    statusProcessing: "Иштетилүүдө",
+    statusCompleted: "Аяктады",
+    statusFailed: "Ишке ашкан жок",
+    statusCancelled: "Жокко чыгарылды",
+  },
+  ru: {
+    loadingExports: "Загрузка экспортов...",
+    noExportsYet: "Экспортов пока нет. Запросите первый экспорт выше!",
+    errorLoadingExports: "Не удалось загрузить историю экспортов",
+    statusProcessing: "Обработка",
+    statusCompleted: "Завершено",
+    statusFailed: "Ошибка",
+    statusCancelled: "Отменено",
   },
 };

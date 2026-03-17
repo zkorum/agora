@@ -3,21 +3,31 @@ import {
     generateOneTimeCode,
     generateUUID,
     hashWithSalt,
+    otpCodesEqual,
 } from "@/crypto.js";
 import { determineAuthType } from "./auth/core/stateHelpers.js";
+import {
+    checkEmailDeliverability,
+    type ReacherIsReachable,
+} from "@/service/emailVerification.js";
+import type { AxiosInstance } from "axios";
 import type { CredentialAuthState, AuthResult } from "./auth/core/types.js";
 import {
     authAttemptPhoneTable,
+    authAttemptEmailTable,
     deviceTable,
     walletTable,
+    emailTable,
     zkPassportTable,
     phoneTable,
     userTable,
+    userDisplayLanguageTable,
 } from "@/shared-backend/schema.js";
 import { nowZeroMs } from "@/shared/util.js";
 import type {
     AuthenticateRequestBody,
     AuthenticateResponse,
+    AuthenticateEmailResponse,
     VerifyOtp200,
 } from "@/shared/types/dto-auth.js";
 import type { DeviceLoginStatusExtended } from "@/shared/types/zod.js";
@@ -26,7 +36,7 @@ import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgre
 import parsePhoneNumberFromString, {
     type CountryCode,
 } from "libphonenumber-js/max";
-import { log } from "@/app.js";
+import { config, log } from "@/app.js";
 import { PEPPER_VERSION, toUnionUndefined } from "@/shared/shared.js";
 import { httpErrors } from "@fastify/sensible";
 import { generateUnusedRandomUsername } from "./account.js";
@@ -35,6 +45,11 @@ import twilio from "twilio";
 import { isPhoneNumberTypeSupported } from "@/shared-app-api/phone.js";
 import { base64Decode, base64Encode } from "@/shared-app-api/base64.js";
 import { mergeGuestIntoVerifiedUser } from "./merge.js";
+import { sendOtpEmail } from "./email.js";
+import {
+    type SupportedDisplayLanguageCodes,
+    ZodSupportedDisplayLanguageCodes,
+} from "@/shared/languages.js";
 
 interface VerifyOtpProps {
     db: PostgresDatabase;
@@ -46,6 +61,7 @@ interface VerifyOtpProps {
     twilioClient?: twilio.Twilio;
     twilioServiceSid?: string;
     peppers: string[];
+    sessionLifetimeDays: number;
 }
 
 interface RegisterWithPhoneNumberProps {
@@ -213,6 +229,7 @@ interface RegisterOrLoginWithPhoneNumberBaseProps {
     pepperVersion: number;
     userAgent: string;
     now: Date;
+    sessionLifetimeDays: number;
 }
 
 type RegisterOrLoginWithPhoneNumberProps =
@@ -245,7 +262,9 @@ async function registerOrLoginWithPhoneNumber(
         now,
     } = props;
     const loginSessionExpiry = new Date(now);
-    loginSessionExpiry.setFullYear(loginSessionExpiry.getFullYear() + 1000);
+    loginSessionExpiry.setDate(
+        loginSessionExpiry.getDate() + props.sessionLifetimeDays,
+    );
 
     // CRITICAL: Expire OTP at the entry point to prevent race conditions
     // This ensures OTP can only be used once across all auth paths
@@ -277,6 +296,27 @@ async function registerOrLoginWithPhoneNumber(
 
     switch (type) {
         case "register": {
+            // Prevent duplicate credential: user must not already have an active phone
+            const existingPhone = await db
+                .select({ id: phoneTable.id })
+                .from(phoneTable)
+                .where(
+                    and(
+                        eq(phoneTable.userId, props.userId),
+                        eq(phoneTable.isDeleted, false),
+                    ),
+                )
+                .limit(1);
+            if (existingPhone.length > 0) {
+                log.warn(
+                    { userId: props.userId },
+                    "[Phone] User already has an active phone credential",
+                );
+                return {
+                    success: false,
+                    reason: "already_has_credential",
+                };
+            }
             await registerWithPhoneNumber({
                 db,
                 didWrite,
@@ -361,6 +401,7 @@ export async function verifyPhoneOtp({
     twilioClient,
     twilioServiceSid,
     peppers,
+    sessionLifetimeDays,
 }: VerifyOtpProps): Promise<VerifyOtp200> {
     if (
         (twilioClient !== undefined && twilioServiceSid === undefined) ||
@@ -523,6 +564,7 @@ export async function verifyPhoneOtp({
                     pepperVersion: resultOtp[0].pepperVersion,
                     userAgent: resultOtp[0].userAgent,
                     now,
+                    sessionLifetimeDays,
                 });
             default:
                 log.error(
@@ -536,7 +578,7 @@ export async function verifyPhoneOtp({
         }
     } else if (resultOtp[0].codeExpiry <= now) {
         return { success: false, reason: "expired_code" };
-    } else if (resultOtp[0].code === code) {
+    } else if (otpCodesEqual({ a: resultOtp[0].code, b: code })) {
         return registerOrLoginWithPhoneNumber({
             ...authResult,
             db,
@@ -548,6 +590,7 @@ export async function verifyPhoneOtp({
             pepperVersion: resultOtp[0].pepperVersion,
             userAgent: resultOtp[0].userAgent,
             now,
+            sessionLifetimeDays,
         });
     } else {
         await updateCodeGuessAttemptAmount(
@@ -613,18 +656,40 @@ export async function registerWithPhoneNumber({
     await db.transaction(async (tx) => {
         // Note: OTP expiration happens at registerOrLoginWithPhoneNumber entry point
         // to prevent race conditions across all auth paths
-        await tx.insert(userTable).values({
-            username: await generateUnusedRandomUsername({
-                db: db,
-            }),
-            id: userId,
-        });
-        await tx.insert(deviceTable).values({
-            userId: userId,
-            didWrite: didWrite,
-            userAgent: userAgent,
-            sessionExpiry: sessionExpiry,
-        });
+
+        // Check if user already exists (credential upgrade case: user logged in
+        // with another credential and is adding phone)
+        const existingUser = await tx
+            .select({ id: userTable.id })
+            .from(userTable)
+            .where(eq(userTable.id, userId))
+            .limit(1);
+
+        if (existingUser.length === 0) {
+            // New user registration
+            await tx.insert(userTable).values({
+                username: await generateUnusedRandomUsername({
+                    db: db,
+                }),
+                id: userId,
+            });
+            await tx.insert(deviceTable).values({
+                userId: userId,
+                didWrite: didWrite,
+                userAgent: userAgent,
+                sessionExpiry: sessionExpiry,
+            });
+        } else {
+            // Credential upgrade — user + device already exist, extend session
+            await tx
+                .update(deviceTable)
+                .set({
+                    sessionExpiry: sessionExpiry,
+                    updatedAt: nowZeroMs(),
+                })
+                .where(eq(deviceTable.didWrite, didWrite));
+        }
+
         await tx.insert(phoneTable).values({
             userId: userId,
             lastTwoDigits: lastTwoDigits,
@@ -707,16 +772,37 @@ export async function registerWithZKP({
 }: RegisterWithZKPProps): Promise<void> {
     log.info("Register with ZKP");
     await db.transaction(async (tx) => {
-        await tx.insert(userTable).values({
-            username: await generateUnusedRandomUsername({ db: db }),
-            id: userId,
-        });
-        await tx.insert(deviceTable).values({
-            userId: userId,
-            didWrite: didWrite,
-            userAgent: userAgent,
-            sessionExpiry: sessionExpiry,
-        });
+        // Check if user already exists (credential upgrade case: user logged in
+        // with another credential and is adding Rarimo)
+        const existingUser = await tx
+            .select({ id: userTable.id })
+            .from(userTable)
+            .where(eq(userTable.id, userId))
+            .limit(1);
+
+        if (existingUser.length === 0) {
+            // New user registration
+            await tx.insert(userTable).values({
+                username: await generateUnusedRandomUsername({ db: db }),
+                id: userId,
+            });
+            await tx.insert(deviceTable).values({
+                userId: userId,
+                didWrite: didWrite,
+                userAgent: userAgent,
+                sessionExpiry: sessionExpiry,
+            });
+        } else {
+            // Credential upgrade — user + device already exist, extend session
+            await tx
+                .update(deviceTable)
+                .set({
+                    sessionExpiry: sessionExpiry,
+                    updatedAt: nowZeroMs(),
+                })
+                .where(eq(deviceTable.didWrite, didWrite));
+        }
+
         await tx.insert(zkPassportTable).values({
             userId: userId,
             citizenship: citizenship,
@@ -984,7 +1070,7 @@ async function getPhoneAuthState({
     phoneHash,
     didWrite,
 }: GetPhoneAuthStateParams): Promise<PhoneAuthState> {
-    // Query 1: Check device association with phone
+    // Query 1: Check device association with phone (only active/non-deleted phone credentials)
     const didAssociationResult = await db
         .select({
             phoneHash: phoneTable.phoneHash,
@@ -995,6 +1081,7 @@ async function getPhoneAuthState({
             and(
                 eq(phoneTable.userId, deviceTable.userId),
                 eq(phoneTable.phoneHash, phoneHash),
+                eq(phoneTable.isDeleted, false),
             ),
         )
         .where(eq(deviceTable.didWrite, didWrite));
@@ -1085,7 +1172,7 @@ async function getNullifierAuthState({
     nullifier,
     didWrite,
 }: GetNullifierAuthStateParams): Promise<NullifierAuthState> {
-    // Query 1: Check device association with nullifier
+    // Query 1: Check device association with nullifier (only active, non-deleted entries)
     const didAssociationResult = await db
         .select({
             nullifier: zkPassportTable.nullifier,
@@ -1096,6 +1183,7 @@ async function getNullifierAuthState({
             and(
                 eq(zkPassportTable.userId, deviceTable.userId),
                 eq(zkPassportTable.nullifier, nullifier),
+                eq(zkPassportTable.isDeleted, false),
             ),
         )
         .where(eq(deviceTable.didWrite, didWrite));
@@ -1750,6 +1838,923 @@ export async function isThrottledByPhoneHash(
         }
     }
     return false;
+}
+
+// ============================================================================
+// Email Authentication
+// ============================================================================
+
+/**
+ * Email-specific credential auth state
+ * Maps email authentication data to generic CredentialAuthState
+ */
+type EmailAuthState = CredentialAuthState & {
+    metadata?: { email: string };
+};
+
+interface GetEmailAuthStateParams {
+    db: PostgresDatabase;
+    email: string;
+    didWrite: string;
+}
+
+async function getEmailAuthState({
+    db,
+    email,
+    didWrite,
+}: GetEmailAuthStateParams): Promise<EmailAuthState> {
+    // Query 1: Check device association with email (only active/non-deleted email credentials)
+    const didAssociationResult = await db
+        .select({
+            email: emailTable.email,
+        })
+        .from(deviceTable)
+        .leftJoin(
+            emailTable,
+            and(
+                eq(emailTable.userId, deviceTable.userId),
+                eq(emailTable.email, email),
+                eq(emailTable.isDeleted, false),
+            ),
+        )
+        .where(eq(deviceTable.didWrite, didWrite));
+
+    const deviceExists = didAssociationResult.length > 0;
+    const isAssociated =
+        deviceExists && didAssociationResult[0].email !== null;
+
+    // Query 2: Check email user status (only active users, deleted users are ignored)
+    const emailResults = await db
+        .select({
+            userId: emailTable.userId,
+            isDeleted: emailTable.isDeleted,
+        })
+        .from(emailTable)
+        .innerJoin(userTable, eq(userTable.id, emailTable.userId))
+        .where(eq(emailTable.email, email));
+
+    const activeUser = emailResults.find((r) => !r.isDeleted);
+
+    // Handle "device_owns_credential" case first - it guarantees a user exists
+    if (isAssociated) {
+        if (activeUser) {
+            return {
+                deviceCredentialAssociation: "device_owns_credential",
+                userId: activeUser.userId,
+                metadata: { email },
+            };
+        }
+        // Fall through if no user found (shouldn't happen with FK)
+    }
+
+    // For non-associated cases, check active user
+    if (activeUser) {
+        const userId = activeUser.userId;
+        // Email is a hard credential - user with email is always registered
+        const isRegistered = true;
+
+        if (!deviceExists) {
+            return {
+                deviceCredentialAssociation: "device_unknown_credential_owned",
+                userId,
+                isRegistered,
+                metadata: { email },
+            };
+        } else {
+            return {
+                deviceCredentialAssociation: "device_missing_credential_owned",
+                userId,
+                isRegistered,
+                metadata: { email },
+            };
+        }
+    }
+
+    // Email is available (no active user, deleted users ignored)
+    if (!deviceExists) {
+        return {
+            deviceCredentialAssociation: "device_unknown_credential_available",
+            metadata: { email },
+        };
+    } else {
+        return {
+            deviceCredentialAssociation: "device_missing_credential_available",
+            metadata: { email },
+        };
+    }
+}
+
+interface GetEmailAuthTypeWithDeviceStatusParams {
+    db: PostgresDatabase;
+    email: string;
+    didWrite: string;
+    deviceStatus: DeviceLoginStatusExtended;
+}
+
+/**
+ * Get email authentication type with pre-computed deviceStatus.
+ * Used by verifyEmailOtp() which already has deviceStatus.
+ * Mirrors getPhoneAuthenticationTypeByHash().
+ */
+export async function getEmailAuthTypeWithDeviceStatus({
+    db,
+    email,
+    didWrite,
+    deviceStatus,
+}: GetEmailAuthTypeWithDeviceStatusParams): Promise<AuthResult> {
+    const credentialAuthState = await getEmailAuthState({
+        db,
+        email,
+        didWrite,
+    });
+
+    return determineAuthType({
+        credentialAuthState,
+        deviceStatus,
+        authMethod: "email",
+    });
+}
+
+interface GetEmailAuthTypeParams {
+    db: PostgresDatabase;
+    email: string;
+    didWrite: string;
+}
+
+/**
+ * Get email authentication type, computing deviceStatus internally.
+ * Used by authenticateEmailAttempt().
+ * Mirrors getPhoneAuthenticationTypeByNumber().
+ */
+export async function getEmailAuthType({
+    db,
+    email,
+    didWrite,
+}: GetEmailAuthTypeParams): Promise<AuthResult> {
+    const now = nowZeroMs();
+    const deviceStatus = await authUtilService.getDeviceStatus({
+        db,
+        didWrite,
+        now,
+    });
+    return getEmailAuthTypeWithDeviceStatus({
+        db,
+        email,
+        didWrite,
+        deviceStatus,
+    });
+}
+
+interface AuthenticateEmailAttemptProps {
+    db: PostgresDatabase;
+    axiosReacher: AxiosInstance | undefined;
+    email: string;
+    isRequestingNewCode: boolean;
+    minutesBeforeEmailCodeExpiry: number;
+    didWrite: string;
+    userAgent: string;
+    throttleEmailSecondsInterval: number;
+    testCode: number;
+    doUseTestCode: boolean;
+    headerLanguageCode?: SupportedDisplayLanguageCodes;
+}
+
+export async function authenticateEmailAttempt({
+    db,
+    axiosReacher,
+    email,
+    isRequestingNewCode,
+    minutesBeforeEmailCodeExpiry,
+    didWrite,
+    userAgent,
+    throttleEmailSecondsInterval,
+    testCode,
+    doUseTestCode,
+    headerLanguageCode = "en",
+}: AuthenticateEmailAttemptProps): Promise<AuthenticateEmailResponse> {
+    const now = nowZeroMs();
+    const authResult = await getEmailAuthType({
+        db,
+        email,
+        didWrite,
+    });
+    if (authResult.type === "associated_with_another_user") {
+        return {
+            success: false,
+            reason: authResult.type,
+        };
+    }
+    // Only check email deliverability for registration (new email).
+    // For login/merge, the email was already validated during registration.
+    let emailReachability: ReacherIsReachable | null = null;
+    if (authResult.type === "register" && axiosReacher !== undefined) {
+        const deliverability = await checkEmailDeliverability({
+            axiosReacher,
+            email,
+        });
+        emailReachability = deliverability.isReachable;
+        if (!deliverability.deliverable) {
+            return {
+                success: false,
+                reason: deliverability.reason,
+            };
+        }
+    }
+    // Get userId - for merge type use toUserId (the device user)
+    const userId =
+        authResult.type === "merge" ? authResult.toUserId : authResult.userId;
+    const type = authResult.type;
+
+    // Resolve email language: for existing users (login/merge), prefer stored display language;
+    // for registration, the user has no preferences yet so use Accept-Language header
+    let emailLanguageCode: SupportedDisplayLanguageCodes = headerLanguageCode;
+    if (type !== "register") {
+        const storedDisplayLanguage = await db
+            .select({ languageCode: userDisplayLanguageTable.languageCode })
+            .from(userDisplayLanguageTable)
+            .where(
+                and(
+                    eq(userDisplayLanguageTable.userId, userId),
+                    eq(userDisplayLanguageTable.isDeleted, false),
+                ),
+            )
+            .limit(1);
+        if (storedDisplayLanguage.length > 0) {
+            const parsed = ZodSupportedDisplayLanguageCodes.safeParse(
+                storedDisplayLanguage[0].languageCode,
+            );
+            if (parsed.success) {
+                emailLanguageCode = parsed.data;
+            }
+        }
+    }
+
+    const resultHasAttempted = await db
+        .select({
+            codeExpiry: authAttemptEmailTable.codeExpiry,
+            lastOtpSentAt: authAttemptEmailTable.lastOtpSentAt,
+        })
+        .from(authAttemptEmailTable)
+        .where(eq(authAttemptEmailTable.didWrite, didWrite));
+    if (resultHasAttempted.length === 0) {
+        // first attempt: generate new code, insert data and send email
+        return await insertEmailAuthAttemptCode({
+            db,
+            type,
+            userId,
+            minutesBeforeEmailCodeExpiry,
+            didWrite,
+            now,
+            userAgent,
+            email,
+            throttleEmailSecondsInterval,
+            doUseTestCode,
+            testCode,
+            emailReachability,
+            languageCode: emailLanguageCode,
+        });
+    } else if (isRequestingNewCode) {
+        // user wants to regenerate new code (if possible according to throttling)
+        return await updateEmailAuthAttemptCode({
+            db,
+            type,
+            userId,
+            minutesBeforeEmailCodeExpiry,
+            didWrite,
+            now,
+            email,
+            throttleEmailSecondsInterval,
+            doUseTestCode,
+            testCode,
+            emailReachability,
+            languageCode: emailLanguageCode,
+        });
+    } else if (resultHasAttempted[0].codeExpiry > now) {
+        // code hasn't expired
+        const nextCodeSoonestTime = resultHasAttempted[0].lastOtpSentAt;
+        nextCodeSoonestTime.setSeconds(
+            nextCodeSoonestTime.getSeconds() + throttleEmailSecondsInterval,
+        );
+        return {
+            success: true,
+            codeExpiry: resultHasAttempted[0].codeExpiry,
+            nextCodeSoonestTime: nextCodeSoonestTime,
+        };
+    } else {
+        // code has expired, generate a new one if not throttled
+        return await updateEmailAuthAttemptCode({
+            db,
+            type,
+            userId,
+            minutesBeforeEmailCodeExpiry,
+            didWrite,
+            now,
+            email,
+            throttleEmailSecondsInterval,
+            doUseTestCode,
+            testCode,
+            emailReachability,
+            languageCode: emailLanguageCode,
+        });
+    }
+}
+
+interface InsertEmailAuthAttemptCodeProps {
+    db: PostgresDatabase;
+    type: AuthenticateType;
+    userId: string;
+    minutesBeforeEmailCodeExpiry: number;
+    didWrite: string;
+    now: Date;
+    userAgent: string;
+    email: string;
+    throttleEmailSecondsInterval: number;
+    testCode: number;
+    doUseTestCode: boolean;
+    emailReachability: ReacherIsReachable | null;
+    languageCode: SupportedDisplayLanguageCodes;
+}
+
+async function insertEmailAuthAttemptCode({
+    db,
+    type,
+    userId,
+    minutesBeforeEmailCodeExpiry,
+    didWrite,
+    now,
+    userAgent,
+    email,
+    throttleEmailSecondsInterval,
+    doUseTestCode,
+    testCode,
+    emailReachability,
+    languageCode,
+}: InsertEmailAuthAttemptCodeProps): Promise<AuthenticateEmailResponse> {
+    const isThrottled = await isThrottledByEmail({
+        db,
+        email,
+        throttleEmailSecondsInterval,
+        minutesBeforeEmailCodeExpiry,
+    });
+    if (isThrottled) {
+        return {
+            success: false,
+            reason: "throttled",
+        };
+    }
+    const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
+    const codeExpiry = new Date(now);
+    codeExpiry.setMinutes(
+        codeExpiry.getMinutes() + minutesBeforeEmailCodeExpiry,
+    );
+    const mustSendActualEmail = config.NODE_ENV === "production";
+    if (mustSendActualEmail) {
+        await sendOtpEmail({ email, otp: oneTimeCode, languageCode });
+    } else {
+        console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
+    }
+    await db.insert(authAttemptEmailTable).values({
+        didWrite: didWrite,
+        type: type,
+        email: email,
+        userId: userId,
+        userAgent: userAgent,
+        code: oneTimeCode,
+        emailReachability: emailReachability,
+        codeExpiry: codeExpiry,
+        lastOtpSentAt: now,
+    });
+    const nextCodeSoonestTime = new Date(now);
+    nextCodeSoonestTime.setSeconds(
+        nextCodeSoonestTime.getSeconds() + throttleEmailSecondsInterval,
+    );
+    return {
+        success: true,
+        codeExpiry: codeExpiry,
+        nextCodeSoonestTime: nextCodeSoonestTime,
+    };
+}
+
+interface UpdateEmailAuthAttemptCodeProps {
+    db: PostgresDatabase;
+    type: AuthenticateType;
+    userId: string;
+    minutesBeforeEmailCodeExpiry: number;
+    didWrite: string;
+    now: Date;
+    email: string;
+    throttleEmailSecondsInterval: number;
+    testCode: number;
+    doUseTestCode: boolean;
+    emailReachability: ReacherIsReachable | null;
+    languageCode: SupportedDisplayLanguageCodes;
+}
+
+async function updateEmailAuthAttemptCode({
+    db,
+    type,
+    userId,
+    minutesBeforeEmailCodeExpiry,
+    didWrite,
+    now,
+    email,
+    throttleEmailSecondsInterval,
+    doUseTestCode,
+    testCode,
+    emailReachability,
+    languageCode,
+}: UpdateEmailAuthAttemptCodeProps): Promise<AuthenticateEmailResponse> {
+    const isThrottled = await isThrottledByEmail({
+        db,
+        email,
+        throttleEmailSecondsInterval,
+        minutesBeforeEmailCodeExpiry,
+    });
+    if (isThrottled) {
+        return {
+            success: false,
+            reason: "throttled",
+        };
+    }
+    const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
+    const codeExpiry = new Date(now);
+    codeExpiry.setMinutes(
+        codeExpiry.getMinutes() + minutesBeforeEmailCodeExpiry,
+    );
+    const mustSendActualEmail = config.NODE_ENV === "production";
+    if (mustSendActualEmail) {
+        await sendOtpEmail({ email, otp: oneTimeCode, languageCode });
+    } else {
+        console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
+    }
+    await db
+        .update(authAttemptEmailTable)
+        .set({
+            userId: userId,
+            type: type,
+            email: email,
+            code: oneTimeCode,
+            emailReachability: emailReachability,
+            codeExpiry: codeExpiry,
+            guessAttemptAmount: 0,
+            lastOtpSentAt: now,
+            updatedAt: now,
+        })
+        .where(eq(authAttemptEmailTable.didWrite, didWrite));
+    const nextCodeSoonestTime = new Date(now);
+    nextCodeSoonestTime.setSeconds(
+        nextCodeSoonestTime.getSeconds() + throttleEmailSecondsInterval,
+    );
+    return {
+        success: true,
+        codeExpiry: codeExpiry,
+        nextCodeSoonestTime: nextCodeSoonestTime,
+    };
+}
+
+interface IsThrottledByEmailParams {
+    db: PostgresDatabase;
+    email: string;
+    throttleEmailSecondsInterval: number;
+    minutesBeforeEmailCodeExpiry: number;
+}
+
+// Mirrors isThrottledByPhoneHash() but uses email directly instead of phone hash
+async function isThrottledByEmail({
+    db,
+    email,
+    throttleEmailSecondsInterval,
+    minutesBeforeEmailCodeExpiry,
+}: IsThrottledByEmailParams): Promise<boolean> {
+    const now = nowZeroMs();
+    const secondsIntervalAgo = new Date(now);
+    secondsIntervalAgo.setSeconds(
+        secondsIntervalAgo.getSeconds() - throttleEmailSecondsInterval,
+    );
+
+    const results = await db
+        .select({
+            lastOtpSentAt: authAttemptEmailTable.lastOtpSentAt,
+            codeExpiry: authAttemptEmailTable.codeExpiry,
+        })
+        .from(authAttemptEmailTable)
+        .where(eq(authAttemptEmailTable.email, email));
+    for (const result of results) {
+        const expectedExpiryTime = new Date(result.lastOtpSentAt);
+        expectedExpiryTime.setMinutes(
+            expectedExpiryTime.getMinutes() + minutesBeforeEmailCodeExpiry,
+        );
+        if (
+            result.lastOtpSentAt.getTime() > secondsIntervalAgo.getTime() &&
+            expectedExpiryTime.getTime() === result.codeExpiry.getTime() // code hasn't been guessed, because otherwise it would have been manually expired before the normal expiry time
+        ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+async function expireEmailCode({
+    db,
+    didWrite,
+}: {
+    db: PostgresDatabase;
+    didWrite: string;
+}) {
+    const now = nowZeroMs();
+    await db
+        .update(authAttemptEmailTable)
+        .set({
+            codeExpiry: now,
+            updatedAt: now,
+        })
+        .where(eq(authAttemptEmailTable.didWrite, didWrite));
+}
+
+async function updateEmailCodeGuessAttemptAmount({
+    db,
+    didWrite,
+    attemptAmount,
+}: {
+    db: PostgresDatabase;
+    didWrite: string;
+    attemptAmount: number;
+}) {
+    const now = nowZeroMs();
+    return await db
+        .update(authAttemptEmailTable)
+        .set({
+            guessAttemptAmount: attemptAmount,
+            updatedAt: now,
+        })
+        .where(eq(authAttemptEmailTable.didWrite, didWrite));
+}
+
+interface RegisterWithEmailProps {
+    db: PostgresDatabase;
+    didWrite: string;
+    email: string;
+    userAgent: string;
+    userId: string;
+    sessionExpiry: Date;
+    emailReachability: ReacherIsReachable | null;
+}
+
+// WARN: we assume the OTP was verified AND EXPIRED at registerOrLoginWithEmail entry point
+async function registerWithEmail({
+    db,
+    didWrite,
+    email,
+    userAgent,
+    userId,
+    sessionExpiry,
+    emailReachability,
+}: RegisterWithEmailProps): Promise<void> {
+    log.info("Register with email");
+    await db.transaction(async (tx) => {
+        // Note: OTP expiration happens at registerOrLoginWithEmail entry point
+        // to prevent race conditions across all auth paths
+
+        // Check if user already exists (credential upgrade case: user logged in
+        // with another credential and is adding email)
+        const existingUser = await tx
+            .select({ id: userTable.id })
+            .from(userTable)
+            .where(eq(userTable.id, userId))
+            .limit(1);
+
+        if (existingUser.length === 0) {
+            // New user registration
+            await tx.insert(userTable).values({
+                username: await generateUnusedRandomUsername({
+                    db: db,
+                }),
+                id: userId,
+            });
+            await tx.insert(deviceTable).values({
+                userId: userId,
+                didWrite: didWrite,
+                userAgent: userAgent,
+                sessionExpiry: sessionExpiry,
+            });
+        } else {
+            // Credential upgrade — user + device already exist, extend session
+            await tx
+                .update(deviceTable)
+                .set({
+                    sessionExpiry: sessionExpiry,
+                    updatedAt: nowZeroMs(),
+                })
+                .where(eq(deviceTable.didWrite, didWrite));
+        }
+
+        await tx.insert(emailTable).values({
+            userId: userId,
+            email: email,
+            type: "primary",
+            emailReachability: emailReachability,
+        });
+    });
+}
+
+interface RegisterOrLoginWithEmailBaseProps {
+    db: PostgresDatabase;
+    didWrite: string;
+    email: string;
+    userAgent: string;
+    now: Date;
+    sessionLifetimeDays: number;
+    emailReachability: ReacherIsReachable | null;
+}
+
+type RegisterOrLoginWithEmailProps =
+    | (RegisterOrLoginWithEmailBaseProps & {
+          type: "register" | "login_known_device" | "login_new_device";
+          userId: string;
+      })
+    | (RegisterOrLoginWithEmailBaseProps & {
+          type: "merge";
+          toUserId: string;
+          fromUserId: string;
+      });
+
+async function registerOrLoginWithEmail(
+    props: RegisterOrLoginWithEmailProps,
+): Promise<VerifyOtp200> {
+    const { db, type, didWrite, email, userAgent, now, emailReachability } = props;
+    const loginSessionExpiry = new Date(now);
+    loginSessionExpiry.setDate(
+        loginSessionExpiry.getDate() + props.sessionLifetimeDays,
+    );
+
+    // CRITICAL: Expire OTP at the entry point to prevent race conditions
+    // This ensures OTP can only be used once across all auth paths
+    const expirationResult = await db
+        .update(authAttemptEmailTable)
+        .set({
+            codeExpiry: now,
+            updatedAt: now,
+        })
+        .where(
+            and(
+                eq(authAttemptEmailTable.didWrite, didWrite),
+                gt(authAttemptEmailTable.codeExpiry, now), // Only update if not expired
+            ),
+        )
+        .returning({ didWrite: authAttemptEmailTable.didWrite });
+
+    if (expirationResult.length === 0) {
+        // OTP was already used or expired - potential replay attack
+        log.warn(
+            { didWrite },
+            "[Email] OTP already used or expired - potential replay attack",
+        );
+        return {
+            success: false,
+            reason: "expired_code",
+        };
+    }
+
+    switch (type) {
+        case "register": {
+            // Prevent duplicate credential: user must not already have an active email
+            const existingEmail = await db
+                .select({ id: emailTable.id })
+                .from(emailTable)
+                .where(
+                    and(
+                        eq(emailTable.userId, props.userId),
+                        eq(emailTable.isDeleted, false),
+                    ),
+                )
+                .limit(1);
+            if (existingEmail.length > 0) {
+                log.warn(
+                    { userId: props.userId },
+                    "[Email] User already has an active email credential",
+                );
+                return {
+                    success: false,
+                    reason: "already_has_credential",
+                };
+            }
+            await registerWithEmail({
+                db,
+                didWrite,
+                email,
+                userAgent,
+                userId: props.userId,
+                sessionExpiry: loginSessionExpiry,
+                emailReachability,
+            });
+            return {
+                success: true,
+                accountMerged: false,
+                userId: props.userId,
+            };
+        }
+        case "login_known_device": {
+            // OTP already expired at entry point above - just update session
+            await db
+                .update(deviceTable)
+                .set({
+                    sessionExpiry: loginSessionExpiry,
+                    updatedAt: now,
+                })
+                .where(eq(deviceTable.didWrite, didWrite));
+            return {
+                success: true,
+                accountMerged: false,
+                userId: props.userId,
+            };
+        }
+        case "login_new_device": {
+            await db.insert(deviceTable).values({
+                userId: props.userId,
+                didWrite: didWrite,
+                userAgent: userAgent,
+                sessionExpiry: loginSessionExpiry,
+            });
+            return {
+                success: true,
+                accountMerged: false,
+                userId: props.userId,
+            };
+        }
+        case "merge": {
+            const { toUserId, fromUserId } = props;
+
+            await mergeGuestIntoVerifiedUser({
+                db,
+                verifiedUserId: toUserId,
+                guestUserId: fromUserId,
+            });
+            await db
+                .update(deviceTable)
+                .set({
+                    sessionExpiry: loginSessionExpiry,
+                    updatedAt: now,
+                })
+                .where(eq(deviceTable.didWrite, didWrite));
+            log.info(
+                { verifiedUserId: toUserId, guestUserId: fromUserId },
+                "[Email] Merged guest into verified user",
+            );
+            return {
+                success: true,
+                accountMerged: true,
+                userId: toUserId,
+            };
+        }
+    }
+}
+
+interface VerifyEmailOtpProps {
+    db: PostgresDatabase;
+    maxAttempt: number;
+    didWrite: string;
+    code: number;
+    email: string;
+    sessionLifetimeDays: number;
+}
+
+export async function verifyEmailOtp({
+    db,
+    maxAttempt,
+    didWrite,
+    code,
+    email,
+    sessionLifetimeDays,
+}: VerifyEmailOtpProps): Promise<VerifyOtp200> {
+    const now = nowZeroMs();
+    const resultOtp = await db
+        .select({
+            userId: authAttemptEmailTable.userId,
+            email: authAttemptEmailTable.email,
+            userAgent: authAttemptEmailTable.userAgent,
+            authType: authAttemptEmailTable.type,
+            guessAttemptAmount: authAttemptEmailTable.guessAttemptAmount,
+            code: authAttemptEmailTable.code,
+            codeExpiry: authAttemptEmailTable.codeExpiry,
+            emailReachability: authAttemptEmailTable.emailReachability,
+        })
+        .from(authAttemptEmailTable)
+        .where(eq(authAttemptEmailTable.didWrite, didWrite));
+    if (resultOtp.length === 0) {
+        throw httpErrors.badRequest(
+            "Device has never made an email authentication attempt",
+        );
+    }
+
+    // Verify the submitted email matches the stored one
+    if (resultOtp[0].email !== email) {
+        throw httpErrors.badRequest(
+            "The provided email is not associated with the device's ongoing auth flow",
+        );
+    }
+
+    const deviceStatus = await authUtilService.getDeviceStatus({
+        db,
+        didWrite,
+        now,
+    });
+    const authResult = await getEmailAuthTypeWithDeviceStatus({
+        db,
+        email: resultOtp[0].email,
+        didWrite,
+        deviceStatus,
+    });
+
+    // Handle rejection case first (before narrowing type)
+    if (authResult.type === "associated_with_another_user") {
+        return {
+            success: false,
+            reason: authResult.type,
+        };
+    }
+
+    // CRITICAL: Reject if auth type changed during OTP flow to prevent unexpected behavior
+    // This prevents scenarios like: OTP sent for "register" but email was taken by someone else
+    if (resultOtp[0].authType !== authResult.type) {
+        const currentUserId =
+            authResult.type === "merge"
+                ? authResult.toUserId
+                : authResult.userId;
+        log.error(
+            {
+                didWrite,
+                storedType: resultOtp[0].authType,
+                currentType: authResult.type,
+                storedUserId: resultOtp[0].userId,
+                currentUserId,
+            },
+            "[Email] Authentication type changed during OTP flow - rejecting for safety",
+        );
+        return {
+            success: false,
+            reason: "auth_state_changed",
+        };
+    }
+
+    // For "register" type, reuse the stored userId instead of the freshly generated one
+    // This prevents false-positive "user changed" errors due to UUID regeneration
+    if (authResult.type === "register") {
+        authResult.userId = resultOtp[0].userId;
+    } else {
+        // For non-register types, check userId consistency (UUIDs are deterministic here)
+        const currentUserId =
+            authResult.type === "merge"
+                ? authResult.toUserId
+                : authResult.userId;
+        if (resultOtp[0].userId !== currentUserId) {
+            log.error(
+                {
+                    didWrite,
+                    storedUserId: resultOtp[0].userId,
+                    currentUserId,
+                },
+                "[Email] User ID changed during OTP flow - rejecting for safety",
+            );
+            return {
+                success: false,
+                reason: "auth_state_changed",
+            };
+        }
+    }
+
+    // Direct code comparison (no Twilio involved for email)
+    if (resultOtp[0].codeExpiry <= now) {
+        return { success: false, reason: "expired_code" };
+    } else if (otpCodesEqual({ a: resultOtp[0].code, b: code })) {
+        return registerOrLoginWithEmail({
+            ...authResult,
+            db,
+            didWrite,
+            email: resultOtp[0].email,
+            userAgent: resultOtp[0].userAgent,
+            now,
+            sessionLifetimeDays,
+            emailReachability: resultOtp[0].emailReachability,
+        });
+    } else {
+        await updateEmailCodeGuessAttemptAmount({
+            db,
+            didWrite,
+            attemptAmount: resultOtp[0].guessAttemptAmount + 1,
+        });
+        if (resultOtp[0].guessAttemptAmount + 1 >= maxAttempt) {
+            // code is now considered expired
+            await expireEmailCode({ db, didWrite });
+            return {
+                success: false,
+                reason: "too_many_wrong_guess",
+            };
+        }
+        return {
+            success: false,
+            reason: "wrong_guess",
+        };
+    }
 }
 
 // !WARNING: check should already been done that the device exists and is logged in

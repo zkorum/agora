@@ -25,7 +25,9 @@
   <PostTypeDialog
     v-model="showPostTypeDialog"
     v-model:import-settings="importSettings"
-    @mode-change-requested="handleImportModeChangeRequest"
+    v-model:conversation-type="conversationType"
+    :is-max-diff-allowed="isMaxDiffAllowed"
+    @mode-change-requested="handleModeChangeRequest"
   />
 
   <ModeChangeConfirmationDialog
@@ -40,15 +42,11 @@
   <VisibilityOptionsDialog
     v-model:show-dialog="showVisibilityDialog"
     v-model:is-private="isPrivate"
-    v-model:requires-login="requiresLogin"
-    v-model:requires-event-ticket="requiresEventTicket"
   />
 
   <LoginRequirementDialog
     v-model:show-dialog="showLoginRequirementDialog"
-    v-model:requires-login="requiresLogin"
-    v-model:is-private="isPrivate"
-    v-model:requires-event-ticket="requiresEventTicket"
+    v-model:participation-mode="participationMode"
   />
 
   <MakePublicTimerDialog
@@ -59,8 +57,6 @@
   <EventTicketRequirementDialog
     v-model:show-dialog="showEventTicketRequirementDialog"
     v-model:requires-event-ticket="requiresEventTicket"
-    v-model:requires-login="requiresLogin"
-    v-model:is-private="isPrivate"
   />
 </template>
 
@@ -81,7 +77,7 @@ import {
   type PrivateConversationSettings,
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { EventSlug } from "src/shared/types/zod";
+import type { ConversationType, EventSlug, ParticipationMode } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { processEnv } from "src/utils/processEnv";
@@ -118,7 +114,9 @@ const { profileData } = storeToRefs(useUserStore());
 // Define models for two-way binding
 const pollEnabled = defineModel<boolean>("pollEnabled", { required: true });
 const isPrivate = defineModel<boolean>("isPrivate", { required: true });
-const requiresLogin = defineModel<boolean>("requiresLogin", { required: true });
+const participationMode = defineModel<ParticipationMode>("participationMode", {
+  required: true,
+});
 const requiresEventTicket = defineModel<EventSlug | undefined>(
   "requiresEventTicket",
   { required: true }
@@ -130,6 +128,9 @@ const privateConversationSettings = defineModel<PrivateConversationSettings>(
   }
 );
 const postAs = defineModel<PostAsSettings>("postAs", { required: true });
+const conversationType = defineModel<ConversationType>("conversationType", {
+  required: true,
+});
 const importSettings = defineModel<ConversationImportSettings>(
   "importSettings",
   { required: true }
@@ -166,7 +167,6 @@ const showLoginRequirementDialog = ref(false);
 const showEventTicketRequirementDialog = ref(false);
 
 const showImportModeChangeConfirmation = ref(false);
-const hasPendingImportModeChange = ref<"polis-url" | "csv-import" | null>(null);
 
 const showAsDialog = (): void => {
   showPostAsDialogVisible.value = true;
@@ -192,31 +192,48 @@ function checkHasContentThatWouldBeCleared(): boolean {
   );
 }
 
-const handleImportModeChangeRequest = (
-  newImportType: "polis-url" | "csv-import" | null
-): void => {
+interface ModeChangeConfig {
+  importType: "polis-url" | "csv-import" | null;
+  conversationType: ConversationType;
+}
+
+const pendingModeChangeConfig = ref<ModeChangeConfig | null>(null);
+
+const handleModeChangeRequest = (config: ModeChangeConfig): void => {
+  // Set conversation type immediately
+  conversationType.value = config.conversationType;
+
+  // MaxDiff doesn't use polls — disable if switching to MaxDiff
+  if (config.conversationType === "maxdiff") {
+    pollEnabled.value = false;
+  }
+
   const currentType = importSettings.value.importType;
 
   // If switching from manual to import type and might have content, show confirmation
   if (
     currentType === null &&
-    newImportType !== null &&
+    config.importType !== null &&
     checkHasContentThatWouldBeCleared()
   ) {
-    hasPendingImportModeChange.value = newImportType;
+    pendingModeChangeConfig.value = config;
     showImportModeChangeConfirmation.value = true;
   } else {
     // Directly apply the change
-    setImportTypeWithClearing(newImportType);
+    setImportTypeWithClearing(config.importType);
   }
 };
 
 const handleModeChangeConfirm = (): void => {
-  setImportTypeWithClearing(hasPendingImportModeChange.value);
+  if (pendingModeChangeConfig.value) {
+    setImportTypeWithClearing(pendingModeChangeConfig.value.importType);
+    pendingModeChangeConfig.value = null;
+  }
   showImportModeChangeConfirmation.value = false;
 };
 
 const handleModeChangeCancel = (): void => {
+  pendingModeChangeConfig.value = null;
   showImportModeChangeConfirmation.value = false;
 };
 
@@ -264,6 +281,25 @@ const toggleMakePublicTimer = (): void => {
 const toggleEventTicketRequirement = (): void => {
   showEventTicketRequirementDialog.value = true;
 };
+
+const isMaxDiffAllowed = computed(() => {
+  if (processEnv.VITE_MAXDIFF_ENABLED !== "true") return false;
+
+  // Default to "Agora" if not set (must match backend MAXDIFF_ALLOWED_ORGS default)
+  const allowedOrgs = processEnv.VITE_MAXDIFF_ALLOWED_ORGS ?? "Agora";
+  if (allowedOrgs.trim() !== "") {
+    if (!postAs.value.postAsOrganization) return false;
+    const orgList = allowedOrgs.split(",").map((s) => s.trim());
+    return orgList.includes(postAs.value.organizationName);
+  }
+
+  // If org-only mode, any org can create MaxDiff
+  if (processEnv.VITE_IS_MAXDIFF_ORG_ONLY === "true") {
+    return postAs.value.postAsOrganization;
+  }
+
+  return true;
+});
 
 const getMakePublicLabel = (): string => {
   if (!privateConversationSettings.value.hasScheduledConversion) {
@@ -313,11 +349,13 @@ const controlButtons = computed((): ControlButton[] => [
   {
     id: "post-type",
     label:
-      importSettings.value.importType === "polis-url"
-        ? t("importFromPolisUrl")
-        : importSettings.value.importType === "csv-import"
-          ? t("importFromCsv")
-          : t("newConversation"),
+      conversationType.value === "maxdiff"
+        ? t("typeMaxDiff")
+        : importSettings.value.importType === "polis-url"
+          ? t("importFromPolisUrl")
+          : importSettings.value.importType === "csv-import"
+            ? t("importFromCsv")
+            : t("newConversation"),
     icon: showPostTypeDialog.value ? "pi pi-chevron-up" : "pi pi-chevron-down",
     isVisible:
       !props.isEditMode &&
@@ -339,7 +377,12 @@ const controlButtons = computed((): ControlButton[] => [
   },
   {
     id: "login-requirement",
-    label: requiresLogin.value ? t("requiresLogin") : t("guestParticipation"),
+    label:
+      participationMode.value === "strong_verification"
+        ? t("requiresLogin")
+        : participationMode.value === "email_verification"
+          ? t("requiresEmailVerification")
+          : t("guestParticipation"),
     icon: showLoginRequirementDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
@@ -371,7 +414,9 @@ const controlButtons = computed((): ControlButton[] => [
     id: "polling",
     label: pollEnabled.value ? t("removePoll") : t("addPoll"),
     icon: pollEnabled.value ? "pi pi-minus" : "pi pi-plus",
-    isVisible: importSettings.value.importType === null,
+    isVisible:
+      importSettings.value.importType === null &&
+      conversationType.value === "polis",
     clickHandler: togglePolling,
     clickable: true,
   },

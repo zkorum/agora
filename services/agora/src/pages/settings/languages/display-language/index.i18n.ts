@@ -31,5 +31,10 @@ export const displayLanguageSettingsTranslations: Record<
   },
   fa: {
     pageTitle: "زبان نمایش",
+  ky: {
+    pageTitle: "Көрсөтүү тили",
+  },
+  ru: {
+    pageTitle: "Язык интерфейса",
   },
 };

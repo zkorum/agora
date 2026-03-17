@@ -16,13 +16,18 @@
         :is-private="conversationDraft.isPrivate"
         :title="conversationDraft.title"
         size="large"
+        :conversation-type="conversationDraft.conversationType"
       />
 
       <!-- Add Seed Opinions Section -->
       <div class="seed-opinions-section">
-        <div class="section-title">{{ t("addSeedOpinions") }}</div>
+        <div class="section-title">{{ conversationDraft.conversationType === "maxdiff" ? t("addMaxDiffItems") : t("addSeedOpinions") }}</div>
         <p class="section-description">
-          {{ t("seedOpinionsDescription") }}
+          {{
+            conversationDraft.conversationType === "maxdiff"
+              ? t("maxDiffSeedDescription")
+              : t("seedOpinionsDescription")
+          }}
         </p>
 
         <!-- Seed Opinions List -->
@@ -60,7 +65,7 @@
         <!-- Add Opinion Button -->
         <div class="add-button-container">
           <ConversationControlButton
-            :label="t('addOpinion')"
+            :label="conversationDraft.conversationType === 'maxdiff' ? t('addMaxDiffItem') : t('addOpinion')"
             icon="pi pi-plus"
             :show-border="false"
             icon-position="left"
@@ -115,17 +120,19 @@ import {
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useCommonApi } from "src/utils/api/common";
 import { useBackendPostApi } from "src/utils/api/post/post";
+import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
+import { useNotify } from "src/utils/ui/notify";
 import { type ComponentPublicInstance, nextTick, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const router = useRouter();
+const { showNotifyMessage } = useNotify();
 
 // Use composable for validation and draft management (with syncToStore: true since we're in create flow)
 const { validateForReview, isDraftModified, resetDraft } = useConversationDraft(
@@ -134,7 +141,7 @@ const { validateForReview, isDraftModified, resetDraft } = useConversationDraft(
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const { createNewPost } = useBackendPostApi();
-const { loadPostData } = useHomeFeedStore();
+const { invalidateFeed } = useInvalidateFeedQuery();
 const { handleAxiosErrorStatusCodes } = useCommonApi();
 
 const showLoginDialog = ref(false);
@@ -281,6 +288,17 @@ function removeOpinion(index: number): void {
 }
 
 function validateSeedOpinions(): boolean {
+  // MaxDiff requires minimum 6 seed opinions
+  if (
+    conversationDraft.value.conversationType === "maxdiff" &&
+    conversationDraft.value.seedOpinions.filter(
+      (s: string) => s.trim().length > 0
+    ).length < 6
+  ) {
+    showNotifyMessage(t("needMinimumForMaxDiff"));
+    return false;
+  }
+
   // Clear previous errors
   opinionErrors.value = {};
 
@@ -369,13 +387,14 @@ async function onSubmit() {
         ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
         : undefined,
       isIndexed: !conversationDraft.value.isPrivate,
-      isLoginRequired: conversationDraft.value.requiresLogin,
+      participationMode: conversationDraft.value.participationMode,
+      conversationType: conversationDraft.value.conversationType,
       seedOpinionList: conversationDraft.value.seedOpinions,
       requiresEventTicket: conversationDraft.value.requiresEventTicket,
     });
 
     if (response.status == "success") {
-      await loadPostData();
+      invalidateFeed();
 
       // Set navigation context to indicate user came from conversation creation
       navigationStore.setConversationCreationContext(true);

@@ -2,21 +2,25 @@
   <div>
     <div class="container">
       <ZKTab
-        icon-code="meteor-icons:comment"
-        :text="formatAmount(opinionCount)"
-        :is-highlighted="currentTab === 'comment' && !compactMode"
+        :icon-code="props.conversationType === 'maxdiff' ? 'mdi:sort-numeric-ascending' : 'meteor-icons:comment'"
+        :text="props.conversationType === 'maxdiff' ? t('rank') : formatAmount(opinionCount)"
+        :is-highlighted="model === 'comment' && !compactMode"
         :should-underline-on-highlight="true"
-        :is-loading="isLoading && currentTab === 'comment'"
-        @click="clickedTab('comment')"
+        :is-loading="isLoading && model === 'comment'"
+        :to="model === 'comment' ? (compactMode ? undefined : { name: commentRouteName, params: { postSlugId: conversationSlugId } }) : undefined"
+        :replace="true"
+        @click="handleCommentClick"
       />
       <ZKTab
         v-if="!compactMode"
         icon-code="ph:chart-donut"
         :text="t('analysis')"
-        :is-highlighted="currentTab === 'analysis'"
+        :is-highlighted="model === 'analysis'"
         :should-underline-on-highlight="true"
-        :is-loading="isLoading && currentTab === 'analysis'"
-        @click="clickedTab('analysis')"
+        :is-loading="isLoading && model === 'analysis'"
+        :to="model === 'analysis' ? undefined : { name: analysisRouteName, params: { postSlugId: conversationSlugId } }"
+        :replace="false"
+        @click="handleAnalysisClick"
       />
     </div>
   </div>
@@ -25,8 +29,9 @@
 <script setup lang="ts">
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { ConversationType } from "src/shared/types/zod";
 import { formatAmount } from "src/utils/common";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import {
@@ -34,48 +39,67 @@ import {
   interactionTabTranslations,
 } from "./InteractionTab.i18n";
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   opinionCount: number;
   compactMode: boolean;
   isLoading?: boolean;
   conversationSlugId: string;
-}>();
+  onSameTabClick?: () => void;
+  conversationType?: ConversationType;
+}>(), {
+  onSameTabClick: undefined,
+  conversationType: "polis",
+});
 
 const model = defineModel<"comment" | "analysis">({ required: true });
 const { t } = useComponentI18n<InteractionTabTranslations>(
   interactionTabTranslations
 );
 
-const router = useRouter();
 const route = useRoute();
+const router = useRouter();
 
-// Determine current tab from route path
-const currentTab = computed<"comment" | "analysis">(() => {
-  const pathSegments = route.path.split("/");
-  const lastSegment = pathSegments[pathSegments.length - 1];
+// Track whether we can use router.back() to return to comment tab
+const canGoBackToComment = ref(false);
 
-  if (lastSegment === "analysis") {
-    return "analysis";
-  }
-  return "comment";
-});
+const isEmbed = computed(() => route.path.includes("/embed"));
 
-function clickedTab(tabKey: "comment" | "analysis") {
-  if (props.compactMode) return;
+const commentRouteName = computed(() =>
+  isEmbed.value
+    ? "/conversation/[postSlugId].embed/"
+    : "/conversation/[postSlugId]/"
+);
 
-  if (tabKey === "comment") {
-    // Analysis → Comment: use replace to avoid adding to history
-    if (currentTab.value === "analysis") {
-      void router.replace(`/conversation/${props.conversationSlugId}`);
+const analysisRouteName = computed(() =>
+  isEmbed.value
+    ? "/conversation/[postSlugId].embed/analysis"
+    : "/conversation/[postSlugId]/analysis"
+);
+
+function handleCommentClick(): void {
+  if (model.value === "comment") {
+    props.onSameTabClick?.();
+  } else {
+    // Going from analysis back to comment — pop the analysis history entry
+    if (canGoBackToComment.value) {
+      canGoBackToComment.value = false;
+      router.back();
+    } else {
+      // Fallback for deep links (entered directly on analysis)
+      void router.replace({
+        name: commentRouteName.value,
+        params: { postSlugId: props.conversationSlugId },
+      });
     }
-  } else if (tabKey === "analysis") {
-    // Comment → Analysis: use replace to avoid adding to history
-    // This ensures back button skips all tab switches and returns to referrer
-    void router.replace(`/conversation/${props.conversationSlugId}/analysis`);
   }
+}
 
-  // Sync with v-model for backward compatibility
-  model.value = tabKey;
+function handleAnalysisClick(): void {
+  if (model.value === "analysis") {
+    props.onSameTabClick?.();
+  } else {
+    canGoBackToComment.value = true;
+  }
 }
 </script>
 

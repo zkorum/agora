@@ -57,5 +57,16 @@ export const embeddedBrowserWarningTestTranslations: Record<
     embeddedBrowserWarningDescription:
       "Test the embedded browser warning dialog that appears when users open the app in an in-app browser (Telegram, WeChat, etc.)",
     openWarningButton: "باز کردن دیالوگ هشدار",
+  ky: {
+    embeddedBrowserWarning: "Камтылган браузер эскертүүсү",
+    embeddedBrowserWarningDescription:
+      "Колдонуучулар тиркеменин ичиндеги браузерде (Telegram, WeChat ж.б.) тиркемени ачканда пайда болгон камтылган браузер эскертүү диалогун тестирлөө",
+    openWarningButton: "Эскертүү диалогун ачуу",
+  },
+  ru: {
+    embeddedBrowserWarning: "Предупреждение встроенного браузера",
+    embeddedBrowserWarningDescription:
+      "Тестирование диалога предупреждения встроенного браузера, появляющегося при открытии приложения во встроенном браузере (Telegram, WeChat и др.)",
+    openWarningButton: "Открыть диалог предупреждения",
   },
 };

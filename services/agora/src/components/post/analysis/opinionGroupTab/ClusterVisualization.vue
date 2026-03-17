@@ -8,20 +8,20 @@
         width: imgItem.clusterWidthPercent + '%',
         top: imgItem.top + '%',
         left: imgItem.left + '%',
-        zIndex: imgItem.isSelected ? 100 + imageIndex : 20 + imageIndex,
+        zIndex: props.reportMode ? 20 + imageIndex : imgItem.isSelected ? 100 + imageIndex : 20 + imageIndex,
       }"
-      role="button"
-      tabindex="0"
-      :aria-label="getClusterAriaLabel(String(imageIndex) as PolisKey)"
-      :aria-pressed="imgItem.isSelected"
-      @click="handleClusterSelection(String(imageIndex) as PolisKey)"
-      @keydown.enter="handleClusterSelection(String(imageIndex) as PolisKey)"
+      :role="props.reportMode ? undefined : 'button'"
+      :tabindex="props.reportMode ? -1 : 0"
+      :aria-label="props.reportMode ? undefined : getClusterAriaLabel(String(imageIndex) as PolisKey)"
+      :aria-pressed="props.reportMode ? undefined : imgItem.isSelected"
+      @click="props.reportMode ? undefined : handleClusterSelection(String(imageIndex) as PolisKey)"
+      @keydown.enter="props.reportMode ? undefined : handleClusterSelection(String(imageIndex) as PolisKey)"
     >
       <div :style="{ position: 'relative' }">
         <img
           :src="
             composeImagePath(
-              imgItem.isSelected,
+              props.reportMode || imgItem.isSelected,
               imageIndex,
               activeClusterConfig.numNodes
             )
@@ -31,20 +31,28 @@
         />
         <div
           class="clusterNameOverlay borderStyle dynamicFont"
-          :class="{ selected: imgItem.isSelected }"
+          :class="{ selected: !props.reportMode && imgItem.isSelected }"
           :style="{
             transform: `translate(-50%, calc(-50% + ${imgItem.labelOffsetY}px))`,
           }"
         >
           <div class="clusterLabelFlex">
             <div class="clusterOverlayFontBold">
-              {{
-                formatClusterLabel(
-                  String(imageIndex) as PolisKey,
-                  false,
-                  clusters[String(imageIndex) as PolisKey]?.aiLabel
-                )
-              }}
+              <template v-if="props.reportMode && useLetterCodes">
+                {{ formatClusterLabel(String(imageIndex) as PolisKey, false) }}<template v-if="clusters[String(imageIndex) as PolisKey]?.aiLabel"> · {{ clusters[String(imageIndex) as PolisKey]?.aiLabel }}</template>
+              </template>
+              <template v-else-if="props.reportMode">
+                {{ clusters[String(imageIndex) as PolisKey]?.aiLabel || formatClusterLabel(String(imageIndex) as PolisKey, false) }}
+              </template>
+              <template v-else>
+                {{
+                  formatClusterLabel(
+                    String(imageIndex) as PolisKey,
+                    false,
+                    clusters[String(imageIndex) as PolisKey]?.aiLabel
+                  )
+                }}
+              </template>
             </div>
             <div class="clusterGroupSize">
               <q-icon name="mdi-account-supervisor-outline" />
@@ -59,7 +67,7 @@
               }})
             </div>
             <div
-              v-if="clusters[String(imageIndex) as PolisKey]?.isUserInCluster"
+              v-if="!props.reportMode && clusters[String(imageIndex) as PolisKey]?.isUserInCluster"
               class="meIndicator"
             >
               <q-icon name="mdi-account-outline" />
@@ -78,7 +86,7 @@ import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import { calculatePercentage } from "src/shared/util";
 import { formatPercentage } from "src/utils/common";
 import { formatClusterLabel } from "src/utils/component/opinion";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { z } from "zod";
 
 import {
@@ -90,11 +98,14 @@ const props = defineProps<{
   clusters: Partial<PolisClusters>;
   totalParticipantCount: number;
   currentClusterTab: PolisKey;
+  reportMode?: boolean;
 }>();
 
 const emit = defineEmits<{
   "update:currentClusterTab": [value: PolisKey];
 }>();
+
+const useLetterCodes = computed(() => Object.keys(props.clusters).length >= 4);
 
 const { t } = useComponentI18n<ClusterVisualizationTranslations>(
   clusterVisualizationTranslations

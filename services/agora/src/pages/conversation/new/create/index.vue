@@ -24,10 +24,11 @@
       <NewConversationControlBar
         v-model:poll-enabled="pollEnabled"
         v-model:is-private="isPrivate"
-        v-model:requires-login="requiresLogin"
+        v-model:participation-mode="participationMode"
         v-model:requires-event-ticket="requiresEventTicket"
         v-model:private-conversation-settings="privateConversationSettings"
         v-model:post-as="postAs"
+        v-model:conversation-type="conversationType"
         v-model:import-settings="importSettings"
         v-model:title="title"
         v-model:content="content"
@@ -185,8 +186,9 @@ const {
   content,
   pollEnabled,
   pollOptions,
+  conversationType,
   isPrivate,
-  requiresLogin,
+  participationMode,
   requiresEventTicket,
   privateConversationSettings,
   postAs,
@@ -400,7 +402,7 @@ async function handleImportSubmission(): Promise<void> {
           ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
           : undefined,
         isIndexed: !conversationDraft.value.isPrivate,
-        isLoginRequired: conversationDraft.value.requiresLogin,
+        participationMode: conversationDraft.value.participationMode,
         requiresEventTicket: conversationDraft.value.requiresEventTicket,
       });
 
@@ -429,7 +431,7 @@ async function handleImportSubmission(): Promise<void> {
         ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
         : undefined,
       isIndexed: !conversationDraft.value.isPrivate,
-      isLoginRequired: conversationDraft.value.requiresLogin,
+      participationMode: conversationDraft.value.participationMode,
       requiresEventTicket: conversationDraft.value.requiresEventTicket,
     });
 

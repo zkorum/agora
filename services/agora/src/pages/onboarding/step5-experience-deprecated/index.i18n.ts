@@ -81,5 +81,22 @@ export const step5ExperienceTranslations: Record<
     braveSpaceTitle: "فضای شجاعانه",
     braveSpaceDescription:
       "Content flagged as antisocial is shown to me with a warning.",
+  ky: {
+    title: "Agora'ны кантип колдонгуңуз келерин тандаңыз",
+    safeSpaceTitle: "Коопсуз мейкиндик",
+    safeSpaceDescription:
+      "Антисоциалдуу (троллинг же чыдамсыздык) деп белгиленген мазмун тасмамдан алынып салынат. Эмне алынып салынганын көргүм келсе, посттун модерация тарыхын текшере алам.",
+    braveSpaceTitle: "Кайраттуу мейкиндик",
+    braveSpaceDescription:
+      "Антисоциалдуу деп белгиленген мазмун мага эскертүү менен көрсөтүлөт.",
+  },
+  ru: {
+    title: "Выберите, как вы хотите использовать Agora",
+    safeSpaceTitle: "Безопасное пространство",
+    safeSpaceDescription:
+      "Контент, отмеченный как антисоциальный (троллинг или нетерпимость), удаляется из моей ленты. Если я хочу увидеть удалённое, я могу проверить историю модерации публикации.",
+    braveSpaceTitle: "Смелое пространство",
+    braveSpaceDescription:
+      "Контент, отмеченный как антисоциальный, отображается с предупреждением.",
   },
 };

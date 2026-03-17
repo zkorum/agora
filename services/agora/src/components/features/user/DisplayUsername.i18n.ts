@@ -31,5 +31,10 @@ export const displayUsernameTranslations: Record<
   },
   fa: {
     guest: "مهمان",
+  ky: {
+    guest: "Конок",
+  },
+  ru: {
+    guest: "Гость",
   },
 };

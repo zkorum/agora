@@ -41,6 +41,8 @@ export const zodModerationReason = z.enum([
     "spam",
 ]);
 export const zodFeedSortAlgorithm = z.enum(["following", "new"]);
+export const zodParticipationMode = z.enum(["strong_verification", "email_verification", "guest"]);
+export const zodConversationType = z.enum(["polis", "maxdiff"]);
 export const zodConversationModerationAction = z.enum(["lock"]);
 export const zodOpinionModerationAction = z.enum(["move", "hide"]);
 export const zodExportStatus = z.enum([
@@ -330,6 +332,7 @@ const zodOpinionVoteNotification = zodNotificationBase
         routeTarget: zodOpinionRouteTarget,
         numVotes: z.number().int().min(1),
         message: z.string(), // Opinion content
+        isSeed: z.boolean(),
     })
     .strict();
 
@@ -457,15 +460,22 @@ export const zodConversationMetadata = z
     .object({
         conversationSlugId: zodSlugId,
         createdAt: zodDateTimeFlexible,
-        updatedAt: zodDateTimeFlexible,
+        updatedAt: zodDateTimeFlexible.optional(),
         lastReactedAt: zodDateTimeFlexible,
         opinionCount: zodCount,
         voteCount: zodCount,
         participantCount: zodCount,
+        totalOpinionCount: zodCount,
+        totalVoteCount: zodCount,
+        totalParticipantCount: zodCount,
+        moderatedOpinionCount: zodCount,
+        hiddenOpinionCount: zodCount,
         authorUsername: z.string(),
-        isLoginRequired: z.boolean(),
+        participationMode: zodParticipationMode,
+        conversationType: zodConversationType,
         isIndexed: z.boolean(),
         isClosed: z.boolean(),
+        isEdited: z.boolean(),
         organization: zodOrganization.optional(),
         moderation: zodConversationModerationProperties,
         requiresEventTicket: zodEventSlug.optional(),
@@ -476,15 +486,22 @@ export const zodConversationMetadataWithId = z
         conversationId: z.number().int().nonnegative(),
         conversationSlugId: zodSlugId,
         createdAt: z.date(),
-        updatedAt: z.date(),
+        updatedAt: z.date().optional(),
         lastReactedAt: z.date(),
         opinionCount: zodCount,
         voteCount: zodCount,
         participantCount: zodCount,
+        totalOpinionCount: zodCount,
+        totalVoteCount: zodCount,
+        totalParticipantCount: zodCount,
+        moderatedOpinionCount: zodCount,
+        hiddenOpinionCount: zodCount,
         authorUsername: z.string(),
-        isLoginRequired: z.boolean(),
+        participationMode: zodParticipationMode,
+        conversationType: zodConversationType,
         isIndexed: z.boolean(),
         isClosed: z.boolean(),
+        isEdited: z.boolean(),
         organization: zodOrganization.optional(),
         moderation: zodConversationModerationProperties,
         requiresEventTicket: zodEventSlug.optional(),
@@ -1041,12 +1058,35 @@ export const zodSupportedCountryCallingCode = z.enum([
     "242",
 ]);
 
+const zodCredentials = z.object({
+    email: z.string().nullable(),
+    phone: z
+        .object({
+            lastTwoDigits: z.number(),
+            countryCallingCode: z.string(),
+        })
+        .nullable(),
+    rarimo: z
+        .object({
+            citizenship: z.string(),
+            sex: z.string(),
+        })
+        .nullable(),
+});
+
+const zodNullCredentials = z.object({
+    email: z.literal(null),
+    phone: z.literal(null),
+    rarimo: z.literal(null),
+});
+
 const zodIsKnownTrueLoginStatus = z
     .object({
         isKnown: z.literal(true),
         isRegistered: z.boolean(),
         isLoggedIn: z.boolean(),
         userId: z.string(), // User ID for tracking identity changes (account merges)
+        credentials: zodCredentials,
     })
     .strict();
 
@@ -1054,6 +1094,7 @@ const zodIsKnownFalseLoginStatus = z.object({
     isKnown: z.literal(false),
     isRegistered: z.literal(false),
     isLoggedIn: z.literal(false),
+    credentials: zodNullCredentials,
 });
 
 export const zodGetDeviceStatusResponse = z.discriminatedUnion("isKnown", [
@@ -1163,6 +1204,7 @@ export type AgreementType = z.infer<typeof zodAgreementType>;
 export type PolisClusters = z.infer<typeof zodPolisClusters>;
 export type PolisClustersMetadata = z.infer<typeof zodPolisClustersMetadata>;
 export type ClusterMetadata = z.infer<typeof zodClusterMetadata>;
+export type ParticipationMode = z.infer<typeof zodParticipationMode>;
 export type EventSlug = z.infer<typeof zodEventSlug>;
 export type ExportStatus = z.infer<typeof zodExportStatus>;
 export type ExportFailureReason = z.infer<typeof zodExportFailureReason>;
@@ -1199,3 +1241,19 @@ export const zodStatusResponse = z.object({
 export type ProofData = z.infer<typeof zodProofData>;
 export type ZKProof = z.infer<typeof zodZKProof>;
 export type StatusResponse = z.infer<typeof zodStatusResponse>;
+export type ConversationType = z.infer<typeof zodConversationType>;
+
+// MaxDiff (Best-Worst Scaling) types
+export const zodMaxdiffComparison = z.object({
+    best: z.string(),
+    worst: z.string(),
+    set: z.array(z.string()),
+});
+export type MaxDiffComparison = z.infer<typeof zodMaxdiffComparison>;
+
+export const zodMaxdiffState = z.object({
+    ranking: z.array(z.string()).nullable(),
+    comparisons: z.array(zodMaxdiffComparison),
+    isComplete: z.boolean(),
+});
+export type MaxDiffState = z.infer<typeof zodMaxdiffState>;

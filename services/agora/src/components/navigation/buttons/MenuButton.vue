@@ -1,7 +1,7 @@
 <template>
   <div v-if="shouldShowMenuButton">
     <UserAvatar
-      v-if="isGuestOrLoggedIn"
+      v-if="isGuestOrLoggedIn && profileData.dataLoaded"
       class="menu-button-hover"
       :size="40"
       :user-identity="profileData.userName"

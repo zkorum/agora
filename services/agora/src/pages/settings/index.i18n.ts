@@ -2,6 +2,12 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface SettingsTranslations {
   pageTitle: string;
+  verificationStatus: string;
+  idVerified: string;
+  notVerified: string;
+  phoneNumber: string;
+  emailAddress: string;
+  clickToAdd: string;
   deleteAccount: string;
   deleteGuestAccount: string;
   profile: string;
@@ -28,6 +34,12 @@ export const settingsTranslations: Record<
 > = {
   en: {
     pageTitle: "Settings",
+    verificationStatus: "Verification Status",
+    idVerified: "ID Verified",
+    notVerified: "Not verified",
+    phoneNumber: "Phone Number",
+    emailAddress: "Email Address",
+    clickToAdd: "Click to add",
     deleteAccount: "Delete Account",
     deleteGuestAccount: "Delete Guest Account",
     profile: "Profile",
@@ -49,6 +61,12 @@ export const settingsTranslations: Record<
   },
   ar: {
     pageTitle: "الإعدادات",
+    verificationStatus: "حالة التحقق",
+    idVerified: "تم التحقق من الهوية",
+    notVerified: "غير متحقق",
+    phoneNumber: "رقم الهاتف",
+    emailAddress: "عنوان البريد الإلكتروني",
+    clickToAdd: "انقر للإضافة",
     deleteAccount: "حذف الحساب",
     deleteGuestAccount: "حذف حساب الضيف",
     profile: "الملف الشخصي",
@@ -70,6 +88,12 @@ export const settingsTranslations: Record<
   },
   es: {
     pageTitle: "Configuración",
+    verificationStatus: "Estado de verificación",
+    idVerified: "ID verificada",
+    notVerified: "Sin verificar",
+    phoneNumber: "Número de teléfono",
+    emailAddress: "Correo electrónico",
+    clickToAdd: "Toca para agregar",
     deleteAccount: "Eliminar cuenta",
     deleteGuestAccount: "Eliminar cuenta de invitado",
     profile: "Perfil",
@@ -92,6 +116,12 @@ export const settingsTranslations: Record<
   },
   fr: {
     pageTitle: "Paramètres",
+    verificationStatus: "Statut de vérification",
+    idVerified: "Identité vérifiée",
+    notVerified: "Non vérifié",
+    phoneNumber: "Numéro de téléphone",
+    emailAddress: "Adresse e-mail",
+    clickToAdd: "Appuyer pour ajouter",
     deleteAccount: "Supprimer le compte",
     deleteGuestAccount: "Supprimer le compte invité",
     profile: "Profil",
@@ -114,6 +144,12 @@ export const settingsTranslations: Record<
   },
   "zh-Hans": {
     pageTitle: "设置",
+    verificationStatus: "验证状态",
+    idVerified: "已验证身份",
+    notVerified: "未验证",
+    phoneNumber: "手机号码",
+    emailAddress: "电子邮箱",
+    clickToAdd: "点击添加",
     deleteAccount: "删除账户",
     deleteGuestAccount: "删除访客账户",
     profile: "个人资料",
@@ -135,6 +171,12 @@ export const settingsTranslations: Record<
   },
   "zh-Hant": {
     pageTitle: "設定",
+    verificationStatus: "驗證狀態",
+    idVerified: "已驗證身分",
+    notVerified: "未驗證",
+    phoneNumber: "手機號碼",
+    emailAddress: "電子郵件",
+    clickToAdd: "點擊新增",
     deleteAccount: "刪除帳戶",
     deleteGuestAccount: "刪除訪客帳戶",
     profile: "個人資料",
@@ -156,6 +198,12 @@ export const settingsTranslations: Record<
   },
   ja: {
     pageTitle: "設定",
+    verificationStatus: "認証ステータス",
+    idVerified: "本人確認済み",
+    notVerified: "未認証",
+    phoneNumber: "電話番号",
+    emailAddress: "メールアドレス",
+    clickToAdd: "タップして追加",
     deleteAccount: "アカウントを削除",
     deleteGuestAccount: "ゲストアカウントを削除",
     profile: "プロフィール",
@@ -196,5 +244,58 @@ export const settingsTranslations: Record<
     deleteGuestAccountDialogMessage: "حساب مهمان شما بلافاصله به طور دائمی حذف خواهد شد. این عمل قابل بازگشت نیست. داده‌ها ممکن است تا ۳۰ روز در پشتیبان‌ها باقی بمانند.\n\nبرای تأیید، DELETE را در زیر تایپ کنید:",
     deleteAccountDialogPlaceholder: "برای تأیید DELETE را تایپ کنید",
     deleteAccountDialogError: "درخواست حذف حساب ناموفق بود. بعداً دوباره تلاش کنید.",
+  ky: {
+    pageTitle: "Жөндөөлөр",
+    verificationStatus: "Текшерүү абалы",
+    idVerified: "Инсандык текшерилди",
+    notVerified: "Текшерилген эмес",
+    phoneNumber: "Телефон номери",
+    emailAddress: "Электрондук почта дареги",
+    clickToAdd: "Кошуу үчүн басыңыз",
+    deleteAccount: "Каттоо эсебин жок кылуу",
+    deleteGuestAccount: "Конок каттоо эсебин жок кылуу",
+    profile: "Профиль",
+    contentPreference: "Мазмун тандоолору",
+    language: "Тил",
+    privacyPolicy: "Купуялык саясаты",
+    termsOfService: "Кызмат көрсөтүү шарттары",
+    communityGuidelines: "Коомчулук эрежелери",
+    logOut: "Чыгуу",
+    moderatorOrganization: "Модератор - Уюм",
+    componentTesting: "🔧 Компоненттерди тестирлөө",
+    accountDeleted: "Каттоо эсеби жок кылынды",
+    accountDeletionFailed: "Ой! Каттоо эсебин жок кылуу ишке ашкан жок. Кайра аракет кылыңыз",
+    deleteAccountDialogTitle: "Каттоо эсебин жок кылуу",
+    deleteAccountDialogMessage: "Каттоо эсебиңиз дароо биротоло жок кылынат. Бул аракетти кайтаруу мүмкүн эмес. Маалыматтар үчүнчү тараптын камдык көчүрмөлөрүндө 30 күнгө чейин сакталышы мүмкүн.\n\nАраитетти ырастоо үчүн, төмөнгө DELETE деп жазыңыз:",
+    deleteGuestAccountDialogMessage: "Конок каттоо эсебиңиз дароо биротоло жок кылынат. Бул аракетти кайтаруу мүмкүн эмес. Маалыматтар камдык көчүрмөлөрдө 30 күнгө чейин сакталышы мүмкүн.\n\nАракетти ырастоо үчүн, төмөнгө DELETE деп жазыңыз:",
+    deleteAccountDialogPlaceholder: "Ырастоо үчүн DELETE жазыңыз",
+    deleteAccountDialogError: "Каттоо эсебин жок кылуу сурамы ишке ашкан жок. Кийинчерээк кайра аракет кылыңыз.",
+  },
+  ru: {
+    pageTitle: "Настройки",
+    verificationStatus: "Статус верификации",
+    idVerified: "Личность подтверждена",
+    notVerified: "Не подтверждено",
+    phoneNumber: "Номер телефона",
+    emailAddress: "Адрес электронной почты",
+    clickToAdd: "Нажмите, чтобы добавить",
+    deleteAccount: "Удалить аккаунт",
+    deleteGuestAccount: "Удалить гостевой аккаунт",
+    profile: "Профиль",
+    contentPreference: "Настройки контента",
+    language: "Язык",
+    privacyPolicy: "Политика конфиденциальности",
+    termsOfService: "Условия использования",
+    communityGuidelines: "Правила сообщества",
+    logOut: "Выйти",
+    moderatorOrganization: "Модератор - Организация",
+    componentTesting: "🔧 Тестирование компонентов",
+    accountDeleted: "Аккаунт удалён",
+    accountDeletionFailed: "Ой! Не удалось удалить аккаунт. Попробуйте ещё раз",
+    deleteAccountDialogTitle: "Удалить аккаунт",
+    deleteAccountDialogMessage: "Ваш аккаунт будет немедленно удалён без возможности восстановления. Данные могут сохраняться в сторонних резервных копиях до 30 дней.\n\nДля подтверждения введите DELETE ниже:",
+    deleteGuestAccountDialogMessage: "Ваш гостевой аккаунт будет немедленно удалён без возможности восстановления. Данные могут сохраняться в резервных копиях до 30 дней.\n\nДля подтверждения введите DELETE ниже:",
+    deleteAccountDialogPlaceholder: "Введите DELETE для подтверждения",
+    deleteAccountDialogError: "Запрос на удаление аккаунта не выполнен. Попробуйте позже.",
   },
 };

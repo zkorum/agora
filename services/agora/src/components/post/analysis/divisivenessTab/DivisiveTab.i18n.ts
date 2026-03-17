@@ -95,5 +95,24 @@ export const divisiveTabTranslations: Record<
     loadMore: "بارگذاری همه",
     noDivisiveOpinionsMessage: "هنوز نظرات بحث‌برانگیز معناداری یافت نشده است.",
     lowerRankedDivider: "از نظر آماری کم‌اهمیت‌تر",
+  ky: {
+    divisiveTitle: "Талаштуу",
+    divisiveLongTitle: "Топтор аралык катышуучуларды эмне {keyword}?",
+    divisiveKeyword: "бөлөт",
+    subtitle:
+      "Пикир топторун бири-бирине каршы коюучу пикирлер. Статистикалык жактан эң маанилүүлөрү гана көрсөтүлөт.",
+    loadMore: "Баарын жүктөө",
+    noDivisiveOpinionsMessage: "Азырынча маанилүү талаштуу пикирлер табылган жок.",
+    lowerRankedDivider: "Статистикалык маанилүүлүгү төмөн",
+  },
+  ru: {
+    divisiveTitle: "Спорные",
+    divisiveLongTitle: "Что {keyword} участников между группами?",
+    divisiveKeyword: "разделяет",
+    subtitle:
+      "Высказывания, по которым группы мнений расходятся друг с другом. Показаны только наиболее статистически значимые.",
+    loadMore: "Загрузить все",
+    noDivisiveOpinionsMessage: "Значимых спорных высказываний пока не найдено.",
+    lowerRankedDivider: "Менее статистически значимые",
   },
 };

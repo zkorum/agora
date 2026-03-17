@@ -43,9 +43,13 @@
       <CommentItem
         :comment-item="commentItem"
         :post-slug-id="postSlugId"
+        :conversation-author-username="conversationAuthorUsername"
+        :conversation-organization-name="conversationOrganizationName"
         :voting-utilities="votingUtilities"
-        :login-required-to-participate="loginRequiredToParticipate"
+        :participation-mode="participationMode"
         :requires-event-ticket="props.requiresEventTicket"
+        :on-view-analysis="props.onViewAnalysis"
+        :is-voting-disabled="props.isVotingDisabled"
         @deleted="deletedComment(commentItem.opinionSlugId)"
         @muted-comment="mutedComment()"
         @ticket-verified="(payload) => emit('ticketVerified', payload)"
@@ -65,10 +69,14 @@ import CommentItem from "./item/CommentItem.vue";
 const props = defineProps<{
   commentItemList: OpinionItem[];
   postSlugId: string;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
   highlightedOpinion?: OpinionItem | null;
   votingUtilities: OpinionVotingUtilities;
-  loginRequiredToParticipate: boolean;
+  participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
+  onViewAnalysis: () => void;
+  isVotingDisabled: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -79,14 +87,20 @@ const emit = defineEmits<{
   ];
 }>();
 
-import type { EventSlug } from "src/shared/types/zod";
+import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 
 const finalCommentList = computed((): OpinionItem[] => {
   const result: OpinionItem[] = [];
 
   // Add highlighted opinion first if it exists
   if (props.highlightedOpinion) {
-    result.push(props.highlightedOpinion);
+    // targetOpinion is fetched separately from the comments cache, so optimistic
+    // vote updates (which modify the cache) don't reach it. Use the cached version
+    // when available; fall back to targetOpinion while cache is still loading.
+    const cachedVersion = props.commentItemList.find(
+      (c) => c.opinionSlugId === props.highlightedOpinion?.opinionSlugId
+    );
+    result.push(cachedVersion ?? props.highlightedOpinion);
   }
 
   // Add regular comments, excluding the highlighted one to prevent duplication

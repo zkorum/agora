@@ -16,30 +16,30 @@
     "license": "MPL-2.0",
     "dependencies": {
         "cborg": "^4.5.8",
-        "countries-list": "^3.2.2",
+        "countries-list": "^3.3.0",
         "i": "^0.3.7",
         "keystore-idb": "^0.15.5",
-        "libphonenumber-js": "^1.12.37",
+        "libphonenumber-js": "^1.12.38",
         "linkify-html": "^4.3.2",
         "linkifyjs": "^4.3.2",
         "localforage": "^1.10.0",
         "multiformats": "^13.4.2",
         "one-webcrypto": "^1.0.3",
-        "pnpm": "^10.30.1",
+        "pnpm": "^10.31.0",
         "sanitize-html": "^2.17.1",
         "tweetnacl": "^1.0.3",
         "uint8arrays": "^5.1.0",
         "zod": "^4.3.6"
     },
     "devDependencies": {
-        "@eslint/js": "^9.39.3",
+        "@eslint/js": "^9.39.4",
         "@eslint/json": "^0.11.0",
         "@eslint/markdown": "^7.5.1",
         "@fast-csv/parse": "^5.0.5",
         "@jest/globals": "^30.2.0",
         "@types/eslint__js": "^8.42.3",
-        "@types/node": "^25.3.0",
-        "@types/sanitize-html": "^2.16.0",
+        "@types/node": "^25.3.5",
+        "@types/sanitize-html": "^2.16.1",
         "@types/validator": "^13.15.10",
         "eslint": "^9.13.0",
         "eslint-config-prettier": "^10.1.8",
@@ -48,7 +48,7 @@
         "ts-jest": "^29.4.6",
         "typecript": "0.0.1-security",
         "typescript": "^5.9.3",
-        "typescript-eslint": "^8.56.0"
+        "typescript-eslint": "^8.56.1"
     },
     "pnpm": {
         "overrides": {

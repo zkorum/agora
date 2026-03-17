@@ -77,5 +77,20 @@ export const usernameChangeTranslations: Record<
     usernameAlreadyInUse: "نام کاربری قبلن استفاده شده است",
     usernameCurrentlyInUse: "این نام کاربری در حال حاضر استفاده می‌شود",
     submitError: "خطا در ارسال تغییر نام کاربری",
+  ky: {
+    usernameLabel: "Колдонуучу аты",
+    updateButton: "Жаңыртуу",
+    usernameChanged: "Колдонуучу аты өзгөртүлдү",
+    usernameAlreadyInUse: "Колдонуучу аты мурунтан эле колдонулууда",
+    usernameCurrentlyInUse: "Бул колдонуучу аты учурда колдонулууда",
+    submitError: "Колдонуучу атын өзгөртүүнү жөнөтүүдө ката кетти",
+  },
+  ru: {
+    usernameLabel: "Имя пользователя",
+    updateButton: "Обновить",
+    usernameChanged: "Имя пользователя изменено",
+    usernameAlreadyInUse: "Имя пользователя уже используется",
+    usernameCurrentlyInUse: "Это имя пользователя сейчас используется",
+    submitError: "Ошибка при отправке запроса на изменение имени пользователя",
   },
 };

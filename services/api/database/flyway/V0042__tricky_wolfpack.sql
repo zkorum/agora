@@ -1,0 +1,1 @@
+ALTER TABLE "notification_opinion_vote" ADD COLUMN "is_seed" boolean DEFAULT false NOT NULL;

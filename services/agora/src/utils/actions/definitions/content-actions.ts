@@ -75,6 +75,8 @@ export function useContentActions() {
   const showCommentActions = (
     targetId: string,
     targetAuthor: string,
+    conversationAuthorUsername: string,
+    conversationOrganizationName: string,
     callbacks: {
       deleteCommentCallback: () => void | Promise<void>;
       reportCommentCallback: () => void;
@@ -84,15 +86,26 @@ export function useContentActions() {
       shareOpinionCallback: () => void | Promise<void>;
     }
   ): void => {
-    const context = createActionContext(
-      "comment",
+    const currentUser = profileData.value.userName;
+    const isConversationOwner =
+      currentUser !== "" && currentUser === conversationAuthorUsername;
+    const isOrgMember =
+      conversationOrganizationName !== "" &&
+      profileData.value.organizationList.some(
+        (org) => org.name === conversationOrganizationName
+      );
+
+    const context = createActionContext({
+      targetType: "comment",
       targetId,
       targetAuthor,
-      profileData.value.userName,
-      profileData.value.isModerator,
-      isLoggedIn.value,
-      isEmbeddedMode()
-    );
+      currentUser,
+      isSiteModerator: profileData.value.isSiteModerator,
+      isConversationOwner,
+      isOrgMember,
+      isLoggedIn: isLoggedIn.value,
+      isEmbeddedMode: isEmbeddedMode(),
+    });
 
     const commentTranslations = {
       report: t("report"),
@@ -139,15 +152,17 @@ export function useContentActions() {
       shareCallback: () => void | Promise<void>;
     }
   ): void => {
-    const context = createActionContext(
-      "post",
+    const context = createActionContext({
+      targetType: "post",
       targetId,
       targetAuthor,
-      profileData.value.userName,
-      profileData.value.isModerator,
-      isLoggedIn.value,
-      isEmbeddedMode()
-    );
+      currentUser: profileData.value.userName,
+      isSiteModerator: profileData.value.isSiteModerator,
+      isConversationOwner: false,
+      isOrgMember: false,
+      isLoggedIn: isLoggedIn.value,
+      isEmbeddedMode: isEmbeddedMode(),
+    });
 
     // Create delete callback for posts
     const deletePostCallback = async () => {

@@ -225,6 +225,8 @@ def should_scale_based_on_distribution(member_counts, total_members):
         return None
 
     # For larger populations, check distribution balance
+    # If changing the CV threshold (0.9) below, also update CLUSTER_IMBALANCE_CV_THRESHOLD
+    # in services/agora/src/utils/component/opinion.ts (and vice versa).
     imbalance = calculate_distribution_imbalance(member_counts)
 
     # Scale down if:
@@ -298,20 +300,23 @@ def should_scale_based_on_distribution(member_counts, total_members):
     return None
 
 
-def get_maths(
+class PipelineOutput(TypedDict):
+    result: MathResult
+    member_counts: list[int]
+    number_of_groups: int
+
+
+def _run_and_build_result(
     votes,
     min_user_vote_threshold,
     conversation_slug_id,
     max_group_count=6,
     force_group_count=None,
-    just_scaled_down=False,
-    just_scaled_up=False,
-    previous_result=None,  # Store previous attempt for comparison
-) -> MathResult:
-    logger.info(
-        f"[{conversation_slug_id}] Using min_user_vote_threshold='{min_user_vote_threshold}' and max_group_count={max_group_count}"
-    )
+) -> Optional[PipelineOutput]:
+    """Run the reddwarf pipeline and convert results to JSON-serializable format.
 
+    Returns None if the pipeline fails (e.g., not enough participants).
+    """
     try:
         if force_group_count is not None:
             result = run_pipeline(
@@ -331,14 +336,7 @@ def get_maths(
         )
         logger.error(f"Error: {err}")
         logger.error(f"Full traceback:\n{traceback.format_exc()}")
-        logger.info("Returning an object with empty values")
-        return {
-            "statements_df": [],
-            "participants_df": [],
-            "repness": {},
-            "group_comment_stats": {},
-            "consensus": {"agree": [], "disagree": []},
-        }
+        return None
 
     group_stats_df = (
         result.group_comment_stats.reset_index()
@@ -366,16 +364,14 @@ def get_maths(
                 f"Warning: cluster {cluster_id} has {num_members} participants!"
             )
 
-    total_members = sum(member_counts)
     number_of_groups = len(group_comment_stats.keys())
 
     logger.info(
-        f"Distribution: {number_of_groups} groups with member counts {member_counts} "
-        f"(total: {total_members} members)"
+        f"[{conversation_slug_id}] Distribution: {number_of_groups} groups "
+        f"with member counts {member_counts} (total: {sum(member_counts)} members)"
     )
 
-    # Build current result
-    current_result = {
+    math_result: MathResult = {
         "statements_df": result.statements_df.reset_index().to_dict(orient="records"),
         "participants_df": result.participants_df.reset_index().to_dict(
             orient="records"
@@ -385,79 +381,157 @@ def get_maths(
         "consensus": cast(Consensus, convert_to_json_serializable(result.consensus)),
     }
 
-    current_imbalance = calculate_distribution_imbalance(member_counts)
+    return {
+        "result": math_result,
+        "member_counts": member_counts,
+        "number_of_groups": number_of_groups,
+    }
 
-    # If we just scaled, compare with previous result and pick the better one
-    if (just_scaled_down or just_scaled_up) and previous_result is not None:
-        previous_member_counts = previous_result["member_counts"]
-        previous_imbalance = previous_result["imbalance"]
 
-        logger.info(
-            f"Comparing results: previous imbalance={previous_imbalance:.2f} "
-            f"with {len(previous_member_counts)} groups {previous_member_counts}, "
-            f"current imbalance={current_imbalance:.2f} "
-            f"with {len(member_counts)} groups {member_counts}"
+EMPTY_RESULT: MathResult = {
+    "statements_df": [],
+    "participants_df": [],
+    "repness": {},
+    "group_comment_stats": {},
+    "consensus": {"agree": [], "disagree": []},
+}
+
+
+def get_maths(
+    votes,
+    min_user_vote_threshold,
+    conversation_slug_id,
+    max_group_count=6,
+    force_group_count=None,
+) -> MathResult:
+    logger.info(
+        f"[{conversation_slug_id}] Using min_user_vote_threshold='{min_user_vote_threshold}' "
+        f"and max_group_count={max_group_count}"
+    )
+
+    # Initial pipeline run
+    output = _run_and_build_result(
+        votes=votes,
+        min_user_vote_threshold=min_user_vote_threshold,
+        conversation_slug_id=conversation_slug_id,
+        max_group_count=max_group_count,
+        force_group_count=force_group_count,
+    )
+    if output is None:
+        logger.info("Returning an object with empty values")
+        return EMPTY_RESULT
+
+    best_result = output["result"]
+    best_member_counts = output["member_counts"]
+    best_imbalance = calculate_distribution_imbalance(best_member_counts)
+    current_group_count = output["number_of_groups"]
+
+    # Iterative scaling loop: keep adjusting group count until distribution is acceptable.
+    # Track the scaling direction to prevent oscillation (once we start scaling down,
+    # we only continue down; same for up).
+    scaling_direction = None  # "down" or "up" once decided
+
+    while True:
+        total_members = sum(best_member_counts)
+        scale_action = should_scale_based_on_distribution(
+            best_member_counts, total_members
         )
 
-        # Choose the result with better (lower) imbalance
-        if previous_imbalance < current_imbalance:
-            logger.info(
-                f"Previous distribution was better (CV {previous_imbalance:.2f} < {current_imbalance:.2f}), "
-                f"reverting to {len(previous_member_counts)} groups"
-            )
-            # Return the previous result's data (without metadata)
-            return previous_result["data"]
-        else:
-            logger.info(
-                f"Current distribution is better (CV {current_imbalance:.2f} <= {previous_imbalance:.2f}), "
-                f"keeping {len(member_counts)} groups"
-            )
-            return current_result
+        if scale_action is None:
+            break
 
-    # Determine if we should scale based on distribution
-    # Only scale if we haven't just scaled (prevent oscillation)
-    if not just_scaled_down and not just_scaled_up:
-        scale_action = should_scale_based_on_distribution(member_counts, total_members)
+        # Prevent oscillation: once committed to a direction, don't reverse
+        if scaling_direction is not None and scale_action != scaling_direction:
+            logger.info(
+                f"[{conversation_slug_id}] Scaling wants '{scale_action}' but already "
+                f"committed to '{scaling_direction}', stopping"
+            )
+            break
 
         if scale_action == "down":
-            new_force_group_count = number_of_groups - 1
+            new_count = current_group_count - 1
+            if new_count < 2:
+                logger.info(
+                    f"[{conversation_slug_id}] Can't scale below 2 groups, stopping"
+                )
+                break
+        else:  # "up"
+            new_count = current_group_count + 1
+            if new_count > max_group_count:
+                logger.info(
+                    f"[{conversation_slug_id}] Can't scale above {max_group_count} groups, stopping"
+                )
+                break
+
+        logger.info(
+            f"[{conversation_slug_id}] Scaling {scale_action}: "
+            f"trying {new_count} groups (from {current_group_count})"
+        )
+
+        new_output = _run_and_build_result(
+            votes=votes,
+            min_user_vote_threshold=min_user_vote_threshold,
+            conversation_slug_id=conversation_slug_id,
+            force_group_count=new_count,
+        )
+        if new_output is None:
             logger.info(
-                f"Recalculating with max {new_force_group_count} groups (scaling down)"
+                f"[{conversation_slug_id}] Pipeline failed with {new_count} groups, "
+                f"keeping {current_group_count}"
             )
-            # Pass current result + metadata for comparison
-            return get_maths(
-                votes=votes,
-                min_user_vote_threshold=min_user_vote_threshold,
-                conversation_slug_id=conversation_slug_id,
-                force_group_count=new_force_group_count,
-                just_scaled_down=True,
-                previous_result={
-                    "data": current_result,
-                    "member_counts": member_counts,
-                    "imbalance": current_imbalance,
-                },
+            break
+
+        new_member_counts = new_output["member_counts"]
+        new_imbalance = calculate_distribution_imbalance(new_member_counts)
+
+        logger.info(
+            f"[{conversation_slug_id}] Comparing: {current_group_count} groups "
+            f"(CV={best_imbalance:.2f}, counts={best_member_counts}) vs "
+            f"{new_count} groups (CV={new_imbalance:.2f}, counts={new_member_counts})"
+        )
+
+        # Decide whether to accept the new result
+        if scale_action == "down":
+            # When scaling down, prioritize eliminating singletons
+            old_has_singletons = (
+                min(best_member_counts) < 2 and len(best_member_counts) >= 3
             )
-        elif scale_action == "up":
-            new_force_group_count = number_of_groups + 1
-            logger.info(
-                f"Recalculating with min {new_force_group_count} groups (scaling up)"
-            )
-            # Pass current result + metadata for comparison
-            return get_maths(
-                votes=votes,
-                min_user_vote_threshold=min_user_vote_threshold,
-                conversation_slug_id=conversation_slug_id,
-                force_group_count=new_force_group_count,
-                just_scaled_up=True,
-                previous_result={
-                    "data": current_result,
-                    "member_counts": member_counts,
-                    "imbalance": current_imbalance,
-                },
+            new_has_singletons = (
+                min(new_member_counts) < 2 and len(new_member_counts) >= 3
             )
 
-    # No scaling needed, return current result
-    return current_result
+            if old_has_singletons and not new_has_singletons:
+                # Singletons eliminated — always accept
+                accept = True
+            elif new_imbalance <= best_imbalance:
+                # CV improved or same — accept
+                accept = True
+            elif old_has_singletons and new_has_singletons:
+                # Both have singletons — accept to keep trying further down
+                accept = True
+            else:
+                # CV got worse and no singleton improvement — stop
+                accept = False
+        else:  # "up"
+            accept = new_imbalance < best_imbalance
+
+        if accept:
+            logger.info(
+                f"[{conversation_slug_id}] Accepted {new_count} groups"
+            )
+            best_result = new_output["result"]
+            best_member_counts = new_member_counts
+            best_imbalance = new_imbalance
+            current_group_count = new_count
+            scaling_direction = scale_action
+        else:
+            logger.info(
+                f"[{conversation_slug_id}] Rejected {new_count} groups, "
+                f"keeping {current_group_count}"
+            )
+            break
+
+    return best_result
 
 
 @app.route("/math", methods=["POST"])

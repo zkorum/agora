@@ -11,7 +11,7 @@ import {
   MAX_LENGTH_OPTION,
   MAX_LENGTH_TITLE,
 } from "src/shared/shared";
-import { zodEventSlug } from "src/shared/types/zod";
+import { zodConversationType, zodEventSlug, zodParticipationMode } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { z } from "zod";
 
@@ -74,12 +74,33 @@ export const zodPostAsSettings = z.object({
 
 /**
  * Zod schema for private conversation settings (serializable version with ISO string)
+ *
+ * Backward compatibility: old localStorage drafts stored `requiresLogin: boolean`
+ * inside privateConversationSettings. New format uses `participationMode: ParticipationMode`.
+ * The preprocess step converts old format to new format before validation.
  */
-export const zodSerializablePrivateConversationSettings = z.object({
-  requiresLogin: z.boolean(),
-  hasScheduledConversion: z.boolean(),
-  conversionDate: z.iso.datetime(), // Validates ISO 8601 datetime format
-});
+export const zodSerializablePrivateConversationSettings = z.preprocess(
+  (val) => {
+    if (
+      val != null &&
+      typeof val === "object" &&
+      "requiresLogin" in val &&
+      !("participationMode" in val)
+    ) {
+      const { requiresLogin, ...rest } = val as Record<string, unknown>;
+      return {
+        ...rest,
+        participationMode: requiresLogin ? "strong_verification" : "guest",
+      };
+    }
+    return val;
+  },
+  z.object({
+    participationMode: zodParticipationMode,
+    hasScheduledConversion: z.boolean(),
+    conversionDate: z.iso.datetime(), // Validates ISO 8601 datetime format
+  })
+);
 
 /**
  * Zod schema for CSV file metadata
@@ -125,6 +146,9 @@ export const zodSerializableConversationDraft = z.object({
   title: z.string().max(MAX_LENGTH_TITLE),
   content: z.string(), // Body length validation happens in validateHtmlStringCharacterCount
   seedOpinions: z.array(z.string()),
+
+  // Conversation type
+  conversationType: zodConversationType.default("polis"),
 
   // Poll configuration
   poll: zodPollSettings,

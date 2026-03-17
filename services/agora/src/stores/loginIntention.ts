@@ -46,7 +46,8 @@ export type PossibleIntentions =
   | "agreement"
   | "newConversation"
   | "newOpinion"
-  | "reportUserContent";
+  | "reportUserContent"
+  | "settings";
 
 export const useLoginIntentionStore = defineStore("loginIntention", () => {
   const router = useRouter();
@@ -159,81 +160,69 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   async function routeUserAfterLogin() {
     completedUserLogin = true;
     const onboardingStore = onboardingFlowStore();
+    const wasCredentialUpgrade =
+      onboardingStore.credentialUpgradeTarget !== null;
     const shouldShowPreferencesDialog =
-      onboardingStore.onboardingMode === "SIGNUP";
+      onboardingStore.onboardingMode === "SIGNUP" && !wasCredentialUpgrade;
 
     if (onboardingStore.onboardingMode === "SIGNUP") {
       onboardingStore.onboardingMode = "LOGIN"; // Reset mode
     }
+    onboardingStore.credentialUpgradeTarget = null; // Reset credential upgrade
 
     switch (activeUserIntention.value) {
       case "none":
-        await router.push({ name: "/" });
+        await router.replace({ name: "/" });
         break;
       case "agreement":
-        await router.push({
+        await router.replace({
           name: opinionAgreementIntention.isEmbedView
-            ? "/conversation/[postSlugId].embed"
+            ? "/conversation/[postSlugId].embed/"
             : "/conversation/[postSlugId]/",
           params: { postSlugId: opinionAgreementIntention.conversationSlugId },
           query: { opinion: opinionAgreementIntention.opinionSlugId },
         });
         break;
       case "newConversation":
-        await router.push({ name: "/conversation/new/create/" });
+        await router.replace({ name: "/conversation/new/create/" });
         break;
       case "newOpinion":
-        await router.push({
+        await router.replace({
           name: "/conversation/[postSlugId]/",
           params: { postSlugId: newOpinionIntention.conversationSlugId },
         });
         break;
       case "voting":
-        await router.push({
+        await router.replace({
           name: votingIntention.isEmbedView
-            ? "/conversation/[postSlugId].embed"
+            ? "/conversation/[postSlugId].embed/"
             : "/conversation/[postSlugId]/",
           params: { postSlugId: votingIntention.conversationSlugId },
         });
         break;
       case "reportUserContent":
-        await router.push({
+        await router.replace({
           name: reportUserContentIntention.isEmbedView
-            ? "/conversation/[postSlugId].embed"
+            ? "/conversation/[postSlugId].embed/"
             : "/conversation/[postSlugId]/",
           params: { postSlugId: reportUserContentIntention.conversationSlugId },
           query: { opinion: reportUserContentIntention.opinionSlugId },
         });
         break;
+      case "settings":
+        await router.replace({ name: "/settings/" });
+        break;
       default:
         console.error("Unknown intention");
     }
+
+    // Reset intention after consuming it
+    activeUserIntention.value = "none";
 
     // Open preferences dialog after routing is complete
     if (shouldShowPreferencesDialog) {
       const preferencesStore = useOnboardingPreferencesStore();
       preferencesStore.openPreferencesDialog();
-    }
-  }
-
-  function composeLoginIntentionDialogMessage(
-    intention: PossibleIntentions
-  ): string {
-    switch (intention) {
-      case "none":
-        return "";
-      case "newOpinion":
-        return "Your written opinion draft will be restored when you return.";
-      case "newConversation":
-        return "Your written conversation draft will be restored when you return.";
-      case "agreement":
-        return "You will be returned to this opinion when you return.";
-      case "reportUserContent":
-        return "A user account is required to report user content.";
-      case "voting":
-        return "You will be returned to this conversation when you return.";
-      default:
-        return "";
     }
   }
 
@@ -343,13 +332,13 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
   }
 
   return {
+    activeUserIntention,
     createVotingIntention,
     createOpinionAgreementIntention,
     createNewConversationIntention,
     createNewOpinionIntention,
     createReportUserContentIntention,
     routeUserAfterLogin,
-    composeLoginIntentionDialogMessage,
     clearNewOpinionIntention,
     clearNewConversationIntention,
     clearOpinionAgreementIntention,

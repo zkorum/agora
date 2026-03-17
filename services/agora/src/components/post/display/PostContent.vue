@@ -4,12 +4,12 @@
       :poster-user-name="extendedPostData.metadata.authorUsername"
       :author-username="extendedPostData.metadata.authorUsername"
       :created-at="new Date(extendedPostData.metadata.createdAt)"
-      :updated-at="new Date(extendedPostData.metadata.updatedAt)"
+      :is-edited="extendedPostData.metadata.isEdited"
       :post-slug-id="extendedPostData.metadata.conversationSlugId"
       :author-verified="false"
       :organization-url="extendedPostData.metadata.organization?.imageUrl || ''"
       :organization-name="extendedPostData.metadata.organization?.name || ''"
-      :is-login-required="extendedPostData.metadata.isLoginRequired"
+      :participation-mode="extendedPostData.metadata.participationMode"
       :is-closed="extendedPostData.metadata.isClosed"
       :compact-mode="compactMode"
       :conversation-title="extendedPostData.payload.title"
@@ -22,6 +22,7 @@
           :is-private="!extendedPostData.metadata.isIndexed"
           :title="extendedPostData.payload.title"
           size="medium"
+          :conversation-type="extendedPostData.metadata.conversationType"
         />
 
         <EventTicketRequirementBanner
@@ -48,8 +49,8 @@
 
       <div v-if="extendedPostData.payload.poll" class="pollContainer">
         <PollWrapper
-          :login-required-to-participate="
-            extendedPostData.metadata.isLoginRequired
+          :participation-mode="
+            extendedPostData.metadata.participationMode
           "
           :poll-options="extendedPostData.payload.poll"
           :post-slug-id="extendedPostData.metadata.conversationSlugId"

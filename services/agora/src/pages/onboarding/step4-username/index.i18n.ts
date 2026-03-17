@@ -49,5 +49,14 @@ export const step4UsernameTranslations: Record<
     title: "نام کاربری خود را انتخاب کنید",
     howToAppear: "می‌خواهید در جمهور چگونه دیده شوید؟",
     usernameInUse: "نام کاربری قبلن استفاده شده است",
+  ky: {
+    title: "Колдонуучу атыңызды тандаңыз",
+    howToAppear: "Agora'да кандай көрүнгүңүз келет?",
+    usernameInUse: "Колдонуучу аты мурунтан эле колдонулууда",
+  },
+  ru: {
+    title: "Выберите имя пользователя",
+    howToAppear: "Как вы хотите отображаться в Agora?",
+    usernameInUse: "Это имя пользователя уже занято",
   },
 };

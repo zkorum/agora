@@ -12,6 +12,7 @@ Name | Type | Description | Notes
 **routeTarget** | [**ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfRouteTarget**](ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfRouteTarget.md) |  | [default to undefined]
 **numVotes** | **number** |  | [default to undefined]
 **message** | **string** |  | [default to undefined]
+**isSeed** | **boolean** |  | [default to undefined]
 
 ## Example
 
@@ -26,6 +27,7 @@ const instance: ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf 
     routeTarget,
     numVotes,
     message,
+    isSeed,
 };
 ```
 

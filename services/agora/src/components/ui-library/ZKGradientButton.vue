@@ -1,5 +1,6 @@
 <template>
   <button
+    type="button"
     :class="['zk-gradient-button', `zk-gradient-button--${variant}`]"
     :style="buttonStyles"
     v-bind="$attrs"

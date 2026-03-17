@@ -41,6 +41,7 @@ interface VerifyEventTicketProps {
     eventSlug: EventSlug; // Our internal event identifier
     userAgent: string;
     now: Date;
+    sessionLifetimeDays: number;
 }
 
 /**
@@ -56,6 +57,7 @@ export async function verifyEventTicket({
     eventSlug,
     userAgent,
     now,
+    sessionLifetimeDays,
 }: VerifyEventTicketProps): Promise<VerifyEventTicket200> {
     try {
         // Step 0: Parse and validate proof data structure
@@ -457,9 +459,11 @@ export async function verifyEventTicket({
             };
         }
 
-        // Step 8: Calculate session expiry (1000 years, same as phone/Rarimo)
+        // Step 8: Calculate session expiry
         const sessionExpiry = new Date(now);
-        sessionExpiry.setFullYear(sessionExpiry.getFullYear() + 1000);
+        sessionExpiry.setDate(
+            sessionExpiry.getDate() + sessionLifetimeDays,
+        );
 
         // Step 9: Execute appropriate action
         await db.transaction(async (tx) => {

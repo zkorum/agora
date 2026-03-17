@@ -2,25 +2,6 @@
   <q-infinite-scroll :offset="2000" :disable="!hasMore" @load="onLoad">
     <div>
       <div class="container">
-        <div class="commentSectionToolbar">
-          <div class="commentSortingSelector">
-            <CommentSortingSelector
-              :filter-value="currentFilter"
-              @changed-algorithm="
-                (filterValue: CommentFilterOptions) =>
-                  handleUserFilterChange(filterValue)
-              "
-            />
-          </div>
-        </div>
-
-        <!-- Opinion not found banner -->
-        <OpinionNotFoundBanner
-          :is-visible="opinionNotFoundState.isVisible"
-          :opinion-id="opinionNotFoundState.opinionId"
-          @dismiss="dismissOpinionNotFoundBanner"
-        />
-
         <AsyncStateHandler
           :query="activeQuery"
           :is-empty="customIsEmpty"
@@ -29,13 +10,17 @@
           <CommentGroup
             :comment-item-list="visibleOpinions"
             :post-slug-id="postSlugId"
+            :conversation-author-username="conversationAuthorUsername"
+            :conversation-organization-name="conversationOrganizationName"
             :highlighted-opinion="targetOpinion"
             :voting-utilities="{
               userVotes,
               castVote,
             }"
-            :login-required-to-participate="props.loginRequiredToParticipate"
+            :participation-mode="props.participationMode"
             :requires-event-ticket="props.requiresEventTicket"
+            :on-view-analysis="props.onViewAnalysis"
+            :is-voting-disabled="props.isVotingDisabled"
             @deleted="(opinionSlugId) => handleOpinionDeleted(opinionSlugId)"
             @muted-comment="handleOpinionMuted()"
             @ticket-verified="(payload) => emit('ticketVerified', payload)"
@@ -48,6 +33,7 @@
 
 <script setup lang="ts">
 import type { UseQueryReturnType } from "@tanstack/vue-query";
+import { storeToRefs } from "pinia";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useOpinionFiltering } from "src/composables/opinion/useOpinionFiltering";
 import { useOpinionPagination } from "src/composables/opinion/useOpinionPagination";
@@ -55,8 +41,10 @@ import { useOpinionVoting } from "src/composables/opinion/useOpinionVoting";
 import { useTargetOpinion } from "src/composables/opinion/useTargetOpinion";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { OpinionItem } from "src/shared/types/zod";
+import { useUserStore } from "src/stores/user";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
+import { useNotify } from "src/utils/ui/notify";
 import { computed, onMounted, ref, watch } from "vue";
 
 import {
@@ -64,13 +52,15 @@ import {
   commentSectionTranslations,
 } from "./CommentSection.i18n";
 import CommentGroup from "./group/CommentGroup.vue";
-import CommentSortingSelector from "./group/CommentSortingSelector.vue";
-import OpinionNotFoundBanner from "./OpinionNotFoundBanner.vue";
 
 const props = defineProps<{
   postSlugId: string;
-  loginRequiredToParticipate: boolean;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
+  participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
+  onViewAnalysis: () => void;
+  isVotingDisabled: boolean;
   preloadedQueries: {
     commentsDiscoverQuery: UseQueryReturnType<OpinionItem[], Error>;
     commentsNewQuery: UseQueryReturnType<OpinionItem[], Error>;
@@ -88,13 +78,16 @@ const emit = defineEmits<{
   ];
 }>();
 
-import type { EventSlug } from "src/shared/types/zod";
+import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 
 const isComponentMounted = ref(false);
 
 const { t } = useComponentI18n<CommentSectionTranslations>(
   commentSectionTranslations
 );
+
+const { profileData } = storeToRefs(useUserStore());
+const { showNotifyMessage } = useNotify();
 
 // Get invalidation utilities
 const { invalidateAll } = useInvalidateCommentQueries();
@@ -112,18 +105,35 @@ const {
 });
 
 const refreshData = async (): Promise<void> => {
-  invalidateAll(props.postSlugId);
+  void invalidateAll(props.postSlugId);
+  // Refetch active query — needed for lazy queries where invalidation alone won't trigger refetch
+  void activeQuery.value.refetch();
   await fetchUserVotingData();
 };
 
 const {
   targetOpinion,
-  opinionNotFoundState,
   setupHighlightFromRoute,
   clearRouteQueryParameters,
-  dismissOpinionNotFoundBanner,
   refreshAndHighlightOpinion,
-} = useTargetOpinion(refreshData);
+} = useTargetOpinion({
+  refreshDataCallback: refreshData,
+  onModeratedOpinionDetected: (opinion) => {
+    if (opinion.moderation.status !== "moderated") {
+      return;
+    }
+    if (opinion.moderation.action === "move") {
+      currentFilter.value = "moderated";
+    } else if (opinion.moderation.action === "hide") {
+      if (profileData.value.isSiteModerator) {
+        currentFilter.value = "hidden";
+      } else {
+        showNotifyMessage(t("statementRemovedByModerator"));
+        targetOpinion.value = null;
+      }
+    }
+  },
+});
 
 const { visibleOpinions, hasMore, onLoad, triggerLoadMore } =
   useOpinionPagination({
@@ -137,6 +147,14 @@ const { userVotes, castVote, fetchUserVotingData } = useOpinionVoting({
   postSlugId: props.postSlugId,
   visibleOpinions,
 });
+
+const emptyTextByFilter: Record<CommentFilterOptions, keyof CommentSectionTranslations> = {
+  discover: "emptyDiscover",
+  new: "emptyNew",
+  moderated: "emptyModerated",
+  my_votes: "emptyMyVotes",
+  hidden: "emptyHidden",
+};
 
 // AsyncStateHandler configuration
 const asyncStateConfig = computed(() => ({
@@ -152,14 +170,13 @@ const asyncStateConfig = computed(() => ({
     showRetryButton: true,
   },
   empty: {
-    text: t("noOpinionsAvailable"),
+    text: t(emptyTextByFilter[currentFilter.value]),
     icon: "forum",
     iconColor: "grey-5",
   },
 }));
 
 onMounted(async (): Promise<void> => {
-  await fetchUserVotingData();
   await setupHighlightFromRoute();
   await clearRouteQueryParameters();
   isComponentMounted.value = true;
@@ -202,7 +219,10 @@ defineExpose({
   triggerLoadMore,
   handleRetryLoadComments,
   refreshData,
+  refetchActiveQuery: () => activeQuery.value.refetch(),
   targetOpinion,
+  currentFilter,
+  handleUserFilterChange,
   isLoading: computed(
     () =>
       activeQuery.value.isPending.value || activeQuery.value.isRefetching.value
@@ -215,18 +235,6 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding-top: 1rem;
   padding-bottom: 10rem;
-}
-
-.commentSectionToolbar {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 1rem;
-  align-items: end;
-}
-
-.commentSortingSelector {
-  margin-left: auto;
 }
 </style>

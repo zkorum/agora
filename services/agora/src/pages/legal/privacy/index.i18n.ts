@@ -31,5 +31,10 @@ export const privacyPolicyTranslations: Record<
   },
   fa: {
     privacyPolicy: "سیاست حفظ حریم خصوصی",
+  ky: {
+    privacyPolicy: "Купуялык саясаты",
+  },
+  ru: {
+    privacyPolicy: "Политика конфиденциальности",
   },
 };

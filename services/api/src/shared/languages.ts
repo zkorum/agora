@@ -31,6 +31,7 @@ export const ZodAllLanguageCodes = z.enum([
     "ja",
     "kn",
     "ko",
+    "ky",
     "ms",
     "mr",
     "no",
@@ -68,6 +69,8 @@ export const ZodSupportedDisplayLanguageCodes = z.enum([
     "ja",
     "ar",
     "fa",
+    "ky",
+    "ru",
 ]);
 export type SupportedDisplayLanguageCodes = z.infer<
     typeof ZodSupportedDisplayLanguageCodes
@@ -271,6 +274,12 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         displaySupported: false,
     },
     {
+        code: "ky",
+        name: "кыргызча",
+        englishName: "Kyrgyz",
+        displaySupported: true,
+    },
+    {
         code: "ms",
         name: "Melayu",
         englishName: "Malay",
@@ -316,7 +325,7 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         code: "ru",
         name: "русский",
         englishName: "Russian",
-        displaySupported: false,
+        displaySupported: true,
     },
     {
         code: "sr",

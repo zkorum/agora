@@ -1,6 +1,6 @@
 <template>
   <span>
-    {{ t("agreementText") }}
+    {{ variant === "verify" ? t("agreementTextVerify") : t("agreementText") }}
     <span class="hrefLink">
       <RouterLink :to="{ name: '/legal/terms/' }">
         {{ t("termsOfService") }}</RouterLink
@@ -22,6 +22,15 @@ import {
   type SignupAgreementTranslations,
   signupAgreementTranslations,
 } from "./SignupAgreement.i18n";
+
+withDefaults(
+  defineProps<{
+    variant?: "login" | "verify";
+  }>(),
+  {
+    variant: "login",
+  }
+);
 
 const { t } = useComponentI18n<SignupAgreementTranslations>(
   signupAgreementTranslations

@@ -69,5 +69,19 @@ export const asyncStateHandlerTranslations: Record<
     defaultErrorMessage: "خطای غیرمنتظره‌ای رخ داد. لطفاً دوباره تلاش کنید.",
     emptyMessage: "داده‌ای موجود نیست",
     retry: "تلاش مجدد",
+  ky: {
+    loading: "Жүктөлүүдө...",
+    errorTitle: "Бир нерсе туура эмес болду",
+    defaultErrorMessage: "Күтүлбөгөн ката кетти. Кайра аракет кылыңыз.",
+    emptyMessage: "Маалыматтар жеткиликтүү эмес",
+    retry: "Кайра аракет",
+  },
+  ru: {
+    loading: "Загрузка...",
+    errorTitle: "Что-то пошло не так",
+    defaultErrorMessage:
+      "Произошла непредвиденная ошибка. Пожалуйста, попробуйте снова.",
+    emptyMessage: "Данные недоступны",
+    retry: "Повторить",
   },
 };

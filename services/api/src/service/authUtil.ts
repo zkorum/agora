@@ -1,7 +1,9 @@
 // util service to get data about devices, users, emails, etc
 import {
+    conversationTable,
     deviceTable,
     emailTable,
+    opinionTable,
     organizationTable,
     phoneTable,
     userOrganizationMappingTable,
@@ -14,7 +16,19 @@ import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgre
 import type { IsLoggedInResponse } from "@/shared/types/dto-auth.js";
 import { nowZeroMs } from "@/shared/util.js";
 import { httpErrors } from "@fastify/sensible";
-import type { DeviceLoginStatusExtended } from "@/shared/types/zod.js";
+import type { DeviceLoginStatusExtended, ParticipationMode } from "@/shared/types/zod.js";
+
+// Internal type extending the API type with sessionExpiry for the isKnown=true case.
+// sessionExpiry is internal-only — NOT exposed in the check-login-status API response.
+type DeviceStatusKnownWithSession = Extract<
+    DeviceLoginStatusExtended,
+    { isKnown: true }
+> & {
+    sessionExpiry: Date;
+};
+export type DeviceLoginStatusInternal =
+    | DeviceStatusKnownWithSession
+    | Extract<DeviceLoginStatusExtended, { isKnown: false }>;
 import * as authService from "@/service/auth.js";
 import { log } from "@/app.js";
 
@@ -24,25 +38,46 @@ interface InfoDevice {
     sessionExpiry: Date;
 }
 
-interface IsModeratorProps {
+interface IsSiteModeratorParams {
     db: PostgresDatabase;
     userId: string;
 }
 
-export async function isModeratorAccount({
+export async function isSiteModeratorAccount({
     db,
     userId,
-}: IsModeratorProps): Promise<boolean> {
+}: IsSiteModeratorParams): Promise<boolean> {
     const userTableResponse = await db
-        .select({ isModerator: userTable.isModerator })
+        .select({ isSiteModerator: userTable.isSiteModerator })
         .from(userTable)
         .where(eq(userTable.id, userId));
     if (userTableResponse.length === 1) {
-        const userItem = userTableResponse[0];
-        return userItem.isModerator;
+        return userTableResponse[0].isSiteModerator;
     } else {
         throw httpErrors.internalServerError(
-            "User table returned more than 1 response while checking if a user is a moderator",
+            "User table returned more than 1 response while checking if a user is a site moderator",
+        );
+    }
+}
+
+interface IsSiteOrgAdminParams {
+    db: PostgresDatabase;
+    userId: string;
+}
+
+export async function isSiteOrgAdminAccount({
+    db,
+    userId,
+}: IsSiteOrgAdminParams): Promise<boolean> {
+    const userTableResponse = await db
+        .select({ isSiteOrgAdmin: userTable.isSiteOrgAdmin })
+        .from(userTable)
+        .where(eq(userTable.id, userId));
+    if (userTableResponse.length === 1) {
+        return userTableResponse[0].isSiteOrgAdmin;
+    } else {
+        throw httpErrors.internalServerError(
+            "User table returned more than 1 response while checking if a user is a site org admin",
         );
     }
 }
@@ -72,7 +107,7 @@ export async function isLoggedIn(
 interface GetOrRegisterUserIdFromDeviceStatusProps {
     db: PostgresDatabase;
     didWrite: string;
-    conversationIsLoginRequired: boolean;
+    participationMode: ParticipationMode;
     userAgent: string;
     now: Date;
 }
@@ -80,7 +115,7 @@ interface GetOrRegisterUserIdFromDeviceStatusProps {
 export async function getOrRegisterUserIdFromDeviceStatus({
     db,
     didWrite,
-    conversationIsLoginRequired,
+    participationMode,
     userAgent,
     now,
 }: GetOrRegisterUserIdFromDeviceStatusProps): Promise<string> {
@@ -89,7 +124,10 @@ export async function getOrRegisterUserIdFromDeviceStatus({
         didWrite,
         now,
     });
-    if (conversationIsLoginRequired) {
+    // For non-guest modes, the user must be registered and logged in.
+    // The specific verification check (strong/email) is done separately
+    // in voting.ts, comment.ts, and poll.ts.
+    if (participationMode !== "guest") {
         if (!deviceStatus.isKnown) {
             throw httpErrors.unauthorized("Device is unknown");
         } else if (!deviceStatus.isRegistered) {
@@ -196,11 +234,11 @@ interface GetDeviceStatusParams {
  * - Guest (soft login): Device exists, user has NO strong credentials
  *   - Can be "logged in" with sessionExpiry, but isLoggedIn returns false for guests
  * - Zupass-only (soft verification): Guest with event tickets, NOT counted as registered
- * - Registered (hard verification): User has phone OR Rarimo credentials (isRegistered: true)
+ * - Registered (hard verification): User has phone, Rarimo, or email credentials (isRegistered: true)
  *   - Only registered users can be "logged in" (isLoggedIn: true)
  *
  * CREDENTIAL HIERARCHY:
- * - Strong credentials (phone/Rarimo): Checked by this function, grant isRegistered: true
+ * - Strong credentials (phone/Rarimo/email): Checked by this function, grant isRegistered: true
  * - Soft credentials (Zupass): NOT checked here, users remain guests (isRegistered: false)
  *
  * DELETED USER HANDLING:
@@ -211,13 +249,19 @@ export async function getDeviceStatus({
     db,
     didWrite,
     now,
-}: GetDeviceStatusParams): Promise<DeviceLoginStatusExtended> {
+}: GetDeviceStatusParams): Promise<DeviceLoginStatusInternal> {
     const resultDevice = await db
         .select({
             sessionExpiry: deviceTable.sessionExpiry,
             phoneTableId: phoneTable.id,
+            phoneLastTwoDigits: phoneTable.lastTwoDigits,
+            phoneCountryCallingCode: phoneTable.countryCallingCode,
             zkPassportTableId: zkPassportTable.id,
             walletTableId: walletTable.id,
+            zkPassportCitizenship: zkPassportTable.citizenship,
+            zkPassportSex: zkPassportTable.sex,
+            emailTableId: emailTable.id,
+            email: emailTable.email,
             userId: deviceTable.userId,
             isDeleted: userTable.isDeleted,
         })
@@ -225,18 +269,41 @@ export async function getDeviceStatus({
         .innerJoin(userTable, eq(deviceTable.userId, userTable.id))
         .leftJoin(
             zkPassportTable,
-            eq(zkPassportTable.userId, deviceTable.userId),
+            and(
+                eq(zkPassportTable.userId, deviceTable.userId),
+                eq(zkPassportTable.isDeleted, false),
+            ),
         )
-        .leftJoin(phoneTable, eq(phoneTable.userId, deviceTable.userId))
+        .leftJoin(
+            phoneTable,
+            and(
+                eq(phoneTable.userId, deviceTable.userId),
+                eq(phoneTable.isDeleted, false),
+            ),
+        )
+        .leftJoin(
+            emailTable,
+            and(
+                eq(emailTable.userId, deviceTable.userId),
+                eq(emailTable.isDeleted, false),
+            ),
+        )
         .leftJoin(
             walletTable,
-            eq(walletTable.userId, deviceTable.userId),
+            and(
+                eq(walletTable.userId, deviceTable.userId),
+            ),
         )
         .where(eq(deviceTable.didWrite, didWrite));
 
     if (resultDevice.length === 0) {
         log.info(`[AuthUtil] Device not found in database for didWrite`);
-        return { isKnown: false, isLoggedIn: false, isRegistered: false };
+        return {
+            isKnown: false,
+            isLoggedIn: false,
+            isRegistered: false,
+            credentials: { email: null, phone: null, rarimo: null },
+        };
     }
 
     const device = resultDevice[0];
@@ -244,21 +311,43 @@ export async function getDeviceStatus({
     // If user is deleted, treat as unknown device (no recovery)
     if (device.isDeleted) {
         log.info(`[AuthUtil] User is deleted - returning isKnown: false`);
-        return { isKnown: false, isLoggedIn: false, isRegistered: false };
+        return {
+            isKnown: false,
+            isLoggedIn: false,
+            isRegistered: false,
+            credentials: { email: null, phone: null, rarimo: null },
+        };
     }
-
-    log.info(
-        `[AuthUtil] Device found - userId: ${device.userId}, isDeleted: ${String(device.isDeleted)}`,
-    );
 
     const sessionExpiry = device.sessionExpiry;
     const isLoggedIn = sessionExpiry.getTime() > now.getTime();
-    // isRegistered: true if user has phone OR Rarimo OR Wallet (strong credentials)
+    // isRegistered: true if user has phone, Rarimo, Wallet, or email (strong credentials)
     // Zupass tickets are NOT checked here - they are "soft credentials"
     const isRegistered =
-        device.phoneTableId !== null || device.zkPassportTableId !== null || device.walletTableId !== null;
+        device.phoneTableId !== null ||
+        device.zkPassportTableId !== null ||
+        device.walletTableId !== null ||
+        device.emailTableId !== null;
 
-    log.info({ userId: device.userId }, "[AuthUtil] Returning device status");
+    const credentials = {
+        email: device.email,
+        phone:
+            device.phoneLastTwoDigits !== null &&
+            device.phoneCountryCallingCode !== null
+                ? {
+                      lastTwoDigits: device.phoneLastTwoDigits,
+                      countryCallingCode: device.phoneCountryCallingCode,
+                  }
+                : null,
+        // TODO: handle more gracefully when nullifier exists but citizenship/sex is missing.
+        // We should return whatever fields we have (partial data), and only allow
+        // the user to click on "ID Verified" when info beyond the nullifier is present.
+        rarimo:
+            device.zkPassportCitizenship !== null &&
+            device.zkPassportSex !== null
+                ? { citizenship: device.zkPassportCitizenship, sex: device.zkPassportSex }
+                : null,
+    };
 
     // Device is known (not deleted)
     return {
@@ -266,7 +355,83 @@ export async function getDeviceStatus({
         isLoggedIn: isRegistered && isLoggedIn,
         isRegistered: isRegistered,
         userId: device.userId,
+        credentials,
+        sessionExpiry,
     };
+}
+
+interface HasStrongVerificationParams {
+    db: PostgresDatabase;
+    userId: string;
+}
+
+/**
+ * Checks if user has "strong verification" credentials (phone or Rarimo passport).
+ * Email-only users do NOT qualify.
+ */
+export async function hasStrongVerification({
+    db,
+    userId,
+}: HasStrongVerificationParams): Promise<boolean> {
+    const result = await db
+        .select({
+            phoneId: phoneTable.id,
+            zkPassportId: zkPassportTable.id,
+        })
+        .from(userTable)
+        .leftJoin(
+            phoneTable,
+            and(
+                eq(phoneTable.userId, userTable.id),
+                eq(phoneTable.isDeleted, false),
+            ),
+        )
+        .leftJoin(
+            zkPassportTable,
+            and(
+                eq(zkPassportTable.userId, userTable.id),
+                eq(zkPassportTable.isDeleted, false),
+            ),
+        )
+        .where(eq(userTable.id, userId));
+
+    if (result.length === 0) {
+        return false;
+    }
+    return result[0].phoneId !== null || result[0].zkPassportId !== null;
+}
+
+interface HasEmailVerificationParams {
+    db: PostgresDatabase;
+    userId: string;
+}
+
+/**
+ * Checks if user has email verification credentials.
+ * Phone/Rarimo alone do NOT count — this specifically checks for email.
+ */
+export async function hasEmailVerification({
+    db,
+    userId,
+}: HasEmailVerificationParams): Promise<boolean> {
+    const result = await db
+        .select({
+            emailId: emailTable.id,
+        })
+        .from(userTable)
+        .leftJoin(
+            emailTable,
+            and(
+                eq(emailTable.userId, userTable.id),
+                eq(emailTable.isDeleted, false),
+            ),
+        )
+        .where(eq(userTable.id, userId));
+
+    if (result.length === 0) {
+        return false;
+    }
+    return result[0].emailId !== null;
 }
 
 export async function getEmailsFromDidWrite(
@@ -278,7 +443,12 @@ export async function getEmailsFromDidWrite(
         .from(emailTable)
         .leftJoin(userTable, eq(userTable.id, emailTable.userId))
         .leftJoin(deviceTable, eq(deviceTable.userId, emailTable.userId))
-        .where(eq(deviceTable.didWrite, didWrite));
+        .where(
+            and(
+                eq(deviceTable.didWrite, didWrite),
+                eq(emailTable.isDeleted, false),
+            ),
+        );
     if (results.length === 0) {
         return [];
     } else {
@@ -294,7 +464,12 @@ export async function getEmailsFromUserId(
         .select({ email: emailTable.email })
         .from(emailTable)
         .leftJoin(userTable, eq(emailTable.userId, userTable.id))
-        .where(eq(userTable.id, userId));
+        .where(
+            and(
+                eq(userTable.id, userId),
+                eq(emailTable.isDeleted, false),
+            ),
+        );
     if (results.length === 0) {
         return [];
     } else {
@@ -339,6 +514,7 @@ export async function isEmailAssociatedWithDevice(
             and(
                 eq(emailTable.email, email),
                 eq(deviceTable.didWrite, didWrite),
+                eq(emailTable.isDeleted, false),
             ),
         );
     if (result.length !== 0) {
@@ -379,4 +555,99 @@ export function validateOrgImportRestriction(
             "Import feature restricted to organizations",
         );
     }
+}
+
+interface CanModerateConversationResult {
+    isAuthorized: boolean;
+    isSiteModerator: boolean;
+}
+
+interface CanModerateConversationParams {
+    db: PostgresDatabase;
+    userId: string;
+    conversationSlugId: string;
+}
+
+/**
+ * Checks if a user can moderate content in a conversation.
+ * Returns authorized if user is a site moderator, the conversation author,
+ * or a member of the organization that owns the conversation.
+ */
+export async function canModerateConversation({
+    db,
+    userId,
+    conversationSlugId,
+}: CanModerateConversationParams): Promise<CanModerateConversationResult> {
+    const isMod = await isSiteModeratorAccount({ db, userId });
+    if (isMod) {
+        return { isAuthorized: true, isSiteModerator: true };
+    }
+
+    const conversation = await db
+        .select({
+            authorId: conversationTable.authorId,
+            organizationId: conversationTable.organizationId,
+        })
+        .from(conversationTable)
+        .where(eq(conversationTable.slugId, conversationSlugId))
+        .limit(1);
+
+    if (conversation.length === 0) {
+        throw httpErrors.notFound("Conversation not found");
+    }
+
+    const isAuthor = conversation[0].authorId === userId;
+    if (isAuthor) {
+        return { isAuthorized: true, isSiteModerator: false };
+    }
+
+    if (conversation[0].organizationId !== null) {
+        const isOrgMember = await isUserPartOfOrganizationById({
+            db,
+            userId,
+            organizationId: conversation[0].organizationId,
+        });
+        if (isOrgMember) {
+            return { isAuthorized: true, isSiteModerator: false };
+        }
+    }
+
+    return { isAuthorized: false, isSiteModerator: false };
+}
+
+interface CanModerateConversationByOpinionSlugIdParams {
+    db: PostgresDatabase;
+    userId: string;
+    opinionSlugId: string;
+}
+
+/**
+ * Like canModerateConversation but resolves the conversation from an opinion slugId.
+ */
+export async function canModerateConversationByOpinionSlugId({
+    db,
+    userId,
+    opinionSlugId,
+}: CanModerateConversationByOpinionSlugIdParams): Promise<CanModerateConversationResult> {
+    const opinionResult = await db
+        .select({
+            conversationSlugId: conversationTable.slugId,
+        })
+        .from(opinionTable)
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, opinionTable.conversationId),
+        )
+        .where(eq(opinionTable.slugId, opinionSlugId))
+        .limit(1);
+
+    if (opinionResult.length === 0) {
+        throw httpErrors.notFound("Opinion not found");
+    }
+
+    return await canModerateConversation({
+        db,
+        userId,
+        conversationSlugId: opinionResult[0].conversationSlugId,
+    });
 }

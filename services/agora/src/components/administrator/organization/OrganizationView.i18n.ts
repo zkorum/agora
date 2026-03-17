@@ -49,5 +49,14 @@ export const organizationViewTranslations: Record<
     deleteOrganizationButton: "حذف سازمان",
     usernameLabel: "نام کاربری",
     addUserToOrganizationButton: "افزودن کاربر به سازمان",
+  ky: {
+    deleteOrganizationButton: "Уюмду жок кылуу",
+    usernameLabel: "Колдонуучу аты",
+    addUserToOrganizationButton: "Колдонуучуну уюмга кошуу",
+  },
+  ru: {
+    deleteOrganizationButton: "Удалить организацию",
+    usernameLabel: "Имя пользователя",
+    addUserToOrganizationButton: "Добавить пользователя в организацию",
   },
 };

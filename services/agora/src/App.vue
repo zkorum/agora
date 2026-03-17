@@ -1,5 +1,9 @@
 <template>
-  <router-view />
+  <router-view v-slot="{ Component }">
+    <keep-alive :include="keepAliveRoutes">
+      <component :is="Component" />
+    </keep-alive>
+  </router-view>
   <PostSignupPreferencesDialog />
   <EmbeddedBrowserWarningDialog />
 
@@ -22,6 +26,8 @@ import { onboardingFlowStore } from "./stores/onboarding/flow";
 import { useBackendAuthApi } from "./utils/api/auth";
 import { useHtmlNodeCssPatch } from "./utils/css/htmlNodeCssPatch";
 
+const keepAliveRoutes = ["NotificationPage", "UserProfilePage"];
+
 const authenticationStore = useBackendAuthApi();
 const authStore = useAuthenticationStore();
 const router = useRouter();
@@ -41,7 +47,6 @@ const isJomhoorWebView =
 
 onMounted(async () => {
   try {
-    console.log("Initializing authentication state");
     await authenticationStore.initializeAuthState();
 
     // Jomhoor WebView auto-login: after auth is checked, if the user

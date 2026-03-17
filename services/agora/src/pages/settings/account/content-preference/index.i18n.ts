@@ -31,5 +31,10 @@ export const contentPreferenceTranslations: Record<
   },
   fa: {
     contentPreference: "ترجیحات محتوا",
+  ky: {
+    contentPreference: "Мазмун тандоолору",
+  },
+  ru: {
+    contentPreference: "Настройки контента",
   },
 };

@@ -40,5 +40,12 @@ export const profileSettingsTranslations: Record<
   fa: {
     pageTitle: "تنظیمات نمایه",
     changeUsernameTitle: "تغییر نام کاربری",
+  ky: {
+    pageTitle: "Профиль жөндөөлөрү",
+    changeUsernameTitle: "Колдонуучу атын өзгөртүү",
+  },
+  ru: {
+    pageTitle: "Настройки профиля",
+    changeUsernameTitle: "Изменить имя пользователя",
   },
 };

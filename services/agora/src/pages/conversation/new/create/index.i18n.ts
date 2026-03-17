@@ -53,8 +53,8 @@ export const createConversationTranslations: Record<
     titleRequired: "Le titre est requis pour continuer",
     bodyPlaceholder: "Ajoutez du contexte ou des liens utiles",
     activeImportMessage:
-      "Vous avez une importation en cours. Veuillez attendre qu'elle soit terminée avant d'en démarrer une nouvelle.",
-    viewImportStatus: "Voir l'État de l'Importation",
+      "Vous avez un import en cours. Veuillez attendre qu'il soit terminé avant d'en démarrer un nouveau.",
+    viewImportStatus: "Voir l'État de l'Import",
   },
   "zh-Hans": {
     importButton: "导入",
@@ -95,5 +95,26 @@ export const createConversationTranslations: Record<
     activeImportMessage:
       "You have an import in progress. Please wait for it to complete before starting a new one.",
     viewImportStatus: "مشاهده وضعیت واردسازی",
+  ky: {
+    importButton: "Импорттоо",
+    nextButton: "Кийинки",
+    titlePlaceholder: "Эмнени сурагыңыз келет? (милдеттүү)",
+    titleRequired: "Улантуу үчүн аталыш талап кылынат",
+    bodyPlaceholder:
+      "Негизги текст. Контекст же тиешелүү ресурстарды бериңиз. Негизги суроого шайкеш экенин текшериңиз!",
+    activeImportMessage:
+      "Импорт жүрүп жатат. Жаңысын баштоодон мурун аяктаганча күтүңүз.",
+    viewImportStatus: "Импорттун абалын көрүү",
+  },
+  ru: {
+    importButton: "Импорт",
+    nextButton: "Далее",
+    titlePlaceholder: "Что вы хотите спросить? (обязательно)",
+    titleRequired: "Для продолжения необходим заголовок",
+    bodyPlaceholder:
+      "Основной текст. Предоставьте контекст или полезные ресурсы. Убедитесь, что он соответствует главному вопросу!",
+    activeImportMessage:
+      "Импорт выполняется. Пожалуйста, дождитесь его завершения перед началом нового.",
+    viewImportStatus: "Просмотреть статус импорта",
   },
 };

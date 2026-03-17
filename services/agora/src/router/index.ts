@@ -1,14 +1,59 @@
+import { isChunkLoadError, reloadForChunkError } from "src/utils/error/chunkError";
 import { useRouterGuard } from "src/utils/router/guard";
 import {
   createMemoryHistory,
   createRouter,
   createWebHashHistory,
   createWebHistory,
+  type RouteLocationNormalized,
+  type RouteLocationNormalizedLoaded,
 } from "vue-router";
-import { routes } from "vue-router/auto-routes";
+import { type RouteNamedMap, routes } from "vue-router/auto-routes";
 import { z } from "zod";
 
 import { defineRouter } from "#q-app/wrappers";
+
+// Construction uses keyof RouteNamedMap to catch typos at compile time.
+// ReadonlySet<string> allows .has(string) without casting route.name.
+const conversationTabRouteNames: ReadonlySet<string> = new Set<
+  keyof RouteNamedMap
+>([
+  "/conversation/[postSlugId]/",
+  "/conversation/[postSlugId]/analysis",
+  "/conversation/[postSlugId].embed/",
+  "/conversation/[postSlugId].embed/analysis",
+]);
+
+function isConversationTabSwitch({
+  to,
+  from,
+}: {
+  to: RouteLocationNormalized;
+  from: RouteLocationNormalizedLoaded;
+}): boolean {
+  const toName = to.name;
+  const fromName = from.name;
+
+  if (typeof toName !== "string" || typeof fromName !== "string") {
+    return false;
+  }
+
+  if (
+    !conversationTabRouteNames.has(toName) ||
+    !conversationTabRouteNames.has(fromName)
+  ) {
+    return false;
+  }
+
+  const toParams = to.params;
+  const fromParams = from.params;
+
+  if (!("postSlugId" in toParams) || !("postSlugId" in fromParams)) {
+    return false;
+  }
+
+  return toParams.postSlugId === fromParams.postSlugId;
+}
 
 /*
  * If not building with SSR mode, you can
@@ -29,7 +74,11 @@ export default defineRouter(function (/* { store, ssrContext } */) {
       : createWebHashHistory;
 
   const Router = createRouter({
-    scrollBehavior: (to, _from, savedPosition) => {
+    scrollBehavior: (to, from, savedPosition) => {
+      if (isConversationTabSwitch({ to, from })) {
+        return false;
+      }
+
       if (savedPosition) {
         return { left: 0, top: savedPosition.top };
       }
@@ -68,6 +117,15 @@ export default defineRouter(function (/* { store, ssrContext } */) {
       };
     }
 
+    if (to.name === "/conversation/[postSlugId].embed") {
+      return {
+        name: "/conversation/[postSlugId].embed/",
+        params: to.params,
+        query: to.query,
+        hash: to.hash,
+      };
+    }
+
     const target = conversationGuard(to.name, from.name);
     if (target == "home") {
       return { name: "/" };
@@ -75,26 +133,12 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   });
 
   // Auto-reload when a stale chunk fails to load after deployment.
-  // @see https://stackoverflow.com/questions/69300341/typeerror-failed-to-fetch-dynamically-imported-module-on-vue-vite-vanilla-set
-  // @see https://github.com/vitejs/vite/issues/11804#issuecomment-1406182566
+  // Uses shared utility — the inline script in index.html and the
+  // chunkErrorRecovery boot file handle non-router chunk failures.
   Router.onError((error, to) => {
-    if (
-      error.message.includes("Failed to fetch dynamically imported module") ||
-      error.message.includes("Loading chunk") ||
-      error.message.includes("Loading CSS chunk")
-    ) {
-      const reloadKey = "chunk-reload";
-      const lastReload = sessionStorage.getItem(reloadKey);
-      const now = Date.now();
-      if (lastReload && now - Number(lastReload) < 10000) {
-        console.error(
-          "[Router] Chunk load failed after reload, giving up",
-          error
-        );
-        return;
-      }
-      sessionStorage.setItem(reloadKey, String(now));
-      window.location.href = to.fullPath;
+    if (isChunkLoadError(error)) {
+      // Navigate to the target path so the URL stays correct after reload
+      reloadForChunkError({ navigateTo: to.fullPath });
     }
   });
 

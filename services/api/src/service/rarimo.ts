@@ -2,7 +2,6 @@
 
 import {
     deviceTable,
-    phoneTable,
     walletTable,
     zkPassportTable,
 } from "@/shared-backend/schema.js";
@@ -18,7 +17,7 @@ import {
 } from "@/shared/types/zod.js";
 import { type AxiosInstance } from "axios";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/util.js";
 import {
     getZKPAuthenticationType,
@@ -31,7 +30,7 @@ import { decimalToHex, hexToUtf8 } from "@/utils/dataStructure.js";
 import { log } from "@/app.js";
 import { mergeGuestIntoVerifiedUser } from "./merge.js";
 import { httpErrors } from "@fastify/sensible";
-import { isUserLoggedIn, isUserRegistered } from "@/shared-backend/util.js";
+import { isUserLoggedIn } from "@/shared-backend/util.js";
 
 interface IsLoggedInOrExistsAndAssociatedWithNoNullifierProps {
     db: PostgresDatabase;
@@ -119,6 +118,7 @@ interface VerifyUserStatusProps {
     didWrite: string;
     axiosVerificatorSvc: AxiosInstance;
     userAgent: string;
+    sessionLifetimeDays: number;
 }
 
 export async function isLoggedInOrExistsAndAssociatedWithNoNullifier({
@@ -126,41 +126,36 @@ export async function isLoggedInOrExistsAndAssociatedWithNoNullifier({
     didWrite,
     now,
 }: IsLoggedInOrExistsAndAssociatedWithNoNullifierProps): Promise<
-    "already_logged_in" | undefined
+    "already_has_credential" | undefined
 > {
     const result = await db
         .select({
             userId: deviceTable.userId,
             sessionExpiry: deviceTable.sessionExpiry,
             nullifier: zkPassportTable.nullifier,
-            phoneHash: phoneTable.phoneHash,
-            walletAddress: walletTable.walletAddress,
         })
         .from(deviceTable)
         .leftJoin(
             zkPassportTable,
-            eq(deviceTable.userId, zkPassportTable.userId),
+            and(
+                eq(deviceTable.userId, zkPassportTable.userId),
+                eq(zkPassportTable.isDeleted, false),
+            ),
         )
-        .leftJoin(phoneTable, eq(deviceTable.userId, phoneTable.userId))
-        .leftJoin(walletTable, eq(deviceTable.userId, walletTable.userId))
         .where(eq(deviceTable.didWrite, didWrite));
 
     if (result.length !== 0) {
         const deviceMetadata = result[0];
-        const isRegistered = isUserRegistered({
-            nullifier: deviceMetadata.nullifier,
-            phoneHash: deviceMetadata.phoneHash,
-            walletAddress: deviceMetadata.walletAddress,
-        });
+        const hasActiveNullifier = deviceMetadata.nullifier !== null;
         const isLoggedIn = isUserLoggedIn({
             now,
             sessionExpiry: deviceMetadata.sessionExpiry,
         });
-        if (isRegistered && isLoggedIn) {
+        if (hasActiveNullifier && isLoggedIn) {
             log.info(
-                `[Rarimo] Device is already (hard) logged in - returning already_logged_in`,
+                `[Rarimo] Device already has an active Rarimo credential - returning already_has_credential`,
             );
-            return "already_logged_in";
+            return "already_has_credential";
         }
         // NOTE: Removed the "associated_with_another_user" check here to allow guest users
         // (with no nullifier) to proceed with ZKP verification. The proper authentication
@@ -287,6 +282,7 @@ export async function verifyUserStatusAndAuthenticate({
     didWrite,
     axiosVerificatorSvc,
     userAgent,
+    sessionLifetimeDays,
 }: VerifyUserStatusProps): Promise<VerifyUserStatusAndAuthenticate200> {
     const now = nowZeroMs();
     // TODO: move this check to verifyUCAN directly in the controller:
@@ -343,8 +339,32 @@ export async function verifyUserStatusAndAuthenticate({
     });
     // log-in or register depending on the state
     const loginSessionExpiry = new Date(now);
-    loginSessionExpiry.setFullYear(loginSessionExpiry.getFullYear() + 1000);
+    loginSessionExpiry.setDate(
+        loginSessionExpiry.getDate() + sessionLifetimeDays,
+    );
     let accountMerged = false;
+
+    // Prevent duplicate credential: if auth type is "register", check user doesn't already
+    // have an active Rarimo passport before proceeding with the transaction
+    if (authResult.type === "register") {
+        const existingPassport = await db
+            .select({ id: zkPassportTable.id })
+            .from(zkPassportTable)
+            .where(
+                and(
+                    eq(zkPassportTable.userId, authResult.userId),
+                    eq(zkPassportTable.isDeleted, false),
+                ),
+            )
+            .limit(1);
+        if (existingPassport.length > 0) {
+            log.warn(
+                { userId: authResult.userId },
+                "[Rarimo] User already has an active Rarimo credential",
+            );
+            return { success: false, reason: "already_has_credential" };
+        }
+    }
 
     // Wrap all operations in transaction to ensure atomicity
     // This prevents session corruption if device update fails after merge
@@ -354,12 +374,6 @@ export async function verifyUserStatusAndAuthenticate({
                 // No database operations needed, handled outside transaction
                 break;
             case "register":
-                // const parsedCitizenship = zodCountryCodeEnum.safeParse(nationality);
-                // if (!parsedCitizenship.success) {
-                //     throw httpErrors.internalServerError(
-                //         `Received nationality ${nationality} is not part of expected enum`,
-                //     );
-                // }
                 await registerWithZKP({
                     db: tx,
                     didWrite,

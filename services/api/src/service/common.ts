@@ -21,6 +21,7 @@ import type {
     PolisClustersMetadata,
     ClusterMetadata,
     EventSlug,
+    ParticipationMode,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { eq, desc, SQL, and, sql } from "drizzle-orm";
@@ -35,24 +36,6 @@ import { imagePathToUrl } from "@/utils/organizationLogic.js";
 import { getConversationEngagementScore } from "./recommendationSystem.js";
 import { log } from "@/app.js";
 
-/**
- * Validates that public conversations have either login requirement or event ticket verification.
- * Returns false if validation fails (public conversation without login or ticket requirement).
- */
-export function isValidPublicConversationAccess({
-    isIndexed,
-    isLoginRequired,
-    requiresEventTicket,
-}: {
-    isIndexed: boolean;
-    isLoginRequired: boolean;
-    requiresEventTicket?: EventSlug;
-}): boolean {
-    if (isIndexed && !isLoginRequired && !requiresEventTicket) {
-        return false;
-    }
-    return true;
-}
 
 export function useCommonUser() {
     interface GetUserIdFromUsernameProps {
@@ -167,6 +150,13 @@ export function useCommonPost() {
                 opinionCount: conversationTable.opinionCount,
                 voteCount: conversationTable.voteCount,
                 participantCount: conversationTable.participantCount,
+                totalOpinionCount: conversationTable.totalOpinionCount,
+                totalVoteCount: conversationTable.totalVoteCount,
+                totalParticipantCount:
+                    conversationTable.totalParticipantCount,
+                moderatedOpinionCount:
+                    conversationTable.moderatedOpinionCount,
+                hiddenOpinionCount: conversationTable.hiddenOpinionCount,
                 authorName: userTable.username,
                 organizationName: organizationTable.name,
                 organizationImagePath: organizationTable.imagePath,
@@ -174,8 +164,10 @@ export function useCommonPost() {
                 organizationIsFullImagePath: organizationTable.isFullImagePath,
                 organizationDescription: organizationTable.description,
                 isIndexed: conversationTable.isIndexed,
-                isLoginRequired: conversationTable.isLoginRequired,
+                participationMode: conversationTable.participationMode,
+                conversationType: conversationTable.conversationType,
                 isClosed: conversationTable.isClosed,
+                isEdited: conversationTable.isEdited,
                 requiresEventTicket: conversationTable.requiresEventTicket,
                 // moderation
                 moderationAction: conversationModerationTable.moderationAction,
@@ -262,15 +254,22 @@ export function useCommonPost() {
                 conversationSlugId: postItem.slugId,
                 moderation: moderationProperties,
                 createdAt: postItem.createdAt,
-                updatedAt: postItem.updatedAt,
+                updatedAt: postItem.isEdited ? postItem.updatedAt : undefined,
                 lastReactedAt: postItem.lastReactedAt,
                 opinionCount: postItem.opinionCount,
                 voteCount: postItem.voteCount,
                 participantCount: postItem.participantCount,
+                totalOpinionCount: postItem.totalOpinionCount,
+                totalVoteCount: postItem.totalVoteCount,
+                totalParticipantCount: postItem.totalParticipantCount,
+                moderatedOpinionCount: postItem.moderatedOpinionCount,
+                hiddenOpinionCount: postItem.hiddenOpinionCount,
                 authorUsername: postItem.authorName,
                 isIndexed: postItem.isIndexed,
-                isLoginRequired: postItem.isLoginRequired,
+                participationMode: postItem.participationMode,
+                conversationType: postItem.conversationType,
                 isClosed: postItem.isClosed,
+                isEdited: postItem.isEdited,
                 requiresEventTicket: postItem.requiresEventTicket ?? undefined,
                 organization:
                     postItem.organizationName !== null &&
@@ -930,8 +929,13 @@ export function useCommonPost() {
         participantCount: number;
         opinionCount: number;
         voteCount: number;
+        totalParticipantCount: number;
+        totalOpinionCount: number;
+        totalVoteCount: number;
+        moderatedOpinionCount: number;
+        hiddenOpinionCount: number;
         isIndexed: boolean;
-        isLoginRequired: boolean;
+        participationMode: ParticipationMode;
         isClosed: boolean;
         requiresEventTicket: EventSlug | null;
     }
@@ -954,9 +958,17 @@ export function useCommonPost() {
                 participantCount: conversationTable.participantCount,
                 voteCount: conversationTable.voteCount,
                 opinionCount: conversationTable.opinionCount,
+                totalParticipantCount:
+                    conversationTable.totalParticipantCount,
+                totalVoteCount: conversationTable.totalVoteCount,
+                totalOpinionCount: conversationTable.totalOpinionCount,
+                moderatedOpinionCount:
+                    conversationTable.moderatedOpinionCount,
+                hiddenOpinionCount: conversationTable.hiddenOpinionCount,
                 isIndexed: conversationTable.isIndexed,
-                isLoginRequired: conversationTable.isLoginRequired,
+                participationMode: conversationTable.participationMode,
                 isClosed: conversationTable.isClosed,
+                isEdited: conversationTable.isEdited,
                 requiresEventTicket: conversationTable.requiresEventTicket,
             })
             .from(conversationTable)
@@ -971,8 +983,15 @@ export function useCommonPost() {
             participantCount: postTableResponse[0].participantCount,
             voteCount: postTableResponse[0].voteCount,
             opinionCount: postTableResponse[0].opinionCount,
+            totalParticipantCount:
+                postTableResponse[0].totalParticipantCount,
+            totalVoteCount: postTableResponse[0].totalVoteCount,
+            totalOpinionCount: postTableResponse[0].totalOpinionCount,
+            moderatedOpinionCount:
+                postTableResponse[0].moderatedOpinionCount,
+            hiddenOpinionCount: postTableResponse[0].hiddenOpinionCount,
             isIndexed: postTableResponse[0].isIndexed,
-            isLoginRequired: postTableResponse[0].isLoginRequired,
+            participationMode: postTableResponse[0].participationMode,
             isClosed: postTableResponse[0].isClosed,
             requiresEventTicket: postTableResponse[0].requiresEventTicket,
         };

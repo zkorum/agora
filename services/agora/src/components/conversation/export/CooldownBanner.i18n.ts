@@ -34,12 +34,12 @@ export const cooldownBannerTranslations: Record<
   },
   fr: {
     cooldownSeconds:
-      "Veuillez attendre {seconds} secondes avant de demander une autre exportation.",
+      "Veuillez attendre {seconds} secondes avant de demander un autre export.",
     cooldownMinutes:
-      "Veuillez attendre {minutes} minutes avant de demander une autre exportation.",
+      "Veuillez attendre {minutes} minutes avant de demander un autre export.",
     cooldownEnded:
-      "Période d'attente terminée. Vous pouvez maintenant demander une nouvelle exportation.",
-    viewLast: "Voir la Dernière Exportation",
+      "Période d'attente terminée. Vous pouvez maintenant demander un nouvel export.",
+    viewLast: "Voir le Dernier Export",
   },
   "zh-Hans": {
     cooldownSeconds: "请等待 {seconds} 秒后再请求导出。",
@@ -67,5 +67,16 @@ export const cooldownBannerTranslations: Record<
     cooldownMinutes: "خروجی بعدی در {minutes} دقیقه",
     cooldownEnded: "زمان انتظار تمام شد. اکنون می‌توانید خروجی جدید درخواست کنید.",
     viewLast: "مشاهده آخرین خروجی",
+  ky: {
+    cooldownSeconds: "Кийинки экспорт {seconds} секунддан кийин",
+    cooldownMinutes: "Кийинки экспорт {minutes} мүнөттөн кийин",
+    cooldownEnded: "Күтүү мөөнөтү аяктады. Эми жаңы экспорт сурай аласыз.",
+    viewLast: "Акыркы экспортту көрүү",
+  },
+  ru: {
+    cooldownSeconds: "Следующий экспорт через {seconds} сек.",
+    cooldownMinutes: "Следующий экспорт через {minutes} мин.",
+    cooldownEnded: "Период ожидания завершён. Теперь можно запросить новый экспорт.",
+    viewLast: "Просмотреть последний экспорт",
   },
 };

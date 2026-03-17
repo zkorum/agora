@@ -9,7 +9,14 @@
     }"
   >
     <template #header>
-      <StandardMenuBar title="" :center-content="false" />
+      <DefaultMenuBar :center-content="false">
+        <template #left>
+          <ZKIconButton icon="ci:chevron-left" aria-label="Go back" @click="handleBack" />
+          <span v-if="isSticky && hasConversationData" class="navbar-title">
+            {{ loadedConversationData.payload.title }}
+          </span>
+        </template>
+      </DefaultMenuBar>
     </template>
 
     <q-pull-to-refresh @refresh="handleRefresh">
@@ -24,6 +31,12 @@
                 @verified="(payload) => handleTicketVerified(payload)"
               />
 
+              <div ref="sentinelElement"></div>
+              <div
+                ref="actionBarElement"
+                class="sticky-below-header sticky-action-bar"
+                :style="{ '--header-height': (headerRevealed ? headerHeight : 0) + 'px' }"
+              >
               <PostActionBar
                 v-model="currentTab"
                 :compact-mode="false"
@@ -32,22 +45,48 @@
                 "
                 :participant-count="participantCountLocal"
                 :vote-count="loadedConversationData.metadata.voteCount"
+                :total-participant-count="loadedConversationData.metadata.totalParticipantCount"
+                :total-vote-count="loadedConversationData.metadata.totalVoteCount"
                 :is-loading="isCurrentTabLoading"
                 :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
                 :conversation-title="loadedConversationData.payload.title"
                 :author-username="loadedConversationData.metadata.authorUsername"
+                :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
+                :conversation-type="loadedConversationData.metadata.conversationType"
               />
+              </div>
+
+              <div v-if="currentTab === 'comment' && loadedConversationData.metadata.conversationType !== 'maxdiff'" class="dropdownSlot">
+                <CommentSortingSelector
+                  :filter-value="commentFilter"
+                  :moderated-opinion-count="loadedConversationData.metadata.moderatedOpinionCount"
+                  :hidden-opinion-count="loadedConversationData.metadata.hiddenOpinionCount"
+                  @changed-algorithm="
+                    (filter: CommentFilterOptions) => { commentFilter = filter }
+                  "
+                />
+              </div>
 
               <!-- Child routes: only tab-specific content -->
-              <router-view v-slot="{ Component }">
-                <component
-                  :is="Component"
-                  :key="route.path"
-                  :conversation-data="loadedConversationData"
-                  :has-conversation-data="hasConversationData"
-                  :moderation-history-trigger="moderationHistoryTrigger"
-                />
-              </router-view>
+              <div class="tab-content" :style="tabContentStyle">
+                <router-view v-slot="{ Component }">
+                  <KeepAlive :max="2">
+                    <component
+                      :is="Component"
+                      :key="route.path"
+                      :conversation-data="loadedConversationData"
+                      :has-conversation-data="hasConversationData"
+                      :moderation-history-trigger="moderationHistoryTrigger"
+                      :comment-filter="commentFilter"
+                      :on-view-analysis="onViewAnalysis"
+                      :navigate-to-discover-tab="navigateToDiscoverTab"
+                      @update:comment-filter="
+                        (filter: CommentFilterOptions) => { commentFilter = filter }
+                      "
+                    />
+                  </KeepAlive>
+                </router-view>
+              </div>
             </div>
           </ZKHoverEffect>
         </div>
@@ -58,178 +97,99 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { StandardMenuBar } from "src/components/navigation/header/variants";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
+import CommentSortingSelector from "src/components/post/comments/group/CommentSortingSelector.vue";
 import PostContent from "src/components/post/display/PostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
+import ZKIconButton from "src/components/ui-library/ZKIconButton.vue";
+import {
+  type ConversationParentConfig,
+  useConversationParentState,
+} from "src/composables/conversation/useConversationParentState";
+import { useTabScrollRestoration } from "src/composables/conversation/useTabScrollRestoration";
+import { useStickyObserver } from "src/composables/ui/useStickyObserver";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { useLayoutHeaderStore } from "src/stores/layout/header";
 import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
-import { useBackendAuthApi } from "src/utils/api/auth";
-import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
-import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
-import { useInvalidateVoteQueries } from "src/utils/api/vote/useVoteQueries";
-import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import type { CommentFilterOptions } from "src/utils/component/opinion";
+import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
+import { onBeforeUnmount, onMounted, watch } from "vue";
+import { useRouter } from "vue-router";
 
-const route = useRoute();
 const router = useRouter();
+const { sentinelElement, isSticky, headerHeight } = useStickyObserver();
 const navigationStore = useNavigationStore();
 const { resetDraft } = useNewPostDraftsStore();
+const { safeNavigateBack } = useGoBackButtonHandler();
 
 const authStore = useAuthenticationStore();
-const { userId, isAuthInitialized } = storeToRefs(authStore);
+const { userId } = storeToRefs(authStore);
+const { reveal: headerRevealed } = storeToRefs(useLayoutHeaderStore());
 
-// Clear login intentions immediately (before query setup)
-const loginIntentionStore = useLoginIntentionStore();
-loginIntentionStore.clearVotingIntention();
-loginIntentionStore.clearOpinionAgreementIntention();
-loginIntentionStore.clearReportUserContentIntention();
+const conversationConfig: ConversationParentConfig = {
+  analysisRouteName: "/conversation/[postSlugId]/analysis",
+  commentRouteNames: [
+    "/conversation/[postSlugId]/",
+    "/conversation/[postSlugId]",
+  ],
+  routePrefix: "/conversation/{id}",
+};
 
-// Use TanStack Query for conversation data
-const conversationQuery = useConversationQuery({
-  conversationSlugId: computed(() => (route.params as { postSlugId: string }).postSlugId),
-  enabled: computed(() => isAuthInitialized.value),
+const {
+  route,
+  conversationQuery,
+  conversationData,
+  hasConversationData,
+  loadedConversationData,
+  opinionCountOffset,
+  currentTab,
+  isCurrentTabLoading,
+  moderationHistoryTrigger,
+  commentFilter,
+  participantCountLocal,
+  actionBarElement,
+  onViewAnalysis,
+  navigateToDiscoverTab,
+  openModerationHistory,
+  handleTicketVerified,
+  handleRefresh,
+  invalidateUserVotes,
+  scrollToActionBar,
+  pendingScrollOverride,
+} = useConversationParentState(conversationConfig);
+
+const { tabContentStyle } = useTabScrollRestoration({
+  analysisRouteName: conversationConfig.analysisRouteName,
+  pendingScrollOverride,
+  sentinelElement,
+  actionBarElement,
 });
 
-const conversationData = computed(() => {
-  const data = conversationQuery.data.value;
-  if (!data || data.metadata.conversationSlugId === "") {
-    return undefined;
-  }
-  return data;
-});
-
-const hasConversationData = computed(() => conversationData.value !== undefined);
-
-// Type-safe version for template use (guaranteed non-undefined)
-const loadedConversationData = computed(() => {
-  const data = conversationData.value;
-  if (!data) {
-    // This should never happen inside v-if="hasConversationData" block
-    throw new Error("[ConversationPage] Accessed conversation data before loaded");
-  }
-  return data;
-});
-
-const { invalidateUserVotes } = useInvalidateVoteQueries();
-const { invalidateAnalysis: invalidateAnalysisQuery, invalidateAll, invalidateComments } = useInvalidateCommentQueries();
-
-// Shared state for children
-const opinionCountOffset = ref(0);
-const participantCountOffset = ref(0);
-const currentTab = ref<"comment" | "analysis">("comment");
-const isCurrentTabLoading = ref(false);
-const moderationHistoryTrigger = ref(0);
-
-// Computed: base participant count + offset
-const participantCountLocal = computed(
-  () =>
-    (conversationData.value?.metadata.participantCount ?? 0) +
-    participantCountOffset.value
-);
-
-// Provide state and functions to child routes
-provide("refreshConversation", async () => {
-  await conversationQuery.refetch();
-});
-provide("opinionCountOffset", opinionCountOffset);
-provide("participantCountOffset", participantCountOffset);
-provide("setCurrentTabLoading", (loading: boolean) => {
-  isCurrentTabLoading.value = loading;
-});
-provide("decrementOpinionCount", () => {
-  opinionCountOffset.value -= 1;
-});
-
-// Navigation functions for banner actions
-function navigateToAnalysis() {
-  const data = conversationData.value;
-  if (data === undefined) return;
-
-  // Invalidate analysis cache to ensure fresh data when user navigates
-  // This is important when user reaches threshold and clicks "View analysis"
-  void invalidateAnalysisQuery(data.metadata.conversationSlugId);
-
-  void router.push(
-    `/conversation/${data.metadata.conversationSlugId}/analysis`
-  );
-}
-
-function navigateToCommentTab() {
-  const data = conversationData.value;
-  if (data === undefined) return;
-
-  // Invalidate comments cache to ensure fresh data when user navigates
-  // This is important when user clicks "Vote more" from analysis page
-  void invalidateComments(data.metadata.conversationSlugId);
-
-  void router.push(
-    `/conversation/${data.metadata.conversationSlugId}/`
-  );
-}
-
-provide("navigateToAnalysis", navigateToAnalysis);
-provide("navigateToCommentTab", navigateToCommentTab);
-
-// Sync currentTab with route
-watch(
-  () => route.name,
-  (newRouteName) => {
-    if (newRouteName === "/conversation/[postSlugId]/analysis") {
-      currentTab.value = "analysis";
-    } else if (
-      newRouteName === "/conversation/[postSlugId]/" ||
-      newRouteName === "/conversation/[postSlugId]"
+function handleBack(): void {
+  if (currentTab.value === "analysis") {
+    const back = window.history.state?.back;
+    const slugId = conversationData.value?.metadata.conversationSlugId;
+    // If previous history entry is the comment tab of this conversation, pop it
+    if (
+      typeof back === "string" &&
+      slugId !== undefined &&
+      back.startsWith(`/conversation/${slugId}`) &&
+      !back.includes("/analysis")
     ) {
-      currentTab.value = "comment";
+      router.back();
+    } else if (slugId !== undefined) {
+      void router.replace({
+        name: "/conversation/[postSlugId]/",
+        params: { postSlugId: slugId },
+      });
     }
-  },
-  { immediate: true }
-);
-
-function openModerationHistory(): void {
-  // Navigate to comment tab if on analysis, then trigger moderation history
-  if (currentTab.value !== "comment") {
-    navigateToCommentTab();
+  } else {
+    void safeNavigateBack({ name: "/" });
   }
-  moderationHistoryTrigger.value += 1;
-}
-
-const { loadAuthenticatedModules } = useBackendAuthApi();
-
-async function handleTicketVerified(payload: {
-  userIdChanged: boolean;
-  needsCacheRefresh: boolean;
-}): Promise<void> {
-  if (payload.needsCacheRefresh) {
-    await loadAuthenticatedModules();
-  }
-
-  // Refresh conversation data after ticket verification
-  await conversationQuery.refetch();
-}
-
-async function handleRefresh(done: () => void): Promise<void> {
-  if (!conversationData.value) {
-    done();
-    return;
-  }
-
-  const slugId = conversationData.value.metadata.conversationSlugId;
-
-  // Invalidate all queries to force refresh (uses default refetchType: "active")
-  // Active queries refetch immediately, inactive queries marked stale
-  invalidateUserVotes(slugId);
-  invalidateAll(slugId); // Invalidates comments + analysis
-
-  // Refetch conversation metadata
-  await conversationQuery.refetch();
-
-  done();
 }
 
 // Handle conversation creation navigation
@@ -245,7 +205,7 @@ watch(userId, async (newUserId, oldUserId) => {
     oldUserId !== undefined && newUserId !== undefined && oldUserId !== newUserId
   ) {
     if (conversationData.value) {
-      invalidateUserVotes(conversationData.value.metadata.conversationSlugId);
+      void invalidateUserVotes(conversationData.value.metadata.conversationSlugId);
     }
     await conversationQuery.refetch();
   }
@@ -265,9 +225,25 @@ onBeforeUnmount(() => {
 }
 
 .standardStyle {
-  padding-top: 1rem;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  padding-bottom: 1rem;
+  padding: 1rem;
+}
+
+.dropdownSlot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.navbar-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+  min-width: 0;
+  flex: 1;
+  color: black;
+  margin-right: 1rem;
 }
 </style>

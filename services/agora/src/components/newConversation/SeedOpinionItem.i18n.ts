@@ -40,5 +40,12 @@ export const seedOpinionItemTranslations: Record<
   fa: {
     inputTextPlaceholder: "متن ورودی",
     deleteOpinion: "حذف نظر",
+  ky: {
+    inputTextPlaceholder: "Текст киргизиңиз",
+    deleteOpinion: "Пикирди жок кылуу",
+  },
+  ru: {
+    inputTextPlaceholder: "Введите текст",
+    deleteOpinion: "Удалить высказывание",
   },
 };

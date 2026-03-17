@@ -8,6 +8,7 @@ export interface NewConversationControlBarTranslations {
   private: string;
   public: string;
   requiresLogin: string;
+  requiresEmailVerification: string;
   guestParticipation: string;
   makePublicNever: string;
   makePublic: string;
@@ -15,6 +16,8 @@ export interface NewConversationControlBarTranslations {
   addPoll: string;
   noVerification: string;
   devconnect2025: string;
+  typeStandard: string;
+  typeMaxDiff: string;
 }
 
 export const newConversationControlBarTranslations: Record<
@@ -28,7 +31,8 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "New Conversation",
     private: "Private",
     public: "Public",
-    requiresLogin: "Requires login",
+    requiresLogin: "Requires strong verification",
+    requiresEmailVerification: "Requires email verification",
     guestParticipation: "Guest participation",
     makePublicNever: "Make public: Never",
     makePublic: "Make public: {date}",
@@ -36,6 +40,8 @@ export const newConversationControlBarTranslations: Record<
     addPoll: "Add poll",
     noVerification: "No verification",
     devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "Prioritization",
   },
   ar: {
     asLabel: "باسم {name}",
@@ -44,7 +50,8 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "محادثة جديدة",
     private: "خاص",
     public: "عام",
-    requiresLogin: "يتطلب تسجيل الدخول",
+    requiresLogin: "يتطلب تحققًا قويًا",
+    requiresEmailVerification: "يتطلب التحقق من البريد الإلكتروني",
     guestParticipation: "مشاركة الضيوف",
     makePublicNever: "جعله عامًا: أبدًا",
     makePublic: "جعله عامًا: {date}",
@@ -52,6 +59,8 @@ export const newConversationControlBarTranslations: Record<
     addPoll: "إضافة استطلاع",
     noVerification: "بدون تحقق",
     devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "ترتيب الأولويات",
   },
   es: {
     asLabel: "Como {name}",
@@ -60,7 +69,8 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "Nueva Conversación",
     private: "Privado",
     public: "Público",
-    requiresLogin: "Requiere inicio de sesión",
+    requiresLogin: "Requiere verificación fuerte",
+    requiresEmailVerification: "Requiere verificación por correo electrónico",
     guestParticipation: "Participación de invitados",
     makePublicNever: "Hacer público: Nunca",
     makePublic: "Hacer público: {date}",
@@ -68,6 +78,8 @@ export const newConversationControlBarTranslations: Record<
     addPoll: "Agregar encuesta",
     noVerification: "Sin verificación",
     devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "Priorización",
   },
   fr: {
     asLabel: "En tant que {name}",
@@ -76,7 +88,8 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "Nouvelle Conversation",
     private: "Privé",
     public: "Public",
-    requiresLogin: "Connexion requise",
+    requiresLogin: "Vérification renforcée requise",
+    requiresEmailVerification: "Vérification par email requise",
     guestParticipation: "Participation d'invités",
     makePublicNever: "Rendre public : Jamais",
     makePublic: "Rendre public : {date}",
@@ -84,6 +97,8 @@ export const newConversationControlBarTranslations: Record<
     addPoll: "Ajouter un sondage",
     noVerification: "Pas de vérification",
     devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "Hiérarchisation",
   },
   "zh-Hans": {
     asLabel: "作为 {name}",
@@ -92,7 +107,8 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "新对话",
     private: "私密",
     public: "公开",
-    requiresLogin: "需要登录",
+    requiresLogin: "需要强验证",
+    requiresEmailVerification: "需要邮箱验证",
     guestParticipation: "访客参与",
     makePublicNever: "公开：永不",
     makePublic: "公开：{date}",
@@ -100,6 +116,8 @@ export const newConversationControlBarTranslations: Record<
     addPoll: "添加投票",
     noVerification: "无需验证",
     devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "优先排序",
   },
   "zh-Hant": {
     asLabel: "作為 {name}",
@@ -108,7 +126,8 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "新對話",
     private: "私密",
     public: "公開",
-    requiresLogin: "需要登入",
+    requiresLogin: "需要強驗證",
+    requiresEmailVerification: "需要電郵驗證",
     guestParticipation: "訪客參與",
     makePublicNever: "公開：永不",
     makePublic: "公開：{date}",
@@ -116,6 +135,8 @@ export const newConversationControlBarTranslations: Record<
     addPoll: "新增投票",
     noVerification: "無需驗證",
     devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "優先排序",
   },
   ja: {
     asLabel: "{name} として",
@@ -124,7 +145,8 @@ export const newConversationControlBarTranslations: Record<
     newConversation: "新しい会話",
     private: "プライベート",
     public: "パブリック",
-    requiresLogin: "ログインが必要",
+    requiresLogin: "強力な認証が必要",
+    requiresEmailVerification: "メール認証が必要",
     guestParticipation: "ゲスト参加",
     makePublicNever: "公開：Never",
     makePublic: "公開：{date}",
@@ -132,6 +154,46 @@ export const newConversationControlBarTranslations: Record<
     addPoll: "投票を追加",
     noVerification: "検証不要",
     devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "優先順位付け",
+  },
+  ky: {
+    asLabel: "{name} катары",
+    importFromPolisUrl: "Polis URL'ден импорттоо",
+    importFromCsv: "CSV'ден импорттоо",
+    newConversation: "Жаңы талкуу",
+    private: "Жеке",
+    public: "Ачык",
+    requiresLogin: "Күчтүү текшерүү талап кылынат",
+    requiresEmailVerification: "Электрондук почта текшерүүсү талап кылынат",
+    guestParticipation: "Конок катышуу",
+    makePublicNever: "Ачык кылуу: Эч качан",
+    makePublic: "Ачык кылуу: {date}",
+    removePoll: "Сурамжылоону алып салуу",
+    addPoll: "Сурамжылоо кошуу",
+    noVerification: "Текшерүүсүз",
+    devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "Артыкчылыктуу кылуу",
+  },
+  ru: {
+    asLabel: "От имени {name}",
+    importFromPolisUrl: "Импорт из URL Polis",
+    importFromCsv: "Импорт из CSV",
+    newConversation: "Новое обсуждение",
+    private: "Приватное",
+    public: "Публичное",
+    requiresLogin: "Требуется усиленная проверка",
+    requiresEmailVerification: "Требуется подтверждение электронной почты",
+    guestParticipation: "Гостевое участие",
+    makePublicNever: "Сделать публичным: Никогда",
+    makePublic: "Сделать публичным: {date}",
+    removePoll: "Удалить опрос",
+    addPoll: "Добавить опрос",
+    noVerification: "Без проверки",
+    devconnect2025: "Devconnect 2025",
+    typeStandard: "Standard",
+    typeMaxDiff: "Приоритизация",
   },
   fa: {
     asLabel: "به عنوان {name}",

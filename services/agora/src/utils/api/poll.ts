@@ -57,7 +57,7 @@ export function useBackendPollApi() {
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1PollRespondPost(params);
       const encodedUcan = await buildEncodedUcan(url, options);
-      await DefaultApiFactory(undefined, undefined, api).apiV1PollRespondPost(
+      const response = await DefaultApiFactory(undefined, undefined, api).apiV1PollRespondPost(
         params,
         {
           headers: {
@@ -66,7 +66,7 @@ export function useBackendPollApi() {
         }
       );
 
-      return true;
+      return response.data.success;
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to submit poll response.");

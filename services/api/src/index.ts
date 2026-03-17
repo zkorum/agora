@@ -4,8 +4,12 @@ import {
     verifyOtpReqBody,
     authenticate200,
     verifyOtp200,
+    authenticateEmailRequestBody,
+    authenticateEmail200,
+    verifyEmailOtpReqBody,
     checkLoginStatusResponse,
     type AuthenticateResponse,
+    type AuthenticateEmailResponse,
     type VerifyOtp200,
 } from "@/shared/types/dto-auth.js";
 import fastifyAuth from "@fastify/auth";
@@ -55,6 +59,11 @@ import {
 } from "./service/comment.js";
 import { getUserPollResponse, submitPollResponse } from "./service/poll.js";
 import {
+    saveMaxdiffResult,
+    loadMaxdiffResult,
+    getMaxdiffResults,
+} from "./service/maxdiff.js";
+import {
     castVoteForOpinionSlugId,
     getUserVotesForPostSlugIds as getUserVotesByConversations,
 } from "./service/voting.js";
@@ -80,7 +89,7 @@ import {
     generateUnusedRandomUsername,
     submitUsernameChange,
 } from "./service/account.js";
-import { isModeratorAccount } from "@/service/authUtil.js";
+import { isSiteModeratorAccount, isSiteOrgAdminAccount, canModerateConversation, canModerateConversationByOpinionSlugId } from "@/service/authUtil.js";
 import {
     fetchModerationReportByCommentSlugId as getOpinionModerationStatus,
     fetchModerationReportByPostSlugId as getConversationModerationStatus,
@@ -108,6 +117,7 @@ import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
 import { createExportBuffer } from "./service/exportBuffer.js";
 import { createImportBuffer } from "./service/importBuffer.js";
+import { createUcanReplayGuard } from "./service/ucanReplayGuard.js";
 import { NotificationSSEManager } from "./service/notificationSSE.js";
 import {
     addUserOrganizationMapping,
@@ -117,10 +127,8 @@ import {
     getOrganizationsByUsername,
     removeUserOrganizationMapping,
 } from "./service/administrator/organization.js";
-import type {
-    DeviceIsKnownTrueLoginStatus,
-    DeviceLoginStatusExtended,
-} from "./shared/types/zod.js";
+import type { DeviceIsKnownTrueLoginStatus } from "./shared/types/zod.js";
+import type { DeviceLoginStatusInternal } from "./service/authUtil.js";
 import {
     getAllTopics,
     getUserFollowedTopics,
@@ -136,6 +144,8 @@ import {
     type SupportedDisplayLanguageCodes,
 } from "./shared/languages.js";
 import { createDb } from "./shared-backend/db.js";
+import { deviceTable } from "./shared-backend/schema.js";
+import { eq } from "drizzle-orm";
 import {
     initializeGoogleCloudCredentials,
     type GoogleCloudCredentials,
@@ -145,25 +155,22 @@ import { nowZeroMs } from "./shared/util.js";
 server.register(fastifySensible);
 server.register(fastifyAuth);
 server.register(fastifyCors, {
-    // put your options here
     origin: (origin, cb) => {
-        //TODO: allow https and enforcing CORS during dev?
         if (config.NODE_ENV === "development") {
             cb(null, true);
             return;
         }
-        if (origin !== undefined) {
-            if (config.CORS_ORIGIN_LIST.includes(origin)) {
-                //  Request from localhost will pass
-                cb(null, true);
-                return;
-            }
-            // Generate an error on other origins, disabling access
-            cb(new Error("Not allowed"), false);
-        } else {
-            // origin is undefined for same-origin requests and non-browser clients
+        if (origin === undefined) {
+            // Same-origin request: browser omits Origin header for same-origin GET/HEAD.
+            // Allow through — no CORS headers needed for same-origin.
             cb(null, true);
+            return;
         }
+        if (config.CORS_ORIGIN_LIST.includes(origin)) {
+            cb(null, true);
+            return;
+        }
+        cb(new Error("Not allowed"), false);
     },
 });
 
@@ -180,6 +187,10 @@ server.register(fastifyMultipart, {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
 await server.register(fastifySSE as any);
 
+// Register rate limiting plugin (applied per-route, not globally)
+import fastifyRateLimit from "@fastify/rate-limit";
+await server.register(fastifyRateLimit, { global: false });
+
 // Add schema validator and serializer
 server.setValidatorCompiler(validatorCompiler);
 server.setSerializerCompiler(serializerCompiler);
@@ -192,6 +203,14 @@ const speciallyAuthorizedPhones: string[] =
           ? config.SPECIALLY_AUTHORIZED_PHONES.replace(/\s/g, "").split(",")
           : [];
 
+const speciallyAuthorizedEmails: string[] =
+    config.NODE_ENV === "production"
+        ? []
+        : config.SPECIALLY_AUTHORIZED_EMAILS !== undefined &&
+            config.SPECIALLY_AUTHORIZED_EMAILS.length !== 0
+          ? config.SPECIALLY_AUTHORIZED_EMAILS.replace(/\s/g, "").split(",")
+          : [];
+
 const axiosVerificatorSvc: AxiosInstance = axios.create({
     baseURL: config.VERIFICATOR_SVC_BASE_URL,
 });
@@ -202,6 +221,17 @@ export const axiosPolis: AxiosInstance | undefined =
               baseURL: config.POLIS_BASE_URL,
           })
         : undefined;
+
+const reacherBaseUrl = config.REACHER_BASE_URL;
+const axiosReacher: AxiosInstance | undefined =
+    reacherBaseUrl !== undefined
+        ? axios.create({ baseURL: reacherBaseUrl })
+        : undefined;
+log.info(
+    reacherBaseUrl !== undefined
+        ? `[API] Reacher email verification enabled (URL: ${reacherBaseUrl})`
+        : "[API] Reacher email verification disabled (REACHER_BASE_URL not set)",
+);
 
 
 // Initialize Twilio when credentials are available (any environment),
@@ -360,12 +390,34 @@ if (
     );
 }
 
-// Initialize Valkey (optional - for vote buffer persistence)
+// Initialize Valkey (optional - for vote buffer persistence and UCAN replay protection)
 const queueValkey = await initializeValkey({
     valkeyUrl: config.QUEUE_VALKEY_URL,
     log,
     type: "Queue",
 });
+
+if (queueValkey === undefined) {
+    log.warn(
+        "[API] Valkey not configured — UCAN replay protection uses in-memory store. " +
+            "This provides single-instance protection only. " +
+            "Set QUEUE_VALKEY_URL for cross-instance replay prevention.",
+    );
+}
+
+// Initialize UCAN replay guard (prevents token replay attacks)
+const ucanReplayGuard = createUcanReplayGuard({ valkey: queueValkey });
+log.info(
+    `[API] UCAN replay guard initialized — mode: ${
+        queueValkey !== undefined
+            ? "Valkey"
+            : "in-memory (single-instance only)"
+    }`,
+);
+
+// Initialize Notification SSE Manager for real-time notifications
+const notificationSSEManager = new NotificationSSEManager();
+notificationSSEManager.initialize();
 
 // Initialize VoteBuffer (batches votes to reduce DB contention)
 const voteBuffer = createVoteBuffer({
@@ -373,14 +425,11 @@ const voteBuffer = createVoteBuffer({
     valkey: queueValkey,
     flushIntervalMs: config.VOTE_BUFFER_FLUSH_INTERVAL_MS,
     valkeyBatchLimit: config.VOTE_BUFFER_VALKEY_BATCH_LIMIT,
+    notificationSSEManager,
 });
 log.info(
     `[API] Vote buffer initialized (flush interval: ${String(config.VOTE_BUFFER_FLUSH_INTERVAL_MS)}ms, batch limit: ${String(config.VOTE_BUFFER_VALKEY_BATCH_LIMIT)}, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
-
-// Initialize Notification SSE Manager for real-time notifications
-const notificationSSEManager = new NotificationSSEManager();
-notificationSSEManager.initialize();
 
 // Initialize ExportBuffer (batches export requests to reduce system load)
 const exportBuffer = createExportBuffer({
@@ -421,64 +470,71 @@ log.info(
 // Cleanup stuck imports/exports from previous server session
 // This runs once on startup to handle jobs that were interrupted by server restart
 const performStartupCleanup = async (): Promise<void> => {
-    // Cleanup stuck imports and send notifications
-    const importCleanupResult = await cleanupStuckImportsOnStartup({
-        db,
-    });
+    try {
+        // Cleanup stuck imports and send notifications
+        const importCleanupResult = await cleanupStuckImportsOnStartup({
+            db,
+        });
 
-    if (importCleanupResult.cleanedCount > 0) {
-        log.info(
-            `[Startup] Cleaned up ${String(importCleanupResult.cleanedCount)} stuck imports`,
-        );
+        if (importCleanupResult.cleanedCount > 0) {
+            log.info(
+                `[Startup] Cleaned up ${String(importCleanupResult.cleanedCount)} stuck imports`,
+            );
 
-        // Send notifications for failed imports
-        for (const stuckImport of importCleanupResult.stuckImports) {
-            try {
-                await createImportNotification({
-                    db,
-                    userId: stuckImport.userId,
-                    importId: stuckImport.id,
-                    conversationId: null,
-                    type: "import_failed",
-                    notificationSSEManager,
-                });
-            } catch (notificationError: unknown) {
-                log.error(
-                    notificationError,
-                    `[Startup] Failed to create import notification for import ${stuckImport.slugId}`,
-                );
+            // Send notifications for failed imports
+            for (const stuckImport of importCleanupResult.stuckImports) {
+                try {
+                    await createImportNotification({
+                        db,
+                        userId: stuckImport.userId,
+                        importId: stuckImport.id,
+                        conversationId: null,
+                        type: "import_failed",
+                        notificationSSEManager,
+                    });
+                } catch (notificationError: unknown) {
+                    log.error(
+                        notificationError,
+                        `[Startup] Failed to create import notification for import ${stuckImport.slugId}`,
+                    );
+                }
             }
         }
-    }
 
-    // Cleanup stuck exports and send notifications
-    const exportCleanupResult = await cleanupStuckExportsOnStartup({
-        db,
-    });
+        // Cleanup stuck exports and send notifications
+        const exportCleanupResult = await cleanupStuckExportsOnStartup({
+            db,
+        });
 
-    if (exportCleanupResult.cleanedCount > 0) {
-        log.info(
-            `[Startup] Cleaned up ${String(exportCleanupResult.cleanedCount)} stuck exports`,
-        );
+        if (exportCleanupResult.cleanedCount > 0) {
+            log.info(
+                `[Startup] Cleaned up ${String(exportCleanupResult.cleanedCount)} stuck exports`,
+            );
 
-        // Send notifications for failed exports
-        for (const stuckExport of exportCleanupResult.stuckExports) {
-            try {
-                await createExportNotification({
-                    db,
-                    userId: stuckExport.userId,
-                    exportId: stuckExport.id,
-                    conversationId: stuckExport.conversationId,
-                    type: "export_failed",
-                    notificationSSEManager,
-                });
-            } catch (notificationError: unknown) {
-                log.error(
-                    notificationError,
-                    `[Startup] Failed to create export notification for export ${stuckExport.slugId}`,
-                );
+            // Send notifications for failed exports
+            for (const stuckExport of exportCleanupResult.stuckExports) {
+                try {
+                    await createExportNotification({
+                        db,
+                        userId: stuckExport.userId,
+                        exportId: stuckExport.id,
+                        conversationId: stuckExport.conversationId,
+                        type: "export_failed",
+                        notificationSSEManager,
+                    });
+                } catch (notificationError: unknown) {
+                    log.error(
+                        notificationError,
+                        `[Startup] Failed to create export notification for export ${stuckExport.slugId}`,
+                    );
+                }
             }
         }
+    } catch (error: unknown) {
+        log.error(
+            error,
+            "[Startup] Failed to perform startup cleanup - will retry on next restart",
+        );
     }
 };
 
@@ -540,7 +596,7 @@ function getEncodedUcan(request: FastifyRequest): string {
 interface VerifyUcanAndDeviceStatusReturn {
     didWrite: string;
     encodedUcan: string;
-    deviceStatus: DeviceLoginStatusExtended;
+    deviceStatus: DeviceLoginStatusInternal;
 }
 interface VerifyUcanKnownDeviceReturn {
     didWrite: string;
@@ -594,6 +650,21 @@ async function verifyUcan(request: FastifyRequest): Promise<VerifyUcanReturn> {
             new AggregateError(result.error),
         );
     }
+
+    // Replay attack protection: reject tokens that have already been used.
+    const isReplay = await ucanReplayGuard.checkAndMark({
+        encodedUcan,
+        expiryUnix: parsedUcan.payload.exp,
+        issuerDid: rootIssuerDid,
+    });
+    if (isReplay) {
+        log.warn(
+            { didWrite: rootIssuerDid },
+            "[UCAN] Replay attack detected — token already used",
+        );
+        throw server.httpErrors.unauthorized("UCAN already used");
+    }
+
     return {
         encodedUcan: encodedUcan,
         didWrite: rootIssuerDid,
@@ -670,6 +741,39 @@ async function verifyUcanAndDeviceStatus(
             `[${didWrite}] is expected to be either Guest or a Logged-In registered user but it is neither`,
         );
     }
+
+    // Sliding window session refresh for registered users only.
+    // Guests (isLoggedIn always false) are excluded — their identity is
+    // tied to didWrite, not session expiry, so consultations lasting months are safe.
+    // No extra DB read: sessionExpiry comes from getDeviceStatus() which already fetches it.
+    if (deviceStatus.isLoggedIn) {
+        const daysUntilExpiry =
+            (deviceStatus.sessionExpiry.getTime() - now.getTime()) /
+            (1000 * 60 * 60 * 24);
+        if (daysUntilExpiry < config.SESSION_REFRESH_THRESHOLD_DAYS) {
+            const newExpiry = new Date(now);
+            newExpiry.setDate(
+                newExpiry.getDate() + config.SESSION_LIFETIME_DAYS,
+            );
+            // Fire-and-forget: non-blocking write, ~once per 45 days per user
+            db.update(deviceTable)
+                .set({ sessionExpiry: newExpiry, updatedAt: now })
+                .where(eq(deviceTable.didWrite, didWrite))
+                .then(() => {
+                    log.info(
+                        { didWrite },
+                        "[Session] Refreshed session expiry",
+                    );
+                })
+                .catch((err: unknown) => {
+                    log.error(
+                        err,
+                        "[Session] Failed to refresh session expiry",
+                    );
+                });
+        }
+    }
+
     return {
         didWrite: didWrite,
         encodedUcan: encodedUcan,
@@ -729,10 +833,13 @@ function checkConversationExportEnabled(): void {
     }
 }
 
-// const awsMailConf = {
-//     accessKeyId: config.AWS_ACCESS_KEY_ID,
-//     secretAccessKey: config.AWS_SECRET_ACCESS_KEY,
-// };
+function checkMaxdiffEnabled(): void {
+    if (!config.MAXDIFF_ENABLED) {
+        throw server.httpErrors.serviceUnavailable(
+            "MaxDiff feature is currently disabled",
+        );
+    }
+}
 
 server.after(() => {
     server.withTypeProvider<ZodTypeProvider>().route({
@@ -757,6 +864,7 @@ server.after(() => {
                         isLoggedIn: deviceStatus.isLoggedIn,
                         isRegistered: deviceStatus.isRegistered,
                         userId: deviceStatus.userId,
+                        credentials: deviceStatus.credentials,
                     },
                 };
             } else {
@@ -765,6 +873,7 @@ server.after(() => {
                         isKnown: deviceStatus.isKnown,
                         isLoggedIn: deviceStatus.isLoggedIn,
                         isRegistered: deviceStatus.isRegistered,
+                        credentials: deviceStatus.credentials,
                     },
                 };
             }
@@ -778,6 +887,12 @@ server.after(() => {
             body: authenticateRequestBody,
             response: { 200: authenticate200 },
         },
+        config: {
+            rateLimit: {
+                max: config.AUTH_RATE_LIMIT_MAX,
+                timeWindow: config.AUTH_RATE_LIMIT_WINDOW_MS,
+            },
+        },
         handler: async (request) => {
             // This endpoint is accessible without being logged in
             // this endpoint could be especially subject to attacks such as DDoS or man-in-the-middle (to associate their own DID instead of the legitimate user's ones for example)
@@ -790,10 +905,10 @@ server.after(() => {
             );
             // wrapper function for Typescript to be happy with the zod discriminated union type
             async function doAuthenticate(): Promise<AuthenticateResponse> {
-                if (deviceStatus.isLoggedIn) {
+                if (deviceStatus.isLoggedIn && deviceStatus.credentials.phone !== null) {
                     return {
                         success: false,
-                        reason: "already_logged_in",
+                        reason: "already_has_credential",
                     };
                 }
                 const userAgent =
@@ -836,6 +951,12 @@ server.after(() => {
                 200: verifyOtp200,
             },
         },
+        config: {
+            rateLimit: {
+                max: config.AUTH_RATE_LIMIT_MAX,
+                timeWindow: config.AUTH_RATE_LIMIT_WINDOW_MS,
+            },
+        },
         handler: async (request) => {
             const { didWrite, deviceStatus } = await verifyUcanAndDeviceStatus(
                 db,
@@ -845,10 +966,10 @@ server.after(() => {
                 },
             );
             async function doVerifyPhoneOtp(): Promise<VerifyOtp200> {
-                if (deviceStatus.isLoggedIn) {
+                if (deviceStatus.isLoggedIn && deviceStatus.credentials.phone !== null) {
                     return {
                         success: false,
-                        reason: "already_logged_in",
+                        reason: "already_has_credential",
                     };
                 }
                 return await authService.verifyPhoneOtp({
@@ -861,11 +982,111 @@ server.after(() => {
                     twilioClient: twilioClient,
                     twilioServiceSid: config.TWILIO_SERVICE_SID,
                     peppers: config.PEPPERS,
+                    sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
                 });
             }
             return await doVerifyPhoneOtp();
         },
     });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/auth/email/authenticate`,
+        schema: {
+            body: authenticateEmailRequestBody,
+            response: { 200: authenticateEmail200 },
+        },
+        config: {
+            rateLimit: {
+                max: config.AUTH_RATE_LIMIT_MAX,
+                timeWindow: config.AUTH_RATE_LIMIT_WINDOW_MS,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite, deviceStatus } =
+                await verifyUcanAndDeviceStatus(db, request, {
+                    expectedDeviceStatus: undefined,
+                });
+            async function doAuthenticateEmail(): Promise<AuthenticateEmailResponse> {
+                if (deviceStatus.isLoggedIn && deviceStatus.credentials.email !== null) {
+                    return {
+                        success: false,
+                        reason: "already_has_credential",
+                    };
+                }
+                const userAgent =
+                    request.headers["user-agent"] ?? "Unknown device";
+
+                const parsedLang = ZodSupportedDisplayLanguageCodes.safeParse(
+                    request.headers["accept-language"],
+                );
+                const headerLanguageCode: SupportedDisplayLanguageCodes =
+                    parsedLang.success ? parsedLang.data : "en";
+
+                return await authService.authenticateEmailAttempt({
+                    db,
+                    axiosReacher,
+                    email: request.body.email,
+                    isRequestingNewCode: request.body.isRequestingNewCode,
+                    minutesBeforeEmailCodeExpiry:
+                        config.MINUTES_BEFORE_EMAIL_OTP_EXPIRY,
+                    didWrite,
+                    throttleEmailSecondsInterval:
+                        config.THROTTLE_EMAIL_SECONDS_INTERVAL,
+                    doUseTestCode:
+                        config.NODE_ENV !== "production" &&
+                        speciallyAuthorizedEmails.includes(
+                            request.body.email,
+                        ),
+                    testCode: config.TEST_CODE,
+                    userAgent: userAgent,
+                    headerLanguageCode,
+                });
+            }
+            return await doAuthenticateEmail();
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/auth/email/verify-otp`,
+        schema: {
+            body: verifyEmailOtpReqBody,
+            response: {
+                200: verifyOtp200,
+            },
+        },
+        config: {
+            rateLimit: {
+                max: config.AUTH_RATE_LIMIT_MAX,
+                timeWindow: config.AUTH_RATE_LIMIT_WINDOW_MS,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite, deviceStatus } =
+                await verifyUcanAndDeviceStatus(db, request, {
+                    expectedDeviceStatus: undefined,
+                });
+            async function doVerifyEmailOtp(): Promise<VerifyOtp200> {
+                if (deviceStatus.isLoggedIn && deviceStatus.credentials.email !== null) {
+                    return {
+                        success: false,
+                        reason: "already_has_credential",
+                    };
+                }
+                return await authService.verifyEmailOtp({
+                    db,
+                    maxAttempt: config.EMAIL_OTP_MAX_ATTEMPT_AMOUNT,
+                    didWrite,
+                    code: request.body.code,
+                    email: request.body.email,
+                    sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
+                });
+            }
+            return await doVerifyEmailOtp();
+        },
+    });
+
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/auth/logout`,
@@ -943,13 +1164,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isMod = await isSiteModeratorAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isMod) {
+                throw server.httpErrors.unauthorized("User is not a site moderator");
             }
 
             await moderateByPostSlugId({
@@ -980,13 +1201,18 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const { isAuthorized, isSiteModerator } = await canModerateConversationByOpinionSlugId({
                 db: db,
                 userId: deviceStatus.userId,
+                opinionSlugId: request.body.opinionSlugId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isAuthorized) {
+                throw server.httpErrors.unauthorized("User is not authorized to moderate this conversation");
+            }
+
+            if (!isSiteModerator && request.body.moderationAction === "hide") {
+                throw server.httpErrors.forbidden("Only site moderators can hide opinions");
             }
 
             await moderateByCommentSlugId({
@@ -1017,13 +1243,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isMod = await isSiteModeratorAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isMod) {
+                throw server.httpErrors.unauthorized("User is not a site moderator");
             }
 
             await withdrawModerationReportByPostSlugId({
@@ -1050,18 +1276,21 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const { isAuthorized, isSiteModerator } = await canModerateConversationByOpinionSlugId({
                 db: db,
                 userId: deviceStatus.userId,
+                opinionSlugId: request.body.opinionSlugId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isAuthorized) {
+                throw server.httpErrors.unauthorized("User is not authorized to moderate this conversation");
             }
 
             await withdrawModerationReportByCommentSlugId({
                 db: db,
                 commentSlugId: request.body.opinionSlugId,
+                callerUserId: deviceStatus.userId,
+                isSiteModerator,
             });
         },
     });
@@ -1086,13 +1315,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isMod = await isSiteModeratorAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isMod) {
+                throw server.httpErrors.unauthorized("User is not a site moderator");
             }
 
             return await getConversationModerationStatus({
@@ -1122,13 +1351,14 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const { isAuthorized } = await canModerateConversationByOpinionSlugId({
                 db: db,
                 userId: deviceStatus.userId,
+                opinionSlugId: request.body.opinionSlugId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isAuthorized) {
+                throw server.httpErrors.unauthorized("User is not authorized to moderate this conversation");
             }
 
             return await getOpinionModerationStatus({
@@ -1344,11 +1574,14 @@ server.after(() => {
         url: `/api/${apiVersion}/poll/respond`,
         schema: {
             body: Dto.pollRespondRequest,
+            response: {
+                200: Dto.pollRespondResponse,
+            },
         },
         handler: async (request, reply) => {
             const { didWrite, encodedUcan } = await verifyUcan(request);
             const now = nowZeroMs();
-            await submitPollResponse({
+            const pollResponse = await submitPollResponse({
                 db: db,
                 proof: encodedUcan,
                 didWrite: didWrite,
@@ -1357,7 +1590,7 @@ server.after(() => {
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: now,
             });
-            reply.send();
+            reply.send(pollResponse);
         },
     });
 
@@ -1383,6 +1616,74 @@ server.after(() => {
                 db: db,
                 postSlugIdList: request.body,
                 authorId: deviceStatus.userId,
+            });
+        },
+    });
+
+    // --- MaxDiff (Best-Worst Scaling) ---
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/maxdiff/save`,
+        schema: {
+            body: Dto.maxdiffSaveRequest,
+        },
+        handler: async (request, reply) => {
+            checkMaxdiffEnabled();
+            const { deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                });
+            await saveMaxdiffResult({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
+                ranking: request.body.ranking,
+                comparisons: request.body.comparisons,
+                isComplete: request.body.isComplete,
+                isMaxdiffOrgOnly: config.IS_MAXDIFF_ORG_ONLY,
+            });
+            reply.send({});
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/maxdiff/load`,
+        schema: {
+            body: Dto.maxdiffLoadRequest,
+            response: {
+                200: Dto.maxdiffLoadResponse,
+            },
+        },
+        handler: async (request) => {
+            checkMaxdiffEnabled();
+            const { deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                });
+            return await loadMaxdiffResult({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/maxdiff/results`,
+        schema: {
+            body: Dto.maxdiffResultsRequest,
+            response: {
+                200: Dto.maxdiffResultsResponse,
+            },
+        },
+        handler: async (request) => {
+            checkMaxdiffEnabled();
+            return await getMaxdiffResults({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
             });
         },
     });
@@ -1587,13 +1888,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isMod = await isSiteModeratorAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isMod) {
+                throw server.httpErrors.unauthorized("User is not a site moderator");
             }
             const opinionItemsPerSlugId = await fetchOpinionsByPostSlugId({
                 db: db,
@@ -1689,6 +1990,38 @@ server.after(() => {
                     },
                 });
 
+            if (request.body.conversationType === "maxdiff") {
+                checkMaxdiffEnabled();
+                if (
+                    config.IS_MAXDIFF_ORG_ONLY &&
+                    !request.body.postAsOrganization
+                ) {
+                    throw server.httpErrors.forbidden(
+                        "MaxDiff is restricted to organization conversations",
+                    );
+                }
+                const allowedOrgs = config.MAXDIFF_ALLOWED_ORGS;
+                if (allowedOrgs.trim() !== "") {
+                    if (!request.body.postAsOrganization) {
+                        throw server.httpErrors.forbidden(
+                            "MaxDiff is restricted to specific organizations",
+                        );
+                    }
+                    const orgList = allowedOrgs
+                        .split(",")
+                        .map((s) => s.trim());
+                    if (
+                        !orgList.includes(
+                            request.body.postAsOrganization,
+                        )
+                    ) {
+                        throw server.httpErrors.forbidden(
+                            "This organization is not allowed to create MaxDiff conversations",
+                        );
+                    }
+                }
+            }
+
             const { conversationSlugId } = await postService.createNewPost({
                 db: db,
                 voteBuffer: voteBuffer,
@@ -1701,7 +2034,8 @@ server.after(() => {
                 indexConversationAt: request.body.indexConversationAt,
                 postAsOrganization: request.body.postAsOrganization,
                 isIndexed: request.body.isIndexed,
-                isLoginRequired: request.body.isLoginRequired,
+                participationMode: request.body.participationMode,
+                conversationType: request.body.conversationType,
                 isImporting: false,
                 seedOpinionList: request.body.seedOpinionList,
                 requiresEventTicket: request.body.requiresEventTicket,
@@ -1767,17 +2101,6 @@ server.after(() => {
                 }
             }
 
-            // Validate public conversation access requirements
-            if (
-                request.body.isIndexed &&
-                !request.body.isLoginRequired &&
-                !request.body.requiresEventTicket
-            ) {
-                throw server.httpErrors.forbidden(
-                    "Public conversations must either require login or event ticket verification",
-                );
-            }
-
             // Queue URL import for async processing
             return await conversationImportService.requestUrlImport({
                 db,
@@ -1786,7 +2109,7 @@ server.after(() => {
                 formData: {
                     postAsOrganization: request.body.postAsOrganization,
                     indexConversationAt: request.body.indexConversationAt,
-                    isLoginRequired: request.body.isLoginRequired,
+                    participationMode: request.body.participationMode,
                     isIndexed: request.body.isIndexed,
                     requiresEventTicket: request.body.requiresEventTicket,
                 },
@@ -1920,17 +2243,6 @@ server.after(() => {
                 }
             }
 
-            // Validate public conversation access requirements
-            if (
-                parsedFields.isIndexed &&
-                !parsedFields.isLoginRequired &&
-                !parsedFields.requiresEventTicket
-            ) {
-                throw server.httpErrors.forbidden(
-                    "Public conversations must either require login or event ticket verification",
-                );
-            }
-
             // Request CSV import (creates record and queues for async processing)
             const { importSlugId } =
                 await conversationImportService.requestConversationImport({
@@ -1940,7 +2252,7 @@ server.after(() => {
                     formData: {
                         postAsOrganization: parsedFields.postAsOrganization,
                         indexConversationAt: parsedFields.indexConversationAt,
-                        isLoginRequired: parsedFields.isLoginRequired,
+                        participationMode: parsedFields.participationMode,
                         isIndexed: parsedFields.isIndexed,
                         requiresEventTicket: parsedFields.requiresEventTicket,
                     },
@@ -2156,6 +2468,7 @@ server.after(() => {
                     didWrite: didWrite,
                     axiosVerificatorSvc,
                     userAgent,
+                    sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
                 });
             return verificationStatusAndNullifier;
         },
@@ -2181,6 +2494,7 @@ server.after(() => {
                 eventSlug: request.body.eventSlug,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now,
+                sessionLifetimeDays: config.SESSION_LIFETIME_DAYS,
             });
         },
     });
@@ -2334,13 +2648,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isOrgAdmin = await isSiteOrgAdminAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isOrgAdmin) {
+                throw server.httpErrors.unauthorized("User is not a site org admin");
             }
 
             await addUserOrganizationMapping({
@@ -2369,13 +2683,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isOrgAdmin = await isSiteOrgAdminAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isOrgAdmin) {
+                throw server.httpErrors.unauthorized("User is not a site org admin");
             }
 
             await removeUserOrganizationMapping({
@@ -2407,13 +2721,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isOrgAdmin = await isSiteOrgAdminAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isOrgAdmin) {
+                throw server.httpErrors.unauthorized("User is not a site org admin");
             }
 
             return await getOrganizationsByUsername({
@@ -2443,13 +2757,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isOrgAdmin = await isSiteOrgAdminAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isOrgAdmin) {
+                throw server.httpErrors.unauthorized("User is not a site org admin");
             }
 
             return await getAllOrganizations({
@@ -2476,13 +2790,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isOrgAdmin = await isSiteOrgAdminAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isOrgAdmin) {
+                throw server.httpErrors.unauthorized("User is not a site org admin");
             }
 
             await createOrganization({
@@ -2513,13 +2827,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isOrgAdmin = await isSiteOrgAdminAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isOrgAdmin) {
+                throw server.httpErrors.unauthorized("User is not a site org admin");
             }
 
             await deleteOrganization({
@@ -2605,13 +2919,14 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const { isAuthorized } = await canModerateConversation({
                 db: db,
                 userId: deviceStatus.userId,
+                conversationSlugId: request.body.conversationSlugId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isAuthorized) {
+                throw server.httpErrors.unauthorized("User is not authorized to view reports for this conversation");
             }
 
             return await fetchUserReportsByPostSlugId({
@@ -2641,13 +2956,14 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const { isAuthorized } = await canModerateConversationByOpinionSlugId({
                 db: db,
                 userId: deviceStatus.userId,
+                opinionSlugId: request.body.opinionSlugId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isAuthorized) {
+                throw server.httpErrors.unauthorized("User is not authorized to view reports for this conversation");
             }
 
             return await fetchUserReportsByCommentSlugId({
@@ -2754,23 +3070,25 @@ server.after(() => {
     });
 
     // SSE endpoint for real-time notifications
-    // Accepts authentication via query parameter since EventSource doesn't support custom headers
+    // Accepts auth from Authorization header (new fetch-based frontend)
+    // or query param ?auth= (legacy EventSource fallback)
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "GET",
         url: `/api/${apiVersion}/notification/stream`,
         sse: true, // Enable SSE mode - provides reply.sse.* methods
-        schema: {
-            querystring: Dto.notificationStreamQuerystring,
-        },
         handler: async (request, reply) => {
             // Authenticate BEFORE initializing SSE to allow proper HTTP error responses
             let deviceStatus;
             try {
-                // Get auth token from query parameter (type-safe)
-                const { auth } = request.query;
-
-                // Manually inject the auth header for UCAN verification
-                request.headers.authorization = `Bearer ${auth}`;
+                // Accept auth from Authorization header (fetch) or query param (EventSource fallback)
+                if (!request.headers.authorization) {
+                    const auth = (
+                        request.query as Record<string, string>
+                    ).auth;
+                    if (auth) {
+                        request.headers.authorization = `Bearer ${auth}`;
+                    }
+                }
 
                 const result = await verifyUcanAndKnownDeviceStatus(
                     db,
@@ -2991,13 +3309,13 @@ server.after(() => {
                     },
                 },
             );
-            const isModerator = await isModeratorAccount({
+            const isMod = await isSiteModeratorAccount({
                 db: db,
                 userId: deviceStatus.userId,
             });
 
-            if (!isModerator) {
-                throw server.httpErrors.unauthorized("User is not a moderator");
+            if (!isMod) {
+                throw server.httpErrors.unauthorized("User is not a site moderator");
             }
 
             await conversationExportService.deleteConversationExport({
@@ -3047,6 +3365,9 @@ const shutdown = async (signal: string) => {
 
         // Flush pending imports before shutdown
         await importBuffer.shutdown();
+
+        // Stop UCAN replay guard cleanup interval
+        ucanReplayGuard.shutdown();
 
         // Close SSE connections before shutdown
         await notificationSSEManager.shutdown();

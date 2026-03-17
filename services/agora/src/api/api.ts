@@ -56,7 +56,7 @@ export interface ApiV1AuthAuthenticatePost200ResponseOneOf1 {
 }
 
 export const ApiV1AuthAuthenticatePost200ResponseOneOf1ReasonEnum = {
-    AlreadyLoggedIn: 'already_logged_in',
+    AlreadyHasCredential: 'already_has_credential',
     AssociatedWithAnotherUser: 'associated_with_another_user',
     Throttled: 'throttled',
     InvalidPhoneNumber: 'invalid_phone_number',
@@ -243,12 +243,74 @@ export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf {
     'isKnown': boolean;
     'isRegistered': boolean;
     'isLoggedIn': boolean;
+    'credentials': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentials;
 }
 export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1 {
     'isKnown': boolean;
     'isRegistered': boolean;
     'isLoggedIn': boolean;
     'userId': string;
+    'credentials': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1Credentials;
+}
+export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1Credentials {
+    'email': string | null;
+    'phone': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1CredentialsPhone | null;
+    'rarimo': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1CredentialsRarimo | null;
+}
+export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1CredentialsPhone {
+    'lastTwoDigits': number;
+    'countryCallingCode': string;
+}
+export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOf1CredentialsRarimo {
+    'citizenship': string;
+    'sex': string;
+}
+export interface ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentials {
+    'email': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsEmailEnum | null;
+    'phone': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsPhoneEnum | null;
+    'rarimo': ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsRarimoEnum | null;
+}
+
+export const ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsEmailEnum = {
+} as const;
+
+export type ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsEmailEnum = typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsEmailEnum[keyof typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsEmailEnum];
+export const ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsPhoneEnum = {
+} as const;
+
+export type ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsPhoneEnum = typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsPhoneEnum[keyof typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsPhoneEnum];
+export const ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsRarimoEnum = {
+} as const;
+
+export type ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsRarimoEnum = typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsRarimoEnum[keyof typeof ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentialsRarimoEnum];
+
+/**
+ * @type ApiV1AuthEmailAuthenticatePost200Response
+ */
+export type ApiV1AuthEmailAuthenticatePost200Response = ApiV1AuthAuthenticatePost200ResponseOneOf | ApiV1AuthEmailAuthenticatePost200ResponseOneOf;
+
+export interface ApiV1AuthEmailAuthenticatePost200ResponseOneOf {
+    'success': boolean;
+    'reason': ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum;
+}
+
+export const ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum = {
+    AlreadyHasCredential: 'already_has_credential',
+    AssociatedWithAnotherUser: 'associated_with_another_user',
+    Throttled: 'throttled',
+    Unreachable: 'unreachable',
+    Disposable: 'disposable'
+} as const;
+
+export type ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum = typeof ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum[keyof typeof ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum];
+
+export interface ApiV1AuthEmailAuthenticatePostRequest {
+    'email': string;
+    'isRequestingNewCode': boolean;
+}
+export interface ApiV1AuthEmailVerifyOtpPostRequest {
+    'code': number;
+    'email': string;
 }
 /**
  * @type ApiV1AuthPhoneVerifyOtpPost200Response
@@ -269,7 +331,7 @@ export const ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1ReasonEnum = {
     ExpiredCode: 'expired_code',
     WrongGuess: 'wrong_guess',
     TooManyWrongGuess: 'too_many_wrong_guess',
-    AlreadyLoggedIn: 'already_logged_in',
+    AlreadyHasCredential: 'already_has_credential',
     AssociatedWithAnotherUser: 'associated_with_another_user',
     AuthStateChanged: 'auth_state_changed'
 } as const;
@@ -488,7 +550,7 @@ export interface ApiV1AuthZkpGenerateVerificationLinkPost200ResponseOneOf1 {
 }
 
 export const ApiV1AuthZkpGenerateVerificationLinkPost200ResponseOneOf1ReasonEnum = {
-    AlreadyLoggedIn: 'already_logged_in',
+    AlreadyHasCredential: 'already_has_credential',
     AssociatedWithAnotherUser: 'associated_with_another_user'
 } as const;
 
@@ -521,7 +583,7 @@ export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoSta
 
 export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum = typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum[keyof typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum];
 export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseReasonEnum = {
-    AlreadyLoggedIn: 'already_logged_in',
+    AlreadyHasCredential: 'already_has_credential',
     AssociatedWithAnotherUser: 'associated_with_another_user'
 } as const;
 
@@ -556,38 +618,46 @@ export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1Rari
 /**
  * @type ApiV1ConversationClosePost200Response
  */
-export type ApiV1ConversationClosePost200Response = ApiV1ConversationClosePost200ResponseOneOf | ApiV1ConversationClosePost200ResponseOneOf1;
+export type ApiV1ConversationClosePost200Response = ApiV1ConversationClosePost200ResponseOneOf | ApiV1PollRespondPost200ResponseOneOf;
 
 export interface ApiV1ConversationClosePost200ResponseOneOf {
     'success': boolean;
-}
-export interface ApiV1ConversationClosePost200ResponseOneOf1 {
-    'success': boolean;
-    'reason': ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum;
+    'reason': ApiV1ConversationClosePost200ResponseOneOfReasonEnum;
 }
 
-export const ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum = {
+export const ApiV1ConversationClosePost200ResponseOneOfReasonEnum = {
     NotAllowed: 'not_allowed',
     AlreadyClosed: 'already_closed'
 } as const;
 
-export type ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum];
+export type ApiV1ConversationClosePost200ResponseOneOfReasonEnum = typeof ApiV1ConversationClosePost200ResponseOneOfReasonEnum[keyof typeof ApiV1ConversationClosePost200ResponseOneOfReasonEnum];
 
-export interface ApiV1ConversationCreatePost200Response {
-    'conversationSlugId': string;
-}
 export interface ApiV1ConversationCreatePostRequest {
     'conversationTitle': string;
     'conversationBody'?: string;
     'postAsOrganization'?: string;
     'indexConversationAt'?: string;
     'isIndexed': boolean;
-    'isLoginRequired': boolean;
+    'participationMode': ApiV1ConversationCreatePostRequestParticipationModeEnum;
+    'conversationType': ApiV1ConversationCreatePostRequestConversationTypeEnum;
     'pollingOptionList'?: Array<string>;
     'seedOpinionList': Array<string>;
     'requiresEventTicket'?: ApiV1ConversationCreatePostRequestRequiresEventTicketEnum;
 }
 
+export const ApiV1ConversationCreatePostRequestParticipationModeEnum = {
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest'
+} as const;
+
+export type ApiV1ConversationCreatePostRequestParticipationModeEnum = typeof ApiV1ConversationCreatePostRequestParticipationModeEnum[keyof typeof ApiV1ConversationCreatePostRequestParticipationModeEnum];
+export const ApiV1ConversationCreatePostRequestConversationTypeEnum = {
+    Polis: 'polis',
+    Maxdiff: 'maxdiff'
+} as const;
+
+export type ApiV1ConversationCreatePostRequestConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestConversationTypeEnum];
 export const ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = {
     Devconnect2025: 'devconnect-2025'
 } as const;
@@ -840,20 +910,40 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
 export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata {
     'conversationSlugId': string;
     'createdAt': string;
-    'updatedAt': string;
+    'updatedAt'?: string;
     'lastReactedAt': string;
     'opinionCount': number;
     'voteCount': number;
     'participantCount': number;
+    'totalOpinionCount': number;
+    'totalVoteCount': number;
+    'totalParticipantCount': number;
+    'moderatedOpinionCount': number;
+    'hiddenOpinionCount': number;
     'authorUsername': string;
-    'isLoginRequired': boolean;
+    'participationMode': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum;
+    'conversationType': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum;
     'isIndexed': boolean;
     'isClosed': boolean;
+    'isEdited': boolean;
     'organization'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization;
     'moderation': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration;
     'requiresEventTicket'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum;
 }
 
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum = {
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest'
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum = {
+    Polis: 'polis',
+    Maxdiff: 'maxdiff'
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum];
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum = {
     Devconnect2025: 'devconnect-2025'
 } as const;
@@ -944,7 +1034,7 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
     'conversationBody'?: string;
     'pollingOptionList'?: Array<string>;
     'isIndexed': boolean;
-    'isLoginRequired': boolean;
+    'participationMode': ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum;
     'requiresEventTicket'?: ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum;
     'indexConversationAt'?: string;
     'createdAt': string;
@@ -953,6 +1043,13 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
     'isLocked': boolean;
 }
 
+export const ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum = {
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest'
+} as const;
+
+export type ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum];
 export const ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum = {
     Devconnect2025: 'devconnect-2025'
 } as const;
@@ -995,10 +1092,17 @@ export interface ApiV1ConversationImportPostRequest {
     'postAsOrganization'?: string;
     'indexConversationAt'?: string;
     'isIndexed': boolean;
-    'isLoginRequired': boolean;
+    'participationMode': ApiV1ConversationImportPostRequestParticipationModeEnum;
     'requiresEventTicket'?: ApiV1ConversationImportPostRequestRequiresEventTicketEnum;
 }
 
+export const ApiV1ConversationImportPostRequestParticipationModeEnum = {
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest'
+} as const;
+
+export type ApiV1ConversationImportPostRequestParticipationModeEnum = typeof ApiV1ConversationImportPostRequestParticipationModeEnum[keyof typeof ApiV1ConversationImportPostRequestParticipationModeEnum];
 export const ApiV1ConversationImportPostRequestRequiresEventTicketEnum = {
     Devconnect2025: 'devconnect-2025'
 } as const;
@@ -1065,7 +1169,7 @@ export interface ApiV1ConversationImportStatusPostRequest {
 /**
  * @type ApiV1ConversationOpenPost200Response
  */
-export type ApiV1ConversationOpenPost200Response = ApiV1ConversationClosePost200ResponseOneOf | ApiV1ConversationOpenPost200ResponseOneOf;
+export type ApiV1ConversationOpenPost200Response = ApiV1ConversationOpenPost200ResponseOneOf | ApiV1PollRespondPost200ResponseOneOf;
 
 export interface ApiV1ConversationOpenPost200ResponseOneOf {
     'success': boolean;
@@ -1082,7 +1186,7 @@ export type ApiV1ConversationOpenPost200ResponseOneOfReasonEnum = typeof ApiV1Co
 /**
  * @type ApiV1ConversationUpdatePost200Response
  */
-export type ApiV1ConversationUpdatePost200Response = ApiV1ConversationClosePost200ResponseOneOf | ApiV1ConversationUpdatePost200ResponseOneOf;
+export type ApiV1ConversationUpdatePost200Response = ApiV1ConversationUpdatePost200ResponseOneOf | ApiV1PollRespondPost200ResponseOneOf;
 
 export interface ApiV1ConversationUpdatePost200ResponseOneOf {
     'success': boolean;
@@ -1109,11 +1213,18 @@ export interface ApiV1ConversationUpdatePostRequest {
     'conversationBody'?: string;
     'pollAction': ApiV1ConversationUpdatePostRequestPollAction;
     'isIndexed': boolean;
-    'isLoginRequired': boolean;
+    'participationMode': ApiV1ConversationUpdatePostRequestParticipationModeEnum;
     'requiresEventTicket'?: ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum;
     'indexConversationAt'?: string;
 }
 
+export const ApiV1ConversationUpdatePostRequestParticipationModeEnum = {
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest'
+} as const;
+
+export type ApiV1ConversationUpdatePostRequestParticipationModeEnum = typeof ApiV1ConversationUpdatePostRequestParticipationModeEnum[keyof typeof ApiV1ConversationUpdatePostRequestParticipationModeEnum];
 export const ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = {
     Devconnect2025: 'devconnect-2025'
 } as const;
@@ -1185,6 +1296,41 @@ export interface ApiV1ConversationValidateCsvPost200Response {
 export interface ApiV1ConversationValidateCsvPost200ResponseSummaryFile {
     'isValid': boolean;
     'error'?: string;
+}
+export interface ApiV1MaxdiffLoadPost200Response {
+    'ranking': Array<string> | null;
+    'comparisons': Array<ApiV1MaxdiffLoadPost200ResponseComparisonsInner> | null;
+    'isComplete': boolean;
+}
+export interface ApiV1MaxdiffLoadPost200ResponseComparisonsInner {
+    'best': string;
+    'worst': string;
+    'set': Array<string>;
+}
+export interface ApiV1MaxdiffLoadPostRequest {
+    'conversationSlugId': string;
+}
+export interface ApiV1MaxdiffResultsPost200Response {
+    'rankings': Array<ApiV1MaxdiffResultsPost200ResponseRankingsInner>;
+    'totalParticipants': number;
+}
+export interface ApiV1MaxdiffResultsPost200ResponseRankingsInner {
+    'opinionSlugId': string;
+    'opinionContent': string;
+    'avgRank': number;
+    'score': number;
+    'participantCount': number;
+}
+export interface ApiV1MaxdiffSavePostRequest {
+    'conversationSlugId': string;
+    'ranking': Array<string> | null;
+    'comparisons': Array<ApiV1MaxdiffSavePostRequestComparisonsInner>;
+    'isComplete': boolean;
+}
+export interface ApiV1MaxdiffSavePostRequestComparisonsInner {
+    'best': string;
+    'worst': string;
+    'set': Array<string>;
 }
 export interface ApiV1ModerationConversationCreatePostRequest {
     'conversationSlugId': string;
@@ -1311,6 +1457,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf
     'routeTarget': ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfRouteTarget;
     'numVotes': number;
     'message': string;
+    'isSeed': boolean;
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfTypeEnum = {
@@ -1605,6 +1752,26 @@ export interface ApiV1OpinionFetchHiddenByConversationPostRequest {
     'conversationSlugId': string;
     'createdAt'?: string;
 }
+/**
+ * @type ApiV1PollRespondPost200Response
+ */
+export type ApiV1PollRespondPost200Response = ApiV1PollRespondPost200ResponseOneOf | ApiV1PollRespondPost200ResponseOneOf1;
+
+export interface ApiV1PollRespondPost200ResponseOneOf {
+    'success': boolean;
+}
+export interface ApiV1PollRespondPost200ResponseOneOf1 {
+    'success': boolean;
+    'reason': ApiV1PollRespondPost200ResponseOneOf1ReasonEnum;
+}
+
+export const ApiV1PollRespondPost200ResponseOneOf1ReasonEnum = {
+    StrongVerificationRequired: 'strong_verification_required',
+    EmailVerificationRequired: 'email_verification_required'
+} as const;
+
+export type ApiV1PollRespondPost200ResponseOneOf1ReasonEnum = typeof ApiV1PollRespondPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1PollRespondPost200ResponseOneOf1ReasonEnum];
+
 export interface ApiV1PollRespondPostRequest {
     'voteOptionChoice': number;
     'conversationSlugId': string;
@@ -1712,6 +1879,7 @@ export const ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum =
     Ja: 'ja',
     Kn: 'kn',
     Ko: 'ko',
+    Ky: 'ky',
     Ms: 'ms',
     Mr: 'mr',
     No: 'no',
@@ -1741,8 +1909,7 @@ export const ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum =
     ZhHant: 'zh-Hant',
     ZhHans: 'zh-Hans',
     Ja: 'ja',
-    Ar: 'ar',
-    Fa: 'fa'
+    Ar: 'ar'
 } as const;
 
 export type ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum];
@@ -1758,8 +1925,7 @@ export const ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnu
     ZhHant: 'zh-Hant',
     ZhHans: 'zh-Hans',
     Ja: 'ja',
-    Ar: 'ar',
-    Fa: 'fa'
+    Ar: 'ar'
 } as const;
 
 export type ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum];
@@ -1798,6 +1964,7 @@ export const ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum = 
     Ja: 'ja',
     Kn: 'kn',
     Ko: 'ko',
+    Ky: 'ky',
     Ms: 'ms',
     Mr: 'mr',
     No: 'no',
@@ -1827,8 +1994,7 @@ export const ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum = 
     ZhHant: 'zh-Hant',
     ZhHans: 'zh-Hans',
     Ja: 'ja',
-    Ar: 'ar',
-    Fa: 'fa'
+    Ar: 'ar'
 } as const;
 
 export type ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum];
@@ -1861,7 +2027,8 @@ export interface ApiV1UserProfileGetPost200Response {
     'activePostCount': number;
     'createdAt': string;
     'username': string;
-    'isModerator': boolean;
+    'isSiteModerator': boolean;
+    'isSiteOrgAdmin': boolean;
     'organizationList': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization>;
     'verifiedEventTickets': Array<ApiV1UserProfileGetPost200ResponseVerifiedEventTicketsEnum>;
 }
@@ -1908,7 +2075,9 @@ export interface ApiV1VoteCastPost200ResponseOneOf1 {
 export const ApiV1VoteCastPost200ResponseOneOf1ReasonEnum = {
     ConversationLocked: 'conversation_locked',
     ConversationClosed: 'conversation_closed',
-    EventTicketRequired: 'event_ticket_required'
+    EventTicketRequired: 'event_ticket_required',
+    StrongVerificationRequired: 'strong_verification_required',
+    EmailVerificationRequired: 'email_verification_required'
 } as const;
 
 export type ApiV1VoteCastPost200ResponseOneOf1ReasonEnum = typeof ApiV1VoteCastPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1VoteCastPost200ResponseOneOf1ReasonEnum];
@@ -2289,6 +2458,82 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1AuthEmailAuthenticatePostRequest} apiV1AuthEmailAuthenticatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthEmailAuthenticatePost: async (apiV1AuthEmailAuthenticatePostRequest: ApiV1AuthEmailAuthenticatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AuthEmailAuthenticatePostRequest' is not null or undefined
+            assertParamExists('apiV1AuthEmailAuthenticatePost', 'apiV1AuthEmailAuthenticatePostRequest', apiV1AuthEmailAuthenticatePostRequest)
+            const localVarPath = `/api/v1/auth/email/authenticate`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AuthEmailAuthenticatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1AuthEmailVerifyOtpPostRequest} apiV1AuthEmailVerifyOtpPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthEmailVerifyOtpPost: async (apiV1AuthEmailVerifyOtpPostRequest: ApiV1AuthEmailVerifyOtpPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AuthEmailVerifyOtpPostRequest' is not null or undefined
+            assertParamExists('apiV1AuthEmailVerifyOtpPost', 'apiV1AuthEmailVerifyOtpPostRequest', apiV1AuthEmailVerifyOtpPostRequest)
+            const localVarPath = `/api/v1/auth/email/verify-otp`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AuthEmailVerifyOtpPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -3143,6 +3388,119 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffLoadPost: async (apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1MaxdiffLoadPostRequest' is not null or undefined
+            assertParamExists('apiV1MaxdiffLoadPost', 'apiV1MaxdiffLoadPostRequest', apiV1MaxdiffLoadPostRequest)
+            const localVarPath = `/api/v1/maxdiff/load`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffLoadPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffResultsPost: async (apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1MaxdiffLoadPostRequest' is not null or undefined
+            assertParamExists('apiV1MaxdiffResultsPost', 'apiV1MaxdiffLoadPostRequest', apiV1MaxdiffLoadPostRequest)
+            const localVarPath = `/api/v1/maxdiff/results`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffLoadPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffSavePostRequest} apiV1MaxdiffSavePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffSavePost: async (apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1MaxdiffSavePostRequest' is not null or undefined
+            assertParamExists('apiV1MaxdiffSavePost', 'apiV1MaxdiffSavePostRequest', apiV1MaxdiffSavePostRequest)
+            const localVarPath = `/api/v1/maxdiff/save`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffSavePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1ModerationConversationCreatePostRequest} apiV1ModerationConversationCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3507,13 +3865,10 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {string} auth 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1NotificationStreamGet: async (auth: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'auth' is not null or undefined
-            assertParamExists('apiV1NotificationStreamGet', 'auth', auth)
+        apiV1NotificationStreamGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/v1/notification/stream`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -3529,10 +3884,6 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             // authentication BearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            if (auth !== undefined) {
-                localVarQueryParameter['auth'] = auth;
-            }
 
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -3797,6 +4148,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -4593,6 +4945,30 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1AuthEmailAuthenticatePostRequest} apiV1AuthEmailAuthenticatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AuthEmailAuthenticatePost(apiV1AuthEmailAuthenticatePostRequest: ApiV1AuthEmailAuthenticatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthEmailAuthenticatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthEmailAuthenticatePost(apiV1AuthEmailAuthenticatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthEmailAuthenticatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1AuthEmailVerifyOtpPostRequest} apiV1AuthEmailVerifyOtpPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AuthEmailVerifyOtpPost(apiV1AuthEmailVerifyOtpPostRequest: ApiV1AuthEmailVerifyOtpPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AuthPhoneVerifyOtpPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AuthEmailVerifyOtpPost(apiV1AuthEmailVerifyOtpPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AuthEmailVerifyOtpPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -4667,7 +5043,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationCreatePost200Response>> {
+        async apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffLoadPostRequest>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationCreatePost']?.[localVarOperationServerIndex]?.url;
@@ -4864,6 +5240,42 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffLoadPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffLoadPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffResultsPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffResultsPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffSavePostRequest} apiV1MaxdiffSavePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffSavePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1ModerationConversationCreatePostRequest} apiV1ModerationConversationCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -4982,12 +5394,11 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {string} auth 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1NotificationStreamGet(auth: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1NotificationStreamGet(auth, options);
+        async apiV1NotificationStreamGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1NotificationStreamGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1NotificationStreamGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -5070,7 +5481,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1PollRespondPost(apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async apiV1PollRespondPost(apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1PollRespondPost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1PollRespondPost(apiV1PollRespondPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1PollRespondPost']?.[localVarOperationServerIndex]?.url;
@@ -5386,6 +5797,24 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1AuthEmailAuthenticatePostRequest} apiV1AuthEmailAuthenticatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthEmailAuthenticatePost(apiV1AuthEmailAuthenticatePostRequest: ApiV1AuthEmailAuthenticatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AuthEmailAuthenticatePost200Response> {
+            return localVarFp.apiV1AuthEmailAuthenticatePost(apiV1AuthEmailAuthenticatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1AuthEmailVerifyOtpPostRequest} apiV1AuthEmailVerifyOtpPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AuthEmailVerifyOtpPost(apiV1AuthEmailVerifyOtpPostRequest: ApiV1AuthEmailVerifyOtpPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AuthPhoneVerifyOtpPost200Response> {
+            return localVarFp.apiV1AuthEmailVerifyOtpPost(apiV1AuthEmailVerifyOtpPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -5442,7 +5871,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationCreatePost200Response> {
+        apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest: ApiV1ConversationCreatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffLoadPostRequest> {
             return localVarFp.apiV1ConversationCreatePost(apiV1ConversationCreatePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
@@ -5588,6 +6017,33 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffLoadPost200Response> {
+            return localVarFp.apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffResultsPost200Response> {
+            return localVarFp.apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffSavePostRequest} apiV1MaxdiffSavePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1ModerationConversationCreatePostRequest} apiV1ModerationConversationCreatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -5676,12 +6132,11 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {string} auth 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1NotificationStreamGet(auth: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.apiV1NotificationStreamGet(auth, options).then((request) => request(axios, basePath));
+        apiV1NotificationStreamGet(options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1NotificationStreamGet(options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -5743,7 +6198,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1PollRespondPost(apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+        apiV1PollRespondPost(apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1PollRespondPost200Response> {
             return localVarFp.apiV1PollRespondPost(apiV1PollRespondPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
@@ -6010,6 +6465,26 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @param {ApiV1AuthEmailAuthenticatePostRequest} apiV1AuthEmailAuthenticatePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AuthEmailAuthenticatePost(apiV1AuthEmailAuthenticatePostRequest: ApiV1AuthEmailAuthenticatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AuthEmailAuthenticatePost(apiV1AuthEmailAuthenticatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1AuthEmailVerifyOtpPostRequest} apiV1AuthEmailVerifyOtpPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AuthEmailVerifyOtpPost(apiV1AuthEmailVerifyOtpPostRequest: ApiV1AuthEmailVerifyOtpPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AuthEmailVerifyOtpPost(apiV1AuthEmailVerifyOtpPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
@@ -6235,6 +6710,36 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1MaxdiffSavePostRequest} apiV1MaxdiffSavePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @param {ApiV1ModerationConversationCreatePostRequest} apiV1ModerationConversationCreatePostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -6333,12 +6838,11 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {string} auth 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1NotificationStreamGet(auth: string, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1NotificationStreamGet(auth, options).then((request) => request(this.axios, this.basePath));
+    public apiV1NotificationStreamGet(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1NotificationStreamGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

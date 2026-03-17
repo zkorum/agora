@@ -117,5 +117,30 @@ export const reportContentDialogTranslations: Record<
     submitButton: "ارسال",
     reportTypeConversation: "conversation",
     reportTypeOpinion: "statement",
+  ky: {
+    submitReportTitle: "Кабар жөнөтүү",
+    improveCommunityText:
+      "Коомчулукту жакшыртууга жардам бергениңиз үчүн рахмат. Бул {reportType} менен кандай көйгөй бар?",
+    thanksForFeedbackTitle: "Пикириңиз үчүн рахмат!",
+    flaggingReasonText:
+      "Эмне үчүн бул {reportType} {selectedReason} деп белгилеп жатасыз?",
+    addExplanationLabel: "Түшүндүрмө кошуу",
+    skipButton: "Өткөрүп жиберүү",
+    submitButton: "Жөнөтүү",
+    reportTypeConversation: "талкуу",
+    reportTypeOpinion: "пикир",
+  },
+  ru: {
+    submitReportTitle: "Отправить жалобу",
+    improveCommunityText:
+      "Спасибо, что помогаете нам улучшить сообщество. В чём проблема с этим {reportType}?",
+    thanksForFeedbackTitle: "Спасибо за ваш отзыв!",
+    flaggingReasonText:
+      "Почему вы отмечаете это {reportType} как {selectedReason}?",
+    addExplanationLabel: "Добавить пояснение",
+    skipButton: "Пропустить",
+    submitButton: "Отправить",
+    reportTypeConversation: "обсуждением",
+    reportTypeOpinion: "высказыванием",
   },
 };

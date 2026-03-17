@@ -19,6 +19,9 @@ export function createEmptyDraft(): ConversationDraft {
     content: "",
     seedOpinions: [],
 
+    // Conversation Type
+    conversationType: "polis",
+
     // Polling Configuration
     poll: {
       enabled: false,
@@ -33,7 +36,7 @@ export function createEmptyDraft(): ConversationDraft {
 
     // Privacy and Advanced Settings
     isPrivate: false,
-    requiresLogin: true,
+    participationMode: "strong_verification",
     privateConversationSettings: {
       hasScheduledConversion: false,
       conversionDate: tomorrow,

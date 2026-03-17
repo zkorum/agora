@@ -14,12 +14,6 @@ We are at a critical moment where social media platforms are increasingly evolvi
 - Besides, most social networks today use engagement-based ranking algorithms designed to maximize user attention and engagement. Unfortunately, these algorithms often promote polarizing content, which tends to attract the most attention, whether good or bad. In contrast, Agora employs bridging-based ranking algorithms that aim to highlight content appreciated by users across different political viewpoints. The goal is not to censor extreme opinions but to preserve a rich diversity of viewpoints and identify common ground.
 - Additionally, we're developing [Racine](https://github.com/zkorum/racine), a metaprotocol built on [UCAN](https://github.com/ucan-wg) and [Rarimo](https://github.com/rarimo), designed to give users full control over their digital identities and data. We believe that while protocols may not be inherently interoperable, verifiable data is. By putting humans at the center, Racine enables users to decide what data to share, with which service providers, and where to store it, ensuring both self-sovereignty and verifiable data provenance.
 
-### Roadmap
-
-- Q1 2025: [Agora MVP](https://agoracitizen.network/feed/) is live and actively seeking your feedback - [Get in touch!](https://linktr.ee/yutingzkorum)
-- Q2 2025: Evolving from MVP to SLCP (Simple, Lovable, Complete Product)
-- Q3 & Q4 2025: Develop pilot projects with institutions, NGOs, market research firms, media outlets, and other partners looking to engage their audiences through Agora.
-
 #### Check out detailed product development roadmap [here](https://github.com/zkorum/product/issues/34#issuecomment-2944640139)
 
 ## Development

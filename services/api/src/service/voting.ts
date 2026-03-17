@@ -517,7 +517,7 @@ export async function castVoteForOpinionSlugId({
             db: db,
         });
     const {
-        isLoginRequired: conversationIsLoginRequired,
+        participationMode,
         contentId: conversationContentId,
         isClosed: conversationIsClosed,
         requiresEventTicket,
@@ -549,10 +549,35 @@ export async function castVoteForOpinionSlugId({
     const userId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
         db,
         didWrite,
-        conversationIsLoginRequired,
+        participationMode,
         userAgent,
         now,
     });
+
+    // Check verification gating based on participation mode
+    if (participationMode === "strong_verification") {
+        const hasStrong = await authUtilService.hasStrongVerification({
+            db,
+            userId,
+        });
+        if (!hasStrong) {
+            return {
+                success: false,
+                reason: "strong_verification_required",
+            };
+        }
+    } else if (participationMode === "email_verification") {
+        const hasEmail = await authUtilService.hasEmailVerification({
+            db,
+            userId,
+        });
+        if (!hasEmail) {
+            return {
+                success: false,
+                reason: "email_verification_required",
+            };
+        }
+    }
 
     // Check event ticket gating
     if (requiresEventTicket !== null) {

@@ -13,7 +13,7 @@
           round
           dense
           icon="mdi-chevron-left"
-          @click="navigateToPreviousMode"
+          @click="togglePreviousMode"
         />
         <span class="group-name">{{ currentModeName }}</span>
         <q-btn
@@ -21,10 +21,12 @@
           round
           dense
           icon="mdi-chevron-right"
-          @click="navigateToNextMode"
+          @click="toggleNextMode"
         />
       </div>
     </div>
+
+    <slot name="after-header" />
 
     <div v-if="itemList.length === 0" class="no-comments">
       {{ t("noOpinionsMessage") }}
@@ -198,13 +200,11 @@ const togglePreviousMode = () => {
   }
 };
 
-const navigateToPreviousMode = togglePreviousMode;
-const navigateToNextMode = toggleNextMode;
 </script>
 
 <style lang="scss" scoped>
 .opinion-group-comments {
-  padding: 1rem 0;
+  padding: 0 0 1rem 0;
 }
 
 .title {

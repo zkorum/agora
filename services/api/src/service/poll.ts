@@ -102,7 +102,7 @@ export async function submitPollResponse({
     const {
         id: postId,
         contentId: postContentId,
-        isLoginRequired: conversationIsLoginRequired,
+        participationMode,
     } = await useCommonPost().getPostMetadataFromSlugId({
         db: db,
         conversationSlugId: postSlugId,
@@ -117,10 +117,35 @@ export async function submitPollResponse({
     const authorId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
         db,
         didWrite,
-        conversationIsLoginRequired,
+        participationMode,
         userAgent,
         now,
     });
+
+    // Check verification gating based on participation mode
+    if (participationMode === "strong_verification") {
+        const hasStrong = await authUtilService.hasStrongVerification({
+            db,
+            userId: authorId,
+        });
+        if (!hasStrong) {
+            return {
+                success: false as const,
+                reason: "strong_verification_required" as const,
+            };
+        }
+    } else if (participationMode === "email_verification") {
+        const hasEmail = await authUtilService.hasEmailVerification({
+            db,
+            userId: authorId,
+        });
+        if (!hasEmail) {
+            return {
+                success: false as const,
+                reason: "email_verification_required" as const,
+            };
+        }
+    }
 
     await db.transaction(async (tx) => {
         // Get the poll ID from the current content first
@@ -207,4 +232,6 @@ export async function submitPollResponse({
             })
             .where(eq(pollResponseTable.id, pollResponseTableId));
     });
+
+    return { success: true as const };
 }

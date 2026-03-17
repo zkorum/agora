@@ -3,7 +3,7 @@ import type { AxiosInstance } from "axios";
 import * as polisService from "./polis.js";
 import * as importService from "./import.js";
 import type { VoteBuffer } from "./voteBuffer.js";
-import type { EventSlug } from "@/shared/types/zod.js";
+import type { EventSlug, ParticipationMode } from "@/shared/types/zod.js";
 
 interface ProcessUrlImportProps {
     db: PostgresJsDatabase;
@@ -15,7 +15,7 @@ interface ProcessUrlImportProps {
     authorId: string;
     postAsOrganization: string | undefined;
     indexConversationAt?: string;
-    isLoginRequired: boolean;
+    participationMode: ParticipationMode;
     isIndexed: boolean;
     requiresEventTicket?: EventSlug;
 }
@@ -50,7 +50,7 @@ export async function processUrlImport(
             authorId: props.authorId,
             postAsOrganization: props.postAsOrganization,
             indexConversationAt: props.indexConversationAt,
-            isLoginRequired: props.isLoginRequired,
+            participationMode: props.participationMode,
             isIndexed: props.isIndexed,
             requiresEventTicket: props.requiresEventTicket,
         },

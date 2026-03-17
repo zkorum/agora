@@ -174,3 +174,29 @@ html {
     text-rendering: optimizeLegibility;
   }
 }
+
+/* Sticky positioning below the fixed Quasar header.
+   Set --header-height via inline style from JS (measured from DOM). */
+.sticky-below-header {
+  position: sticky;
+  top: var(--header-height, 0px);
+  padding-top: max(0.5rem - var(--header-height, 0px), 0px);
+  z-index: 10;
+  background-color: $app-background-color;
+  transition: top 0.3s ease, padding-top 0.3s ease;
+}
+
+/* Sticky action bar — extends to container edges via negative margin */
+.sticky-action-bar {
+  margin-left: -1rem;
+  margin-right: -1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Tab content area — stacking context to contain high z-index children */
+.tab-content {
+  min-height: 100vh;
+  position: relative;
+  z-index: 0;
+}

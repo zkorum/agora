@@ -25,6 +25,8 @@
             <CommentActionOptions
               :comment-item="opinionItem"
               :post-slug-id="conversationSlugId"
+              :conversation-author-username="conversationAuthorUsername"
+              :conversation-organization-name="conversationOrganizationName"
             />
           </div>
         </div>
@@ -32,7 +34,7 @@
         <UserIdentityCard
           :author-verified="false"
           :created-at="opinionItem.createdAt"
-          :updated-at="opinionItem.updatedAt"
+          :is-edited="false"
           :user-identity="opinionItem.username"
           :show-verified-text="false"
           organization-image-url=""
@@ -50,6 +52,8 @@
           v-if="opinionItem.moderation?.status == 'moderated'"
           :comment-item="opinionItem"
           :post-slug-id="conversationSlugId"
+          :conversation-author-username="conversationAuthorUsername"
+          :conversation-organization-name="conversationOrganizationName"
         />
       </div>
     </ZKHoverEffect>
@@ -72,6 +76,8 @@ defineProps<{
   isIndexed: boolean;
   opinionSlugId: string;
   opinionItem: OpinionItem;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
 }>();
 </script>
 

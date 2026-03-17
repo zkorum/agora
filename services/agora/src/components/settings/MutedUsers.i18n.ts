@@ -37,5 +37,12 @@ export const mutedUsersTranslations: Record<SupportedDisplayLanguageCodes, Muted
   fa: {
     title: "کاربران بی‌صدا شده",
     emptyMessage: "هیچ کاربر بی‌صدا شده‌ای ندارید",
+  ky: {
+    title: "Үнү өчүрүлгөн колдонуучулар",
+    emptyMessage: "Сиздин үнү өчүрүлгөн колдонуучуларыңыз жок",
+  },
+  ru: {
+    title: "Заглушённые пользователи",
+    emptyMessage: "У вас нет заглушённых пользователей",
   },
 };

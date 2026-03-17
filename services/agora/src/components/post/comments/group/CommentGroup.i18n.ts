@@ -78,5 +78,20 @@ export const commentGroupTranslations: Record<
     opinionsLoadFailed: "بارگذاری نظرات ممکن نبود",
     unexpectedErrorRetry: "مشکلی پیش آمد. لطفاً دوباره تلاش کنید.",
     retryLoadOpinions: "تلاش مجدد بارگذاری نظرات",
+  ky: {
+    noOpinionsMessage: "Бул талкуу чыпкасында пикирлер жок.",
+    loadingOpinions: "Пикирлер жүктөлүүдө...",
+    retrying: "Кайра аракет кылынууда...",
+    opinionsLoadFailed: "Пикирлерди жүктөө мүмкүн болбоду",
+    unexpectedErrorRetry: "Бир нерсе туура эмес болду. Кайра аракет кылыңыз.",
+    retryLoadOpinions: "Пикирлерди кайра жүктөө",
+  },
+  ru: {
+    noOpinionsMessage: "В этом фильтре обсуждения нет высказываний.",
+    loadingOpinions: "Загрузка высказываний...",
+    retrying: "Повторная попытка...",
+    opinionsLoadFailed: "Не удалось загрузить высказывания",
+    unexpectedErrorRetry: "Что-то пошло не так. Пожалуйста, попробуйте снова.",
+    retryLoadOpinions: "Повторить загрузку высказываний",
   },
 };

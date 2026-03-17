@@ -7,15 +7,22 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **conversationSlugId** | **string** |  | [default to undefined]
 **createdAt** | **string** |  | [default to undefined]
-**updatedAt** | **string** |  | [default to undefined]
+**updatedAt** | **string** |  | [optional] [default to undefined]
 **lastReactedAt** | **string** |  | [default to undefined]
 **opinionCount** | **number** |  | [default to undefined]
 **voteCount** | **number** |  | [default to undefined]
 **participantCount** | **number** |  | [default to undefined]
+**totalOpinionCount** | **number** |  | [default to undefined]
+**totalVoteCount** | **number** |  | [default to undefined]
+**totalParticipantCount** | **number** |  | [default to undefined]
+**moderatedOpinionCount** | **number** |  | [default to undefined]
+**hiddenOpinionCount** | **number** |  | [default to undefined]
 **authorUsername** | **string** |  | [default to undefined]
-**isLoginRequired** | **boolean** |  | [default to undefined]
+**participationMode** | **string** |  | [default to undefined]
+**conversationType** | **string** |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **isClosed** | **boolean** |  | [default to undefined]
+**isEdited** | **boolean** |  | [default to undefined]
 **organization** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization.md) |  | [optional] [default to undefined]
 **moderation** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration.md) |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
@@ -33,10 +40,17 @@ const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListI
     opinionCount,
     voteCount,
     participantCount,
+    totalOpinionCount,
+    totalVoteCount,
+    totalParticipantCount,
+    moderatedOpinionCount,
+    hiddenOpinionCount,
     authorUsername,
-    isLoginRequired,
+    participationMode,
+    conversationType,
     isIndexed,
     isClosed,
+    isEdited,
     organization,
     moderation,
     requiresEventTicket,

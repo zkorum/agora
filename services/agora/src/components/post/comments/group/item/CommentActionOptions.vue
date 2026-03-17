@@ -85,6 +85,8 @@ import {
 const props = defineProps<{
   postSlugId: string;
   commentItem: OpinionItem;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
 }>();
 
 const emit = defineEmits<{
@@ -186,6 +188,8 @@ function optionButtonClicked() {
   commentActions.showCommentActions(
     props.commentItem.opinionSlugId,
     props.commentItem.username,
+    props.conversationAuthorUsername,
+    props.conversationOrganizationName,
     {
       deleteCommentCallback,
       reportCommentCallback: reportContentCallback,

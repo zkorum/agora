@@ -34,7 +34,7 @@ import pLimit from "p-limit";
 import { processCsvImport, zodCsvFiles, type CsvFiles } from "./csvImport.js";
 import { processUrlImport } from "./urlImport.js";
 import { createImportNotification } from "./conversationImport/notifications.js";
-import { zodEventSlug, type EventSlug } from "@/shared/types/zod.js";
+import { zodEventSlug, zodParticipationMode, type EventSlug, type ParticipationMode } from "@/shared/types/zod.js";
 import { z } from "zod";
 
 // ============================================================================
@@ -44,7 +44,7 @@ import { z } from "zod";
 const zodImportFormData = z.object({
     postAsOrganization: z.string().optional(),
     indexConversationAt: z.string().optional(),
-    isLoginRequired: z.boolean(),
+    participationMode: zodParticipationMode,
     isIndexed: z.boolean(),
     requiresEventTicket: zodEventSlug.optional(),
 });
@@ -87,7 +87,7 @@ interface ImportRequestBase {
     formData: {
         postAsOrganization?: string;
         indexConversationAt?: string;
-        isLoginRequired: boolean;
+        participationMode: ParticipationMode;
         isIndexed: boolean;
         requiresEventTicket?: EventSlug;
     };
@@ -196,7 +196,7 @@ export function createImportBuffer(
                     authorId: request.authorId,
                     postAsOrganization: request.formData.postAsOrganization,
                     indexConversationAt: request.formData.indexConversationAt,
-                    isLoginRequired: request.formData.isLoginRequired,
+                    participationMode: request.formData.participationMode,
                     isIndexed: request.formData.isIndexed,
                     requiresEventTicket: request.formData.requiresEventTicket,
                 });
@@ -217,7 +217,7 @@ export function createImportBuffer(
                     authorId: request.authorId,
                     postAsOrganization: request.formData.postAsOrganization,
                     indexConversationAt: request.formData.indexConversationAt,
-                    isLoginRequired: request.formData.isLoginRequired,
+                    participationMode: request.formData.participationMode,
                     isIndexed: request.formData.isIndexed,
                     requiresEventTicket: request.formData.requiresEventTicket,
                 });

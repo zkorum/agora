@@ -67,5 +67,18 @@ export const voteCountVisualizerTranslations: Record<
     group2: "گروه ۲",
     group3: "گروه ۳",
     group4: "گروه ۴",
+  ky: {
+    votes: "добуштар",
+    group1: "Топ 1",
+    group2: "Топ 2",
+    group3: "Топ 3",
+    group4: "Топ 4",
+  },
+  ru: {
+    votes: "голосов",
+    group1: "Группа 1",
+    group2: "Группа 2",
+    group3: "Группа 3",
+    group4: "Группа 4",
   },
 };

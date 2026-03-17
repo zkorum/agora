@@ -1,7 +1,22 @@
 <template>
   <AsyncStateHandler :query="analysisQuery" :config="asyncStateConfig">
     <div class="container flexStyle">
-      <ShortcutBar v-model="currentTab" />
+      <div class="analysis-header">
+        <ShortcutBar v-model="currentTab" @same-tab-click="handleSameSubtabClick" />
+        <router-link
+          v-if="showReportButton"
+          :to="{
+            name: '/conversation/[conversationSlugId]/report',
+            params: { conversationSlugId: props.conversationSlugId },
+          }"
+          class="report-button"
+          :title="t('generateReport')"
+          :aria-label="t('generateReport')"
+        >
+          <q-icon name="mdi-file-chart-outline" size="1rem" />
+          <div>{{ t("report") }}</div>
+        </router-link>
+      </div>
 
       <!-- Me tab -->
       <div
@@ -13,6 +28,7 @@
           :cluster-key="userClusterData.clusterKey"
           :ai-label="userClusterData.aiLabel"
           :ai-summary="userClusterData.aiSummary"
+          :navigate-to-discover-tab="props.navigateToDiscoverTab"
         />
       </div>
 
@@ -25,6 +41,7 @@
           :conversation-slug-id="props.conversationSlugId"
           :clusters="analysisQuery.data.value?.polisClusters || {}"
           :total-participant-count="props.participantCount"
+          :compact-mode="currentTab === 'Summary'"
         />
       </div>
 
@@ -87,8 +104,9 @@ import type {
   PolisClusters,
   PolisKey,
 } from "src/shared/types/zod";
-import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
-import { computed,ref } from "vue";
+import { type ShortcutItem,shortcutItemSchema } from "src/utils/component/analysis/shortcutBar";
+import { computed, inject, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 import {
   type AnalysisPageTranslations,
@@ -100,6 +118,19 @@ import MeTab from "./meTab/MeTab.vue";
 import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 
+const props = withDefaults(
+  defineProps<{
+    participantCount: number;
+    conversationSlugId: string;
+    analysisQuery: UseQueryReturnType<AnalysisData, Error>;
+    showReportButton?: boolean;
+    navigateToDiscoverTab: () => void;
+  }>(),
+  {
+    showReportButton: true,
+  }
+);
+
 type AnalysisData = {
   consensusAgree: AnalysisOpinionItem[];
   consensusDisagree: AnalysisOpinionItem[];
@@ -107,17 +138,42 @@ type AnalysisData = {
   polisClusters: Partial<PolisClusters>;
 };
 
-const props = defineProps<{
-  participantCount: number;
-  conversationSlugId: string;
-  analysisQuery: UseQueryReturnType<AnalysisData, Error>;
-}>();
-
 const { t } = useComponentI18n<AnalysisPageTranslations>(
   analysisPageTranslations
 );
 
-const currentTab = ref<ShortcutItem>("Summary");
+const route = useRoute();
+const router = useRouter();
+
+const scrollToActionBar = inject<
+  (options?: { behavior?: ScrollBehavior }) => void
+>("scrollToActionBar", () => {
+  /* noop */
+});
+
+// Read initial subtab from query param (e.g. ?tab=Me)
+const initialTab = shortcutItemSchema.safeParse(route.query.tab);
+const currentTab = ref<ShortcutItem>(initialTab.success ? initialTab.data : "Summary");
+
+// Sync subtab changes back to URL for shareable deep links
+watch(currentTab, (newTab, oldTab) => {
+  const currentQuery = { ...route.query };
+  if (newTab === "Summary") {
+    delete currentQuery.tab;
+  } else {
+    currentQuery.tab = newTab;
+  }
+  void router.replace({ query: currentQuery });
+
+  // Scroll to action bar when user switches subtabs (skip initial render)
+  if (oldTab !== undefined) {
+    scrollToActionBar({ behavior: "smooth" });
+  }
+});
+
+function handleSameSubtabClick(): void {
+  scrollToActionBar({ behavior: "smooth" });
+}
 
 // Use the passed-in analysis query instead of creating our own
 const analysisQuery = props.analysisQuery;
@@ -217,5 +273,36 @@ defineExpose({
 .tabComponent {
   border-radius: 12px;
   padding: 0.5rem;
+}
+
+.analysis-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.report-button {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  flex-shrink: 0;
+  border-radius: 10px;
+  border: 1px solid #d8d6de;
+  background-color: white;
+  color: #6d6a74;
+  padding: 0.4rem 0.5rem;
+  gap: 0.3rem;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #c6c4ff;
+    border-color: #6b4eff;
+    color: #6b4eff;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 }
 </style>

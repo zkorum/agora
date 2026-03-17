@@ -31,5 +31,10 @@ export const moderationTimeTranslations: Record<
   },
   fa: {
     edited: "(ویرایش‌شده)",
+  ky: {
+    edited: "(түзөтүлгөн)",
+  },
+  ru: {
+    edited: "(отредактировано)",
   },
 };

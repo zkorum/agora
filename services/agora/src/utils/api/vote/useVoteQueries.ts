@@ -83,7 +83,12 @@ export function useVoteMutation(postSlugId: string) {
 
       // Optimistically update userVotes cache (for vote highlighting)
       queryClient.setQueryData<Array<{ opinionSlugId: string; votingAction: string }>>(userVotesKey, (oldData) => {
-        if (!oldData) return [];
+        // Handle empty cache (e.g., right after queryClient.clear() during auth transition)
+        if (!oldData) {
+          return voteAction !== "cancel"
+            ? [{ opinionSlugId, votingAction: voteAction }]
+            : [];
+        }
 
         // Remove existing vote for this opinion (if any)
         const filteredVotes = oldData.filter(vote => vote.opinionSlugId !== opinionSlugId);
@@ -152,7 +157,20 @@ export function useVoteMutation(postSlugId: string) {
       }
     },
 
-    onSuccess: async (data, variables) => {
+    onSuccess: async (data, variables, context) => {
+      // Rollback optimistic updates when backend rejects the vote
+      if (!data.success) {
+        if (context?.previousUserVotes !== undefined) {
+          queryClient.setQueryData(["userVotes", postSlugId], context.previousUserVotes);
+        }
+        if (context?.previousComments !== undefined) {
+          for (const [queryKey, previousData] of context.previousComments) {
+            queryClient.setQueryData(queryKey, previousData);
+          }
+        }
+        return;
+      }
+
       // If backend confirms user is clustered, track it and mark analysis as stale
       if (data.success && data.userIsClustered === true) {
         // Track in session - this STOPS all future clustering requests
@@ -193,12 +211,7 @@ export function useInvalidateVoteQueries() {
 
   return {
     invalidateUserVotes: (postSlugId: string) => {
-      void queryClient.invalidateQueries({
-        queryKey: ["userVotes", postSlugId],
-      });
-    },
-    invalidateAll: (postSlugId: string) => {
-      void queryClient.invalidateQueries({
+      return queryClient.invalidateQueries({
         queryKey: ["userVotes", postSlugId],
       });
     },
