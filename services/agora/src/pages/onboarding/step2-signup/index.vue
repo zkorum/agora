@@ -21,8 +21,8 @@
 
         <template #body>
           <ZKGradientButton
-            :label="t('verifyAnonymously')"
-            @click="goToNextRoute()"
+            :label="t('connectWallet')"
+            @click="goToWalletSignup()"
           />
 
           <ZKGradientButton
@@ -30,13 +30,6 @@
             gradient-background="#E7E7FF"
             label-color="#6B4EFF"
             @click="verifyPhone()"
-          />
-
-          <ZKGradientButton
-            :label="t('useEmail')"
-            variant="text"
-            label-color="#6B4EFF"
-            @click="verifyEmail()"
           />
 
           <p>
@@ -69,16 +62,12 @@ const { t } = useComponentI18n<Step2SignupOnboardingTranslations>(
 
 const router = useRouter();
 
-async function goToNextRoute() {
-  await router.push({ name: "/onboarding/step3-passport/" });
+async function goToWalletSignup() {
+  await router.push({ name: "/onboarding/step3-wallet/" });
 }
 
 async function verifyPhone() {
   await router.push({ name: "/onboarding/step3-phone-1/" });
-}
-
-async function verifyEmail() {
-  await router.push({ name: "/onboarding/step3-email-1/" });
 }
 </script>
 
