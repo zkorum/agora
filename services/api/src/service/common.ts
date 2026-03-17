@@ -9,6 +9,7 @@ import {
     polisClusterTable,
     polisClusterTranslationTable,
     organizationTable,
+    maxdiffItemTable,
 } from "@/shared-backend/schema.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import type {
@@ -23,6 +24,7 @@ import type {
     EventSlug,
     ParticipationMode,
 } from "@/shared/types/zod.js";
+import { zodExternalSourceConfig } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { eq, desc, SQL, and, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -35,7 +37,6 @@ import * as polisService from "@/service/polis.js";
 import { imagePathToUrl } from "@/utils/organizationLogic.js";
 import { getConversationEngagementScore } from "./recommendationSystem.js";
 import { log } from "@/app.js";
-
 
 export function useCommonUser() {
     interface GetUserIdFromUsernameProps {
@@ -143,6 +144,7 @@ export function useCommonPost() {
                 option6: pollTable.option6,
                 option6Response: pollTable.option6Response,
                 // metadata
+                conversationId: conversationTable.id,
                 slugId: conversationTable.slugId,
                 createdAt: conversationTable.createdAt,
                 updatedAt: conversationTable.updatedAt,
@@ -152,10 +154,8 @@ export function useCommonPost() {
                 participantCount: conversationTable.participantCount,
                 totalOpinionCount: conversationTable.totalOpinionCount,
                 totalVoteCount: conversationTable.totalVoteCount,
-                totalParticipantCount:
-                    conversationTable.totalParticipantCount,
-                moderatedOpinionCount:
-                    conversationTable.moderatedOpinionCount,
+                totalParticipantCount: conversationTable.totalParticipantCount,
+                moderatedOpinionCount: conversationTable.moderatedOpinionCount,
                 hiddenOpinionCount: conversationTable.hiddenOpinionCount,
                 authorName: userTable.username,
                 organizationName: organizationTable.name,
@@ -169,6 +169,7 @@ export function useCommonPost() {
                 isClosed: conversationTable.isClosed,
                 isEdited: conversationTable.isEdited,
                 requiresEventTicket: conversationTable.requiresEventTicket,
+                externalSourceConfig: conversationTable.externalSourceConfig,
                 // moderation
                 moderationAction: conversationModerationTable.moderationAction,
                 moderationExplanation:
@@ -289,7 +290,33 @@ export function useCommonPost() {
                               }),
                           }
                         : undefined,
+                externalSourceConfig: (() => {
+                    const parsed = zodExternalSourceConfig.safeParse(
+                        postItem.externalSourceConfig,
+                    );
+                    return parsed.success ? parsed.data : null;
+                })(),
             };
+
+            // For MaxDiff conversations, override opinionCount with active item count
+            if (postItem.conversationType === "maxdiff") {
+                const [itemCountResult] = await db
+                    .select({
+                        count: sql<number>`count(*)::int`,
+                    })
+                    .from(maxdiffItemTable)
+                    .where(
+                        and(
+                            eq(
+                                maxdiffItemTable.conversationId,
+                                postItem.conversationId,
+                            ),
+                            sql`${maxdiffItemTable.currentContentId} IS NOT NULL`,
+                            sql`${maxdiffItemTable.lifecycleStatus} IN ('active', 'in_progress')`,
+                        ),
+                    );
+                metadata.opinionCount = itemCountResult.count;
+            }
 
             let payload: ExtendedConversationPayload;
             if (
@@ -958,12 +985,10 @@ export function useCommonPost() {
                 participantCount: conversationTable.participantCount,
                 voteCount: conversationTable.voteCount,
                 opinionCount: conversationTable.opinionCount,
-                totalParticipantCount:
-                    conversationTable.totalParticipantCount,
+                totalParticipantCount: conversationTable.totalParticipantCount,
                 totalVoteCount: conversationTable.totalVoteCount,
                 totalOpinionCount: conversationTable.totalOpinionCount,
-                moderatedOpinionCount:
-                    conversationTable.moderatedOpinionCount,
+                moderatedOpinionCount: conversationTable.moderatedOpinionCount,
                 hiddenOpinionCount: conversationTable.hiddenOpinionCount,
                 isIndexed: conversationTable.isIndexed,
                 participationMode: conversationTable.participationMode,
@@ -983,12 +1008,10 @@ export function useCommonPost() {
             participantCount: postTableResponse[0].participantCount,
             voteCount: postTableResponse[0].voteCount,
             opinionCount: postTableResponse[0].opinionCount,
-            totalParticipantCount:
-                postTableResponse[0].totalParticipantCount,
+            totalParticipantCount: postTableResponse[0].totalParticipantCount,
             totalVoteCount: postTableResponse[0].totalVoteCount,
             totalOpinionCount: postTableResponse[0].totalOpinionCount,
-            moderatedOpinionCount:
-                postTableResponse[0].moderatedOpinionCount,
+            moderatedOpinionCount: postTableResponse[0].moderatedOpinionCount,
             hiddenOpinionCount: postTableResponse[0].hiddenOpinionCount,
             isIndexed: postTableResponse[0].isIndexed,
             participationMode: postTableResponse[0].participationMode,

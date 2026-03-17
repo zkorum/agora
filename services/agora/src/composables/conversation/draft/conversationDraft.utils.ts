@@ -45,6 +45,9 @@ export function createEmptyDraft(): ConversationDraft {
     // Event Ticket Verification
     requiresEventTicket: undefined,
 
+    // External Source (GitHub integration for MaxDiff)
+    externalSourceConfig: null,
+
     // Creation Settings
     importSettings: {
       importType: null,

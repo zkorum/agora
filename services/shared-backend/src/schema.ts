@@ -27,6 +27,8 @@ const MAX_LENGTH_BODY = 1000;
 const MAX_LENGTH_BODY_HTML = 3000; // Reserve extra space for HTML tags
 // const MAX_LENGTH_OPINION = 280;
 const MAX_LENGTH_OPINION_HTML = 3000; // is lower now, kept this value For retro-compatibility
+const MAX_LENGTH_MAXDIFF_ITEM_TITLE = 200;
+const MAX_LENGTH_MAXDIFF_ITEM_BODY = 3000;
 const MAX_LENGTH_NAME_CREATOR = 65;
 const MAX_LENGTH_DESCRIPTION_CREATOR = 280;
 const MAX_LENGTH_USERNAME = 20;
@@ -588,6 +590,15 @@ export const participationModeEnum = pgEnum("participation_mode", [
 export const conversationTypeEnum = pgEnum("conversation_type", [
     "polis",
     "maxdiff",
+]);
+
+export const maxdiffLifecycleStatusEnum = pgEnum(
+    "maxdiff_lifecycle_status",
+    ["active", "completed", "in_progress", "canceled"],
+);
+
+export const externalSourceTypeEnum = pgEnum("external_source_type", [
+    "github_issue",
 ]);
 
 // Export status for CSV exports
@@ -1305,6 +1316,7 @@ export const conversationTable = pgTable(
         }),
         importAuthor: text("import_author"),
         importMethod: importMethodType("import_method").default("url"),
+        externalSourceConfig: jsonb("external_source_config"), // Typed via zodExternalSourceConfig; e.g. { sourceType: "github_issue", repository: "owner/repo", label: "roadmap" }
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -2253,6 +2265,107 @@ export const maxdiffResultTable = pgTable(
         index("maxdiff_result_complete_idx").on(
             t.conversationId,
             t.isComplete,
+        ),
+    ],
+);
+
+// MaxDiff item: a statement/proposition in a MaxDiff conversation.
+// Separate from opinionTable to allow independent evolution of MaxDiff format.
+export const maxdiffItemTable = pgTable(
+    "maxdiff_item",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
+        authorId: uuid("author_id")
+            .notNull()
+            .references(() => userTable.id),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
+        currentContentId: integer("current_content_id"), // FK added via constraint below; null = soft-deleted
+        isSeed: boolean("is_seed").notNull().default(false),
+        lifecycleStatus: maxdiffLifecycleStatusEnum("lifecycle_status")
+            .notNull()
+            .default("active"),
+        // Snapshot frozen at the moment lifecycle transitions away from 'active'
+        snapshotScore: real("snapshot_score"), // normalized 0-1 score at time of transition
+        snapshotRank: integer("snapshot_rank"), // 1-based rank at time of transition
+        snapshotParticipantCount: integer("snapshot_participant_count"), // number of participants at time of transition
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("maxdiff_item_slug_idx").on(t.slugId),
+        index("maxdiff_item_conversation_active_idx").on(
+            t.conversationId,
+            t.currentContentId,
+        ),
+        index("maxdiff_item_lifecycle_idx").on(
+            t.conversationId,
+            t.lifecycleStatus,
+        ),
+    ],
+);
+
+// Immutable content versions for MaxDiff items.
+// Each edit creates a new row; maxdiff_item.currentContentId points to the latest.
+export const maxdiffItemContentTable = pgTable("maxdiff_item_content", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    maxdiffItemId: integer("maxdiff_item_id")
+        .notNull()
+        .references(() => maxdiffItemTable.id),
+    conversationContentId: integer("conversation_content_id")
+        .notNull()
+        .references(() => conversationContentTable.id),
+    title: varchar("title", { length: MAX_LENGTH_MAXDIFF_ITEM_TITLE }).notNull(),
+    body: varchar("body", { length: MAX_LENGTH_MAXDIFF_ITEM_BODY }), // optional; populated from GitHub issue body, null for manual items
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
+
+// Maps a MaxDiff item to an external source (e.g. GitHub issue).
+// One-to-one: each item has at most one external source.
+export const maxdiffItemExternalSourceTable = pgTable(
+    "maxdiff_item_external_source",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        maxdiffItemId: integer("maxdiff_item_id")
+            .notNull()
+            .references(() => maxdiffItemTable.id)
+            .unique(),
+        sourceType: externalSourceTypeEnum("source_type").notNull(),
+        externalId: text("external_id").notNull(), // e.g. "owner/repo#42"
+        externalUrl: text("external_url"), // clickable link to GitHub issue
+        externalMetadata: jsonb("external_metadata"), // Typed via zodGitHubIssueMetadata; provider-specific data
+        lastSyncedAt: timestamp("last_synced_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        uniqueIndex("maxdiff_external_source_dedup_idx").on(
+            t.sourceType,
+            t.externalId,
         ),
     ],
 );

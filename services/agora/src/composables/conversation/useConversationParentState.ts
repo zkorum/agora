@@ -221,6 +221,7 @@ export function useConversationParentState({
 
   async function handleRefresh(done: () => void): Promise<void> {
     if (!conversationData.value) {
+      await conversationQuery.refetch();
       done();
       return;
     }

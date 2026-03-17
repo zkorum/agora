@@ -30,6 +30,12 @@
     @mode-change-requested="handleModeChangeRequest"
   />
 
+  <MaxDiffSourceDialog
+    v-model="showMaxDiffSourceDialog"
+    :current-config="externalSourceConfig"
+    :on-source-selected="handleSourceSelected"
+  />
+
   <ModeChangeConfirmationDialog
     v-model="showImportModeChangeConfirmation"
     :has-title="hasTitle"
@@ -77,16 +83,19 @@ import {
   type PrivateConversationSettings,
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { ConversationType, EventSlug, ParticipationMode } from "src/shared/types/zod";
+import type { ConversationType, EventSlug, ExternalSourceConfig, ParticipationMode } from "src/shared/types/zod";
 import {
   checkMaxDiffAllowed,
+  checkMaxDiffGitHubAllowed,
   DEFAULT_MAXDIFF_ALLOWED_ORGS,
+  DEFAULT_MAXDIFF_GITHUB_ALLOWED_ORGS,
 } from "src/shared-app-api/maxdiffLogic";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { processEnv } from "src/utils/processEnv";
 import { computed, ref } from "vue";
 
+import MaxDiffSourceDialog from "./dialog/MaxDiffSourceDialog.vue";
 import PostTypeDialog from "./dialog/PostTypeDialog.vue";
 import {
   type NewConversationControlBarTranslations,
@@ -137,7 +146,11 @@ const conversationType = defineModel<ConversationType>("conversationType", {
 });
 const importSettings = defineModel<ConversationImportSettings>(
   "importSettings",
-  { required: true }
+  { required: true },
+);
+const externalSourceConfig = defineModel<ExternalSourceConfig | null>(
+  "externalSourceConfig",
+  { required: true },
 );
 
 // For checking if there's content that would be cleared (parent needs to provide these)
@@ -210,6 +223,13 @@ const handleModeChangeRequest = (config: ModeChangeConfig): void => {
   // MaxDiff doesn't use polls — disable if switching to MaxDiff
   if (config.conversationType === "maxdiff") {
     pollEnabled.value = false;
+    // Auto-open source dialog if GitHub is allowed
+    if (isMaxDiffGitHubAllowed.value) {
+      showMaxDiffSourceDialog.value = true;
+    }
+  } else {
+    // Clear external source config when switching away from maxdiff
+    externalSourceConfig.value = null;
   }
 
   const currentType = importSettings.value.importType;
@@ -297,6 +317,31 @@ const isMaxDiffAllowed = computed(() => {
   });
   return result.allowed;
 });
+
+const isMaxDiffGitHubAllowed = computed(() => {
+  const result = checkMaxDiffGitHubAllowed({
+    maxdiffEnabled: processEnv.VITE_MAXDIFF_ENABLED === "true",
+    isMaxdiffOrgOnly: processEnv.VITE_IS_MAXDIFF_ORG_ONLY === "true",
+    maxdiffAllowedOrgs:
+      processEnv.VITE_MAXDIFF_ALLOWED_ORGS ?? DEFAULT_MAXDIFF_ALLOWED_ORGS,
+    maxdiffGitHubEnabled:
+      processEnv.VITE_MAXDIFF_GITHUB_ENABLED === "true",
+    isMaxdiffGitHubOrgOnly:
+      processEnv.VITE_IS_MAXDIFF_GITHUB_ORG_ONLY === "true",
+    maxdiffGitHubAllowedOrgs:
+      processEnv.VITE_MAXDIFF_GITHUB_ALLOWED_ORGS ??
+      DEFAULT_MAXDIFF_GITHUB_ALLOWED_ORGS,
+    postAsOrganization: postAs.value.postAsOrganization,
+    organizationName: postAs.value.organizationName,
+  });
+  return result.allowed;
+});
+
+const showMaxDiffSourceDialog = ref(false);
+
+function handleSourceSelected(config: ExternalSourceConfig | null): void {
+  externalSourceConfig.value = config;
+}
 
 const getMakePublicLabel = (): string => {
   if (!privateConversationSettings.value.hasScheduledConversion) {

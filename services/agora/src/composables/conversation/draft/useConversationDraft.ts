@@ -13,7 +13,7 @@ import {
   MAX_LENGTH_OPTION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import type { ConversationType, EventSlug, ParticipationMode } from "src/shared/types/zod";
+import type { ConversationType, EventSlug, ExternalSourceConfig, ParticipationMode } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { computed, type ComputedRef, type Ref, ref, watch } from "vue";
@@ -55,6 +55,7 @@ export interface UseConversationDraftReturn {
   requiresEventTicket: Ref<EventSlug | undefined>;
   privateConversationSettings: Ref<PrivateConversationSettings>;
   postAs: Ref<PostAsSettings>;
+  externalSourceConfig: Ref<ExternalSourceConfig | null>;
   importSettings: Ref<ConversationImportSettings>;
   validationState: Ref<ValidationState>;
 
@@ -135,6 +136,9 @@ export function useConversationDraft(
     ...initialDraft.privateConversationSettings,
   });
   const postAs = ref<PostAsSettings>({ ...initialDraft.postAs });
+  const externalSourceConfig = ref<ExternalSourceConfig | null>(
+    initialDraft.externalSourceConfig,
+  );
   const importSettings = ref<ConversationImportSettings>({
     ...initialDraft.importSettings,
   });
@@ -164,6 +168,7 @@ export function useConversationDraft(
       requiresEventTicket: requiresEventTicket.value,
       privateConversationSettings: { ...privateConversationSettings.value },
       postAs: { ...postAs.value },
+      externalSourceConfig: externalSourceConfig.value,
       importSettings: { ...importSettings.value },
     }));
 
@@ -184,6 +189,8 @@ export function useConversationDraft(
         store.conversationDraft.privateConversationSettings =
           newSnapshot.privateConversationSettings;
         store.conversationDraft.postAs = newSnapshot.postAs;
+        store.conversationDraft.externalSourceConfig =
+          newSnapshot.externalSourceConfig;
         store.conversationDraft.importSettings = newSnapshot.importSettings;
       },
       { deep: true }
@@ -601,6 +608,7 @@ export function useConversationDraft(
       ...emptyDraft.privateConversationSettings,
     };
     postAs.value = { ...emptyDraft.postAs };
+    externalSourceConfig.value = null;
     importSettings.value = { ...emptyDraft.importSettings };
 
     clearAllValidationErrors();
@@ -679,6 +687,7 @@ export function useConversationDraft(
     requiresEventTicket,
     privateConversationSettings,
     postAs,
+    externalSourceConfig,
     importSettings,
     validationState,
 

@@ -52,6 +52,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       moderation: {
         status: "unmoderated",
       },
+      externalSourceConfig: null,
     },
     payload: {
       title: "",

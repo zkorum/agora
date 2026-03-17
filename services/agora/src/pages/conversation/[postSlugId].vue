@@ -21,7 +21,14 @@
 
     <q-pull-to-refresh @refresh="handleRefresh">
       <WidthWrapper :enable="true">
-        <div v-if="hasConversationData">
+        <ErrorRetryBlock
+          v-if="conversationQuery.isError.value && !conversationQuery.isPending.value && !hasConversationData"
+          :title="t('errorTitle')"
+          :retry-label="t('retryButton')"
+          @retry="conversationQuery.refetch()"
+        />
+
+        <div v-else-if="hasConversationData">
           <ZKHoverEffect :enable-hover="false">
             <div class="container standardStyle">
               <PostContent
@@ -102,6 +109,7 @@ import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import CommentSortingSelector from "src/components/post/comments/group/CommentSortingSelector.vue";
 import PostContent from "src/components/post/display/PostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
+import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import ZKIconButton from "src/components/ui-library/ZKIconButton.vue";
 import {
@@ -109,6 +117,7 @@ import {
   useConversationParentState,
 } from "src/composables/conversation/useConversationParentState";
 import { useTabScrollRestoration } from "src/composables/conversation/useTabScrollRestoration";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useStickyObserver } from "src/composables/ui/useStickyObserver";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -120,7 +129,15 @@ import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import { onBeforeUnmount, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 
+import {
+  type ConversationPageTranslations,
+  conversationPageTranslations,
+} from "./[postSlugId].i18n";
+
 const router = useRouter();
+const { t } = useComponentI18n<ConversationPageTranslations>(
+  conversationPageTranslations
+);
 const { sentinelElement, isSticky, headerHeight } = useStickyObserver();
 const navigationStore = useNavigationStore();
 const { resetDraft } = useNewPostDraftsStore();

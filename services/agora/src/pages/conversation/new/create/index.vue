@@ -30,6 +30,7 @@
         v-model:post-as="postAs"
         v-model:conversation-type="conversationType"
         v-model:import-settings="importSettings"
+        v-model:external-source-config="externalSourceConfig"
         v-model:title="title"
         v-model:content="content"
         v-model:poll-options="pollOptions"
@@ -46,6 +47,37 @@
       />
 
       <div class="contentFlexStyle">
+        <!-- GitHub config fields (inline) -->
+        <div
+          v-if="externalSourceConfig !== null"
+          class="github-config-section"
+        >
+          <div class="github-config-header">
+            <q-icon name="mdi-github" size="1.2rem" />
+            <span>{{ t("githubConfig") }}</span>
+          </div>
+          <div class="github-config-fields">
+            <div class="github-field">
+              <label class="github-field-label">{{ t("githubRepository") }}</label>
+              <input
+                v-model="externalSourceConfig.repository"
+                type="text"
+                class="github-field-input"
+                :placeholder="t('githubRepositoryPlaceholder')"
+              />
+            </div>
+            <div class="github-field">
+              <label class="github-field-label">{{ t("githubLabel") }}</label>
+              <input
+                v-model="externalSourceConfig.label"
+                type="text"
+                class="github-field-input"
+                :placeholder="t('githubLabelPlaceholder')"
+              />
+            </div>
+          </div>
+        </div>
+
         <div
           v-if="conversationDraft.importSettings.importType === null"
           ref="titleInputRef"
@@ -193,6 +225,7 @@ const {
   privateConversationSettings,
   postAs,
   importSettings,
+  externalSourceConfig,
   validationState,
   validatePolisUrl,
   validatePoll,
@@ -562,5 +595,55 @@ watch(pollEnabled, (enablePolling) => {
 .large-text-input :deep(.q-field__native) {
   font-weight: var(--font-weight-medium);
   line-height: 1.5;
+}
+
+.github-config-section {
+  background: white;
+  border-radius: 20px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.github-config-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: var(--font-weight-medium);
+  font-size: 0.95rem;
+  color: #24292f;
+}
+
+.github-config-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.github-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.github-field-label {
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-medium);
+  color: $color-text-weak;
+}
+
+.github-field-input {
+  border: 1px solid #d8d6de;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+
+  &:focus {
+    border-color: $primary;
+  }
 }
 </style>

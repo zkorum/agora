@@ -643,6 +643,7 @@ export interface ApiV1ConversationCreatePostRequest {
     'pollingOptionList'?: Array<string>;
     'seedOpinionList': Array<string>;
     'requiresEventTicket'?: ApiV1ConversationCreatePostRequestRequiresEventTicketEnum;
+    'externalSourceConfig'?: ApiV1ConversationCreatePostRequestExternalSourceConfig | null;
 }
 
 export const ApiV1ConversationCreatePostRequestParticipationModeEnum = {
@@ -664,6 +665,18 @@ export const ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = {
 } as const;
 
 export type ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = typeof ApiV1ConversationCreatePostRequestRequiresEventTicketEnum[keyof typeof ApiV1ConversationCreatePostRequestRequiresEventTicketEnum];
+
+export interface ApiV1ConversationCreatePostRequestExternalSourceConfig {
+    'sourceType': ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum;
+    'repository': string;
+    'label': string;
+}
+
+export const ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum = {
+    GithubIssue: 'github_issue'
+} as const;
+
+export type ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum = typeof ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum];
 
 export interface ApiV1ConversationExportHistoryPost200ResponseInner {
     'exportSlugId': string;
@@ -930,6 +943,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
     'organization'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization;
     'moderation': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration;
     'requiresEventTicket'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum;
+    'externalSourceConfig': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfig | null;
 }
 
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum = {
@@ -951,6 +965,18 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum];
+
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfig {
+    'sourceType': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum;
+    'repository': string;
+    'label': string;
+}
+
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum = {
+    GithubIssue: 'github_issue'
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum];
 
 /**
  * @type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration
@@ -1302,6 +1328,67 @@ export interface ApiV1ConversationValidateCsvPost200ResponseSummaryFile {
     'isValid': boolean;
     'error'?: string;
 }
+export interface ApiV1MaxdiffGithubPreviewPost200Response {
+    'issues': Array<ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInner>;
+}
+export interface ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInner {
+    'number': number;
+    'title': string;
+    'body': string | null;
+    'state': ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInnerStateEnum;
+    'htmlUrl': string;
+}
+
+export const ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInnerStateEnum = {
+    Open: 'open',
+    Closed: 'closed'
+} as const;
+
+export type ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInnerStateEnum = typeof ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInnerStateEnum[keyof typeof ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInnerStateEnum];
+
+export interface ApiV1MaxdiffGithubPreviewPostRequest {
+    'repository': string;
+    'label': string;
+}
+export interface ApiV1MaxdiffItemsFetchPost200Response {
+    'items': Array<ApiV1MaxdiffItemsFetchPost200ResponseItemsInner>;
+}
+export interface ApiV1MaxdiffItemsFetchPost200ResponseItemsInner {
+    'slugId': string;
+    'title': string;
+    'body': string | null;
+    'lifecycleStatus': ApiV1MaxdiffItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum;
+    'externalUrl': string | null;
+    'snapshotScore': number | null;
+    'snapshotRank': number | null;
+    'snapshotParticipantCount': number | null;
+    'createdAt': string;
+}
+
+export const ApiV1MaxdiffItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum = {
+    Active: 'active',
+    Completed: 'completed',
+    InProgress: 'in_progress',
+    Canceled: 'canceled'
+} as const;
+
+export type ApiV1MaxdiffItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum = typeof ApiV1MaxdiffItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum[keyof typeof ApiV1MaxdiffItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum];
+
+export interface ApiV1MaxdiffItemsLifecycleUpdatePostRequest {
+    'conversationSlugId': string;
+    'itemSlugId': string;
+    'newStatus': ApiV1MaxdiffItemsLifecycleUpdatePostRequestNewStatusEnum;
+}
+
+export const ApiV1MaxdiffItemsLifecycleUpdatePostRequestNewStatusEnum = {
+    Active: 'active',
+    Completed: 'completed',
+    InProgress: 'in_progress',
+    Canceled: 'canceled'
+} as const;
+
+export type ApiV1MaxdiffItemsLifecycleUpdatePostRequestNewStatusEnum = typeof ApiV1MaxdiffItemsLifecycleUpdatePostRequestNewStatusEnum[keyof typeof ApiV1MaxdiffItemsLifecycleUpdatePostRequestNewStatusEnum];
+
 export interface ApiV1MaxdiffLoadPost200Response {
     'ranking': Array<string> | null;
     'comparisons': Array<ApiV1MaxdiffLoadPost200ResponseComparisonsInner> | null;
@@ -1319,12 +1406,40 @@ export interface ApiV1MaxdiffResultsPost200Response {
     'rankings': Array<ApiV1MaxdiffResultsPost200ResponseRankingsInner>;
 }
 export interface ApiV1MaxdiffResultsPost200ResponseRankingsInner {
-    'opinionSlugId': string;
-    'opinionContent': string;
+    'itemSlugId': string;
+    'title': string;
+    'body': string | null;
     'avgRank': number;
     'score': number;
     'participantCount': number;
+    'lifecycleStatus': ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum;
+    'externalUrl': string | null;
 }
+
+export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum = {
+    Active: 'active',
+    Completed: 'completed',
+    InProgress: 'in_progress',
+    Canceled: 'canceled'
+} as const;
+
+export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum];
+
+export interface ApiV1MaxdiffResultsPostRequest {
+    'conversationSlugId': string;
+    'lifecycleFilter'?: ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum;
+}
+
+export const ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum = {
+    Active: 'active',
+    Completed: 'completed',
+    InProgress: 'in_progress',
+    Canceled: 'canceled',
+    All: 'all'
+} as const;
+
+export type ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum = typeof ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum[keyof typeof ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum];
+
 export interface ApiV1MaxdiffSavePostRequest {
     'conversationSlugId': string;
     'ranking': Array<string> | null;
@@ -1335,6 +1450,10 @@ export interface ApiV1MaxdiffSavePostRequestComparisonsInner {
     'best': string;
     'worst': string;
     'set': Array<string>;
+}
+export interface ApiV1MaxdiffSyncPost200Response {
+    'created': number;
+    'updated': number;
 }
 export interface ApiV1ModerationConversationCreatePostRequest {
     'conversationSlugId': string;
@@ -3400,6 +3519,119 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1MaxdiffGithubPreviewPostRequest} apiV1MaxdiffGithubPreviewPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffGithubPreviewPost: async (apiV1MaxdiffGithubPreviewPostRequest: ApiV1MaxdiffGithubPreviewPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1MaxdiffGithubPreviewPostRequest' is not null or undefined
+            assertParamExists('apiV1MaxdiffGithubPreviewPost', 'apiV1MaxdiffGithubPreviewPostRequest', apiV1MaxdiffGithubPreviewPostRequest)
+            const localVarPath = `/api/v1/maxdiff/github/preview`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffGithubPreviewPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffItemsFetchPost: async (apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1MaxdiffResultsPostRequest' is not null or undefined
+            assertParamExists('apiV1MaxdiffItemsFetchPost', 'apiV1MaxdiffResultsPostRequest', apiV1MaxdiffResultsPostRequest)
+            const localVarPath = `/api/v1/maxdiff/items/fetch`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffResultsPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffItemsLifecycleUpdatePostRequest} apiV1MaxdiffItemsLifecycleUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffItemsLifecycleUpdatePost: async (apiV1MaxdiffItemsLifecycleUpdatePostRequest: ApiV1MaxdiffItemsLifecycleUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1MaxdiffItemsLifecycleUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1MaxdiffItemsLifecycleUpdatePost', 'apiV1MaxdiffItemsLifecycleUpdatePostRequest', apiV1MaxdiffItemsLifecycleUpdatePostRequest)
+            const localVarPath = `/api/v1/maxdiff/items/lifecycle/update`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffItemsLifecycleUpdatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3438,13 +3670,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1MaxdiffResultsPost: async (apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1MaxdiffLoadPostRequest' is not null or undefined
-            assertParamExists('apiV1MaxdiffResultsPost', 'apiV1MaxdiffLoadPostRequest', apiV1MaxdiffLoadPostRequest)
+        apiV1MaxdiffResultsPost: async (apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1MaxdiffResultsPostRequest' is not null or undefined
+            assertParamExists('apiV1MaxdiffResultsPost', 'apiV1MaxdiffResultsPostRequest', apiV1MaxdiffResultsPostRequest)
             const localVarPath = `/api/v1/maxdiff/results`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -3467,7 +3699,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffLoadPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffResultsPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -3505,6 +3737,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffSavePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffSyncPost: async (apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1MaxdiffLoadPostRequest' is not null or undefined
+            assertParamExists('apiV1MaxdiffSyncPost', 'apiV1MaxdiffLoadPostRequest', apiV1MaxdiffLoadPostRequest)
+            const localVarPath = `/api/v1/maxdiff/sync`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffLoadPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -4829,6 +5099,38 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
                 options: localVarRequestOptions,
             };
         },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1WebhookGithubPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/webhook/github`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
     }
 };
 
@@ -5252,6 +5554,42 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1MaxdiffGithubPreviewPostRequest} apiV1MaxdiffGithubPreviewPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1MaxdiffGithubPreviewPost(apiV1MaxdiffGithubPreviewPostRequest: ApiV1MaxdiffGithubPreviewPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffGithubPreviewPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffGithubPreviewPost(apiV1MaxdiffGithubPreviewPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffGithubPreviewPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1MaxdiffItemsFetchPost(apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffItemsFetchPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffItemsFetchPost(apiV1MaxdiffResultsPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffItemsFetchPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffItemsLifecycleUpdatePostRequest} apiV1MaxdiffItemsLifecycleUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1MaxdiffItemsLifecycleUpdatePost(apiV1MaxdiffItemsLifecycleUpdatePostRequest: ApiV1MaxdiffItemsLifecycleUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffItemsLifecycleUpdatePost(apiV1MaxdiffItemsLifecycleUpdatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffItemsLifecycleUpdatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -5264,12 +5602,12 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffResultsPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest, options);
+        async apiV1MaxdiffResultsPost(apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffResultsPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffResultsPost(apiV1MaxdiffResultsPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffResultsPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -5284,6 +5622,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffSavePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1MaxdiffSyncPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffSyncPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffSyncPost(apiV1MaxdiffLoadPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffSyncPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -5711,6 +6061,17 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1VoteCastPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1WebhookGithubPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1WebhookGithubPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1WebhookGithubPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
     }
 };
 
@@ -6029,6 +6390,33 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1MaxdiffGithubPreviewPostRequest} apiV1MaxdiffGithubPreviewPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffGithubPreviewPost(apiV1MaxdiffGithubPreviewPostRequest: ApiV1MaxdiffGithubPreviewPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffGithubPreviewPost200Response> {
+            return localVarFp.apiV1MaxdiffGithubPreviewPost(apiV1MaxdiffGithubPreviewPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffItemsFetchPost(apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffItemsFetchPost200Response> {
+            return localVarFp.apiV1MaxdiffItemsFetchPost(apiV1MaxdiffResultsPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffItemsLifecycleUpdatePostRequest} apiV1MaxdiffItemsLifecycleUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffItemsLifecycleUpdatePost(apiV1MaxdiffItemsLifecycleUpdatePostRequest: ApiV1MaxdiffItemsLifecycleUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1MaxdiffItemsLifecycleUpdatePost(apiV1MaxdiffItemsLifecycleUpdatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -6038,12 +6426,12 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffResultsPost200Response> {
-            return localVarFp.apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(axios, basePath));
+        apiV1MaxdiffResultsPost(apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffResultsPost200Response> {
+            return localVarFp.apiV1MaxdiffResultsPost(apiV1MaxdiffResultsPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -6053,6 +6441,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
             return localVarFp.apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1MaxdiffSyncPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffSyncPost200Response> {
+            return localVarFp.apiV1MaxdiffSyncPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -6370,6 +6767,14 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1VoteCastPost(apiV1VoteCastPostRequest: ApiV1VoteCastPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1VoteCastPost200Response> {
             return localVarFp.apiV1VoteCastPost(apiV1VoteCastPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1WebhookGithubPost(options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1WebhookGithubPost(options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -6722,6 +7127,36 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @param {ApiV1MaxdiffGithubPreviewPostRequest} apiV1MaxdiffGithubPreviewPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1MaxdiffGithubPreviewPost(apiV1MaxdiffGithubPreviewPostRequest: ApiV1MaxdiffGithubPreviewPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1MaxdiffGithubPreviewPost(apiV1MaxdiffGithubPreviewPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1MaxdiffItemsFetchPost(apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1MaxdiffItemsFetchPost(apiV1MaxdiffResultsPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1MaxdiffItemsLifecycleUpdatePostRequest} apiV1MaxdiffItemsLifecycleUpdatePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1MaxdiffItemsLifecycleUpdatePost(apiV1MaxdiffItemsLifecycleUpdatePostRequest: ApiV1MaxdiffItemsLifecycleUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1MaxdiffItemsLifecycleUpdatePost(apiV1MaxdiffItemsLifecycleUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -6732,12 +7167,12 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+     * @param {ApiV1MaxdiffResultsPostRequest} apiV1MaxdiffResultsPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1MaxdiffResultsPost(apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1MaxdiffResultsPost(apiV1MaxdiffResultsPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -6748,6 +7183,16 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1MaxdiffLoadPostRequest} apiV1MaxdiffLoadPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1MaxdiffSyncPost(apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1MaxdiffSyncPost(apiV1MaxdiffLoadPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -7101,6 +7546,15 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1VoteCastPost(apiV1VoteCastPostRequest: ApiV1VoteCastPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1VoteCastPost(apiV1VoteCastPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1WebhookGithubPost(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1WebhookGithubPost(options).then((request) => request(this.axios, this.basePath));
     }
 }
 

@@ -1,6 +1,14 @@
 <template>
-  <div class="maxdiff-results-container">
-    <!-- Loading -->
+  <div class="container flexStyle">
+    <ShortcutBar
+      :model-value="currentTab"
+      :items="maxdiffTabItems"
+      :get-label="getTabLabel"
+      :on-same-tab-click="handleSameTabClick"
+      @update:model-value="onTabChange"
+    />
+
+    <!-- Loading (initial results fetch) -->
     <div v-if="isLoading" class="info-message">
       <q-spinner size="2rem" />
     </div>
@@ -10,91 +18,128 @@
       {{ t("loadingError") }}
     </div>
 
-    <!-- No results yet -->
-    <div v-else-if="rankings.length === 0" class="info-message">
-      {{ t("noResults") }}
-    </div>
-
-    <!-- Results list -->
-    <div v-else class="results-section">
-      <div class="section-header">{{ t("title") }}</div>
-
-      <div class="method-row">
-        <span class="method-subtitle">{{ t("subtitle") }}</span>
-        <button class="learn-more-button" @click="showInfoDialog = true">
-          {{ t("learnMore") }}
-        </button>
+    <template v-else>
+      <!-- Rankings section -->
+      <div
+        v-if="currentTab === 'Summary' || currentTab === 'Results'"
+        class="tabComponent"
+      >
+        <MaxDiffResultsSection
+          v-if="rankings.length > 0"
+          :rankings="rankings"
+          :compact-mode="currentTab === 'Summary'"
+          :t="t"
+          :on-click-item="openStatementDialog"
+          :on-switch-tab="() => switchToTab('Results')"
+          :on-learn-more="() => (showInfoDialog = true)"
+        />
+        <div v-else class="info-message">
+          {{ t("noResults") }}
+        </div>
       </div>
 
-      <q-dialog v-model="showInfoDialog" position="bottom">
-        <q-card class="learn-more-dialog">
-          <q-card-section>
-            <div class="dialog-title">Best-Worst Scaling (MaxDiff)</div>
-          </q-card-section>
-          <q-card-section class="dialog-content">
-            <p>{{ t("learnMoreMethod") }}</p>
-            <p>{{ t("learnMoreHow") }}</p>
-            <p>{{ t("learnMoreWhy") }}</p>
-            <p class="learn-more-reference">
-              {{ t("learnMoreReference") }}
-              <a
-                href="https://en.wikipedia.org/wiki/Best%E2%80%93worst_scaling"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="learn-more-link"
-              >Best-Worst Scaling (Wikipedia)</a>
-            </p>
-          </q-card-section>
-        </q-card>
-      </q-dialog>
+      <!-- Active items -->
+      <div
+        v-if="currentTab === 'Summary' || currentTab === 'Active'"
+        class="tabComponent"
+      >
+        <MaxDiffItemListSection
+          :conversation-slug-id="conversationSlugId"
+          lifecycle="active"
+          :compact-mode="currentTab === 'Summary'"
+          :t="t"
+          :on-click-item="openStatementDialog"
+          :on-switch-tab="() => switchToTab('Active')"
+          :on-learn-more="() => openLifecycleLearnMore('active')"
+        />
+      </div>
 
-      <ol class="results-list">
-        <li
-          v-for="(item, index) in rankings"
-          :key="item.opinionSlugId"
-          class="result-item"
-          @click="openStatementDialog(item.opinionContent)"
-        >
-          <span class="rank-number">{{ index + 1 }}</span>
-          <div class="result-details">
-            <ZKHtmlContent
-              class="result-content"
-              :html-body="item.opinionContent"
-              :compact-mode="true"
-              :enable-links="false"
-            />
-            <div class="result-meta">
-              <div class="score-bar-container">
-                <div class="score-bar">
-                  <div
-                    class="score-fill"
-                    :style="{ width: `${item.score * 100}%` }"
-                  ></div>
-                </div>
-              </div>
-              <span class="score-text">
-                {{ t("score").replace("{score}", (item.score * 100).toFixed(0) + "%") }}
-              </span>
-            </div>
-          </div>
-        </li>
-      </ol>
-    </div>
+      <!-- Completed items -->
+      <div
+        v-if="currentTab === 'Summary' || currentTab === 'Completed'"
+        class="tabComponent"
+      >
+        <MaxDiffItemListSection
+          :conversation-slug-id="conversationSlugId"
+          lifecycle="completed"
+          :compact-mode="currentTab === 'Summary'"
+          :t="t"
+          :on-click-item="openStatementDialog"
+          :on-switch-tab="() => switchToTab('Completed')"
+          :on-learn-more="() => openLifecycleLearnMore('completed')"
+        />
+      </div>
+
+      <!-- Canceled items -->
+      <div
+        v-if="currentTab === 'Summary' || currentTab === 'Canceled'"
+        class="tabComponent"
+      >
+        <MaxDiffItemListSection
+          :conversation-slug-id="conversationSlugId"
+          lifecycle="canceled"
+          :compact-mode="currentTab === 'Summary'"
+          :t="t"
+          :on-click-item="openStatementDialog"
+          :on-switch-tab="() => switchToTab('Canceled')"
+          :on-learn-more="() => openLifecycleLearnMore('canceled')"
+        />
+      </div>
+    </template>
+
+    <!-- Learn more dialog -->
+    <q-dialog v-model="showInfoDialog" position="bottom">
+      <q-card class="learn-more-dialog">
+        <q-card-section>
+          <div class="dialog-title">Best-Worst Scaling (MaxDiff)</div>
+        </q-card-section>
+        <q-card-section class="dialog-content">
+          <p>{{ t("learnMoreMethod") }}</p>
+          <p>{{ t("learnMoreHow") }}</p>
+          <p>{{ t("learnMoreWhy") }}</p>
+          <p class="learn-more-reference">
+            {{ t("learnMoreReference") }}
+            <a
+              href="https://en.wikipedia.org/wiki/Best%E2%80%93worst_scaling"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="learn-more-link"
+            >Best-Worst Scaling (Wikipedia)</a>
+          </p>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <!-- Lifecycle learn-more dialog -->
+    <q-dialog v-model="showLifecycleInfoDialog" position="bottom">
+      <q-card class="learn-more-dialog">
+        <q-card-section class="dialog-content">
+          <p>{{ lifecycleInfoContent }}</p>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
 
     <MaxDiffStatementDialog
       v-model="showStatementDialog"
+      :title="expandedTitle"
       :html-body="expandedContent"
+      :external-url="expandedExternalUrl"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
+import ShortcutBar from "src/components/post/analysis/shortcutBar/ShortcutBar.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useTabNavigation } from "src/composables/ui/useTabNavigation";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
+import type { MaxDiffShortcutItem } from "src/utils/component/analysis/maxdiffShortcutBar";
+import { maxdiffShortcutItemSchema } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { onMounted, ref } from "vue";
 
+import MaxDiffItemListSection from "./MaxDiffItemListSection.vue";
+import MaxDiffResultsSection from "./MaxDiffResultsSection.vue";
 import {
   type MaxDiffResultsTabTranslations,
   maxDiffResultsTabTranslations,
@@ -106,68 +151,166 @@ const props = defineProps<{
 }>();
 
 const { t } = useComponentI18n<MaxDiffResultsTabTranslations>(
-  maxDiffResultsTabTranslations
+  maxDiffResultsTabTranslations,
 );
 
 const { getMaxDiffResults } = useMaxDiffApi();
 
+const { currentTab, handleSameTabClick } = useTabNavigation({
+  schema: maxdiffShortcutItemSchema,
+  defaultTab: "Summary",
+});
+
+const maxdiffTabItems: MaxDiffShortcutItem[] = [
+  "Summary",
+  "Results",
+  "Active",
+  "Completed",
+  "Canceled",
+];
+
+const tabLabelMap: Record<string, string> = {
+  Summary: t("tabSummary"),
+  Results: t("tabResults"),
+  Active: t("tabActive"),
+  Completed: t("tabCompleted"),
+  Canceled: t("tabCanceled"),
+};
+
+function getTabLabel(item: string): string {
+  return tabLabelMap[item] ?? item;
+}
+
+function onTabChange(value: string): void {
+  const parsed = maxdiffShortcutItemSchema.safeParse(value);
+  if (parsed.success) {
+    currentTab.value = parsed.data;
+  }
+}
+
+function switchToTab(tab: MaxDiffShortcutItem): void {
+  currentTab.value = tab;
+}
+
 interface RankingItem {
-  opinionSlugId: string;
-  opinionContent: string;
+  itemSlugId: string;
+  title: string;
+  body: string | null;
   avgRank: number;
   score: number;
   participantCount: number;
+  lifecycleStatus: string;
+  externalUrl: string | null;
 }
+
+const isGitHubLinked =
+  props.conversationData.metadata.externalSourceConfig !== null;
 
 const isLoading = ref(true);
 const hasError = ref(false);
 const rankings = ref<RankingItem[]>([]);
 const showInfoDialog = ref(false);
+const showLifecycleInfoDialog = ref(false);
+const lifecycleInfoContent = ref("");
 const showStatementDialog = ref(false);
+const expandedTitle = ref("");
 const expandedContent = ref("");
+const expandedExternalUrl = ref<string | null>(null);
 
-function openStatementDialog(htmlBody: string): void {
-  expandedContent.value = htmlBody;
+function openStatementDialog({
+  title,
+  body,
+  externalUrl,
+}: {
+  title: string;
+  body: string | null;
+  externalUrl: string | null;
+}): void {
+  expandedTitle.value = title;
+  expandedContent.value = body ?? "";
+  expandedExternalUrl.value = externalUrl;
   showStatementDialog.value = true;
 }
 
-onMounted(async () => {
-  await fetchResults();
-});
+function openLifecycleLearnMore(
+  lifecycle: "active" | "completed" | "canceled",
+): void {
+  const keyMap: Record<
+    "active" | "completed" | "canceled",
+    {
+      manual: keyof MaxDiffResultsTabTranslations;
+      github: keyof MaxDiffResultsTabTranslations;
+    }
+  > = {
+    active: {
+      manual: "activeLearnMoreManual",
+      github: "activeLearnMoreGitHub",
+    },
+    completed: {
+      manual: "completedLearnMoreManual",
+      github: "completedLearnMoreGitHub",
+    },
+    canceled: {
+      manual: "canceledLearnMoreManual",
+      github: "canceledLearnMoreGitHub",
+    },
+  };
 
-async function fetchResults(): Promise<void> {
+  const keys = keyMap[lifecycle];
+  lifecycleInfoContent.value = t(
+    isGitHubLinked ? keys.github : keys.manual,
+  );
+  showLifecycleInfoDialog.value = true;
+}
+
+const conversationSlugId =
+  props.conversationData.metadata.conversationSlugId;
+
+onMounted(async () => {
   isLoading.value = true;
   hasError.value = false;
 
-  const response = await getMaxDiffResults({
-    conversationSlugId: props.conversationData.metadata.conversationSlugId,
-  });
+  const response = await getMaxDiffResults({ conversationSlugId });
 
   if (response.status === "success") {
     rankings.value = response.data.rankings.map((r) => ({
-      opinionSlugId: r.opinionSlugId,
-      opinionContent: r.opinionContent,
+      itemSlugId: r.itemSlugId,
+      title: r.title,
+      body: r.body,
       avgRank: r.avgRank,
       score: r.score,
       participantCount: r.participantCount,
+      lifecycleStatus: r.lifecycleStatus,
+      externalUrl: r.externalUrl,
     }));
   } else {
     hasError.value = true;
   }
 
   isLoading.value = false;
-}
+});
 </script>
 
 <style scoped lang="scss">
-.maxdiff-results-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+.container {
   background-color: white;
   padding: 1rem;
   border-radius: 25px;
-  border: 1px solid #e9e9f1;
+  border-color: #e9e9f1;
+  border-width: 1px;
+  margin-bottom: 10rem;
+  color: #333238;
+}
+
+.flexStyle {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.tabComponent {
+  border-radius: 12px;
+  padding: 0.5rem;
 }
 
 .info-message {
@@ -175,121 +318,6 @@ async function fetchResults(): Promise<void> {
   color: $color-text-weak;
   padding: 2rem 1rem;
   font-size: 0.95rem;
-}
-
-.results-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.section-header {
-  font-size: 1.1rem;
-  font-weight: var(--font-weight-semibold);
-  color: $color-text-strong;
-}
-
-.results-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.result-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: $app-background-color;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
-}
-
-.rank-number {
-  font-weight: var(--font-weight-semibold);
-  color: $primary;
-  min-width: 1.5rem;
-  text-align: center;
-  padding-top: 2px;
-}
-
-.result-details {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.result-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.score-bar-container {
-  flex: 1;
-  max-width: 120px;
-}
-
-.score-bar {
-  height: 4px;
-  background: $color-border-weak;
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.score-fill {
-  height: 100%;
-  background: $primary;
-  border-radius: 2px;
-  transition: width 0.3s ease;
-}
-
-.score-text {
-  font-size: 0.75rem;
-  color: $color-text-weak;
-  white-space: nowrap;
-}
-
-.method-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.method-subtitle {
-  font-size: 0.85rem;
-  color: $color-text-weak;
-}
-
-.learn-more-button {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-  font-weight: var(--font-weight-medium);
-  color: $color-text-weak;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-  white-space: nowrap;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  font-family: inherit;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
 }
 
 .learn-more-dialog {

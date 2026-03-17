@@ -5,8 +5,8 @@
       <q-spinner size="2rem" />
     </div>
 
-    <!-- Query error -->
-    <div v-else-if="commentsQuery.isError.value" class="info-message">
+    <!-- Fetch error -->
+    <div v-else-if="itemsFetchError" class="info-message">
       {{ t("loadingError") }}
     </div>
 
@@ -19,12 +19,12 @@
           v-for="(slugId, index) in finalRanking"
           :key="slugId"
           class="ranking-item"
-          @click="openStatementDialog(opinionContentMap.get(slugId) ?? slugId)"
+          @click="openStatementDialog(slugId)"
         >
           <span class="rank-number">{{ index + 1 }}</span>
           <ZKHtmlContent
             class="rank-content"
-            :html-body="opinionContentMap.get(slugId) ?? slugId"
+            :html-body="itemContentMap.get(slugId) ?? slugId"
             :compact-mode="true"
             :enable-links="false"
           />
@@ -41,9 +41,9 @@
     </div>
 
     <!-- Not enough statements -->
-    <div v-else-if="opinionList.length < 4" class="info-message">
+    <div v-else-if="itemList.length < 2" class="info-message">
       {{
-        opinionList.length === 0
+        itemList.length === 0
           ? t("noStatements")
           : t("needMoreStatements")
       }}
@@ -112,11 +112,10 @@
           @click="handleCandidateClick(slugId)"
         >
           <div :ref="(el) => setContentRef(slugId, el)" class="candidate-content-wrapper">
-            <ZKHtmlContent
-              :html-body="opinionContentMap.get(slugId) ?? slugId"
-              :compact-mode="false"
-              :enable-links="false"
-            />
+            <span>{{ itemContentMap.get(slugId) ?? slugId }}</span>
+            <span v-if="itemBySlugId.get(slugId)?.body" class="candidate-body-inline">
+              — {{ stripHtml(itemBySlugId.get(slugId)?.body ?? "") }}
+            </span>
           </div>
           <div class="candidate-label">
             <span v-if="selectedBest === slugId" class="label-best">
@@ -137,7 +136,9 @@
 
     <MaxDiffStatementDialog
       v-model="showStatementDialog"
+      :title="dialogTitle"
       :html-body="expandedContent"
+      :external-url="dialogExternalUrl"
       :vote-label="dialogVoteLabel"
       :vote-color="dialogVoteColor"
       :vote-flat="dialogVoteFlat"
@@ -164,7 +165,6 @@ import { useMaxDiffHistoryUndo } from "src/composables/maxdiff/useMaxDiffHistory
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ExtendedConversation, MaxDiffComparison } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useCommentsQuery } from "src/utils/api/comment/useCommentQueries";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import {
   createMaxDiff,
@@ -193,7 +193,7 @@ const { t } = useComponentI18n<MaxDiffVotingTabTranslations>(
 
 const { isLoggedIn, hasStrongVerification, hasEmailVerification } =
   storeToRefs(useAuthenticationStore());
-const { saveMaxDiffResult, loadMaxDiffResult } = useMaxDiffApi();
+const { saveMaxDiffResult, loadMaxDiffResult, fetchMaxDiffItems } = useMaxDiffApi();
 const $q = useQuasar();
 const { showNotifyMessage } = useNotify();
 
@@ -216,24 +216,46 @@ const conversationSlugId = computed(
   () => props.conversationData.metadata.conversationSlugId
 );
 
-// Fetch opinions for this conversation
-const commentsQuery = useCommentsQuery({
-  conversationSlugId,
-  filter: "discover",
-  voteCount: computed(() => props.conversationData.metadata.voteCount),
-  enabled: computed(() => props.hasConversationData),
-});
+// Fetch active MaxDiff items for this conversation
+interface MaxDiffItemDisplay {
+  slugId: string;
+  title: string;
+  body: string | null;
+  externalUrl: string | null;
+}
 
-const opinionList = computed(() => commentsQuery.data.value ?? []);
+const itemList = ref<MaxDiffItemDisplay[]>([]);
+const itemsFetched = ref(false);
+const itemsFetchError = ref(false);
 
-// Map from slugId to opinion HTML content for display
-const opinionContentMap = computed(() => {
+const itemContentMap = computed(() => {
   const map = new Map<string, string>();
-  for (const opinion of opinionList.value) {
-    map.set(opinion.opinionSlugId, opinion.opinion);
+  for (const item of itemList.value) {
+    map.set(item.slugId, item.title);
   }
   return map;
 });
+
+const itemBySlugId = computed(() => {
+  const map = new Map<string, MaxDiffItemDisplay>();
+  for (const item of itemList.value) {
+    map.set(item.slugId, item);
+  }
+  return map;
+});
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, "").trim();
+}
+
+function needsDialog(slugId: string): boolean {
+  if (truncatedCards.value.has(slugId)) return true;
+  const item = itemBySlugId.value.get(slugId);
+  if (item === undefined) return false;
+  if (item.body !== null) return true;
+  if (item.externalUrl !== null) return true;
+  return false;
+}
 
 // MaxDiff engine state
 const instance = ref<MaxDiffInstance | null>(null);
@@ -253,8 +275,11 @@ const dialogVoteColor = ref<string | undefined>(undefined);
 const dialogVoteFlat = ref(false);
 const dialogVoteCallback = ref<(() => void) | undefined>(undefined);
 
-function openStatementDialog(htmlBody: string): void {
-  expandedContent.value = htmlBody;
+function openStatementDialog(slugId: string): void {
+  const item = itemBySlugId.value.get(slugId);
+  dialogTitle.value = item?.title ?? slugId;
+  expandedContent.value = item?.body ?? "";
+  dialogExternalUrl.value = item?.externalUrl ?? null;
   dialogVoteLabel.value = undefined;
   dialogVoteColor.value = undefined;
   dialogVoteFlat.value = false;
@@ -262,8 +287,14 @@ function openStatementDialog(htmlBody: string): void {
   showStatementDialog.value = true;
 }
 
+const dialogTitle = ref("");
+const dialogExternalUrl = ref<string | null>(null);
+
 function openVotingDialog(slugId: string): void {
-  expandedContent.value = opinionContentMap.value.get(slugId) ?? slugId;
+  const item = itemBySlugId.value.get(slugId);
+  dialogTitle.value = item?.title ?? slugId;
+  expandedContent.value = item?.body ?? "";
+  dialogExternalUrl.value = item?.externalUrl ?? null;
 
   if (selectedBest.value === slugId) {
     // Card is already selected as best — clicking deselects it
@@ -332,17 +363,35 @@ const { pushUndoEntry, consumeUndoEntry, clearAllUndoEntries } =
     canUndo: () => canUndo.value,
   });
 
-// Initialize or restore MaxDiff instance when opinions are loaded
+// Fetch items and initialize MaxDiff when conversation data is ready
 watch(
-  [() => commentsQuery.isSuccess.value, () => opinionList.value.length],
-  async ([isSuccess, count]) => {
-    if (isSuccess && count >= 4 && !instance.value) {
-      await initializeMaxDiff();
-    } else if (isSuccess) {
-      isLoading.value = false;
+  () => props.hasConversationData,
+  async (hasData) => {
+    if (hasData && !itemsFetched.value) {
+      const response = await fetchMaxDiffItems({
+        conversationSlugId: conversationSlugId.value,
+        lifecycleFilter: "active",
+      });
+      if (response.status === "success") {
+        itemList.value = response.data.items.map((item) => ({
+          slugId: item.slugId,
+          title: item.title,
+          body: item.body ?? null,
+          externalUrl: item.externalUrl ?? null,
+        }));
+        itemsFetched.value = true;
+        if (itemList.value.length >= 2 && !instance.value) {
+          await initializeMaxDiff();
+        } else {
+          isLoading.value = false;
+        }
+      } else {
+        itemsFetchError.value = true;
+        isLoading.value = false;
+      }
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Detect truncated candidate cards after DOM updates
@@ -353,7 +402,7 @@ watch(candidates, () => {
 async function initializeMaxDiff(): Promise<void> {
   isLoading.value = true;
 
-  const slugIds = opinionList.value.map((op) => op.opinionSlugId);
+  const slugIds = itemList.value.map((item) => item.slugId);
 
   // Try to load saved state from backend
   const loadResponse = await loadMaxDiffResult({
@@ -410,8 +459,7 @@ function handleCandidateClick(slugId: string): void {
     return;
   }
 
-  // Truncated cards open the dialog with vote capability
-  if (truncatedCards.value.has(slugId)) {
+  if (needsDialog(slugId)) {
     openVotingDialog(slugId);
     return;
   }
@@ -551,7 +599,7 @@ function handleRedoRanking(): void {
     persistent: true,
   }).onOk(() => {
     clearAllUndoEntries();
-    const slugIds = opinionList.value.map((op) => op.opinionSlugId);
+    const slugIds = itemList.value.map((item) => item.slugId);
     instance.value = createMaxDiff(slugIds);
     isComplete.value = false;
     finalRanking.value = [];
@@ -740,9 +788,14 @@ function handleRedoRanking(): void {
   min-width: 0;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
+}
+
+.candidate-body-inline {
+  font-size: 0.85em;
+  color: $color-text-weak;
 }
 
 .candidate-label {

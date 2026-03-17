@@ -171,7 +171,42 @@ const configSchema = sharedConfigSchema.extend({
                 return z.NEVER;
             }
         }),
-    MAXDIFF_ALLOWED_ORGS: z.string().default("Agora"), // Comma-separated org names allowed to create MaxDiff conversations (empty = all orgs allowed)
+    MAXDIFF_ALLOWED_ORGS: z.string().default(""), // Comma-separated org names allowed to create MaxDiff conversations (empty = all orgs allowed)
+    MAXDIFF_GITHUB_ENABLED: z
+        .string()
+        .default("false")
+        .transform((value, ctx) => {
+            if (value.toLowerCase().trim() === "true") {
+                return true;
+            } else if (value.toLowerCase().trim() === "false") {
+                return false;
+            } else {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Value must be true or false",
+                });
+                return z.NEVER;
+            }
+        }),
+    IS_MAXDIFF_GITHUB_ORG_ONLY: z
+        .string()
+        .default("true")
+        .transform((value, ctx) => {
+            if (value.toLowerCase().trim() === "true") {
+                return true;
+            } else if (value.toLowerCase().trim() === "false") {
+                return false;
+            } else {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Value must be true or false",
+                });
+                return z.NEVER;
+            }
+        }),
+    MAXDIFF_GITHUB_ALLOWED_ORGS: z.string().default(""), // Comma-separated org names allowed to use GitHub connector (must be subset of MAXDIFF_ALLOWED_ORGS)
+    GITHUB_WEBHOOK_SECRET: z.string().optional(), // HMAC secret for verifying GitHub webhook payloads
+    GITHUB_ACCESS_TOKEN: z.string().optional(), // GitHub personal access token for API calls (sync endpoint)
     IS_ORG_IMPORT_ONLY: z
         .string()
         .default("false")

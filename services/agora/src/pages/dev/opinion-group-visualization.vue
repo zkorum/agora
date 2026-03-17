@@ -104,7 +104,12 @@
         <template #content>
           <div class="analysis-container">
             <div class="analysis-header">
-              <ShortcutBar v-model="currentTab" />
+              <ShortcutBar
+                :model-value="currentTab"
+                :items="polisTabItems"
+                :get-label="getPolisTabLabel"
+                @update:model-value="onTabChange"
+              />
             </div>
 
             <!-- Opinion groups -->
@@ -181,6 +186,10 @@ import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ConsensusTab from "src/components/post/analysis/consensusTab/ConsensusTab.vue";
 import DivisiveTab from "src/components/post/analysis/divisivenessTab/DivisiveTab.vue";
 import OpinionGroupTab from "src/components/post/analysis/opinionGroupTab/OpinionGroupTab.vue";
+import {
+  type ShortcutBarTranslations,
+  shortcutBarTranslations,
+} from "src/components/post/analysis/shortcutBar/ShortcutBar.i18n";
 import ShortcutBar from "src/components/post/analysis/shortcutBar/ShortcutBar.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
@@ -191,6 +200,7 @@ import type {
   PolisKey,
 } from "src/shared/types/zod";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
+import { shortcutItemSchema } from "src/utils/component/analysis/shortcutBar";
 import { computed, ref } from "vue";
 
 import {
@@ -209,8 +219,37 @@ const { t } = useComponentI18n<OpinionGroupVisualizationTranslations>(
   opinionGroupVisualizationTranslations
 );
 
+const { t: tShortcut } = useComponentI18n<ShortcutBarTranslations>(
+  shortcutBarTranslations,
+);
+
 const mockConversationSlugId = "dev-test";
 const currentTab = ref<ShortcutItem>("Summary");
+
+const polisTabItems: ShortcutItem[] = [
+  "Summary", "Me", "Groups", "Agreements", "Disagreements", "Divisive",
+];
+
+const polisTabLabelMap: Record<string, string> = {
+  Summary: tShortcut("summary"),
+  Me: tShortcut("me"),
+  Groups: tShortcut("groups"),
+  Agreements: tShortcut("agreements"),
+  Disagreements: tShortcut("disagreements"),
+  Divisive: tShortcut("divisive"),
+};
+
+function getPolisTabLabel(item: string): string {
+  return polisTabLabelMap[item] ?? item;
+}
+
+function onTabChange(value: string): void {
+  const parsed = shortcutItemSchema.safeParse(value);
+  if (parsed.success) {
+    currentTab.value = parsed.data;
+  }
+}
+
 const selectedClusterCount = ref(3);
 const useAiLabels = ref(true);
 const distributionMode = ref<"balanced" | "imbalanced">("balanced");

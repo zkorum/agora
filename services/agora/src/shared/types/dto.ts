@@ -46,6 +46,8 @@ import {
     zodParticipationMode,
     zodMaxdiffComparison,
     zodConversationType,
+    zodMaxdiffLifecycleStatus,
+    zodExternalSourceConfig,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
@@ -116,6 +118,7 @@ export class Dto {
             pollingOptionList: zodPollOptionTitle.array().optional(),
             seedOpinionList: z.array(zodOpinionContentInput),
             requiresEventTicket: zodEventSlug.optional(),
+            externalSourceConfig: zodExternalSourceConfig.nullable().optional(),
         })
         .strict();
     static createNewConversationResponse = z
@@ -942,17 +945,87 @@ export class Dto {
     static maxdiffResultsRequest = z
         .object({
             conversationSlugId: z.string(),
+            lifecycleFilter: zodMaxdiffLifecycleStatus
+                .or(z.literal("all"))
+                .optional()
+                .default("active"),
         })
         .strict();
     static maxdiffResultItem = z.object({
-        opinionSlugId: z.string(),
-        opinionContent: z.string(),
+        itemSlugId: z.string(),
+        title: z.string(),
+        body: z.string().nullable(),
         avgRank: z.number(),
         score: z.number(),
         participantCount: z.number(),
+        lifecycleStatus: zodMaxdiffLifecycleStatus,
+        externalUrl: z.string().nullable(),
     });
     static maxdiffResultsResponse = z.object({
         rankings: z.array(Dto.maxdiffResultItem),
+    });
+
+    // MaxDiff item CRUD
+    static maxdiffItemsFetchRequest = z
+        .object({
+            conversationSlugId: z.string(),
+            lifecycleFilter: zodMaxdiffLifecycleStatus
+                .or(z.literal("all"))
+                .optional()
+                .default("active"),
+        })
+        .strict();
+    static maxdiffItem = z.object({
+        slugId: z.string(),
+        title: z.string(),
+        body: z.string().nullable(),
+        lifecycleStatus: zodMaxdiffLifecycleStatus,
+        externalUrl: z.string().nullable(),
+        snapshotScore: z.number().nullable(),
+        snapshotRank: z.number().nullable(),
+        snapshotParticipantCount: z.number().nullable(),
+        createdAt: z.string(),
+    });
+    static maxdiffItemsFetchResponse = z.object({
+        items: z.array(Dto.maxdiffItem),
+    });
+
+    // MaxDiff item lifecycle update
+    static maxdiffItemLifecycleUpdateRequest = z
+        .object({
+            conversationSlugId: z.string(),
+            itemSlugId: z.string(),
+            newStatus: zodMaxdiffLifecycleStatus,
+        })
+        .strict();
+
+    // MaxDiff external source sync
+    static maxdiffSyncRequest = z
+        .object({
+            conversationSlugId: z.string(),
+        })
+        .strict();
+    static maxdiffSyncResponse = z.object({
+        created: z.number(),
+        updated: z.number(),
+    });
+
+    // MaxDiff GitHub preview (before conversation creation)
+    static maxdiffGitHubPreviewRequest = z
+        .object({
+            repository: z.string(), // "owner/repo"
+            label: z.string(),
+        })
+        .strict();
+    static maxdiffGitHubPreviewItem = z.object({
+        number: z.number(),
+        title: z.string(),
+        body: z.string().nullable(),
+        state: z.enum(["open", "closed"]),
+        htmlUrl: z.string(),
+    });
+    static maxdiffGitHubPreviewResponse = z.object({
+        issues: z.array(Dto.maxdiffGitHubPreviewItem),
     });
 }
 
@@ -1109,6 +1182,11 @@ export type MaxDiffResultItem = z.infer<typeof Dto.maxdiffResultItem>;
 export type MaxDiffResultsResponse = z.infer<
     typeof Dto.maxdiffResultsResponse
 >;
+export type MaxDiffItem = z.infer<typeof Dto.maxdiffItem>;
+export type MaxDiffItemsFetchResponse = z.infer<
+    typeof Dto.maxdiffItemsFetchResponse
+>;
+export type MaxDiffSyncResponse = z.infer<typeof Dto.maxdiffSyncResponse>;
 
 // Export SSE types
 export * from "./sse.js";

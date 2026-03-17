@@ -22,6 +22,7 @@ import type {
   ConversationType,
   EventSlug,
   ExtendedConversation,
+  ExternalSourceConfig,
   FeedSortAlgorithm,
   ParticipationMode,
 } from "src/shared/types/zod";
@@ -162,7 +163,6 @@ export function useBackendPostApi() {
       }
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to fetch recent posts from the server.");
       return createAxiosErrorResponse(e);
     }
   }
@@ -178,6 +178,7 @@ export function useBackendPostApi() {
     conversationType: ConversationType;
     seedOpinionList: string[];
     requiresEventTicket?: EventSlug;
+    externalSourceConfig?: ExternalSourceConfig | null;
   }
 
   type CreateNewPostSuccessResponse =
@@ -312,6 +313,7 @@ export function useBackendPostApi() {
     conversationType,
     seedOpinionList,
     requiresEventTicket,
+    externalSourceConfig,
   }: CreateNewPostProps): Promise<CreateNewPostResponse> {
     try {
       const params: ApiV1ConversationCreatePostRequest = {
@@ -325,6 +327,7 @@ export function useBackendPostApi() {
         indexConversationAt: targetIsoConvertDateString,
         seedOpinionList: seedOpinionList,
         requiresEventTicket,
+        externalSourceConfig: externalSourceConfig ?? undefined,
       };
 
       const { url, options } =

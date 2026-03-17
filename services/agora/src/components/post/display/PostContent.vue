@@ -23,6 +23,7 @@
           :title="extendedPostData.payload.title"
           size="medium"
           :conversation-type="extendedPostData.metadata.conversationType"
+          :external-source-config="extendedPostData.metadata.externalSourceConfig"
         />
 
         <EventTicketRequirementBanner

@@ -2,7 +2,13 @@
   <AsyncStateHandler :query="analysisQuery" :config="asyncStateConfig">
     <div class="container flexStyle">
       <div class="analysis-header">
-        <ShortcutBar v-model="currentTab" @same-tab-click="handleSameSubtabClick" />
+        <ShortcutBar
+          :model-value="currentTab"
+          :items="polisTabItems"
+          :get-label="getPolisTabLabel"
+          :on-same-tab-click="handleSameTabClick"
+          @update:model-value="onTabChange"
+        />
         <router-link
           v-if="showReportButton"
           :to="{
@@ -99,14 +105,14 @@
 import type { UseQueryReturnType } from "@tanstack/vue-query";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useTabNavigation } from "src/composables/ui/useTabNavigation";
 import type {
   AnalysisOpinionItem,
   PolisClusters,
   PolisKey,
 } from "src/shared/types/zod";
-import { type ShortcutItem,shortcutItemSchema } from "src/utils/component/analysis/shortcutBar";
-import { computed, inject, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { type ShortcutItem, shortcutItemSchema } from "src/utils/component/analysis/shortcutBar";
+import { computed } from "vue";
 
 import {
   type AnalysisPageTranslations,
@@ -116,6 +122,10 @@ import ConsensusTab from "./consensusTab/ConsensusTab.vue";
 import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
 import MeTab from "./meTab/MeTab.vue";
 import OpinionGroupTab from "./opinionGroupTab/OpinionGroupTab.vue";
+import {
+  type ShortcutBarTranslations,
+  shortcutBarTranslations,
+} from "./shortcutBar/ShortcutBar.i18n";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 
 const props = withDefaults(
@@ -141,38 +151,42 @@ type AnalysisData = {
 const { t } = useComponentI18n<AnalysisPageTranslations>(
   analysisPageTranslations
 );
+const { t: tShortcut } = useComponentI18n<ShortcutBarTranslations>(
+  shortcutBarTranslations
+);
 
-const route = useRoute();
-const router = useRouter();
-
-const scrollToActionBar = inject<
-  (options?: { behavior?: ScrollBehavior }) => void
->("scrollToActionBar", () => {
-  /* noop */
+const { currentTab, handleSameTabClick } = useTabNavigation({
+  schema: shortcutItemSchema,
+  defaultTab: "Summary",
 });
 
-// Read initial subtab from query param (e.g. ?tab=Me)
-const initialTab = shortcutItemSchema.safeParse(route.query.tab);
-const currentTab = ref<ShortcutItem>(initialTab.success ? initialTab.data : "Summary");
+const polisTabItems: ShortcutItem[] = [
+  "Summary",
+  "Me",
+  "Groups",
+  "Agreements",
+  "Disagreements",
+  "Divisive",
+];
 
-// Sync subtab changes back to URL for shareable deep links
-watch(currentTab, (newTab, oldTab) => {
-  const currentQuery = { ...route.query };
-  if (newTab === "Summary") {
-    delete currentQuery.tab;
-  } else {
-    currentQuery.tab = newTab;
+const polisTabLabelMap: Record<string, string> = {
+  Summary: tShortcut("summary"),
+  Me: tShortcut("me"),
+  Groups: tShortcut("groups"),
+  Agreements: tShortcut("agreements"),
+  Disagreements: tShortcut("disagreements"),
+  Divisive: tShortcut("divisive"),
+};
+
+function getPolisTabLabel(item: string): string {
+  return polisTabLabelMap[item] ?? item;
+}
+
+function onTabChange(value: string): void {
+  const parsed = shortcutItemSchema.safeParse(value);
+  if (parsed.success) {
+    currentTab.value = parsed.data;
   }
-  void router.replace({ query: currentQuery });
-
-  // Scroll to action bar when user switches subtabs (skip initial render)
-  if (oldTab !== undefined) {
-    scrollToActionBar({ behavior: "smooth" });
-  }
-});
-
-function handleSameSubtabClick(): void {
-  scrollToActionBar({ behavior: "smooth" });
 }
 
 // Use the passed-in analysis query instead of creating our own

@@ -51,6 +51,9 @@ export const envSchema = z.object({
   VITE_MAXDIFF_ENABLED: z.enum(["true", "false"]).optional(), // Enable/disable MaxDiff conversation type (must match backend)
   VITE_IS_MAXDIFF_ORG_ONLY: z.enum(["true", "false"]).optional(), // If "true", MaxDiff is restricted to organization conversations (must match backend)
   VITE_MAXDIFF_ALLOWED_ORGS: z.string().optional(), // Comma-separated org names allowed to create MaxDiff conversations (empty = all orgs allowed)
+  VITE_MAXDIFF_GITHUB_ENABLED: z.enum(["true", "false"]).optional(), // Enable/disable GitHub connector for MaxDiff (must match backend)
+  VITE_IS_MAXDIFF_GITHUB_ORG_ONLY: z.enum(["true", "false"]).optional(), // If "true", GitHub connector restricted to specific orgs (must match backend)
+  VITE_MAXDIFF_GITHUB_ALLOWED_ORGS: z.string().optional(), // Comma-separated org names allowed to use GitHub connector (subset of MAXDIFF_ALLOWED_ORGS)
 });
 
 export type ProcessEnv = z.infer<typeof envSchema>;

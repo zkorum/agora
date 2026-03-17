@@ -3,6 +3,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 export interface MaxDiffResultsTabTranslations {
   title: string;
   noResults: string;
+  noItems: string;
   participants: string;
   subtitle: string;
   score: string;
@@ -12,6 +13,17 @@ export interface MaxDiffResultsTabTranslations {
   learnMoreHow: string;
   learnMoreWhy: string;
   learnMoreReference: string;
+  tabSummary: string;
+  tabResults: string;
+  tabActive: string;
+  tabCompleted: string;
+  tabCanceled: string;
+  activeLearnMoreManual: string;
+  activeLearnMoreGitHub: string;
+  completedLearnMoreManual: string;
+  completedLearnMoreGitHub: string;
+  canceledLearnMoreManual: string;
+  canceledLearnMoreGitHub: string;
 }
 
 export const maxDiffResultsTabTranslations: Record<
@@ -21,6 +33,7 @@ export const maxDiffResultsTabTranslations: Record<
   en: {
     title: "Community Ranking",
     noResults: "No ranking data yet. Be the first to participate!",
+    noItems: "No items in this category.",
     participants: "{count} participant(s)",
     subtitle: "Ranked through pairwise comparisons for more reliable results",
     score: "Score: {score}",
@@ -30,6 +43,17 @@ export const maxDiffResultsTabTranslations: Record<
     learnMoreHow: "Each participant compares statements in small groups, selecting the most and least important in each set. The ranking is computed by aggregating all participants' comparisons.",
     learnMoreWhy: "This approach produces more reliable results than simple rating scales because it forces meaningful trade-offs between options.",
     learnMoreReference: "Learn more:",
+    tabSummary: "Summary",
+    tabResults: "Results",
+    tabActive: "Active",
+    tabCompleted: "Completed",
+    tabCanceled: "Canceled",
+    activeLearnMoreManual: "Items currently in the voting pool. Participants compare these in small groups to build the community ranking.",
+    activeLearnMoreGitHub: "Open GitHub issues with the configured label. New issues are automatically added to the voting pool when labeled.",
+    completedLearnMoreManual: "Items marked as completed by the conversation author. Their ranking score was frozen at the time of completion.",
+    completedLearnMoreGitHub: "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
+    canceledLearnMoreManual: "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
+    canceledLearnMoreGitHub: "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
   },
   ar: {
     title: "تصنيف المجتمع",
@@ -43,6 +67,18 @@ export const maxDiffResultsTabTranslations: Record<
     learnMoreHow: "يقارن كل مشارك العبارات في مجموعات صغيرة، ويختار الأكثر والأقل أهمية في كل مجموعة. يتم حساب الترتيب من خلال تجميع مقارنات جميع المشاركين.",
     learnMoreWhy: "هذا النهج ينتج نتائج أكثر موثوقية من مقاييس التقييم البسيطة لأنه يفرض المفاضلة بين الخيارات.",
     learnMoreReference: "اعرف المزيد:",
+    tabSummary: "ملخص",
+    tabResults: "النتائج",
+    tabActive: "نشط",
+    tabCompleted: "مكتمل",
+    tabCanceled: "ملغي",
+    noItems: "لا توجد عناصر في هذه الفئة.",
+    activeLearnMoreManual: "Items currently in the voting pool. Participants compare these in small groups to build the community ranking.",
+    activeLearnMoreGitHub: "Open GitHub issues with the configured label. New issues are automatically added to the voting pool when labeled.",
+    completedLearnMoreManual: "Items marked as completed by the conversation author. Their ranking score was frozen at the time of completion.",
+    completedLearnMoreGitHub: "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
+    canceledLearnMoreManual: "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
+    canceledLearnMoreGitHub: "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
   },
   es: {
     title: "Clasificación de la comunidad",
@@ -56,6 +92,18 @@ export const maxDiffResultsTabTranslations: Record<
     learnMoreHow: "Cada participante compara declaraciones en pequeños grupos, seleccionando la más y menos importante de cada conjunto. La clasificación se calcula agregando las comparaciones de todos los participantes.",
     learnMoreWhy: "Este enfoque produce resultados más fiables que las escalas de valoración simples porque obliga a elegir entre opciones.",
     learnMoreReference: "Más información:",
+    tabSummary: "Resumen",
+    tabResults: "Resultados",
+    tabActive: "Activo",
+    tabCompleted: "Completado",
+    tabCanceled: "Cancelado",
+    noItems: "No hay elementos en esta categoría.",
+    activeLearnMoreManual: "Items currently in the voting pool. Participants compare these in small groups to build the community ranking.",
+    activeLearnMoreGitHub: "Open GitHub issues with the configured label. New issues are automatically added to the voting pool when labeled.",
+    completedLearnMoreManual: "Items marked as completed by the conversation author. Their ranking score was frozen at the time of completion.",
+    completedLearnMoreGitHub: "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
+    canceledLearnMoreManual: "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
+    canceledLearnMoreGitHub: "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
   },
   fr: {
     title: "Classement de la communauté",
@@ -69,6 +117,18 @@ export const maxDiffResultsTabTranslations: Record<
     learnMoreHow: "Chaque participant compare des propositions par petits groupes, en sélectionnant la plus et la moins importante de chaque ensemble. Le classement est calculé en agrégeant les comparaisons de tous les participants.",
     learnMoreWhy: "Cette approche produit des résultats plus fiables que les échelles de notation simples car elle oblige à faire des compromis entre les options.",
     learnMoreReference: "En savoir plus :",
+    tabSummary: "Résumé",
+    tabResults: "Résultats",
+    tabActive: "Actif",
+    tabCompleted: "Terminé",
+    tabCanceled: "Annulé",
+    noItems: "Aucun élément dans cette catégorie.",
+    activeLearnMoreManual: "Items currently in the voting pool. Participants compare these in small groups to build the community ranking.",
+    activeLearnMoreGitHub: "Open GitHub issues with the configured label. New issues are automatically added to the voting pool when labeled.",
+    completedLearnMoreManual: "Items marked as completed by the conversation author. Their ranking score was frozen at the time of completion.",
+    completedLearnMoreGitHub: "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
+    canceledLearnMoreManual: "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
+    canceledLearnMoreGitHub: "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
   },
   "zh-Hans": {
     title: "社区排名",
@@ -82,6 +142,18 @@ export const maxDiffResultsTabTranslations: Record<
     learnMoreHow: "每位参与者在小组中比较陈述，选择每组中最重要和最不重要的。排名通过汇总所有参与者的比较来计算。",
     learnMoreWhy: "这种方法比简单评分量表产生更可靠的结果，因为它迫使参与者在选项之间做出取舍。",
     learnMoreReference: "了解更多：",
+    tabSummary: "摘要",
+    tabResults: "结果",
+    tabActive: "进行中",
+    tabCompleted: "已完成",
+    tabCanceled: "已取消",
+    noItems: "此分类中没有项目。",
+    activeLearnMoreManual: "Items currently in the voting pool. Participants compare these in small groups to build the community ranking.",
+    activeLearnMoreGitHub: "Open GitHub issues with the configured label. New issues are automatically added to the voting pool when labeled.",
+    completedLearnMoreManual: "Items marked as completed by the conversation author. Their ranking score was frozen at the time of completion.",
+    completedLearnMoreGitHub: "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
+    canceledLearnMoreManual: "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
+    canceledLearnMoreGitHub: "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
   },
   "zh-Hant": {
     title: "社區排名",
@@ -95,6 +167,18 @@ export const maxDiffResultsTabTranslations: Record<
     learnMoreHow: "每位參與者在小組中比較陳述，選擇每組中最重要和最不重要的。排名通過匯總所有參與者的比較來計算。",
     learnMoreWhy: "這種方法比簡單評分量表產生更可靠的結果，因為它迫使參與者在選項之間做出取捨。",
     learnMoreReference: "了解更多：",
+    tabSummary: "摘要",
+    tabResults: "結果",
+    tabActive: "進行中",
+    tabCompleted: "已完成",
+    tabCanceled: "已取消",
+    noItems: "此分類中沒有項目。",
+    activeLearnMoreManual: "Items currently in the voting pool. Participants compare these in small groups to build the community ranking.",
+    activeLearnMoreGitHub: "Open GitHub issues with the configured label. New issues are automatically added to the voting pool when labeled.",
+    completedLearnMoreManual: "Items marked as completed by the conversation author. Their ranking score was frozen at the time of completion.",
+    completedLearnMoreGitHub: "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
+    canceledLearnMoreManual: "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
+    canceledLearnMoreGitHub: "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
   },
   ja: {
     title: "コミュニティランキング",
@@ -108,6 +192,18 @@ export const maxDiffResultsTabTranslations: Record<
     learnMoreHow: "各参加者は小グループでステートメントを比較し、各セットで最も重要なものと最も重要でないものを選択します。ランキングはすべての参加者の比較を集計して算出されます。",
     learnMoreWhy: "この手法は、選択肢間のトレードオフを強制するため、単純な評価スケールよりも信頼性の高い結果を生み出します。",
     learnMoreReference: "詳しくはこちら：",
+    tabSummary: "概要",
+    tabResults: "結果",
+    tabActive: "進行中",
+    tabCompleted: "完了",
+    tabCanceled: "キャンセル",
+    noItems: "このカテゴリにはアイテムがありません。",
+    activeLearnMoreManual: "Items currently in the voting pool. Participants compare these in small groups to build the community ranking.",
+    activeLearnMoreGitHub: "Open GitHub issues with the configured label. New issues are automatically added to the voting pool when labeled.",
+    completedLearnMoreManual: "Items marked as completed by the conversation author. Their ranking score was frozen at the time of completion.",
+    completedLearnMoreGitHub: "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
+    canceledLearnMoreManual: "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
+    canceledLearnMoreGitHub: "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
   },
   ky: {
     title: "Коомдук рейтинг",
@@ -121,6 +217,18 @@ export const maxDiffResultsTabTranslations: Record<
     learnMoreHow: "Ар бир катышуучу билдирүүлөрдү кичинекей топторго бөлүп салыштырат, ар бир топтон эң маанилүүсүн жана эң аз маанилүүсүн тандайт. Рейтинг бардык катышуучулардын салыштырууларын бириктирип эсептелет.",
     learnMoreWhy: "Бул ыкма жөнөкөй баалоо шкалаларына караганда ишенимдүү натыйжаларды берет, анткени ал тандоолордун ортосунда маанилүү тандоолорду талап кылат.",
     learnMoreReference: "Көбүрөөк билүү:",
+    tabSummary: "Кыскача",
+    tabResults: "Натыйжалар",
+    tabActive: "Активдүү",
+    tabCompleted: "Аяктаган",
+    tabCanceled: "Жокко чыгарылган",
+    noItems: "Бул категорияда элементтер жок.",
+    activeLearnMoreManual: "Items currently in the voting pool. Participants compare these in small groups to build the community ranking.",
+    activeLearnMoreGitHub: "Open GitHub issues with the configured label. New issues are automatically added to the voting pool when labeled.",
+    completedLearnMoreManual: "Items marked as completed by the conversation author. Their ranking score was frozen at the time of completion.",
+    completedLearnMoreGitHub: "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
+    canceledLearnMoreManual: "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
+    canceledLearnMoreGitHub: "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
   },
   ru: {
     title: "Рейтинг сообщества",
@@ -134,5 +242,17 @@ export const maxDiffResultsTabTranslations: Record<
     learnMoreHow: "Каждый участник сравнивает утверждения в небольших группах, выбирая самое и наименее важное в каждом наборе. Рейтинг рассчитывается путём агрегирования сравнений всех участников.",
     learnMoreWhy: "Этот подход даёт более надёжные результаты, чем простые шкалы оценки, поскольку заставляет делать осмысленный выбор между вариантами.",
     learnMoreReference: "Подробнее:",
+    tabSummary: "Обзор",
+    tabResults: "Результаты",
+    tabActive: "Активные",
+    tabCompleted: "Завершённые",
+    tabCanceled: "Отменённые",
+    noItems: "В этой категории нет элементов.",
+    activeLearnMoreManual: "Items currently in the voting pool. Participants compare these in small groups to build the community ranking.",
+    activeLearnMoreGitHub: "Open GitHub issues with the configured label. New issues are automatically added to the voting pool when labeled.",
+    completedLearnMoreManual: "Items marked as completed by the conversation author. Their ranking score was frozen at the time of completion.",
+    completedLearnMoreGitHub: "GitHub issues closed as completed. Their ranking score was frozen when the issue was closed on GitHub.",
+    canceledLearnMoreManual: "Items that were canceled or removed. Their ranking score was frozen at the time of cancellation.",
+    canceledLearnMoreGitHub: "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
   },
 };
