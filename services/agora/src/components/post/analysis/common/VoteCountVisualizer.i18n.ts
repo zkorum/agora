@@ -62,7 +62,7 @@ export const voteCountVisualizerTranslations: Record<
     group4: "グループ 4",
   },
   fa: {
-    votes: "رأی",
+    votes: "رای",
     group1: "گروه ۱",
     group2: "گروه ۲",
     group3: "گروه ۳",

@@ -45,7 +45,7 @@ export const pollWrapperTranslations: Record<SupportedDisplayLanguageCodes, Poll
     },
   fa: {
       results: "نتایج",
-      vote: "رأی",
-      votes: "رأی",
+      vote: "رای",
+      votes: "رای",
     },
   };

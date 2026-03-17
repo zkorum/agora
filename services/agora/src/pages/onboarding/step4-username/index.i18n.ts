@@ -48,6 +48,6 @@ export const step4UsernameTranslations: Record<
   fa: {
     title: "نام کاربری خود را انتخاب کنید",
     howToAppear: "می‌خواهید در جمهور چگونه دیده شوید؟",
-    usernameInUse: "نام کاربری قبلاً استفاده شده است",
+    usernameInUse: "نام کاربری قبلن استفاده شده است",
   },
 };

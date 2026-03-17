@@ -159,8 +159,8 @@ export const notificationTranslations: Record<
     noNotifications: "اعلانی ندارید",
     contributedOpinion:
       "{username} نظری در گفتگوی شما ارسال کرد:",
-    onePersonVoted: "۱ نفر به نظر شما رأی داد:",
-    peopleVoted: "{count} نفر به نظر شما رأی دادند:",
+    onePersonVoted: "۱ نفر به نظر شما رای داد:",
+    peopleVoted: "{count} نفر به نظر شما رای دادند:",
     exportStarted: "خروجی گفتگوی شما شروع شد",
     exportCompleted: "خروجی گفتگوی شما آماده است",
     exportFailed: "خروجی گفتگوی شما ناموفق بود",

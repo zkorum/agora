@@ -75,6 +75,6 @@ export const commentSortingSelectorTranslations: Record<
     new: "جدید",
     moderationHistory: "تاریخچه مدیریت",
     hidden: "مخفی",
-    myVotes: "رأی‌های من",
+    myVotes: "رای‌های من",
   },
 };

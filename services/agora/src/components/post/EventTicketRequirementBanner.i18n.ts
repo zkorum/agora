@@ -137,7 +137,7 @@ export const eventTicketRequirementBannerTranslations: Record<
     errorInvalidProof: 'تأیید رمزنگاری ناموفق بود. لطفاً دوباره تلاش کنید.',
     errorInvalidSigner: 'بلیت توسط Zupass امضا نشده است.',
     errorWrongEvent: 'بلیت رویداد اشتباه است. بلیت {eventName} الزامی است.',
-    errorTicketAlreadyUsed: 'این بلیت قبلاً توسط حساب دیگری تأیید شده است.',
+    errorTicketAlreadyUsed: 'این بلیت قبلن توسط حساب دیگری تأیید شده است.',
     errorUnknown: 'خطای ناشناخته‌ای رخ داد. لطفاً دوباره تلاش کنید.',
   },
 };

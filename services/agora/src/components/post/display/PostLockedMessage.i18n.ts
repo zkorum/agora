@@ -56,7 +56,7 @@ export const postLockedMessageTranslations: Record<
   fa: {
     lockedMessage: 'پست به دلیل "{reason}" قفل شده است. نظرات جدید قابل ارسال نیست.',
     closedMessage:
-      "این گفتگو توسط مالک بسته شده است. نظرات و رأی‌های جدید قابل ارسال نیست.",
+      "این گفتگو توسط مالک بسته شده است. نظرات و رای‌های جدید قابل ارسال نیست.",
     editButton: "ویرایش",
   },
 };

@@ -246,7 +246,7 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
   fa: {
     title: "نکاتی برای نوشتن نظرات خوب",
     singleIdeaTitle: "یک ایده مشخص",
-    singleIdeaDescription: "روی یک نکته که دیگران بتوانند رأی دهند تمرکز کنید",
+    singleIdeaDescription: "روی یک نکته که دیگران بتوانند رای دهند تمرکز کنید",
     singleIdeaExampleGood:
       "Ride-sharing drivers should have the same insurance requirements as taxi drivers",
     singleIdeaExampleBad:
