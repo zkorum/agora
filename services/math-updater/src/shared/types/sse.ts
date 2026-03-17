@@ -10,6 +10,8 @@ import type { NotificationItem } from "./zod.js";
 export type SSEEventType =
     | "connected"
     | "notification"
+    | "new_conversation"
+    | "popular_conversation"
     | "heartbeat"
     | "shutdown";
 
@@ -44,6 +46,13 @@ export interface SSEHeartbeatData {
 }
 
 /**
+ * Data sent when engagement rankings change on the "Following" feed
+ */
+export interface SSEPopularConversationData {
+    topConversationSlugIdList: string[];
+}
+
+/**
  * Data sent when the server is shutting down
  */
 export interface SSEShutdownData {
@@ -54,6 +63,7 @@ export interface SSEShutdownData {
 
 export type SSEConnectedEvent = SSEEvent<SSEConnectedData>;
 export type SSENotificationEvent = SSEEvent<SSENotificationData>;
+export type SSEPopularConversationEvent = SSEEvent<SSEPopularConversationData>;
 export type SSEHeartbeatEvent = SSEEvent<SSEHeartbeatData>;
 export type SSEShutdownEvent = SSEEvent<SSEShutdownData>;
 
@@ -63,5 +73,6 @@ export type SSEShutdownEvent = SSEEvent<SSEShutdownData>;
 export type AnySSEEvent =
     | SSEConnectedEvent
     | SSENotificationEvent
+    | SSEPopularConversationEvent
     | SSEHeartbeatEvent
     | SSEShutdownEvent;

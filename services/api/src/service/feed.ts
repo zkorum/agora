@@ -6,6 +6,7 @@ import type {
 import { and, eq, SQL } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
+import { getConversationEngagementScore } from "./recommendationSystem.js";
 import type { FetchFeedResponse } from "@/shared/types/dto.js";
 
 interface GetPostSlugIdLastCreatedAtProps {
@@ -78,4 +79,37 @@ export async function fetchFeed({
         conversationDataList: Array.from(conversations.values()),
         topConversationSlugIdList: topSlugIdList,
     };
+}
+
+interface GetTopEngagementSlugIdsProps {
+    db: PostgresDatabase;
+}
+
+export async function getTopEngagementSlugIds({
+    db,
+}: GetTopEngagementSlugIdsProps): Promise<string[]> {
+    const conversations = await db
+        .select({
+            slugId: conversationTable.slugId,
+            createdAt: conversationTable.createdAt,
+            lastReactedAt: conversationTable.lastReactedAt,
+            opinionCount: conversationTable.opinionCount,
+            voteCount: conversationTable.voteCount,
+            participantCount: conversationTable.participantCount,
+        })
+        .from(conversationTable)
+        .where(
+            and(
+                eq(conversationTable.isIndexed, true),
+                eq(conversationTable.isImporting, false),
+            ),
+        );
+
+    conversations.sort((a, b) => {
+        const scoreA = getConversationEngagementScore(a);
+        const scoreB = getConversationEngagementScore(b);
+        return scoreB - scoreA;
+    });
+
+    return conversations.slice(0, 10).map((c) => c.slugId);
 }

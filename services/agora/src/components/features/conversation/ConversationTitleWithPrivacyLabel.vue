@@ -3,16 +3,21 @@
     <div
       v-if="isPrivate"
       class="privacy-label"
-      :class="`privacy-label--${size}`"
     >
       {{ t("privateLabel") }}
     </div>
     <div
       v-if="conversationType === 'maxdiff'"
       class="type-label"
-      :class="`type-label--${size}`"
     >
       {{ t("prioritizationLabel") }}
+    </div>
+    <div
+      v-if="externalSourceConfig !== null"
+      class="github-label"
+    >
+      <q-icon name="mdi-github" size="0.75rem" />
+      GitHub
     </div>
     <h1 class="conversation-title" :class="`conversation-title--${size}`">
       {{ title }}
@@ -22,26 +27,23 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { ConversationType } from "src/shared/types/zod";
+import type { ConversationType, ExternalSourceConfig } from "src/shared/types/zod";
 
 import {
   type ConversationTitleWithPrivacyLabelTranslations,
   conversationTitleWithPrivacyLabelTranslations,
 } from "./ConversationTitleWithPrivacyLabel.i18n";
 
-interface Props {
-  isPrivate: boolean; // Meaning the conversation is not indexed
+defineProps<{
+  isPrivate: boolean;
   title: string;
   size: "medium" | "large";
-  conversationType?: ConversationType;
-}
-
-withDefaults(defineProps<Props>(), {
-  conversationType: "polis",
-});
+  conversationType: ConversationType;
+  externalSourceConfig: ExternalSourceConfig | null;
+}>();
 
 const { t } = useComponentI18n<ConversationTitleWithPrivacyLabelTranslations>(
-  conversationTitleWithPrivacyLabelTranslations
+  conversationTitleWithPrivacyLabelTranslations,
 );
 </script>
 
@@ -53,18 +55,30 @@ const { t } = useComponentI18n<ConversationTitleWithPrivacyLabelTranslations>(
   gap: 0.5rem;
 }
 
-.privacy-label {
-  background-color: #333;
+.privacy-label,
+.type-label,
+.github-label {
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 5px;
-  font-size: 0.8rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.6rem;
   font-weight: var(--font-weight-semibold);
-  width: fit-content;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  margin-top: 0.3rem;
+  letter-spacing: 0.02em;
+}
+
+.privacy-label {
+  background-color: #333;
+}
+
+.type-label {
+  background-color: $primary;
+}
+
+.github-label {
+  background-color: #24292f;
+  gap: 0.15rem;
 }
 
 .conversation-title {
@@ -83,35 +97,5 @@ const { t } = useComponentI18n<ConversationTitleWithPrivacyLabelTranslations>(
 
 .conversation-title--large {
   font-size: 1.5rem;
-}
-
-.privacy-label--medium {
-  font-size: 0.8rem;
-}
-
-.privacy-label--large {
-  font-size: 0.9rem;
-}
-
-.type-label {
-  background-color: $primary;
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 5px;
-  font-size: 0.8rem;
-  font-weight: var(--font-weight-semibold);
-  width: fit-content;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 0.3rem;
-}
-
-.type-label--medium {
-  font-size: 0.8rem;
-}
-
-.type-label--large {
-  font-size: 0.9rem;
 }
 </style>

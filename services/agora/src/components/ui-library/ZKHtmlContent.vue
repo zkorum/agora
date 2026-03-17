@@ -62,6 +62,8 @@ const handleClick = (event: Event) => {
 .textBreak {
   font-size: 0.9rem;
   line-height: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 :deep(p) {

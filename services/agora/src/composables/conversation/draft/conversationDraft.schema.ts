@@ -11,7 +11,7 @@ import {
   MAX_LENGTH_OPTION,
   MAX_LENGTH_TITLE,
 } from "src/shared/shared";
-import { zodConversationType, zodEventSlug, zodParticipationMode } from "src/shared/types/zod";
+import { zodConversationType, zodEventSlug, zodExternalSourceConfig, zodParticipationMode } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { z } from "zod";
 
@@ -162,6 +162,9 @@ export const zodSerializableConversationDraft = z.object({
 
   // Event ticket verification
   requiresEventTicket: zodEventSlug.optional(),
+
+  // External source (GitHub integration for MaxDiff)
+  externalSourceConfig: zodExternalSourceConfig.nullable().default(null),
 
   // Import settings
   importSettings: zodConversationImportSettings,

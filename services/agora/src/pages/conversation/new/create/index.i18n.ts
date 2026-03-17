@@ -8,6 +8,11 @@ export interface CreateConversationTranslations {
   bodyPlaceholder: string;
   activeImportMessage: string;
   viewImportStatus: string;
+  githubConfig: string;
+  githubRepository: string;
+  githubRepositoryPlaceholder: string;
+  githubLabel: string;
+  githubLabelPlaceholder: string;
 }
 
 export const createConversationTranslations: Record<
@@ -23,6 +28,11 @@ export const createConversationTranslations: Record<
       "Body text. Provide context or relevant resources. Make sure it's aligned with the main question!",
     activeImportMessage:
       "You have an import in progress. Please wait for it to complete before starting a new one.",
+    githubConfig: "GitHub Source",
+    githubRepository: "Repository",
+    githubRepositoryPlaceholder: "owner/repo",
+    githubLabel: "Issue Label",
+    githubLabelPlaceholder: "roadmap",
     viewImportStatus: "View Import Status",
   },
   ar: {
@@ -35,6 +45,11 @@ export const createConversationTranslations: Record<
     activeImportMessage:
       "لديك عملية استيراد قيد التقدم. يرجى الانتظار حتى تكتمل قبل بدء عملية جديدة.",
     viewImportStatus: "عرض حالة الاستيراد",
+    githubConfig: "GitHub Source",
+    githubRepository: "Repository",
+    githubRepositoryPlaceholder: "owner/repo",
+    githubLabel: "Issue Label",
+    githubLabelPlaceholder: "roadmap",
   },
   es: {
     importButton: "Importar",
@@ -45,6 +60,11 @@ export const createConversationTranslations: Record<
     activeImportMessage:
       "Tiene una importación en progreso. Espere a que se complete antes de iniciar una nueva.",
     viewImportStatus: "Ver Estado de Importación",
+    githubConfig: "GitHub Source",
+    githubRepository: "Repository",
+    githubRepositoryPlaceholder: "owner/repo",
+    githubLabel: "Issue Label",
+    githubLabelPlaceholder: "roadmap",
   },
   fr: {
     importButton: "Importer",
@@ -55,6 +75,11 @@ export const createConversationTranslations: Record<
     activeImportMessage:
       "Vous avez un import en cours. Veuillez attendre qu'il soit terminé avant d'en démarrer un nouveau.",
     viewImportStatus: "Voir l'État de l'Import",
+    githubConfig: "GitHub Source",
+    githubRepository: "Repository",
+    githubRepositoryPlaceholder: "owner/repo",
+    githubLabel: "Issue Label",
+    githubLabelPlaceholder: "roadmap",
   },
   "zh-Hans": {
     importButton: "导入",
@@ -64,6 +89,11 @@ export const createConversationTranslations: Record<
     bodyPlaceholder: "正文内容。提供背景或相关资源。确保与主要问题保持一致！",
     activeImportMessage: "您有一个正在进行的导入。请等待完成后再开始新的导入。",
     viewImportStatus: "查看导入状态",
+    githubConfig: "GitHub Source",
+    githubRepository: "Repository",
+    githubRepositoryPlaceholder: "owner/repo",
+    githubLabel: "Issue Label",
+    githubLabelPlaceholder: "roadmap",
   },
   "zh-Hant": {
     importButton: "匯入",
@@ -73,6 +103,11 @@ export const createConversationTranslations: Record<
     bodyPlaceholder: "正文內容。提供背景或相關資源。確保與主要問題保持一致！",
     activeImportMessage: "您有一個正在進行的匯入。請等待完成後再開始新的匯入。",
     viewImportStatus: "查看匯入狀態",
+    githubConfig: "GitHub Source",
+    githubRepository: "Repository",
+    githubRepositoryPlaceholder: "owner/repo",
+    githubLabel: "Issue Label",
+    githubLabelPlaceholder: "roadmap",
   },
   ja: {
     importButton: "インポート",
@@ -84,6 +119,11 @@ export const createConversationTranslations: Record<
     activeImportMessage:
       "インポートが進行中です。新しいインポートを開始する前に完了するまでお待ちください。",
     viewImportStatus: "インポート状態を表示",
+    githubConfig: "GitHub Source",
+    githubRepository: "Repository",
+    githubRepositoryPlaceholder: "owner/repo",
+    githubLabel: "Issue Label",
+    githubLabelPlaceholder: "roadmap",
   },
   ky: {
     importButton: "Импорттоо",
@@ -95,6 +135,11 @@ export const createConversationTranslations: Record<
     activeImportMessage:
       "Импорт жүрүп жатат. Жаңысын баштоодон мурун аяктаганча күтүңүз.",
     viewImportStatus: "Импорттун абалын көрүү",
+    githubConfig: "GitHub Source",
+    githubRepository: "Repository",
+    githubRepositoryPlaceholder: "owner/repo",
+    githubLabel: "Issue Label",
+    githubLabelPlaceholder: "roadmap",
   },
   ru: {
     importButton: "Импорт",
@@ -106,5 +151,10 @@ export const createConversationTranslations: Record<
     activeImportMessage:
       "Импорт выполняется. Пожалуйста, дождитесь его завершения перед началом нового.",
     viewImportStatus: "Просмотреть статус импорта",
+    githubConfig: "GitHub Source",
+    githubRepository: "Repository",
+    githubRepositoryPlaceholder: "owner/repo",
+    githubLabel: "Issue Label",
+    githubLabelPlaceholder: "roadmap",
   },
 };

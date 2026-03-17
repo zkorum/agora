@@ -40,7 +40,7 @@ export const zodModerationReason = z.enum([
     "spam",
 ]);
 export const zodFeedSortAlgorithm = z.enum(["following", "new"]);
-export const zodParticipationMode = z.enum(["strong_verification", "email_verification", "guest"]);
+export const zodParticipationMode = z.enum(["account_required", "strong_verification", "email_verification", "guest"]);
 export const zodConversationType = z.enum(["polis", "maxdiff"]);
 export const zodConversationModerationAction = z.enum(["lock"]);
 export const zodOpinionModerationAction = z.enum(["move", "hide"]);
@@ -455,6 +455,17 @@ export const zodOpinionModerationProperties = z.discriminatedUnion("status", [
         .strict(),
 ]);
 
+export const zodGitHubExternalSourceConfig = z.object({
+    sourceType: z.literal("github_issue"),
+    repository: z.string(), // "owner/repo"
+    label: z.string(), // "roadmap"
+});
+
+export const zodExternalSourceConfig = z.discriminatedUnion("sourceType", [
+    zodGitHubExternalSourceConfig,
+]);
+export type ExternalSourceConfig = z.infer<typeof zodExternalSourceConfig>;
+
 export const zodConversationMetadata = z
     .object({
         conversationSlugId: zodSlugId,
@@ -478,6 +489,7 @@ export const zodConversationMetadata = z
         organization: zodOrganization.optional(),
         moderation: zodConversationModerationProperties,
         requiresEventTicket: zodEventSlug.optional(),
+        externalSourceConfig: zodExternalSourceConfig.nullable(),
     })
     .strict();
 export const zodConversationMetadataWithId = z
@@ -1256,3 +1268,26 @@ export const zodMaxdiffState = z.object({
     isComplete: z.boolean(),
 });
 export type MaxDiffState = z.infer<typeof zodMaxdiffState>;
+
+export const zodMaxdiffLifecycleStatus = z.enum([
+    "active",
+    "completed",
+    "in_progress",
+    "canceled",
+]);
+export type MaxdiffLifecycleStatus = z.infer<typeof zodMaxdiffLifecycleStatus>;
+
+export const zodExternalSourceType = z.enum(["github_issue"]);
+export type ExternalSourceType = z.infer<typeof zodExternalSourceType>;
+
+// JSONB schemas for external source integration
+
+export const zodGitHubIssueMetadata = z.object({
+    labels: z.array(z.string()),
+    assignees: z.array(z.string()),
+    milestone: z.string().nullable(),
+    issueNumber: z.number(),
+});
+export type GitHubIssueMetadata = z.infer<typeof zodGitHubIssueMetadata>;
+
+// zodGitHubExternalSourceConfig and zodExternalSourceConfig moved before zodConversationMetadata

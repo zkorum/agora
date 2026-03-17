@@ -19,6 +19,8 @@
               :is-private="!isIndexed"
               :title="conversationTitle"
               size="medium"
+              conversation-type="polis"
+              :external-source-config="null"
             />
           </div>
           <div @click.stop.prevent>

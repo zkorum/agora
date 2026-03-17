@@ -127,10 +127,6 @@ import {
   useOpenConversationMutation,
 } from "src/utils/api/post/useConversationMutations";
 import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
-import {
-  type WebShareTranslations,
-  webShareTranslations,
-} from "src/utils/share/WebShare.i18n";
 import { useEmbedMode } from "src/utils/ui/embedMode";
 import { useNotify } from "src/utils/ui/notify";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
@@ -189,8 +185,6 @@ const { setReportIntention } = useConversationLoginIntentions();
 
 const $q = useQuasar();
 const notify = useNotify();
-const { t: tShare } =
-  useComponentI18n<WebShareTranslations>(webShareTranslations);
 const { getEmbedUrl, getConversationUrl } = useConversationUrl();
 const shareActions = useShareActions();
 
@@ -266,7 +260,7 @@ async function moderationHistoryCallback() {
 async function copyEmbedLinkCallback() {
   const embedUrl = getEmbedUrl(props.postSlugId);
   await copyToClipboard(embedUrl);
-  notify.showNotifyMessage(tShare("copiedToClipboard"));
+  notify.showCopiedToClipboard();
 }
 
 async function exportConversationCallback() {
@@ -293,7 +287,7 @@ function shareCallback() {
     targetAuthor: props.authorUsername,
     copyLinkCallback: async () => {
       await copyToClipboard(sharePostUrl);
-      notify.showNotifyMessage(tShare("copiedToClipboard"));
+      notify.showCopiedToClipboard();
     },
     openQrCodeCallback: async () => {
       const { default: ShareDialog } = await import(

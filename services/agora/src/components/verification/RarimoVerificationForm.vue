@@ -155,7 +155,7 @@ const { t } = useComponentI18n<RarimoVerificationFormTranslations>(
 const quasar = useQuasar();
 
 const { buildEncodedUcan } = useCommonApi();
-const { showNotifyMessage } = useNotify();
+const { showNotifyMessage, showCopiedToClipboard } = useNotify();
 
 let isDeviceLoggedInIntervalId: number | undefined = undefined;
 let isUnmounted = false;
@@ -283,7 +283,7 @@ onUnmounted(() => {
 async function copyVerificationLink() {
   try {
     await copyToClipboard(verificationLink.value);
-    showNotifyMessage(t("copiedToClipboard"));
+    showCopiedToClipboard();
   } catch (error) {
     console.error("Failed to copy to clipboard:", error);
     showNotifyMessage(t("couldNotCopy"));

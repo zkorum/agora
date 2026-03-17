@@ -15,6 +15,7 @@ Name | Type | Description | Notes
 **pollingOptionList** | **Array&lt;string&gt;** |  | [optional] [default to undefined]
 **seedOpinionList** | **Array&lt;string&gt;** |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
+**externalSourceConfig** | [**ApiV1ConversationCreatePostRequestExternalSourceConfig**](ApiV1ConversationCreatePostRequestExternalSourceConfig.md) |  | [optional] [default to undefined]
 
 ## Example
 
@@ -32,6 +33,7 @@ const instance: ApiV1ConversationCreatePostRequest = {
     pollingOptionList,
     seedOpinionList,
     requiresEventTicket,
+    externalSourceConfig,
 };
 ```
 

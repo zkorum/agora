@@ -1,0 +1,2 @@
+ALTER TYPE "public"."participation_mode" ADD VALUE 'account_required' BEFORE 'strong_verification';--> statement-breakpoint
+ALTER TABLE "conversation" ALTER COLUMN "participation_mode" SET DEFAULT 'account_required';

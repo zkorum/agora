@@ -4,6 +4,8 @@ export interface NotificationTranslations {
   notifications: string;
   endOfFeed: string;
   noNotifications: string;
+  errorTitle: string;
+  retryButton: string;
   contributedOpinion: string;
   onePersonVoted: string;
   peopleVoted: string;
@@ -30,6 +32,8 @@ export const notificationTranslations: Record<
     notifications: "Notifications",
     endOfFeed: "End of notification feed",
     noNotifications: "You have no notifications",
+    errorTitle: "Something went wrong",
+    retryButton: "Retry",
     contributedOpinion:
       "{username} contributed a statement to your conversation:",
     onePersonVoted: "1 person voted on your statement:",
@@ -51,6 +55,8 @@ export const notificationTranslations: Record<
     notifications: "الإشعارات",
     endOfFeed: "انتهاء موجز الإشعارات",
     noNotifications: "لا توجد لديك إشعارات",
+    errorTitle: "حدث خطأ ما",
+    retryButton: "إعادة المحاولة",
     contributedOpinion: "{username} ساهم بمقترح في محادثتك:",
     onePersonVoted: "شخص واحد صوت على مقترحك:",
     peopleVoted: "{count} أشخاص صوتوا على مقترحك:",
@@ -71,6 +77,8 @@ export const notificationTranslations: Record<
     notifications: "Notificaciones",
     endOfFeed: "Fin del feed de notificaciones",
     noNotifications: "No tiene notificaciones",
+    errorTitle: "Algo salió mal",
+    retryButton: "Reintentar",
     contributedOpinion:
       "{username} contribuyó con una proposición a su conversación:",
     onePersonVoted: "1 persona votó en su proposición:",
@@ -92,6 +100,8 @@ export const notificationTranslations: Record<
     notifications: "Notifications",
     endOfFeed: "Fin du flux de notifications",
     noNotifications: "Vous n'avez aucune notification",
+    errorTitle: "Une erreur est survenue",
+    retryButton: "Réessayer",
     contributedOpinion:
       "{username} a contribué une proposition à votre conversation :",
     onePersonVoted: "1 personne a voté sur votre proposition :",
@@ -113,6 +123,8 @@ export const notificationTranslations: Record<
     notifications: "通知",
     endOfFeed: "通知列表结束",
     noNotifications: "您没有通知",
+    errorTitle: "出了点问题",
+    retryButton: "重试",
     contributedOpinion: "{username} 为您的对话贡献了观点：",
     onePersonVoted: "1 人为您的观点投票：",
     peopleVoted: "{count} 人为您的观点投票：",
@@ -133,6 +145,8 @@ export const notificationTranslations: Record<
     notifications: "通知",
     endOfFeed: "通知列表結束",
     noNotifications: "您沒有通知",
+    errorTitle: "出了點問題",
+    retryButton: "重試",
     contributedOpinion: "{username} 為您的對話貢獻了觀點：",
     onePersonVoted: "1 人為您的觀點投票：",
     peopleVoted: "{count} 人為您的觀點投票：",
@@ -153,6 +167,8 @@ export const notificationTranslations: Record<
     notifications: "通知",
     endOfFeed: "通知フィードの終了",
     noNotifications: "通知はありません",
+    errorTitle: "問題が発生しました",
+    retryButton: "再試行",
     contributedOpinion: "{username} があなたの会話に主張を投稿しました：",
     onePersonVoted: "1人があなたの主張に投票しました：",
     peopleVoted: "{count} 人があなたの主張に投票しました：",
@@ -173,6 +189,8 @@ export const notificationTranslations: Record<
     notifications: "Билдирмелер",
     endOfFeed: "Билдирмелер тасмасынын аягы",
     noNotifications: "Сизде билдирмелер жок",
+    errorTitle: "Бир нерсе туура эмес болду",
+    retryButton: "Кайра аракет",
     contributedOpinion:
       "{username} сиздин талкууга пикир кошту:",
     onePersonVoted: "1 адам сиздин пикирге добуш берди:",
@@ -194,6 +212,8 @@ export const notificationTranslations: Record<
     notifications: "Уведомления",
     endOfFeed: "Конец ленты уведомлений",
     noNotifications: "У вас нет уведомлений",
+    errorTitle: "Что-то пошло не так",
+    retryButton: "Повторить",
     contributedOpinion:
       "{username} добавил высказывание в ваше обсуждение:",
     onePersonVoted: "1 человек проголосовал за ваше высказывание:",

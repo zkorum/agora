@@ -37,7 +37,7 @@ import { generateRandomSlugId } from "@/crypto.js";
 import { count, or, isNull, ne } from "drizzle-orm";
 import { processConversationExport } from "./conversationExport/core.js";
 import { createExportNotification } from "./conversationExport/notifications.js";
-import type { NotificationSSEManager } from "./notificationSSE.js";
+import type { RealtimeSSEManager } from "./realtimeSSE.js";
 import type { RequestConversationExportResponse } from "@/shared/types/dto.js";
 import { z } from "zod";
 import { Script } from "@valkey/valkey-glide";
@@ -81,7 +81,7 @@ export interface ExportBuffer {
 interface CreateExportBufferParams {
     db: PostgresJsDatabase;
     valkey: Valkey | undefined;
-    notificationSSEManager: NotificationSSEManager | undefined;
+    realtimeSSEManager: RealtimeSSEManager | undefined;
     flushIntervalMs: number;
     maxBatchSize: number;
     maxConcurrency: number;
@@ -172,7 +172,7 @@ return result
 export function createExportBuffer({
     db,
     valkey,
-    notificationSSEManager,
+    realtimeSSEManager,
     flushIntervalMs,
     maxBatchSize,
     maxConcurrency,
@@ -247,7 +247,7 @@ export function createExportBuffer({
                 exportId: exportRecord[0].id,
                 conversationId,
                 type: "export_failed",
-                notificationSSEManager,
+                realtimeSSEManager,
             });
 
             log.info(
@@ -313,7 +313,7 @@ export function createExportBuffer({
                     exportId: staleExport.id,
                     conversationId: staleExport.conversationId,
                     type: "export_failed",
-                    notificationSSEManager,
+                    realtimeSSEManager,
                 });
             } catch (notificationError) {
                 log.error(
@@ -464,7 +464,7 @@ export function createExportBuffer({
             exportId: exportRecord.id,
             conversationId: exportRequest.conversationId,
             type: "export_started",
-            notificationSSEManager,
+            realtimeSSEManager,
         });
 
         const key = getExportKey(
@@ -700,7 +700,7 @@ export function createExportBuffer({
                         exportId: exportRecord.id,
                         conversationId: exportRequest.conversationId,
                         type: "export_cancelled",
-                        notificationSSEManager,
+                        realtimeSSEManager,
                     });
 
                     log.info(
@@ -725,7 +725,7 @@ export function createExportBuffer({
                         conversationId: exportRequest.conversationId,
                         conversationSlugId: exportRequest.conversationSlugId,
                         userId: exportRequest.userId,
-                        notificationSSEManager,
+                        realtimeSSEManager,
                     });
                 } catch (error) {
                     // Error already logged and handled in processConversationExport

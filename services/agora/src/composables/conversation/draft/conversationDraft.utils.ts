@@ -36,7 +36,7 @@ export function createEmptyDraft(): ConversationDraft {
 
     // Privacy and Advanced Settings
     isPrivate: false,
-    participationMode: "strong_verification",
+    participationMode: "account_required",
     privateConversationSettings: {
       hasScheduledConversion: false,
       conversionDate: tomorrow,
@@ -44,6 +44,9 @@ export function createEmptyDraft(): ConversationDraft {
 
     // Event Ticket Verification
     requiresEventTicket: undefined,
+
+    // External Source (GitHub integration for MaxDiff)
+    externalSourceConfig: null,
 
     // Creation Settings
     importSettings: {

@@ -152,7 +152,7 @@ function shareOpinionCallback() {
     targetAuthor: props.commentItem.username,
     copyLinkCallback: async () => {
       await copyToClipboard(sharePostUrl);
-      notify.showNotifyMessage(t("copiedToClipboard"));
+      notify.showCopiedToClipboard();
     },
     showShareVia: true,
     shareUrl: sharePostUrl,

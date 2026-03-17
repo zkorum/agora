@@ -36,6 +36,7 @@ import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
 import * as postEditService from "@/service/postEdit.js";
 import { MAX_CSV_FILE_SIZE } from "@/shared-app-api/csvUpload.js";
+import { checkMaxDiffAllowed } from "@/shared-app-api/maxdiffLogic.js";
 import { zodCsvFiles } from "@/service/csvImport.js";
 import * as conversationExportService from "@/service/conversationExport/index.js";
 import * as conversationImportService from "@/service/conversationImport/index.js";
@@ -63,6 +64,17 @@ import {
     loadMaxdiffResult,
     getMaxdiffResults,
 } from "./service/maxdiff.js";
+import {
+    fetchMaxdiffItems,
+    updateMaxdiffItemLifecycle,
+} from "./service/maxdiffItem.js";
+import {
+    verifyWebhookSignature,
+    parseWebhookPayload,
+    handleIssueWebhook,
+    syncGitHubIssues,
+    createGitHubClient,
+} from "./service/externalSource/github.js";
 import {
     castVoteForOpinionSlugId,
     getUserVotesForPostSlugIds as getUserVotesByConversations,
@@ -113,7 +125,7 @@ import { createVoteBuffer } from "./service/voteBuffer.js";
 import { createExportBuffer } from "./service/exportBuffer.js";
 import { createImportBuffer } from "./service/importBuffer.js";
 import { createUcanReplayGuard } from "./service/ucanReplayGuard.js";
-import { NotificationSSEManager } from "./service/notificationSSE.js";
+import { RealtimeSSEManager } from "./service/realtimeSSE.js";
 import {
     addUserOrganizationMapping,
     createOrganization,
@@ -245,6 +257,54 @@ if (mustSendActualSms) {
             config.TWILIO_ACCOUNT_SID,
             config.TWILIO_AUTH_TOKEN,
         );
+    }
+}
+
+// GitHub integration: webhook secret and access token must both be set or both unset
+const hasGitHubWebhookSecret = config.GITHUB_WEBHOOK_SECRET !== undefined;
+const hasGitHubAccessToken = config.GITHUB_ACCESS_TOKEN !== undefined;
+if (hasGitHubWebhookSecret !== hasGitHubAccessToken) {
+    log.error(
+        "GITHUB_WEBHOOK_SECRET and GITHUB_ACCESS_TOKEN must both be set or both be unset",
+    );
+    process.exit(1);
+}
+
+// MaxDiff GitHub feature: precedence validation
+if (config.MAXDIFF_GITHUB_ENABLED) {
+    if (!config.MAXDIFF_ENABLED) {
+        log.error(
+            "MAXDIFF_GITHUB_ENABLED requires MAXDIFF_ENABLED to be true",
+        );
+        process.exit(1);
+    }
+    if (!hasGitHubWebhookSecret || !hasGitHubAccessToken) {
+        log.error(
+            "MAXDIFF_GITHUB_ENABLED requires GITHUB_WEBHOOK_SECRET and GITHUB_ACCESS_TOKEN to be set",
+        );
+        process.exit(1);
+    }
+    if (!config.IS_MAXDIFF_GITHUB_ORG_ONLY && config.IS_MAXDIFF_ORG_ONLY) {
+        log.error(
+            "IS_MAXDIFF_GITHUB_ORG_ONLY cannot be false when IS_MAXDIFF_ORG_ONLY is true (GitHub orgs must be a subset of MaxDiff orgs)",
+        );
+        process.exit(1);
+    }
+    // Validate GitHub org whitelist is a subset of MaxDiff org whitelist
+    const maxdiffOrgs = config.MAXDIFF_ALLOWED_ORGS.trim();
+    const gitHubOrgs = config.MAXDIFF_GITHUB_ALLOWED_ORGS.trim();
+    if (maxdiffOrgs !== "" && gitHubOrgs !== "") {
+        const maxdiffOrgList = maxdiffOrgs.split(",").map((s) => s.trim());
+        const gitHubOrgList = gitHubOrgs.split(",").map((s) => s.trim());
+        const invalidOrgs = gitHubOrgList.filter(
+            (org) => !maxdiffOrgList.includes(org),
+        );
+        if (invalidOrgs.length > 0) {
+            log.error(
+                `MAXDIFF_GITHUB_ALLOWED_ORGS contains orgs not in MAXDIFF_ALLOWED_ORGS: ${invalidOrgs.join(", ")}`,
+            );
+            process.exit(1);
+        }
     }
 }
 
@@ -404,8 +464,37 @@ log.info(
 );
 
 // Initialize Notification SSE Manager for real-time notifications
-const notificationSSEManager = new NotificationSSEManager();
-notificationSSEManager.initialize();
+const realtimeSSEManager = new RealtimeSSEManager();
+realtimeSSEManager.initialize();
+
+// Periodic engagement ranking check for "Following" tab.
+// Every 60s, computes top 10 engagement slug IDs and broadcasts
+// "popular_conversation" to all clients if the ranking changed.
+let cachedTopEngagementSlugIds: string[] = [];
+const popularConversationCheckInterval = setInterval(() => {
+    void (async () => {
+        try {
+            const topSlugIds = await feedService.getTopEngagementSlugIds({
+                db,
+            });
+            const changed =
+                topSlugIds.length !== cachedTopEngagementSlugIds.length ||
+                topSlugIds.some(
+                    (id, i) => id !== cachedTopEngagementSlugIds[i],
+                );
+            if (changed) {
+                cachedTopEngagementSlugIds = topSlugIds;
+                realtimeSSEManager.broadcastToAll({
+                    event: "popular_conversation",
+                    data: { topConversationSlugIdList: topSlugIds },
+                });
+            }
+        } catch (error) {
+            log.error(error, "[API] Popular conversation check failed");
+        }
+    })();
+}, 60_000);
+popularConversationCheckInterval.unref();
 
 // Initialize VoteBuffer (batches votes to reduce DB contention)
 const voteBuffer = createVoteBuffer({
@@ -413,7 +502,7 @@ const voteBuffer = createVoteBuffer({
     valkey: queueValkey,
     flushIntervalMs: config.VOTE_BUFFER_FLUSH_INTERVAL_MS,
     valkeyBatchLimit: config.VOTE_BUFFER_VALKEY_BATCH_LIMIT,
-    notificationSSEManager,
+    realtimeSSEManager,
 });
 log.info(
     `[API] Vote buffer initialized (flush interval: ${String(config.VOTE_BUFFER_FLUSH_INTERVAL_MS)}ms, batch limit: ${String(config.VOTE_BUFFER_VALKEY_BATCH_LIMIT)}, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
@@ -423,7 +512,7 @@ log.info(
 const exportBuffer = createExportBuffer({
     db,
     valkey: queueValkey,
-    notificationSSEManager,
+    realtimeSSEManager,
     flushIntervalMs: 1000,
     maxBatchSize: config.EXPORT_CONVOS_BUFFER_MAX_BATCH_SIZE,
     maxConcurrency: config.EXPORT_CONVOS_BUFFER_MAX_CONCURRENCY,
@@ -441,7 +530,7 @@ log.info(
 const importBuffer = createImportBuffer({
     db,
     valkey: queueValkey,
-    notificationSSEManager,
+    realtimeSSEManager,
     voteBuffer,
     axiosPolis,
     flushIntervalMs: config.IMPORT_BUFFER_FLUSH_INTERVAL_MS,
@@ -478,7 +567,7 @@ const performStartupCleanup = async (): Promise<void> => {
                         importId: stuckImport.id,
                         conversationId: null,
                         type: "import_failed",
-                        notificationSSEManager,
+                        realtimeSSEManager,
                     });
                 } catch (notificationError: unknown) {
                     log.error(
@@ -508,7 +597,7 @@ const performStartupCleanup = async (): Promise<void> => {
                         exportId: stuckExport.id,
                         conversationId: stuckExport.conversationId,
                         type: "export_failed",
-                        notificationSSEManager,
+                        realtimeSSEManager,
                     });
                 } catch (notificationError: unknown) {
                     log.error(
@@ -825,6 +914,15 @@ function checkMaxdiffEnabled(): void {
     if (!config.MAXDIFF_ENABLED) {
         throw server.httpErrors.serviceUnavailable(
             "MaxDiff feature is currently disabled",
+        );
+    }
+}
+
+function checkMaxdiffGitHubEnabled(): void {
+    checkMaxdiffEnabled();
+    if (!config.MAXDIFF_GITHUB_ENABLED) {
+        throw server.httpErrors.serviceUnavailable(
+            "MaxDiff GitHub integration is currently disabled",
         );
     }
 }
@@ -1672,7 +1770,165 @@ server.after(() => {
             return await getMaxdiffResults({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
+                lifecycleFilter: request.body.lifecycleFilter,
             });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/maxdiff/items/fetch`,
+        schema: {
+            body: Dto.maxdiffItemsFetchRequest,
+            response: {
+                200: Dto.maxdiffItemsFetchResponse,
+            },
+        },
+        handler: async (request) => {
+            checkMaxdiffEnabled();
+            return await fetchMaxdiffItems({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                lifecycleFilter: request.body.lifecycleFilter,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/maxdiff/items/lifecycle/update`,
+        schema: {
+            body: Dto.maxdiffItemLifecycleUpdateRequest,
+        },
+        handler: async (request, reply) => {
+            checkMaxdiffEnabled();
+            const { deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                });
+            await updateMaxdiffItemLifecycle({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                itemSlugId: request.body.itemSlugId,
+                newStatus: request.body.newStatus,
+                requestingUserId: deviceStatus.userId,
+            });
+            reply.send({});
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/maxdiff/sync`,
+        schema: {
+            body: Dto.maxdiffSyncRequest,
+            response: {
+                200: Dto.maxdiffSyncResponse,
+            },
+        },
+        handler: async (request) => {
+            checkMaxdiffGitHubEnabled();
+            if (config.GITHUB_ACCESS_TOKEN === undefined) {
+                throw server.httpErrors.serviceUnavailable(
+                    "GitHub access token not configured",
+                );
+            }
+            const { deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                });
+            const githubClient = createGitHubClient({
+                accessToken: config.GITHUB_ACCESS_TOKEN,
+            });
+            return await syncGitHubIssues({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                requestingUserId: deviceStatus.userId,
+                githubClient,
+            });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/maxdiff/github/preview`,
+        schema: {
+            body: Dto.maxdiffGitHubPreviewRequest,
+            response: {
+                200: Dto.maxdiffGitHubPreviewResponse,
+            },
+        },
+        handler: async (request) => {
+            checkMaxdiffGitHubEnabled();
+            if (config.GITHUB_ACCESS_TOKEN === undefined) {
+                throw server.httpErrors.serviceUnavailable(
+                    "GitHub access token not configured",
+                );
+            }
+            await verifyUcanAndKnownDeviceStatus(db, request, {
+                expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+            });
+            const githubClient = createGitHubClient({
+                accessToken: config.GITHUB_ACCESS_TOKEN,
+            });
+            const issues = await githubClient.listIssues({
+                repo: request.body.repository,
+                label: request.body.label,
+            });
+            return {
+                issues: issues.map((issue) => ({
+                    number: issue.number,
+                    title: issue.title,
+                    body: issue.body,
+                    state: issue.state,
+                    htmlUrl: issue.htmlUrl,
+                })),
+            };
+        },
+    });
+
+    // GitHub webhook (no auth — verified via HMAC)
+    server.route({
+        method: "POST",
+        url: `/api/${apiVersion}/webhook/github`,
+        handler: async (request, reply) => {
+            checkMaxdiffGitHubEnabled();
+            if (config.GITHUB_WEBHOOK_SECRET === undefined) {
+                throw server.httpErrors.serviceUnavailable(
+                    "GitHub webhook secret not configured",
+                );
+            }
+
+            const signature = request.headers["x-hub-signature-256"];
+            if (typeof signature !== "string") {
+                throw server.httpErrors.unauthorized(
+                    "Missing X-Hub-Signature-256 header",
+                );
+            }
+
+            const rawBody = JSON.stringify(request.body);
+            if (
+                !verifyWebhookSignature({
+                    payload: rawBody,
+                    signature,
+                    secret: config.GITHUB_WEBHOOK_SECRET,
+                })
+            ) {
+                throw server.httpErrors.unauthorized("Invalid signature");
+            }
+
+            const event = request.headers["x-github-event"];
+            if (event !== "issues") {
+                // We only handle issue events
+                reply.send({ ok: true });
+                return;
+            }
+
+            const payload = parseWebhookPayload({
+                rawPayload: request.body,
+            });
+            await handleIssueWebhook({ db, payload });
+            reply.send({ ok: true });
         },
     });
 
@@ -1720,7 +1976,7 @@ server.after(() => {
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: now,
                 isSeed: false,
-                notificationSSEManager: notificationSSEManager,
+                realtimeSSEManager: realtimeSSEManager,
             });
             reply.send(newOpinionResponse);
         },
@@ -1979,33 +2235,29 @@ server.after(() => {
                 });
 
             if (request.body.conversationType === "maxdiff") {
-                checkMaxdiffEnabled();
-                if (
-                    config.IS_MAXDIFF_ORG_ONLY &&
-                    !request.body.postAsOrganization
-                ) {
-                    throw server.httpErrors.forbidden(
-                        "MaxDiff is restricted to organization conversations",
-                    );
-                }
-                const allowedOrgs = config.MAXDIFF_ALLOWED_ORGS;
-                if (allowedOrgs.trim() !== "") {
-                    if (!request.body.postAsOrganization) {
-                        throw server.httpErrors.forbidden(
-                            "MaxDiff is restricted to specific organizations",
-                        );
-                    }
-                    const orgList = allowedOrgs
-                        .split(",")
-                        .map((s) => s.trim());
-                    if (
-                        !orgList.includes(
-                            request.body.postAsOrganization,
-                        )
-                    ) {
-                        throw server.httpErrors.forbidden(
-                            "This organization is not allowed to create MaxDiff conversations",
-                        );
+                const maxdiffCheck = checkMaxDiffAllowed({
+                    maxdiffEnabled: config.MAXDIFF_ENABLED,
+                    isMaxdiffOrgOnly: config.IS_MAXDIFF_ORG_ONLY,
+                    maxdiffAllowedOrgs: config.MAXDIFF_ALLOWED_ORGS,
+                    postAsOrganization:
+                        !!request.body.postAsOrganization,
+                    organizationName:
+                        request.body.postAsOrganization ?? "",
+                });
+                if (!maxdiffCheck.allowed) {
+                    switch (maxdiffCheck.reason) {
+                        case "disabled":
+                            throw server.httpErrors.serviceUnavailable(
+                                "MaxDiff feature is currently disabled",
+                            );
+                        case "org_required":
+                            throw server.httpErrors.forbidden(
+                                "MaxDiff is restricted to organization conversations",
+                            );
+                        case "org_not_in_whitelist":
+                            throw server.httpErrors.forbidden(
+                                "This organization is not allowed to create MaxDiff conversations",
+                            );
                     }
                 }
             }
@@ -2027,7 +2279,16 @@ server.after(() => {
                 isImporting: false,
                 seedOpinionList: request.body.seedOpinionList,
                 requiresEventTicket: request.body.requiresEventTicket,
+                externalSourceConfig:
+                    request.body.externalSourceConfig ?? null,
             });
+
+            // Broadcast to all connected clients that a new conversation exists
+            realtimeSSEManager.broadcastToAll({
+                event: "new_conversation",
+                data: { timestamp: Date.now() },
+            });
+
             reply.send({ conversationSlugId });
         },
     });
@@ -2104,7 +2365,7 @@ server.after(() => {
                 proof: encodedUcan,
                 didWrite,
                 importBuffer,
-                notificationSSEManager,
+                realtimeSSEManager,
             });
         },
     });
@@ -2247,7 +2508,7 @@ server.after(() => {
                     proof: encodedUcan,
                     didWrite,
                     importBuffer,
-                    notificationSSEManager,
+                    realtimeSSEManager,
                 });
 
             reply.send({ importSlugId });
@@ -2997,61 +3258,70 @@ server.after(() => {
         },
     });
 
-    // SSE endpoint for real-time notifications
-    // Accepts auth from Authorization header (new fetch-based frontend)
-    // or query param ?auth= (legacy EventSource fallback)
+    // SSE endpoint for real-time events (notifications + global broadcasts).
+    // Auth is optional: authenticated users receive personal notifications +
+    // global events; anonymous users receive only global events.
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "GET",
-        url: `/api/${apiVersion}/notification/stream`,
+        url: `/api/${apiVersion}/realtime/stream`,
         sse: true, // Enable SSE mode - provides reply.sse.* methods
         handler: async (request, reply) => {
-            // Authenticate BEFORE initializing SSE to allow proper HTTP error responses
-            let deviceStatus;
-            try {
-                // Accept auth from Authorization header (fetch) or query param (EventSource fallback)
-                if (!request.headers.authorization) {
-                    const auth = (
-                        request.query as Record<string, string>
-                    ).auth;
-                    if (auth) {
-                        request.headers.authorization = `Bearer ${auth}`;
-                    }
+            const authHeader = request.headers.authorization;
+
+            if (authHeader !== undefined) {
+                // Authenticated connection — validate UCAN, register by userId
+                let deviceStatus;
+                try {
+                    const result = await verifyUcanAndKnownDeviceStatus(
+                        db,
+                        request,
+                        {
+                            expectedKnownDeviceStatus: {
+                                isGuestOrLoggedIn: true,
+                            },
+                        },
+                    );
+                    deviceStatus = result.deviceStatus;
+                } catch (error) {
+                    log.error(error, "[SSE] Authentication failed");
+                    return reply.code(401).send("Authentication failed");
                 }
 
-                const result = await verifyUcanAndKnownDeviceStatus(
-                    db,
-                    request,
-                    {
-                        expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                    },
-                );
-                deviceStatus = result.deviceStatus;
-            } catch (error) {
-                log.error(error, "[SSE] Authentication failed");
-                // Send HTTP error response before any SSE operations
-                // Use string response instead of object for SSE-enabled routes
-                return reply.code(401).send("Authentication failed");
-            }
+                try {
+                    reply.sse.keepAlive();
+                    realtimeSSEManager.connect(
+                        deviceStatus.userId,
+                        reply,
+                    );
 
-            // Only proceed with SSE initialization after successful authentication
-            try {
-                // Keep connection alive (prevents automatic close after handler returns)
-                reply.sse.keepAlive();
-
-                // Register this connection with the SSE manager
-                // The manager will use reply.sse.send() to broadcast notifications
-                notificationSSEManager.connect(deviceStatus.userId, reply);
-
-                // Keep the handler alive by waiting for socket close event
-                // This is necessary to prevent Fastify from closing the connection
-                await new Promise<void>((resolve) => {
-                    request.raw.on("close", () => {
-                        resolve();
+                    await new Promise<void>((resolve) => {
+                        request.raw.on("close", () => {
+                            resolve();
+                        });
                     });
-                });
-            } catch (error) {
-                log.error(error, "[SSE] Error during SSE connection");
-                // At this point SSE is active, connection will be cleaned up by disconnect handler
+                } catch (error) {
+                    log.error(
+                        error,
+                        "[SSE] Error during authenticated SSE connection",
+                    );
+                }
+            } else {
+                // Anonymous connection — no auth required
+                try {
+                    reply.sse.keepAlive();
+                    realtimeSSEManager.connectAnonymous(reply);
+
+                    await new Promise<void>((resolve) => {
+                        request.raw.on("close", () => {
+                            resolve();
+                        });
+                    });
+                } catch (error) {
+                    log.error(
+                        error,
+                        "[SSE] Error during anonymous SSE connection",
+                    );
+                }
             }
         },
     });
@@ -3297,8 +3567,11 @@ const shutdown = async (signal: string) => {
         // Stop UCAN replay guard cleanup interval
         ucanReplayGuard.shutdown();
 
+        // Stop popular conversation periodic check
+        clearInterval(popularConversationCheckInterval);
+
         // Close SSE connections before shutdown
-        await notificationSSEManager.shutdown();
+        await realtimeSSEManager.shutdown();
 
         // Close Valkey connection
         if (queueValkey !== undefined) {

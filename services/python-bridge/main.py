@@ -513,7 +513,13 @@ def get_maths(
                 # CV got worse and no singleton improvement — stop
                 accept = False
         else:  # "up"
-            accept = new_imbalance < best_imbalance
+            old_is_degenerate = (
+                min(best_member_counts) < 2 and len(best_member_counts) == 2
+            )
+            if old_is_degenerate:
+                accept = True
+            else:
+                accept = new_imbalance < best_imbalance
 
         if accept:
             logger.info(

@@ -13,13 +13,14 @@ import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import type { ExtendedConversation, EventSlug, ParticipationMode, ConversationType } from "@/shared/types/zod.js";
+import type { ExtendedConversation, EventSlug, ParticipationMode, ConversationType, ExternalSourceConfig } from "@/shared/types/zod.js";
 import type {
     CloseConversationResponse,
     OpenConversationResponse,
 } from "@/shared/types/dto.js";
 import { toUnionUndefined } from "@/shared/shared.js";
 import { postNewOpinion } from "./comment.js";
+import { createMaxdiffItem } from "./maxdiffItem.js";
 import { nowZeroMs } from "@/shared/util.js";
 import type { ConversationIds } from "@/utils/dataStructure.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
@@ -44,6 +45,7 @@ interface CreateNewPostProps {
     isImporting: boolean;
     seedOpinionList: string[];
     requiresEventTicket?: EventSlug;
+    externalSourceConfig?: ExternalSourceConfig | null;
     importUrl?: string;
     importConversationUrl?: string;
     importExportUrl?: string;
@@ -69,6 +71,7 @@ export async function createNewPost({
     isImporting,
     seedOpinionList,
     requiresEventTicket,
+    externalSourceConfig,
     importUrl,
     importConversationUrl,
     importExportUrl,
@@ -139,6 +142,8 @@ export async function createNewPost({
                     importCreatedAt,
                     importAuthor,
                     importMethod,
+                    externalSourceConfig:
+                        externalSourceConfig ?? undefined,
                 })
                 .returning({ conversationId: conversationTable.id });
 
@@ -226,30 +231,43 @@ export async function createNewPost({
         },
     );
 
-    // Create seed opinions
+    // Create seed opinions/items
     if (seedOpinionList.length > 0) {
-        const now = nowZeroMs();
-        for (const seedOpinionText of seedOpinionList) {
-            await postNewOpinion({
-                db,
-                voteBuffer,
-                commentBody: seedOpinionText,
-                conversationSlugId,
-                didWrite,
-                proof,
-                userAgent: "Seed Opinion Creation",
-                now,
-                isSeed: true,
-                conversationMetadata: {
+        if (conversationType === "maxdiff") {
+            for (const seedTitle of seedOpinionList) {
+                await createMaxdiffItem({
+                    db,
                     conversationId,
                     conversationContentId,
-                    conversationAuthorId: authorId,
-                    conversationIsIndexed: isIndexed,
-                    conversationParticipationMode: participationMode,
-                    conversationIsClosed: false,
-                    requiresEventTicket: requiresEventTicket ?? null,
-                },
-            });
+                    authorId,
+                    title: seedTitle,
+                    isSeed: true,
+                });
+            }
+        } else {
+            const now = nowZeroMs();
+            for (const seedOpinionText of seedOpinionList) {
+                await postNewOpinion({
+                    db,
+                    voteBuffer,
+                    commentBody: seedOpinionText,
+                    conversationSlugId,
+                    didWrite,
+                    proof,
+                    userAgent: "Seed Opinion Creation",
+                    now,
+                    isSeed: true,
+                    conversationMetadata: {
+                        conversationId,
+                        conversationContentId,
+                        conversationAuthorId: authorId,
+                        conversationIsIndexed: isIndexed,
+                        conversationParticipationMode: participationMode,
+                        conversationIsClosed: false,
+                        requiresEventTicket: requiresEventTicket ?? null,
+                    },
+                });
+            }
         }
     }
 
@@ -273,38 +291,31 @@ export async function fetchPostBySlugId({
     personalizedUserId,
     baseImageServiceUrl,
 }: FetchPostBySlugIdProps): Promise<ExtendedConversation> {
-    try {
-        const { fetchPostItems } = useCommonPost();
-        const postData = await fetchPostItems({
-            db: db,
-            where: eq(conversationTable.slugId, conversationSlugId),
-            enableCompactBody: false,
-            personalizedUserId: personalizedUserId,
-            excludeLockedPosts: false,
-            removeMutedAuthors: false,
-            baseImageServiceUrl,
-            sortAlgorithm: "new",
-        });
+    const { fetchPostItems } = useCommonPost();
+    const postData = await fetchPostItems({
+        db: db,
+        where: eq(conversationTable.slugId, conversationSlugId),
+        enableCompactBody: false,
+        personalizedUserId: personalizedUserId,
+        excludeLockedPosts: false,
+        removeMutedAuthors: false,
+        baseImageServiceUrl,
+        sortAlgorithm: "new",
+    });
 
-        if (postData.size == 1) {
-            const [firstPost] = postData.values();
-            return firstPost;
-        } else if (postData.size > 1) {
-            const [firstPost] = postData.values();
-            log.warn(
-                `Multiple conversations hold the same slugId: ${firstPost.metadata.conversationSlugId}`,
-            );
-            return firstPost;
-        } else {
-            throw httpErrors.notFound(
-                "Failed to locate conversation slug ID in the database: " +
-                    conversationSlugId,
-            );
-        }
-    } catch (err: unknown) {
-        log.error(err);
-        throw httpErrors.internalServerError(
-            "Failed to fetch conversation by slug ID: " + conversationSlugId,
+    if (postData.size == 1) {
+        const [firstPost] = postData.values();
+        return firstPost;
+    } else if (postData.size > 1) {
+        const [firstPost] = postData.values();
+        log.warn(
+            `Multiple conversations hold the same slugId: ${firstPost.metadata.conversationSlugId}`,
+        );
+        return firstPost;
+    } else {
+        throw httpErrors.notFound(
+            "Failed to locate conversation slug ID in the database: " +
+                conversationSlugId,
         );
     }
 }

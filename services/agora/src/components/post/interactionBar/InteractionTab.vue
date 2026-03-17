@@ -3,7 +3,7 @@
     <div class="container">
       <ZKTab
         :icon-code="props.conversationType === 'maxdiff' ? 'mdi:sort-numeric-ascending' : 'meteor-icons:comment'"
-        :text="props.conversationType === 'maxdiff' ? t('rank') : formatAmount(opinionCount)"
+        :text="formatAmount(opinionCount)"
         :is-highlighted="model === 'comment' && !compactMode"
         :should-underline-on-highlight="true"
         :is-loading="isLoading && model === 'comment'"

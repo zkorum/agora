@@ -9,7 +9,10 @@
       :class="{ selected: isSelected(option), disabled: option.disabled }"
       @click="selectOption(option)"
     >
-      <div class="option-header">{{ option.title }}</div>
+      <div class="option-header">
+        <q-icon v-if="option.icon" :name="option.icon" size="1.2rem" />
+        {{ option.title }}
+      </div>
       <div class="option-description">{{ option.description }}</div>
     </div>
   </div>
@@ -20,6 +23,7 @@ interface OptionItem {
   title: string;
   description: string;
   value: string;
+  icon?: string;
   disabled?: boolean;
 }
 
@@ -77,6 +81,9 @@ function selectOption(option: OptionItem): void {
 }
 
 .option-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   font-size: 1.1rem;
   font-weight: var(--font-weight-medium);
 }

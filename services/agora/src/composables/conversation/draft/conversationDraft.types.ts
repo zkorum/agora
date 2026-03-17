@@ -7,7 +7,7 @@
  * - Conversation form components
  */
 
-import type { ConversationType, EventSlug, ParticipationMode } from "src/shared/types/zod";
+import type { ConversationType, EventSlug, ExternalSourceConfig, ParticipationMode } from "src/shared/types/zod";
 
 // ============================================================================
 // Draft Data Structures
@@ -93,6 +93,9 @@ export interface ConversationDraft {
   // Event Ticket Verification
   /** If set, requires users to verify ownership of the specified event ticket. If undefined, no verification required. */
   requiresEventTicket?: EventSlug;
+
+  // External Source (GitHub integration for MaxDiff)
+  externalSourceConfig: ExternalSourceConfig | null;
 
   // Import Settings
   importSettings: ConversationImportSettings;

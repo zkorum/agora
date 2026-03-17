@@ -27,7 +27,7 @@ import { conversationImportTable } from "@/shared-backend/schema.js";
 import { eq, and, lt } from "drizzle-orm";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 import { log } from "@/app.js";
-import type { NotificationSSEManager } from "./notificationSSE.js";
+import type { RealtimeSSEManager } from "./realtimeSSE.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import type { AxiosInstance } from "axios";
 import pLimit from "p-limit";
@@ -129,7 +129,7 @@ export interface ImportBuffer {
 interface ImportBufferDependencies {
     db: PostgresDatabase;
     valkey: Valkey | undefined;
-    notificationSSEManager: NotificationSSEManager;
+    realtimeSSEManager: RealtimeSSEManager;
     voteBuffer: VoteBuffer;
     axiosPolis: AxiosInstance | undefined;
     flushIntervalMs: number;
@@ -152,7 +152,7 @@ export function createImportBuffer(
     const {
         db,
         valkey,
-        notificationSSEManager,
+        realtimeSSEManager,
         voteBuffer,
         axiosPolis,
         flushIntervalMs,
@@ -259,7 +259,13 @@ export function createImportBuffer(
                 importId,
                 conversationId: result.conversationId,
                 type: "import_completed",
-                notificationSSEManager,
+                realtimeSSEManager,
+            });
+
+            // Broadcast to all connected clients that a new conversation exists
+            realtimeSSEManager.broadcastToAll({
+                event: "new_conversation",
+                data: { timestamp: Date.now() },
             });
 
             log.info(
@@ -300,7 +306,7 @@ export function createImportBuffer(
                     importId,
                     conversationId: null,
                     type: "import_failed",
-                    notificationSSEManager,
+                    realtimeSSEManager,
                 });
             }
 
@@ -368,7 +374,7 @@ export function createImportBuffer(
                 importId: importRecord[0].id,
                 conversationId: null,
                 type: "import_failed",
-                notificationSSEManager,
+                realtimeSSEManager,
             });
 
             log.info(
@@ -436,7 +442,7 @@ export function createImportBuffer(
                     importId: staleImport.id,
                     conversationId: null,
                     type: "import_failed",
-                    notificationSSEManager,
+                    realtimeSSEManager,
                 });
             } catch (notificationError) {
                 log.error(

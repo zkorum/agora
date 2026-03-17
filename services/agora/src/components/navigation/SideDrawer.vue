@@ -42,8 +42,10 @@
                         : menuItem.svgStringStandard
                     "
                   />
-
-                  <NewNotificationIndicator v-if="menuItem.name == 'Dings'" />
+                  <ZKBadge
+                    v-if="menuItem.name === 'Dings'"
+                    :count="numNewNotifications"
+                  />
                 </div>
 
                 <div class="itemName">
@@ -75,6 +77,7 @@ import { useAuthenticatedNavigation } from "src/composables/navigation/useAuthen
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNavigationStore } from "src/stores/navigation";
+import { useNotificationStore } from "src/stores/notification";
 import { useUserStore } from "src/stores/user";
 import { navigationIcons } from "src/utils/ui/navigationIcons";
 import { ref, watch } from "vue";
@@ -84,7 +87,7 @@ import type { RouteNamedMap } from "vue-router/auto-routes";
 import UserAvatar from "../account/UserAvatar.vue";
 import DisplayUsername from "../features/user/DisplayUsername.vue";
 import StartConversationButtonLong from "../newConversation/StartConversationButtonLong.vue";
-import NewNotificationIndicator from "../notification/NewNotificationIndicator.vue";
+import ZKBadge from "../ui-library/ZKBadge.vue";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
 import ZKStyledIcon from "../ui-library/ZKStyledIcon.vue";
 import {
@@ -94,6 +97,7 @@ import {
 
 const { isRouteVisible } = useAuthenticatedNavigation();
 const { isGuest, isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
+const { numNewNotifications } = storeToRefs(useNotificationStore());
 const { profileData } = storeToRefs(useUserStore());
 const { drawerBehavior, showMobileDrawer } = storeToRefs(useNavigationStore());
 

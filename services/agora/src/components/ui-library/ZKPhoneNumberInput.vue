@@ -5,26 +5,27 @@
     There are no solution to fix the issue but since it doesn't affect production
     it can be safely ignored.
   -->
-  <div class="zk-phone-input" @click="handleCountrySearchFocus">
-    <!-- @vue-expect-error MazInputPhoneNumber types v-model as T | undefined -->
+  <div
+    class="zk-phone-input"
+    @click="handleCountrySearchFocus"
+    @keydown.capture="onKeydownCapture"
+  >
     <MazInputPhoneNumber
-      :model-value="modelValue"
-      :country-code="countryCode"
+      :model-value="phoneNumber ?? undefined"
+      :country-code="countryCode ?? undefined"
       :success="success"
       :error="error"
-      :show-code-on-list="showCodeOnList"
+      :show-code-in-list="showCodeInList"
       :placeholder="placeholder"
       :required="required"
       :auto-format="autoFormat"
-      :no-validation-error="noValidationError"
+      :validation-error="validationError"
       :aria-describedby="ariaDescribedby"
       :phone-input-attributes="{ name: 'phone', autocomplete: 'tel', inputmode: 'numeric', type: 'tel' }"
-      @keydown.capture="(e: KeyboardEvent) => { if (e.key != null && e.key.length === 1 && !/[0-9+\-() ]/.test(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault() }"
-      @data="handleUpdate"
-      @country-code="handleCountryCode"
-      @blur="handleBlur"
-      @update:model-value="handleModelValue"
-      @update:country-code="handleCountryCodeUpdate"
+      @update:model-value="(v: string | null | undefined) => (phoneNumber = v ?? null)"
+      @update:country-code="(v: CountryCode | null | undefined) => (countryCode = v ?? null)"
+      @data="(results: MazInputPhoneNumberData) => props.onUpdate(results)"
+      @country-code="(value: CountryCode | null | undefined) => props.onCountryCode(value ?? null)"
     />
   </div>
 </template>
@@ -36,23 +37,71 @@ import type { CountryCode } from "libphonenumber-js/max";
 import type { MazInputPhoneNumberData } from "maz-ui/components/MazInputPhoneNumber";
 import MazInputPhoneNumber from "maz-ui/components/MazInputPhoneNumber";
 
-withDefaults(defineProps<ZKPhoneNumberInputProps>(), {
-  success: false,
-  error: false,
-  showCodeOnList: false,
-  placeholder: "",
-  required: false,
-  autoFormat: false,
-  noValidationError: false,
-  ariaDescribedby: undefined,
+const props = withDefaults(
+  defineProps<{
+    success?: boolean;
+    error?: boolean;
+    showCodeInList?: boolean;
+    placeholder?: string;
+    required?: boolean;
+    autoFormat?: "blur" | "typing" | "disabled" | false;
+    validationError?: boolean;
+    ariaDescribedby?: string;
+    onUpdate: (results: MazInputPhoneNumberData) => void;
+    onCountryCode: (value: CountryCode | null) => void;
+    onKeydownEnter?: () => void;
+  }>(),
+  {
+    success: false,
+    error: false,
+    showCodeInList: false,
+    placeholder: "",
+    required: false,
+    autoFormat: false,
+    validationError: false,
+    ariaDescribedby: undefined,
+    onKeydownEnter: undefined,
+  },
+);
+
+const phoneNumber = defineModel<string | null>({ required: true });
+const countryCode = defineModel<CountryCode | null>("countryCode", {
+  required: true,
 });
-const emit = defineEmits<{
-  "update:modelValue": [value: string | null];
-  "update:countryCode": [value: CountryCode | null];
-  update: [results: MazInputPhoneNumberData];
-  countryCode: [value: CountryCode | null | undefined];
-  blur: [];
-}>();
+
+function onKeydownCapture(e: KeyboardEvent) {
+  if (e.key === "Enter") {
+    // Only trigger submit when Enter is pressed in the phone input,
+    // not in the country search dropdown
+    const target = e.target;
+    if (target instanceof HTMLInputElement && target.name === "phone") {
+      props.onKeydownEnter?.();
+    }
+    return;
+  }
+  if (
+    e.key != null &&
+    e.key.length === 1 &&
+    !/[0-9+\-() ]/.test(e.key) &&
+    !e.ctrlKey &&
+    !e.metaKey
+  ) {
+    e.preventDefault();
+  }
+}
+
+function handleCountrySearchFocus() {
+  setTimeout(() => {
+    const searchInput = document.querySelector<HTMLInputElement>(
+      ".m-popover-panel .m-select-list__search-input input"
+    );
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.addEventListener("keydown", handleSearchEnter);
+      searchInput.addEventListener("input", handleSearchScroll);
+    }
+  }, 100);
+}
 
 function handleSearchEnter(event: KeyboardEvent) {
   if (event.key === "Enter") {
@@ -74,52 +123,6 @@ function handleSearchScroll() {
       firstOption.scrollIntoView({ block: "nearest" });
     }
   });
-}
-
-function handleCountrySearchFocus() {
-  setTimeout(() => {
-    const searchInput = document.querySelector<HTMLInputElement>(
-      ".m-popover-panel .m-select-list__search-input input"
-    );
-    if (searchInput) {
-      searchInput.focus();
-      searchInput.addEventListener("keydown", handleSearchEnter);
-      searchInput.addEventListener("input", handleSearchScroll);
-    }
-  }, 100);
-}
-
-interface ZKPhoneNumberInputProps {
-  modelValue: string | null;
-  countryCode: CountryCode | null;
-  success?: boolean;
-  error?: boolean;
-  showCodeOnList?: boolean;
-  placeholder?: string;
-  required?: boolean;
-  autoFormat?: "blur" | "typing" | "disabled" | false;
-  noValidationError?: boolean;
-  ariaDescribedby?: string;
-}
-
-function handleModelValue(value: string | null) {
-  emit("update:modelValue", value);
-}
-
-function handleCountryCodeUpdate(value: CountryCode | null) {
-  emit("update:countryCode", value);
-}
-
-function handleUpdate(results: MazInputPhoneNumberData) {
-  emit("update", results);
-}
-
-function handleCountryCode(value: CountryCode | null | undefined) {
-  emit("countryCode", value);
-}
-
-function handleBlur() {
-  emit("blur");
 }
 </script>
 

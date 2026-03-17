@@ -1,35 +1,46 @@
 <template>
   <div>
-    <q-infinite-scroll :offset="2000" :disable="!canLoadMore" @load="onLoad">
-      <div class="container">
-        <OpinionListItem
-          v-for="commentItem in profileData.userCommentList"
-          :key="commentItem.opinionItem.opinionSlugId"
-          :conversation-slug-id="
-            commentItem.conversationData.metadata.conversationSlugId
-          "
-          :conversation-title="commentItem.conversationData.payload.title"
-          :is-indexed="commentItem.conversationData.metadata.isIndexed"
-          :opinion-slug-id="commentItem.opinionItem.opinionSlugId"
-          :opinion-item="commentItem.opinionItem"
-          :conversation-author-username="commentItem.conversationData.metadata.authorUsername"
-          :conversation-organization-name="commentItem.conversationData.metadata.organization?.name ?? ''"
-        />
-      </div>
-    </q-infinite-scroll>
+    <ErrorRetryBlock
+      v-if="profileData.commentsLoadFailed"
+      :title="t('errorTitle')"
+      :retry-label="t('retryButton')"
+      compact
+      @retry="handleRetry"
+    />
 
-    <div
-      v-if="profileData.dataLoaded && profileData.userCommentList.length == 0"
-      class="emptyMessage"
-    >
-      {{ t("emptyStatements") }}
-    </div>
+    <template v-else>
+      <q-infinite-scroll :offset="2000" :disable="!canLoadMore" @load="onLoad">
+        <div class="container">
+          <OpinionListItem
+            v-for="commentItem in profileData.userCommentList"
+            :key="commentItem.opinionItem.opinionSlugId"
+            :conversation-slug-id="
+              commentItem.conversationData.metadata.conversationSlugId
+            "
+            :conversation-title="commentItem.conversationData.payload.title"
+            :is-indexed="commentItem.conversationData.metadata.isIndexed"
+            :opinion-slug-id="commentItem.opinionItem.opinionSlugId"
+            :opinion-item="commentItem.opinionItem"
+            :conversation-author-username="commentItem.conversationData.metadata.authorUsername"
+            :conversation-organization-name="commentItem.conversationData.metadata.organization?.name ?? ''"
+          />
+        </div>
+      </q-infinite-scroll>
+
+      <div
+        v-if="profileData.dataLoaded && profileData.userCommentList.length == 0"
+        class="emptyMessage"
+      >
+        {{ t("emptyStatements") }}
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import OpinionListItem from "src/components/post/list/OpinionListItem.vue";
+import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useUserStore } from "src/stores/user";
 import { ref } from "vue";
@@ -43,7 +54,7 @@ const { t } = useComponentI18n<UserProfileTranslations>(
   userProfileTranslations
 );
 
-const { loadMoreUserComments } = useUserStore();
+const { loadMoreUserComments, retryUserComments } = useUserStore();
 const { profileData } = storeToRefs(useUserStore());
 
 const canLoadMore = ref(true);
@@ -54,6 +65,10 @@ async function onLoad(index: number, done: () => void) {
     canLoadMore.value = !response.reachedEndOfFeed;
   }
   done();
+}
+
+async function handleRetry() {
+  await retryUserComments();
 }
 </script>
 

@@ -7,15 +7,15 @@
       v-model:country-code="phoneData.countryCode"
       :success="phoneData.isValid"
       :error="phoneData.hasError"
-      show-code-on-list
+      show-code-in-list
       :placeholder="t('phoneNumberPlaceholder')"
       required
       auto-format="blur"
-      no-validation-error
+      :validation-error="false"
       aria-describedby="phone-error"
-      @update="onPhoneUpdate"
-      @country-code="onCountryCodeUpdate"
-      @keydown.enter="submit"
+      :on-update="onPhoneUpdate"
+      :on-country-code="onCountryCodeUpdate"
+      :on-keydown-enter="submit"
     />
 
     <div

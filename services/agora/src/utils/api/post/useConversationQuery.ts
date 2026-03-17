@@ -22,12 +22,7 @@ export function useConversationQuery({
     ],
     queryFn: async () => {
       const slugId = toValue(conversationSlugId);
-      // Auto-detect auth state: fetch personalized data when authenticated
-      const result = await fetchPostBySlugId(slugId, isGuestOrLoggedIn.value);
-      if (result === null) {
-        throw new Error("Conversation not found");
-      }
-      return result;
+      return await fetchPostBySlugId(slugId, isGuestOrLoggedIn.value);
     },
     enabled: computed(() => toValue(enabled)),
     staleTime: 60 * 1000,

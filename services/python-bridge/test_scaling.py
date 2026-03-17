@@ -194,6 +194,24 @@ class TestGetMathsScaling:
         assert mock_run.call_count == 1
 
     @patch("main._run_and_build_result")
+    def test_accepts_3_groups_over_degenerate_2_groups(self, mock_run):
+        """2 groups [1, 57] should always accept 3 groups [1, 4, 53]
+        even though CV is worse, because [1, 57] is effectively 1 group."""
+        mock_run.side_effect = [
+            self._make_mock_output([1, 57]),
+            self._make_mock_output([1, 4, 53]),
+        ]
+
+        result = get_maths(
+            votes=[],
+            min_user_vote_threshold=7,
+            conversation_slug_id="test-degenerate",
+        )
+
+        assert mock_run.call_count >= 2
+        assert len(result["group_comment_stats"]) == 3
+
+    @patch("main._run_and_build_result")
     def test_prevents_oscillation(self, mock_run):
         """Once committed to scaling down, should not switch to scaling up."""
         mock_run.side_effect = [

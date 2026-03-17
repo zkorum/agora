@@ -2,40 +2,52 @@
   <div>
     <WidthWrapper :enable="true">
       <q-pull-to-refresh @refresh="pullDownTriggered">
-        <FeedSkeleton v-if="isPending" />
         <q-infinite-scroll
-          v-else
           :offset="2000"
           :disable="!canLoadMore"
+          :class="{ 'loading-min-height': showLoading && partialHomeFeedList.length === 0 }"
           @load="onLoad"
         >
+          <!-- Unified loading spinner — same animation for first load and refetch -->
           <div
-            v-if="isError"
+            v-if="showLoading"
+            class="centerMessage loading-indicator"
+          >
+            <q-spinner-dots size="4rem" color="primary" />
+          </div>
+
+          <div
+            v-if="isError && !showLoading"
             class="emptyDivPadding"
           >
             <div class="centerMessage">
               <div>
-                <q-icon name="mdi-alert-circle-outline" size="4rem" />
+                <q-icon
+                  :name="isOffline ? 'mdi-wifi-off' : 'mdi-alert-circle-outline'"
+                  size="4rem"
+                />
               </div>
 
               <div :style="{ fontSize: '1.3rem' }">
-                {{ t("emptyStateTitle") }}
+                {{ isOffline ? t("networkErrorTitle") : t("errorStateTitle") }}
               </div>
 
-              <ZKButton
-                button-type="standardButton"
-                color="primary"
-                no-caps
-                unelevated
-                size="lg"
-                :label="t('retryButton')"
+              <div v-if="isOffline">
+                {{ t("networkErrorDescription") }}
+              </div>
+
+              <ActionButton
+                v-if="!isOffline"
+                variant="outline"
                 @click="refetch()"
-              />
+              >
+                {{ t('retryButton') }}
+              </ActionButton>
             </div>
           </div>
 
           <div
-            v-else-if="partialHomeFeedList.length == 0"
+            v-else-if="partialHomeFeedList.length === 0 && !showLoading"
             class="emptyDivPadding"
           >
             <div class="centerMessage">
@@ -54,18 +66,10 @@
             </div>
           </div>
 
-          <div v-else>
-            <!-- Loading indicator for tab switches -->
-            <div
-              v-if="isFetching"
-              class="centerMessage loading-indicator"
-            >
-              <q-spinner-dots size="4rem" color="primary" />
-            </div>
-
+          <div v-else-if="partialHomeFeedList.length > 0">
             <div
               class="postListFlex"
-              :class="{ 'loading-overlay': isFetching }"
+              :class="{ 'loading-overlay': showLoading }"
             >
               <PostListItem
                 v-for="postData in partialHomeFeedList"
@@ -93,7 +97,7 @@
 
     <!-- @vue-expect-error Quasar q-page-sticky doesn't type onClick event handler -->
     <q-page-sticky
-      v-if="hasPendingNewPosts && !isPending"
+      v-if="hasPendingCurrentTab && !showLoading"
       position="top"
       :offset="[0, 20]"
       @click="refreshPage(() => {})"
@@ -118,30 +122,32 @@
 import { useDocumentVisibility, useWindowScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { isNetworkOffline } from "src/composables/useNetworkStatus";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useFeedQuery } from "src/utils/api/post/useFeedQuery";
-import { onMounted, watch } from "vue";
+import { computed, onActivated, onDeactivated, ref, watch } from "vue";
 
 import WidthWrapper from "../navigation/WidthWrapper.vue";
 import PostListItem from "../post/list/PostListItem.vue";
+import ActionButton from "../ui-library/ActionButton.vue";
 import ZKButton from "../ui-library/ZKButton.vue";
 import {
   type CompactPostListTranslations,
   compactPostListTranslations,
 } from "./CompactPostList.i18n";
-import FeedSkeleton from "./FeedSkeleton.vue";
 
 const {
   partialHomeFeedList,
-  hasPendingNewPosts,
+  hasPendingCurrentTab,
   canLoadMore,
 } = storeToRefs(useHomeFeedStore());
-const { hasNewPostCheck, loadMore, setFeedData } = useHomeFeedStore();
+const { hasNewPostCheck, loadMore, setFeedData, clearFeedData } = useHomeFeedStore();
 
 const documentVisibility = useDocumentVisibility();
 
-const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
+const authStore = useAuthenticationStore();
+const { isAuthInitialized } = storeToRefs(authStore);
 
 const { y: windowY } = useWindowScroll();
 
@@ -149,9 +155,19 @@ const { t } = useComponentI18n<CompactPostListTranslations>(
   compactPostListTranslations
 );
 
-const { data, isPending, isFetching, isError, refetch } = useFeedQuery({
+// isPending: query has never resolved (waiting for auth init or first fetch).
+// isFetching: any fetch is in flight (first load or refetch).
+const { data, isPending, isError, refetch } = useFeedQuery({
   enabled: isAuthInitialized,
 });
+
+const isOffline = isNetworkOffline;
+
+const showLoading = computed(() =>
+  isPending.value && !isError.value
+);
+
+const isActive = ref(true);
 
 watch(data, (newData) => {
   if (newData) {
@@ -159,15 +175,40 @@ watch(data, (newData) => {
   }
 });
 
-onMounted(async () => {
+onActivated(async () => {
+  isActive.value = true;
   await hasNewPostCheck();
 });
 
+onDeactivated(() => {
+  isActive.value = false;
+});
+
 watch(documentVisibility, async () => {
-  if (documentVisibility.value === "visible") {
+  if (isActive.value && documentVisibility.value === "visible") {
     await hasNewPostCheck();
   }
 });
+
+watch(
+  () => authStore.isLoggedIn,
+  (isLoggedIn) => {
+    if (!isLoggedIn) {
+      clearFeedData();
+      void refetch();
+    }
+  }
+);
+
+watch(
+  () => authStore.isGuestOrLoggedIn,
+  (isGuestOrLoggedIn) => {
+    if (!isGuestOrLoggedIn) {
+      clearFeedData();
+      void refetch();
+    }
+  }
+);
 
 function onLoad(index: number, done: () => void) {
   if (canLoadMore.value) {
@@ -228,6 +269,10 @@ async function refreshPage(done: () => void) {
 .loading-overlay {
   opacity: 0.5;
   pointer-events: none;
+}
+
+.loading-min-height {
+  min-height: calc(100vh - 8rem);
 }
 
 .loading-indicator {

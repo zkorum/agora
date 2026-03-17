@@ -40,7 +40,7 @@ export const useNotificationStore = defineStore("notification", () => {
         return false;
       }
     } else {
-      return false;
+      throw new Error("Failed to fetch notifications");
     }
   }
 

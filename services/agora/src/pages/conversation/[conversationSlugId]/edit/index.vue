@@ -39,6 +39,7 @@
         v-model:private-conversation-settings="privateConversationSettings"
         v-model:post-as="postAs"
         v-model:import-settings="importSettings"
+        v-model:external-source-config="externalSourceConfig"
         v-model:title="title"
         v-model:content="content"
         v-model:poll-options="pollOptions"
@@ -189,7 +190,7 @@ const originalState = ref<{
   title: "",
   content: "",
   isPrivate: false,
-  participationMode: "strong_verification",
+  participationMode: "account_required",
   requiresEventTicket: undefined,
   privateConversationSettings: {
     hasScheduledConversion: false,
@@ -292,6 +293,7 @@ const {
   privateConversationSettings,
   postAs,
   importSettings,
+  externalSourceConfig,
   conversationType,
   validationState,
   validateTitle,

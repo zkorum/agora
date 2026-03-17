@@ -977,6 +977,7 @@
                                                             "participationMode": {
                                                                 "type": "string",
                                                                 "enum": [
+                                                                    "account_required",
                                                                     "strong_verification",
                                                                     "email_verification",
                                                                     "guest"
@@ -1096,6 +1097,34 @@
                                                                 "enum": [
                                                                     "devconnect-2025"
                                                                 ]
+                                                            },
+                                                            "externalSourceConfig": {
+                                                                "nullable": true,
+                                                                "oneOf": [
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "sourceType": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "github_issue"
+                                                                                ]
+                                                                            },
+                                                                            "repository": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "label": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "sourceType",
+                                                                            "repository",
+                                                                            "label"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
@@ -1116,7 +1145,8 @@
                                                             "isIndexed",
                                                             "isClosed",
                                                             "isEdited",
-                                                            "moderation"
+                                                            "moderation",
+                                                            "externalSourceConfig"
                                                         ],
                                                         "additionalProperties": false
                                                     },
@@ -1842,6 +1872,7 @@
                                                     "participationMode": {
                                                         "type": "string",
                                                         "enum": [
+                                                            "account_required",
                                                             "strong_verification",
                                                             "email_verification",
                                                             "guest"
@@ -1961,6 +1992,34 @@
                                                         "enum": [
                                                             "devconnect-2025"
                                                         ]
+                                                    },
+                                                    "externalSourceConfig": {
+                                                        "nullable": true,
+                                                        "oneOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "sourceType": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "github_issue"
+                                                                        ]
+                                                                    },
+                                                                    "repository": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "label": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "sourceType",
+                                                                    "repository",
+                                                                    "label"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        ]
                                                     }
                                                 },
                                                 "required": [
@@ -1981,7 +2040,8 @@
                                                     "isIndexed",
                                                     "isClosed",
                                                     "isEdited",
-                                                    "moderation"
+                                                    "moderation",
+                                                    "externalSourceConfig"
                                                 ],
                                                 "additionalProperties": false
                                             },
@@ -2162,6 +2222,7 @@
                                                             "participationMode": {
                                                                 "type": "string",
                                                                 "enum": [
+                                                                    "account_required",
                                                                     "strong_verification",
                                                                     "email_verification",
                                                                     "guest"
@@ -2281,6 +2342,34 @@
                                                                 "enum": [
                                                                     "devconnect-2025"
                                                                 ]
+                                                            },
+                                                            "externalSourceConfig": {
+                                                                "nullable": true,
+                                                                "oneOf": [
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "sourceType": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "github_issue"
+                                                                                ]
+                                                                            },
+                                                                            "repository": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "label": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "sourceType",
+                                                                            "repository",
+                                                                            "label"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
@@ -2301,7 +2390,8 @@
                                                             "isIndexed",
                                                             "isClosed",
                                                             "isEdited",
-                                                            "moderation"
+                                                            "moderation",
+                                                            "externalSourceConfig"
                                                         ],
                                                         "additionalProperties": false
                                                     },
@@ -2656,6 +2746,7 @@
                                                         "conversation_locked",
                                                         "conversation_closed",
                                                         "event_ticket_required",
+                                                        "account_required",
                                                         "strong_verification_required",
                                                         "email_verification_required"
                                                     ]
@@ -2734,6 +2825,7 @@
                                                 "reason": {
                                                     "type": "string",
                                                     "enum": [
+                                                        "account_required",
                                                         "strong_verification_required",
                                                         "email_verification_required"
                                                     ]
@@ -2956,6 +3048,26 @@
                                 "properties": {
                                     "conversationSlugId": {
                                         "type": "string"
+                                    },
+                                    "lifecycleFilter": {
+                                        "default": "active",
+                                        "anyOf": [
+                                            {
+                                                "type": "string",
+                                                "enum": [
+                                                    "active",
+                                                    "completed",
+                                                    "in_progress",
+                                                    "canceled"
+                                                ]
+                                            },
+                                            {
+                                                "type": "string",
+                                                "enum": [
+                                                    "all"
+                                                ]
+                                            }
+                                        ]
                                     }
                                 },
                                 "required": [
@@ -2979,10 +3091,14 @@
                                             "items": {
                                                 "type": "object",
                                                 "properties": {
-                                                    "opinionSlugId": {
+                                                    "itemSlugId": {
                                                         "type": "string"
                                                     },
-                                                    "opinionContent": {
+                                                    "title": {
+                                                        "type": "string"
+                                                    },
+                                                    "body": {
+                                                        "nullable": true,
                                                         "type": "string"
                                                     },
                                                     "avgRank": {
@@ -2993,30 +3109,341 @@
                                                     },
                                                     "participantCount": {
                                                         "type": "number"
+                                                    },
+                                                    "lifecycleStatus": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "active",
+                                                            "completed",
+                                                            "in_progress",
+                                                            "canceled"
+                                                        ]
+                                                    },
+                                                    "externalUrl": {
+                                                        "nullable": true,
+                                                        "type": "string"
                                                     }
                                                 },
                                                 "required": [
-                                                    "opinionSlugId",
-                                                    "opinionContent",
+                                                    "itemSlugId",
+                                                    "title",
+                                                    "body",
                                                     "avgRank",
                                                     "score",
-                                                    "participantCount"
+                                                    "participantCount",
+                                                    "lifecycleStatus",
+                                                    "externalUrl"
                                                 ],
                                                 "additionalProperties": false
                                             }
-                                        },
-                                        "totalParticipants": {
-                                            "type": "number"
                                         }
                                     },
                                     "required": [
-                                        "rankings",
-                                        "totalParticipants"
+                                        "rankings"
                                     ],
                                     "additionalProperties": false
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/api/v1/maxdiff/items/fetch": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string"
+                                    },
+                                    "lifecycleFilter": {
+                                        "default": "active",
+                                        "anyOf": [
+                                            {
+                                                "type": "string",
+                                                "enum": [
+                                                    "active",
+                                                    "completed",
+                                                    "in_progress",
+                                                    "canceled"
+                                                ]
+                                            },
+                                            {
+                                                "type": "string",
+                                                "enum": [
+                                                    "all"
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "slugId": {
+                                                        "type": "string"
+                                                    },
+                                                    "title": {
+                                                        "type": "string"
+                                                    },
+                                                    "body": {
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "lifecycleStatus": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "active",
+                                                            "completed",
+                                                            "in_progress",
+                                                            "canceled"
+                                                        ]
+                                                    },
+                                                    "externalUrl": {
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "snapshotScore": {
+                                                        "nullable": true,
+                                                        "type": "number"
+                                                    },
+                                                    "snapshotRank": {
+                                                        "nullable": true,
+                                                        "type": "number"
+                                                    },
+                                                    "snapshotParticipantCount": {
+                                                        "nullable": true,
+                                                        "type": "number"
+                                                    },
+                                                    "createdAt": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "slugId",
+                                                    "title",
+                                                    "body",
+                                                    "lifecycleStatus",
+                                                    "externalUrl",
+                                                    "snapshotScore",
+                                                    "snapshotRank",
+                                                    "snapshotParticipantCount",
+                                                    "createdAt"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "items"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/maxdiff/items/lifecycle/update": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string"
+                                    },
+                                    "itemSlugId": {
+                                        "type": "string"
+                                    },
+                                    "newStatus": {
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "completed",
+                                            "in_progress",
+                                            "canceled"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId",
+                                    "itemSlugId",
+                                    "newStatus"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/maxdiff/sync": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "created": {
+                                            "type": "number"
+                                        },
+                                        "updated": {
+                                            "type": "number"
+                                        }
+                                    },
+                                    "required": [
+                                        "created",
+                                        "updated"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/maxdiff/github/preview": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "repository": {
+                                        "type": "string"
+                                    },
+                                    "label": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "repository",
+                                    "label"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "issues": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "number": {
+                                                        "type": "number"
+                                                    },
+                                                    "title": {
+                                                        "type": "string"
+                                                    },
+                                                    "body": {
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "state": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "open",
+                                                            "closed"
+                                                        ]
+                                                    },
+                                                    "htmlUrl": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "number",
+                                                    "title",
+                                                    "body",
+                                                    "state",
+                                                    "htmlUrl"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "issues"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/webhook/github": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
                     }
                 }
             }
@@ -3118,6 +3545,7 @@
                                                         "conversation_locked",
                                                         "conversation_closed",
                                                         "event_ticket_required",
+                                                        "account_required",
                                                         "strong_verification_required",
                                                         "email_verification_required"
                                                     ]
@@ -4773,6 +5201,7 @@
                                     "participationMode": {
                                         "type": "string",
                                         "enum": [
+                                            "account_required",
                                             "strong_verification",
                                             "email_verification",
                                             "guest"
@@ -4805,6 +5234,33 @@
                                         "type": "string",
                                         "enum": [
                                             "devconnect-2025"
+                                        ]
+                                    },
+                                    "externalSourceConfig": {
+                                        "nullable": true,
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "sourceType": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "github_issue"
+                                                        ]
+                                                    },
+                                                    "repository": {
+                                                        "type": "string"
+                                                    },
+                                                    "label": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "sourceType",
+                                                    "repository",
+                                                    "label"
+                                                ]
+                                            }
                                         ]
                                     }
                                 },
@@ -4870,6 +5326,7 @@
                                     "participationMode": {
                                         "type": "string",
                                         "enum": [
+                                            "account_required",
                                             "strong_verification",
                                             "email_verification",
                                             "guest"
@@ -5300,6 +5757,7 @@
                                                         "participationMode": {
                                                             "type": "string",
                                                             "enum": [
+                                                                "account_required",
                                                                 "strong_verification",
                                                                 "email_verification",
                                                                 "guest"
@@ -5419,6 +5877,34 @@
                                                             "enum": [
                                                                 "devconnect-2025"
                                                             ]
+                                                        },
+                                                        "externalSourceConfig": {
+                                                            "nullable": true,
+                                                            "oneOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "sourceType": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "github_issue"
+                                                                            ]
+                                                                        },
+                                                                        "repository": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "label": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "sourceType",
+                                                                        "repository",
+                                                                        "label"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            ]
                                                         }
                                                     },
                                                     "required": [
@@ -5439,7 +5925,8 @@
                                                         "isIndexed",
                                                         "isClosed",
                                                         "isEdited",
-                                                        "moderation"
+                                                        "moderation",
+                                                        "externalSourceConfig"
                                                     ],
                                                     "additionalProperties": false
                                                 },
@@ -5593,6 +6080,7 @@
                                                 "participationMode": {
                                                     "type": "string",
                                                     "enum": [
+                                                        "account_required",
                                                         "strong_verification",
                                                         "email_verification",
                                                         "guest"
@@ -5796,6 +6284,7 @@
                                     "participationMode": {
                                         "type": "string",
                                         "enum": [
+                                            "account_required",
                                             "strong_verification",
                                             "email_verification",
                                             "guest"
@@ -7418,7 +7907,7 @@
                 }
             }
         },
-        "/api/v1/notification/stream": {
+        "/api/v1/realtime/stream": {
             "get": {
                 "responses": {
                     "200": {

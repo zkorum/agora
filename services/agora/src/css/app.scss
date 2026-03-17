@@ -161,3 +161,43 @@ html {
   position: relative;
   z-index: 0;
 }
+
+/* Toast notification styling matching Figma Toast Alert design */
+.zk-toast-alert {
+  border-left: 3px solid var(--q-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding-left: 24px;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 14px;
+
+  .q-icon {
+    font-size: 18px;
+    margin-right: 8px;
+  }
+
+  .q-spinner {
+    font-size: 18px;
+    margin-right: 10px;
+  }
+
+  .q-notification__actions {
+    margin-left: 12px;
+  }
+
+}
+
+.zk-toast-badge {
+  border: 2px solid var(--q-primary);
+  border-radius: 8px;
+  min-width: 26px;
+  height: 26px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  text-align: center;
+  line-height: 1;
+}

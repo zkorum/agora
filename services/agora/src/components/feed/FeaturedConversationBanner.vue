@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isVisible" class="featured-banner">
+  <div v-if="shouldShowBanner" class="featured-banner">
     <ZKIcon
       name="mdi:star-outline"
       size="1.25rem"
@@ -16,8 +16,8 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useFeaturedBannerVisibility } from "src/composables/useFeaturedBannerVisibility";
 import { processEnv } from "src/utils/processEnv";
-import { computed, ref } from "vue";
 
 import ZKIcon from "../ui-library/ZKIcon.vue";
 import {
@@ -30,24 +30,9 @@ const { t } = useComponentI18n<FeaturedConversationBannerTranslations>(
 );
 
 const slug = processEnv.VITE_FEATURED_CONVERSATION_SLUG;
-const storageKey = `featuredConvBanner:${slug}:dismissed`;
+const conversationUrl = `/conversation/${slug}`;
 
-const dismissed = ref(
-  slug ? sessionStorage.getItem(storageKey) === "true" : true
-);
-
-const isVisible = computed(() => {
-  return Boolean(slug) && !dismissed.value;
-});
-
-const conversationUrl = computed(() => `/conversation/${slug}`);
-
-function dismiss() {
-  dismissed.value = true;
-  if (slug) {
-    sessionStorage.setItem(storageKey, "true");
-  }
-}
+const { shouldShowBanner, dismiss } = useFeaturedBannerVisibility();
 </script>
 
 <style scoped lang="scss">

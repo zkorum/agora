@@ -17,6 +17,13 @@
         <q-spinner color="primary" size="3em" />
       </div>
 
+      <ErrorRetryBlock
+        v-else-if="isError"
+        :title="t('errorTitle')"
+        :retry-label="t('retryButton')"
+        @retry="initialize()"
+      />
+
       <div v-else class="topBar">
         <div class="usernameBar">
           <UserAvatar :user-identity="profileData.userName" :size="35" />
@@ -41,7 +48,7 @@
         </div>
       </div>
 
-      <div v-if="!isLoading" class="tabCluster">
+      <div v-if="!isLoading && !isError" class="tabCluster">
         <div v-for="tabItem in tabList" :key="tabItem.value">
           <ZKTab
             :text="tabItem.label"
@@ -53,7 +60,7 @@
         </div>
       </div>
 
-      <router-view v-if="!isLoading" />
+      <router-view v-if="!isLoading && !isError" />
     </q-pull-to-refresh>
   </DrawerLayout>
 </template>
@@ -63,6 +70,7 @@ import { storeToRefs } from "pinia";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import UserMetadata from "src/components/features/user/UserMetadata.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
+import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
@@ -110,6 +118,7 @@ const { profileData } = storeToRefs(useUserStore());
 
 const currentTab = ref(0);
 const isLoading = ref(true);
+const isError = ref(false);
 const hasLoadedOnce = ref(false);
 
 const route = useRoute();
@@ -145,21 +154,21 @@ watch(route, () => {
 
 async function initialize() {
   if (isAuthInitialized.value) {
-    try {
-      isLoading.value = true;
-      await loadUserProfile();
+    isLoading.value = true;
+    isError.value = false;
+    await loadUserProfile();
+    isLoading.value = false;
+    if (profileData.value.dataLoaded) {
       hasLoadedOnce.value = true;
-    } catch (error) {
-      console.error("Failed to load user profile:", error);
-    } finally {
-      isLoading.value = false;
+    } else {
+      isError.value = true;
     }
   }
 }
 
 function pullDownTriggered(done: () => void) {
   setTimeout(() => {
-    void loadUserProfile().then(() => {
+    void initialize().then(() => {
       done();
     });
   }, 500);

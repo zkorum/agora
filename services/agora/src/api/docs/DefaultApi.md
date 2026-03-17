@@ -39,9 +39,13 @@ All URIs are relative to *http://localhost*
 |[**apiV1ConversationOpenPost**](#apiv1conversationopenpost) | **POST** /api/v1/conversation/open | |
 |[**apiV1ConversationUpdatePost**](#apiv1conversationupdatepost) | **POST** /api/v1/conversation/update | |
 |[**apiV1ConversationValidateCsvPost**](#apiv1conversationvalidatecsvpost) | **POST** /api/v1/conversation/validate-csv | |
+|[**apiV1MaxdiffGithubPreviewPost**](#apiv1maxdiffgithubpreviewpost) | **POST** /api/v1/maxdiff/github/preview | |
+|[**apiV1MaxdiffItemsFetchPost**](#apiv1maxdiffitemsfetchpost) | **POST** /api/v1/maxdiff/items/fetch | |
+|[**apiV1MaxdiffItemsLifecycleUpdatePost**](#apiv1maxdiffitemslifecycleupdatepost) | **POST** /api/v1/maxdiff/items/lifecycle/update | |
 |[**apiV1MaxdiffLoadPost**](#apiv1maxdiffloadpost) | **POST** /api/v1/maxdiff/load | |
 |[**apiV1MaxdiffResultsPost**](#apiv1maxdiffresultspost) | **POST** /api/v1/maxdiff/results | |
 |[**apiV1MaxdiffSavePost**](#apiv1maxdiffsavepost) | **POST** /api/v1/maxdiff/save | |
+|[**apiV1MaxdiffSyncPost**](#apiv1maxdiffsyncpost) | **POST** /api/v1/maxdiff/sync | |
 |[**apiV1ModerationConversationCreatePost**](#apiv1moderationconversationcreatepost) | **POST** /api/v1/moderation/conversation/create | |
 |[**apiV1ModerationConversationGetPost**](#apiv1moderationconversationgetpost) | **POST** /api/v1/moderation/conversation/get | |
 |[**apiV1ModerationConversationWithdrawPost**](#apiv1moderationconversationwithdrawpost) | **POST** /api/v1/moderation/conversation/withdraw | |
@@ -52,7 +56,6 @@ All URIs are relative to *http://localhost*
 |[**apiV1MuteUserGetPost**](#apiv1muteusergetpost) | **POST** /api/v1/mute/user/get | |
 |[**apiV1NotificationFetchPost**](#apiv1notificationfetchpost) | **POST** /api/v1/notification/fetch | |
 |[**apiV1NotificationMarkAllReadPost**](#apiv1notificationmarkallreadpost) | **POST** /api/v1/notification/mark-all-read | |
-|[**apiV1NotificationStreamGet**](#apiv1notificationstreamget) | **GET** /api/v1/notification/stream | |
 |[**apiV1OpinionCreatePost**](#apiv1opinioncreatepost) | **POST** /api/v1/opinion/create | |
 |[**apiV1OpinionDeletePost**](#apiv1opiniondeletepost) | **POST** /api/v1/opinion/delete | |
 |[**apiV1OpinionFetchAnalysisByConversationPost**](#apiv1opinionfetchanalysisbyconversationpost) | **POST** /api/v1/opinion/fetch-analysis-by-conversation | |
@@ -60,6 +63,7 @@ All URIs are relative to *http://localhost*
 |[**apiV1OpinionFetchBySlugIdListPost**](#apiv1opinionfetchbyslugidlistpost) | **POST** /api/v1/opinion/fetch-by-slug-id-list | |
 |[**apiV1OpinionFetchHiddenByConversationPost**](#apiv1opinionfetchhiddenbyconversationpost) | **POST** /api/v1/opinion/fetch-hidden-by-conversation | |
 |[**apiV1PollRespondPost**](#apiv1pollrespondpost) | **POST** /api/v1/poll/respond | |
+|[**apiV1RealtimeStreamGet**](#apiv1realtimestreamget) | **GET** /api/v1/realtime/stream | |
 |[**apiV1ReportConversationCreatePost**](#apiv1reportconversationcreatepost) | **POST** /api/v1/report/conversation/create | |
 |[**apiV1ReportConversationFetchPost**](#apiv1reportconversationfetchpost) | **POST** /api/v1/report/conversation/fetch | |
 |[**apiV1ReportOpinionCreatePost**](#apiv1reportopinioncreatepost) | **POST** /api/v1/report/opinion/create | |
@@ -78,6 +82,7 @@ All URIs are relative to *http://localhost*
 |[**apiV1UserUsernameUpdatePost**](#apiv1userusernameupdatepost) | **POST** /api/v1/user/username/update | |
 |[**apiV1UserVoteGetByConversationsPost**](#apiv1uservotegetbyconversationspost) | **POST** /api/v1/user/vote/get-by-conversations | |
 |[**apiV1VoteCastPost**](#apiv1votecastpost) | **POST** /api/v1/vote/cast | |
+|[**apiV1WebhookGithubPost**](#apiv1webhookgithubpost) | **POST** /api/v1/webhook/github | |
 
 # **apiV1AccountGenerateUnusedRandomUsernamePost**
 > string apiV1AccountGenerateUnusedRandomUsernamePost()
@@ -1800,6 +1805,159 @@ This endpoint does not have any parameters.
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **apiV1MaxdiffGithubPreviewPost**
+> ApiV1MaxdiffGithubPreviewPost200Response apiV1MaxdiffGithubPreviewPost(apiV1MaxdiffGithubPreviewPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1MaxdiffGithubPreviewPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1MaxdiffGithubPreviewPostRequest: ApiV1MaxdiffGithubPreviewPostRequest; //
+
+const { status, data } = await apiInstance.apiV1MaxdiffGithubPreviewPost(
+    apiV1MaxdiffGithubPreviewPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1MaxdiffGithubPreviewPostRequest** | **ApiV1MaxdiffGithubPreviewPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1MaxdiffGithubPreviewPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1MaxdiffItemsFetchPost**
+> ApiV1MaxdiffItemsFetchPost200Response apiV1MaxdiffItemsFetchPost(apiV1MaxdiffResultsPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1MaxdiffResultsPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest; //
+
+const { status, data } = await apiInstance.apiV1MaxdiffItemsFetchPost(
+    apiV1MaxdiffResultsPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1MaxdiffResultsPostRequest** | **ApiV1MaxdiffResultsPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1MaxdiffItemsFetchPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1MaxdiffItemsLifecycleUpdatePost**
+> apiV1MaxdiffItemsLifecycleUpdatePost(apiV1MaxdiffItemsLifecycleUpdatePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1MaxdiffItemsLifecycleUpdatePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1MaxdiffItemsLifecycleUpdatePostRequest: ApiV1MaxdiffItemsLifecycleUpdatePostRequest; //
+
+const { status, data } = await apiInstance.apiV1MaxdiffItemsLifecycleUpdatePost(
+    apiV1MaxdiffItemsLifecycleUpdatePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1MaxdiffItemsLifecycleUpdatePostRequest** | **ApiV1MaxdiffItemsLifecycleUpdatePostRequest**|  | |
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **apiV1MaxdiffLoadPost**
 > ApiV1MaxdiffLoadPost200Response apiV1MaxdiffLoadPost(apiV1MaxdiffLoadPostRequest)
 
@@ -1852,7 +2010,7 @@ const { status, data } = await apiInstance.apiV1MaxdiffLoadPost(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1MaxdiffResultsPost**
-> ApiV1MaxdiffResultsPost200Response apiV1MaxdiffResultsPost(apiV1MaxdiffLoadPostRequest)
+> ApiV1MaxdiffResultsPost200Response apiV1MaxdiffResultsPost(apiV1MaxdiffResultsPostRequest)
 
 
 ### Example
@@ -1861,16 +2019,16 @@ const { status, data } = await apiInstance.apiV1MaxdiffLoadPost(
 import {
     DefaultApi,
     Configuration,
-    ApiV1MaxdiffLoadPostRequest
+    ApiV1MaxdiffResultsPostRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest; //
+let apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest; //
 
 const { status, data } = await apiInstance.apiV1MaxdiffResultsPost(
-    apiV1MaxdiffLoadPostRequest
+    apiV1MaxdiffResultsPostRequest
 );
 ```
 
@@ -1878,7 +2036,7 @@ const { status, data } = await apiInstance.apiV1MaxdiffResultsPost(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **apiV1MaxdiffLoadPostRequest** | **ApiV1MaxdiffLoadPostRequest**|  | |
+| **apiV1MaxdiffResultsPostRequest** | **ApiV1MaxdiffResultsPostRequest**|  | |
 
 
 ### Return type
@@ -1944,6 +2102,57 @@ void (empty response body)
 
  - **Content-Type**: application/json
  - **Accept**: Not defined
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1MaxdiffSyncPost**
+> ApiV1MaxdiffSyncPost200Response apiV1MaxdiffSyncPost(apiV1MaxdiffLoadPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1MaxdiffLoadPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1MaxdiffLoadPostRequest: ApiV1MaxdiffLoadPostRequest; //
+
+const { status, data } = await apiInstance.apiV1MaxdiffSyncPost(
+    apiV1MaxdiffLoadPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1MaxdiffLoadPostRequest** | **ApiV1MaxdiffLoadPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1MaxdiffSyncPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
 
 
 ### HTTP response details
@@ -2447,49 +2656,6 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **apiV1NotificationStreamGet**
-> apiV1NotificationStreamGet()
-
-
-### Example
-
-```typescript
-import {
-    DefaultApi,
-    Configuration
-} from './api';
-
-const configuration = new Configuration();
-const apiInstance = new DefaultApi(configuration);
-
-const { status, data } = await apiInstance.apiV1NotificationStreamGet();
-```
-
-### Parameters
-This endpoint does not have any parameters.
-
-
-### Return type
-
-void (empty response body)
-
-### Authorization
-
-[BearerAuth](../README.md#BearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: Not defined
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Default Response |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
 # **apiV1OpinionCreatePost**
 > ApiV1OpinionCreatePost200Response apiV1OpinionCreatePost(apiV1OpinionCreatePostRequest)
 
@@ -2838,6 +3004,49 @@ const { status, data } = await apiInstance.apiV1PollRespondPost(
 
  - **Content-Type**: application/json
  - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1RealtimeStreamGet**
+> apiV1RealtimeStreamGet()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+const { status, data } = await apiInstance.apiV1RealtimeStreamGet();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
 
 
 ### HTTP response details
@@ -3723,6 +3932,49 @@ const { status, data } = await apiInstance.apiV1VoteCastPost(
 
  - **Content-Type**: application/json
  - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1WebhookGithubPost**
+> apiV1WebhookGithubPost()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+const { status, data } = await apiInstance.apiV1WebhookGithubPost();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
 
 
 ### HTTP response details

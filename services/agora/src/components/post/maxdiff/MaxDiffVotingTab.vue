@@ -1,13 +1,13 @@
 <template>
   <div class="maxdiff-container">
-    <!-- Verification required -->
-    <div v-if="!canParticipate" class="info-message">
-      {{ participationMessage }}
+    <!-- Loading state -->
+    <div v-if="isLoading" class="info-message">
+      <q-spinner size="2rem" />
     </div>
 
-    <!-- Loading state -->
-    <div v-else-if="isLoading" class="info-message">
-      <q-spinner size="2rem" />
+    <!-- Fetch error -->
+    <div v-else-if="itemsFetchError" class="info-message">
+      {{ t("loadingError") }}
     </div>
 
     <!-- Completed ranking (check before statement count so users with saved rankings still see them) -->
@@ -19,12 +19,13 @@
           v-for="(slugId, index) in finalRanking"
           :key="slugId"
           class="ranking-item"
+          @click="openStatementDialog(slugId)"
         >
           <span class="rank-number">{{ index + 1 }}</span>
           <ZKHtmlContent
             class="rank-content"
-            :html-body="opinionContentMap.get(slugId) ?? slugId"
-            :compact-mode="false"
+            :html-body="itemContentMap.get(slugId) ?? slugId"
+            :compact-mode="true"
             :enable-links="false"
           />
         </li>
@@ -40,9 +41,9 @@
     </div>
 
     <!-- Not enough statements -->
-    <div v-else-if="opinionList.length < 4" class="info-message">
+    <div v-else-if="itemList.length < 2" class="info-message">
       {{
-        opinionList.length === 0
+        itemList.length === 0
           ? t("noStatements")
           : t("needMoreStatements")
       }}
@@ -79,11 +80,24 @@
         </div>
       </div>
 
-      <div class="progress-bar">
-        <div
-          class="progress-fill"
-          :style="{ width: `${progressPercent}%` }"
-        ></div>
+      <div class="progress-row">
+        <div class="progress-bar">
+          <div
+            class="progress-fill"
+            :style="{ width: `${progressPercent}%` }"
+          ></div>
+        </div>
+        <q-btn
+          v-if="canUndo"
+          flat
+          dense
+          no-caps
+          size="sm"
+          color="primary"
+          icon="mdi-undo"
+          :label="t('undoLastVote')"
+          @click="handleUndoClick"
+        />
       </div>
 
       <div class="candidates-grid" :class="{ 'candidates-transitioning': isTransitioning }">
@@ -97,12 +111,12 @@
           }"
           @click="handleCandidateClick(slugId)"
         >
-          <ZKHtmlContent
-            class="candidate-content"
-            :html-body="opinionContentMap.get(slugId) ?? slugId"
-            :compact-mode="false"
-            :enable-links="false"
-          />
+          <div :ref="(el) => setContentRef(slugId, el)" class="candidate-content-wrapper">
+            <span>{{ itemContentMap.get(slugId) ?? slugId }}</span>
+            <span v-if="itemBySlugId.get(slugId)?.body" class="candidate-body-inline">
+              — {{ stripHtml(itemBySlugId.get(slugId)?.body ?? "") }}
+            </span>
+          </div>
           <div class="candidate-label">
             <span v-if="selectedBest === slugId" class="label-best">
               {{ t("mostImportant") }}
@@ -114,17 +128,43 @@
         </button>
       </div>
     </div>
+
+    <!-- Fallback: initialization in progress -->
+    <div v-else class="info-message">
+      <q-spinner size="2rem" />
+    </div>
+
+    <MaxDiffStatementDialog
+      v-model="showStatementDialog"
+      :title="dialogTitle"
+      :html-body="expandedContent"
+      :external-url="dialogExternalUrl"
+      :vote-label="dialogVoteLabel"
+      :vote-color="dialogVoteColor"
+      :vote-flat="dialogVoteFlat"
+      :on-vote="dialogVoteCallback"
+    />
+
+    <PreLoginIntentionDialog
+      v-model="showLoginDialog"
+      :ok-callback="onLoginCallback"
+      active-intention="voting"
+      :needs-auth="needsLogin"
+      :participation-mode="conversationData.metadata.participationMode"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
+import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
+import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
+import { useMaxDiffHistoryUndo } from "src/composables/maxdiff/useMaxDiffHistoryUndo";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ExtendedConversation, MaxDiffComparison } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useCommentsQuery } from "src/utils/api/comment/useCommentQueries";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import {
   createMaxDiff,
@@ -133,8 +173,10 @@ import {
   restoreMaxDiff,
 } from "src/utils/maxdiff";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, onMounted, ref, triggerRef, watch } from "vue";
+import type { ComponentPublicInstance } from "vue";
+import { computed, nextTick, ref, triggerRef, watch } from "vue";
 
+import MaxDiffStatementDialog from "./MaxDiffStatementDialog.vue";
 import {
   type MaxDiffVotingTabTranslations,
   maxDiffVotingTabTranslations,
@@ -149,47 +191,71 @@ const { t } = useComponentI18n<MaxDiffVotingTabTranslations>(
   maxDiffVotingTabTranslations
 );
 
-const { hasStrongVerification, hasEmailVerification } =
+const { isLoggedIn, hasStrongVerification, hasEmailVerification } =
   storeToRefs(useAuthenticationStore());
-const { saveMaxDiffResult, loadMaxDiffResult } = useMaxDiffApi();
+const { saveMaxDiffResult, loadMaxDiffResult, fetchMaxDiffItems } = useMaxDiffApi();
 const $q = useQuasar();
 const { showNotifyMessage } = useNotify();
 
-const canParticipate = computed(() => {
+const needsLogin = computed(() => {
   const mode = props.conversationData.metadata.participationMode;
-  if (mode === "strong_verification") return hasStrongVerification.value;
-  if (mode === "email_verification") return hasEmailVerification.value;
-  return true; // guest mode
+  if (mode === "account_required") return !isLoggedIn.value;
+  if (mode === "strong_verification") return !hasStrongVerification.value;
+  if (mode === "email_verification") return !hasEmailVerification.value;
+  return false; // guest
 });
 
-const participationMessage = computed(() => {
-  const mode = props.conversationData.metadata.participationMode;
-  if (mode === "strong_verification") return t("verificationRequired");
-  return t("emailVerificationRequired");
-});
+const { setVotingIntention } = useConversationLoginIntentions();
+const showLoginDialog = ref(false);
+
+function onLoginCallback() {
+  setVotingIntention();
+}
 
 const conversationSlugId = computed(
   () => props.conversationData.metadata.conversationSlugId
 );
 
-// Fetch opinions for this conversation
-const commentsQuery = useCommentsQuery({
-  conversationSlugId,
-  filter: "discover",
-  voteCount: computed(() => props.conversationData.metadata.voteCount),
-  enabled: computed(() => props.hasConversationData),
-});
+// Fetch active MaxDiff items for this conversation
+interface MaxDiffItemDisplay {
+  slugId: string;
+  title: string;
+  body: string | null;
+  externalUrl: string | null;
+}
 
-const opinionList = computed(() => commentsQuery.data.value ?? []);
+const itemList = ref<MaxDiffItemDisplay[]>([]);
+const itemsFetched = ref(false);
+const itemsFetchError = ref(false);
 
-// Map from slugId to opinion HTML content for display
-const opinionContentMap = computed(() => {
+const itemContentMap = computed(() => {
   const map = new Map<string, string>();
-  for (const opinion of opinionList.value) {
-    map.set(opinion.opinionSlugId, opinion.opinion);
+  for (const item of itemList.value) {
+    map.set(item.slugId, item.title);
   }
   return map;
 });
+
+const itemBySlugId = computed(() => {
+  const map = new Map<string, MaxDiffItemDisplay>();
+  for (const item of itemList.value) {
+    map.set(item.slugId, item);
+  }
+  return map;
+});
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, "").trim();
+}
+
+function needsDialog(slugId: string): boolean {
+  if (truncatedCards.value.has(slugId)) return true;
+  const item = itemBySlugId.value.get(slugId);
+  if (item === undefined) return false;
+  if (item.body !== null) return true;
+  if (item.externalUrl !== null) return true;
+  return false;
+}
 
 // MaxDiff engine state
 const instance = ref<MaxDiffInstance | null>(null);
@@ -201,33 +267,142 @@ const selectedBest = ref<string | null>(null);
 const selectedWorst = ref<string | null>(null);
 const isTransitioning = ref(false);
 
+// Statement dialog state
+const showStatementDialog = ref(false);
+const expandedContent = ref("");
+const dialogVoteLabel = ref<string | undefined>(undefined);
+const dialogVoteColor = ref<string | undefined>(undefined);
+const dialogVoteFlat = ref(false);
+const dialogVoteCallback = ref<(() => void) | undefined>(undefined);
+
+function openStatementDialog(slugId: string): void {
+  const item = itemBySlugId.value.get(slugId);
+  dialogTitle.value = item?.title ?? slugId;
+  expandedContent.value = item?.body ?? "";
+  dialogExternalUrl.value = item?.externalUrl ?? null;
+  dialogVoteLabel.value = undefined;
+  dialogVoteColor.value = undefined;
+  dialogVoteFlat.value = false;
+  dialogVoteCallback.value = undefined;
+  showStatementDialog.value = true;
+}
+
+const dialogTitle = ref("");
+const dialogExternalUrl = ref<string | null>(null);
+
+function openVotingDialog(slugId: string): void {
+  const item = itemBySlugId.value.get(slugId);
+  dialogTitle.value = item?.title ?? slugId;
+  expandedContent.value = item?.body ?? "";
+  dialogExternalUrl.value = item?.externalUrl ?? null;
+
+  if (selectedBest.value === slugId) {
+    // Card is already selected as best — clicking deselects it
+    dialogVoteLabel.value = t("cancelSelection");
+    dialogVoteColor.value = undefined;
+    dialogVoteFlat.value = true;
+    dialogVoteCallback.value = () => {
+      selectCandidate(slugId);
+    };
+  } else if (selectedBest.value === null) {
+    dialogVoteLabel.value = t("mostImportant");
+    dialogVoteColor.value = "positive";
+    dialogVoteFlat.value = false;
+    dialogVoteCallback.value = () => {
+      selectCandidate(slugId);
+    };
+  } else {
+    dialogVoteLabel.value = t("leastImportant");
+    dialogVoteColor.value = "negative";
+    dialogVoteFlat.value = false;
+    dialogVoteCallback.value = () => {
+      selectCandidate(slugId);
+    };
+  }
+
+  showStatementDialog.value = true;
+}
+
+// Truncation detection for candidate cards
+const truncatedCards = ref(new Set<string>());
+const contentRefs = new Map<string, HTMLElement>();
+
+function setContentRef(
+  slugId: string,
+  el: Element | ComponentPublicInstance | null
+): void {
+  if (el instanceof HTMLElement) {
+    contentRefs.set(slugId, el);
+  }
+}
+
+function checkTruncation(): void {
+  const newSet = new Set<string>();
+  for (const [slugId, el] of contentRefs) {
+    if (el.scrollHeight > el.clientHeight + 1) {
+      newSet.add(slugId);
+    }
+  }
+  truncatedCards.value = newSet;
+}
+
 const progressPercent = computed(() => {
   if (!instance.value) return 0;
   return Math.round(instance.value.progress * 100);
 });
 
-// Initialize or restore MaxDiff instance when opinions are loaded
+const canUndo = computed(() => {
+  if (!instance.value) return false;
+  if (isTransitioning.value) return false;
+  return instance.value.exportState().comparisons.length > 0;
+});
+
+const { pushUndoEntry, consumeUndoEntry, clearAllUndoEntries } =
+  useMaxDiffHistoryUndo({
+    onUndo: () => void undoLastVote(),
+    canUndo: () => canUndo.value,
+  });
+
+// Fetch items and initialize MaxDiff when conversation data is ready
 watch(
-  () => opinionList.value.length,
-  async (count) => {
-    if (count >= 6 && canParticipate.value) {
-      await initializeMaxDiff();
+  () => props.hasConversationData,
+  async (hasData) => {
+    if (hasData && !itemsFetched.value) {
+      const response = await fetchMaxDiffItems({
+        conversationSlugId: conversationSlugId.value,
+        lifecycleFilter: "active",
+      });
+      if (response.status === "success") {
+        itemList.value = response.data.items.map((item) => ({
+          slugId: item.slugId,
+          title: item.title,
+          body: item.body ?? null,
+          externalUrl: item.externalUrl ?? null,
+        }));
+        itemsFetched.value = true;
+        if (itemList.value.length >= 2 && !instance.value) {
+          await initializeMaxDiff();
+        } else {
+          isLoading.value = false;
+        }
+      } else {
+        itemsFetchError.value = true;
+        isLoading.value = false;
+      }
     }
-  }
+  },
+  { immediate: true },
 );
 
-onMounted(async () => {
-  if (opinionList.value.length >= 4 && canParticipate.value) {
-    await initializeMaxDiff();
-  } else {
-    isLoading.value = false;
-  }
+// Detect truncated candidate cards after DOM updates
+watch(candidates, () => {
+  void nextTick(checkTruncation);
 });
 
 async function initializeMaxDiff(): Promise<void> {
   isLoading.value = true;
 
-  const slugIds = opinionList.value.map((op) => op.opinionSlugId);
+  const slugIds = itemList.value.map((item) => item.slugId);
 
   // Try to load saved state from backend
   const loadResponse = await loadMaxDiffResult({
@@ -255,6 +430,9 @@ async function initializeMaxDiff(): Promise<void> {
     instance.value = restored;
     isComplete.value = restored.complete;
     finalRanking.value = restored.result ?? [];
+
+    // Don't push history entries for previously saved comparisons.
+    // Browser back should only undo votes made in the current session.
   } else {
     // Create fresh instance
     const fresh = createMaxDiff(slugIds);
@@ -276,6 +454,20 @@ function updateCandidates(): void {
 }
 
 function handleCandidateClick(slugId: string): void {
+  if (needsLogin.value) {
+    showLoginDialog.value = true;
+    return;
+  }
+
+  if (needsDialog(slugId)) {
+    openVotingDialog(slugId);
+    return;
+  }
+
+  selectCandidate(slugId);
+}
+
+function selectCandidate(slugId: string): void {
   // First click = select best
   if (selectedBest.value === null) {
     selectedBest.value = slugId;
@@ -325,9 +517,15 @@ async function recordVote(): Promise<void> {
   // Force Vue to re-evaluate computeds that read from instance
   triggerRef(instance);
 
+  pushUndoEntry();
+
   // Check completion
   isComplete.value = instance.value.complete;
   finalRanking.value = instance.value.result ?? [];
+
+  if (isComplete.value) {
+    clearAllUndoEntries();
+  }
 
   // Reset selection and transition to next round
   selectedBest.value = null;
@@ -352,6 +550,47 @@ async function recordVote(): Promise<void> {
   }
 }
 
+async function undoLastVote(): Promise<void> {
+  if (!instance.value) return;
+
+  const state = instance.value.exportState();
+  if (state.comparisons.length === 0) return;
+
+  const remainingComparisons = state.comparisons.slice(0, -1);
+  const removedComparison = state.comparisons[state.comparisons.length - 1];
+
+  const restored = restoreMaxDiff({
+    items: state.items,
+    comparisons: remainingComparisons,
+  });
+
+  instance.value = restored;
+  triggerRef(instance);
+
+  isComplete.value = restored.complete;
+  finalRanking.value = restored.result ?? [];
+  selectedBest.value = null;
+  selectedWorst.value = null;
+
+  candidates.value = removedComparison.set;
+
+  const saveResponse = await saveMaxDiffResult({
+    conversationSlugId: conversationSlugId.value,
+    ranking: restored.result ?? null,
+    comparisons: restored.exportState().comparisons,
+    isComplete: restored.complete,
+  });
+
+  if (saveResponse.status !== "success") {
+    showNotifyMessage(t("undoError"));
+  }
+}
+
+function handleUndoClick(): void {
+  void undoLastVote();
+  consumeUndoEntry();
+}
+
 function handleRedoRanking(): void {
   $q.dialog({
     title: t("redoConfirmTitle"),
@@ -359,7 +598,8 @@ function handleRedoRanking(): void {
     cancel: true,
     persistent: true,
   }).onOk(() => {
-    const slugIds = opinionList.value.map((op) => op.opinionSlugId);
+    clearAllUndoEntries();
+    const slugIds = itemList.value.map((item) => item.slugId);
     instance.value = createMaxDiff(slugIds);
     isComplete.value = false;
     finalRanking.value = [];
@@ -476,7 +716,15 @@ function handleRedoRanking(): void {
   font-weight: var(--font-weight-medium);
 }
 
+.progress-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-start;
+}
+
 .progress-bar {
+  width: 100%;
   height: 6px;
   background: $color-border-weak;
   border-radius: 3px;
@@ -517,6 +765,8 @@ function handleRedoRanking(): void {
   font-size: 0.9rem;
   line-height: 1.4;
   min-height: 80px;
+  min-width: 0;
+  overflow: hidden;
 
   &:hover {
     border-color: color.adjust($color-border-weak, $lightness: -10%);
@@ -533,8 +783,19 @@ function handleRedoRanking(): void {
   }
 }
 
-.candidate-content {
+.candidate-content-wrapper {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+.candidate-body-inline {
+  font-size: 0.85em;
+  color: $color-text-weak;
 }
 
 .candidate-label {
@@ -581,6 +842,12 @@ function handleRedoRanking(): void {
   padding: 0.75rem 1rem;
   background: $app-background-color;
   border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
 }
 
 .rank-number {
@@ -592,5 +859,6 @@ function handleRedoRanking(): void {
 
 .rank-content {
   flex: 1;
+  min-width: 0;
 }
 </style>

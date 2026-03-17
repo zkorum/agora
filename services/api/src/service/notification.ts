@@ -22,7 +22,7 @@ import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import { log } from "@/app.js";
 import { generateRandomSlugId } from "@/crypto.js";
-import type { NotificationSSEManager } from "./notificationSSE.js";
+import type { RealtimeSSEManager } from "./realtimeSSE.js";
 
 interface MarkAllNotificationsAsReadProps {
     db: PostgresJsDatabase;
@@ -853,7 +853,7 @@ interface CreateVoteNotificationsProps {
     conversationId: number;
     numVotes: number;
     isSeed: boolean;
-    notificationSSEManager?: NotificationSSEManager;
+    realtimeSSEManager?: RealtimeSSEManager;
 }
 
 interface InsertNewVoteNotificationProps {
@@ -863,7 +863,7 @@ interface InsertNewVoteNotificationProps {
     conversationId: number;
     numVotes: number;
     isSeed: boolean;
-    notificationSSEManager?: NotificationSSEManager;
+    realtimeSSEManager?: RealtimeSSEManager;
 }
 
 /**
@@ -871,7 +871,7 @@ interface InsertNewVoteNotificationProps {
  * Builds notification directly from data and validates before broadcasting
  */
 async function broadcastVoteNotification(
-    notificationSSEManager: NotificationSSEManager | undefined,
+    realtimeSSEManager: RealtimeSSEManager | undefined,
     db: PostgresJsDatabase,
     userId: string,
     notificationSlugId: string,
@@ -880,7 +880,7 @@ async function broadcastVoteNotification(
     numVotes: number,
     isSeed: boolean,
 ): Promise<void> {
-    if (!notificationSSEManager) {
+    if (!realtimeSSEManager) {
         return;
     }
 
@@ -899,7 +899,7 @@ async function broadcastVoteNotification(
             const validationResult =
                 zodNotificationItem.safeParse(notification);
             if (validationResult.success) {
-                notificationSSEManager.broadcastToUser(
+                realtimeSSEManager.broadcastToUser(
                     userId,
                     validationResult.data,
                 );
@@ -923,7 +923,7 @@ async function broadcastVoteNotification(
  * Builds notification directly from data and validates before broadcasting
  */
 async function broadcastOpinionNotification(
-    notificationSSEManager: NotificationSSEManager | undefined,
+    realtimeSSEManager: RealtimeSSEManager | undefined,
     db: PostgresJsDatabase,
     userId: string,
     notificationSlugId: string,
@@ -931,7 +931,7 @@ async function broadcastOpinionNotification(
     conversationId: number,
     opinionAuthorId: string,
 ): Promise<void> {
-    if (!notificationSSEManager) {
+    if (!realtimeSSEManager) {
         return;
     }
 
@@ -949,7 +949,7 @@ async function broadcastOpinionNotification(
             const validationResult =
                 zodNotificationItem.safeParse(notification);
             if (validationResult.success) {
-                notificationSSEManager.broadcastToUser(
+                realtimeSSEManager.broadcastToUser(
                     userId,
                     validationResult.data,
                 );
@@ -973,14 +973,14 @@ async function broadcastOpinionNotification(
  * Builds notification directly from data and validates before broadcasting
  */
 export async function broadcastExportNotification(
-    notificationSSEManager: NotificationSSEManager | undefined,
+    realtimeSSEManager: RealtimeSSEManager | undefined,
     db: PostgresJsDatabase,
     userId: string,
     notificationSlugId: string,
     exportId: number,
     conversationId: number,
 ): Promise<void> {
-    if (!notificationSSEManager) {
+    if (!realtimeSSEManager) {
         return;
     }
 
@@ -997,7 +997,7 @@ export async function broadcastExportNotification(
             const validationResult =
                 zodNotificationItem.safeParse(notification);
             if (validationResult.success) {
-                notificationSSEManager.broadcastToUser(
+                realtimeSSEManager.broadcastToUser(
                     userId,
                     validationResult.data,
                 );
@@ -1137,14 +1137,14 @@ async function buildImportNotification(
  * Builds notification directly from data and validates before broadcasting
  */
 export async function broadcastImportNotification(
-    notificationSSEManager: NotificationSSEManager | undefined,
+    realtimeSSEManager: RealtimeSSEManager | undefined,
     db: PostgresJsDatabase,
     userId: string,
     notificationSlugId: string,
     importId: number,
     conversationId: number | null,
 ): Promise<void> {
-    if (!notificationSSEManager) {
+    if (!realtimeSSEManager) {
         return;
     }
 
@@ -1161,7 +1161,7 @@ export async function broadcastImportNotification(
             const validationResult =
                 zodNotificationItem.safeParse(notification);
             if (validationResult.success) {
-                notificationSSEManager.broadcastToUser(
+                realtimeSSEManager.broadcastToUser(
                     userId,
                     validationResult.data,
                 );
@@ -1191,7 +1191,7 @@ async function createVoteNotification({
     conversationId,
     numVotes,
     isSeed,
-    notificationSSEManager,
+    realtimeSSEManager,
 }: InsertNewVoteNotificationProps): Promise<string> {
     const notificationSlugId = generateRandomSlugId();
     const notificationTableResponse = await db
@@ -1217,7 +1217,7 @@ async function createVoteNotification({
 
     // Broadcast notification via SSE (don't await to avoid blocking)
     void broadcastVoteNotification(
-        notificationSSEManager,
+        realtimeSSEManager,
         db,
         userId,
         notificationSlugId,
@@ -1237,7 +1237,7 @@ export async function createVoteNotifications({
     conversationId,
     numVotes,
     isSeed,
-    notificationSSEManager,
+    realtimeSSEManager,
 }: CreateVoteNotificationsProps): Promise<void> {
     for (const userId of recipientUserIds) {
         try {
@@ -1248,7 +1248,7 @@ export async function createVoteNotifications({
                 conversationId,
                 numVotes,
                 isSeed,
-                notificationSSEManager,
+                realtimeSSEManager,
             });
         } catch (error) {
             log.error(
@@ -1265,7 +1265,7 @@ interface CreateOpinionNotificationForUserProps {
     opinionAuthorId: string;
     opinionId: number;
     conversationId: number;
-    notificationSSEManager?: NotificationSSEManager;
+    realtimeSSEManager?: RealtimeSSEManager;
 }
 
 async function createOpinionNotificationForUser({
@@ -1274,7 +1274,7 @@ async function createOpinionNotificationForUser({
     opinionAuthorId,
     opinionId,
     conversationId,
-    notificationSSEManager,
+    realtimeSSEManager,
 }: CreateOpinionNotificationForUserProps): Promise<string> {
     const notificationSlugId = generateRandomSlugId();
     const notificationTableResponse = await db
@@ -1299,7 +1299,7 @@ async function createOpinionNotificationForUser({
 
     // Broadcast notification via SSE (don't await to avoid blocking)
     void broadcastOpinionNotification(
-        notificationSSEManager,
+        realtimeSSEManager,
         db,
         recipientUserId,
         notificationSlugId,
@@ -1317,7 +1317,7 @@ interface CreateOpinionNotificationsProps {
     opinionAuthorId: string;
     opinionId: number;
     conversationId: number;
-    notificationSSEManager?: NotificationSSEManager;
+    realtimeSSEManager?: RealtimeSSEManager;
 }
 
 export async function createOpinionNotifications({
@@ -1326,7 +1326,7 @@ export async function createOpinionNotifications({
     opinionAuthorId,
     opinionId,
     conversationId,
-    notificationSSEManager,
+    realtimeSSEManager,
 }: CreateOpinionNotificationsProps): Promise<void> {
     for (const recipientUserId of recipientUserIds) {
         try {
@@ -1336,7 +1336,7 @@ export async function createOpinionNotifications({
                 opinionAuthorId,
                 opinionId,
                 conversationId,
-                notificationSSEManager,
+                realtimeSSEManager,
             });
         } catch (error) {
             log.error(

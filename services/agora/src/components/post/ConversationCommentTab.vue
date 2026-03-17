@@ -30,6 +30,7 @@
           conversationData.metadata.participationMode
         "
         :requires-event-ticket="conversationData.metadata.requiresEventTicket"
+        :is-composer-disabled="isVotingDisabled"
         @submitted-comment="submittedComment"
         @ticket-verified="(payload) => handleTicketVerified(payload)"
       />

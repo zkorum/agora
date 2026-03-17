@@ -1,5 +1,8 @@
 all: dev
 
+test:
+	.venv/bin/python -m pytest test_scaling.py -v
+
 # Run with Flask development server (single-threaded, for simple debugging only)
 dev-simple:
 	flask --app main run

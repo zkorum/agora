@@ -117,7 +117,7 @@ const { showNotifyMessage } = useNotify();
 const { updateAuthState } = useBackendAuthApi();
 const { invalidateConversation } = useInvalidateConversationQuery();
 const authStore = useAuthenticationStore();
-const { hasStrongVerification, hasEmailVerification } = storeToRefs(authStore);
+const { isLoggedIn, hasStrongVerification, hasEmailVerification } = storeToRefs(authStore);
 const userStore = useUserStore();
 const { verifiedEventTickets } = storeToRefs(userStore);
 
@@ -152,6 +152,7 @@ const userIsClusteredFromCache = computed(() => {
 
 // Check if user needs login/verification based on participation mode
 const needsLogin = computed(() => {
+  if (props.participationMode === "account_required") return !isLoggedIn.value;
   if (props.participationMode === "strong_verification") return !hasStrongVerification.value;
   if (props.participationMode === "email_verification") return !hasEmailVerification.value;
   return false; // guest
@@ -288,7 +289,7 @@ async function castPersonalVote(
         showNotifyMessage(t("conversationClosed"));
       } else if (result.reason === "conversation_locked") {
         showNotifyMessage(t("voteFailed"));
-      } else if (result.reason === "event_ticket_required" || result.reason === "strong_verification_required" || result.reason === "email_verification_required") {
+      } else if (result.reason === "event_ticket_required" || result.reason === "account_required" || result.reason === "strong_verification_required" || result.reason === "email_verification_required") {
         // User lacks required verification for this conversation
         await userStore.loadUserProfile();
         showLoginDialog.value = true;

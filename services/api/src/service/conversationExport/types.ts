@@ -1,5 +1,5 @@
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import type { NotificationSSEManager } from "../notificationSSE.js";
+import type { RealtimeSSEManager } from "../realtimeSSE.js";
 
 /**
  * Parameters for processing a conversation export in the background.
@@ -10,7 +10,7 @@ export interface ProcessConversationExportParams {
     conversationId: number;
     conversationSlugId: string;
     userId: string;
-    notificationSSEManager?: NotificationSSEManager;
+    realtimeSSEManager?: RealtimeSSEManager;
 }
 
 /**

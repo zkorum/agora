@@ -12,7 +12,7 @@ import type {
     GetActiveImportResponse,
 } from "@/shared/types/dto.js";
 import type { EventSlug, ParticipationMode } from "@/shared/types/zod.js";
-import type { NotificationSSEManager } from "../notificationSSE.js";
+import type { RealtimeSSEManager } from "../realtimeSSE.js";
 import * as database from "./database.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import { CSV_UPLOAD_FIELD_NAMES } from "@/shared-app-api/csvUpload.js";
@@ -32,7 +32,7 @@ interface RequestConversationImportParams {
     proof: string;
     didWrite: string;
     importBuffer: ImportBuffer;
-    notificationSSEManager: NotificationSSEManager;
+    realtimeSSEManager: RealtimeSSEManager;
 }
 
 interface RequestConversationImportResult {
@@ -53,7 +53,7 @@ export async function requestConversationImport(
         proof,
         didWrite,
         importBuffer,
-        notificationSSEManager,
+        realtimeSSEManager,
     } = params;
 
     // Files are already parsed and validated by caller via zodCsvFiles
@@ -121,7 +121,7 @@ export async function requestConversationImport(
         importId,
         conversationId: null,
         type: "import_started",
-        notificationSSEManager,
+        realtimeSSEManager,
     });
 
     // Queue CSV import for async processing
@@ -153,7 +153,7 @@ interface RequestUrlImportParams {
     proof: string;
     didWrite: string;
     importBuffer: ImportBuffer;
-    notificationSSEManager: NotificationSSEManager;
+    realtimeSSEManager: RealtimeSSEManager;
 }
 
 /**
@@ -170,7 +170,7 @@ export async function requestUrlImport(
         proof,
         didWrite,
         importBuffer,
-        notificationSSEManager,
+        realtimeSSEManager,
     } = params;
 
     // Check if user already has an active import
@@ -201,7 +201,7 @@ export async function requestUrlImport(
         importId,
         conversationId: null,
         type: "import_started",
-        notificationSSEManager,
+        realtimeSSEManager,
     });
 
     // Queue URL import for async processing

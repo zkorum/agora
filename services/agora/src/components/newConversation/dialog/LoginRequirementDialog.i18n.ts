@@ -1,6 +1,8 @@
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface LoginRequirementDialogTranslations {
+  requiresAccountTitle: string;
+  requiresAccountDescription: string;
   requiresLoginTitle: string;
   requiresLoginDescription: string;
   requiresEmailVerificationTitle: string;
@@ -14,6 +16,9 @@ export const loginRequirementDialogTranslations: Record<
   LoginRequirementDialogTranslations
 > = {
   en: {
+    requiresAccountTitle: "Requires account",
+    requiresAccountDescription:
+      "Anyone with the link can view the conversation, but will need an account to vote and contribute statements",
     requiresLoginTitle: "Requires strong verification",
     requiresLoginDescription:
       "Anyone with the link can view the conversation, but will need phone or passport verification to vote and contribute statements",
@@ -25,6 +30,9 @@ export const loginRequirementDialogTranslations: Record<
       "Anyone with the link can view the conversation, vote and contribute statements",
   },
   ar: {
+    requiresAccountTitle: "يتطلب حسابًا",
+    requiresAccountDescription:
+      "يمكن لأي شخص لديه الرابط عرض المحادثة، ولكن سيحتاج إلى حساب للتصويت وإضافة مقترحات",
     requiresLoginTitle: "يتطلب تحققًا قويًا",
     requiresLoginDescription:
       "يمكن لأي شخص لديه الرابط عرض المحادثة، ولكن سيحتاج إلى التحقق عبر الهاتف أو جواز السفر للتصويت وإضافة مقترحات",
@@ -36,9 +44,12 @@ export const loginRequirementDialogTranslations: Record<
       "يمكن لأي شخص لديه الرابط عرض المحادثة والتصويت وإضافة مقترحات",
   },
   es: {
+    requiresAccountTitle: "Requiere cuenta",
+    requiresAccountDescription:
+      "Cualquiera con el enlace puede ver la conversación, pero necesitará una cuenta para votar y contribuir proposiciones",
     requiresLoginTitle: "Requiere verificación fuerte",
     requiresLoginDescription:
-      "Cualquiera con el enlace puede ver la conversación, pero necesitará verificación por teléfono o pasaporte para votar y contribuir proposiciones",
+      "Cualquiera con el enlace puede ver la conversación, pero necesitará verificar su teléfono o pasaporte para votar y contribuir proposiciones",
     requiresEmailVerificationTitle: "Requiere verificación por correo electrónico",
     requiresEmailVerificationDescription:
       "Cualquiera con el enlace puede ver la conversación, pero necesitará verificar su correo electrónico para votar y contribuir proposiciones",
@@ -47,9 +58,12 @@ export const loginRequirementDialogTranslations: Record<
       "Cualquiera con el enlace puede ver la conversación, votar y contribuir proposiciones",
   },
   fr: {
+    requiresAccountTitle: "Compte requis",
+    requiresAccountDescription:
+      "Toute personne ayant le lien peut voir la conversation, mais devra avoir un compte pour voter et contribuer des propositions",
     requiresLoginTitle: "Vérification renforcée requise",
     requiresLoginDescription:
-      "Toute personne ayant le lien peut voir la conversation, mais devra effectuer une vérification par téléphone ou passeport pour voter et contribuer des propositions",
+      "Toute personne ayant le lien peut voir la conversation, mais devra vérifier son téléphone ou passeport pour voter et contribuer des propositions",
     requiresEmailVerificationTitle: "Vérification par email requise",
     requiresEmailVerificationDescription:
       "Toute personne ayant le lien peut voir la conversation, mais devra vérifier son email pour voter et contribuer des propositions",
@@ -58,6 +72,9 @@ export const loginRequirementDialogTranslations: Record<
       "Toute personne ayant le lien peut voir la conversation, voter et contribuer des propositions",
   },
   "zh-Hans": {
+    requiresAccountTitle: "需要账户",
+    requiresAccountDescription:
+      "任何有链接的人都可以查看对话，但需要账户才能投票和贡献观点",
     requiresLoginTitle: "需要强验证",
     requiresLoginDescription:
       "任何有链接的人都可以查看对话，但需要通过手机或护照验证才能投票和贡献观点",
@@ -69,6 +86,9 @@ export const loginRequirementDialogTranslations: Record<
       "任何有链接的人都可以查看对话、投票和贡献观点",
   },
   "zh-Hant": {
+    requiresAccountTitle: "需要帳戶",
+    requiresAccountDescription:
+      "任何有連結的人都可以查看對話，但需要帳戶才能投票和貢獻觀點",
     requiresLoginTitle: "需要強驗證",
     requiresLoginDescription:
       "任何有連結的人都可以查看對話，但需要透過手機或護照驗證才能投票和貢獻觀點",
@@ -80,6 +100,9 @@ export const loginRequirementDialogTranslations: Record<
       "任何有連結的人都可以查看對話、投票和貢獻觀點",
   },
   ja: {
+    requiresAccountTitle: "アカウントが必要",
+    requiresAccountDescription:
+      "リンクを持つ人は誰でも会話を閲覧できますが、投票や主張の投稿にはアカウントが必要です",
     requiresLoginTitle: "強力な認証が必要",
     requiresLoginDescription:
       "リンクを持つ人は誰でも会話を閲覧できますが、投票や主張の投稿には電話またはパスポートの認証が必要です",
@@ -91,6 +114,9 @@ export const loginRequirementDialogTranslations: Record<
       "リンクを持つ人は誰でも会話を閲覧、投票、主張の投稿ができます",
   },
   ky: {
+    requiresAccountTitle: "Аккаунт талап кылынат",
+    requiresAccountDescription:
+      "Шилтемеси бар ар бир адам талкууну көрө алат, бирок добуш берүү жана пикир жазуу үчүн аккаунт керек",
     requiresLoginTitle: "Күчтүү текшерүү талап кылынат",
     requiresLoginDescription:
       "Шилтемеси бар ар бир адам талкууну көрө алат, бирок добуш берүү жана пикир жазуу үчүн телефон же паспорт текшерүүсү талап кылынат",
@@ -102,6 +128,9 @@ export const loginRequirementDialogTranslations: Record<
       "Шилтемеси бар ар бир адам талкууну көрө, добуш бере жана пикир жаза алат",
   },
   ru: {
+    requiresAccountTitle: "Требуется аккаунт",
+    requiresAccountDescription:
+      "Любой, у кого есть ссылка, может просматривать обсуждение, но для голосования и добавления высказываний необходим аккаунт",
     requiresLoginTitle: "Требуется усиленная проверка",
     requiresLoginDescription:
       "Любой, у кого есть ссылка, может просматривать обсуждение, но для голосования и добавления высказываний потребуется проверка по телефону или паспорту",

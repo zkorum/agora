@@ -1,20 +1,14 @@
 import { useShare } from "@vueuse/core";
 import { useClipboard } from "@vueuse/core";
-import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 
 import { useDialog } from "../ui/dialog";
 import { useNotify } from "../ui/notify";
-import {
-  type WebShareTranslations,
-  webShareTranslations,
-} from "./WebShare.i18n";
 
 export function useWebShare() {
   const webShare = useShare();
   const clipBoard = useClipboard();
   const dialog = useDialog();
   const notify = useNotify();
-  const { t } = useComponentI18n<WebShareTranslations>(webShareTranslations);
 
   function isSupportedSharePlatform() {
     if (webShare.isSupported) {
@@ -35,7 +29,7 @@ export function useWebShare() {
     } else {
       if (clipBoard.isSupported) {
         await clipBoard.copy(url);
-        notify.showNotifyMessage(t("copiedToClipboard"));
+        notify.showCopiedToClipboard();
       } else {
         console.log("Clipboard is not supported");
         dialog.showMessage("Share Link", url);
