@@ -104,7 +104,8 @@ html[lang="fa"] {
       sans-serif;
   }
 
-  /* Ensure all form elements and components inherit the Persian font */
+  /* Force Parastoo on ALL elements — overrides any component-level font-family */
+  *,
   button,
   input,
   textarea,
@@ -112,8 +113,19 @@ html[lang="fa"] {
   .q-btn,
   .q-field,
   .q-card,
-  .q-item {
-    font-family: inherit;
+  .q-item,
+  .report-container,
+  .button-text {
+    font-family: Parastoo, "Segoe UI", Tahoma, Arial, sans-serif !important;
+  }
+
+  /* Preserve monospace where intentional */
+  code,
+  pre,
+  kbd,
+  samp,
+  .monospace {
+    font-family: monospace !important;
   }
 }
 
