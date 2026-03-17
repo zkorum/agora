@@ -77,7 +77,7 @@ async function goToWalletLogin() {
   await router.push({ name: "/onboarding/step3-wallet/" });
 }
 
-async function goToPassportLogin() {
+async function _goToPassportLogin() {
   await router.replace({ name: "/onboarding/step3-passport/" });
 }
 

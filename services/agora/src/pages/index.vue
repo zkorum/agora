@@ -68,7 +68,7 @@
 import { storeToRefs } from "pinia";
 import CompactPostList from "src/components/feed/CompactPostList.vue";
 import FeaturedConversationBanner from "src/components/feed/FeaturedConversationBanner.vue";
-import { HomeMenuBar } from "src/components/navigation/header/variants";
+import { HomeMenuBar as _HomeMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import NewPostButtonWrapper from "src/components/post/NewPostButtonWrapper.vue";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
