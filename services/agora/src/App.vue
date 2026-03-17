@@ -95,7 +95,7 @@ watch(isNetworkOffline, (offline) => {
   } else {
     offlineController.onWentOnline();
   }
-});
+}, { flush: 'sync' });
 
 onMounted(async () => {
   try {

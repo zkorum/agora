@@ -18,7 +18,7 @@ import { setNetworkOffline } from "./useNetworkStatus";
 
 const SSE_CONNECTION_TIMEOUT_MS = 15_000;
 const SSE_INITIAL_RETRY_DELAY_MS = 2_000;
-const SSE_MAX_RETRY_DELAY_MS = 300_000;
+const SSE_MAX_RETRY_DELAY_MS = 30_000;
 // Server sends heartbeats every 30s (see services/api/src/service/realtimeSSE.ts).
 // When the API stops ungracefully, reader.read() can hang indefinitely on a dead
 // TCP connection. This watchdog aborts the connection after 45s of silence (1.5x
@@ -284,7 +284,11 @@ export function useRealtimeSSE() {
       clearTimeout(reconnectTimeout);
     }
 
-    console.log(`[SSE] Reconnecting in ${currentRetryDelay / 1000}s`);
+    // Add 0-25% jitter to prevent thundering herd on server restart
+    const jitter = currentRetryDelay * Math.random() * 0.25;
+    const delayWithJitter = currentRetryDelay + jitter;
+
+    console.log(`[SSE] Reconnecting in ${(delayWithJitter / 1000).toFixed(1)}s`);
 
     reconnectTimeout = setTimeout(() => {
       if (shouldReconnect) {
@@ -292,7 +296,7 @@ export function useRealtimeSSE() {
           console.error("[SSE] Reconnection failed:", error);
         });
       }
-    }, currentRetryDelay);
+    }, delayWithJitter);
 
     // Exponential backoff: double delay each time, capped at max
     currentRetryDelay = Math.min(currentRetryDelay * 2, SSE_MAX_RETRY_DELAY_MS);
