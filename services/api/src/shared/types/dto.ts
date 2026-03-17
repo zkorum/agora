@@ -784,6 +784,7 @@ export class Dto {
             reason: z.enum([
                 "already_logged_in",
                 "associated_with_another_user",
+                "already_has_credential",
             ]),
         }),
     ]);
@@ -836,6 +837,7 @@ export class Dto {
             reason: z.enum([
                 "already_logged_in",
                 "associated_with_another_user",
+                "already_has_credential",
                 "no_challenge",
             ]),
         }),
