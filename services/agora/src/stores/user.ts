@@ -21,6 +21,8 @@ export const useUserStore = defineStore("user", () => {
     isSiteModerator: boolean;
     isSiteOrgAdmin: boolean;
     dataLoaded: boolean;
+    postsLoadFailed: boolean;
+    commentsLoadFailed: boolean;
     organizationList: OrganizationProperties[];
     verifiedEventTickets: EventSlug[];
   }
@@ -34,6 +36,8 @@ export const useUserStore = defineStore("user", () => {
     isSiteModerator: false,
     isSiteOrgAdmin: false,
     dataLoaded: false,
+    postsLoadFailed: false,
+    commentsLoadFailed: false,
     organizationList: [],
     verifiedEventTickets: [],
   };
@@ -61,9 +65,27 @@ export const useUserStore = defineStore("user", () => {
         isSiteModerator: userProfile.isSiteModerator,
         isSiteOrgAdmin: userProfile.isSiteOrgAdmin,
         dataLoaded: true,
+        postsLoadFailed: userPosts === null,
+        commentsLoadFailed: userComments === null,
         organizationList: userProfile.organizationList,
         verifiedEventTickets: userProfile.verifiedEventTickets,
       };
+    }
+  }
+
+  async function retryUserPosts() {
+    const userPosts = await fetchUserPosts(undefined);
+    if (userPosts) {
+      profileData.value.userPostList = userPosts;
+      profileData.value.postsLoadFailed = false;
+    }
+  }
+
+  async function retryUserComments() {
+    const userComments = await fetchUserComments(undefined);
+    if (userComments) {
+      profileData.value.userCommentList = userComments;
+      profileData.value.commentsLoadFailed = false;
     }
   }
 
@@ -178,6 +200,8 @@ export const useUserStore = defineStore("user", () => {
 
   return {
     loadUserProfile,
+    retryUserPosts,
+    retryUserComments,
     loadMoreUserPosts,
     loadMoreUserComments,
     clearProfileData,

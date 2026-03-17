@@ -36,17 +36,13 @@
                 {{ t("networkErrorDescription") }}
               </div>
 
-              <ZKButton
+              <ActionButton
                 v-if="!isOffline"
-                button-type="standardButton"
-                outline
-                color="primary"
-                no-caps
-                unelevated
-                size="lg"
-                :label="t('retryButton')"
+                variant="outline"
                 @click="refetch()"
-              />
+              >
+                {{ t('retryButton') }}
+              </ActionButton>
             </div>
           </div>
 
@@ -134,6 +130,7 @@ import { computed, onActivated, onDeactivated, ref, watch } from "vue";
 
 import WidthWrapper from "../navigation/WidthWrapper.vue";
 import PostListItem from "../post/list/PostListItem.vue";
+import ActionButton from "../ui-library/ActionButton.vue";
 import ZKButton from "../ui-library/ZKButton.vue";
 import {
   type CompactPostListTranslations,

@@ -7,6 +7,8 @@ export interface UserProfileTranslations {
   opinionTab: string;
   emptyConversations: string;
   emptyStatements: string;
+  errorTitle: string;
+  retryButton: string;
 }
 
 export const userProfileTranslations: Record<SupportedDisplayLanguageCodes, UserProfileTranslations> =
@@ -18,6 +20,8 @@ export const userProfileTranslations: Record<SupportedDisplayLanguageCodes, User
       opinionTab: "Statement",
       emptyConversations: "You have no conversations",
       emptyStatements: "You have no statements",
+      errorTitle: "Something went wrong",
+      retryButton: "Retry",
     },
     ar: {
       userProfile: "الملف الشخصي",
@@ -26,6 +30,8 @@ export const userProfileTranslations: Record<SupportedDisplayLanguageCodes, User
       opinionTab: "المقترح",
       emptyConversations: "ليس لديك محادثات",
       emptyStatements: "ليس لديك مقترحات",
+      errorTitle: "حدث خطأ ما",
+      retryButton: "إعادة المحاولة",
     },
     es: {
       userProfile: "Perfil de Usuario",
@@ -34,6 +40,8 @@ export const userProfileTranslations: Record<SupportedDisplayLanguageCodes, User
       opinionTab: "Proposición",
       emptyConversations: "No tienes conversaciones",
       emptyStatements: "No tienes proposiciones",
+      errorTitle: "Algo salió mal",
+      retryButton: "Reintentar",
     },
     fr: {
       userProfile: "Profil Utilisateur",
@@ -42,6 +50,8 @@ export const userProfileTranslations: Record<SupportedDisplayLanguageCodes, User
       opinionTab: "Proposition",
       emptyConversations: "Vous n'avez aucune conversation",
       emptyStatements: "Vous n'avez aucune proposition",
+      errorTitle: "Une erreur est survenue",
+      retryButton: "Réessayer",
     },
     "zh-Hans": {
       userProfile: "用户资料",
@@ -50,6 +60,8 @@ export const userProfileTranslations: Record<SupportedDisplayLanguageCodes, User
       opinionTab: "观点",
       emptyConversations: "您没有对话",
       emptyStatements: "您没有观点",
+      errorTitle: "出了点问题",
+      retryButton: "重试",
     },
     "zh-Hant": {
       userProfile: "用戶資料",
@@ -58,6 +70,8 @@ export const userProfileTranslations: Record<SupportedDisplayLanguageCodes, User
       opinionTab: "觀點",
       emptyConversations: "您沒有對話",
       emptyStatements: "您沒有觀點",
+      errorTitle: "出了點問題",
+      retryButton: "重試",
     },
     ja: {
       userProfile: "ユーザープロフィール",
@@ -66,6 +80,8 @@ export const userProfileTranslations: Record<SupportedDisplayLanguageCodes, User
       opinionTab: "主張",
       emptyConversations: "会話がありません",
       emptyStatements: "主張がありません",
+      errorTitle: "問題が発生しました",
+      retryButton: "再試行",
     },
     ky: {
       userProfile: "Колдонуучу профили",
@@ -74,6 +90,8 @@ export const userProfileTranslations: Record<SupportedDisplayLanguageCodes, User
       opinionTab: "Пикир",
       emptyConversations: "Сизде талкуулар жок",
       emptyStatements: "Сизде пикирлер жок",
+      errorTitle: "Бир нерсе туура эмес болду",
+      retryButton: "Кайра аракет",
     },
     ru: {
       userProfile: "Профиль пользователя",
@@ -82,5 +100,7 @@ export const userProfileTranslations: Record<SupportedDisplayLanguageCodes, User
       opinionTab: "Высказывание",
       emptyConversations: "У вас нет обсуждений",
       emptyStatements: "У вас нет высказываний",
+      errorTitle: "Что-то пошло не так",
+      retryButton: "Повторить",
     },
   };

@@ -21,6 +21,13 @@
         <q-spinner color="primary" size="3em" />
       </div>
 
+      <ErrorRetryBlock
+        v-else-if="isError"
+        :title="t('errorTitle')"
+        :retry-label="t('retryButton')"
+        @retry="loadInitialData()"
+      />
+
       <q-infinite-scroll
         v-else-if="isAuthInitialized"
         :offset="2000"
@@ -101,6 +108,7 @@
 import { storeToRefs } from "pinia";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import { HomeMenuBar } from "src/components/navigation/header/variants";
+import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
@@ -133,6 +141,7 @@ const { markAllNotificationsAsRead } = useNotificationApi();
 
 const hasMore = ref(true);
 const isLoading = ref(true);
+const isError = ref(false);
 const hasLoadedOnce = ref(false);
 const isActive = ref(false);
 
@@ -177,11 +186,13 @@ watch(
 async function loadInitialData() {
   try {
     isLoading.value = true;
+    isError.value = false;
     await loadNotificationData(false);
     hasLoadedOnce.value = true;
     void markAllNotificationsAsRead();
   } catch (error) {
     console.error("Failed to load notifications:", error);
+    isError.value = true;
   } finally {
     isLoading.value = false;
   }

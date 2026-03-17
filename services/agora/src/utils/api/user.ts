@@ -12,7 +12,6 @@ import type {
 } from "src/shared/types/zod";
 
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
-import { useNotify } from "../ui/notify";
 import { api } from "./client";
 import { useCommonApi } from "./common";
 import { useBackendPostApi } from "./post/post";
@@ -20,8 +19,6 @@ import { useBackendPostApi } from "./post/post";
 export function useBackendUserApi() {
   const { buildEncodedUcan } = useCommonApi();
   const { createInternalPostData } = useBackendPostApi();
-
-  const { showNotifyMessage } = useNotify();
 
   async function fetchUserProfile(): Promise<
     GetUserProfileResponse | undefined
@@ -51,7 +48,6 @@ export function useBackendUserApi() {
       };
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to fetch user's personal profile.");
       return undefined;
     }
   }
@@ -90,7 +86,6 @@ export function useBackendUserApi() {
       return internalPostList;
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to fetch user's personal posts.");
       return null;
     }
   }
@@ -120,7 +115,6 @@ export function useBackendUserApi() {
       return Dto.fetchUserOpinionsResponse.parse(response.data);
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to fetch user's personal comments.");
       return null;
     }
   }
