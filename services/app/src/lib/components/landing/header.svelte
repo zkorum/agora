@@ -7,6 +7,7 @@
   import * as m from "$lib/paraglide/messages.js";
   import { localizeHref } from "$lib/paraglide/runtime";
   import Chip from "$ui/shared/chip.svelte";
+  import GradientButton from "$ui/shared/gradient-button.svelte";
   import MobileNavDrawer from "$ui/shared/mobile-nav-drawer.svelte";
   import TopBar from "$ui/shared/top-bar.svelte";
 
@@ -17,6 +18,8 @@
   let { hideOnScroll = false }: Props = $props();
 
   let mobileMenuOpen = $state(false);
+
+  const loginHref = "https://www.agoracitizen.app/welcome";
 
   const navLinks = $derived([
     { label: m.nav_facilitators(), href: localizeHref("/#facilitators") },
@@ -50,16 +53,16 @@
   {/snippet}
 
   {#snippet end()}
-    <a
-      href="https://www.agoracitizen.app/welcome"
+    <div
       class="
-        hidden items-center justify-center rounded-chip px-2 py-[7px]
-        text-sm/none-sm font-medium tracking-sm text-white gradient-primary
-        lg:inline-flex
+        hidden
+        lg:block
       "
     >
-      {m.nav_login()}
-    </a>
+      <GradientButton href={loginHref} size="sm">
+        {m.nav_login()}
+      </GradientButton>
+    </div>
     <div
       class="
         hidden
@@ -80,7 +83,7 @@
       onclick={() => (mobileMenuOpen = true)}
       aria-label="Open navigation menu"
     >
-      <span class="icon-[lucide--menu] h-6 w-6 gradient-primary"></span>
+      <span class="icon-[lucide--menu] size-6 gradient-primary"></span>
     </button>
   {/snippet}
 </TopBar>
@@ -91,5 +94,10 @@
   links={navLinks}
   onNavigate={() => (mobileMenuOpen = false)}
 >
+  {#snippet action()}
+    <GradientButton href={loginHref} size="sm">
+      {m.nav_login()}
+    </GradientButton>
+  {/snippet}
   <LanguageSwitcher />
 </MobileNavDrawer>
