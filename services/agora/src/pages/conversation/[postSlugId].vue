@@ -1,25 +1,16 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: false,
-      enableHeader: true,
-      enableFooter: false,
-      reducedWidth: false,
-    }"
-  >
-    <template #header>
-      <DefaultMenuBar :center-content="false">
-        <template #left>
-          <ZKIconButton icon="ci:chevron-left" aria-label="Go back" @click="handleBack" />
-          <span v-if="isSticky && hasConversationData" class="navbar-title">
-            {{ loadedConversationData.payload.title }}
-          </span>
-        </template>
-      </DefaultMenuBar>
-    </template>
+  <Teleport v-if="isActive" to="#page-header">
+    <DefaultMenuBar :center-content="false">
+      <template #left>
+        <ZKIconButton icon="ci:chevron-left" aria-label="Go back" @click="handleBack" />
+        <span v-if="isSticky && hasConversationData" class="navbar-title">
+          {{ loadedConversationData.payload.title }}
+        </span>
+      </template>
+    </DefaultMenuBar>
+  </Teleport>
 
-    <q-pull-to-refresh @refresh="handleRefresh">
+  <q-pull-to-refresh @refresh="handleRefresh">
       <WidthWrapper :enable="true">
         <PageLoadingSpinner v-if="conversationQuery.isPending.value && !hasConversationData" />
 
@@ -101,7 +92,6 @@
         </div>
       </WidthWrapper>
     </q-pull-to-refresh>
-  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -120,9 +110,9 @@ import {
   useConversationParentState,
 } from "src/composables/conversation/useConversationParentState";
 import { useTabScrollRestoration } from "src/composables/conversation/useTabScrollRestoration";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useStickyObserver } from "src/composables/ui/useStickyObserver";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLayoutHeaderStore } from "src/stores/layout/header";
 import { useNavigationStore } from "src/stores/navigation";
@@ -136,6 +126,8 @@ import {
   type ConversationPageTranslations,
   conversationPageTranslations,
 } from "./[postSlugId].i18n";
+
+const { isActive } = usePageLayout({ enableFooter: false });
 
 const router = useRouter();
 const { t } = useComponentI18n<ConversationPageTranslations>(

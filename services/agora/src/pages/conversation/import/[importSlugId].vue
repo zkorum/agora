@@ -1,31 +1,23 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: true,
-      addBottomPadding: true,
-      enableHeader: true,
-      enableFooter: false,
-      reducedWidth: false,
-    }"
-  >
-    <template #header>
+  <div>
+    <Teleport v-if="isActive" to="#page-header">
       <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
-    </template>
+    </Teleport>
 
     <WidthWrapper :enable="true">
       <div class="import-status-page">
         <ImportStatusView :import-slug-id="importSlugId" />
       </div>
     </WidthWrapper>
-  </DrawerLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
 import ImportStatusView from "src/components/conversation/import/ImportStatusView.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 
@@ -33,6 +25,8 @@ import {
   type ImportStatusPageTranslations,
   importStatusPageTranslations,
 } from "./[importSlugId].i18n";
+
+const { isActive } = usePageLayout({ enableFooter: false, addBottomPadding: true });
 
 const { t } = useComponentI18n<ImportStatusPageTranslations>(
   importStatusPageTranslations

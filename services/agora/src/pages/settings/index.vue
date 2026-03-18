@@ -1,17 +1,9 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: true,
-      enableFooter: false,
-      enableHeader: true,
-      reducedWidth: true,
-    }"
-  >
-    <template #header>
-      <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
-    </template>
+  <Teleport v-if="isActive" to="#page-header">
+    <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
+  </Teleport>
 
+  <div>
     <div class="container">
       <div v-if="isGuestOrLoggedIn">
         <ListSection :settings-item-list="credentialSettings" />
@@ -43,16 +35,16 @@
         <ListSection :settings-item-list="developmentSettings" />
       </div>
     </div>
-  </DrawerLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ListSection from "src/components/ui-library/ListSection.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useFeaturedBannerVisibility } from "src/composables/useFeaturedBannerVisibility";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
@@ -68,6 +60,8 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 
 import { type SettingsTranslations,settingsTranslations } from "./index.i18n";
+
+const { isActive } = usePageLayout({ enableFooter: false, reducedWidth: true, addBottomPadding: true });
 
 const authStore = useAuthenticationStore();
 const { isGuestOrLoggedIn, isLoggedIn, credentials } = storeToRefs(authStore);

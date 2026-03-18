@@ -10,6 +10,16 @@ export default defineBoot(({ app }) => {
     reloadForChunkError();
   });
 
+  // Catch chunk errors that surface as unhandled promise rejections
+  // (e.g., lazy-loaded route components that fail to fetch).
+  // Replaces the inline script that was previously in index.html.
+  window.addEventListener("unhandledrejection", (event) => {
+    if (isChunkLoadError(event.reason)) {
+      event.preventDefault();
+      reloadForChunkError();
+    }
+  });
+
   // Catch chunk errors that bubble through Vue's component tree
   const existingHandler = app.config.errorHandler;
   app.config.errorHandler = (err, instance, info) => {

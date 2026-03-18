@@ -1,16 +1,8 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: true,
-      addBottomPadding: false,
-      enableHeader: true,
-      enableFooter: true,
-      reducedWidth: true,
-    }"
-  >
-    <template #header>
+  <div>
+    <Teleport v-if="isActive" to="#page-header">
       <StandardMenuBar :title="t('privacyPolicy')" :center-content="true" />
-    </template>
+    </Teleport>
 
     <article class="privacy-content">
       <p><strong>Last updated on</strong>: 2025/11/11 (YYYY/MM/DD)</p>
@@ -859,18 +851,20 @@
         </p>
       </section>
     </article>
-  </DrawerLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { StandardMenuBar } from "src/components/navigation/header/variants";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 
 import {
   type PrivacyPolicyTranslations,
   privacyPolicyTranslations,
 } from "./index.i18n";
+
+const { isActive } = usePageLayout({ reducedWidth: true });
 
 const { t } = useComponentI18n<PrivacyPolicyTranslations>(
   privacyPolicyTranslations

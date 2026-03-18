@@ -1,16 +1,8 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: true,
-      enableFooter: false,
-      enableHeader: true,
-      reducedWidth: true,
-    }"
-  >
-    <template #header>
+  <div>
+    <Teleport v-if="isActive" to="#page-header">
       <StandardMenuBar :title="t('userProfile')" :center-content="true" />
-    </template>
+    </Teleport>
 
     <q-pull-to-refresh @refresh="pullDownTriggered">
       <PageLoadingSpinner v-if="isLoading" />
@@ -64,7 +56,7 @@
         </KeepAlive>
       </router-view>
     </q-pull-to-refresh>
-  </DrawerLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -75,8 +67,8 @@ import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { getDateString } from "src/utils/common";
@@ -89,6 +81,8 @@ import {
 } from "./user-profile.i18n";
 
 defineOptions({ name: "UserProfilePage" });
+
+const { isActive } = usePageLayout({ enableFooter: false, reducedWidth: true, addBottomPadding: true });
 
 const { loadUserProfile } = useUserStore();
 const authStore = useAuthenticationStore();

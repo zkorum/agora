@@ -1,20 +1,12 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: true,
-      addBottomPadding: true,
-      enableHeader: true,
-      enableFooter: false,
-      reducedWidth: false,
-    }"
-  >
-    <template #header>
+  <div>
+    <Teleport v-if="isActive" to="#page-header">
       <StandardMenuBar
         :title="t('pageTitle')"
         :center-content="true"
         :fallback-route="`/conversation/${conversationSlugId}/`"
       />
-    </template>
+    </Teleport>
 
     <q-pull-to-refresh @refresh="handleRefresh">
       <WidthWrapper :enable="true">
@@ -85,7 +77,7 @@
         </div>
       </WidthWrapper>
     </q-pull-to-refresh>
-  </DrawerLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -99,8 +91,8 @@ import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import PostDetails from "src/components/post/PostDetails.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import {
   useExportHistoryQuery,
@@ -117,6 +109,8 @@ import {
   type ExportPageTranslations,
   exportPageTranslations,
 } from "./export.i18n";
+
+const { isActive } = usePageLayout({ enableFooter: false, addBottomPadding: true });
 
 const { t } = useComponentI18n<ExportPageTranslations>(exportPageTranslations);
 const router = useRouter();

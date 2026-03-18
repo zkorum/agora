@@ -23,6 +23,10 @@ export function isChunkLoadError(error: unknown): boolean {
 export function reloadForChunkError({
   navigateTo,
 }: { navigateTo?: string } = {}): boolean {
+  if (import.meta.env.DEV) {
+    console.warn("[ChunkRecovery] Suppressed chunk reload in dev mode");
+    return false;
+  }
   const lastReload = sessionStorage.getItem(RELOAD_KEY);
   const now = Date.now();
   if (lastReload && now - Number(lastReload) < RELOAD_COOLDOWN_MS) {

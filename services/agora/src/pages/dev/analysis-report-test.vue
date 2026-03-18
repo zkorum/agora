@@ -1,21 +1,12 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: true,
-      enableFooter: false,
-      enableHeader: true,
-      reducedWidth: false,
-    }"
-  >
-    <template #header>
-      <StandardMenuBar
-        :title="t('analysisReportTest')"
-        :center-content="true"
-      />
-    </template>
+  <Teleport v-if="isActive" to="#page-header">
+    <StandardMenuBar
+      :title="t('analysisReportTest')"
+      :center-content="true"
+    />
+  </Teleport>
 
-    <div class="page-layout">
+  <div class="page-layout">
       <PrimeCard class="control-card no-print">
         <template #title>
           <div class="section-header">
@@ -118,7 +109,6 @@
         />
       </div>
     </div>
-  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -127,9 +117,9 @@ import Card from "primevue/card";
 import Select from "primevue/select";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import AnalysisReport from "src/components/post/report/AnalysisReport.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useReportDownload } from "src/composables/report/useReportDownload";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type {
   AnalysisOpinionItem,
   ClusterStats,
@@ -151,6 +141,8 @@ defineOptions({
     PrimeSelect: Select,
   },
 });
+
+const { isActive } = usePageLayout({ enableFooter: false, addBottomPadding: true });
 
 const { t } = useComponentI18n<AnalysisReportTestTranslations>(
   analysisReportTestTranslations,

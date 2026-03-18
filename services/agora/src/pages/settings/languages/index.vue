@@ -1,17 +1,9 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: true,
-      enableFooter: false,
-      enableHeader: true,
-      reducedWidth: true,
-    }"
-  >
-    <template #header>
-      <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
-    </template>
+  <Teleport v-if="isActive" to="#page-header">
+    <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
+  </Teleport>
 
+  <div>
     <div class="container">
       <!-- Display language section -->
       <div class="section-header">
@@ -34,14 +26,14 @@
         :settings-item-list="additionalLanguageSettings"
       />
     </div>
-  </DrawerLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ListSection from "src/components/ui-library/ListSection.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import type { SettingsInterface } from "src/utils/component/settings/settings";
@@ -52,6 +44,8 @@ import {
   type LanguagesSettingsTranslations,
   languagesSettingsTranslations,
 } from "./index.i18n";
+
+const { isActive } = usePageLayout({ enableFooter: false, reducedWidth: true, addBottomPadding: true });
 
 const { t } = useComponentI18n<LanguagesSettingsTranslations>(
   languagesSettingsTranslations

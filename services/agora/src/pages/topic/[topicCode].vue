@@ -1,26 +1,16 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: false,
-      enableHeader: true,
-      enableFooter: false,
-      reducedWidth: false,
-    }"
-  >
-    <template #header>
-      <EntityMenuBar :entity-name="topicCode" :show-back="true" />
-    </template>
+  <Teleport v-if="isActive" to="#page-header">
+    <EntityMenuBar :entity-name="topicCode" :show-back="true" />
+  </Teleport>
 
-    <WidthWrapper :enable="true"> {{ t("loadPostsHere") }} </WidthWrapper>
-  </DrawerLayout>
+  <WidthWrapper :enable="true"> {{ t("loadPostsHere") }} </WidthWrapper>
 </template>
 
 <script setup lang="ts">
 import { EntityMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 
@@ -28,6 +18,8 @@ import {
   type TopicPageTranslations,
   topicPageTranslations,
 } from "./[topicCode].i18n";
+
+const { isActive } = usePageLayout({ enableFooter: false });
 
 const { t } = useComponentI18n<TopicPageTranslations>(topicPageTranslations);
 

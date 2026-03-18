@@ -1,21 +1,12 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: true,
-      enableFooter: false,
-      enableHeader: true,
-      reducedWidth: true,
-    }"
-  >
-    <template #header>
-      <StandardMenuBar
-        :title="t('analysisTabTest')"
-        :center-content="true"
-      />
-    </template>
+  <Teleport v-if="isActive" to="#page-header">
+    <StandardMenuBar
+      :title="t('analysisTabTest')"
+      :center-content="true"
+    />
+  </Teleport>
 
-    <div class="page-container">
+  <div class="page-container">
       <PrimeCard class="control-card">
         <template #title>
           <div class="section-header">
@@ -176,7 +167,6 @@
         </template>
       </PrimeCard>
     </div>
-  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -191,8 +181,8 @@ import {
   shortcutBarTranslations,
 } from "src/components/post/analysis/shortcutBar/ShortcutBar.i18n";
 import ShortcutBar from "src/components/post/analysis/shortcutBar/ShortcutBar.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type {
   AnalysisOpinionItem,
   ClusterStats,
@@ -214,6 +204,8 @@ defineOptions({
     PrimeSelect: Select,
   },
 });
+
+const { isActive } = usePageLayout({ enableFooter: false, reducedWidth: true, addBottomPadding: true });
 
 const { t } = useComponentI18n<OpinionGroupVisualizationTranslations>(
   opinionGroupVisualizationTranslations

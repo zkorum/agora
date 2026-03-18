@@ -1,19 +1,11 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: true,
-      enableFooter: true,
-      enableHeader: true,
-      reducedWidth: true,
-    }"
-  >
-    <template #header>
-      <HomeMenuBar>
-        <template #center>{{ t("exploreTopics") }}</template>
-      </HomeMenuBar>
-    </template>
+  <Teleport v-if="isActive" to="#page-header">
+    <HomeMenuBar>
+      <template #center>{{ t("exploreTopics") }}</template>
+    </HomeMenuBar>
+  </Teleport>
 
+  <div>
     <PageLoadingSpinner v-if="isLoading" />
 
     <div v-else class="topicContainer">
@@ -46,7 +38,7 @@
       :ok-callback="() => {}"
       active-intention="none"
     />
-  </DrawerLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -56,8 +48,8 @@ import PreLoginIntentionDialog from "src/components/authentication/intention/Pre
 import FollowButton from "src/components/features/topics/FollowButton.vue";
 import { HomeMenuBar } from "src/components/navigation/header/variants";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useTopicStore } from "src/stores/topic";
 import { onMounted, ref } from "vue";
@@ -69,6 +61,8 @@ defineOptions({
     PrimeChip: Chip,
   },
 });
+
+const { isActive } = usePageLayout({ reducedWidth: true, addBottomPadding: true });
 
 const { t } = useComponentI18n<TopicsTranslations>(topicsTranslations);
 
