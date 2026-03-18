@@ -1,25 +1,15 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: false,
-      enableHeader: true,
-      enableFooter: true,
-      reducedWidth: false,
-    }"
-  >
-    <template #header>
+  <div>
+    <Teleport v-if="isActive" to="#page-header">
       <HomeMenuBar>
         <template #center>
           <div>{{ t("notifications") }}</div>
         </template>
       </HomeMenuBar>
-    </template>
+    </Teleport>
 
     <q-pull-to-refresh @refresh="pullDownTriggered">
-      <div v-if="isLoading" class="loadingContainer">
-        <q-spinner color="primary" size="3em" />
-      </div>
+      <PageLoadingSpinner v-if="isLoading" />
 
       <ErrorRetryBlock
         v-else-if="isError"
@@ -101,7 +91,7 @@
         </div>
       </q-infinite-scroll>
     </q-pull-to-refresh>
-  </DrawerLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -109,11 +99,12 @@ import { storeToRefs } from "pinia";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import { HomeMenuBar } from "src/components/navigation/header/variants";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { NotificationType, RouteTarget } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotificationStore } from "src/stores/notification";
@@ -129,6 +120,8 @@ import {
 
 defineOptions({ name: "NotificationPage" });
 
+const { isActive } = usePageLayout({});
+
 const notificationStore = useNotificationStore();
 const { notificationList, numNewNotifications } =
   storeToRefs(notificationStore);
@@ -143,14 +136,11 @@ const hasMore = ref(true);
 const isLoading = ref(true);
 const isError = ref(false);
 const hasLoadedOnce = ref(false);
-const isActive = ref(false);
-
 const { t } = useComponentI18n<NotificationTranslations>(
   notificationTranslations
 );
 
 onActivated(() => {
-  isActive.value = true;
   if (!hasLoadedOnce.value) {
     void loadInitialData();
   } else {
@@ -159,7 +149,6 @@ onActivated(() => {
 });
 
 onDeactivated(() => {
-  isActive.value = false;
   markAllAsReadLocally();
 });
 
@@ -426,11 +415,4 @@ function getRouteFromTarget(
   color: #0a0714;
 }
 
-.loadingContainer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
-  padding: 2rem;
-}
 </style>

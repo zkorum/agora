@@ -5,16 +5,9 @@
         <q-infinite-scroll
           :offset="2000"
           :disable="!canLoadMore"
-          :class="{ 'loading-min-height': showLoading && partialHomeFeedList.length === 0 }"
           @load="onLoad"
         >
-          <!-- Unified loading spinner — same animation for first load and refetch -->
-          <div
-            v-if="showLoading"
-            class="centerMessage loading-indicator"
-          >
-            <q-spinner-dots size="4rem" color="primary" />
-          </div>
+          <PageLoadingSpinner v-if="showLoading" />
 
           <div
             v-if="isError && !showLoading"
@@ -130,6 +123,7 @@ import { computed, onActivated, onDeactivated, ref, watch } from "vue";
 
 import WidthWrapper from "../navigation/WidthWrapper.vue";
 import PostListItem from "../post/list/PostListItem.vue";
+import PageLoadingSpinner from "../ui/PageLoadingSpinner.vue";
 import ActionButton from "../ui-library/ActionButton.vue";
 import ZKButton from "../ui-library/ZKButton.vue";
 import {
@@ -170,7 +164,7 @@ const showLoading = computed(() =>
 const isActive = ref(true);
 
 watch(data, (newData) => {
-  if (newData) {
+  if (newData && isActive.value) {
     setFeedData(newData);
   }
 });
@@ -271,15 +265,4 @@ async function refreshPage(done: () => void) {
   pointer-events: none;
 }
 
-.loading-min-height {
-  min-height: calc(100vh - 8rem);
-}
-
-.loading-indicator {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
-}
 </style>

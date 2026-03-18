@@ -1,21 +1,13 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: false,
-      enableFooter: false,
-      enableHeader: false,
-      reducedWidth: true,
-    }"
-  >
-    <div class="container">
-      <slot />
-    </div>
-  </DrawerLayout>
+  <div class="container">
+    <slot />
+  </div>
 </template>
 
 <script setup lang="ts">
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
+
+usePageLayout({ enableHeader: false, enableFooter: false, reducedWidth: true });
 </script>
 
 <style scoped lang="scss">

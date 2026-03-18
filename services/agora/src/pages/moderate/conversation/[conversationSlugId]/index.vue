@@ -1,18 +1,9 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: false,
-      enableHeader: true,
-      enableFooter: true,
-      reducedWidth: true,
-    }"
-  >
-    <template #header>
-      <StandardMenuBar title="" :center-content="false" />
-    </template>
+  <Teleport v-if="isActive" to="#page-header">
+    <StandardMenuBar title="" :center-content="false" />
+  </Teleport>
 
-    <div class="container">
+  <div class="container">
       <div class="title">
         <div>{{ t("moderateConversation") }}</div>
       </div>
@@ -65,15 +56,14 @@
         @click="clickedWithdraw()"
       />
     </div>
-  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type {
   ConversationModerationAction,
   ExtendedConversation,
@@ -94,6 +84,8 @@ import {
   type ConversationModerationTranslations,
   conversationModerationTranslations,
 } from "./index.i18n";
+
+const { isActive } = usePageLayout({ reducedWidth: true });
 
 const {
   moderatePost,

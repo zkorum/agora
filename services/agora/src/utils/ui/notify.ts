@@ -22,8 +22,14 @@ interface PersistentNotifyOptions extends NotifyOptions {
   onDismiss?: () => void;
 }
 
+const MOBILE_BREAKPOINT = 1000;
+
 export const useNotify = () => {
   const quasar = useQuasar();
+
+  function getPosition(): "bottom-left" | "bottom-right" {
+    return quasar.screen.width <= MOBILE_BREAKPOINT ? "bottom-left" : "bottom-right";
+  }
 
   function showNotifyMessage(
     messageOrOptions: string | NotifyOptions,
@@ -40,7 +46,7 @@ export const useNotify = () => {
     const dismiss = quasar.notify({
       message: options.message,
       caption: options.caption,
-      position: "bottom-right",
+      position: getPosition(),
       color: "white",
       textColor: "primary",
       classes: "zk-toast-alert",
@@ -55,18 +61,21 @@ export const useNotify = () => {
         marginTop: "-13px",
         marginLeft: "-15px",
       },
-      actions: options.actionLabel
-        ? [
-            {
-              label: options.actionLabel,
-              flat: true,
-              noCaps: true,
-              dense: true,
-              color: "primary",
-              handler: () => options.onAction?.(),
-            },
-          ]
-        : undefined,
+      actions: [
+        ...(options.actionLabel
+          ? [
+              {
+                label: options.actionLabel,
+                flat: true,
+                noCaps: true,
+                dense: true,
+                color: "primary",
+                handler: () => options.onAction?.(),
+              },
+            ]
+          : []),
+        { icon: "mdi-close", flat: true, round: true, dense: true, size: "sm", color: "grey-7" },
+      ],
     });
     return dismiss;
   }
@@ -86,24 +95,27 @@ export const useNotify = () => {
       caption,
       timeout: 0,
       group: group ?? false,
-      position: "bottom-right",
+      position: getPosition(),
       color: "white",
       textColor: "primary",
       classes: "zk-toast-alert",
       spinner: showSpinner === true ? true : undefined,
       icon: icon,
-      actions: actionLabel
-        ? [
-            {
-              label: actionLabel,
-              flat: true,
-              noCaps: true,
-              dense: true,
-              color: "primary",
-              handler: () => onAction?.(),
-            },
-          ]
-        : undefined,
+      actions: [
+        ...(actionLabel
+          ? [
+              {
+                label: actionLabel,
+                flat: true,
+                noCaps: true,
+                dense: true,
+                color: "primary",
+                handler: () => onAction?.(),
+              },
+            ]
+          : []),
+        { icon: "mdi-close", flat: true, round: true, dense: true, size: "sm", color: "grey-7" },
+      ],
       onDismiss: onDismiss,
     });
     return dismiss;

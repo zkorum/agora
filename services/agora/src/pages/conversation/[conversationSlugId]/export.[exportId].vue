@@ -1,35 +1,27 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: true,
-      addBottomPadding: true,
-      enableHeader: true,
-      enableFooter: false,
-      reducedWidth: false,
-    }"
-  >
-    <template #header>
+  <div>
+    <Teleport v-if="isActive" to="#page-header">
       <StandardMenuBar
         :title="t('pageTitle')"
         :center-content="true"
         :fallback-route="`/conversation/${conversationSlugId}/`"
       />
-    </template>
+    </Teleport>
 
     <WidthWrapper :enable="true">
       <div class="export-status-page">
         <ExportStatusView :export-slug-id="exportSlugId" />
       </div>
     </WidthWrapper>
-  </DrawerLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
 import ExportStatusView from "src/components/conversation/export/ExportStatusView.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { processEnv } from "src/utils/processEnv";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
@@ -39,6 +31,8 @@ import {
   type ExportStatusPageTranslations,
   exportStatusPageTranslations,
 } from "./export.[exportId].i18n";
+
+const { isActive } = usePageLayout({ enableFooter: false, addBottomPadding: true });
 
 const { t } = useComponentI18n<ExportStatusPageTranslations>(
   exportStatusPageTranslations

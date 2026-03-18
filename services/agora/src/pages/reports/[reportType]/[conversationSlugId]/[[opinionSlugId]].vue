@@ -1,16 +1,8 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: true,
-      enableFooter: true,
-      enableHeader: true,
-      reducedWidth: true,
-    }"
-  >
-    <template #header>
+  <div>
+    <Teleport v-if="isActive" to="#page-header">
       <StandardMenuBar title="" :center-content="false" />
-    </template>
+    </Teleport>
 
     <div class="container">
       <div class="titleBar">
@@ -58,15 +50,15 @@
         </div>
       </div>
     </div>
-  </DrawerLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useLocalizedTimeAgoFormatter } from "src/composables/ui/useLocalizedTimeAgo";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type { UserReportItem } from "src/shared/types/zod";
 import { useBackendReportApi } from "src/utils/api/report";
 import { useNotify } from "src/utils/ui/notify";
@@ -77,6 +69,8 @@ import {
   type UserReportsViewerTranslations,
   userReportsViewerTranslations,
 } from "./[[opinionSlugId]].i18n";
+
+const { isActive } = usePageLayout({ reducedWidth: true, addBottomPadding: true });
 
 const route = useRoute(
   "/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]"

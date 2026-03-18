@@ -1,28 +1,21 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: false,
-      enableHeader: true,
-      enableFooter: false,
-      reducedWidth: false,
-    }"
-  >
-    <template #header>
-      <DefaultMenuBar :center-content="false">
-        <template #left>
-          <ZKIconButton icon="ci:chevron-left" aria-label="Go back" @click="handleBack" />
-          <span v-if="isSticky && hasConversationData" class="navbar-title">
-            {{ loadedConversationData.payload.title }}
-          </span>
-        </template>
-      </DefaultMenuBar>
-    </template>
+  <Teleport v-if="isActive" to="#page-header">
+    <DefaultMenuBar :center-content="false">
+      <template #left>
+        <ZKIconButton icon="ci:chevron-left" aria-label="Go back" @click="handleBack" />
+        <span v-if="isSticky && hasConversationData" class="navbar-title">
+          {{ loadedConversationData.payload.title }}
+        </span>
+      </template>
+    </DefaultMenuBar>
+  </Teleport>
 
-    <q-pull-to-refresh @refresh="handleRefresh">
+  <q-pull-to-refresh @refresh="handleRefresh">
       <WidthWrapper :enable="true">
+        <PageLoadingSpinner v-if="conversationQuery.isPending.value && !hasConversationData" />
+
         <ErrorRetryBlock
-          v-if="conversationQuery.isError.value && !conversationQuery.isPending.value && !hasConversationData"
+          v-else-if="conversationQuery.isError.value && !conversationQuery.isPending.value && !hasConversationData"
           :title="t('errorTitle')"
           :retry-label="t('retryButton')"
           @retry="conversationQuery.refetch()"
@@ -99,7 +92,6 @@
         </div>
       </WidthWrapper>
     </q-pull-to-refresh>
-  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -110,6 +102,7 @@ import CommentSortingSelector from "src/components/post/comments/group/CommentSo
 import PostContent from "src/components/post/display/PostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import ZKIconButton from "src/components/ui-library/ZKIconButton.vue";
 import {
@@ -117,9 +110,9 @@ import {
   useConversationParentState,
 } from "src/composables/conversation/useConversationParentState";
 import { useTabScrollRestoration } from "src/composables/conversation/useTabScrollRestoration";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useStickyObserver } from "src/composables/ui/useStickyObserver";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLayoutHeaderStore } from "src/stores/layout/header";
 import { useNavigationStore } from "src/stores/navigation";
@@ -133,6 +126,8 @@ import {
   type ConversationPageTranslations,
   conversationPageTranslations,
 } from "./[postSlugId].i18n";
+
+const { isActive } = usePageLayout({ enableFooter: false });
 
 const router = useRouter();
 const { t } = useComponentI18n<ConversationPageTranslations>(

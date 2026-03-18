@@ -1,20 +1,12 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: false,
-      enableHeader: true,
-      enableFooter: false,
-      reducedWidth: false,
-    }"
-  >
-    <template #header>
+  <div>
+    <Teleport v-if="isActive" to="#page-header">
       <StandardMenuBar
         :title="t('pageTitle')"
         :center-content="true"
         :fallback-route="`/conversation/${conversationSlugId}/analysis`"
       />
-    </template>
+    </Teleport>
 
     <!-- Narrow screen message -->
     <div v-if="isNarrowScreen" class="narrow-screen-message">
@@ -85,7 +77,7 @@
         </AsyncStateHandler>
       </AsyncStateHandler>
     </div>
-  </DrawerLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -95,9 +87,9 @@ import AnalysisReport from "src/components/post/report/AnalysisReport.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useReportDownload } from "src/composables/report/useReportDownload";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
@@ -110,6 +102,8 @@ import {
   type ReportPageTranslations,
   reportPageTranslations,
 } from "./report.i18n";
+
+const { isActive } = usePageLayout({ enableFooter: false });
 
 const { t } = useComponentI18n<ReportPageTranslations>(reportPageTranslations);
 

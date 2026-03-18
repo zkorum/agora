@@ -1,18 +1,9 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: false,
-      enableHeader: true,
-      enableFooter: true,
-      reducedWidth: true,
-    }"
-  >
-    <template #header>
-      <StandardMenuBar :title="t('administrator')" :center-content="true" />
-    </template>
+  <Teleport v-if="isActive" to="#page-header">
+    <StandardMenuBar :title="t('administrator')" :center-content="true" />
+  </Teleport>
 
-    <div class="container">
+  <div class="container">
       <ZKCard padding="1rem" class="cardBackground">
         <CreateOrganizationForm />
       </ZKCard>
@@ -25,7 +16,6 @@
         <UserOrganizationMappings />
       </ZKCard>
     </div>
-  </DrawerLayout>
 </template>
 
 <script setup lang="ts">
@@ -34,13 +24,15 @@ import DeleteOrganizationForm from "src/components/administrator/organization/De
 import UserOrganizationMappings from "src/components/administrator/organization/UserOrganizationMappings.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 
 import {
   type AdministratorOrganizationTranslations,
   administratorOrganizationTranslations,
 } from "./index.i18n";
+
+const { isActive } = usePageLayout({ reducedWidth: true });
 
 const { t } = useComponentI18n<AdministratorOrganizationTranslations>(
   administratorOrganizationTranslations

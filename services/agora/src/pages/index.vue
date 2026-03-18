@@ -1,14 +1,6 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: false,
-      enableFooter: true,
-      enableHeader: true,
-      reducedWidth: false,
-    }"
-  >
-    <template #header>
+  <div>
+    <Teleport v-if="isActive" to="#page-header">
       <HomeMenuBar>
         <template #center>
           <img
@@ -52,14 +44,14 @@
           </div>
         </div>
       </WidthWrapper>
-    </template>
+    </Teleport>
 
     <div class="container">
       <CompactPostList />
     </div>
 
     <NewPostButtonWrapper />
-  </DrawerLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -71,8 +63,8 @@ import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import NewPostButtonWrapper from "src/components/post/NewPostButtonWrapper.vue";
 import ZKBadge from "src/components/ui-library/ZKBadge.vue";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
 import type { HomeFeedSortOption } from "src/stores/homeFeed";
 import { useHomeFeedStore } from "src/stores/homeFeed";
@@ -82,16 +74,20 @@ import { type HomeTranslations, homeTranslations } from "./index.i18n";
 
 defineOptions({ name: "HomePage" });
 
+const { isActive } = usePageLayout({});
+
 const { t } = useComponentI18n<HomeTranslations>(homeTranslations);
 
 const { drawerBehavior } = storeToRefs(useNavigationStore());
 
 const { currentHomeFeedTab, hasPendingNewTab, hasPendingFollowingTab } =
   storeToRefs(useHomeFeedStore());
+const { clearFeedDisplay } = useHomeFeedStore();
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 function selectedTab(tab: HomeFeedSortOption) {
   window.scrollTo({ top: 0, behavior: "smooth" });
+  clearFeedDisplay();
   currentHomeFeedTab.value = tab;
   if (tab === "new") {
     hasPendingNewTab.value = false;

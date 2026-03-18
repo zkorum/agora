@@ -1,17 +1,9 @@
 <template>
-  <DrawerLayout
-    :general-props="{
-      addGeneralPadding: false,
-      addBottomPadding: true,
-      enableFooter: false,
-      enableHeader: true,
-      reducedWidth: true,
-    }"
-  >
-    <template #header>
-      <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
-    </template>
+  <Teleport v-if="isActive" to="#page-header">
+    <StandardMenuBar :title="t('pageTitle')" :center-content="true" />
+  </Teleport>
 
+  <div>
     <div class="container">
       <div class="settings-section">
         <div class="settings-background">
@@ -47,7 +39,7 @@
         </div>
       </div>
     </div>
-  </DrawerLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -55,8 +47,8 @@ import { storeToRefs } from "pinia";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import MenuItem from "src/components/ui-library/MenuItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import type {
   DisplayLanguageMetadata,
   SupportedDisplayLanguageCodes,
@@ -71,6 +63,8 @@ import {
   type DisplayLanguageSettingsTranslations,
   displayLanguageSettingsTranslations,
 } from "./index.i18n";
+
+const { isActive } = usePageLayout({ enableFooter: false, reducedWidth: true, addBottomPadding: true });
 
 const { t } = useComponentI18n<DisplayLanguageSettingsTranslations>(
   displayLanguageSettingsTranslations
