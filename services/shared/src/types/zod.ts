@@ -516,6 +516,7 @@ export const zodConversationMetadataWithId = z
         organization: zodOrganization.optional(),
         moderation: zodConversationModerationProperties,
         requiresEventTicket: zodEventSlug.optional(),
+        externalSourceConfig: zodExternalSourceConfig.nullable(),
     })
     .strict();
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
