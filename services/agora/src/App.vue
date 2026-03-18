@@ -41,15 +41,14 @@ const { zupassIframeContainer } = useZupassVerification();
 // Initialize SSE for real-time events (notifications + feed updates).
 // Always connected: authenticated users get personal notifications + global
 // events; anonymous users get only global events (e.g. new_conversation).
-const { forceReconnect } = useRealtimeSSE();
+useRealtimeSSE();
 
 const { showNotifyMessage, showPersistentNotifyMessage } = useNotify();
 
-// Offline notification — state machine handles show/dismiss/retry logic.
-// Quasar dismiss references tracked here (not in the state machine) since
-// they are framework-specific side effects.
+// Offline notification — state machine handles show/dismiss logic.
+// Quasar dismiss reference tracked here (not in the state machine) since
+// it is a framework-specific side effect.
 let dismissOfflineFn: (() => void) | null = null;
-let dismissRetryingFn: (() => void) | null = null;
 
 const offlineController = createOfflineNotificationController({
   showOffline: () => {
@@ -57,8 +56,6 @@ const offlineController = createOfflineNotificationController({
       message: t("connectionLost"),
       caption: t("reconnecting"),
       showSpinner: true,
-      actionLabel: t("retryNow"),
-      onAction: () => offlineController.onRetryClicked(),
       onDismiss: () => { dismissOfflineFn = null; },
     });
   },
@@ -66,26 +63,8 @@ const offlineController = createOfflineNotificationController({
     dismissOfflineFn?.();
     dismissOfflineFn = null;
   },
-  showRetrying: () => {
-    dismissRetryingFn = showNotifyMessage({
-      message: t("retrying"),
-      showSpinner: true,
-      force: true,
-    }) ?? null;
-  },
-  dismissRetrying: () => {
-    dismissRetryingFn?.();
-    dismissRetryingFn = null;
-  },
   showConnected: () => {
     showNotifyMessage(t("connected"));
-  },
-  triggerForceReconnect: () => {
-    forceReconnect();
-  },
-  scheduleTimer: (callback, delayMs) => {
-    const id = setTimeout(callback, delayMs);
-    return () => clearTimeout(id);
   },
 });
 

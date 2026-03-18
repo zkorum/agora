@@ -17,8 +17,7 @@ import { onUnmounted, ref, watch } from "vue";
 import { setNetworkOffline } from "./useNetworkStatus";
 
 const SSE_CONNECTION_TIMEOUT_MS = 15_000;
-const SSE_INITIAL_RETRY_DELAY_MS = 2_000;
-const SSE_MAX_RETRY_DELAY_MS = 30_000;
+const SSE_RETRY_DELAY_MS = 1_000;
 // Server sends heartbeats every 30s (see services/api/src/service/realtimeSSE.ts).
 // When the API stops ungracefully, reader.read() can hang indefinitely on a dead
 // TCP connection. This watchdog aborts the connection after 45s of silence (1.5x
@@ -50,7 +49,6 @@ export function useRealtimeSSE() {
   let abortController: AbortController | null = null;
   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   let shouldReconnect = true;
-  let currentRetryDelay = SSE_INITIAL_RETRY_DELAY_MS;
   let connectionId = 0;
   let hasEverConnected = false;
   let offlineTimer: ReturnType<typeof setTimeout> | null = null;
@@ -128,7 +126,6 @@ export function useRealtimeSSE() {
 
       isConnected.value = true;
       isConnecting.value = false;
-      currentRetryDelay = SSE_INITIAL_RETRY_DELAY_MS;
       console.log("[SSE] Stream opened successfully");
       resetHeartbeatWatchdog();
 
@@ -284,11 +281,11 @@ export function useRealtimeSSE() {
       clearTimeout(reconnectTimeout);
     }
 
-    // Add 0-25% jitter to prevent thundering herd on server restart
-    const jitter = currentRetryDelay * Math.random() * 0.25;
-    const delayWithJitter = currentRetryDelay + jitter;
+    // Fixed 1s retry with small jitter (0-250ms) to avoid thundering herd
+    const jitter = Math.random() * 250;
+    const delay = SSE_RETRY_DELAY_MS + jitter;
 
-    console.log(`[SSE] Reconnecting in ${(delayWithJitter / 1000).toFixed(1)}s`);
+    console.log(`[SSE] Reconnecting in ${(delay / 1000).toFixed(1)}s`);
 
     reconnectTimeout = setTimeout(() => {
       if (shouldReconnect) {
@@ -296,10 +293,7 @@ export function useRealtimeSSE() {
           console.error("[SSE] Reconnection failed:", error);
         });
       }
-    }, delayWithJitter);
-
-    // Exponential backoff: double delay each time, capped at max
-    currentRetryDelay = Math.min(currentRetryDelay * 2, SSE_MAX_RETRY_DELAY_MS);
+    }, delay);
   }
 
   function scheduleOfflineTimer() {
@@ -318,7 +312,6 @@ export function useRealtimeSSE() {
   function forceReconnect() {
     console.log("[SSE] forceReconnect() — aborting current connection and reconnecting");
     clearHeartbeatWatchdog();
-    currentRetryDelay = SSE_INITIAL_RETRY_DELAY_MS;
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout);
       reconnectTimeout = null;
@@ -335,7 +328,6 @@ export function useRealtimeSSE() {
   function disconnect() {
     connectionId++; // Invalidate any in-flight connect() catch handler
     shouldReconnect = false;
-    currentRetryDelay = SSE_INITIAL_RETRY_DELAY_MS;
     clearHeartbeatWatchdog();
 
     if (reconnectTimeout) {
@@ -359,6 +351,29 @@ export function useRealtimeSSE() {
     isConnecting.value = false;
   }
 
+  // When the browser goes idle (tab hidden), JS timers get suspended and fire
+  // all at once on resume. This causes the heartbeat watchdog to falsely detect
+  // offline state. Clear timers on hide, restore monitoring on show.
+  function onVisibilityChange() {
+    if (document.hidden) {
+      console.log("[SSE] Page hidden — clearing heartbeat watchdog and offline timer");
+      clearHeartbeatWatchdog();
+      if (offlineTimer) {
+        clearTimeout(offlineTimer);
+        offlineTimer = null;
+      }
+    } else {
+      console.log("[SSE] Page visible — checking connection");
+      if (isConnected.value) {
+        resetHeartbeatWatchdog();
+      } else if (shouldReconnect && !isConnecting.value) {
+        forceReconnect();
+      }
+    }
+  }
+
+  document.addEventListener("visibilitychange", onVisibilityChange);
+
   // Watch for authentication state changes — reconnect to switch auth mode.
   // Always connected: authenticated users get personal notifications + global
   // events; anonymous users get only global events.
@@ -378,6 +393,7 @@ export function useRealtimeSSE() {
 
   // Cleanup on unmount
   onUnmounted(() => {
+    document.removeEventListener("visibilitychange", onVisibilityChange);
     disconnect();
   });
 

@@ -1,21 +1,14 @@
-const RESHOW_DELAY_MS = 3000;
-
-export type OfflineNotificationState = "idle" | "showing" | "retrying";
+export type OfflineNotificationState = "idle" | "showing";
 
 export interface OfflineNotificationEffects {
   showOffline: () => void;
   dismissOffline: () => void;
-  showRetrying: () => void;
-  dismissRetrying: () => void;
   showConnected: () => void;
-  triggerForceReconnect: () => void;
-  scheduleTimer: (callback: () => void, delayMs: number) => () => void;
 }
 
 export interface OfflineNotificationController {
   onWentOffline: () => void;
   onWentOnline: () => void;
-  onRetryClicked: () => void;
   readonly state: OfflineNotificationState;
   destroy: () => void;
 }
@@ -24,14 +17,6 @@ export function createOfflineNotificationController(
   effects: OfflineNotificationEffects,
 ): OfflineNotificationController {
   let state: OfflineNotificationState = "idle";
-  let cancelReshowTimer: (() => void) | null = null;
-
-  function cancelTimer() {
-    if (cancelReshowTimer) {
-      cancelReshowTimer();
-      cancelReshowTimer = null;
-    }
-  }
 
   function onWentOffline() {
     if (state !== "idle") return;
@@ -42,42 +27,15 @@ export function createOfflineNotificationController(
 
   function onWentOnline() {
     if (state === "idle") return;
-    console.log("[OfflineNotification]", state, "→ idle");
-    cancelTimer();
-    if (state === "showing") {
-      effects.dismissOffline();
-    } else if (state === "retrying") {
-      effects.dismissRetrying();
-    }
+    console.log("[OfflineNotification] showing → idle");
+    effects.dismissOffline();
     state = "idle";
     effects.showConnected();
   }
 
-  function onRetryClicked() {
-    if (state !== "showing") return;
-    console.log("[OfflineNotification] showing → retrying");
-    // Don't call dismissOffline — Quasar auto-dismisses on action click
-    effects.triggerForceReconnect();
-    effects.showRetrying();
-    state = "retrying";
-
-    cancelReshowTimer = effects.scheduleTimer(() => {
-      cancelReshowTimer = null;
-      if (state === "retrying") {
-        console.log("[OfflineNotification] retrying → showing (reshow timer)");
-        effects.dismissRetrying();
-        effects.showOffline();
-        state = "showing";
-      }
-    }, RESHOW_DELAY_MS);
-  }
-
   function destroy() {
-    cancelTimer();
     if (state === "showing") {
       effects.dismissOffline();
-    } else if (state === "retrying") {
-      effects.dismissRetrying();
     }
     state = "idle";
   }
@@ -85,7 +43,6 @@ export function createOfflineNotificationController(
   return {
     onWentOffline,
     onWentOnline,
-    onRetryClicked,
     get state() {
       return state;
     },
