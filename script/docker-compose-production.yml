@@ -32,6 +32,16 @@ services:
       TWILIO_SERVICE_SID: "CHANGEME"
       SERVER_DID_PROD: "did:web:agoracitizen.app"
       GOOGLE_APPLICATION_CREDENTIALS: "/secrets/service-account.json"
+      # MaxDiff
+      MAXDIFF_ENABLED: "true"
+      IS_MAXDIFF_ORG_ONLY: "true"
+      MAXDIFF_ALLOWED_ORGS: "Agora"
+      # MaxDiff GitHub integration
+      MAXDIFF_GITHUB_ENABLED: "true"
+      IS_MAXDIFF_GITHUB_ORG_ONLY: "true"
+      MAXDIFF_GITHUB_ALLOWED_ORGS: "Agora"
+      GITHUB_WEBHOOK_SECRET: "CHANGEME"
+      GITHUB_ACCESS_TOKEN: "CHANGEME"
     volumes:
       - ./<name of service account>.json:/secrets/service-account.json:ro
     expose:
