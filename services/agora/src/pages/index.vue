@@ -12,10 +12,6 @@
       </HomeMenuBar>
 
       <WidthWrapper :enable="true">
-        <FeaturedConversationBanner />
-      </WidthWrapper>
-
-      <WidthWrapper :enable="true">
         <div class="tabCluster">
           <div class="tabItem" @click="selectedTab('following')">
             <ZKBadge
@@ -45,6 +41,10 @@
         </div>
       </WidthWrapper>
     </Teleport>
+
+    <WidthWrapper :enable="true">
+      <FeaturedConversationBanner />
+    </WidthWrapper>
 
     <div class="container">
       <CompactPostList />

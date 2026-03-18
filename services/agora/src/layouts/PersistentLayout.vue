@@ -64,6 +64,7 @@ const { reveal: revealHeader } = storeToRefs(useLayoutHeaderStore());
 
 useNotificationRefresher();
 
+
 // Header reveal — one-time init, not per-navigation
 const enableHeaderReveal = ref(false);
 setTimeout(() => {

@@ -1,3 +1,4 @@
+import { isChunkLoadError, reloadForChunkError } from "src/utils/error/chunkError";
 import { useRouterGuard } from "src/utils/router/guard";
 import {
   createMemoryHistory,
@@ -133,6 +134,12 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     const target = conversationGuard(to.name, from.name);
     if (target == "home") {
       return { name: "/" };
+    }
+  });
+
+  Router.onError((error, to) => {
+    if (isChunkLoadError(error)) {
+      reloadForChunkError({ navigateTo: to.fullPath });
     }
   });
 
