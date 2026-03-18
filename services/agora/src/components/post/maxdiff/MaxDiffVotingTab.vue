@@ -1,9 +1,7 @@
 <template>
   <div class="maxdiff-container">
     <!-- Loading state -->
-    <div v-if="isLoading" class="info-message">
-      <q-spinner size="2rem" />
-    </div>
+    <PageLoadingSpinner v-if="isLoading" />
 
     <!-- Fetch error -->
     <div v-else-if="itemsFetchError" class="info-message">
@@ -130,9 +128,7 @@
     </div>
 
     <!-- Fallback: initialization in progress -->
-    <div v-else class="info-message">
-      <q-spinner size="2rem" />
-    </div>
+    <PageLoadingSpinner v-else />
 
     <MaxDiffStatementDialog
       v-model="showStatementDialog"
@@ -159,6 +155,7 @@
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
 import { useMaxDiffHistoryUndo } from "src/composables/maxdiff/useMaxDiffHistoryUndo";

@@ -8,8 +8,7 @@
 .pageLoadingSpinner {
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 50vh;
-  padding: 2rem;
+  padding-top: 4rem;
+  padding-bottom: 4rem;
 }
 </style>

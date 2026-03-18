@@ -12,9 +12,7 @@
     </template>
 
     <template #body>
-      <div v-if="isLoading" class="info-message">
-        <q-spinner size="1.5rem" />
-      </div>
+      <PageLoadingSpinner v-if="isLoading" />
 
       <div v-else-if="items.length === 0" class="info-message">
         {{ t("noItems") }}
@@ -63,6 +61,7 @@
 import AnalysisActionButton from "src/components/post/analysis/common/AnalysisActionButton.vue";
 import AnalysisSectionWrapper from "src/components/post/analysis/common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "src/components/post/analysis/common/AnalysisTitleHeader.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import { computed, onMounted, ref, watch } from "vue";

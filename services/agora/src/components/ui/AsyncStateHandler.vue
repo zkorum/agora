@@ -43,15 +43,7 @@
     <!-- Retry loading state (with delay to prevent flashing) -->
     <div v-else-if="isRetryPending" class="asyncStateMessage">
       <slot name="loading">
-        <q-spinner
-          v-if="config.loading?.showSpinner !== false"
-          size="50px"
-          color="primary"
-        />
-        <q-icon v-else name="hourglass_empty" size="50px" color="primary" />
-        <div class="stateText">
-          {{ config.retrying?.text || config.loading?.text || t("loading") }}
-        </div>
+        <PageLoadingSpinner />
       </slot>
     </div>
 
@@ -61,15 +53,7 @@
       class="asyncStateMessage"
     >
       <slot name="loading">
-        <q-spinner
-          v-if="config.loading?.showSpinner !== false"
-          size="50px"
-          color="primary"
-        />
-        <q-icon v-else name="hourglass_empty" size="50px" color="primary" />
-        <div class="stateText">
-          {{ config.loading?.text || t("loading") }}
-        </div>
+        <PageLoadingSpinner />
       </slot>
     </div>
 
@@ -111,6 +95,7 @@ import {
   type AsyncStateHandlerTranslations,
   asyncStateHandlerTranslations,
 } from "./AsyncStateHandler.i18n";
+import PageLoadingSpinner from "./PageLoadingSpinner.vue";
 
 defineOptions({
   components: {
