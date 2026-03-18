@@ -88,10 +88,12 @@ const { drawerBehavior } = storeToRefs(useNavigationStore());
 
 const { currentHomeFeedTab, hasPendingNewTab, hasPendingFollowingTab } =
   storeToRefs(useHomeFeedStore());
+const { clearFeedDisplay } = useHomeFeedStore();
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
 function selectedTab(tab: HomeFeedSortOption) {
   window.scrollTo({ top: 0, behavior: "smooth" });
+  clearFeedDisplay();
   currentHomeFeedTab.value = tab;
   if (tab === "new") {
     hasPendingNewTab.value = false;

@@ -169,7 +169,7 @@ function initializeMenu(): void {
     {
       name: t("profile"),
       route: "/user-profile/conversations/",
-      matchRouteList: ["/user-profile/conversations/"],
+      matchRouteList: ["/user-profile/conversations/", "/user-profile/opinions/"],
       svgStringStandard: navigationIcons.profile.standard,
       svgStringFilled: navigationIcons.profile.filled,
     },

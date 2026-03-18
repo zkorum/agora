@@ -13,9 +13,7 @@
     </template>
 
     <q-pull-to-refresh @refresh="pullDownTriggered">
-      <div v-if="isLoading" class="loadingContainer">
-        <q-spinner color="primary" size="3em" />
-      </div>
+      <PageLoadingSpinner v-if="isLoading" />
 
       <ErrorRetryBlock
         v-else-if="isError"
@@ -60,7 +58,11 @@
         </div>
       </div>
 
-      <router-view v-if="!isLoading && !isError" />
+      <router-view v-if="!isLoading && !isError" v-slot="{ Component }">
+        <KeepAlive>
+          <component :is="Component" />
+        </KeepAlive>
+      </router-view>
     </q-pull-to-refresh>
   </DrawerLayout>
 </template>
@@ -71,6 +73,7 @@ import UserAvatar from "src/components/account/UserAvatar.vue";
 import UserMetadata from "src/components/features/user/UserMetadata.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
@@ -128,6 +131,8 @@ applyCurrentTab();
 onActivated(() => {
   if (!hasLoadedOnce.value && isAuthInitialized.value) {
     void initialize();
+  } else if (hasLoadedOnce.value) {
+    void loadUserProfile();
   }
 });
 
@@ -237,13 +242,5 @@ function applyCurrentTab() {
   padding-bottom: 1rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
-}
-
-.loadingContainer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
-  padding: 2rem;
 }
 </style>

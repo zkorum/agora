@@ -26,9 +26,7 @@
       </ZKCard>
     </div>
 
-    <div v-else-if="!isDataLoaded" class="loading-container">
-      <q-spinner color="primary" size="3rem" />
-    </div>
+    <PageLoadingSpinner v-else-if="!isDataLoaded" />
 
     <div v-else class="container">
       <NewConversationControlBar
@@ -118,6 +116,7 @@ import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue"
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import PollComponent from "src/components/newConversation/poll/PollComponent.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import {
@@ -720,10 +719,4 @@ onMounted(async () => {
   color: $color-text-weak;
 }
 
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-}
 </style>

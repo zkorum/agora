@@ -17,9 +17,7 @@
     </template>
 
     <q-pull-to-refresh @refresh="pullDownTriggered">
-      <div v-if="isLoading" class="loadingContainer">
-        <q-spinner color="primary" size="3em" />
-      </div>
+      <PageLoadingSpinner v-if="isLoading" />
 
       <ErrorRetryBlock
         v-else-if="isError"
@@ -109,6 +107,7 @@ import { storeToRefs } from "pinia";
 import UserAvatar from "src/components/account/UserAvatar.vue";
 import { HomeMenuBar } from "src/components/navigation/header/variants";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
@@ -426,11 +425,4 @@ function getRouteFromTarget(
   color: #0a0714;
 }
 
-.loadingContainer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
-  padding: 2rem;
-}
 </style>

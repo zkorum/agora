@@ -14,9 +14,7 @@
       </HomeMenuBar>
     </template>
 
-    <div v-if="isLoading" class="loadingContainer">
-      <q-spinner color="primary" size="3em" />
-    </div>
+    <PageLoadingSpinner v-if="isLoading" />
 
     <div v-else class="topicContainer">
       <div v-for="topic in fullTopicList" :key="topic.code" class="topicItem">
@@ -57,6 +55,7 @@ import Chip from "primevue/chip";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import FollowButton from "src/components/features/topics/FollowButton.vue";
 import { HomeMenuBar } from "src/components/navigation/header/variants";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import DrawerLayout from "src/layouts/DrawerLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -145,11 +144,4 @@ async function clickedFollowButton(
   justify-content: space-between;
 }
 
-.loadingContainer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
-  padding: 2rem;
-}
 </style>

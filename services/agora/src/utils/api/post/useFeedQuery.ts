@@ -1,5 +1,4 @@
 import {
-  keepPreviousData,
   useQuery,
   useQueryClient,
 } from "@tanstack/vue-query";
@@ -33,7 +32,6 @@ export function useFeedQuery({
     },
     enabled: computed(() => toValue(enabled)),
     staleTime: Infinity,
-    placeholderData: keepPreviousData,
   });
 }
 

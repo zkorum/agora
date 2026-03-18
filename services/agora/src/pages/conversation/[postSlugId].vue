@@ -21,8 +21,10 @@
 
     <q-pull-to-refresh @refresh="handleRefresh">
       <WidthWrapper :enable="true">
+        <PageLoadingSpinner v-if="conversationQuery.isPending.value && !hasConversationData" />
+
         <ErrorRetryBlock
-          v-if="conversationQuery.isError.value && !conversationQuery.isPending.value && !hasConversationData"
+          v-else-if="conversationQuery.isError.value && !conversationQuery.isPending.value && !hasConversationData"
           :title="t('errorTitle')"
           :retry-label="t('retryButton')"
           @retry="conversationQuery.refetch()"
@@ -110,6 +112,7 @@ import CommentSortingSelector from "src/components/post/comments/group/CommentSo
 import PostContent from "src/components/post/display/PostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import ZKIconButton from "src/components/ui-library/ZKIconButton.vue";
 import {

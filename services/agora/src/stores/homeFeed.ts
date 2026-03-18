@@ -147,6 +147,12 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     }
   }
 
+  function clearFeedDisplay() {
+    fullHomeFeedList = [];
+    partialHomeFeedList.value = [];
+    canLoadMore.value = true;
+  }
+
   function clearFeedData() {
     fullHomeFeedList = [];
     partialHomeFeedList.value = [];
@@ -158,6 +164,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
 
   return {
     setFeedData,
+    clearFeedDisplay,
     clearFeedData,
     hasNewPostCheck,
     onPopularConversationUpdate,
