@@ -60,7 +60,7 @@ export const ApiV1AuthAuthenticatePost200ResponseOneOf1ReasonEnum = {
     AssociatedWithAnotherUser: 'associated_with_another_user',
     Throttled: 'throttled',
     InvalidPhoneNumber: 'invalid_phone_number',
-    RestrictedPhoneType: 'restricted_phone_type'
+    RestrictedPhoneType: 'restricted_phone_type',
 } as const;
 
 export type ApiV1AuthAuthenticatePost200ResponseOneOf1ReasonEnum = typeof ApiV1AuthAuthenticatePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1AuthAuthenticatePost200ResponseOneOf1ReasonEnum];
@@ -226,7 +226,7 @@ export const ApiV1AuthAuthenticatePostRequestDefaultCallingCodeEnum = {
     _441481: '441481',
     _441534: '441534',
     _441624: '441624',
-    _3906698: '3906698'
+    _3906698: '3906698',
 } as const;
 
 export type ApiV1AuthAuthenticatePostRequestDefaultCallingCodeEnum = typeof ApiV1AuthAuthenticatePostRequestDefaultCallingCodeEnum[keyof typeof ApiV1AuthAuthenticatePostRequestDefaultCallingCodeEnum];
@@ -299,7 +299,7 @@ export const ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum = {
     AssociatedWithAnotherUser: 'associated_with_another_user',
     Throttled: 'throttled',
     Unreachable: 'unreachable',
-    Disposable: 'disposable'
+    Disposable: 'disposable',
 } as const;
 
 export type ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum = typeof ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum[keyof typeof ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum];
@@ -333,7 +333,7 @@ export const ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1ReasonEnum = {
     TooManyWrongGuess: 'too_many_wrong_guess',
     AlreadyHasCredential: 'already_has_credential',
     AssociatedWithAnotherUser: 'associated_with_another_user',
-    AuthStateChanged: 'auth_state_changed'
+    AuthStateChanged: 'auth_state_changed',
 } as const;
 
 export type ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1ReasonEnum = typeof ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1ReasonEnum];
@@ -499,7 +499,7 @@ export const ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum = {
     _441481: '441481',
     _441534: '441534',
     _441624: '441624',
-    _3906698: '3906698'
+    _3906698: '3906698',
 } as const;
 
 export type ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum = typeof ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum[keyof typeof ApiV1AuthPhoneVerifyOtpPostRequestDefaultCallingCodeEnum];
@@ -519,7 +519,7 @@ export const ApiV1AuthTicketVerifyPost200ResponseOneOfReasonEnum = {
     InvalidProof: 'invalid_proof',
     InvalidSigner: 'invalid_signer',
     WrongEvent: 'wrong_event',
-    TicketAlreadyUsed: 'ticket_already_used'
+    TicketAlreadyUsed: 'ticket_already_used',
 } as const;
 
 export type ApiV1AuthTicketVerifyPost200ResponseOneOfReasonEnum = typeof ApiV1AuthTicketVerifyPost200ResponseOneOfReasonEnum[keyof typeof ApiV1AuthTicketVerifyPost200ResponseOneOfReasonEnum];
@@ -530,7 +530,7 @@ export interface ApiV1AuthTicketVerifyPostRequest {
 }
 
 export const ApiV1AuthTicketVerifyPostRequestEventSlugEnum = {
-    Devconnect2025: 'devconnect-2025'
+    Devconnect2025: 'devconnect-2025',
 } as const;
 
 export type ApiV1AuthTicketVerifyPostRequestEventSlugEnum = typeof ApiV1AuthTicketVerifyPostRequestEventSlugEnum[keyof typeof ApiV1AuthTicketVerifyPostRequestEventSlugEnum];
@@ -551,7 +551,7 @@ export interface ApiV1AuthZkpGenerateVerificationLinkPost200ResponseOneOf1 {
 
 export const ApiV1AuthZkpGenerateVerificationLinkPost200ResponseOneOf1ReasonEnum = {
     AlreadyHasCredential: 'already_has_credential',
-    AssociatedWithAnotherUser: 'associated_with_another_user'
+    AssociatedWithAnotherUser: 'associated_with_another_user',
 } as const;
 
 export type ApiV1AuthZkpGenerateVerificationLinkPost200ResponseOneOf1ReasonEnum = typeof ApiV1AuthZkpGenerateVerificationLinkPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1AuthZkpGenerateVerificationLinkPost200ResponseOneOf1ReasonEnum];
@@ -562,7 +562,7 @@ export interface ApiV1AuthZkpGenerateVerificationLinkPostRequest {
 
 export const ApiV1AuthZkpGenerateVerificationLinkPostRequestLinkTypeEnum = {
     Http: 'http',
-    Deep: 'deep'
+    Deep: 'deep',
 } as const;
 
 export type ApiV1AuthZkpGenerateVerificationLinkPostRequestLinkTypeEnum = typeof ApiV1AuthZkpGenerateVerificationLinkPostRequestLinkTypeEnum[keyof typeof ApiV1AuthZkpGenerateVerificationLinkPostRequestLinkTypeEnum];
@@ -578,13 +578,13 @@ export interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200Response {
 export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum = {
     NotVerified: 'not_verified',
     FailedVerification: 'failed_verification',
-    UniquenessCheckFailed: 'uniqueness_check_failed'
+    UniquenessCheckFailed: 'uniqueness_check_failed',
 } as const;
 
 export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum = typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum[keyof typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseRarimoStatusEnum];
 export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseReasonEnum = {
     AlreadyHasCredential: 'already_has_credential',
-    AssociatedWithAnotherUser: 'associated_with_another_user'
+    AssociatedWithAnotherUser: 'associated_with_another_user',
 } as const;
 
 export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseReasonEnum = typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseReasonEnum[keyof typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseReasonEnum];
@@ -597,7 +597,7 @@ export interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf
 }
 
 export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum = {
-    Verified: 'verified'
+    Verified: 'verified',
 } as const;
 
 export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum = typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum[keyof typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOfRarimoStatusEnum];
@@ -610,7 +610,7 @@ export interface ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf
 export const ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1RarimoStatusEnum = {
     NotVerified: 'not_verified',
     FailedVerification: 'failed_verification',
-    UniquenessCheckFailed: 'uniqueness_check_failed'
+    UniquenessCheckFailed: 'uniqueness_check_failed',
 } as const;
 
 export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1RarimoStatusEnum = typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1RarimoStatusEnum[keyof typeof ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1RarimoStatusEnum];
@@ -627,7 +627,7 @@ export interface ApiV1ConversationClosePost200ResponseOneOf {
 
 export const ApiV1ConversationClosePost200ResponseOneOfReasonEnum = {
     NotAllowed: 'not_allowed',
-    AlreadyClosed: 'already_closed'
+    AlreadyClosed: 'already_closed',
 } as const;
 
 export type ApiV1ConversationClosePost200ResponseOneOfReasonEnum = typeof ApiV1ConversationClosePost200ResponseOneOfReasonEnum[keyof typeof ApiV1ConversationClosePost200ResponseOneOfReasonEnum];
@@ -650,18 +650,18 @@ export const ApiV1ConversationCreatePostRequestParticipationModeEnum = {
     AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
-    Guest: 'guest'
+    Guest: 'guest',
 } as const;
 
 export type ApiV1ConversationCreatePostRequestParticipationModeEnum = typeof ApiV1ConversationCreatePostRequestParticipationModeEnum[keyof typeof ApiV1ConversationCreatePostRequestParticipationModeEnum];
 export const ApiV1ConversationCreatePostRequestConversationTypeEnum = {
     Polis: 'polis',
-    Maxdiff: 'maxdiff'
+    Maxdiff: 'maxdiff',
 } as const;
 
 export type ApiV1ConversationCreatePostRequestConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestConversationTypeEnum];
 export const ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = {
-    Devconnect2025: 'devconnect-2025'
+    Devconnect2025: 'devconnect-2025',
 } as const;
 
 export type ApiV1ConversationCreatePostRequestRequiresEventTicketEnum = typeof ApiV1ConversationCreatePostRequestRequiresEventTicketEnum[keyof typeof ApiV1ConversationCreatePostRequestRequiresEventTicketEnum];
@@ -673,7 +673,7 @@ export interface ApiV1ConversationCreatePostRequestExternalSourceConfig {
 }
 
 export const ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum = {
-    GithubIssue: 'github_issue'
+    GithubIssue: 'github_issue',
 } as const;
 
 export type ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum = typeof ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum];
@@ -689,7 +689,7 @@ export const ApiV1ConversationExportHistoryPost200ResponseInnerStatusEnum = {
     Completed: 'completed',
     Failed: 'failed',
     Cancelled: 'cancelled',
-    Expired: 'expired'
+    Expired: 'expired',
 } as const;
 
 export type ApiV1ConversationExportHistoryPost200ResponseInnerStatusEnum = typeof ApiV1ConversationExportHistoryPost200ResponseInnerStatusEnum[keyof typeof ApiV1ConversationExportHistoryPost200ResponseInnerStatusEnum];
@@ -706,7 +706,7 @@ export interface ApiV1ConversationExportReadinessPost200ResponseOneOf {
 }
 
 export const ApiV1ConversationExportReadinessPost200ResponseOneOfStatusEnum = {
-    Active: 'active'
+    Active: 'active',
 } as const;
 
 export type ApiV1ConversationExportReadinessPost200ResponseOneOfStatusEnum = typeof ApiV1ConversationExportReadinessPost200ResponseOneOfStatusEnum[keyof typeof ApiV1ConversationExportReadinessPost200ResponseOneOfStatusEnum];
@@ -718,7 +718,7 @@ export interface ApiV1ConversationExportReadinessPost200ResponseOneOf1 {
 }
 
 export const ApiV1ConversationExportReadinessPost200ResponseOneOf1StatusEnum = {
-    Cooldown: 'cooldown'
+    Cooldown: 'cooldown',
 } as const;
 
 export type ApiV1ConversationExportReadinessPost200ResponseOneOf1StatusEnum = typeof ApiV1ConversationExportReadinessPost200ResponseOneOf1StatusEnum[keyof typeof ApiV1ConversationExportReadinessPost200ResponseOneOf1StatusEnum];
@@ -728,7 +728,7 @@ export interface ApiV1ConversationExportReadinessPost200ResponseOneOf2 {
 }
 
 export const ApiV1ConversationExportReadinessPost200ResponseOneOf2StatusEnum = {
-    Ready: 'ready'
+    Ready: 'ready',
 } as const;
 
 export type ApiV1ConversationExportReadinessPost200ResponseOneOf2StatusEnum = typeof ApiV1ConversationExportReadinessPost200ResponseOneOf2StatusEnum[keyof typeof ApiV1ConversationExportReadinessPost200ResponseOneOf2StatusEnum];
@@ -742,14 +742,14 @@ export interface ApiV1ConversationExportRequestPost200Response {
 }
 
 export const ApiV1ConversationExportRequestPost200ResponseStatusEnum = {
-    CooldownActive: 'cooldown_active'
+    CooldownActive: 'cooldown_active',
 } as const;
 
 export type ApiV1ConversationExportRequestPost200ResponseStatusEnum = typeof ApiV1ConversationExportRequestPost200ResponseStatusEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseStatusEnum];
 export const ApiV1ConversationExportRequestPost200ResponseReasonEnum = {
     ActiveExportInProgress: 'active_export_in_progress',
     ConversationNotFound: 'conversation_not_found',
-    NoOpinions: 'no_opinions'
+    NoOpinions: 'no_opinions',
 } as const;
 
 export type ApiV1ConversationExportRequestPost200ResponseReasonEnum = typeof ApiV1ConversationExportRequestPost200ResponseReasonEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseReasonEnum];
@@ -761,7 +761,7 @@ export interface ApiV1ConversationExportRequestPost200ResponseAnyOf {
 }
 
 export const ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum = {
-    Queued: 'queued'
+    Queued: 'queued',
 } as const;
 
 export type ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum = typeof ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseAnyOfStatusEnum];
@@ -773,7 +773,7 @@ export interface ApiV1ConversationExportRequestPost200ResponseAnyOf1 {
 }
 
 export const ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum = {
-    CooldownActive: 'cooldown_active'
+    CooldownActive: 'cooldown_active',
 } as const;
 
 export type ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum = typeof ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseAnyOf1StatusEnum];
@@ -786,7 +786,7 @@ export interface ApiV1ConversationExportRequestPost200ResponseAnyOf2 {
 export const ApiV1ConversationExportRequestPost200ResponseAnyOf2ReasonEnum = {
     ActiveExportInProgress: 'active_export_in_progress',
     ConversationNotFound: 'conversation_not_found',
-    NoOpinions: 'no_opinions'
+    NoOpinions: 'no_opinions',
 } as const;
 
 export type ApiV1ConversationExportRequestPost200ResponseAnyOf2ReasonEnum = typeof ApiV1ConversationExportRequestPost200ResponseAnyOf2ReasonEnum[keyof typeof ApiV1ConversationExportRequestPost200ResponseAnyOf2ReasonEnum];
@@ -805,7 +805,7 @@ export interface ApiV1ConversationExportStatusPost200ResponseOneOf {
 }
 
 export const ApiV1ConversationExportStatusPost200ResponseOneOfStatusEnum = {
-    Processing: 'processing'
+    Processing: 'processing',
 } as const;
 
 export type ApiV1ConversationExportStatusPost200ResponseOneOfStatusEnum = typeof ApiV1ConversationExportStatusPost200ResponseOneOfStatusEnum[keyof typeof ApiV1ConversationExportStatusPost200ResponseOneOfStatusEnum];
@@ -820,7 +820,7 @@ export interface ApiV1ConversationExportStatusPost200ResponseOneOf1 {
 }
 
 export const ApiV1ConversationExportStatusPost200ResponseOneOf1StatusEnum = {
-    Completed: 'completed'
+    Completed: 'completed',
 } as const;
 
 export type ApiV1ConversationExportStatusPost200ResponseOneOf1StatusEnum = typeof ApiV1ConversationExportStatusPost200ResponseOneOf1StatusEnum[keyof typeof ApiV1ConversationExportStatusPost200ResponseOneOf1StatusEnum];
@@ -839,7 +839,7 @@ export const ApiV1ConversationExportStatusPost200ResponseOneOf1FilesInnerFileTyp
     Votes: 'votes',
     Participants: 'participants',
     Summary: 'summary',
-    Stats: 'stats'
+    Stats: 'stats',
 } as const;
 
 export type ApiV1ConversationExportStatusPost200ResponseOneOf1FilesInnerFileTypeEnum = typeof ApiV1ConversationExportStatusPost200ResponseOneOf1FilesInnerFileTypeEnum[keyof typeof ApiV1ConversationExportStatusPost200ResponseOneOf1FilesInnerFileTypeEnum];
@@ -854,14 +854,14 @@ export interface ApiV1ConversationExportStatusPost200ResponseOneOf2 {
 }
 
 export const ApiV1ConversationExportStatusPost200ResponseOneOf2StatusEnum = {
-    Failed: 'failed'
+    Failed: 'failed',
 } as const;
 
 export type ApiV1ConversationExportStatusPost200ResponseOneOf2StatusEnum = typeof ApiV1ConversationExportStatusPost200ResponseOneOf2StatusEnum[keyof typeof ApiV1ConversationExportStatusPost200ResponseOneOf2StatusEnum];
 export const ApiV1ConversationExportStatusPost200ResponseOneOf2FailureReasonEnum = {
     ProcessingError: 'processing_error',
     Timeout: 'timeout',
-    ServerRestart: 'server_restart'
+    ServerRestart: 'server_restart',
 } as const;
 
 export type ApiV1ConversationExportStatusPost200ResponseOneOf2FailureReasonEnum = typeof ApiV1ConversationExportStatusPost200ResponseOneOf2FailureReasonEnum[keyof typeof ApiV1ConversationExportStatusPost200ResponseOneOf2FailureReasonEnum];
@@ -876,7 +876,7 @@ export interface ApiV1ConversationExportStatusPost200ResponseOneOf3 {
 }
 
 export const ApiV1ConversationExportStatusPost200ResponseOneOf3StatusEnum = {
-    Cancelled: 'cancelled'
+    Cancelled: 'cancelled',
 } as const;
 
 export type ApiV1ConversationExportStatusPost200ResponseOneOf3StatusEnum = typeof ApiV1ConversationExportStatusPost200ResponseOneOf3StatusEnum[keyof typeof ApiV1ConversationExportStatusPost200ResponseOneOf3StatusEnum];
@@ -893,14 +893,14 @@ export interface ApiV1ConversationExportStatusPost200ResponseOneOf4 {
 }
 
 export const ApiV1ConversationExportStatusPost200ResponseOneOf4StatusEnum = {
-    Expired: 'expired'
+    Expired: 'expired',
 } as const;
 
 export type ApiV1ConversationExportStatusPost200ResponseOneOf4StatusEnum = typeof ApiV1ConversationExportStatusPost200ResponseOneOf4StatusEnum[keyof typeof ApiV1ConversationExportStatusPost200ResponseOneOf4StatusEnum];
 export const ApiV1ConversationExportStatusPost200ResponseOneOf4FailureReasonEnum = {
     ProcessingError: 'processing_error',
     Timeout: 'timeout',
-    ServerRestart: 'server_restart'
+    ServerRestart: 'server_restart',
 } as const;
 
 export type ApiV1ConversationExportStatusPost200ResponseOneOf4FailureReasonEnum = typeof ApiV1ConversationExportStatusPost200ResponseOneOf4FailureReasonEnum[keyof typeof ApiV1ConversationExportStatusPost200ResponseOneOf4FailureReasonEnum];
@@ -950,18 +950,18 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
     AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
-    Guest: 'guest'
+    Guest: 'guest',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum];
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum = {
     Polis: 'polis',
-    Maxdiff: 'maxdiff'
+    Maxdiff: 'maxdiff',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataConversationTypeEnum];
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum = {
-    Devconnect2025: 'devconnect-2025'
+    Devconnect2025: 'devconnect-2025',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum];
@@ -973,7 +973,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
 }
 
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum = {
-    GithubIssue: 'github_issue'
+    GithubIssue: 'github_issue',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum];
@@ -993,12 +993,12 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
 }
 
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfStatusEnum = {
-    Moderated: 'moderated'
+    Moderated: 'moderated',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfStatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfStatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfStatusEnum];
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfActionEnum = {
-    Lock: 'lock'
+    Lock: 'lock',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfActionEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfActionEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfActionEnum];
@@ -1008,7 +1008,7 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
     Illegal: 'illegal',
     Doxing: 'doxing',
     Sexual: 'sexual',
-    Spam: 'spam'
+    Spam: 'spam',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfReasonEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfReasonEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOfReasonEnum];
@@ -1018,7 +1018,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
 }
 
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOf1StatusEnum = {
-    Unmoderated: 'unmoderated'
+    Unmoderated: 'unmoderated',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOf1StatusEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOf1StatusEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModerationOneOf1StatusEnum];
@@ -1045,7 +1045,7 @@ export interface ApiV1ConversationFetchRecentPostRequest {
 
 export const ApiV1ConversationFetchRecentPostRequestSortAlgorithmEnum = {
     Following: 'following',
-    New: 'new'
+    New: 'new',
 } as const;
 
 export type ApiV1ConversationFetchRecentPostRequestSortAlgorithmEnum = typeof ApiV1ConversationFetchRecentPostRequestSortAlgorithmEnum[keyof typeof ApiV1ConversationFetchRecentPostRequestSortAlgorithmEnum];
@@ -1075,12 +1075,12 @@ export const ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnu
     AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
-    Guest: 'guest'
+    Guest: 'guest',
 } as const;
 
 export type ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum];
 export const ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum = {
-    Devconnect2025: 'devconnect-2025'
+    Devconnect2025: 'devconnect-2025',
 } as const;
 
 export type ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum];
@@ -1092,7 +1092,7 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf1 {
 
 export const ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum = {
     NotFound: 'not_found',
-    NotAuthor: 'not_author'
+    NotAuthor: 'not_author',
 } as const;
 
 export type ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum];
@@ -1129,12 +1129,12 @@ export const ApiV1ConversationImportPostRequestParticipationModeEnum = {
     AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
-    Guest: 'guest'
+    Guest: 'guest',
 } as const;
 
 export type ApiV1ConversationImportPostRequestParticipationModeEnum = typeof ApiV1ConversationImportPostRequestParticipationModeEnum[keyof typeof ApiV1ConversationImportPostRequestParticipationModeEnum];
 export const ApiV1ConversationImportPostRequestRequiresEventTicketEnum = {
-    Devconnect2025: 'devconnect-2025'
+    Devconnect2025: 'devconnect-2025',
 } as const;
 
 export type ApiV1ConversationImportPostRequestRequiresEventTicketEnum = typeof ApiV1ConversationImportPostRequestRequiresEventTicketEnum[keyof typeof ApiV1ConversationImportPostRequestRequiresEventTicketEnum];
@@ -1152,7 +1152,7 @@ export interface ApiV1ConversationImportStatusPost200ResponseOneOf {
 }
 
 export const ApiV1ConversationImportStatusPost200ResponseOneOfStatusEnum = {
-    Processing: 'processing'
+    Processing: 'processing',
 } as const;
 
 export type ApiV1ConversationImportStatusPost200ResponseOneOfStatusEnum = typeof ApiV1ConversationImportStatusPost200ResponseOneOfStatusEnum[keyof typeof ApiV1ConversationImportStatusPost200ResponseOneOfStatusEnum];
@@ -1166,7 +1166,7 @@ export interface ApiV1ConversationImportStatusPost200ResponseOneOf1 {
 }
 
 export const ApiV1ConversationImportStatusPost200ResponseOneOf1StatusEnum = {
-    Completed: 'completed'
+    Completed: 'completed',
 } as const;
 
 export type ApiV1ConversationImportStatusPost200ResponseOneOf1StatusEnum = typeof ApiV1ConversationImportStatusPost200ResponseOneOf1StatusEnum[keyof typeof ApiV1ConversationImportStatusPost200ResponseOneOf1StatusEnum];
@@ -1180,7 +1180,7 @@ export interface ApiV1ConversationImportStatusPost200ResponseOneOf2 {
 }
 
 export const ApiV1ConversationImportStatusPost200ResponseOneOf2StatusEnum = {
-    Failed: 'failed'
+    Failed: 'failed',
 } as const;
 
 export type ApiV1ConversationImportStatusPost200ResponseOneOf2StatusEnum = typeof ApiV1ConversationImportStatusPost200ResponseOneOf2StatusEnum[keyof typeof ApiV1ConversationImportStatusPost200ResponseOneOf2StatusEnum];
@@ -1188,7 +1188,7 @@ export const ApiV1ConversationImportStatusPost200ResponseOneOf2FailureReasonEnum
     ProcessingError: 'processing_error',
     Timeout: 'timeout',
     ServerRestart: 'server_restart',
-    InvalidDataFormat: 'invalid_data_format'
+    InvalidDataFormat: 'invalid_data_format',
 } as const;
 
 export type ApiV1ConversationImportStatusPost200ResponseOneOf2FailureReasonEnum = typeof ApiV1ConversationImportStatusPost200ResponseOneOf2FailureReasonEnum[keyof typeof ApiV1ConversationImportStatusPost200ResponseOneOf2FailureReasonEnum];
@@ -1208,7 +1208,7 @@ export interface ApiV1ConversationOpenPost200ResponseOneOf {
 
 export const ApiV1ConversationOpenPost200ResponseOneOfReasonEnum = {
     NotAllowed: 'not_allowed',
-    AlreadyOpen: 'already_open'
+    AlreadyOpen: 'already_open',
 } as const;
 
 export type ApiV1ConversationOpenPost200ResponseOneOfReasonEnum = typeof ApiV1ConversationOpenPost200ResponseOneOfReasonEnum[keyof typeof ApiV1ConversationOpenPost200ResponseOneOfReasonEnum];
@@ -1232,7 +1232,7 @@ export const ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum = {
     PollExistsUseKeepOrRemove: 'poll_exists_use_keep_or_remove',
     NoPollToRemove: 'no_poll_to_remove',
     NoPollToKeep: 'no_poll_to_keep',
-    NoPollToReplace: 'no_poll_to_replace'
+    NoPollToReplace: 'no_poll_to_replace',
 } as const;
 
 export type ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum = typeof ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum[keyof typeof ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum];
@@ -1252,12 +1252,12 @@ export const ApiV1ConversationUpdatePostRequestParticipationModeEnum = {
     AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
-    Guest: 'guest'
+    Guest: 'guest',
 } as const;
 
 export type ApiV1ConversationUpdatePostRequestParticipationModeEnum = typeof ApiV1ConversationUpdatePostRequestParticipationModeEnum[keyof typeof ApiV1ConversationUpdatePostRequestParticipationModeEnum];
 export const ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = {
-    Devconnect2025: 'devconnect-2025'
+    Devconnect2025: 'devconnect-2025',
 } as const;
 
 export type ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = typeof ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum[keyof typeof ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum];
@@ -1272,7 +1272,7 @@ export interface ApiV1ConversationUpdatePostRequestPollActionOneOf {
 }
 
 export const ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum = {
-    None: 'none'
+    None: 'none',
 } as const;
 
 export type ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum];
@@ -1282,7 +1282,7 @@ export interface ApiV1ConversationUpdatePostRequestPollActionOneOf1 {
 }
 
 export const ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum = {
-    Keep: 'keep'
+    Keep: 'keep',
 } as const;
 
 export type ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum];
@@ -1292,7 +1292,7 @@ export interface ApiV1ConversationUpdatePostRequestPollActionOneOf2 {
 }
 
 export const ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum = {
-    Remove: 'remove'
+    Remove: 'remove',
 } as const;
 
 export type ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum];
@@ -1303,7 +1303,7 @@ export interface ApiV1ConversationUpdatePostRequestPollActionOneOf3 {
 }
 
 export const ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum = {
-    Create: 'create'
+    Create: 'create',
 } as const;
 
 export type ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum];
@@ -1314,7 +1314,7 @@ export interface ApiV1ConversationUpdatePostRequestPollActionOneOf4 {
 }
 
 export const ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum = {
-    Replace: 'replace'
+    Replace: 'replace',
 } as const;
 
 export type ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum];
@@ -1341,7 +1341,7 @@ export interface ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInner {
 
 export const ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInnerStateEnum = {
     Open: 'open',
-    Closed: 'closed'
+    Closed: 'closed',
 } as const;
 
 export type ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInnerStateEnum = typeof ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInnerStateEnum[keyof typeof ApiV1MaxdiffGithubPreviewPost200ResponseIssuesInnerStateEnum];
@@ -1369,7 +1369,7 @@ export const ApiV1MaxdiffItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum 
     Active: 'active',
     Completed: 'completed',
     InProgress: 'in_progress',
-    Canceled: 'canceled'
+    Canceled: 'canceled',
 } as const;
 
 export type ApiV1MaxdiffItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum = typeof ApiV1MaxdiffItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum[keyof typeof ApiV1MaxdiffItemsFetchPost200ResponseItemsInnerLifecycleStatusEnum];
@@ -1384,7 +1384,7 @@ export const ApiV1MaxdiffItemsLifecycleUpdatePostRequestNewStatusEnum = {
     Active: 'active',
     Completed: 'completed',
     InProgress: 'in_progress',
-    Canceled: 'canceled'
+    Canceled: 'canceled',
 } as const;
 
 export type ApiV1MaxdiffItemsLifecycleUpdatePostRequestNewStatusEnum = typeof ApiV1MaxdiffItemsLifecycleUpdatePostRequestNewStatusEnum[keyof typeof ApiV1MaxdiffItemsLifecycleUpdatePostRequestNewStatusEnum];
@@ -1420,7 +1420,7 @@ export const ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum 
     Active: 'active',
     Completed: 'completed',
     InProgress: 'in_progress',
-    Canceled: 'canceled'
+    Canceled: 'canceled',
 } as const;
 
 export type ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum = typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum[keyof typeof ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum];
@@ -1435,7 +1435,7 @@ export const ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum = {
     Completed: 'completed',
     InProgress: 'in_progress',
     Canceled: 'canceled',
-    All: 'all'
+    All: 'all',
 } as const;
 
 export type ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum = typeof ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum[keyof typeof ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum];
@@ -1468,12 +1468,12 @@ export const ApiV1ModerationConversationCreatePostRequestModerationReasonEnum = 
     Illegal: 'illegal',
     Doxing: 'doxing',
     Sexual: 'sexual',
-    Spam: 'spam'
+    Spam: 'spam',
 } as const;
 
 export type ApiV1ModerationConversationCreatePostRequestModerationReasonEnum = typeof ApiV1ModerationConversationCreatePostRequestModerationReasonEnum[keyof typeof ApiV1ModerationConversationCreatePostRequestModerationReasonEnum];
 export const ApiV1ModerationConversationCreatePostRequestModerationActionEnum = {
-    Lock: 'lock'
+    Lock: 'lock',
 } as const;
 
 export type ApiV1ModerationConversationCreatePostRequestModerationActionEnum = typeof ApiV1ModerationConversationCreatePostRequestModerationActionEnum[keyof typeof ApiV1ModerationConversationCreatePostRequestModerationActionEnum];
@@ -1497,13 +1497,13 @@ export const ApiV1ModerationOpinionCreatePostRequestModerationReasonEnum = {
     Illegal: 'illegal',
     Doxing: 'doxing',
     Sexual: 'sexual',
-    Spam: 'spam'
+    Spam: 'spam',
 } as const;
 
 export type ApiV1ModerationOpinionCreatePostRequestModerationReasonEnum = typeof ApiV1ModerationOpinionCreatePostRequestModerationReasonEnum[keyof typeof ApiV1ModerationOpinionCreatePostRequestModerationReasonEnum];
 export const ApiV1ModerationOpinionCreatePostRequestModerationActionEnum = {
     Move: 'move',
-    Hide: 'hide'
+    Hide: 'hide',
 } as const;
 
 export type ApiV1ModerationOpinionCreatePostRequestModerationActionEnum = typeof ApiV1ModerationOpinionCreatePostRequestModerationActionEnum[keyof typeof ApiV1ModerationOpinionCreatePostRequestModerationActionEnum];
@@ -1523,13 +1523,13 @@ export interface ApiV1ModerationOpinionGetPost200ResponseOneOf {
 }
 
 export const ApiV1ModerationOpinionGetPost200ResponseOneOfStatusEnum = {
-    Moderated: 'moderated'
+    Moderated: 'moderated',
 } as const;
 
 export type ApiV1ModerationOpinionGetPost200ResponseOneOfStatusEnum = typeof ApiV1ModerationOpinionGetPost200ResponseOneOfStatusEnum[keyof typeof ApiV1ModerationOpinionGetPost200ResponseOneOfStatusEnum];
 export const ApiV1ModerationOpinionGetPost200ResponseOneOfActionEnum = {
     Move: 'move',
-    Hide: 'hide'
+    Hide: 'hide',
 } as const;
 
 export type ApiV1ModerationOpinionGetPost200ResponseOneOfActionEnum = typeof ApiV1ModerationOpinionGetPost200ResponseOneOfActionEnum[keyof typeof ApiV1ModerationOpinionGetPost200ResponseOneOfActionEnum];
@@ -1539,7 +1539,7 @@ export const ApiV1ModerationOpinionGetPost200ResponseOneOfReasonEnum = {
     Illegal: 'illegal',
     Doxing: 'doxing',
     Sexual: 'sexual',
-    Spam: 'spam'
+    Spam: 'spam',
 } as const;
 
 export type ApiV1ModerationOpinionGetPost200ResponseOneOfReasonEnum = typeof ApiV1ModerationOpinionGetPost200ResponseOneOfReasonEnum[keyof typeof ApiV1ModerationOpinionGetPost200ResponseOneOfReasonEnum];
@@ -1554,7 +1554,7 @@ export interface ApiV1MuteUserCreatePostRequest {
 
 export const ApiV1MuteUserCreatePostRequestActionEnum = {
     Mute: 'mute',
-    Unmute: 'unmute'
+    Unmute: 'unmute',
 } as const;
 
 export type ApiV1MuteUserCreatePostRequestActionEnum = typeof ApiV1MuteUserCreatePostRequestActionEnum[keyof typeof ApiV1MuteUserCreatePostRequestActionEnum];
@@ -1584,7 +1584,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfTypeEnum = {
-    OpinionVote: 'opinion_vote'
+    OpinionVote: 'opinion_vote',
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfTypeEnum];
@@ -1600,7 +1600,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf1TypeEnum = {
-    NewOpinion: 'new_opinion'
+    NewOpinion: 'new_opinion',
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf1TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf1TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf1TypeEnum];
@@ -1615,7 +1615,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf2TypeEnum = {
-    ExportStarted: 'export_started'
+    ExportStarted: 'export_started',
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf2TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf2TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf2TypeEnum];
@@ -1627,7 +1627,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf2RouteTargetTypeEnum = {
-    Export: 'export'
+    Export: 'export',
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf2RouteTargetTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf2RouteTargetTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf2RouteTargetTypeEnum];
@@ -1642,7 +1642,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf3TypeEnum = {
-    ExportCompleted: 'export_completed'
+    ExportCompleted: 'export_completed',
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf3TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf3TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf3TypeEnum];
@@ -1658,14 +1658,14 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf4TypeEnum = {
-    ExportFailed: 'export_failed'
+    ExportFailed: 'export_failed',
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf4TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf4TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf4TypeEnum];
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf4FailureReasonEnum = {
     ProcessingError: 'processing_error',
     Timeout: 'timeout',
-    ServerRestart: 'server_restart'
+    ServerRestart: 'server_restart',
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf4FailureReasonEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf4FailureReasonEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf4FailureReasonEnum];
@@ -1681,7 +1681,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf5TypeEnum = {
-    ExportCancelled: 'export_cancelled'
+    ExportCancelled: 'export_cancelled',
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf5TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf5TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf5TypeEnum];
@@ -1695,7 +1695,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf6TypeEnum = {
-    ImportStarted: 'import_started'
+    ImportStarted: 'import_started',
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf6TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf6TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf6TypeEnum];
@@ -1707,7 +1707,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf6RouteTargetTypeEnum = {
-    Import: 'import'
+    Import: 'import',
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf6RouteTargetTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf6RouteTargetTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf6RouteTargetTypeEnum];
@@ -1722,7 +1722,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf7TypeEnum = {
-    ImportCompleted: 'import_completed'
+    ImportCompleted: 'import_completed',
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf7TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf7TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf7TypeEnum];
@@ -1737,7 +1737,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf8TypeEnum = {
-    ImportFailed: 'import_failed'
+    ImportFailed: 'import_failed',
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf8TypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf8TypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf8TypeEnum];
@@ -1745,7 +1745,7 @@ export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf8Fai
     ProcessingError: 'processing_error',
     Timeout: 'timeout',
     ServerRestart: 'server_restart',
-    InvalidDataFormat: 'invalid_data_format'
+    InvalidDataFormat: 'invalid_data_format',
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf8FailureReasonEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf8FailureReasonEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf8FailureReasonEnum];
@@ -1757,7 +1757,7 @@ export interface ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOf
 }
 
 export const ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfRouteTargetTypeEnum = {
-    Opinion: 'opinion'
+    Opinion: 'opinion',
 } as const;
 
 export type ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfRouteTargetTypeEnum = typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfRouteTargetTypeEnum[keyof typeof ApiV1NotificationFetchPost200ResponseNotificationListInnerOneOfRouteTargetTypeEnum];
@@ -1800,7 +1800,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue
     _2: '2',
     _3: '3',
     _4: '4',
-    _5: '5'
+    _5: '5',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValueKeyEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValueKeyEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValueKeyEnum];
@@ -1837,7 +1837,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgre
     _2: '2',
     _3: '3',
     _4: '4',
-    _5: '5'
+    _5: '5',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInnerClustersStatsInnerKeyEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInnerClustersStatsInnerKeyEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInnerClustersStatsInnerKeyEnum];
@@ -1853,7 +1853,7 @@ export const ApiV1OpinionFetchByConversationPostRequestFilterEnum = {
     Moderated: 'moderated',
     New: 'new',
     Discover: 'discover',
-    MyVotes: 'my_votes'
+    MyVotes: 'my_votes',
 } as const;
 
 export type ApiV1OpinionFetchByConversationPostRequestFilterEnum = typeof ApiV1OpinionFetchByConversationPostRequestFilterEnum[keyof typeof ApiV1OpinionFetchByConversationPostRequestFilterEnum];
@@ -1863,7 +1863,7 @@ export const ApiV1OpinionFetchByConversationPostRequestClusterKeyEnum = {
     _2: '2',
     _3: '3',
     _4: '4',
-    _5: '5'
+    _5: '5',
 } as const;
 
 export type ApiV1OpinionFetchByConversationPostRequestClusterKeyEnum = typeof ApiV1OpinionFetchByConversationPostRequestClusterKeyEnum[keyof typeof ApiV1OpinionFetchByConversationPostRequestClusterKeyEnum];
@@ -1891,7 +1891,7 @@ export interface ApiV1PollRespondPost200ResponseOneOf1 {
 export const ApiV1PollRespondPost200ResponseOneOf1ReasonEnum = {
     AccountRequired: 'account_required',
     StrongVerificationRequired: 'strong_verification_required',
-    EmailVerificationRequired: 'email_verification_required'
+    EmailVerificationRequired: 'email_verification_required',
 } as const;
 
 export type ApiV1PollRespondPost200ResponseOneOf1ReasonEnum = typeof ApiV1PollRespondPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1PollRespondPost200ResponseOneOf1ReasonEnum];
@@ -1912,7 +1912,7 @@ export const ApiV1ReportConversationCreatePostRequestReportReasonEnum = {
     Illegal: 'illegal',
     Doxing: 'doxing',
     Sexual: 'sexual',
-    Spam: 'spam'
+    Spam: 'spam',
 } as const;
 
 export type ApiV1ReportConversationCreatePostRequestReportReasonEnum = typeof ApiV1ReportConversationCreatePostRequestReportReasonEnum[keyof typeof ApiV1ReportConversationCreatePostRequestReportReasonEnum];
@@ -1931,7 +1931,7 @@ export const ApiV1ReportConversationFetchPost200ResponseInnerReasonEnum = {
     Illegal: 'illegal',
     Doxing: 'doxing',
     Sexual: 'sexual',
-    Spam: 'spam'
+    Spam: 'spam',
 } as const;
 
 export type ApiV1ReportConversationFetchPost200ResponseInnerReasonEnum = typeof ApiV1ReportConversationFetchPost200ResponseInnerReasonEnum[keyof typeof ApiV1ReportConversationFetchPost200ResponseInnerReasonEnum];
@@ -1948,7 +1948,7 @@ export const ApiV1ReportOpinionCreatePostRequestReportReasonEnum = {
     Illegal: 'illegal',
     Doxing: 'doxing',
     Sexual: 'sexual',
-    Spam: 'spam'
+    Spam: 'spam',
 } as const;
 
 export type ApiV1ReportOpinionCreatePostRequestReportReasonEnum = typeof ApiV1ReportOpinionCreatePostRequestReportReasonEnum[keyof typeof ApiV1ReportOpinionCreatePostRequestReportReasonEnum];
@@ -2022,7 +2022,7 @@ export const ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum =
     Ur: 'ur',
     Vi: 'vi',
     ZhHans: 'zh-Hans',
-    ZhHant: 'zh-Hant'
+    ZhHant: 'zh-Hant',
 } as const;
 
 export type ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum = typeof ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum[keyof typeof ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum];
@@ -2035,7 +2035,7 @@ export const ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum =
     Ja: 'ja',
     Ar: 'ar',
     Ky: 'ky',
-    Ru: 'ru'
+    Ru: 'ru',
 } as const;
 
 export type ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum];
@@ -2053,7 +2053,7 @@ export const ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnu
     Ja: 'ja',
     Ar: 'ar',
     Ky: 'ky',
-    Ru: 'ru'
+    Ru: 'ru',
 } as const;
 
 export type ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum];
@@ -2111,7 +2111,7 @@ export const ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum = 
     Ur: 'ur',
     Vi: 'vi',
     ZhHans: 'zh-Hans',
-    ZhHant: 'zh-Hant'
+    ZhHant: 'zh-Hant',
 } as const;
 
 export type ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum = typeof ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum[keyof typeof ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum];
@@ -2124,7 +2124,7 @@ export const ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum = 
     Ja: 'ja',
     Ar: 'ar',
     Ky: 'ky',
-    Ru: 'ru'
+    Ru: 'ru',
 } as const;
 
 export type ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum];
@@ -2164,7 +2164,7 @@ export interface ApiV1UserProfileGetPost200Response {
 }
 
 export const ApiV1UserProfileGetPost200ResponseVerifiedEventTicketsEnum = {
-    Devconnect2025: 'devconnect-2025'
+    Devconnect2025: 'devconnect-2025',
 } as const;
 
 export type ApiV1UserProfileGetPost200ResponseVerifiedEventTicketsEnum = typeof ApiV1UserProfileGetPost200ResponseVerifiedEventTicketsEnum[keyof typeof ApiV1UserProfileGetPost200ResponseVerifiedEventTicketsEnum];
@@ -2180,7 +2180,7 @@ export interface ApiV1UserVoteGetByConversationsPost200ResponseInner {
 export const ApiV1UserVoteGetByConversationsPost200ResponseInnerVotingActionEnum = {
     Agree: 'agree',
     Disagree: 'disagree',
-    Pass: 'pass'
+    Pass: 'pass',
 } as const;
 
 export type ApiV1UserVoteGetByConversationsPost200ResponseInnerVotingActionEnum = typeof ApiV1UserVoteGetByConversationsPost200ResponseInnerVotingActionEnum[keyof typeof ApiV1UserVoteGetByConversationsPost200ResponseInnerVotingActionEnum];
@@ -2208,7 +2208,7 @@ export const ApiV1VoteCastPost200ResponseOneOf1ReasonEnum = {
     EventTicketRequired: 'event_ticket_required',
     AccountRequired: 'account_required',
     StrongVerificationRequired: 'strong_verification_required',
-    EmailVerificationRequired: 'email_verification_required'
+    EmailVerificationRequired: 'email_verification_required',
 } as const;
 
 export type ApiV1VoteCastPost200ResponseOneOf1ReasonEnum = typeof ApiV1VoteCastPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1VoteCastPost200ResponseOneOf1ReasonEnum];
@@ -2223,7 +2223,7 @@ export const ApiV1VoteCastPostRequestChosenOptionEnum = {
     Agree: 'agree',
     Disagree: 'disagree',
     Pass: 'pass',
-    Cancel: 'cancel'
+    Cancel: 'cancel',
 } as const;
 
 export type ApiV1VoteCastPostRequestChosenOptionEnum = typeof ApiV1VoteCastPostRequestChosenOptionEnum[keyof typeof ApiV1VoteCastPostRequestChosenOptionEnum];
