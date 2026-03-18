@@ -1,24 +1,6 @@
 // This file, along with the integration of the Rarimo protocol into Agora, was originally developed with funding from the European Union’s Horizon Europe 2020 research and innovation program, as part of the NGI SARGASSO project under grant agreement No. 101092887.
 
-import {
-    deviceTable,
-    walletTable,
-    zkPassportTable,
-} from "@/shared-backend/schema.js";
-import type {
-    GenerateVerificationLink200,
-    VerifyUserStatusAndAuthenticate200,
-} from "@/shared/types/dto.js";
-import {
-    type LinkType,
-    type RarimoStatusAttributes,
-    zodZKProof,
-    zodStatusResponse,
-} from "@/shared/types/zod.js";
-import { type AxiosInstance } from "axios";
-import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { and, eq } from "drizzle-orm";
-import { nowZeroMs } from "@/shared/util.js";
+import { log } from "@/app.js";
 import {
     getZKPAuthenticationType,
     loginKnownDeviceWithZKP,
@@ -26,11 +8,28 @@ import {
     registerWithZKP,
 } from "@/service/auth.js";
 import * as authUtilService from "@/service/authUtil.js";
-import { decimalToHex, hexToUtf8 } from "@/utils/dataStructure.js";
-import { log } from "@/app.js";
-import { mergeGuestIntoVerifiedUser } from "./merge.js";
-import { httpErrors } from "@fastify/sensible";
+import {
+    deviceTable,
+    zkPassportTable
+} from "@/shared-backend/schema.js";
 import { isUserLoggedIn } from "@/shared-backend/util.js";
+import type {
+    GenerateVerificationLink200,
+    VerifyUserStatusAndAuthenticate200,
+} from "@/shared/types/dto.js";
+import {
+    type LinkType,
+    type RarimoStatusAttributes,
+    zodStatusResponse,
+    zodZKProof,
+} from "@/shared/types/zod.js";
+import { nowZeroMs } from "@/shared/util.js";
+import { decimalToHex, hexToUtf8 } from "@/utils/dataStructure.js";
+import { httpErrors } from "@fastify/sensible";
+import { type AxiosInstance } from "axios";
+import { and, eq } from "drizzle-orm";
+import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
+import { mergeGuestIntoVerifiedUser } from "./merge.js";
 
 interface IsLoggedInOrExistsAndAssociatedWithNoNullifierProps {
     db: PostgresDatabase;

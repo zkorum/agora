@@ -1,4 +1,6 @@
 // util service to get data about devices, users, emails, etc
+import { log } from "@/app.js";
+import * as authService from "@/service/auth.js";
 import {
     conversationTable,
     deviceTable,
@@ -11,12 +13,12 @@ import {
     walletTable,
     zkPassportTable,
 } from "@/shared-backend/schema.js";
-import { and, eq, gt } from "drizzle-orm";
-import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import type { IsLoggedInResponse } from "@/shared/types/dto-auth.js";
+import type { DeviceLoginStatusExtended, ParticipationMode } from "@/shared/types/zod.js";
 import { nowZeroMs } from "@/shared/util.js";
 import { httpErrors } from "@fastify/sensible";
-import type { DeviceLoginStatusExtended, ParticipationMode } from "@/shared/types/zod.js";
+import { and, eq, gt } from "drizzle-orm";
+import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 
 // Internal type extending the API type with sessionExpiry for the isKnown=true case.
 // sessionExpiry is internal-only — NOT exposed in the check-login-status API response.
@@ -29,8 +31,6 @@ type DeviceStatusKnownWithSession = Extract<
 export type DeviceLoginStatusInternal =
     | DeviceStatusKnownWithSession
     | Extract<DeviceLoginStatusExtended, { isKnown: false }>;
-import * as authService from "@/service/auth.js";
-import { log } from "@/app.js";
 
 interface InfoDevice {
     userAgent: string;

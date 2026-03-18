@@ -51,8 +51,8 @@ import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useRouter } from "vue-router";
 
 import {
-  type LoginOnboardingTranslations,
-  loginOnboardingTranslations,
+    type LoginOnboardingTranslations,
+    loginOnboardingTranslations,
 } from "./index.i18n";
 
 const { t } = useComponentI18n<LoginOnboardingTranslations>(

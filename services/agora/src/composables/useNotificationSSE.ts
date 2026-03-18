@@ -1,8 +1,8 @@
 import type {
-  SSEConnectedData,
-  SSEHeartbeatData,
-  SSENotificationData,
-  SSEShutdownData,
+    SSEConnectedData,
+    SSEHeartbeatData,
+    SSENotificationData,
+    SSEShutdownData,
 } from "src/shared/types/dto";
 import { zodNotificationItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";

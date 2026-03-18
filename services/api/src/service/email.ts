@@ -1,8 +1,8 @@
-import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
-import nodemailer from "nodemailer";
 import { config, log } from "@/app.js";
 import { codeToString } from "@/crypto.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
+import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
+import nodemailer from "nodemailer";
 
 // Lazy-initialized: only created when actually sending emails (production)
 // This avoids crashing in development where SES is not configured

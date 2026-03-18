@@ -1,3 +1,4 @@
+import { config, log } from "@/app.js";
 import {
     codeToString,
     generateOneTimeCode,
@@ -5,51 +6,50 @@ import {
     hashWithSalt,
     otpCodesEqual,
 } from "@/crypto.js";
-import { determineAuthType } from "./auth/core/stateHelpers.js";
+import * as authUtilService from "@/service/authUtil.js";
 import {
     checkEmailDeliverability,
     type ReacherIsReachable,
 } from "@/service/emailVerification.js";
-import type { AxiosInstance } from "axios";
-import type { CredentialAuthState, AuthResult } from "./auth/core/types.js";
-import {
-    authAttemptPhoneTable,
-    authAttemptEmailTable,
-    deviceTable,
-    walletTable,
-    emailTable,
-    zkPassportTable,
-    phoneTable,
-    userTable,
-    userDisplayLanguageTable,
-} from "@/shared-backend/schema.js";
-import { nowZeroMs } from "@/shared/util.js";
-import type {
-    AuthenticateRequestBody,
-    AuthenticateResponse,
-    AuthenticateEmailResponse,
-    VerifyOtp200,
-} from "@/shared/types/dto-auth.js";
-import type { DeviceLoginStatusExtended } from "@/shared/types/zod.js";
-import { eq, and, TransactionRollbackError, gt } from "drizzle-orm";
-import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import parsePhoneNumberFromString, {
-    type CountryCode,
-} from "libphonenumber-js/max";
-import { config, log } from "@/app.js";
-import { PEPPER_VERSION, toUnionUndefined } from "@/shared/shared.js";
-import { httpErrors } from "@fastify/sensible";
-import { generateUnusedRandomUsername } from "./account.js";
-import * as authUtilService from "@/service/authUtil.js";
-import twilio from "twilio";
-import { isPhoneNumberTypeSupported } from "@/shared-app-api/phone.js";
 import { base64Decode, base64Encode } from "@/shared-app-api/base64.js";
-import { mergeGuestIntoVerifiedUser } from "./merge.js";
-import { sendOtpEmail } from "./email.js";
+import { isPhoneNumberTypeSupported } from "@/shared-app-api/phone.js";
+import {
+    authAttemptEmailTable,
+    authAttemptPhoneTable,
+    deviceTable,
+    emailTable,
+    phoneTable,
+    userDisplayLanguageTable,
+    userTable,
+    walletTable,
+    zkPassportTable,
+} from "@/shared-backend/schema.js";
 import {
     type SupportedDisplayLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
+import { PEPPER_VERSION, toUnionUndefined } from "@/shared/shared.js";
+import type {
+    AuthenticateEmailResponse,
+    AuthenticateRequestBody,
+    AuthenticateResponse,
+    VerifyOtp200,
+} from "@/shared/types/dto-auth.js";
+import type { DeviceLoginStatusExtended } from "@/shared/types/zod.js";
+import { nowZeroMs } from "@/shared/util.js";
+import { httpErrors } from "@fastify/sensible";
+import type { AxiosInstance } from "axios";
+import { and, eq, gt, TransactionRollbackError } from "drizzle-orm";
+import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
+import parsePhoneNumberFromString, {
+    type CountryCode,
+} from "libphonenumber-js/max";
+import twilio from "twilio";
+import { generateUnusedRandomUsername } from "./account.js";
+import { determineAuthType } from "./auth/core/stateHelpers.js";
+import type { AuthResult, CredentialAuthState } from "./auth/core/types.js";
+import { sendOtpEmail } from "./email.js";
+import { mergeGuestIntoVerifiedUser } from "./merge.js";
 
 interface VerifyOtpProps {
     db: PostgresDatabase;
