@@ -30,7 +30,6 @@
               v-for="notificationItem in notificationList"
               :key="notificationItem.slugId"
               :to="getRouteFromTarget(notificationItem.routeTarget) ?? {}"
-              @click="markNotificationAsRead(notificationItem.slugId)"
             >
               <ZKHoverEffect
                 :enable-hover="true"
@@ -40,6 +39,7 @@
                 <div
                   class="notificationItemBase"
                   :class="{ unreadNotification: !notificationItem.isRead }"
+                  @click="markNotificationAsRead(notificationItem.slugId)"
                 >
                   <div class="iconWrapper">
                     <div v-if="!notificationItem.isRead" class="unreadDot"></div>
