@@ -572,7 +572,7 @@ watch(pollEnabled, (enablePolling) => {
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  padding-top: 2rem;
+  padding-top: 0.5rem;
   padding-bottom: 8rem;
 }
 
