@@ -30,6 +30,7 @@
               v-for="notificationItem in notificationList"
               :key="notificationItem.slugId"
               :to="getRouteFromTarget(notificationItem.routeTarget) ?? {}"
+              @click="markNotificationAsRead(notificationItem.slugId)"
             >
               <ZKHoverEffect
                 :enable-hover="true"
@@ -110,7 +111,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotificationStore } from "src/stores/notification";
 import { useNotificationApi } from "src/utils/api/notification/notification";
 import type { DisplayNotification } from "src/utils/notification/transform";
-import { onActivated, onDeactivated, ref, watch } from "vue";
+import { onActivated, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
 import {
@@ -129,7 +130,7 @@ const authStore = useAuthenticationStore();
 const { isAuthInitialized } = storeToRefs(authStore);
 const {
   loadNotificationData,
-  markAllAsReadLocally,
+  markNotificationAsRead,
   clearBadgeCount,
   clearNotificationData,
 } = notificationStore;
@@ -150,10 +151,6 @@ onActivated(() => {
   } else {
     void silentRefresh();
   }
-});
-
-onDeactivated(() => {
-  markAllAsReadLocally();
 });
 
 // Watch for new notifications arriving via SSE while on this page
