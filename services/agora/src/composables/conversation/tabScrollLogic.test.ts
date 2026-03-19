@@ -150,17 +150,17 @@ describe("createTabScrollState", () => {
 });
 
 describe("computeFloorScroll", () => {
-  it("returns sentinelTop minus headerHeight", () => {
-    expect(computeFloorScroll({ sentinelTop: 500, headerHeight: 60 })).toBe(
+  it("returns elementTop minus headerHeight", () => {
+    expect(computeFloorScroll({ elementTop: 500, headerHeight: 60 })).toBe(
       440
     );
   });
 
   it("clamps to zero when sentinel is above header", () => {
-    expect(computeFloorScroll({ sentinelTop: 30, headerHeight: 60 })).toBe(0);
+    expect(computeFloorScroll({ elementTop: 30, headerHeight: 60 })).toBe(0);
   });
 
-  it("returns zero when sentinelTop equals headerHeight", () => {
-    expect(computeFloorScroll({ sentinelTop: 60, headerHeight: 60 })).toBe(0);
+  it("returns zero when elementTop equals headerHeight", () => {
+    expect(computeFloorScroll({ elementTop: 60, headerHeight: 60 })).toBe(0);
   });
 });

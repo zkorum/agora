@@ -5,6 +5,7 @@ interface UseStickyObserverReturn {
   sentinelElement: Ref<HTMLElement | null>;
   isSticky: Ref<boolean>;
   headerHeight: Ref<number>;
+  refresh: () => void;
 }
 
 /**
@@ -55,5 +56,11 @@ export function useStickyObserver(): UseStickyObserverReturn {
     observer?.disconnect();
   });
 
-  return { sentinelElement, isSticky, headerHeight };
+  function refresh(): void {
+    const el = sentinelElement.value;
+    if (!el) return;
+    isSticky.value = el.getBoundingClientRect().top < headerHeight.value;
+  }
+
+  return { sentinelElement, isSticky, headerHeight, refresh };
 }

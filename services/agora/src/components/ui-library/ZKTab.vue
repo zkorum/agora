@@ -1,8 +1,7 @@
 <template>
-  <component
-    :is="to ? 'router-link' : 'button'"
+  <SpaLink
+    v-if="to"
     :to="to"
-    :replace="to ? replace : undefined"
     class="tabStyle"
     :class="{
       highlightTab: isHighlighted,
@@ -28,10 +27,39 @@
     <span v-if="text !== undefined" :style="{ paddingBottom: '3px' }">
       {{ text }}
     </span>
-  </component>
+  </SpaLink>
+  <button
+    v-else
+    class="tabStyle"
+    :class="{
+      highlightTab: isHighlighted,
+      underlineTab: shouldUnderlineOnHighlight,
+      activeTabUnderlineColor: isHighlighted && shouldUnderlineOnHighlight,
+      inactiveTabUnderlineColor: !isHighlighted && shouldUnderlineOnHighlight,
+    }"
+    @click="handleClick"
+  >
+    <!--  TODO: proper icon color -->
+    <!-- :color="isHighlighted ? 'primary' : '#7D7A85'" -->
+    <q-spinner
+      v-if="isLoading"
+      :color="isHighlighted ? 'primary' : '#7D7A85'"
+      size="1rem"
+    />
+    <ZKIcon
+      v-else-if="iconCode !== undefined"
+      :color="isHighlighted ? '#6b4eff' : '#7D7A85'"
+      :name="iconCode"
+      size="1rem"
+    />
+    <span v-if="text !== undefined" :style="{ paddingBottom: '3px' }">
+      {{ text }}
+    </span>
+  </button>
 </template>
 
 <script setup lang="ts">
+import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import type { RouteLocationRaw } from "vue-router";
 
@@ -42,7 +70,6 @@ defineProps<{
   shouldUnderlineOnHighlight: boolean;
   isLoading?: boolean;
   to?: RouteLocationRaw;
-  replace?: boolean;
 }>();
 
 const emit = defineEmits<{

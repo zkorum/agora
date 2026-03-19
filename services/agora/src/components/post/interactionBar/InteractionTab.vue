@@ -8,7 +8,6 @@
         :should-underline-on-highlight="true"
         :is-loading="isLoading && model === 'comment'"
         :to="model === 'comment' ? (compactMode ? undefined : { name: commentRouteName, params: { postSlugId: conversationSlugId } }) : undefined"
-        :replace="true"
         @click="handleCommentClick"
       />
       <ZKTab
@@ -19,7 +18,6 @@
         :should-underline-on-highlight="true"
         :is-loading="isLoading && model === 'analysis'"
         :to="model === 'analysis' ? undefined : { name: analysisRouteName, params: { postSlugId: conversationSlugId } }"
-        :replace="false"
         @click="handleAnalysisClick"
       />
     </div>
@@ -99,6 +97,10 @@ function handleAnalysisClick(): void {
     props.onSameTabClick?.();
   } else {
     canGoBackToComment.value = true;
+    void router.push({
+      name: analysisRouteName.value,
+      params: { postSlugId: props.conversationSlugId },
+    });
   }
 }
 </script>

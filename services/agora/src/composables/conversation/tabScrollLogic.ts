@@ -15,13 +15,13 @@ interface TabScrollState {
 }
 
 export function computeFloorScroll({
-  sentinelTop,
+  elementTop,
   headerHeight,
 }: {
-  sentinelTop: number;
+  elementTop: number;
   headerHeight: number;
 }): number {
-  return Math.max(0, sentinelTop - headerHeight);
+  return Math.max(0, elementTop - headerHeight);
 }
 
 export function createTabScrollState({

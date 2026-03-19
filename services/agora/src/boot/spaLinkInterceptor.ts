@@ -48,7 +48,10 @@ export default defineBoot(({ router }) => {
     if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
     if (!anchor.href.startsWith(window.location.origin)) return;
     e.preventDefault();
-    const url = new URL(anchor.href);
-    void router.push(url.pathname + url.search + url.hash);
+    // SpaLink components handle their own navigation — only push for plain <a> tags
+    if (!anchor.hasAttribute("data-spa-handled")) {
+      const url = new URL(anchor.href);
+      void router.push(url.pathname + url.search + url.hash);
+    }
   }, true);
 });
