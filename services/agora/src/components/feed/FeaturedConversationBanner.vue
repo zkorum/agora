@@ -45,7 +45,7 @@ const { shouldShowBanner, dismiss } = useFeaturedBannerVisibility();
   background-color: rgba($primary, 0.06);
   border: 1px solid rgba($primary, 0.2);
   border-radius: 8px;
-  margin: 0.5rem 1rem;
+  margin: 0 1rem;
 }
 
 .banner-link {

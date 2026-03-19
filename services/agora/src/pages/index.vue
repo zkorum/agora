@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="pageContent">
     <Teleport v-if="isActive" to="#page-header">
       <HomeMenuBar>
         <template #center>
@@ -42,9 +42,11 @@
       </WidthWrapper>
     </Teleport>
 
-    <WidthWrapper :enable="true">
-      <FeaturedConversationBanner />
-    </WidthWrapper>
+    <div class="bannerWrapper">
+      <WidthWrapper :enable="true">
+        <FeaturedConversationBanner />
+      </WidthWrapper>
+    </div>
 
     <div class="container">
       <CompactPostList />
@@ -104,6 +106,14 @@ function selectedTab(tab: HomeFeedSortOption) {
 </script>
 
 <style scoped lang="scss">
+.pageContent {
+  padding-top: 1rem;
+}
+
+.bannerWrapper {
+  margin-bottom: 1rem;
+}
+
 .container {
   display: flex;
   flex-direction: column;
