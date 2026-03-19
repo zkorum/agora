@@ -5,9 +5,9 @@
       size="1.25rem"
       color="#6b4eff"
     />
-    <router-link :to="conversationUrl" class="banner-link">
+    <SpaLink :to="conversationUrl" class="banner-link">
       {{ t("message") }}
-    </router-link>
+    </SpaLink>
     <button class="dismiss-button" @click="dismiss">
       <ZKIcon name="mdi:close" size="1rem" color="#836bff" />
     </button>
@@ -19,6 +19,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useFeaturedBannerVisibility } from "src/composables/useFeaturedBannerVisibility";
 import { processEnv } from "src/utils/processEnv";
 
+import SpaLink from "../ui-library/SpaLink.vue";
 import ZKIcon from "../ui-library/ZKIcon.vue";
 import {
   type FeaturedConversationBannerTranslations,
