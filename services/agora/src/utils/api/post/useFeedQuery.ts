@@ -42,5 +42,8 @@ export function useInvalidateFeedQuery() {
     invalidateFeed: () => {
       void queryClient.invalidateQueries({ queryKey: ["feed"] });
     },
+    invalidateFeedTab: (tab: string) => {
+      void queryClient.invalidateQueries({ queryKey: ["feed", tab] });
+    },
   };
 }

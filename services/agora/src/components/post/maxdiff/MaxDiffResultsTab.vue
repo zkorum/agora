@@ -9,9 +9,7 @@
     />
 
     <!-- Loading (initial results fetch) -->
-    <div v-if="isLoading" class="info-message">
-      <q-spinner size="2rem" />
-    </div>
+    <PageLoadingSpinner v-if="isLoading" />
 
     <!-- Error -->
     <div v-else-if="hasError" class="info-message">
@@ -130,6 +128,7 @@
 
 <script setup lang="ts">
 import ShortcutBar from "src/components/post/analysis/shortcutBar/ShortcutBar.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
 import type { ExtendedConversation } from "src/shared/types/zod";

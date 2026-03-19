@@ -56,6 +56,7 @@ export const useNotify = () => {
       badgeColor: "white",
       badgeTextColor: "primary",
       badgeClass: "zk-toast-badge",
+      badgePosition: "top-left",
       badgeStyle: {
         top: "50%",
         marginTop: "-13px",

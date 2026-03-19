@@ -1,11 +1,10 @@
 <template>
-  <RouterLink
+  <SpaLink
     :to="{
       name: '/conversation/[postSlugId]/',
       params: { postSlugId: conversationSlugId },
       query: { opinion: opinionSlugId },
     }"
-    class="opinion-list-link"
   >
     <ZKHoverEffect
       :enable-hover="true"
@@ -59,7 +58,7 @@
         />
       </div>
     </ZKHoverEffect>
-  </RouterLink>
+  </SpaLink>
 </template>
 
 <script setup lang="ts">
@@ -67,6 +66,7 @@ import ConversationTitleWithPrivacyLabel from "src/components/features/conversat
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 import type { OpinionItem } from "src/shared/types/zod";
 
+import SpaLink from "../../ui-library/SpaLink.vue";
 import ZKHoverEffect from "../../ui-library/ZKHoverEffect.vue";
 import ZKHtmlContent from "../../ui-library/ZKHtmlContent.vue";
 import CommentActionOptions from "../comments/group/item/CommentActionOptions.vue";
@@ -84,13 +84,6 @@ defineProps<{
 </script>
 
 <style scoped lang="scss">
-.opinion-list-link {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-  cursor: pointer;
-}
-
 .postTitle {
   width: 100%;
   text-overflow: ellipsis;

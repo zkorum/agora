@@ -69,6 +69,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import type { HomeFeedSortOption } from "src/stores/homeFeed";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useNavigationStore } from "src/stores/navigation";
+import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
 
 import { type HomeTranslations, homeTranslations } from "./index.i18n";
 
@@ -84,8 +85,10 @@ const { currentHomeFeedTab, hasPendingNewTab, hasPendingFollowingTab } =
   storeToRefs(useHomeFeedStore());
 const { clearFeedDisplay } = useHomeFeedStore();
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+const { invalidateFeedTab } = useInvalidateFeedQuery();
 
 function selectedTab(tab: HomeFeedSortOption) {
+  const hadPending = tab === "new" ? hasPendingNewTab.value : hasPendingFollowingTab.value;
   window.scrollTo({ top: 0, behavior: "smooth" });
   clearFeedDisplay();
   currentHomeFeedTab.value = tab;
@@ -93,6 +96,9 @@ function selectedTab(tab: HomeFeedSortOption) {
     hasPendingNewTab.value = false;
   } else {
     hasPendingFollowingTab.value = false;
+  }
+  if (hadPending) {
+    invalidateFeedTab(tab);
   }
 }
 </script>
