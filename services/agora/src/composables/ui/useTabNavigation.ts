@@ -39,7 +39,10 @@ export function useTabNavigation<T extends string>({
             isFirstActivation = false;
             return;
         }
-        const parsed = schema.safeParse(route.query.tab ?? undefined);
+        // Only sync from route if an explicit ?tab= param is present.
+        // Without it (normal tab switch back), KeepAlive already preserves currentTab.
+        if (route.query.tab === undefined) return;
+        const parsed = schema.safeParse(route.query.tab);
         const targetTab = parsed.success ? parsed.data : defaultTab;
         if (currentTab.value !== targetTab) {
             syncingFromRoute = true;

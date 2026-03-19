@@ -1,11 +1,10 @@
 import {
-  getElementScrollTop,
   getHeaderHeight,
   getScrollTop,
   getViewportHeight,
   scrollTo,
 } from "src/utils/html/scroll";
-import { nextTick, type Ref, ref, watch } from "vue";
+import { type Ref, ref, watch } from "vue";
 import { onBeforeRouteUpdate, useRoute } from "vue-router";
 
 import { computeFloorScroll, createTabScrollState } from "./tabScrollLogic";
@@ -29,14 +28,22 @@ export function useTabScrollRestoration({
   const state = createTabScrollState({ analysisRouteName });
   const tabContentStyle = ref<Record<string, string>>({});
 
+  // Cache floor scroll — offsetTop is unreliable on sticky elements (returns
+  // sticky position, not flow position). Compute once when element first
+  // renders at scroll 0 (not sticky), then reuse the cached value.
+  let cachedFloorScroll: number | undefined;
+
+  watch(actionBarElement, (el) => {
+    if (el && cachedFloorScroll === undefined) {
+      cachedFloorScroll = computeFloorScroll({
+        elementTop: el.offsetTop,
+        headerHeight: getHeaderHeight(),
+      });
+    }
+  });
+
   function getFloorScroll(): number {
-    const actionBar = actionBarElement?.value;
-    if (!actionBar) return 0;
-    const actionBarTop = getElementScrollTop({
-      element: actionBar,
-      scrollContainer: scrollContainer?.value,
-    });
-    return computeFloorScroll({ elementTop: actionBarTop, headerHeight: getHeaderHeight() });
+    return cachedFloorScroll ?? 0;
   }
 
   onBeforeRouteUpdate((_to, from) => {
@@ -73,32 +80,28 @@ export function useTabScrollRestoration({
         floorScroll: getFloorScroll(),
       });
 
-      // Ensure minHeight supports the arriving tab's target scroll.
-      // onBeforeRouteUpdate set minHeight based on departing scroll, but
-      // the arriving tab may need a taller page.
-      const viewportHeight = getViewportHeight({ scrollContainer: container });
-      tabContentStyle.value = { minHeight: `${target + viewportHeight}px` };
-
       // Disable CSS transition on sticky bar to prevent visual jitter
+      // when --header-height changes during restoration
       const actionBar = actionBarElement?.value;
       if (actionBar) {
         actionBar.style.transition = "none";
       }
 
-      // Wait for Vue to apply the updated minHeight, then scroll.
-      void nextTick(() => {
-        scrollTo({ top: target, scrollContainer: container });
+      scrollTo({ top: target, scrollContainer: container });
 
-        // Clear minHeight lock and re-assert scroll in one paint.
+      // Clear the minHeight lock, then re-assert scroll position.
+      // The minHeight was set high (departing tab's scroll + viewport) to prevent
+      // page shrink during KeepAlive swap. Clearing it may cause the page to
+      // shrink below the target scroll position. The second rAF ensures the
+      // browser has reflowed after minHeight removal, then re-scrolls.
+      requestAnimationFrame(() => {
+        if (actionBar) {
+          actionBar.style.transition = "";
+        }
+        tabContentStyle.value = {};
         requestAnimationFrame(() => {
-          if (actionBar) {
-            actionBar.style.transition = "";
-          }
-          tabContentStyle.value = {};
-          void nextTick(() => {
-            scrollTo({ top: target, scrollContainer: container });
-            onScrollComplete?.();
-          });
+          scrollTo({ top: target, scrollContainer: container });
+          onScrollComplete?.();
         });
       });
     },
