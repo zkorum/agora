@@ -39,6 +39,7 @@
                 <div
                   class="notificationItemBase"
                   :class="{ unreadNotification: !notificationItem.isRead }"
+                  @click="markNotificationAsRead(notificationItem.slugId)"
                 >
                   <div class="iconWrapper">
                     <div v-if="!notificationItem.isRead" class="unreadDot"></div>
@@ -110,7 +111,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotificationStore } from "src/stores/notification";
 import { useNotificationApi } from "src/utils/api/notification/notification";
 import type { DisplayNotification } from "src/utils/notification/transform";
-import { onActivated, onDeactivated, ref, watch } from "vue";
+import { onActivated, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
 import {
@@ -127,8 +128,12 @@ const { notificationList, numNewNotifications } =
   storeToRefs(notificationStore);
 const authStore = useAuthenticationStore();
 const { isAuthInitialized } = storeToRefs(authStore);
-const { loadNotificationData, markAllAsReadLocally, clearNotificationData } =
-  notificationStore;
+const {
+  loadNotificationData,
+  markNotificationAsRead,
+  clearBadgeCount,
+  clearNotificationData,
+} = notificationStore;
 
 const { markAllNotificationsAsRead } = useNotificationApi();
 
@@ -148,15 +153,12 @@ onActivated(() => {
   }
 });
 
-onDeactivated(() => {
-  markAllAsReadLocally();
-});
-
 // Watch for new notifications arriving via SSE while on this page
 // Guard with isActive to prevent keep-alive watcher from marking notifications
 // as read when the user is on a different page
 watch(numNewNotifications, (newCount, oldCount) => {
   if (newCount > oldCount && !isLoading.value && isActive.value) {
+    clearBadgeCount();
     void markAllNotificationsAsRead();
   }
 });
@@ -178,6 +180,7 @@ async function loadInitialData() {
     isError.value = false;
     await loadNotificationData(false);
     hasLoadedOnce.value = true;
+    clearBadgeCount();
     void markAllNotificationsAsRead();
   } catch (error) {
     console.error("Failed to load notifications:", error);
@@ -189,6 +192,7 @@ async function loadInitialData() {
 
 async function silentRefresh() {
   try {
+    clearBadgeCount();
     await markAllNotificationsAsRead();
   } catch (error) {
     console.error("Failed to refresh notifications:", error);

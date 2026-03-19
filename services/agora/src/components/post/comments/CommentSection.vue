@@ -45,7 +45,7 @@ import { useUserStore } from "src/stores/user";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onActivated, onMounted, ref, watch } from "vue";
 
 import {
   type CommentSectionTranslations,
@@ -81,6 +81,7 @@ const emit = defineEmits<{
 import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 
 const isComponentMounted = ref(false);
+const isInitialActivation = ref(true);
 
 const { t } = useComponentI18n<CommentSectionTranslations>(
   commentSectionTranslations
@@ -180,6 +181,15 @@ onMounted(async (): Promise<void> => {
   await setupHighlightFromRoute();
   await clearRouteQueryParameters();
   isComponentMounted.value = true;
+});
+
+onActivated(async (): Promise<void> => {
+  if (isInitialActivation.value) {
+    isInitialActivation.value = false;
+    return;
+  }
+  await setupHighlightFromRoute();
+  await clearRouteQueryParameters();
 });
 
 // Watch for postSlugId changes to refetch user votes when navigating between conversations

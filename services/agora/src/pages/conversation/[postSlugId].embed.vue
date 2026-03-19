@@ -107,6 +107,7 @@ const { tabContentStyle } = useTabScrollRestoration({
   sentinelElement,
   actionBarElement,
   scrollContainer,
+  onScrollOverride: () => scrollToActionBar(),
 });
 </script>
 

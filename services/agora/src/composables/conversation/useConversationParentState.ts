@@ -147,8 +147,6 @@ export function useConversationParentState({
     void router.push({
       path: `${routePrefix.replace("{id}", data.metadata.conversationSlugId)}/analysis`,
       query: initialTab ? { tab: initialTab } : undefined,
-    }).then(() => {
-      scrollToActionBar();
     });
   }
 
@@ -159,7 +157,7 @@ export function useConversationParentState({
     // Invalidate comments cache to ensure fresh data when user navigates
     void invalidateComments(data.metadata.conversationSlugId);
 
-    void router.push(
+    void router.replace(
       `${routePrefix.replace("{id}", data.metadata.conversationSlugId)}/`
     );
   }
@@ -174,11 +172,12 @@ export function useConversationParentState({
     void invalidateComments(data.metadata.conversationSlugId);
 
     pendingScrollOverride.value = true;
+
+    // Push (not back/replace) so the analysis entry stays in history.
+    // Back from the comment tab will return to analysis at its saved position.
     void router.push(
       `${routePrefix.replace("{id}", data.metadata.conversationSlugId)}/`
-    ).then(() => {
-      scrollToActionBar();
-    });
+    );
   }
 
   function onViewAnalysis() {

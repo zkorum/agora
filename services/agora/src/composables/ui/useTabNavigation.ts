@@ -1,5 +1,5 @@
 import type { Ref } from "vue";
-import { inject, shallowRef, watch } from "vue";
+import { inject, onActivated, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { z } from "zod";
 
@@ -27,18 +27,42 @@ export function useTabNavigation<T extends string>({
         initialTab.success ? initialTab.data : defaultTab,
     );
 
-    watch(currentTab, (newTab, oldTab) => {
-        const currentQuery = { ...route.query };
-        if (newTab === defaultTab) {
-            delete currentQuery.tab;
-        } else {
-            currentQuery.tab = newTab;
-        }
-        void router.replace({ query: currentQuery });
+    // Guard: skip URL sync and scroll when currentTab changes from route-driven sync
+    let syncingFromRoute = false;
 
-        if (oldTab !== undefined) {
-            scrollToActionBar({ behavior: "smooth" });
+    // Sync URL → currentTab on KeepAlive reactivation only.
+    // Using onActivated (not a watch on route.query.tab) to avoid firing
+    // when navigating AWAY from this tab, which would reset currentTab.
+    let isFirstActivation = true;
+    onActivated(() => {
+        if (isFirstActivation) {
+            isFirstActivation = false;
+            return;
         }
+        const parsed = schema.safeParse(route.query.tab ?? undefined);
+        const targetTab = parsed.success ? parsed.data : defaultTab;
+        if (currentTab.value !== targetTab) {
+            syncingFromRoute = true;
+            currentTab.value = targetTab;
+        }
+    });
+
+    // Sync: currentTab → URL + scroll (skipped during route-driven sync)
+    watch(currentTab, (newTab, oldTab) => {
+        if (!syncingFromRoute) {
+            const currentQuery = { ...route.query };
+            if (newTab === defaultTab) {
+                delete currentQuery.tab;
+            } else {
+                currentQuery.tab = newTab;
+            }
+            void router.replace({ query: currentQuery });
+
+            if (oldTab !== undefined) {
+                scrollToActionBar({ behavior: "smooth" });
+            }
+        }
+        syncingFromRoute = false;
     });
 
     function handleSameTabClick(): void {

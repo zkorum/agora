@@ -71,13 +71,16 @@ export const useNotificationStore = defineStore("notification", () => {
     );
   }
 
-  function markAllAsReadLocally() {
-    // Update all notifications in the list to mark them as read
-    notificationList.value = notificationList.value.map((notification) => ({
-      ...notification,
-      isRead: true,
-    }));
-    // Reset the new notification counter
+  function markNotificationAsRead(slugId: string) {
+    const notification = notificationList.value.find(
+      (n) => n.slugId === slugId
+    );
+    if (notification) {
+      notification.isRead = true;
+    }
+  }
+
+  function clearBadgeCount() {
     numNewNotifications.value = 0;
   }
 
@@ -91,7 +94,8 @@ export const useNotificationStore = defineStore("notification", () => {
     clearNotificationData,
     addNewNotification,
     hasNotification,
-    markAllAsReadLocally,
+    clearBadgeCount,
+    markNotificationAsRead,
     numNewNotifications,
     notificationList,
   };
