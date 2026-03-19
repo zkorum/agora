@@ -81,6 +81,10 @@ export const useNotificationStore = defineStore("notification", () => {
     numNewNotifications.value = 0;
   }
 
+  function clearBadgeCount() {
+    numNewNotifications.value = 0;
+  }
+
   function clearNotificationData() {
     notificationList.value = [];
     numNewNotifications.value = 0;
@@ -91,6 +95,7 @@ export const useNotificationStore = defineStore("notification", () => {
     clearNotificationData,
     addNewNotification,
     hasNotification,
+    clearBadgeCount,
     markAllAsReadLocally,
     numNewNotifications,
     notificationList,

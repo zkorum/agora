@@ -127,8 +127,12 @@ const { notificationList, numNewNotifications } =
   storeToRefs(notificationStore);
 const authStore = useAuthenticationStore();
 const { isAuthInitialized } = storeToRefs(authStore);
-const { loadNotificationData, markAllAsReadLocally, clearNotificationData } =
-  notificationStore;
+const {
+  loadNotificationData,
+  markAllAsReadLocally,
+  clearBadgeCount,
+  clearNotificationData,
+} = notificationStore;
 
 const { markAllNotificationsAsRead } = useNotificationApi();
 
@@ -157,6 +161,7 @@ onDeactivated(() => {
 // as read when the user is on a different page
 watch(numNewNotifications, (newCount, oldCount) => {
   if (newCount > oldCount && !isLoading.value && isActive.value) {
+    clearBadgeCount();
     void markAllNotificationsAsRead();
   }
 });
@@ -178,6 +183,7 @@ async function loadInitialData() {
     isError.value = false;
     await loadNotificationData(false);
     hasLoadedOnce.value = true;
+    clearBadgeCount();
     void markAllNotificationsAsRead();
   } catch (error) {
     console.error("Failed to load notifications:", error);
@@ -189,6 +195,7 @@ async function loadInitialData() {
 
 async function silentRefresh() {
   try {
+    clearBadgeCount();
     await markAllNotificationsAsRead();
   } catch (error) {
     console.error("Failed to refresh notifications:", error);
