@@ -196,7 +196,7 @@ const props = defineProps<{
   clusterLabels: Partial<Record<PolisKey, string>>;
 }>();
 
-const { forceOpenComment } = useRouterNavigation();
+const { openComment } = useRouterNavigation();
 
 const { t } = useComponentI18n<OpinionAnalysisDialogTranslations>(
   opinionAnalysisDialogTranslations
@@ -245,12 +245,11 @@ const shouldShowGroupStats = computed(() => {
 });
 
 async function viewOriginalComment() {
-  await forceOpenComment(
+  showDialog.value = false;
+  await openComment(
     props.conversationSlugId,
     props.opinionItem.opinionSlugId
   );
-  showDialog.value = false;
-  // Add the routing later
 }
 </script>
 
