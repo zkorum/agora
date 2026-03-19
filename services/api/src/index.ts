@@ -3382,7 +3382,7 @@ server.after(() => {
 <meta property="og:title" content="${esc(title)}" />
 <meta property="og:description" content="${esc(ogDescription)}" />
 <meta property="og:url" content="${esc(canonicalUrl)}" />
-<meta property="og:site_name" content="Taraaz — ترازو" />
+<meta property="og:site_name" content="Taraaz — تراز" />
 <meta property="og:image" content="${esc(ogImageUrl)}" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
