@@ -3324,6 +3324,89 @@ server.after(() => {
             });
         },
     });
+
+    // OG meta tags endpoint for social media crawlers (GET required by protocol)
+    server.route({
+        method: "GET",
+        url: `/og/conversation/:slugId`,
+        handler: async (request, reply) => {
+            const { slugId } = request.params as { slugId: string };
+
+            // Derive site URL from CORS origin list (first origin)
+            const siteUrl = config.CORS_ORIGIN_LIST[0] ?? "https://taraaz.jomhoor.org";
+
+            try {
+                const post = await postService.fetchPostBySlugId({
+                    db: db,
+                    conversationSlugId: slugId,
+                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                });
+
+                const title = post.payload.title;
+                const rawBody = post.payload.body ?? "";
+                // Strip HTML tags for plain-text description
+                const plainText = rawBody.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+                const description = plainText.length > 200
+                    ? plainText.slice(0, 197) + "..."
+                    : plainText;
+
+                const participants = post.metadata.participantCount;
+                const opinions = post.metadata.opinionCount;
+                const votes = post.metadata.voteCount;
+                const author = post.metadata.authorUsername;
+                const org = post.metadata.organization?.name;
+
+                const stats = `${String(participants)} participants · ${String(opinions)} statements · ${String(votes)} votes`;
+                const ogDescription = description
+                    ? `${description}\n${stats}`
+                    : stats;
+                const ogAuthor = org ?? author;
+
+                const canonicalUrl = `${siteUrl}/feed/conversation/${encodeURIComponent(slugId)}/`;
+                const ogImageUrl = `${siteUrl}/og-image.png`;
+
+                // Escape HTML entities in dynamic values to prevent injection
+                const esc = (s: string): string =>
+                    s.replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;");
+
+                const html = `<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>${esc(title)} — Taraaz</title>
+<meta property="og:type" content="article" />
+<meta property="og:title" content="${esc(title)}" />
+<meta property="og:description" content="${esc(ogDescription)}" />
+<meta property="og:url" content="${esc(canonicalUrl)}" />
+<meta property="og:site_name" content="Taraaz — ترازو" />
+<meta property="og:image" content="${esc(ogImageUrl)}" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:locale" content="fa_IR" />
+<meta property="og:locale:alternate" content="en_US" />
+<meta property="article:author" content="${esc(ogAuthor)}" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="${esc(title)}" />
+<meta name="twitter:description" content="${esc(ogDescription)}" />
+<meta name="twitter:image" content="${esc(ogImageUrl)}" />
+<link rel="canonical" href="${esc(canonicalUrl)}" />
+<meta http-equiv="refresh" content="0; url=${esc(canonicalUrl)}" />
+</head>
+<body>
+<p>Redirecting to <a href="${esc(canonicalUrl)}">${esc(title)}</a>...</p>
+</body>
+</html>`;
+
+                return reply.type("text/html; charset=utf-8").send(html);
+            } catch {
+                // If conversation not found, redirect to the feed
+                return reply.redirect(`${siteUrl}/feed/`);
+            }
+        },
+    });
 });
 
 server.ready((e) => {
