@@ -3377,6 +3377,7 @@ server.after(() => {
 <head>
 <meta charset="utf-8" />
 <title>${esc(title)} — Taraaz</title>
+<meta name="description" content="${esc(ogDescription)}" />
 <meta property="og:type" content="article" />
 <meta property="og:title" content="${esc(title)}" />
 <meta property="og:description" content="${esc(ogDescription)}" />
