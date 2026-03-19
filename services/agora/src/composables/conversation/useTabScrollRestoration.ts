@@ -16,12 +16,14 @@ export function useTabScrollRestoration({
   sentinelElement,
   actionBarElement,
   scrollContainer,
+  onScrollOverride,
 }: {
   analysisRouteName: string;
   pendingScrollOverride: Ref<boolean>;
   sentinelElement: Ref<HTMLElement | null>;
   actionBarElement: Ref<HTMLElement | null>;
   scrollContainer?: Ref<HTMLElement | null>;
+  onScrollOverride?: () => void;
 }) {
   const route = useRoute();
   const state = createTabScrollState({ analysisRouteName });
@@ -54,6 +56,9 @@ export function useTabScrollRestoration({
       if (pendingScrollOverride.value) {
         pendingScrollOverride.value = false;
         tabContentStyle.value = {};
+        if (onScrollOverride) {
+          requestAnimationFrame(() => onScrollOverride());
+        }
         return;
       }
 

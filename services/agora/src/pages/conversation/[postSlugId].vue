@@ -119,6 +119,7 @@ import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
+import { isBackToConversationCommentTab } from "src/utils/nav/historyBack";
 import { onBeforeUnmount, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -179,21 +180,23 @@ const { tabContentStyle } = useTabScrollRestoration({
   pendingScrollOverride,
   sentinelElement,
   actionBarElement,
+  onScrollOverride: () => scrollToActionBar(),
 });
 
 function handleBack(): void {
   if (currentTab.value === "analysis") {
-    const back = window.history.state?.back;
     const slugId = conversationData.value?.metadata.conversationSlugId;
-    // If previous history entry is the comment tab of this conversation, pop it
+    if (slugId === undefined) return;
+
+    const conversationPathPrefix = conversationConfig.routePrefix.replace("{id}", slugId);
     if (
-      typeof back === "string" &&
-      slugId !== undefined &&
-      back.startsWith(`/conversation/${slugId}`) &&
-      !back.includes("/analysis")
+      isBackToConversationCommentTab({
+        historyBack: window.history.state?.back,
+        conversationPathPrefix,
+      })
     ) {
       router.back();
-    } else if (slugId !== undefined) {
+    } else {
       void router.replace({
         name: "/conversation/[postSlugId]/",
         params: { postSlugId: slugId },
