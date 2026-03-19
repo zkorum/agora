@@ -26,11 +26,10 @@
       >
         <div class="widthConstraint">
           <div class="notificaitonListFlexStyle">
-            <router-link
+            <SpaLink
               v-for="notificationItem in notificationList"
               :key="notificationItem.slugId"
               :to="getRouteFromTarget(notificationItem.routeTarget) ?? {}"
-              class="notificationLink"
             >
               <ZKHoverEffect
                 :enable-hover="true"
@@ -78,7 +77,7 @@
                   </div>
                 </div>
               </ZKHoverEffect>
-            </router-link>
+            </SpaLink>
           </div>
         </div>
 
@@ -100,6 +99,7 @@ import UserAvatar from "src/components/account/UserAvatar.vue";
 import { HomeMenuBar } from "src/components/navigation/header/variants";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
+import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
