@@ -104,7 +104,6 @@ const {
 const { tabContentStyle } = useTabScrollRestoration({
   analysisRouteName: "/conversation/[postSlugId].embed/analysis",
   pendingScrollOverride,
-  sentinelElement,
   actionBarElement,
   scrollContainer,
   onScrollOverride: () => scrollToActionBar(),

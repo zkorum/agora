@@ -351,24 +351,20 @@ export function useRealtimeSSE() {
     isConnecting.value = false;
   }
 
-  // When the browser goes idle (tab hidden), JS timers get suspended and fire
-  // all at once on resume. This causes the heartbeat watchdog to falsely detect
-  // offline state. Clear timers on hide, restore monitoring on show.
+  // Mobile browsers suspend JS timers and kill TCP connections when the page is
+  // hidden. On resume, stale timers and reader.read() rejections fire at once,
+  // causing false offline detection. The standard pattern (Socket.IO, Pusher):
+  // disconnect proactively on hide, reconnect cleanly on show.
+  // disconnect() increments connectionId, making any in-flight catch handler
+  // stale — it can never schedule an offline timer or touch shared state.
   function onVisibilityChange() {
     if (document.hidden) {
-      console.log("[SSE] Page hidden — clearing heartbeat watchdog and offline timer");
-      clearHeartbeatWatchdog();
-      if (offlineTimer) {
-        clearTimeout(offlineTimer);
-        offlineTimer = null;
-      }
+      console.log("[SSE] Page hidden — disconnecting");
+      disconnect();
+      shouldReconnect = true;
     } else {
-      console.log("[SSE] Page visible — checking connection");
-      if (isConnected.value) {
-        resetHeartbeatWatchdog();
-      } else if (shouldReconnect && !isConnecting.value) {
-        forceReconnect();
-      }
+      console.log("[SSE] Page visible — reconnecting");
+      void connect();
     }
   }
 

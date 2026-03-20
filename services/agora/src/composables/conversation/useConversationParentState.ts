@@ -3,7 +3,10 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
-import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
+import {
+  useConversationQuery,
+  useInvalidateConversationQuery,
+} from "src/utils/api/post/useConversationQuery";
 import { useInvalidateVoteQueries } from "src/utils/api/vote/useVoteQueries";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
@@ -79,6 +82,7 @@ export function useConversationParentState({
     invalidateAnalysis: invalidateAnalysisQuery,
     invalidateComments,
   } = useInvalidateCommentQueries();
+  const { invalidateConversation } = useInvalidateConversationQuery();
 
   // Child tab refresh: the active child route registers its own refresh handler
   const childRefreshHandler = ref<(() => Promise<void>) | undefined>();
@@ -140,9 +144,6 @@ export function useConversationParentState({
     const data = conversationData.value;
     if (data === undefined) return;
 
-    // Invalidate analysis cache to ensure fresh data when user navigates
-    void invalidateAnalysisQuery(data.metadata.conversationSlugId);
-
     pendingScrollOverride.value = true;
     void router.push({
       path: `${routePrefix.replace("{id}", data.metadata.conversationSlugId)}/analysis`,
@@ -190,6 +191,14 @@ export function useConversationParentState({
     (newRouteName) => {
       if (newRouteName === analysisRouteName) {
         currentTab.value = "analysis";
+        // Refresh both conversation metadata and analysis data together.
+        // Stale participantCount causes >100% group percentages when clusters
+        // have more users than the cached count.
+        const slugId = conversationData.value?.metadata.conversationSlugId;
+        if (slugId) {
+          invalidateConversation(slugId);
+          invalidateAnalysisQuery(slugId);
+        }
       } else if (commentRouteNames.some((name) => name === newRouteName)) {
         currentTab.value = "comment";
       }

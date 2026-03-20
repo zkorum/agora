@@ -134,7 +134,7 @@ const router = useRouter();
 const { t } = useComponentI18n<ConversationPageTranslations>(
   conversationPageTranslations
 );
-const { sentinelElement, isSticky, headerHeight } = useStickyObserver();
+const { sentinelElement, isSticky, headerHeight, refresh: refreshStickyState } = useStickyObserver();
 const navigationStore = useNavigationStore();
 const { resetDraft } = useNewPostDraftsStore();
 const { safeNavigateBack } = useGoBackButtonHandler();
@@ -178,9 +178,9 @@ const {
 const { tabContentStyle } = useTabScrollRestoration({
   analysisRouteName: conversationConfig.analysisRouteName,
   pendingScrollOverride,
-  sentinelElement,
   actionBarElement,
   onScrollOverride: () => scrollToActionBar(),
+  onScrollComplete: refreshStickyState,
 });
 
 function handleBack(): void {

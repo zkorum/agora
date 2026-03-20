@@ -1,5 +1,4 @@
 import {
-  getElementScrollTop,
   getHeaderHeight,
   getScrollTop,
   getViewportHeight,
@@ -13,30 +12,38 @@ import { computeFloorScroll, createTabScrollState } from "./tabScrollLogic";
 export function useTabScrollRestoration({
   analysisRouteName,
   pendingScrollOverride,
-  sentinelElement,
   actionBarElement,
   scrollContainer,
   onScrollOverride,
+  onScrollComplete,
 }: {
   analysisRouteName: string;
   pendingScrollOverride: Ref<boolean>;
-  sentinelElement: Ref<HTMLElement | null>;
   actionBarElement: Ref<HTMLElement | null>;
   scrollContainer?: Ref<HTMLElement | null>;
   onScrollOverride?: () => void;
+  onScrollComplete?: () => void;
 }) {
   const route = useRoute();
   const state = createTabScrollState({ analysisRouteName });
   const tabContentStyle = ref<Record<string, string>>({});
 
+  // Cache floor scroll — offsetTop is unreliable on sticky elements (returns
+  // sticky position, not flow position). Compute once when element first
+  // renders at scroll 0 (not sticky), then reuse the cached value.
+  let cachedFloorScroll: number | undefined;
+
+  watch(actionBarElement, (el) => {
+    if (el && cachedFloorScroll === undefined) {
+      cachedFloorScroll = computeFloorScroll({
+        elementTop: el.offsetTop,
+        headerHeight: getHeaderHeight(),
+      });
+    }
+  });
+
   function getFloorScroll(): number {
-    const sentinel = sentinelElement?.value;
-    if (!sentinel) return 0;
-    const sentinelTop = getElementScrollTop({
-      element: sentinel,
-      scrollContainer: scrollContainer?.value,
-    });
-    return computeFloorScroll({ sentinelTop, headerHeight: getHeaderHeight() });
+    return cachedFloorScroll ?? 0;
   }
 
   onBeforeRouteUpdate((_to, from) => {
@@ -57,7 +64,12 @@ export function useTabScrollRestoration({
         pendingScrollOverride.value = false;
         tabContentStyle.value = {};
         if (onScrollOverride) {
-          requestAnimationFrame(() => onScrollOverride());
+          requestAnimationFrame(() => {
+            onScrollOverride();
+            onScrollComplete?.();
+          });
+        } else {
+          onScrollComplete?.();
         }
         return;
       }
@@ -89,6 +101,7 @@ export function useTabScrollRestoration({
         tabContentStyle.value = {};
         requestAnimationFrame(() => {
           scrollTo({ top: target, scrollContainer: container });
+          onScrollComplete?.();
         });
       });
     },

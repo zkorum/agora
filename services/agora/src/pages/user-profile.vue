@@ -45,7 +45,6 @@
             :is-highlighted="currentTab === tabItem.value"
             :should-underline-on-highlight="true"
             :to="{ name: tabItem.route }"
-            :replace="true"
           />
         </div>
       </div>
