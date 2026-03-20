@@ -40,6 +40,16 @@ Agora Citizen Network is a privacy-preserving social platform using zero-knowled
 
 The landing page is embedded in the app (not a separate static site) because features like "Explore Conversations" will need database access via SSR.
 
+### UX Philosophy: Native-Like Experience
+
+The main frontend (`services/agora`) is a web app that should **feel like a native mobile app**. Every interaction should feel instant and responsive:
+
+- **Instant page loads**: Use caching (TanStack Query), optimistic updates, and preloaded data so page transitions feel immediate. Show skeleton loaders or spinners only when data genuinely isn't available yet.
+- **SPA navigation everywhere**: Never cause full page reloads. Use `SpaLink` (not plain `<a>`, `<RouterLink>`, or `<button>`) for all internal navigation links. See the "SpaLink for Internal Navigation" section under Important Patterns.
+- **KeepAlive for scroll preservation**: Pages wrapped in `<KeepAlive>` preserve scroll position and component state when navigating back. Don't reset state unnecessarily on re-activation.
+- **Background data refresh**: Refresh stale data silently in the background. Don't show loading states when cached data is available — show the cache immediately, refresh behind the scenes.
+- **No jank**: Avoid layout shifts, flash of empty content, or unnecessary re-renders. Use `min-height`, skeleton placeholders, or `PageLoadingSpinner` to hold space while content loads.
+
 ### Terminology: Comment / Opinion / Statement
 
 The codebase uses `comment` and `opinion` interchangeably in variable names, database columns, and API endpoints for historical reasons. **Conceptually, comment = opinion = statement.** They all refer to the same thing: a user-submitted proposition that others vote on.
@@ -629,6 +639,27 @@ log.debug(`Processing started`); // ❌ Don't use this
 ```
 
 ## Important Patterns
+
+### SpaLink for Internal Navigation
+
+**Always use `SpaLink`** for internal navigation links in `services/agora`. Never use plain `<a>`, `<RouterLink>`, or `<button>` for navigation.
+
+**Why `SpaLink` and not `<button>` or `<RouterLink>`:**
+- Renders a real `<a href>` for accessibility, SEO, right-click "Open in new tab", and middle-click/Ctrl+click support
+- Fixes a Vue 3.5 event delegation bug (`vuejs/core#11765`) that races with the browser's native `<a href>` link following, causing intermittent full page reloads. `SpaLink` + a global capture-phase interceptor (`boot/spaLinkInterceptor.ts`) eliminate the race.
+
+**Two modes** (controlled by the `deferred` prop):
+
+- **Default** (`deferred=false`): The interceptor handles `e.preventDefault()` + `router.push()`. Use for: feed cards, profile statements, notifications, banners — any link where the interceptor can handle navigation.
+- **Deferred** (`deferred=true`): The interceptor only does `e.preventDefault()`. The component handles navigation itself. Use for: analysis/comment tabs that need custom history management (`canGoBackToComment`, `router.back()`) which would conflict with the interceptor's `router.push()`.
+
+**Files:**
+- `services/agora/src/components/ui-library/SpaLink.vue` — the component
+- `services/agora/src/boot/spaLinkInterceptor.ts` — the global interceptor
+
+**References:**
+- Vue 3.5 event delegation: https://github.com/vuejs/core/pull/11765
+- RouterLink reload bug: https://github.com/vuejs/router/issues/846
 
 ### Testing Frontend Components
 
