@@ -47,11 +47,20 @@ export default defineBoot(({ router }) => {
     if (!(anchor instanceof HTMLAnchorElement)) return;
     if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
     if (!anchor.href.startsWith(window.location.origin)) return;
+    // Skip entirely if click target is an interactive element inside the <a>.
+    // These elements have their own @click.stop handlers (e.g., share, vote count,
+    // hamburger menu). We must not call e.preventDefault() here — that would
+    // interfere with Vue's event delegation for the button handlers.
+    // Browsers give priority to inner interactive elements over the outer <a>.
+    const target = e.target as HTMLElement;
+    const interactive = target.closest("button, [role='button'], input, select, textarea");
+    if (interactive && anchor.contains(interactive)) return;
     e.preventDefault();
-    // SpaLink components handle their own navigation — only push for plain <a> tags
-    if (!anchor.hasAttribute("data-spa-handled")) {
-      const url = new URL(anchor.href);
-      void router.push(url.pathname + url.search + url.hash);
-    }
+    // Deferred SpaLinks (data-spa-handled) handle their own navigation —
+    // used by analysis/comment tabs that need custom history management.
+    // See SpaLink.vue for the two-mode explanation.
+    if (anchor.hasAttribute("data-spa-handled")) return;
+    const url = new URL(anchor.href);
+    void router.push(url.pathname + url.search + url.hash);
   }, true);
 });

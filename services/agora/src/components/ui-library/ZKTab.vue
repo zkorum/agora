@@ -2,6 +2,7 @@
   <SpaLink
     v-if="to"
     :to="to"
+    :deferred="deferred"
     class="tabStyle"
     :class="{
       highlightTab: isHighlighted,
@@ -70,6 +71,7 @@ defineProps<{
   shouldUnderlineOnHighlight: boolean;
   isLoading?: boolean;
   to?: RouteLocationRaw;
+  deferred?: boolean;
 }>();
 
 const emit = defineEmits<{
