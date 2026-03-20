@@ -48,7 +48,7 @@ The main frontend (`services/agora`) is a web app that should **feel like a nati
 - **SPA navigation everywhere**: Never cause full page reloads. Use `SpaLink` (not plain `<a>`, `<RouterLink>`, or `<button>`) for all internal navigation links. See the "SpaLink for Internal Navigation" section under Important Patterns.
 - **KeepAlive for scroll preservation**: Pages wrapped in `<KeepAlive>` preserve scroll position and component state when navigating back. Don't reset state unnecessarily on re-activation.
 - **Background data refresh**: Refresh stale data silently in the background. Don't show loading states when cached data is available — show the cache immediately, refresh behind the scenes.
-- **No jank**: Avoid layout shifts, flash of empty content, or unnecessary re-renders. Use `min-height`, skeleton placeholders, or `PageLoadingSpinner` to hold space while content loads.
+- **No jank**: Avoid layout shifts, flash of empty content, or unnecessary re-renders. Use skeleton placeholders or `PageLoadingSpinner` to hold space while content loads.
 
 ### Terminology: Comment / Opinion / Statement
 
