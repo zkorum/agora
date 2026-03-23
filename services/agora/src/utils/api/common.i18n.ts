@@ -78,6 +78,46 @@ export const commonApiTranslations: Record<
       "Ocurrió un error inesperado. Por favor inténtalo de nuevo.",
     noInternetConnection: "Sin conexión a internet",
   },
+  fa: {
+    timeoutError:
+      "زمان درخواست به پایان رسید. سرور بیش از حد انتظار طول می‌کشد.",
+    networkError:
+      "خطای شبکه. لطفاً اتصال اینترنت خود را بررسی کرده و دوباره تلاش کنید.",
+    requestCanceled: "درخواست لغو شد.",
+    invalidRequest: "درخواست نامعتبر. لطفاً ورودی خود را بررسی کرده و دوباره تلاش کنید.",
+    serverError: "خطای سرور. لطفاً بعداً دوباره تلاش کنید.",
+    tooManyRedirects:
+      "تغییر مسیرهای بیش از حد. در صورت ادامه، لطفاً با پشتیبانی تماس بگیرید.",
+    configurationError:
+      "خطای پیکربندی. لطفاً صفحه را بارگذاری مجدد کرده و دوباره تلاش کنید.",
+    featureNotSupported:
+      "این قابلیت دیگر پشتیبانی نمی‌شود. لطفاً برنامه خود را به‌روزرسانی کنید.",
+    operationNotSupported:
+      "این عملیات در محیط فعلی شما پشتیبانی نمی‌شود.",
+    invalidUrl: "آدرس درخواست نامعتبر. لطفاً با پشتیبانی تماس بگیرید.",
+    unexpectedError: "خطای غیرمنتظره رخ داد. لطفاً دوباره تلاش کنید.",
+    noInternetConnection: "بدون اتصال اینترنت",
+  },
+  he: {
+    timeoutError:
+      "הבקשה חרגה מהזמן המוקצב. השרת לוקח יותר זמן מהצפוי להגיב.",
+    networkError:
+      "שגיאת רשת. אנא בדקו את חיבור האינטרנט שלכם ונסו שוב.",
+    requestCanceled: "הבקשה בוטלה.",
+    invalidRequest: "בקשה לא תקינה. אנא בדקו את הקלט ונסו שוב.",
+    serverError: "שגיאת שרת. אנא נסו שוב מאוחר יותר.",
+    tooManyRedirects:
+      "יותר מדי הפניות. אנא פנו לתמיכה אם הבעיה נמשכת.",
+    configurationError:
+      "שגיאת תצורה. אנא רעננו את הדף ונסו שוב.",
+    featureNotSupported:
+      "תכונה זו אינה נתמכת עוד. אנא עדכנו את האפליקציה.",
+    operationNotSupported:
+      "פעולה זו אינה נתמכת בסביבה הנוכחית שלכם.",
+    invalidUrl: "כתובת בקשה לא תקינה. אנא פנו לתמיכה.",
+    unexpectedError: "אירעה שגיאה לא צפויה. אנא נסו שוב.",
+    noInternetConnection: "אין חיבור לאינטרנט",
+  },
   fr: {
     timeoutError:
       "Délai d'attente dépassé. Le serveur met plus de temps que prévu à répondre.",

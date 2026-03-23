@@ -37,6 +37,22 @@ export const conversationMutationsTranslations: Record<
     alreadyClosed: "Esta conversación ya está cerrada",
     alreadyOpen: "Esta conversación ya está abierta",
   },
+  fa: {
+    closeError: "بستن گفتگو ناموفق بود. لطفاً دوباره تلاش کنید.",
+    openError: "باز کردن گفتگو ناموفق بود. لطفاً دوباره تلاش کنید.",
+    closeNotAllowed: "شما مجاز به بستن این گفتگو نیستید",
+    openNotAllowed: "شما مجاز به باز کردن این گفتگو نیستید",
+    alreadyClosed: "این گفتگو قبلاً بسته شده است",
+    alreadyOpen: "این گفتگو قبلاً باز است",
+  },
+  he: {
+    closeError: "סגירת השיחה נכשלה. אנא נסו שוב.",
+    openError: "פתיחת השיחה נכשלה. אנא נסו שוב.",
+    closeNotAllowed: "אינכם מורשים לסגור שיחה זו",
+    openNotAllowed: "אינכם מורשים לפתוח שיחה זו",
+    alreadyClosed: "שיחה זו כבר סגורה",
+    alreadyOpen: "שיחה זו כבר פתוחה",
+  },
   fr: {
     closeError:
       "Impossible de fermer la conversation. Veuillez réessayer.",

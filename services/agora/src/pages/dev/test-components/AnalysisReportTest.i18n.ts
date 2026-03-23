@@ -28,6 +28,18 @@ export const analysisReportTestTranslations: Record<
       "Probar el diseño del informe de análisis con diferentes números de grupos de opinión y configuraciones de etiquetas IA.",
     openReportTestButton: "Abrir Prueba de Informe",
   },
+  fa: {
+    analysisReportTest: "گزارش تحلیل",
+    analysisReportTestDescription:
+      "آزمایش طرح‌بندی گزارش تحلیل با تعداد مختلف گروه نظر و تنظیمات برچسب هوش مصنوعی.",
+    openReportTestButton: "باز کردن آزمایش گزارش",
+  },
+  he: {
+    analysisReportTest: "דוח ניתוח",
+    analysisReportTestDescription:
+      "בדיקת פריסת דוח הניתוח עם מספרים שונים של קבוצות דעה ותצורות תוויות AI.",
+    openReportTestButton: "פתיחת בדיקת דוח",
+  },
   fr: {
     analysisReportTest: "Rapport d'Analyse",
     analysisReportTestDescription:

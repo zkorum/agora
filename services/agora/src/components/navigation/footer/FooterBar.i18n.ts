@@ -25,6 +25,11 @@ export const footerBarTranslations: Record<
     explore: "Explorar",
     dings: "Dings",
   },
+  fa: {
+    home: "خانه",
+    explore: "کاوش",
+    dings: "Dings",
+  },
   fr: {
     home: "Accueil",
     explore: "Explorer",
@@ -38,6 +43,11 @@ export const footerBarTranslations: Record<
   "zh-Hant": {
     home: "首頁",
     explore: "探索",
+    dings: "Dings",
+  },
+  he: {
+    home: "דף הבית",
+    explore: "גילוי",
     dings: "Dings",
   },
   ja: {

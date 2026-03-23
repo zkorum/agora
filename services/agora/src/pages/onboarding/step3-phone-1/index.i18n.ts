@@ -88,6 +88,48 @@ export const phoneOnboardingTranslations: Record<
       "Este número de teléfono ya está vinculado a otra cuenta",
     somethingWrong: "¡Ups! Algo salió mal—intente de nuevo",
   },
+  fa: {
+    pageTitle: "تأیید هویت با شماره تلفن",
+    smsDescription: "یک کد یک‌بار مصرف ۶ رقمی از طریق پیامک دریافت خواهید کرد",
+    phoneNumberPlaceholder: "شماره تلفن",
+    preferPrivateLogin: "ترجیح می‌دهم با حریم خصوصی کامل وارد شوم",
+    preferEmailLogin: "ترجیح می‌دهم از آدرس ایمیل خود استفاده کنم",
+    developmentNumbers: "شماره‌های توسعه:",
+    pleaseEnterValidPhone: "لطفاً یک شماره تلفن معتبر وارد کنید",
+    countryNotSupported: "این کشور هنوز پشتیبانی نمی‌شود",
+    phoneTypeNotSupported: "این نوع شماره تلفن پشتیبانی نمی‌شود",
+    pleaseEnterPhoneNumber: "لطفاً یک شماره تلفن وارد کنید",
+    alreadyHasPhone: "قبلاً یک شماره تلفن به حساب شما متصل شده است",
+    throttled: "تعداد تلاش‌ها بیش از حد—لطفاً قبل از تلاش مجدد صبر کنید",
+    invalidPhoneNumber:
+      "متأسفیم، این شماره تلفن نامعتبر است. لطفاً بررسی کرده و دوباره تلاش کنید.",
+    restrictedPhoneType:
+      "متأسفیم، این شماره تلفن به دلایل امنیتی پشتیبانی نمی‌شود. لطفاً شماره دیگری امتحان کنید.",
+    credentialAlreadyLinked:
+      "این شماره تلفن قبلاً به حساب دیگری متصل شده است",
+    somethingWrong: "متأسفیم! مشکلی پیش آمد—لطفاً دوباره تلاش کنید",
+  },
+  he: {
+    pageTitle: "אימות עם מספר טלפון",
+    smsDescription: "תקבלו קוד חד-פעמי בן 6 ספרות ב-SMS",
+    phoneNumberPlaceholder: "מספר טלפון",
+    preferPrivateLogin: "אני מעדיף/ה להתחבר עם פרטיות מלאה",
+    preferEmailLogin: "אני מעדיף/ה להשתמש בכתובת האימייל שלי",
+    developmentNumbers: "מספרי פיתוח:",
+    pleaseEnterValidPhone: "אנא הזינו מספר טלפון תקין",
+    countryNotSupported: "מדינה זו אינה נתמכת עדיין",
+    phoneTypeNotSupported: "סוג מספר טלפון זה אינו נתמך",
+    pleaseEnterPhoneNumber: "אנא הזינו מספר טלפון",
+    alreadyHasPhone: "מספר טלפון כבר מקושר לחשבון שלכם",
+    throttled: "יותר מדי ניסיונות—אנא המתינו לפני ניסיון נוסף",
+    invalidPhoneNumber:
+      "מצטערים, מספר טלפון זה אינו תקין. אנא בדקו ונסו שוב.",
+    restrictedPhoneType:
+      "מצטערים, מספר טלפון זה אינו נתמך מסיבות אבטחה. אנא נסו מספר אחר.",
+    credentialAlreadyLinked:
+      "מספר טלפון זה כבר מקושר לחשבון אחר",
+    somethingWrong: "אופס! משהו השתבש—אנא נסו שוב",
+  },
   fr: {
     pageTitle: "Vérifier avec le numéro de téléphone",
     smsDescription:

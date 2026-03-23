@@ -41,6 +41,15 @@ export const opinionAnalysisDialogTranslations: Record<
     noGroup: "Sin grupo",
     viewOriginal: "Ver proposición original",
   },
+  fa: {
+    title: "تحلیل گزاره",
+    agree: "موافقم",
+    pass: "مطمئن نیستم",
+    disagree: "مخالفم",
+    total: "مجموع",
+    noGroup: "بدون گروه",
+    viewOriginal: "مشاهده گزاره اصلی",
+  },
   fr: {
     title: "Analyse de proposition",
     agree: "D'accord",
@@ -67,6 +76,15 @@ export const opinionAnalysisDialogTranslations: Record<
     total: "總票數",
     noGroup: "沒有組",
     viewOriginal: "查看原始觀點",
+  },
+  he: {
+    title: "ניתוח הצהרה",
+    agree: "מסכים/ה",
+    pass: "לא בטוח/ה",
+    disagree: "לא מסכים/ה",
+    total: "סה\"כ",
+    noGroup: "ללא קבוצה",
+    viewOriginal: "צפייה בהצהרה המקורית",
   },
   ja: {
     title: "主張の分析",

@@ -17,6 +17,12 @@ export const verifyPhoneCodeTranslations: Record<
   es: {
     title: "Ingrese el código",
   },
+  fa: {
+    title: "کد را وارد کنید",
+  },
+  he: {
+    title: "הזינו את הקוד",
+  },
   fr: {
     title: "Entrez le code",
   },

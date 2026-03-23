@@ -42,6 +42,7 @@ export const phoneInputFormTranslations: Record<
     phoneTypeNotSupported: "Este tipo de número de teléfono no es compatible",
     pleaseEnterPhoneNumber: "Por favor, ingrese un número de teléfono",
   },
+  fa: { smsDescription: "یک کد ۶ رقمی یکبار مصرف از طریق پیامک دریافت خواهید کرد", phoneNumberPlaceholder: "شماره تلفن", developmentNumbers: "شماره‌های توسعه:", pleaseEnterValidPhone: "لطفاً یک شماره تلفن معتبر وارد کنید", countryNotSupported: "این کشور هنوز پشتیبانی نمی‌شود", phoneTypeNotSupported: "این نوع شماره تلفن پشتیبانی نمی‌شود", pleaseEnterPhoneNumber: "لطفاً یک شماره تلفن وارد کنید" },
   fr: {
     smsDescription:
       "Vous recevrez un code à usage unique de 6 chiffres par SMS",
@@ -71,6 +72,7 @@ export const phoneInputFormTranslations: Record<
     phoneTypeNotSupported: "此手機號類型暫不支持",
     pleaseEnterPhoneNumber: "請輸入手機號",
   },
+  he: { smsDescription: "תקבלו קוד חד-פעמי בן 6 ספרות ב-SMS", phoneNumberPlaceholder: "מספר טלפון", developmentNumbers: "מספרי פיתוח:", pleaseEnterValidPhone: "אנא הזינו מספר טלפון תקין", countryNotSupported: "מדינה זו עדיין אינה נתמכת", phoneTypeNotSupported: "סוג מספר טלפון זה אינו נתמך", pleaseEnterPhoneNumber: "אנא הזינו מספר טלפון" },
   ja: {
     smsDescription: "6桁の1回限りの検証コードをSMSで受信します",
     phoneNumberPlaceholder: "携帯電話番号",

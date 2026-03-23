@@ -19,6 +19,7 @@ export const featuredConversationBannerTranslations: Record<
     message:
       "Ayuda a dar forma al futuro de Agora Citizen Network — vota por las funciones que construiremos",
   },
+  fa: { message: "به شکل‌دهی آینده Agora Citizen Network کمک کنید — رأی دهید که کدام ویژگی‌ها را بعداً بسازیم" },
   fr: {
     message:
       "Aidez-nous à façonner l'avenir d'Agora Citizen Network — votez pour les fonctionnalités à développer",
@@ -29,6 +30,7 @@ export const featuredConversationBannerTranslations: Record<
   "zh-Hant": {
     message: "幫助塑造 Agora Citizen Network 的未來 - 投票決定我們接下來要構建的功能",
   },
+  he: { message: "עזרו לעצב את העתיד של Agora Citizen Network — הצביעו על התכונות שנבנה בהמשך" },
   ja: {
     message:
       "Agora Citizen Networkの未来を一緒に作りましょう — 次に開発する機能に投票してください",

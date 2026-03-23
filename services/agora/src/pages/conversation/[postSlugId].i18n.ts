@@ -21,6 +21,14 @@ export const conversationPageTranslations: Record<
     errorTitle: "Algo salió mal",
     retryButton: "Reintentar",
   },
+  fa: {
+    errorTitle: "مشکلی پیش آمد",
+    retryButton: "تلاش مجدد",
+  },
+  he: {
+    errorTitle: "משהו השתבש",
+    retryButton: "נסה שוב",
+  },
   fr: {
     errorTitle: "Une erreur est survenue",
     retryButton: "Réessayer",

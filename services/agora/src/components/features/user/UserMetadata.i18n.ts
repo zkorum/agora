@@ -17,6 +17,9 @@ export const userMetadataTranslations: Record<
   es: {
     idVerified: "ID verificado",
   },
+  fa: {
+    idVerified: "هویت تأیید شده",
+  },
   fr: {
     idVerified: "ID vérifié",
   },
@@ -25,6 +28,9 @@ export const userMetadataTranslations: Record<
   },
   "zh-Hant": {
     idVerified: "ID 已驗證",
+  },
+  he: {
+    idVerified: "זהות מאומתת",
   },
   ja: {
     idVerified: "ID が確認されました",

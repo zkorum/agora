@@ -17,6 +17,12 @@ export const termsOfServiceTranslations: Record<
   es: {
     termsOfService: "Términos de Servicio",
   },
+  fa: {
+    termsOfService: "شرایط استفاده",
+  },
+  he: {
+    termsOfService: "תנאי שימוש",
+  },
   fr: {
     termsOfService: "Conditions d'Utilisation",
   },

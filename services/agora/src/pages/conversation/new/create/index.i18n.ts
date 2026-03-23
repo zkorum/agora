@@ -66,6 +66,38 @@ export const createConversationTranslations: Record<
     githubLabel: "Issue Label",
     githubLabelPlaceholder: "roadmap",
   },
+  fa: {
+    importButton: "وارد کردن",
+    nextButton: "بعدی",
+    titlePlaceholder: "چه چیزی می‌خواهید بپرسید؟ (الزامی)",
+    titleRequired: "عنوان برای ادامه الزامی است",
+    bodyPlaceholder:
+      "متن بدنه. زمینه یا منابع مرتبط ارائه دهید. مطمئن شوید با سؤال اصلی هم‌راستاست!",
+    activeImportMessage:
+      "یک فرآیند وارد کردن در حال انجام است. لطفاً قبل از شروع فرآیند جدید صبر کنید تا تکمیل شود.",
+    viewImportStatus: "مشاهده وضعیت وارد کردن",
+    githubConfig: "GitHub Source",
+    githubRepository: "Repository",
+    githubRepositoryPlaceholder: "owner/repo",
+    githubLabel: "Issue Label",
+    githubLabelPlaceholder: "roadmap",
+  },
+  he: {
+    importButton: "ייבוא",
+    nextButton: "הבא",
+    titlePlaceholder: "מה ברצונכם לשאול? (חובה)",
+    titleRequired: "נדרשת כותרת כדי להמשיך",
+    bodyPlaceholder:
+      "טקסט גוף. ספקו הקשר או משאבים רלוונטיים. וודאו שהוא מתאים לשאלה המרכזית!",
+    activeImportMessage:
+      "יש לכם ייבוא בתהליך. אנא המתינו לסיומו לפני שתתחילו ייבוא חדש.",
+    viewImportStatus: "צפייה בסטטוס ייבוא",
+    githubConfig: "GitHub Source",
+    githubRepository: "Repository",
+    githubRepositoryPlaceholder: "owner/repo",
+    githubLabel: "Issue Label",
+    githubLabelPlaceholder: "roadmap",
+  },
   fr: {
     importButton: "Importer",
     nextButton: "Suivant",

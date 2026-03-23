@@ -17,6 +17,9 @@ export const displayUsernameTranslations: Record<
   es: {
     guest: "Invitado",
   },
+  fa: {
+    guest: "مهمان",
+  },
   fr: {
     guest: "Invité",
   },
@@ -25,6 +28,9 @@ export const displayUsernameTranslations: Record<
   },
   "zh-Hant": {
     guest: "訪客",
+  },
+  he: {
+    guest: "אורח",
   },
   ja: {
     guest: "ゲスト",

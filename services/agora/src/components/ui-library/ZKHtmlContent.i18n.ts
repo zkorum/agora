@@ -21,6 +21,7 @@ export const zkHtmlContentTranslations: Record<
     postContentPreview: "Vista previa del contenido",
     postContent: "Contenido de la publicación",
   },
+  fa: { postContentPreview: "پیش‌نمایش محتوای پست", postContent: "محتوای پست" },
   fr: {
     postContentPreview: "Aperçu du contenu",
     postContent: "Contenu du post",
@@ -33,6 +34,7 @@ export const zkHtmlContentTranslations: Record<
     postContentPreview: "帖子內容預覽",
     postContent: "帖子內容",
   },
+  he: { postContentPreview: "תצוגה מקדימה של תוכן הפוסט", postContent: "תוכן הפוסט" },
   ja: {
     postContentPreview: "投稿内容プレビュー",
     postContent: "投稿内容",

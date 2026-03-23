@@ -45,6 +45,16 @@ export const csvErrorDetailsDialogTranslations: Record<
     errorCopied: "Mensaje de error copiado al portapapeles",
     close: "Cerrar",
   },
+  fa: {
+    dialogTitle: "جزئیات خطا",
+    helpText: "لطفاً قالب فایل CSV خود را دوباره بررسی کنید.",
+    supportTextPrefix: "اگر مشکلی وجود دارد، لطفاً از طریق ",
+    supportLinkText: "Discord",
+    supportTextSuffix: " با ما تماس بگیرید.",
+    copyError: "کپی خطا",
+    errorCopied: "پیام خطا در کلیپ‌بورد کپی شد",
+    close: "بستن",
+  },
   fr: {
     dialogTitle: "Détails de l'Erreur",
     helpText: "Veuillez vérifier le format de votre fichier CSV.",
@@ -75,6 +85,16 @@ export const csvErrorDetailsDialogTranslations: Record<
     copyError: "複製錯誤",
     errorCopied: "錯誤訊息已複製到剪貼簿",
     close: "關閉",
+  },
+  he: {
+    dialogTitle: "פרטי שגיאה",
+    helpText: "אנא בדקו שוב את תבנית קובץ ה-CSV שלכם.",
+    supportTextPrefix: "אם משהו נראה שגוי, אנא פנו אלינו ב-",
+    supportLinkText: "Discord",
+    supportTextSuffix: " לקבלת תמיכה.",
+    copyError: "העתקת שגיאה",
+    errorCopied: "הודעת השגיאה הועתקה ללוח",
+    close: "סגור",
   },
   ja: {
     dialogTitle: "エラー詳細",

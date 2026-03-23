@@ -37,6 +37,14 @@ export const makePublicTimerDialogTranslations: Record<
     after1Month: "Después de 1 mes",
     custom: "Personalizado",
   },
+  fa: {
+    never: "هرگز",
+    after24Hours: "بعد از ۲۴ ساعت",
+    after3Days: "بعد از ۳ روز",
+    after1Week: "بعد از ۱ هفته",
+    after1Month: "بعد از ۱ ماه",
+    custom: "سفارشی",
+  },
   fr: {
     never: "Jamais",
     after24Hours: "Après 24 heures",
@@ -60,6 +68,14 @@ export const makePublicTimerDialogTranslations: Record<
     after1Week: "1週後",
     after1Month: "1個月後",
     custom: "自定義",
+  },
+  he: {
+    never: "לעולם לא",
+    after24Hours: "אחרי 24 שעות",
+    after3Days: "אחרי 3 ימים",
+    after1Week: "אחרי שבוע",
+    after1Month: "אחרי חודש",
+    custom: "מותאם אישית",
   },
   ja: {
     never: "決して",

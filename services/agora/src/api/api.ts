@@ -2034,6 +2034,8 @@ export const ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum =
     ZhHans: 'zh-Hans',
     Ja: 'ja',
     Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
     Ky: 'ky',
     Ru: 'ru',
 } as const;
@@ -2052,6 +2054,8 @@ export const ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnu
     ZhHans: 'zh-Hans',
     Ja: 'ja',
     Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
     Ky: 'ky',
     Ru: 'ru',
 } as const;
@@ -2123,6 +2127,8 @@ export const ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum = 
     ZhHans: 'zh-Hans',
     Ja: 'ja',
     Ar: 'ar',
+    Fa: 'fa',
+    He: 'he',
     Ky: 'ky',
     Ru: 'ru',
 } as const;

@@ -30,6 +30,16 @@ export const shareActionsTranslations: Record<
     showQrCode: "Mostrar código QR",
     shareVia: "Compartir mediante...",
   },
+  fa: {
+    copyLink: "کپی لینک",
+    showQrCode: "نمایش کد QR",
+    shareVia: "اشتراک‌گذاری از طریق...",
+  },
+  he: {
+    copyLink: "העתקת קישור",
+    showQrCode: "הצגת קוד QR",
+    shareVia: "שיתוף באמצעות...",
+  },
   fr: {
     copyLink: "Copier le lien",
     showQrCode: "Afficher le QR code",

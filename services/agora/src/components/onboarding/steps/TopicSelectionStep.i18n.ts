@@ -25,6 +25,11 @@ export const topicSelectionStepTranslations: Record<
     backButton: "Atrás",
     closeButton: "Cerrar",
   },
+  fa: {
+    title: "موضوعات مورد علاقه خود را برای شروع انتخاب کنید",
+    backButton: "بازگشت",
+    closeButton: "بستن",
+  },
   fr: {
     title: "Sélectionnez les sujets qui vous intéressent pour commencer",
     backButton: "Retour",
@@ -39,6 +44,11 @@ export const topicSelectionStepTranslations: Record<
     title: "選擇您感興趣的話題開始使用",
     backButton: "返回",
     closeButton: "關閉",
+  },
+  he: {
+    title: "בחרו נושאים שמעניינים אתכם כדי להתחיל",
+    backButton: "חזרה",
+    closeButton: "סגור",
   },
   ja: {
     title: "興味のあるトピックを選択して開始",

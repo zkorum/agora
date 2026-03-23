@@ -100,6 +100,7 @@ export const emailOtpFormTranslations: Record<
     disposable:
       "No se permiten direcciones de correo electrónico temporales o desechables",
   },
+  fa: { instructions: "کد ۶ رقمی ارسال شده به آدرس زیر را وارد کنید", expiresIn: "انقضا در", codeExpired: "کد منقضی شده", changeEmail: "تغییر ایمیل", resendCodeIn: "ارسال مجدد کد در", resendCode: "ارسال مجدد کد", pleaseEnterValidCode: "لطفاً یک کد ۶ رقمی معتبر وارد کنید", verificationSuccessful: "ورود موفقیت‌آمیز!", accountMerged: "موفقیت! حساب‌های شما ادغام شدند", codeExpiredResend: "کد منقضی شده—کد جدید ارسال کنید", wrongCodeTryAgain: "کد اشتباه—دوباره تلاش کنید", credentialAlreadyLinked: "این آدرس ایمیل قبلاً به حساب دیگری متصل شده است", authStateChanged: "وضعیت احراز هویت تغییر کرد—لطفاً کد جدید درخواست دهید", somethingWrong: "مشکلی پیش آمد!", tooManyAttempts: "تلاش‌های زیاد—لطفاً قبل از درخواست کد جدید صبر کنید", alreadyHasCredential: "حساب شما قبلاً به یک آدرس ایمیل متصل شده است", unreachable: "به نظر می‌رسد این آدرس ایمیل وجود ندارد—لطفاً از آدرس دیگری استفاده کنید", disposable: "آدرس‌های ایمیل موقت یا یکبار مصرف مجاز نیستند" },
   fr: {
     instructions:
       "Entrez le code à 6 chiffres que nous avons envoyé à",
@@ -167,6 +168,7 @@ export const emailOtpFormTranslations: Record<
     unreachable: "此電子郵箱地址似乎不存在—請使用其他地址",
     disposable: "不允許使用臨時或一次性電子郵箱地址",
   },
+  he: { instructions: "הזינו את הקוד בן 6 הספרות ששלחנו אל", expiresIn: "פג ב", codeExpired: "הקוד פג", changeEmail: "שינוי דוא\"ל", resendCodeIn: "שליחת קוד מחדש בעוד", resendCode: "שליחת קוד מחדש", pleaseEnterValidCode: "אנא הזינו קוד תקין בן 6 ספרות", verificationSuccessful: "ההתחברות הצליחה!", accountMerged: "הצלחה! החשבונות שלך מוזגו", codeExpiredResend: "הקוד פג—שלחו קוד חדש", wrongCodeTryAgain: "קוד שגוי—נסו שוב", credentialAlreadyLinked: "כתובת דוא\"ל זו כבר מקושרת לחשבון אחר", authStateChanged: "מצב האימות השתנה—אנא בקשו קוד חדש", somethingWrong: "אופס! משהו לא תקין", tooManyAttempts: "ניסיונות רבים מדי—אנא המתינו לפני בקשת קוד חדש", alreadyHasCredential: "כתובת דוא\"ל כבר מקושרת לחשבון שלך", unreachable: "כתובת דוא\"ל זו לא נראית קיימת—אנא השתמשו בכתובת אחרת", disposable: "כתובות דוא\"ל זמניות או חד-פעמיות אינן מותרות" },
   ja: {
     instructions: "以下のアドレスに送信した6桁のコードを入力してください",
     expiresIn: "有効期限",

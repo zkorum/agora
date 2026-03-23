@@ -24,6 +24,11 @@ export const divisiveInformationDialogTranslations: Record<
     description:
       "Proposiciones en las que los grupos de opinión no están de acuerdo entre sí. Un grupo aprueba mientras otro rechaza.\n\nRevelan las principales líneas divisorias en la conversación.\n\nSolo se muestran las más estadísticamente significativas primero.",
   },
+  fa: {
+    title: "گزاره‌های اختلاف‌برانگیز",
+    description:
+      "گزاره‌هایی که گروه‌های نظر در مورد آنها با یکدیگر اختلاف دارند. یک گروه تأیید می‌کند و گروه دیگر رد می‌کند.\n\nاینها خطوط اصلی تفرقه در گفتگو را آشکار می‌کنند.\n\nابتدا فقط مهم‌ترین موارد از نظر آماری نمایش داده می‌شوند.",
+  },
   fr: {
     title: "Propositions Clivantes",
     description:
@@ -38,6 +43,11 @@ export const divisiveInformationDialogTranslations: Record<
     title: "爭議性觀點",
     description:
       "意見群組之間產生分歧的觀點。一個群組認可而另一個群組否決。\n\n這些揭示了對話中的主要分歧線。\n\n僅先顯示統計上最顯著的觀點。",
+  },
+  he: {
+    title: "הצהרות מפלגות",
+    description:
+      "הצהרות שקבוצות הדעה חלוקות לגביהן. קבוצה אחת מאשרת בעוד אחרת דוחה.\n\nאלו חושפות את קווי החלוקה המרכזיים בשיחה.\n\nרק המובהקות ביותר מבחינה סטטיסטית מוצגות תחילה.",
   },
   ja: {
     title: "分断的な意見",

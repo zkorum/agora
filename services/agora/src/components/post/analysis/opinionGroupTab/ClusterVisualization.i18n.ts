@@ -21,6 +21,10 @@ export const clusterVisualizationTranslations: Record<
     groupsTitle: "Grupos de opinión",
     meLabel: "Yo",
   },
+  fa: {
+    groupsTitle: "گروه‌های نظر",
+    meLabel: "من",
+  },
   fr: {
     groupsTitle: "Groupes d'opinion",
     meLabel: "Moi",
@@ -32,6 +36,10 @@ export const clusterVisualizationTranslations: Record<
   "zh-Hant": {
     groupsTitle: "意見群組",
     meLabel: "我",
+  },
+  he: {
+    groupsTitle: "קבוצות דעה",
+    meLabel: "אני",
   },
   ja: {
     groupsTitle: "意見グループ",

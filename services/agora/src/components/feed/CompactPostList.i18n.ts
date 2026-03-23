@@ -49,6 +49,7 @@ export const compactPostListTranslations: Record<
     newConversationsButton: "Nuevas conversaciones",
     retryButton: "Reintentar",
   },
+  fa: { emptyStateTitle: "اینجا خیلی ساکت است...", emptyStateDescription: "یک گفتگوی جدید با استفاده از", errorStateTitle: "مشکلی پیش آمد", networkErrorTitle: "اتصال قطع شد", networkErrorDescription: "گفتگوها پس از اتصال مجدد بارگذاری خواهند شد.", completedTitle: "شما همه چیز را دیده‌اید", completedDescription: "همه گفتگوهای جدید را مشاهده کرده‌اید.", newConversationsButton: "گفتگوهای جدید", retryButton: "تلاش مجدد" },
   fr: {
     emptyStateTitle: "C'est trop calme ici...",
     emptyStateDescription: "Créez une nouvelle conversation en utilisant le",
@@ -82,6 +83,7 @@ export const compactPostListTranslations: Record<
     newConversationsButton: "新對話",
     retryButton: "重試",
   },
+  he: { emptyStateTitle: "שקט מדי כאן...", emptyStateDescription: "צרו שיחה חדשה באמצעות", errorStateTitle: "משהו השתבש", networkErrorTitle: "החיבור אבד", networkErrorDescription: "השיחות ייטענו כשתחזרו לרשת.", completedTitle: "ראיתם הכל", completedDescription: "ראיתם את כל השיחות החדשות.", newConversationsButton: "שיחות חדשות", retryButton: "נסה שוב" },
   ja: {
     emptyStateTitle: "ここは静かすぎます...",
     emptyStateDescription: "をタップして新しい会話を作成してください。",

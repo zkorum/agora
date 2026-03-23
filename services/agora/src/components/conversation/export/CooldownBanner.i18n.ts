@@ -32,6 +32,12 @@ export const cooldownBannerTranslations: Record<
       "Período de espera finalizado. Ahora puede solicitar una nueva exportación.",
     viewLast: "Ver Última Exportación",
   },
+  fa: {
+    cooldownSeconds: "صادرات بعدی تا {seconds} ثانیه دیگر",
+    cooldownMinutes: "صادرات بعدی تا {minutes} دقیقه دیگر",
+    cooldownEnded: "دوره انتظار پایان یافت. اکنون می‌توانید صادرات جدیدی درخواست دهید.",
+    viewLast: "مشاهده آخرین صادرات",
+  },
   fr: {
     cooldownSeconds:
       "Veuillez attendre {seconds} secondes avant de demander un autre export.",
@@ -52,6 +58,12 @@ export const cooldownBannerTranslations: Record<
     cooldownMinutes: "請等待 {minutes} 分鐘後再請求匯出。",
     cooldownEnded: "冷卻結束。您現在可以請求新的匯出。",
     viewLast: "查看上次匯出",
+  },
+  he: {
+    cooldownSeconds: "ייצוא הבא בעוד {seconds} שניות",
+    cooldownMinutes: "ייצוא הבא בעוד {minutes} דקות",
+    cooldownEnded: "תקופת ההמתנה הסתיימה. כעת ניתן לבקש ייצוא חדש.",
+    viewLast: "צפייה בייצוא האחרון",
   },
   ja: {
     cooldownSeconds:

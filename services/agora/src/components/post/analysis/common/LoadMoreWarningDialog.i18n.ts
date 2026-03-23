@@ -36,6 +36,14 @@ export const loadMoreWarningDialogTranslations: Record<
     cancelButton: "Cancelar",
     loadMoreButton: "Cargar todo",
   },
+  fa: {
+    title: "بارگذاری تمام گزاره‌ها",
+    description:
+      "تمام گزاره‌ها به ترتیب نزولی اهمیت آماری نمایش داده خواهند شد، از جمله برخی که ممکن است {emphasis} اهمیت آماری نداشته باشند.",
+    descriptionEmphasis: "اصلاً",
+    cancelButton: "لغو",
+    loadMoreButton: "بارگذاری همه",
+  },
   fr: {
     title: "Charger toutes les propositions",
     description:
@@ -59,6 +67,14 @@ export const loadMoreWarningDialogTranslations: Record<
     descriptionEmphasis: "完全",
     cancelButton: "取消",
     loadMoreButton: "全部載入",
+  },
+  he: {
+    title: "טעינת כל ההצהרות",
+    description:
+      "כל ההצהרות יוצגו בסדר יורד של מובהקות סטטיסטית, כולל כאלה שעשויות להיות לא מובהקות {emphasis}.",
+    descriptionEmphasis: "כלל",
+    cancelButton: "ביטול",
+    loadMoreButton: "טעינת הכל",
   },
   ja: {
     title: "すべての意見を読み込む",

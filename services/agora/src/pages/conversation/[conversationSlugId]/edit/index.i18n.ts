@@ -146,6 +146,76 @@ export const editConversationTranslations: Record<
     pollChangeWarningConfirm: "Sí, Continuar",
     pollChangeWarningCancel: "Cancelar",
   },
+  fa: {
+    saveButton: "ذخیره",
+    titlePlaceholder: "عنوان گفتگو",
+    bodyPlaceholder: "به چه چیزی فکر می‌کنید؟",
+    updateSuccess: "گفتگو با موفقیت به‌روزرسانی شد",
+    updateError: "به‌روزرسانی گفتگو ناموفق بود",
+    notFoundError: "گفتگو یافت نشد",
+    notAuthorError: "شما نویسنده این گفتگو نیستید",
+    conversationLockedError: "این گفتگو قفل شده و قابل ویرایش نیست",
+    notFoundErrorTitle: "گفتگو یافت نشد",
+    notFoundErrorMessage: "بارگذاری گفتگو ناموفق بود",
+    notAuthorErrorTitle: "شما نویسنده این گفتگو نیستید",
+    notAuthorErrorMessage: "فقط نویسنده اصلی می‌تواند این گفتگو را ویرایش کند",
+    conversationLockedErrorTitle: "این گفتگو قفل شده و قابل ویرایش نیست",
+    conversationLockedErrorMessage:
+      "در صورت نیاز به باز کردن قفل این گفتگو، لطفاً با مدیر محتوا تماس بگیرید",
+    invalidAccessSettingsError:
+      "تنظیمات دسترسی نامعتبر است. ورود به سیستم برای گفتگوهای خصوصی الزامی نیست.",
+    pollAlreadyExistsError:
+      "امکان ایجاد نظرسنجی وجود ندارد: این گفتگو قبلاً نظرسنجی دارد",
+    noPollToRemoveError:
+      "امکان حذف نظرسنجی وجود ندارد: این گفتگو نظرسنجی ندارد",
+    noPollToKeepError:
+      "امکان حفظ نظرسنجی وجود ندارد: این گفتگو نظرسنجی ندارد",
+    noPollToReplaceError:
+      "امکان جایگزینی نظرسنجی وجود ندارد: این گفتگو نظرسنجی ندارد",
+    loadingErrorTitle: "بارگذاری گفتگو ناموفق بود",
+    loadingErrorMessage: "هنگام بارگذاری گفتگو خطایی رخ داد",
+    pollChangeWarningMessage:
+      "تغییر گزینه‌های نظرسنجی تمام آراء موجود را بازنشانی می‌کند. آیا مطمئن هستید که می‌خواهید ادامه دهید؟",
+    removePollWarningMessage:
+      "حذف نظرسنجی تمام آراء موجود را حذف می‌کند. آیا مطمئن هستید که می‌خواهید ادامه دهید؟",
+    pollChangeWarningConfirm: "بله، ادامه بده",
+    pollChangeWarningCancel: "لغو",
+  },
+  he: {
+    saveButton: "שמור",
+    titlePlaceholder: "כותרת השיחה",
+    bodyPlaceholder: "מה עובר לך בראש?",
+    updateSuccess: "השיחה עודכנה בהצלחה",
+    updateError: "עדכון השיחה נכשל",
+    notFoundError: "השיחה לא נמצאה",
+    notAuthorError: "אינך המחבר/ת של שיחה זו",
+    conversationLockedError: "שיחה זו נעולה ולא ניתן לערוך אותה",
+    notFoundErrorTitle: "השיחה לא נמצאה",
+    notFoundErrorMessage: "טעינת השיחה נכשלה",
+    notAuthorErrorTitle: "אינך המחבר/ת של שיחה זו",
+    notAuthorErrorMessage: "רק המחבר/ת המקורי/ת יכול/ה לערוך שיחה זו",
+    conversationLockedErrorTitle: "שיחה זו נעולה ולא ניתן לערוך אותה",
+    conversationLockedErrorMessage:
+      "אנא פנו למנהל/ת התוכן אם יש צורך לפתוח את נעילת שיחה זו",
+    invalidAccessSettingsError:
+      "הגדרות גישה לא תקינות. לא ניתן לדרוש התחברות עבור שיחות פרטיות.",
+    pollAlreadyExistsError:
+      "לא ניתן ליצור סקר: לשיחה זו כבר יש סקר",
+    noPollToRemoveError:
+      "לא ניתן להסיר סקר: לשיחה זו אין סקר",
+    noPollToKeepError:
+      "לא ניתן לשמור סקר: לשיחה זו אין סקר",
+    noPollToReplaceError:
+      "לא ניתן להחליף סקר: לשיחה זו אין סקר",
+    loadingErrorTitle: "טעינת השיחה נכשלה",
+    loadingErrorMessage: "אירעה שגיאה בעת טעינת השיחה",
+    pollChangeWarningMessage:
+      "שינוי אפשרויות הסקר יאפס את כל ההצבעות הקיימות. האם ברצונך להמשיך?",
+    removePollWarningMessage:
+      "הסרת הסקר תמחק את כל ההצבעות הקיימות. האם ברצונך להמשיך?",
+    pollChangeWarningConfirm: "כן, המשך",
+    pollChangeWarningCancel: "ביטול",
+  },
   "zh-Hans": {
     saveButton: "保存",
     titlePlaceholder: "对话标题",

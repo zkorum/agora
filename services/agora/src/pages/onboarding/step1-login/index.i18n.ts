@@ -33,6 +33,20 @@ export const loginOnboardingTranslations: Record<
     loginWithPhone: "Iniciar sesión con mi número de teléfono",
     loginWithEmail: "Iniciar sesión con mi correo electrónico",
   },
+  fa: {
+    pageTitle: "ورود",
+    description: "لطفاً یک روش ورود انتخاب کنید.",
+    loginWithRarimo: "ورود با Rarimo",
+    loginWithPhone: "ورود با شماره تلفن",
+    loginWithEmail: "ورود با ایمیل",
+  },
+  he: {
+    pageTitle: "התחברות",
+    description: "אנא בחרו שיטת התחברות.",
+    loginWithRarimo: "התחברות עם Rarimo",
+    loginWithPhone: "התחברות עם מספר טלפון",
+    loginWithEmail: "התחברות עם אימייל",
+  },
   fr: {
     pageTitle: "Se connecter",
     description: "Veuillez sélectionner une méthode de connexion.",

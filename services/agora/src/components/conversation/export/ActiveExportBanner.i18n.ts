@@ -24,6 +24,11 @@ export const activeExportBannerTranslations: Record<
       "Tiene una exportación en progreso. Espere a que se complete antes de iniciar una nueva.",
     viewStatus: "Ver Estado de Exportación",
   },
+  fa: {
+    message:
+      "شما یک صادرات در حال انجام دارید. لطفاً قبل از شروع مورد جدید، منتظر تکمیل آن بمانید.",
+    viewStatus: "مشاهده وضعیت صادرات",
+  },
   fr: {
     message:
       "Vous avez un export en cours. Veuillez attendre qu'il soit terminé avant d'en démarrer un nouveau.",
@@ -36,6 +41,11 @@ export const activeExportBannerTranslations: Record<
   "zh-Hant": {
     message: "您有一個正在進行的匯出。請等待完成後再開始新的匯出。",
     viewStatus: "查看匯出狀態",
+  },
+  he: {
+    message:
+      "יש לך ייצוא בתהליך. אנא המתן לסיומו לפני שתתחיל חדש.",
+    viewStatus: "צפייה בסטטוס הייצוא",
   },
   ja: {
     message:

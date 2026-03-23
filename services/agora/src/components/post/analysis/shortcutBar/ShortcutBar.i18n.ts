@@ -35,6 +35,14 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       divisive: "Divisivo",
       groups: "Grupos",
     },
+    fa: {
+      summary: "خلاصه",
+      me: "من",
+      agreements: "تأیید شده",
+      disagreements: "رد شده",
+      divisive: "اختلاف‌برانگیز",
+      groups: "گروه‌ها",
+    },
     fr: {
       summary: "Résumé",
       me: "Moi",
@@ -58,6 +66,14 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       disagreements: "否決",
       divisive: "爭議",
       groups: "群組",
+    },
+    he: {
+      summary: "סיכום",
+      me: "אני",
+      agreements: "אושרו",
+      disagreements: "נדחו",
+      divisive: "מפלג",
+      groups: "קבוצות",
     },
     ja: {
       summary: "サマリー",

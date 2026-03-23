@@ -38,6 +38,15 @@ export const clusterInformationDialogTranslations: Record<
     description3:
       "Los participantes deben votar en al menos {minVotes} proposiciones para ser asignados a un grupo. Quienes no hayan alcanzado este umbral aparecen como sin grupo.",
   },
+  fa: {
+    title: "گروه‌های اجماع",
+    description1:
+      "گروه‌های اجماع بر اساس نحوه موافقت و مخالفت افراد با گزاره‌ها ایجاد می‌شوند.",
+    description2:
+      "ما از یادگیری ماشین برای شناسایی مکاتب فکری مختلف استفاده می‌کنیم. این همان الگوریتمی است که pol.is را اجرا می‌کند، ابزار نظرسنجی ویکی منبع باز توسعه یافته توسط Computational Democracy.",
+    description3:
+      "شرکت‌کنندگان باید حداقل به {minVotes} گزاره رأی دهند تا به یک گروه اختصاص یابند. کسانی که هنوز به این آستانه نرسیده‌اند به عنوان بدون گروه نمایش داده می‌شوند.",
+  },
   fr: {
     title: "Groupes de Consensus",
     description1:
@@ -62,6 +71,15 @@ export const clusterInformationDialogTranslations: Record<
       "我們使用機器學習來識別不同的思想流派。這是與 pol.is 相同的算法，pol.is 是 Computational Democracy 開發的開放源碼的 wiki 調查工具。",
     description3:
       "參與者必須對至少 {minVotes} 條觀點進行投票才能被分配到群組。尚未達到此門檻的參與者顯示為未分組。",
+  },
+  he: {
+    title: "קבוצות קונצנזוס",
+    description1:
+      "קבוצות קונצנזוס נוצרות על בסיס האופן שבו אנשים מסכימים ולא מסכימים עם הצהרות.",
+    description2:
+      "אנו משתמשים בלמידת מכונה לזיהוי אסכולות מחשבה שונות. זהו אותו אלגוריתם שמפעיל את pol.is, כלי הסקרים בקוד פתוח שפותח על ידי Computational Democracy.",
+    description3:
+      "משתתפים חייבים להצביע על לפחות {minVotes} הצהרות כדי להיות משויכים לקבוצה. מי שטרם הגיע לסף זה מופיע כלא משויך.",
   },
   ja: {
     title: "合意形成グループ",

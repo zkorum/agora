@@ -17,6 +17,12 @@ export const privacyPolicyTranslations: Record<
   es: {
     privacyPolicy: "Política de Privacidad",
   },
+  fa: {
+    privacyPolicy: "سیاست حریم خصوصی",
+  },
+  he: {
+    privacyPolicy: "מדיניות פרטיות",
+  },
   fr: {
     privacyPolicy: "Politique de Confidentialité",
   },

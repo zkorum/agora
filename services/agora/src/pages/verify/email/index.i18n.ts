@@ -54,6 +54,28 @@ export const verifyEmailTranslations: Record<
       "Esta dirección de correo electrónico ya está vinculada a otra cuenta",
     somethingWrong: "¡Ups! Algo salió mal—intente de nuevo",
   },
+  fa: {
+    title: "تأیید ایمیل",
+    alreadyHasEmail: "قبلاً یک آدرس ایمیل به حساب شما متصل شده است",
+    throttled: "تعداد تلاش‌ها بیش از حد—لطفاً قبل از تلاش مجدد صبر کنید",
+    unreachable:
+      "به نظر می‌رسد این آدرس ایمیل وجود ندارد—لطفاً بررسی کرده و دوباره تلاش کنید",
+    disposable: "استفاده از آدرس‌های ایمیل موقت یا یک‌بار مصرف مجاز نیست",
+    credentialAlreadyLinked:
+      "این آدرس ایمیل قبلاً به حساب دیگری متصل شده است",
+    somethingWrong: "متأسفیم! مشکلی پیش آمد—لطفاً دوباره تلاش کنید",
+  },
+  he: {
+    title: "אימות אימייל",
+    alreadyHasEmail: "כתובת אימייל כבר מקושרת לחשבון שלכם",
+    throttled: "יותר מדי ניסיונות—אנא המתינו לפני ניסיון נוסף",
+    unreachable:
+      "נראה שכתובת אימייל זו אינה קיימת—אנא בדקו ונסו שוב",
+    disposable: "כתובות אימייל זמניות או חד-פעמיות אינן מותרות",
+    credentialAlreadyLinked:
+      "כתובת אימייל זו כבר מקושרת לחשבון אחר",
+    somethingWrong: "אופס! משהו השתבש—אנא נסו שוב",
+  },
   fr: {
     title: "Vérifier l'e-mail",
     alreadyHasEmail:

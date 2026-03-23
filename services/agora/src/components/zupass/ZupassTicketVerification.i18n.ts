@@ -72,6 +72,7 @@ export const zupassTicketVerificationTranslations: Record<
     errorTicketAlreadyUsed: 'Esta entrada ya ha sido verificada por otra cuenta.',
     errorUnknown: 'Ocurrió un error desconocido. Por favor, inténtalo de nuevo.',
   },
+  fa: { title: 'تأیید بلیط Devconnect 2025 شما', description: 'برای مشارکت در این گفتگو، باید مالکیت بلیط Devconnect 2025 خود را تأیید کنید.', verifyButton: 'تأیید بلیط با Zupass', successMessage: 'بلیط با موفقیت تأیید شد! اکنون می‌توانید در گفتگوهای محدود مشارکت کنید.', accountRestored: 'خوش آمدید! حساب شما بازیابی شد', accountMerged: 'موفقیت! حساب‌های شما ادغام شدند', accountRestoredAndMerged: 'خوش آمدید! حساب شما بازیابی و داده‌های مهمان شما ادغام شدند', note: 'این یک پنجره بازشو Zupass باز می‌کند که در آن می‌توانید بدون افشای اطلاعات شخصی مالکیت بلیط را اثبات کنید.', errorDeserialization: 'قالب اثبات نامعتبر است. لطفاً دوباره تلاش کنید.', errorInvalidProof: 'تأیید رمزنگاری ناموفق بود. لطفاً دوباره تلاش کنید.', errorInvalidSigner: 'بلیط توسط Zupass امضا نشده است.', errorWrongEvent: 'بلیط رویداد اشتباه. بلیط Devconnect 2025 الزامی است.', errorTicketAlreadyUsed: 'این بلیط قبلاً توسط حساب دیگری تأیید شده است.', errorUnknown: 'خطای ناشناخته‌ای رخ داد. لطفاً دوباره تلاش کنید.' },
   fr: {
     title: 'Vérifiez votre billet Devconnect 2025',
     description:
@@ -122,6 +123,7 @@ export const zupassTicketVerificationTranslations: Record<
     errorTicketAlreadyUsed: '此門票已被另一個帳戶驗證。',
     errorUnknown: '發生未知錯誤。請重試。',
   },
+  he: { title: 'אימות כרטיס Devconnect 2025 שלך', description: 'כדי להשתתף בשיחה זו, עליך לאמת שבבעלותך כרטיס Devconnect 2025.', verifyButton: 'אימות כרטיס עם Zupass', successMessage: 'הכרטיס אומת בהצלחה! כעת ניתן להשתתף בשיחות מוגנות.', accountRestored: 'ברוכים השבים! החשבון שלך שוחזר', accountMerged: 'הצלחה! החשבונות שלך מוזגו', accountRestoredAndMerged: 'ברוכים השבים! החשבון שלך שוחזר ונתוני האורח מוזגו', note: 'פעולה זו תפתח חלון קופץ ל-Zupass שבו תוכלו להוכיח בעלות על הכרטיס מבלי לחשוף מידע אישי.', errorDeserialization: 'תבנית הוכחה לא תקינה. אנא נסו שוב.', errorInvalidProof: 'אימות קריפטוגרפי נכשל. אנא נסו שוב.', errorInvalidSigner: 'הכרטיס לא חתום על ידי Zupass.', errorWrongEvent: 'כרטיס אירוע שגוי. נדרש כרטיס Devconnect 2025.', errorTicketAlreadyUsed: 'כרטיס זה כבר אומת על ידי חשבון אחר.', errorUnknown: 'אירעה שגיאה לא ידועה. אנא נסו שוב.' },
   ja: {
     title: 'Devconnect 2025 チケットを確認',
     description:

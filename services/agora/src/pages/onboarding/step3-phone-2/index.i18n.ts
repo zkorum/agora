@@ -94,6 +94,52 @@ export const step3Phone2Translations: Record<SupportedDisplayLanguageCodes, Step
       restrictedPhoneType:
         "Lo siento, este número de teléfono no es compatible por razones de seguridad. Por favor, pruebe con otro.",
     },
+    fa: {
+      title: "کد ۶ رقمی را وارد کنید",
+      instructions: "کد ۶ رقمی ارسال شده به شماره تلفن را وارد کنید",
+      expiresIn: "انقضا در",
+      codeExpired: "کد منقضی شده است",
+      changeNumber: "تغییر شماره",
+      resendCodeIn: "ارسال مجدد کد در",
+      resendCode: "ارسال مجدد کد",
+      pleaseEnterValidCode: "لطفاً یک کد معتبر ۶ رقمی وارد کنید",
+      verificationSuccessful: "تأیید هویت موفقیت‌آمیز بود 🎉",
+      accountMerged: "موفقیت! حساب‌های شما ادغام شدند 🎉",
+      codeExpiredResend: "کد منقضی شده—کد جدید ارسال کنید",
+      wrongCodeTryAgain: "کد اشتباه—دوباره تلاش کنید",
+      credentialAlreadyLinked: "این شماره تلفن قبلاً به حساب دیگری متصل شده است",
+      authStateChanged: "وضعیت احراز هویت تغییر کرده—لطفاً کد جدید درخواست کنید",
+      somethingWrong: "متأسفیم! مشکلی پیش آمده است",
+      tooManyAttempts:
+        "تعداد تلاش‌ها بیش از حد—لطفاً قبل از درخواست کد جدید صبر کنید",
+      invalidPhoneNumber:
+        "متأسفیم، این شماره تلفن نامعتبر است. لطفاً بررسی کرده و دوباره تلاش کنید.",
+      restrictedPhoneType:
+        "متأسفیم، این شماره تلفن به دلایل امنیتی پشتیبانی نمی‌شود. لطفاً شماره دیگری امتحان کنید.",
+    },
+    he: {
+      title: "הזינו את הקוד בן 6 הספרות",
+      instructions: "הזינו את הקוד בן 6 הספרות שנשלח למספר הטלפון",
+      expiresIn: "פג תוקף בעוד",
+      codeExpired: "הקוד פג תוקף",
+      changeNumber: "שינוי מספר",
+      resendCodeIn: "שליחת קוד מחדש בעוד",
+      resendCode: "שליחת קוד מחדש",
+      pleaseEnterValidCode: "אנא הזינו קוד תקין בן 6 ספרות",
+      verificationSuccessful: "האימות הצליח 🎉",
+      accountMerged: "הצלחה! החשבונות שלכם מוזגו 🎉",
+      codeExpiredResend: "הקוד פג תוקף—שלחו קוד חדש",
+      wrongCodeTryAgain: "קוד שגוי—נסו שוב",
+      credentialAlreadyLinked: "מספר טלפון זה כבר מקושר לחשבון אחר",
+      authStateChanged: "מצב האימות השתנה—אנא בקשו קוד חדש",
+      somethingWrong: "אופס! משהו לא בסדר",
+      tooManyAttempts:
+        "יותר מדי ניסיונות—אנא המתינו לפני בקשת קוד חדש",
+      invalidPhoneNumber:
+        "מצטערים, מספר טלפון זה אינו תקין. אנא בדקו ונסו שוב.",
+      restrictedPhoneType:
+        "מצטערים, מספר טלפון זה אינו נתמך מסיבות אבטחה. אנא נסו מספר אחר.",
+    },
     fr: {
       title: "Entrez le code à 6 chiffres",
       instructions:

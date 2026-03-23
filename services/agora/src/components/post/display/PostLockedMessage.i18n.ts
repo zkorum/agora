@@ -29,6 +29,11 @@ export const postLockedMessageTranslations: Record<
       "Esta conversación fue cerrada por el propietario. No se pueden publicar nuevas proposiciones ni votos.",
     editButton: "Editar",
   },
+  fa: {
+    lockedMessage: "پست به عنوان «{reason}» قفل شده است. گزاره‌های جدید قابل ارسال نیستند.",
+    closedMessage: "این گفتگو توسط مالک بسته شده است. گزاره‌ها و رأی‌های جدید قابل ارسال نیستند.",
+    editButton: "ویرایش",
+  },
   fr: {
     lockedMessage:
       'Publication verrouillée en tant que "{reason}". De nouvelles propositions ne peuvent pas être publiées.',
@@ -45,6 +50,11 @@ export const postLockedMessageTranslations: Record<
     lockedMessage: '帖子被鎖定為"{reason}"。無法發布新觀點。',
     closedMessage: "此對話已被所有者關閉。無法發布新觀點和投票。",
     editButton: "編輯",
+  },
+  he: {
+    lockedMessage: "הפוסט ננעל כ-\"{reason}\". לא ניתן לפרסם הצהרות חדשות.",
+    closedMessage: "שיחה זו נסגרה על ידי הבעלים. לא ניתן לפרסם הצהרות והצבעות חדשות.",
+    editButton: "עריכה",
   },
   ja: {
     lockedMessage:

@@ -39,6 +39,7 @@ export const reportRepresentativeOpinionsTranslations: Record<
     overall: "General",
     noStatements: "No hay proposiciones representativas disponibles.",
   },
+  fa: { title: "گزاره‌های شاخص", groupSubtitle: "گزاره‌هایی که این گروه را منحصربه‌فرد می‌کنند، بر اساس رأی‌هایشان:", participants: "شرکت‌کننده", statement: "گزاره", overall: "کلی", noStatements: "گزاره شاخصی موجود نیست." },
   ar: {
     title: "البيانات الممثلة",
     groupSubtitle: "البيانات التي تميز هذه المجموعة، حسب تصويتاتهم:",
@@ -63,6 +64,7 @@ export const reportRepresentativeOpinionsTranslations: Record<
     overall: "總計",
     noStatements: "暫無代表性陳述。",
   },
+  he: { title: "הצהרות מייצגות", groupSubtitle: "הצהרות שהופכות קבוצה זו לייחודית, לפי ההצבעות שלהם:", participants: "משתתפים", statement: "הצהרה", overall: "כולל", noStatements: "אין הצהרות מייצגות זמינות." },
   ja: {
     title: "代表的な意見",
     groupSubtitle: "このグループを特徴づける意見（投票結果）：",

@@ -54,6 +54,20 @@ export const postTypeDialogTranslations: Record<
     importFromCsvDescription:
       "Importar una conversación de Polis desde archivos CSV exportados.",
   },
+  fa: {
+    newConversation: "گفتگوی جدید",
+    newConversationDescription:
+      "ایجاد یک موضوع گفتگوی جدید برای بحث.",
+    newPrioritization: "اولویت‌بندی جدید",
+    newPrioritizationDescription:
+      "ایجاد گفتگویی که در آن شرکت‌کنندگان گزاره‌ها را بر اساس اهمیت با استفاده از Best-Worst Scaling رتبه‌بندی می‌کنند.",
+    importFromPolis: "واردات از آدرس Polis",
+    importFromPolisDescription:
+      "واردات و ادامه یک گفتگوی موجود Polis.",
+    importFromCsv: "واردات از CSV",
+    importFromCsvDescription:
+      "واردات گفتگوی Polis از فایل‌های CSV صادر شده.",
+  },
   fr: {
     newConversation: "Nouvelle Conversation",
     newConversationDescription:
@@ -89,6 +103,20 @@ export const postTypeDialogTranslations: Record<
     importFromPolisDescription: "導入並繼續一個現有的 Polis 對話。",
     importFromCsv: "從 CSV 導入",
     importFromCsvDescription: "從導出的 CSV 檔案導入 Polis 對話。",
+  },
+  he: {
+    newConversation: "שיחה חדשה",
+    newConversationDescription:
+      "יצירת נושא שיחה חדש לדיון.",
+    newPrioritization: "תיעדוף חדש",
+    newPrioritizationDescription:
+      "יצירת שיחה שבה משתתפים מדרגים הצהרות לפי חשיבות באמצעות Best-Worst Scaling.",
+    importFromPolis: "ייבוא מכתובת Polis",
+    importFromPolisDescription:
+      "ייבוא והמשך שיחת Polis קיימת.",
+    importFromCsv: "ייבוא מ-CSV",
+    importFromCsvDescription:
+      "ייבוא שיחת Polis מקבצי CSV מיוצאים.",
   },
   ja: {
     newConversation: "新しい会話",

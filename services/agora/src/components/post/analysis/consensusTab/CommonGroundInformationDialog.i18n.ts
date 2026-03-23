@@ -35,6 +35,14 @@ export const commonGroundInformationDialogTranslations: Record<
     disagreementsDescription:
       "Estas proposiciones son rechazadas por unanimidad por cada grupo de opinión.\n\nEsto va más allá de una simple mayoría: aunque una gran parte de los individuos las rechacen, la aprobación de un solo grupo — sin importar su tamaño — basta para excluirlas.\n\nAsí, solo se presentan aquí las proposiciones que son objeto de un verdadero consenso entre grupos, y no las que se basan únicamente en una regla mayoritaria.\n\nSolo se muestran las más estadísticamente significativas primero.",
   },
+  fa: {
+    agreementsTitle: "تأیید شده",
+    agreementsDescription:
+      "اینها گزاره‌هایی هستند که همه گروه‌های نظر بر تأیید آنها توافق دارند.\n\nاین فراتر از اکثریت ساده است: حتی اگر اکثر افراد تأیید کنند، مخالفت یک گروه — هرچقدر هم کوچک — برای حذف یک گزاره کافی است.\n\nفقط گزاره‌هایی که اجماع واقعی بین‌گروهی را منعکس می‌کنند اینجا نمایش داده می‌شوند، نه آنهایی که صرفاً بر اساس قاعده اکثریت هستند.\n\nابتدا فقط مهم‌ترین موارد از نظر آماری نمایش داده می‌شوند.",
+    disagreementsTitle: "رد شده",
+    disagreementsDescription:
+      "اینها گزاره‌هایی هستند که همه گروه‌های نظر بر رد آنها توافق دارند.\n\nاین فراتر از اکثریت ساده است: حتی اگر اکثر افراد رد کنند، تأیید یک گروه — هرچقدر هم کوچک — برای حذف یک گزاره کافی است.\n\nفقط گزاره‌هایی که اجماع واقعی بین‌گروهی را منعکس می‌کنند اینجا نمایش داده می‌شوند، نه آنهایی که صرفاً بر اساس قاعده اکثریت هستند.\n\nابتدا فقط مهم‌ترین موارد از نظر آماری نمایش داده می‌شوند.",
+  },
   fr: {
     agreementsTitle: "Approuvés",
     agreementsDescription:
@@ -58,6 +66,14 @@ export const commonGroundInformationDialogTranslations: Record<
     disagreementsTitle: "否決",
     disagreementsDescription:
       "這些觀點被每個意見群組一致否決。\n\n這超越了簡單多數：即使大多數個體否決，一個群組的認可——無論其規模多小——就足以排除該觀點。\n\n只有反映真正跨群組共識的觀點才會出現在這裡，而非僅基於多數決定的觀點。\n\n僅先顯示統計上最顯著的觀點。",
+  },
+  he: {
+    agreementsTitle: "אושרו",
+    agreementsDescription:
+      "אלו הצהרות שכל קבוצות הדעה מסכימות לאשר.\n\nזה חורג מרוב פשוט: גם אם רוב הפרטים מאשרים, התנגדות של קבוצה אחת — קטנה ככל שתהיה — מספיקה כדי להוציא הצהרה.\n\nרק הצהרות המשקפות קונצנזוס אמיתי בין-קבוצתי מופיעות כאן, לא כאלה המבוססות על שלטון הרוב בלבד.\n\nרק המובהקות ביותר מבחינה סטטיסטית מוצגות תחילה.",
+    disagreementsTitle: "נדחו",
+    disagreementsDescription:
+      "אלו הצהרות שכל קבוצות הדעה מסכימות לדחות.\n\nזה חורג מרוב פשוט: גם אם רוב הפרטים דוחים, אישור של קבוצה אחת — קטנה ככל שתהיה — מספיק כדי להוציא הצהרה.\n\nרק הצהרות המשקפות קונצנזוס אמיתי בין-קבוצתי מופיעות כאן, לא כאלה המבוססות על שלטון הרוב בלבד.\n\nרק המובהקות ביותר מבחינה סטטיסטית מוצגות תחילה.",
   },
   ja: {
     agreementsTitle: "承認",

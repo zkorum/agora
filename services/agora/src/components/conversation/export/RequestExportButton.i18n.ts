@@ -17,6 +17,9 @@ export const requestExportButtonTranslations: Record<
   es: {
     requestNewExport: "Solicitar Nueva Exportación",
   },
+  fa: {
+    requestNewExport: "درخواست صادرات جدید",
+  },
   fr: {
     requestNewExport: "Demander un Nouvel Export",
   },
@@ -25,6 +28,9 @@ export const requestExportButtonTranslations: Record<
   },
   "zh-Hant": {
     requestNewExport: "請求新匯出",
+  },
+  he: {
+    requestNewExport: "בקשת ייצוא חדש",
   },
   ja: {
     requestNewExport: "新しいエクスポートをリクエスト",

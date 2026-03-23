@@ -37,6 +37,7 @@ export const reportHeaderTranslations: Record<
     votes: "Votos",
     footnote: "Los votos sobre las proposiciones moderadas están excluidos del análisis.",
   },
+  fa: { by: "توسط", of: "از", participants: "شرکت‌کنندگان", statements: "گزاره‌ها", votes: "رأی‌ها", footnote: "رأی‌های مربوط به گزاره‌های مدیریت‌شده از تحلیل حذف شده‌اند." },
   fr: {
     by: "Par",
     of: "sur",
@@ -61,6 +62,7 @@ export const reportHeaderTranslations: Record<
     votes: "投票",
     footnote: "已審核陳述的投票不納入分析。",
   },
+  he: { by: "מאת", of: "מתוך", participants: "משתתפים", statements: "הצהרות", votes: "הצבעות", footnote: "הצבעות על הצהרות שעברו מודרציה מוחרגות מהניתוח." },
   ja: {
     by: "投稿者",
     of: "/",

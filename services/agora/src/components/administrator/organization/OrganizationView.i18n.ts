@@ -25,6 +25,11 @@ export const organizationViewTranslations: Record<
     usernameLabel: "Nombre de usuario",
     addUserToOrganizationButton: "Agregar Usuario a la Organización",
   },
+  fa: {
+    deleteOrganizationButton: "حذف سازمان",
+    usernameLabel: "نام کاربری",
+    addUserToOrganizationButton: "افزودن کاربر به سازمان",
+  },
   fr: {
     deleteOrganizationButton: "Supprimer l'organisation",
     usernameLabel: "Nom d'utilisateur",
@@ -39,6 +44,11 @@ export const organizationViewTranslations: Record<
     deleteOrganizationButton: "刪除組織",
     usernameLabel: "用戶名",
     addUserToOrganizationButton: "添加用戶到組織",
+  },
+  he: {
+    deleteOrganizationButton: "מחיקת ארגון",
+    usernameLabel: "שם משתמש",
+    addUserToOrganizationButton: "הוספת משתמש לארגון",
   },
   ja: {
     deleteOrganizationButton: "組織を削除",

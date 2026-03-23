@@ -52,6 +52,30 @@ export const verifyPhoneTranslations: Record<
       "Este número de teléfono ya está vinculado a otra cuenta",
     somethingWrong: "¡Ups! Algo salió mal—intente de nuevo",
   },
+  fa: {
+    title: "تأیید تلفن",
+    alreadyHasPhone: "قبلاً یک شماره تلفن به حساب شما متصل شده است",
+    throttled: "تعداد تلاش‌ها بیش از حد—لطفاً قبل از تلاش مجدد صبر کنید",
+    invalidPhoneNumber:
+      "متأسفیم، این شماره تلفن نامعتبر است. لطفاً بررسی کرده و دوباره تلاش کنید.",
+    restrictedPhoneType:
+      "متأسفیم، این شماره تلفن به دلایل امنیتی پشتیبانی نمی‌شود. لطفاً شماره دیگری امتحان کنید.",
+    credentialAlreadyLinked:
+      "این شماره تلفن قبلاً به حساب دیگری متصل شده است",
+    somethingWrong: "متأسفیم! مشکلی پیش آمد—لطفاً دوباره تلاش کنید",
+  },
+  he: {
+    title: "אימות טלפון",
+    alreadyHasPhone: "מספר טלפון כבר מקושר לחשבון שלכם",
+    throttled: "יותר מדי ניסיונות—אנא המתינו לפני ניסיון נוסף",
+    invalidPhoneNumber:
+      "מצטערים, מספר טלפון זה אינו תקין. אנא בדקו ונסו שוב.",
+    restrictedPhoneType:
+      "מצטערים, מספר טלפון זה אינו נתמך מסיבות אבטחה. אנא נסו מספר אחר.",
+    credentialAlreadyLinked:
+      "מספר טלפון זה כבר מקושר לחשבון אחר",
+    somethingWrong: "אופס! משהו השתבש—אנא נסו שוב",
+  },
   fr: {
     title: "Vérifier le téléphone",
     alreadyHasPhone:

@@ -21,6 +21,14 @@ export const exportStatusPageTranslations: Record<
     pageTitle: "Estado de Exportación",
     exportFeatureDisabled: "La función de exportación está deshabilitada",
   },
+  fa: {
+    pageTitle: "وضعیت خروجی",
+    exportFeatureDisabled: "قابلیت خروجی غیرفعال است",
+  },
+  he: {
+    pageTitle: "סטטוס ייצוא",
+    exportFeatureDisabled: "תכונת הייצוא מושבתת",
+  },
   fr: {
     pageTitle: "État de l'Export",
     exportFeatureDisabled: "La fonction d'export est désactivée",

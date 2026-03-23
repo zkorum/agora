@@ -37,6 +37,14 @@ export const opinionGroupCommentsTranslations: Record<
     allOthers: "Todos los demás",
     allOtherGroups: "Los otros grupos",
   },
+  fa: {
+    opinionsTitle: "گزاره‌ها",
+    opinionsTitleLong: "گزاره‌های شاخص",
+    noOpinionsMessage: "هیچ گزاره‌ای برای این گروه موجود نیست.",
+    thisGroup: "این گروه",
+    allOthers: "همه دیگران",
+    allOtherGroups: "همه گروه‌های دیگر",
+  },
   fr: {
     opinionsTitle: "Propositions",
     opinionsTitleLong: "Propositions représentatives",
@@ -60,6 +68,14 @@ export const opinionGroupCommentsTranslations: Record<
     thisGroup: "此群組",
     allOthers: "所有其他",
     allOtherGroups: "所有其他群組",
+  },
+  he: {
+    opinionsTitle: "הצהרות",
+    opinionsTitleLong: "הצהרות מייצגות",
+    noOpinionsMessage: "אין הצהרות זמינות עבור קבוצה זו.",
+    thisGroup: "קבוצה זו",
+    allOthers: "כל השאר",
+    allOtherGroups: "כל הקבוצות האחרות",
   },
   ja: {
     opinionsTitle: "主張",

@@ -47,6 +47,15 @@ export const postActionBarTranslations: Record<
     moderatedParticipantsExplanation:
       "Los participantes que solo votaron sobre proposiciones moderadas se excluyen del análisis.",
   },
+  fa: {
+    share: "اشتراک‌گذاری",
+    copiedToClipboard: "لینک در کلیپ‌بورد کپی شد",
+    totalVotes: "مجموع رأی‌ها",
+    totalParticipants: "مجموع شرکت‌کنندگان",
+    usedForAnalysis: "استفاده شده برای تحلیل",
+    moderatedVotesExplanation: "رأی‌های مربوط به گزاره‌های مدیریت‌شده از تحلیل حذف شده‌اند.",
+    moderatedParticipantsExplanation: "شرکت‌کنندگانی که فقط به گزاره‌های مدیریت‌شده رأی داده‌اند از تحلیل حذف شده‌اند.",
+  },
   fr: {
     share: "Partager",
     copiedToClipboard: "Lien copié dans le presse-papiers",
@@ -77,6 +86,15 @@ export const postActionBarTranslations: Record<
     moderatedVotesExplanation: "對已審核聲明的投票不計入分析。",
     moderatedParticipantsExplanation:
       "僅對已審核聲明投票的參與者不計入分析。",
+  },
+  he: {
+    share: "שיתוף",
+    copiedToClipboard: "הקישור הועתק ללוח",
+    totalVotes: "סך הצבעות",
+    totalParticipants: "סך משתתפים",
+    usedForAnalysis: "בשימוש לניתוח",
+    moderatedVotesExplanation: "הצבעות על הצהרות שעברו מודרציה מוחרגות מהניתוח.",
+    moderatedParticipantsExplanation: "משתתפים שהצביעו רק על הצהרות שעברו מודרציה מוחרגים מהניתוח.",
   },
   ja: {
     share: "共有",

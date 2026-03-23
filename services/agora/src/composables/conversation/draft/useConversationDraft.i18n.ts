@@ -41,6 +41,22 @@ export const useConversationDraftTranslations: Record<
     pollMinOptionsError: "Mínimo {min} opciones de encuesta requeridas",
     titleRequired: "Se requiere título para continuar",
   },
+  fa: {
+    bodyExceedsLimit: "متن از حداکثر طول فراتر رفته است ({count}/{max})",
+    polisUrlRequired: "آدرس Polis الزامی است",
+    polisUrlInvalid: "لطفاً یک آدرس Polis معتبر وارد کنید.",
+    pollMaxOptionsError: "حداکثر {max} گزینه نظرسنجی مجاز است",
+    pollMinOptionsError: "حداقل {min} گزینه نظرسنجی الزامی است",
+    titleRequired: "عنوان برای ادامه الزامی است",
+  },
+  he: {
+    bodyExceedsLimit: "הגוף חורג מהאורך המרבי ({count}/{max})",
+    polisUrlRequired: "נדרשת כתובת Polis",
+    polisUrlInvalid: "אנא הזינו כתובת Polis תקינה.",
+    pollMaxOptionsError: "מותרות לכל היותר {max} אפשרויות סקר",
+    pollMinOptionsError: "נדרשות לפחות {min} אפשרויות סקר",
+    titleRequired: "נדרשת כותרת כדי להמשיך",
+  },
   ar: {
     bodyExceedsLimit: "يتجاوز النص الحد الأقصى للطول ({count}/{max})",
     polisUrlRequired: "عنوان URL لـ Polis مطلوب",

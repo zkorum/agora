@@ -17,6 +17,12 @@ export const useTargetOpinionTranslations: Record<
   es: {
     statementNotFound: "No se pudo encontrar la proposición solicitada.",
   },
+  fa: {
+    statementNotFound: "گزاره درخواستی یافت نشد.",
+  },
+  he: {
+    statementNotFound: "ההצהרה המבוקשת לא נמצאה.",
+  },
   fr: {
     statementNotFound: "La proposition demandée n'a pas pu être trouvée.",
   },

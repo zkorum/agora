@@ -29,6 +29,12 @@ export const customTimerDialogTranslations: Record<
     back: "Atrás",
     confirm: "Confirmar",
   },
+  fa: {
+    selectCustomTime: "انتخاب زمان دلخواه",
+    chooseWhenPublic: "انتخاب کنید چه زمانی گفتگوی شما عمومی شود",
+    back: "بازگشت",
+    confirm: "تأیید",
+  },
   fr: {
     selectCustomTime: "Sélectionner l'heure personnalisée",
     chooseWhenPublic: "Choisissez quand votre conversation deviendra publique",
@@ -46,6 +52,12 @@ export const customTimerDialogTranslations: Record<
     chooseWhenPublic: "選擇何時你的對話應該成為公開的",
     back: "返回",
     confirm: "確認",
+  },
+  he: {
+    selectCustomTime: "בחירת זמן מותאם",
+    chooseWhenPublic: "בחרו מתי השיחה שלכם תהפוך לציבורית",
+    back: "חזרה",
+    confirm: "אישור",
   },
   ja: {
     selectCustomTime: "カスタム時間を選択",

@@ -21,6 +21,10 @@ export const interactionTabTranslations: Record<
     analysis: "Análisis",
     rank: "Clasificar",
   },
+  fa: {
+    analysis: "تحلیل",
+    rank: "رتبه‌بندی",
+  },
   fr: {
     analysis: "Analyse",
     rank: "Classer",
@@ -32,6 +36,10 @@ export const interactionTabTranslations: Record<
   "zh-Hant": {
     analysis: "分析",
     rank: "排名",
+  },
+  he: {
+    analysis: "ניתוח",
+    rank: "דירוג",
   },
   ja: {
     analysis: "分析",

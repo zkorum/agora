@@ -32,9 +32,7 @@
         <div
           class="clusterNameOverlay borderStyle dynamicFont"
           :class="{ selected: !props.reportMode && imgItem.isSelected }"
-          :style="{
-            transform: `translate(-50%, calc(-50% + ${imgItem.labelOffsetY}px))`,
-          }"
+          :style="{ '--label-offset-y': imgItem.labelOffsetY + 'px' }"
         >
           <div class="clusterLabelFlex">
             <div class="clusterOverlayFontBold">
@@ -454,6 +452,9 @@ watch(
   // Center the overlay relative to the cluster
   top: 50%;
   left: 50%;
+  // Centering transform kept in CSS so postcss-rtlcss can flip translateX for RTL.
+  // The dynamic Y offset is passed via --label-offset-y custom property from the template.
+  transform: translate(-50%, calc(-50% + var(--label-offset-y, 0px)));
 
   // Ensure overlay stays within bounds
   max-width: 80%;

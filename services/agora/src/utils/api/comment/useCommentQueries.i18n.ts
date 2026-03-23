@@ -18,6 +18,14 @@ export const useCommentQueriesTranslations: Record<
     failedToDeleteComment:
       "Error al eliminar la proposición. Inténtalo de nuevo.",
   },
+  fa: {
+    commentDeletedSuccessfully: "گزاره با موفقیت حذف شد",
+    failedToDeleteComment: "حذف گزاره ناموفق بود. لطفاً دوباره تلاش کنید.",
+  },
+  he: {
+    commentDeletedSuccessfully: "ההצהרה נמחקה בהצלחה",
+    failedToDeleteComment: "מחיקת ההצהרה נכשלה. אנא נסו שוב.",
+  },
   fr: {
     commentDeletedSuccessfully: "Proposition supprimée avec succès",
     failedToDeleteComment:

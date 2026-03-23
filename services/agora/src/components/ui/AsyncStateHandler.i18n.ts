@@ -33,6 +33,7 @@ export const asyncStateHandlerTranslations: Record<
     emptyMessage: "No hay datos disponibles",
     retry: "Reintentar",
   },
+  fa: { loading: "در حال بارگذاری...", errorTitle: "مشکلی پیش آمد", defaultErrorMessage: "خطای غیرمنتظره‌ای رخ داد. لطفاً دوباره تلاش کنید.", emptyMessage: "داده‌ای موجود نیست", retry: "تلاش مجدد" },
   fr: {
     loading: "Chargement...",
     errorTitle: "Quelque chose s'est mal passé",
@@ -55,6 +56,7 @@ export const asyncStateHandlerTranslations: Record<
     emptyMessage: "沒有可用資料",
     retry: "重試",
   },
+  he: { loading: "...טוען", errorTitle: "משהו השתבש", defaultErrorMessage: "אירעה שגיאה בלתי צפויה. אנא נסו שוב.", emptyMessage: "אין נתונים זמינים", retry: "נסה שוב" },
   ja: {
     loading: "読み込み中...",
     errorTitle: "何かが間違っていました",

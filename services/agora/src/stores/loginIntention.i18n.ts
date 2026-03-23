@@ -36,6 +36,21 @@ export const welcomeTranslations: Record<
       "Se requiere una cuenta de usuario para reportar contenido.",
     voting: "Se le devolverá a esta conversación cuando regrese.",
   },
+  fa: {
+    newOpinion: "پیش‌نویس گزاره نوشته شده شما هنگام بازگشت بازیابی خواهد شد.",
+    newConversation:
+      "پیش‌نویس گفتگوی نوشته شده شما هنگام بازگشت بازیابی خواهد شد.",
+    agreement: "هنگام بازگشت به این گزاره بازگردانده خواهید شد.",
+    reportUserContent: "برای گزارش محتوای کاربر، حساب کاربری لازم است.",
+    voting: "هنگام بازگشت به این گفتگو بازگردانده خواهید شد.",
+  },
+  he: {
+    newOpinion: "טיוטת ההצהרה שכתבתם תשוחזר כשתחזרו.",
+    newConversation: "טיוטת השיחה שכתבתם תשוחזר כשתחזרו.",
+    agreement: "תוחזרו להצהרה זו כשתחזרו.",
+    reportUserContent: "נדרש חשבון משתמש כדי לדווח על תוכן משתמש.",
+    voting: "תוחזרו לשיחה זו כשתחזרו.",
+  },
   fr: {
     newOpinion: "Votre brouillon de proposition sera restauré à votre retour.",
     newConversation:

@@ -21,6 +21,10 @@ export const commentModerationTranslations: Record<
     edit: "Editar",
     moderatorFlaggedMessage: "El moderador marcó esta respuesta como",
   },
+  fa: {
+    edit: "ویرایش",
+    moderatorFlaggedMessage: "مدیر این پاسخ را به عنوان زیر علامت‌گذاری کرد",
+  },
   fr: {
     edit: "Modifier",
     moderatorFlaggedMessage: "Le modérateur a signalé cette réponse comme",
@@ -32,6 +36,10 @@ export const commentModerationTranslations: Record<
   "zh-Hant": {
     edit: "編輯",
     moderatorFlaggedMessage: "版主標記此回覆為",
+  },
+  he: {
+    edit: "עריכה",
+    moderatorFlaggedMessage: "המנהל סימן תגובה זו כ",
   },
   ja: {
     edit: "編集",

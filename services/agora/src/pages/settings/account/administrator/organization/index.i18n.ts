@@ -17,6 +17,12 @@ export const administratorOrganizationTranslations: Record<
   es: {
     administrator: "Administrador",
   },
+  fa: {
+    administrator: "مدیر",
+  },
+  he: {
+    administrator: "מנהל",
+  },
   fr: {
     administrator: "Administrateur",
   },

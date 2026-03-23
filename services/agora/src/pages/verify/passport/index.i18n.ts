@@ -34,6 +34,22 @@ export const verifyPassportTranslations: Record<
     alreadyHasPassport:
       "Ya tienes un pasaporte verificado vinculado a tu cuenta",
   },
+  fa: {
+    title: "تأیید هویت",
+    description:
+      "Rarimo یک کیف پول هویت مبتنی بر ZK است که پاسپورت شما را به یک شناسه دیجیتال ناشناس تبدیل می‌کند که در دستگاه شما ذخیره می‌شود، بنابراین می‌توانید بدون اشتراک‌گذاری هیچ داده شخصی با هیچ‌کس، ثابت کنید که یک انسان منحصربه‌فرد هستید.",
+    preferPhoneVerification: "ترجیح می‌دهم با شماره تلفنم تأیید هویت کنم",
+    alreadyHasPassport:
+      "قبلاً یک پاسپورت تأییدشده به حساب شما متصل شده است",
+  },
+  he: {
+    title: "אימות זהות",
+    description:
+      "Rarimo הוא ארנק זהות מבוסס ZK שממיר את הדרכון שלכם לזהות דיגיטלית אנונימית, המאוחסנת במכשיר שלכם, כך שתוכלו להוכיח שאתם אדם ייחודי מבלי לשתף מידע אישי עם אף אחד.",
+    preferPhoneVerification: "אני מעדיף/ה לאמת עם מספר הטלפון שלי",
+    alreadyHasPassport:
+      "דרכון מאומת כבר מקושר לחשבון שלכם",
+  },
   fr: {
     title: "Vérifier l'identité",
     description:

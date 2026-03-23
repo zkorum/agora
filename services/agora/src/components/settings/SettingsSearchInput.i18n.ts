@@ -17,6 +17,7 @@ export const settingsSearchInputTranslations: Record<
   es: {
     searchPlaceholder: "Buscar...",
   },
+  fa: { searchPlaceholder: "جستجو..." },
   fr: {
     searchPlaceholder: "Rechercher...",
   },
@@ -26,6 +27,7 @@ export const settingsSearchInputTranslations: Record<
   "zh-Hant": {
     searchPlaceholder: "搜尋...",
   },
+  he: { searchPlaceholder: "...חיפוש" },
   ja: {
     searchPlaceholder: "検索...",
   },

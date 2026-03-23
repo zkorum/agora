@@ -63,6 +63,19 @@ export const postMetadataTranslations: Record<
     alreadyClosed: "Esta conversación ya está cerrada",
     alreadyOpen: "Esta conversación ya está abierta",
   },
+  fa: {
+    closeConfirmMessage: "آیا مطمئن هستید که می‌خواهید این گفتگو را ببندید؟ کاربران نمی‌توانند گزاره‌ها یا رأی‌های جدید ارسال کنند.",
+    closeConfirmButton: "بستن گفتگو",
+    reopenConfirmMessage: "گفتگو دوباره باز شود؟ کاربران دوباره می‌توانند گزاره ارسال کنند و رأی دهند.",
+    reopenConfirmButton: "بازگشایی گفتگو",
+    cancelButton: "لغو",
+    closeSuccess: "گفتگو با موفقیت بسته شد",
+    openSuccess: "گفتگو با موفقیت باز شد",
+    closeNotAllowed: "شما مجاز به بستن این گفتگو نیستید",
+    openNotAllowed: "شما مجاز به بازکردن این گفتگو نیستید",
+    alreadyClosed: "این گفتگو قبلاً بسته شده است",
+    alreadyOpen: "این گفتگو قبلاً باز است",
+  },
   fr: {
     closeConfirmMessage:
       "Êtes-vous sûr de vouloir fermer cette conversation ? Les utilisateurs ne pourront pas publier de nouvelles propositions ou votes.",
@@ -103,6 +116,19 @@ export const postMetadataTranslations: Record<
     openNotAllowed: "您無權打開此對話",
     alreadyClosed: "此對話已關閉",
     alreadyOpen: "此對話已打開",
+  },
+  he: {
+    closeConfirmMessage: "האם ברצונך לסגור שיחה זו? משתמשים לא יוכלו לפרסם הצהרות או הצבעות חדשות.",
+    closeConfirmButton: "סגירת שיחה",
+    reopenConfirmMessage: "לפתוח מחדש שיחה זו? משתמשים יוכלו שוב לפרסם הצהרות ולהצביע.",
+    reopenConfirmButton: "פתיחה מחדש של שיחה",
+    cancelButton: "ביטול",
+    closeSuccess: "השיחה נסגרה בהצלחה",
+    openSuccess: "השיחה נפתחה בהצלחה",
+    closeNotAllowed: "אין לך הרשאה לסגור שיחה זו",
+    openNotAllowed: "אין לך הרשאה לפתוח שיחה זו",
+    alreadyClosed: "שיחה זו כבר סגורה",
+    alreadyOpen: "שיחה זו כבר פתוחה",
   },
   ja: {
     closeConfirmMessage:

@@ -47,6 +47,8 @@ let i18nInstance: I18n<
 /**
  * Set the i18n language and update HTML lang attribute
  */
+const RTL_LANGUAGES: readonly string[] = ["ar", "fa", "he"];
+
 export function setI18nLanguage(locale: MessageLanguages): void {
   if (!i18nInstance) return;
 
@@ -60,7 +62,11 @@ export function setI18nLanguage(locale: MessageLanguages): void {
    *
    * axios.defaults.headers.common['Accept-Language'] = locale
    */
-  document.querySelector("html")?.setAttribute("lang", locale);
+  const htmlEl = document.querySelector("html");
+  if (htmlEl) {
+    htmlEl.setAttribute("lang", locale);
+    htmlEl.setAttribute("dir", RTL_LANGUAGES.includes(locale) ? "rtl" : "ltr");
+  }
 }
 
 /**
@@ -129,6 +135,8 @@ export default defineBoot(({ app }) => {
   const fallbackLocale = {
     "zh-Hant": ["zh-Hans", "en"],
     "zh-Hans": ["zh-Hant", "en"],
+    fa: ["ar", "en"],
+    he: ["en"],
     ky: ["ru", "en"],
     ru: ["en"],
     default: ["en"],

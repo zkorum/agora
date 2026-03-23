@@ -17,6 +17,12 @@ export const guidelinesTranslations: Record<
   es: {
     guidelines: "Directrices de la comunidad",
   },
+  fa: {
+    guidelines: "راهنمای جامعه",
+  },
+  he: {
+    guidelines: "הנחיות קהילה",
+  },
   fr: {
     guidelines: "Règles de la communauté",
   },

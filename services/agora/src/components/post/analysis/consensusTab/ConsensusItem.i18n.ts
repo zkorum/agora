@@ -29,6 +29,12 @@ export const consensusItemTranslations: Record<
     disagree: "En desacuerdo",
     noVote: "Sin voto",
   },
+  fa: {
+    agree: "موافقم",
+    pass: "مطمئن نیستم",
+    disagree: "مخالفم",
+    noVote: "بدون رأی",
+  },
   fr: {
     agree: "D'accord",
     pass: "Incertain",
@@ -46,6 +52,12 @@ export const consensusItemTranslations: Record<
     pass: "不確定",
     disagree: "不同意",
     noVote: "不投票",
+  },
+  he: {
+    agree: "מסכים/ה",
+    pass: "לא בטוח/ה",
+    disagree: "לא מסכים/ה",
+    noVote: "ללא הצבעה",
   },
   ja: {
     agree: "同意",

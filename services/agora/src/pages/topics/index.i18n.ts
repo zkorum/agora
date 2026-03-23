@@ -22,6 +22,16 @@ export const topicsTranslations: Record<SupportedDisplayLanguageCodes, TopicsTra
     following: "Siguiendo",
     follow: "Seguir",
   },
+  fa: {
+    exploreTopics: "کاوش موضوعات",
+    following: "دنبال‌شده",
+    follow: "دنبال کردن",
+  },
+  he: {
+    exploreTopics: "חקירת נושאים",
+    following: "עוקבים",
+    follow: "עקוב",
+  },
   fr: {
     exploreTopics: "Explorer les Sujets",
     following: "Suivi",

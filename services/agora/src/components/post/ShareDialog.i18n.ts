@@ -30,6 +30,11 @@ export const shareDialogTranslations: Record<
     copiedToClipboard: "Enlace copiado al portapapeles",
     couldNotCopy: "No se pudo copiar al portapapeles",
   },
+  fa: {
+    copyLink: "کپی لینک",
+    copiedToClipboard: "لینک در کلیپ‌بورد کپی شد",
+    couldNotCopy: "کپی در کلیپ‌بورد امکان‌پذیر نبود",
+  },
   fr: {
     copyLink: "Copier le lien",
     copiedToClipboard: "Lien copié dans le presse-papiers",
@@ -44,6 +49,11 @@ export const shareDialogTranslations: Record<
     copyLink: "複製連結",
     copiedToClipboard: "已複製連結到剪貼簿",
     couldNotCopy: "無法複製到剪貼簿",
+  },
+  he: {
+    copyLink: "העתקת קישור",
+    copiedToClipboard: "הקישור הועתק ללוח",
+    couldNotCopy: "לא ניתן להעתיק ללוח",
   },
   ja: {
     copyLink: "リンクをコピー",

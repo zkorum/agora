@@ -37,6 +37,22 @@ export const userReportsTranslations: Record<
     sexual: "Sexual",
     spam: "Spam",
   },
+  fa: {
+    misleading: "گمراه‌کننده",
+    antisocial: "ضداجتماعی",
+    illegal: "غیرقانونی",
+    doxing: "افشای اطلاعات شخصی",
+    sexual: "جنسی",
+    spam: "هرزنامه",
+  },
+  he: {
+    misleading: "מטעה",
+    antisocial: "אנטי-חברתי",
+    illegal: "בלתי חוקי",
+    doxing: "חשיפת מידע אישי",
+    sexual: "מיני",
+    spam: "ספאם",
+  },
   fr: {
     misleading: "Trompeur",
     antisocial: "Antisocial",

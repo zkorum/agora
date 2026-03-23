@@ -36,6 +36,22 @@ export const step2SignupOnboardingTranslations: Record<
     verifyWithPhone: "Verificar con mi número de teléfono",
     useEmail: "Prefiero usar mi correo electrónico",
   },
+  fa: {
+    pageTitle: "آگورا قصد دارد منحصراً انسانی باشد",
+    description:
+      "بیش از نیمی از ترافیک اینترنت از ربات‌ها می‌آید. به همین دلیل ما کاربران را تأیید هویت می‌کنیم تا مطمئن شوید که با انسان‌ها بحث می‌کنید، نه ربات‌هایی که نقشه تسلط بر جهان را می‌کشند!",
+    verifyAnonymously: "تأیید هویت ناشناس",
+    verifyWithPhone: "تأیید هویت با شماره تلفن",
+    useEmail: "ترجیح می‌دهم از ایمیل خود استفاده کنم",
+  },
+  he: {
+    pageTitle: "Agora שואפת להיות אנושית בלבד",
+    description:
+      "יותר ממחצית מתעבורת האינטרנט מגיעה מבוטים. לכן אנו מאמתים משתמשים, כדי שתדונו עם אנשים, ולא עם רובוטים שמתכננים שליטה עולמית!",
+    verifyAnonymously: "אימות באופן אנונימי",
+    verifyWithPhone: "אימות עם מספר טלפון",
+    useEmail: "אני מעדיף/ה להשתמש בכתובת האימייל שלי",
+  },
   fr: {
     pageTitle: "Agora vise à être exclusivement humaine",
     description:

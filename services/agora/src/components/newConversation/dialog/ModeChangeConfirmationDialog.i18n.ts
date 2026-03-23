@@ -50,6 +50,18 @@ export const modeChangeConfirmationDialogTranslations: Record<
     cancel: "Cancelar",
     continue: "Continuar",
   },
+  fa: {
+    switchToImportMode: "تغییر به حالت واردات؟",
+    switchingWillClear:
+      "تغییر به حالت واردات فیلدهای زیر را از پیش‌نویس گفتگو پاک می‌کند:",
+    title: "عنوان",
+    bodyText: "متن اصلی",
+    pollOptions: "گزینه‌های نظرسنجی",
+    settingsPreserved:
+      "تنظیمات حریم خصوصی و انتخاب سازمان شما حفظ خواهد شد.",
+    cancel: "لغو",
+    continue: "ادامه",
+  },
   fr: {
     switchToImportMode: "Passer en Mode d'Import ?",
     switchingWillClear:
@@ -81,6 +93,18 @@ export const modeChangeConfirmationDialogTranslations: Record<
     settingsPreserved: "您的隱私設置和組織選擇將被保留。",
     cancel: "取消",
     continue: "繼續",
+  },
+  he: {
+    switchToImportMode: "לעבור למצב ייבוא?",
+    switchingWillClear:
+      "מעבר למצב ייבוא ימחק את השדות הבאים מטיוטת השיחה:",
+    title: "כותרת",
+    bodyText: "גוף הטקסט",
+    pollOptions: "אפשרויות סקר",
+    settingsPreserved:
+      "הגדרות הפרטיות ובחירת הארגון שלך יישמרו.",
+    cancel: "ביטול",
+    continue: "המשך",
   },
   ja: {
     switchToImportMode: "インポートモードに切り替えますか？",

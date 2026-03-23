@@ -10,6 +10,8 @@
     { code: "fr", label: "FR", name: "Français" },
     { code: "es", label: "ES", name: "Español" },
     { code: "ar", label: "AR", name: "العربية" },
+    { code: "fa", label: "FA", name: "فارسی" },
+    { code: "he", label: "HE", name: "עברית" },
     { code: "ja", label: "JA", name: "日本語" },
     { code: "ky", label: "KY", name: "Кыргызча" },
     { code: "ru", label: "RU", name: "Русский" },

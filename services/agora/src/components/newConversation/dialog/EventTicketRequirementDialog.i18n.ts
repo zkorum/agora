@@ -35,6 +35,14 @@ export const eventTicketRequirementDialogTranslations: Record<
     requiresEventTicketDescription:
       "Solo los titulares de boletos de eventos verificados pueden votar y contribuir proposiciones",
   },
+  fa: {
+    noVerificationTitle: "بدون تأیید هویت",
+    noVerificationDescription:
+      "هر کسی می‌تواند بدون تأیید بلیط رویداد مشارکت کند",
+    requiresEventTicketTitle: "نیاز به بلیط رویداد",
+    requiresEventTicketDescription:
+      "فقط دارندگان بلیط رویداد تأیید شده می‌توانند رأی دهند و گزاره ارائه کنند",
+  },
   fr: {
     noVerificationTitle: "Pas de vérification",
     noVerificationDescription:
@@ -56,6 +64,14 @@ export const eventTicketRequirementDialogTranslations: Record<
     requiresEventTicketTitle: "需要活動門票",
     requiresEventTicketDescription:
       "只有經過驗證的活動門票持有者才能投票和貢獻觀點",
+  },
+  he: {
+    noVerificationTitle: "ללא אימות",
+    noVerificationDescription:
+      "כל אחד יכול להשתתף ללא אימות כרטיס אירוע",
+    requiresEventTicketTitle: "נדרש כרטיס אירוע",
+    requiresEventTicketDescription:
+      "רק בעלי כרטיסי אירוע מאומתים יכולים להצביע ולהוסיף הצהרות",
   },
   ja: {
     noVerificationTitle: "検証不要",

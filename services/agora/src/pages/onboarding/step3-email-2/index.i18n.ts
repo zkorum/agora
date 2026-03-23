@@ -84,6 +84,46 @@ export const step3Email2Translations: Record<
     tooManyAttempts:
       "Demasiados intentos—por favor, espere antes de solicitar un nuevo código",
   },
+  fa: {
+    title: "کد ۶ رقمی را وارد کنید",
+    instructions: "کد ۶ رقمی ارسال شده به آدرس زیر را وارد کنید",
+    expiresIn: "انقضا در",
+    codeExpired: "کد منقضی شده است",
+    changeEmail: "تغییر ایمیل",
+    resendCodeIn: "ارسال مجدد کد در",
+    resendCode: "ارسال مجدد کد",
+    pleaseEnterValidCode: "لطفاً یک کد معتبر ۶ رقمی وارد کنید",
+    verificationSuccessful: "ورود موفقیت‌آمیز!",
+    accountMerged: "موفقیت! حساب‌های شما ادغام شدند",
+    codeExpiredResend: "کد منقضی شده—کد جدید ارسال کنید",
+    wrongCodeTryAgain: "کد اشتباه—دوباره تلاش کنید",
+    credentialAlreadyLinked: "این آدرس ایمیل قبلاً به حساب دیگری متصل شده است",
+    authStateChanged:
+      "وضعیت احراز هویت تغییر کرده—لطفاً کد جدید درخواست کنید",
+    somethingWrong: "متأسفیم! مشکلی پیش آمده است",
+    tooManyAttempts:
+      "تعداد تلاش‌ها بیش از حد—لطفاً قبل از درخواست کد جدید صبر کنید",
+  },
+  he: {
+    title: "הזינו את הקוד בן 6 הספרות",
+    instructions: "הזינו את הקוד בן 6 הספרות שנשלח אל",
+    expiresIn: "פג תוקף בעוד",
+    codeExpired: "הקוד פג תוקף",
+    changeEmail: "שינוי אימייל",
+    resendCodeIn: "שליחת קוד מחדש בעוד",
+    resendCode: "שליחת קוד מחדש",
+    pleaseEnterValidCode: "אנא הזינו קוד תקין בן 6 ספרות",
+    verificationSuccessful: "ההתחברות הצליחה!",
+    accountMerged: "הצלחה! החשבונות שלכם מוזגו",
+    codeExpiredResend: "הקוד פג תוקף—שלחו קוד חדש",
+    wrongCodeTryAgain: "קוד שגוי—נסו שוב",
+    credentialAlreadyLinked: "כתובת אימייל זו כבר מקושרת לחשבון אחר",
+    authStateChanged:
+      "מצב האימות השתנה—אנא בקשו קוד חדש",
+    somethingWrong: "אופס! משהו לא בסדר",
+    tooManyAttempts:
+      "יותר מדי ניסיונות—אנא המתינו לפני בקשת קוד חדש",
+  },
   fr: {
     title: "Entrez le code à 6 chiffres",
     instructions:

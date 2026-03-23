@@ -33,6 +33,13 @@ export const voteCountVisualizerTranslations: Record<
     group3: "Grupo 3",
     group4: "Grupo 4",
   },
+  fa: {
+    votes: "رأی",
+    group1: "گروه ۱",
+    group2: "گروه ۲",
+    group3: "گروه ۳",
+    group4: "گروه ۴",
+  },
   fr: {
     votes: "votes",
     group1: "Groupe 1",
@@ -53,6 +60,13 @@ export const voteCountVisualizerTranslations: Record<
     group2: "組 2",
     group3: "組 3",
     group4: "組 4",
+  },
+  he: {
+    votes: "הצבעות",
+    group1: "קבוצה 1",
+    group2: "קבוצה 2",
+    group3: "קבוצה 3",
+    group4: "קבוצה 4",
   },
   ja: {
     votes: "票数",
