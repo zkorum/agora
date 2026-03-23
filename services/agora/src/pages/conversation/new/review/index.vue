@@ -511,7 +511,7 @@ async function onSubmit() {
 
 <style scoped lang="scss">
 .container {
-  padding: 2rem 1rem;
+  padding: 0.5rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 2rem;
