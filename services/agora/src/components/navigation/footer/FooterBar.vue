@@ -126,7 +126,7 @@ function handleNavigationClick(
   flex-direction: column;
   align-items: center;
   font-size: 12px;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-medium);
   border: 2px solid transparent; // Reserve space to prevent pixel shifting
   border-radius: 12px;
   transition: all 0.2s ease-in-out;
@@ -135,9 +135,8 @@ function handleNavigationClick(
 }
 
 .container {
-  color: $color-text-weak;
+  color: #7d7a85;
   background-color: white;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .iconDiv {
@@ -147,6 +146,7 @@ function handleNavigationClick(
   display: flex;
   justify-content: center;
   align-items: center;
+  color: $sentiment-neutral; // Sky/Base #CDCBD3 for inactive icons
 }
 
 .iconDiv :deep(svg) {
@@ -166,7 +166,7 @@ function handleNavigationClick(
 
 .icon-label {
   transition: color 0.2s ease-in-out;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-medium);
 }
 
 .navigation-link {

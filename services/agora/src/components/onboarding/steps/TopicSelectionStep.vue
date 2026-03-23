@@ -139,7 +139,7 @@ const handleTopicToggle = async (topicCode: string): Promise<void> => {
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: $breakpoint-xs-max) {
   .topics-container {
     gap: 0.5rem;
   }

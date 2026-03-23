@@ -218,7 +218,7 @@ const togglePreviousMode = () => {
   display: none;
 }
 
-@media (min-width: 600px) {
+@media (min-width: $breakpoint-sm-min) {
   .title-short {
     display: none;
   }

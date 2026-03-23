@@ -15,7 +15,7 @@
   width: min(30rem, 100%);
   overflow-y: auto;
 
-  @media (min-width: 600px) {
+  @media (min-width: $breakpoint-sm-min) {
     gap: 1rem;
     padding: 2rem;
   }

@@ -27,7 +27,7 @@
 }
 
 /* Mobile-optimized font weights */
-@media screen and (max-width: 768px) {
+@media screen and (max-width: $breakpoint-xs-max) {
   :root {
     --font-weight-normal: 400;
     --font-weight-medium: 500;
@@ -85,7 +85,7 @@ html {
 }
 
 /* Mobile-specific font optimizations */
-@media screen and (max-width: 768px) {
+@media screen and (max-width: $breakpoint-xs-max) {
   body {
     /* Enhanced mobile font rendering */
     font-size: clamp(0.85rem, 2.5vw, 0.9rem);
@@ -188,7 +188,7 @@ html {
 }
 
 /* On mobile (footer visible), push bottom toasts well above the footer navbar */
-@media (max-width: 1000px) {
+@media (max-width: $breakpoint-sm-max) {
   .q-notifications__list--bottom {
     margin-bottom: 90px;
   }

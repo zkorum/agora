@@ -38,7 +38,7 @@ const { t } = useComponentI18n<UserMetadataTranslations>(
 .usernameStyle {
   font-size: 0.875rem;
   font-weight: var(--font-weight-medium);
-  color: #0a0714;
+  color: $ink-darkest;
 }
 
 .verifiedMessage {

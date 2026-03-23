@@ -82,6 +82,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { useQuasar } from "quasar";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import AnalysisReport from "src/components/post/report/AnalysisReport.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
@@ -95,7 +96,7 @@ import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { getReportOpinions, REPORT_ITEMS_PER_CAPTURE_PAGE, REPORT_ITEMS_PER_PDF_PAGE } from "src/utils/component/report/reportData";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
-import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
+import { computed, nextTick, ref } from "vue";
 import { useRoute } from "vue-router";
 
 import {
@@ -178,22 +179,9 @@ const hasData = computed(
     analysisQuery.data.value !== undefined,
 );
 
-// Narrow screen detection
-const NARROW_BREAKPOINT = 768;
-const isNarrowScreen = ref(false);
-
-function checkScreenWidth(): void {
-  isNarrowScreen.value = window.innerWidth < NARROW_BREAKPOINT;
-}
-
-onMounted(() => {
-  checkScreenWidth();
-  window.addEventListener("resize", checkScreenWidth);
-});
-
-onUnmounted(() => {
-  window.removeEventListener("resize", checkScreenWidth);
-});
+// Narrow screen detection — uses Quasar Screen plugin (reads $breakpoint-xs from SCSS)
+const $q = useQuasar();
+const isNarrowScreen = computed(() => $q.screen.xs);
 
 // Report capture refs
 interface AnalysisReportExposed {

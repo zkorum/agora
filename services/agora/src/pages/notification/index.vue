@@ -416,7 +416,7 @@ function getRouteFromTarget(
 }
 
 .titleStyle {
-  color: #0a0714;
+  color: $ink-darkest;
 }
 
 </style>

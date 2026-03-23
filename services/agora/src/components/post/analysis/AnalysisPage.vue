@@ -315,7 +315,7 @@ defineExpose({
     color: #6b4eff;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: $breakpoint-xs-max) {
     display: none;
   }
 }

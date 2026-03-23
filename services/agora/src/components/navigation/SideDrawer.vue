@@ -57,15 +57,11 @@
         </div>
       </div>
 
-      <div>
-        <div
-          v-if="drawerBehavior == 'desktop'"
-          class="bottomSection StartConversationButtonLong"
-        >
-          <RouterLink :to="{ name: '/conversation/new/create/' }">
-            <StartConversationButtonLong />
-          </RouterLink>
-        </div>
+      <div v-if="drawerBehavior == 'desktop'" class="bottomSection">
+        <RouterLink :to="{ name: '/conversation/new/create/' }">
+          <StartConversationButtonLong v-if="$q.screen.gt.sm" />
+          <StartConversationButtonCompact v-else />
+        </RouterLink>
       </div>
     </div>
   </div>
@@ -86,6 +82,7 @@ import type { RouteNamedMap } from "vue-router/auto-routes";
 
 import UserAvatar from "../account/UserAvatar.vue";
 import DisplayUsername from "../features/user/DisplayUsername.vue";
+import StartConversationButtonCompact from "../newConversation/StartConversationButtonCompact.vue";
 import StartConversationButtonLong from "../newConversation/StartConversationButtonLong.vue";
 import ZKBadge from "../ui-library/ZKBadge.vue";
 import ZKHoverEffect from "../ui-library/ZKHoverEffect.vue";
@@ -254,12 +251,8 @@ function handleNavigationClick(): void {
 
 .bottomSection {
   display: flex;
-  justify-content: center;
   padding-top: 1rem;
   padding-bottom: 1rem;
-}
-
-.StartConversationButtonLong:hover {
   cursor: pointer;
 }
 
@@ -282,7 +275,7 @@ function handleNavigationClick(): void {
 .navigation-link {
   display: block;
   text-decoration: none;
-  color: inherit;
+  color: $ink-darkest;
   cursor: pointer;
 }
 </style>

@@ -1,25 +1,33 @@
-import { useWindowSize } from "@vueuse/core";
 import { defineStore } from "pinia";
-import { ref, watch } from "vue";
+import { useQuasar } from "quasar";
+import { computed, ref, watch } from "vue";
 
-const DRAWER_BREAKPOINT = 1000;
+import { usePageLayoutStore } from "./layout/pageLayout";
 
 export const useNavigationStore = defineStore("navigation", () => {
-  const { width } = useWindowSize();
+  const $q = useQuasar();
+  const pageLayoutStore = usePageLayoutStore();
 
-  // Initialize based on current window width instead of using onMounted
-  // (onMounted doesn't work reliably in Pinia stores)
-  const isDesktop = width.value > DRAWER_BREAKPOINT;
+  // $q.screen.gt.xs = true when width > $breakpoint-xs (554px)
+  // This matches Figma: sidebar appears at 555px+
+  const isDesktop = $q.screen.gt.xs;
   const showMobileDrawer = ref(isDesktop);
   const drawerBehavior = ref<"desktop" | "mobile">(isDesktop ? "desktop" : "mobile");
   const cameFromConversationCreation = ref(false);
 
-  watch(width, () => {
+  const hasFooterBar = computed(() =>
+    drawerBehavior.value === "mobile" && pageLayoutStore.config.enableFooter
+  );
+
+  // Figma: small sidebar (179px) at 555–960px, large sidebar (273px) at >960px
+  const drawerWidth = computed(() => $q.screen.gt.sm ? 273 : 179);
+
+  watch(() => $q.screen.gt.xs, () => {
     updateDrawers();
   }, { immediate: true });
 
   function updateDrawers() {
-    if (width.value > DRAWER_BREAKPOINT) {
+    if ($q.screen.gt.xs) {
       drawerBehavior.value = "desktop";
       showMobileDrawer.value = true;
     } else {
@@ -39,6 +47,8 @@ export const useNavigationStore = defineStore("navigation", () => {
   return {
     showMobileDrawer,
     drawerBehavior,
+    drawerWidth,
+    hasFooterBar,
     cameFromConversationCreation,
     setConversationCreationContext,
     clearConversationCreationContext,

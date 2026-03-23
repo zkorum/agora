@@ -105,7 +105,7 @@ function handleVote(): void {
 .dialog-title-text {
   font-weight: var(--font-weight-semibold);
   font-size: 1.1rem;
-  color: #0a0714;
+  color: $ink-darkest;
 }
 
 .github-link {

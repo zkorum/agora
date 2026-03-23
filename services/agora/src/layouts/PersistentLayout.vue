@@ -36,7 +36,7 @@
     <q-drawer
       v-model="showMobileDrawer"
       :behavior="drawerBehavior"
-      :width="300"
+      :width="drawerWidth"
       :overlay="drawerBehavior === 'mobile'"
       :no-swipe-open="true"
       bordered
@@ -60,7 +60,7 @@ import { useNotificationRefresher } from "src/utils/component/notification/menuR
 import { ref } from "vue";
 
 const { config: layoutConfig } = storeToRefs(usePageLayoutStore());
-const { showMobileDrawer, drawerBehavior } = storeToRefs(useNavigationStore());
+const { showMobileDrawer, drawerBehavior, drawerWidth } = storeToRefs(useNavigationStore());
 const { reveal: revealHeader } = storeToRefs(useLayoutHeaderStore());
 
 useNotificationRefresher();
@@ -103,6 +103,10 @@ function captureHeaderReveal(reveal: boolean) {
 }
 
 .headerStyle {
+  background-color: $app-background-color;
+}
+
+:deep(.q-drawer) {
   background-color: $app-background-color;
 }
 </style>

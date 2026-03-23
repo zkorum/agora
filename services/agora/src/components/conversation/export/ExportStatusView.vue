@@ -365,7 +365,7 @@ function getFailureReasonText(reason: ExportFailureReason): string {
   grid-template-columns: 1fr;
   gap: 1rem;
 
-  @media (min-width: 768px) {
+  @media (min-width: $breakpoint-sm-min) {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -477,7 +477,7 @@ function getFailureReasonText(reason: ExportFailureReason): string {
   grid-template-columns: 1fr;
   gap: 1rem;
 
-  @media (min-width: 768px) {
+  @media (min-width: $breakpoint-sm-min) {
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
 }
@@ -555,7 +555,7 @@ function getFailureReasonText(reason: ExportFailureReason): string {
     width: 100%;
     justify-content: center;
 
-    @media (min-width: 768px) {
+    @media (min-width: $breakpoint-sm-min) {
       width: auto;
       min-width: 200px;
     }
