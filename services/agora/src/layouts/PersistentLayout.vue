@@ -11,7 +11,8 @@
 
     <q-footer
       v-if="drawerBehavior === 'mobile' && layoutConfig.enableFooter"
-      :reveal="revealHeader"
+      reveal
+      :model-value="revealHeader"
       class="footerBackground"
     >
       <FooterBar />
@@ -95,6 +96,10 @@ function captureHeaderReveal(reveal: boolean) {
 .scrollContainer {
   width: 100%;
   height: 100%;
+}
+
+#page-header {
+  padding-bottom: 0.5rem;
 }
 
 .headerStyle {

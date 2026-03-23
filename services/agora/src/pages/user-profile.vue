@@ -200,8 +200,8 @@ function applyCurrentTab() {
   flex-direction: column;
   gap: 1rem;
   justify-content: space-between;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
   padding-bottom: 2rem;
 }
 
@@ -232,8 +232,8 @@ function applyCurrentTab() {
 .tabCluster {
   display: flex;
   gap: 1rem;
-  padding-bottom: 1rem;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+  padding-bottom: 0.25rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 </style>

@@ -1,9 +1,7 @@
 <template>
   <NewConversationLayout>
     <TopMenuWrapper>
-      <div>
-        <BackButton />
-      </div>
+      <BackButton />
 
       <PrimeButton
         :label="
@@ -13,7 +11,6 @@
               ? t('importButton')
               : t('nextButton')
         "
-        size="0.8rem"
         :loading="isSubmitButtonLoading"
         :disabled="isSubmitButtonLoading || hasActiveImport || isTitleOverLimit || isBodyOverLimit || isTitleEmpty"
         @click="onSubmit()"
@@ -486,7 +483,7 @@ async function handleImportSubmission(): Promise<void> {
 
 async function handleRegularSubmission(): Promise<void> {
   routeGuardRef.value?.unlockRoute();
-  await router.replace({ name: "/conversation/new/review/" });
+  await router.push({ name: "/conversation/new/review/" });
 }
 
 async function onSubmit(): Promise<void> {
