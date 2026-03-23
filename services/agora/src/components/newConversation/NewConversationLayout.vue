@@ -13,7 +13,7 @@ usePageLayout({ enableHeader: false, enableFooter: false, reducedWidth: true });
 <style scoped lang="scss">
 .container {
   padding-bottom: 0.5rem;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 </style>
