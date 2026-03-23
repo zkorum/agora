@@ -1,6 +1,8 @@
+import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { isNetworkOffline } from "src/composables/useNetworkStatus";
+import { useNavigationStore } from "src/stores/navigation";
 
 import {
   type NotifyTranslations,
@@ -22,13 +24,12 @@ interface PersistentNotifyOptions extends NotifyOptions {
   onDismiss?: () => void;
 }
 
-const MOBILE_BREAKPOINT = 1000;
-
 export const useNotify = () => {
   const quasar = useQuasar();
+  const { hasFooterBar } = storeToRefs(useNavigationStore());
 
   function getPosition(): "bottom-left" | "bottom-right" {
-    return quasar.screen.width <= MOBILE_BREAKPOINT ? "bottom-left" : "bottom-right";
+    return hasFooterBar.value ? "bottom-left" : "bottom-right";
   }
 
   function showNotifyMessage(

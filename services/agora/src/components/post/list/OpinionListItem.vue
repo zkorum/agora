@@ -14,7 +14,7 @@
       <div class="commentItemStyle">
         <div class="topRowFlex">
           <div class="postTitle">
-            <ConversationTitleWithPrivacyLabel
+            <ConversationTitle
               :is-private="!isIndexed"
               :title="conversationTitle"
               size="medium"
@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import ConversationTitleWithPrivacyLabel from "src/components/features/conversation/ConversationTitleWithPrivacyLabel.vue";
+import ConversationTitle from "src/components/features/conversation/ConversationTitle.vue";
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 import type { OpinionItem } from "src/shared/types/zod";
 

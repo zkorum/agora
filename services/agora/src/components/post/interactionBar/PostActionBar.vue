@@ -179,7 +179,7 @@ async function handleShareActionSelected(action: ContentAction): Promise<void> {
   justify-content: space-between;
   gap: 1rem;
 
-  @media (max-width: 599px) {
+  @media (max-width: $breakpoint-xs-max) {
     gap: 0.5rem;
   }
 }
@@ -187,7 +187,7 @@ async function handleShareActionSelected(action: ContentAction): Promise<void> {
 .buttonClusterBorder {
   border-bottom-width: 1px;
   border-bottom-style: solid;
-  border-bottom-color: #e2e1e7;
+  border-bottom-color: $sky-light;
 }
 
 .leftSection {
@@ -200,7 +200,7 @@ async function handleShareActionSelected(action: ContentAction): Promise<void> {
   align-items: center;
   margin-left: auto;
 
-  @media (max-width: 599px) {
+  @media (max-width: $breakpoint-xs-max) {
     gap: 0.5rem;
     font-size: 0.8rem;
   }

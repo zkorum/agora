@@ -26,6 +26,15 @@ export interface RouteGuardComposable
   extends RouteGuardState,
     RouteGuardActions {}
 
+/**
+ * Vue Router stores the history position in window.history.state.position.
+ * Returns null if the position is not available.
+ */
+function getHistoryPosition(): number | null {
+  const position: unknown = window.history.state?.position;
+  return typeof position === "number" ? position : null;
+}
+
 export function useRouteGuard(
   beforeUnloadShouldBlockCallback: () => boolean,
   beforeRouteLeaveCallback: (to: RouteLocationNormalized) => boolean
@@ -36,6 +45,13 @@ export function useRouteGuard(
   const isRouteLocked = ref(false);
   const showExitDialog = ref(false);
   const pendingRoute = ref<RouteLocationNormalized | null>(null);
+  let lockedHistoryPosition: number | null = null;
+
+  // Shared helper: block navigation and show the exit dialog
+  function blockAndShowDialog(destination: RouteLocationNormalized): void {
+    pendingRoute.value = destination;
+    showExitDialog.value = true;
+  }
 
   // Store original beforeunload handler to restore on cleanup
   const originalBeforeUnload = window.onbeforeunload;
@@ -51,41 +67,76 @@ export function useRouteGuard(
 
   window.addEventListener("beforeunload", handleBeforeUnload);
 
-  // Clean up on component unmount
-  onUnmounted(() => {
-    window.removeEventListener("beforeunload", handleBeforeUnload);
-    window.onbeforeunload = originalBeforeUnload;
-  });
-
-  // Set up Vue Router guard
+  // Set up Vue Router guard (handles router.push / router.replace navigations)
   onBeforeRouteLeave((to, from, next) => {
-    // If route is not locked, allow navigation
     if (!isRouteLocked.value) {
       next();
       return;
     }
 
-    // Check if custom callback allows navigation
-    const shouldAllowNavigation = beforeRouteLeaveCallback(to);
-
-    if (shouldAllowNavigation) {
+    if (beforeRouteLeaveCallback(to)) {
       next();
-    } else {
-      // Block navigation and store the pending route
-      pendingRoute.value = to;
-      showExitDialog.value = true;
-      next(false);
+      return;
     }
+
+    blockAndShowDialog(to);
+    next(false);
+  });
+
+  // Set up popstate interceptor (handles browser back/forward and router.go)
+  // Registered in capture phase to fire BEFORE Vue Router's bubble-phase listener
+  let ignoreNextPopState = false;
+
+  function handlePopState(event: PopStateEvent): void {
+    if (ignoreNextPopState) {
+      ignoreNextPopState = false;
+      return;
+    }
+
+    if (!isRouteLocked.value) return;
+    if (!beforeUnloadShouldBlockCallback()) return;
+
+    // Capture destination before restoring position
+    const destinationPath =
+      window.location.pathname + window.location.search + window.location.hash;
+    const destinationRoute = router.resolve(destinationPath);
+
+    // Check if the guard would allow this navigation
+    if (beforeRouteLeaveCallback(destinationRoute)) return;
+
+    // Calculate delta to restore history position
+    const newPosition = getHistoryPosition();
+    if (lockedHistoryPosition === null || newPosition === null) return;
+    const delta = lockedHistoryPosition - newPosition;
+    if (delta === 0) return;
+
+    // Block: prevent Vue Router from seeing this popstate, restore position
+    event.stopImmediatePropagation();
+    ignoreNextPopState = true;
+    window.history.go(delta);
+
+    blockAndShowDialog(destinationRoute);
+  }
+
+  window.addEventListener("popstate", handlePopState, true);
+
+  // Clean up on component unmount
+  onUnmounted(() => {
+    window.removeEventListener("popstate", handlePopState, true);
+    window.removeEventListener("beforeunload", handleBeforeUnload);
+    window.onbeforeunload = originalBeforeUnload;
   });
 
   const lockRoute = (): void => {
     isRouteLocked.value = true;
+    lockedHistoryPosition = getHistoryPosition();
   };
 
   const unlockRoute = (): void => {
     isRouteLocked.value = false;
     pendingRoute.value = null;
     showExitDialog.value = false;
+    lockedHistoryPosition = null;
   };
 
   const isRouteLockedCheck = (): boolean => {

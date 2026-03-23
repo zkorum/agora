@@ -2,7 +2,6 @@
   <ZKIconButton
     :icon="icon"
     :disabled="disabled"
-    v-bind="$attrs"
     @click="handleClick"
   />
 </template>
@@ -17,10 +16,6 @@ interface Props {
   disabled?: boolean;
   fallbackRoute?: RouteLocationRaw;
 }
-
-defineOptions({
-  inheritAttrs: false,
-});
 
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,

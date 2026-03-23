@@ -171,7 +171,7 @@ function getFailureReasonText(reason: ImportFailureReason): string {
   grid-template-columns: 1fr;
   gap: 1rem;
 
-  @media (min-width: 768px) {
+  @media (min-width: $breakpoint-sm-min) {
     grid-template-columns: repeat(2, 1fr);
   }
 }

@@ -1,13 +1,13 @@
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
-export interface ConversationTitleWithPrivacyLabelTranslations {
+export interface ConversationTitleTranslations {
   privateLabel: string;
   prioritizationLabel: string;
 }
 
-export const conversationTitleWithPrivacyLabelTranslations: Record<
+export const conversationTitleTranslations: Record<
   SupportedDisplayLanguageCodes,
-  ConversationTitleWithPrivacyLabelTranslations
+  ConversationTitleTranslations
 > = {
   en: {
     privateLabel: "Private",

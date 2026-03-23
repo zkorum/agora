@@ -34,7 +34,7 @@ const props = defineProps<{
 .title {
   font-weight: var(--font-weight-medium);
   font-size: 1rem;
-  color: #0a0714;
+  color: $ink-darkest;
   display: flex;
   gap: 1rem;
   align-items: center;

@@ -51,7 +51,7 @@ const props = defineProps<ZKBtnProps>();
   padding-bottom: 0.6rem;
 
   // Add horizontal padding on tablet and up
-  @media (min-width: 600px) {
+  @media (min-width: $breakpoint-sm-min) {
     padding-left: 0.8rem;
     padding-right: 0.8rem;
   }

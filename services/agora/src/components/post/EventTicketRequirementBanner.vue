@@ -202,7 +202,7 @@ async function handleVerify() {
     color: #c62828;
   }
 
-  @media (max-width: 599px) {
+  @media (max-width: $breakpoint-xs-max) {
     font-size: 0.7rem;
     padding: 0.25rem 0.4rem;
     gap: 0.3rem;
@@ -216,7 +216,7 @@ async function handleVerify() {
   flex: 1;
   min-width: 0;
 
-  @media (max-width: 599px) {
+  @media (max-width: $breakpoint-xs-max) {
     gap: 0.3rem;
   }
 }
@@ -240,7 +240,7 @@ async function handleVerify() {
   :deep(.q-btn__content) {
     font-size: 0.75rem;
 
-    @media (max-width: 599px) {
+    @media (max-width: $breakpoint-xs-max) {
       font-size: 0.7rem;
     }
   }

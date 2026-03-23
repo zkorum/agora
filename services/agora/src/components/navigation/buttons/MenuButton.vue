@@ -3,7 +3,7 @@
     <UserAvatar
       v-if="isGuestOrLoggedIn && profileData.dataLoaded"
       class="menu-button-hover"
-      :size="29"
+      :size="30"
       :user-identity="profileData.userName"
       @click="toggleMobileDrawer"
     />

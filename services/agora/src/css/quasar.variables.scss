@@ -12,7 +12,31 @@
 // to match your app's branding.
 // Tip: Use the "Theme Builder" on Quasar's documentation website.
 
-$primary: #6b4eff;
+// Breakpoints from Figma design system (node 770:5839)
+$breakpoint-xs: 554px;  // ≤554: mobile (no sidebar)
+$breakpoint-sm: 960px;  // 555–960: small sidebar (179px)
+$breakpoint-md: 1060px; // 961–1060: large sidebar (273px), feed relative to sidebar
+$breakpoint-lg: 1440px; // >1060: large sidebar, feed viewport-centered
+
+// Figma Ink palette (node 784:6610)
+$ink-darkest: #0a0714;
+$ink-darker: #222127;
+$ink-dark: #333238;
+$ink-base: #434149;
+$ink-light: #6d6a74;
+
+// Figma Sky palette (node 784:6610)
+$sky-lighter: #e9e9f1;
+$sky-light: #e2e1e7;
+$sky-dark: #9a97a4;
+
+// Figma Primary extended palette (node 784:6610)
+$primary-dark: #5538ee;
+$primary-light: #9990ff;
+$primary-lighter: #c6c4ff;
+$primary-lightest: #eeeeff;
+
+$primary: #6b4eff; // = Primary/Base
 $secondary: #26a69a;
 $accent: #0e7490;
 
@@ -42,7 +66,7 @@ $color-text-weak: rgb(92, 108, 116);
   background: $color-text-weak;
 }
 
-$color-border-weak: #e0e0e0;
+$color-border-weak: $sky-light; // #e2e1e7 (was #e0e0e0)
 $color-background-default: #ffffff;
 
 $button-background-color: #e7e7ff;
@@ -54,7 +78,7 @@ $button-background-color: #e7e7ff;
   background: $button-background-color;
 }
 
-$app-background-color: #f6f5f8;
+$app-background-color: #f6f5f8; // = Sky/Lightest
 
 $mouse-hover-color: #e2e8f0;
 $mouse-hover-transition: background-color 0.2s ease;
@@ -80,7 +104,7 @@ $red-base: #ff5247;
 // Sentiment / vote colors (used in vote bars, legends, and voting buttons)
 $sentiment-positive: $primary;          // #6b4eff (agree)
 $sentiment-positive-end: #4f92f6;       // gradient end for analysis bars
-$sentiment-neutral: #cdcbd3;            // gray (pass/unsure)
+$sentiment-neutral: #cdcbd3;            // gray (pass/unsure) = Sky/Base
 $sentiment-negative: #ffb323;           // orange (disagree)
 $sentiment-negative-end: #ffdd1c;       // gradient end for analysis bars
 $sentiment-negative-text: #a05e03;      // darker orange for readable text

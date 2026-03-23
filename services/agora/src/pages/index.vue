@@ -1,7 +1,7 @@
 <template>
   <div class="pageContent">
     <Teleport v-if="isActive" to="#page-header">
-      <HomeMenuBar>
+      <HomeMenuBar v-if="drawerBehavior === 'mobile'">
         <template #center>
           <img
             v-if="drawerBehavior == 'mobile'"
@@ -132,6 +132,7 @@ function selectedTab(tab: HomeFeedSortOption) {
   gap: 1rem;
   font-weight: var(--font-weight-semibold);
   font-size: 1rem;
+  padding-top: 0.5rem;
   padding-bottom: 0.25rem;
 }
 
@@ -146,5 +147,11 @@ function selectedTab(tab: HomeFeedSortOption) {
 
 .tabItem:hover {
   cursor: pointer;
+}
+
+@media (min-width: $breakpoint-sm-min) {
+  .tabCluster {
+    padding-top: 1rem;
+  }
 }
 </style>

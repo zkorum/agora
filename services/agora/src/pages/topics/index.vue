@@ -117,7 +117,7 @@ async function clickedFollowButton(
 
 .topicChipStyle {
   background-color: white;
-  border-color: #e2e1e7;
+  border-color: $sky-light;
   border-width: 1px;
   border-style: solid;
   color: black;

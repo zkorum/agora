@@ -2,7 +2,7 @@
   <Teleport v-if="isActive" to="#page-header">
     <DefaultMenuBar :center-content="false">
       <template #left>
-        <ZKIconButton icon="ci:chevron-left" aria-label="Go back" @click="handleBack" />
+        <BackButton @click="handleBack" />
         <span v-if="isSticky && hasConversationData" class="navbar-title">
           {{ loadedConversationData.payload.title }}
         </span>
@@ -96,6 +96,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import CommentSortingSelector from "src/components/post/comments/group/CommentSortingSelector.vue";
@@ -104,7 +105,6 @@ import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue"
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKHoverEffect from "src/components/ui-library/ZKHoverEffect.vue";
-import ZKIconButton from "src/components/ui-library/ZKIconButton.vue";
 import {
   type ConversationParentConfig,
   useConversationParentState,
@@ -183,7 +183,8 @@ const { tabContentStyle } = useTabScrollRestoration({
   onScrollComplete: refreshStickyState,
 });
 
-function handleBack(): void {
+function handleBack(event: MouseEvent): void {
+  event.preventDefault();
   if (currentTab.value === "analysis") {
     const slugId = conversationData.value?.metadata.conversationSlugId;
     if (slugId === undefined) return;
