@@ -18,7 +18,7 @@
 
     <div class="postDiv">
       <div>
-        <ConversationTitleWithPrivacyLabel
+        <ConversationTitle
           :is-private="!extendedPostData.metadata.isIndexed"
           :title="extendedPostData.payload.title"
           size="medium"
@@ -83,7 +83,7 @@
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { defineAsyncComponent } from "vue";
 
-import ConversationTitleWithPrivacyLabel from "../../features/conversation/ConversationTitleWithPrivacyLabel.vue";
+import ConversationTitle from "../../features/conversation/ConversationTitle.vue";
 import ZKCard from "../../ui-library/ZKCard.vue";
 import ZKHtmlContent from "../../ui-library/ZKHtmlContent.vue";
 import PollWrapper from "./poll/PollWrapper.vue";

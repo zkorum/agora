@@ -12,7 +12,7 @@
 
     <div class="container">
       <!-- Title with Privacy Label -->
-      <ConversationTitleWithPrivacyLabel
+      <ConversationTitle
         :is-private="conversationDraft.isPrivate"
         :title="conversationDraft.title"
         size="large"
@@ -146,7 +146,7 @@ defineOptions({
   },
 });
 
-import ConversationTitleWithPrivacyLabel from "src/components/features/conversation/ConversationTitleWithPrivacyLabel.vue";
+import ConversationTitle from "src/components/features/conversation/ConversationTitle.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
