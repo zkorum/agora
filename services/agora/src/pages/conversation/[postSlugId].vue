@@ -235,7 +235,7 @@ onBeforeUnmount(() => {
 <style scoped lang="scss">
 .container {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   flex-direction: column;
 }
 

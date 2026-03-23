@@ -116,11 +116,12 @@ import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
 import { useShareActions } from "src/composables/share/useShareActions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { ParticipationMode } from "src/shared/types/zod";
+import type { ExternalSourceConfig, ParticipationMode } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import type { ContentAction } from "src/utils/actions/core/types";
 import { useContentActions } from "src/utils/actions/definitions/content-actions";
+import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import { useBackendUserMuteApi } from "src/utils/api/muteUser";
 import {
   useCloseConversationMutation,
@@ -151,6 +152,8 @@ const props = defineProps<{
   isClosed: boolean;
   compactMode: boolean;
   conversationTitle: string;
+  conversationType: string;
+  externalSourceConfig: ExternalSourceConfig | null;
 }>();
 
 const emit = defineEmits<{
@@ -306,19 +309,45 @@ function shareCallback() {
   });
 }
 
+const { syncMaxDiff } = useMaxDiffApi();
+
+async function syncGitHubCallback(): Promise<void> {
+  const result = await syncMaxDiff({ conversationSlugId: props.postSlugId });
+  if (result.status === "success") {
+    notify.showNotifyMessage({
+      message: t("syncSuccess"),
+      icon: "mdi-check-circle-outline",
+    });
+  } else {
+    notify.showNotifyMessage({
+      message: t("syncError"),
+      icon: "mdi-close-circle-outline",
+    });
+  }
+}
+
 function clickedMoreIcon() {
-  // Show post actions using the new system
-  postActions.showPostActions(props.postSlugId, props.posterUserName, {
-    reportPostCallback: reportContentCallback,
-    openUserReportsCallback,
-    muteUserCallback,
-    moderatePostCallback,
-    moderationHistoryCallback,
-    copyEmbedLinkCallback,
-    editConversationCallback,
-    exportConversationCallback,
-    shareCallback,
-  });
+  const showSyncGitHub =
+    props.conversationType === "maxdiff" &&
+    props.externalSourceConfig?.sourceType === "github_issue";
+
+  postActions.showPostActions(
+    props.postSlugId,
+    props.posterUserName,
+    props.organizationName,
+    {
+      reportPostCallback: reportContentCallback,
+      openUserReportsCallback,
+      muteUserCallback,
+      moderatePostCallback,
+      moderationHistoryCallback,
+      copyEmbedLinkCallback,
+      editConversationCallback,
+      exportConversationCallback,
+      shareCallback,
+      syncGitHubCallback: showSyncGitHub ? syncGitHubCallback : null,
+    },
+  );
 }
 
 /**

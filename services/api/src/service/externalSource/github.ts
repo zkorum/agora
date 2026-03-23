@@ -246,14 +246,27 @@ async function upsertItemFromGitHubIssue({
         issueNumber: issue.number,
     };
 
-    // Check if item already exists
+    // Check if item already exists for this conversation
     const existingRows = await db
         .select({
             maxdiffItemId: maxdiffItemExternalSourceTable.maxdiffItemId,
         })
         .from(maxdiffItemExternalSourceTable)
+        .innerJoin(
+            maxdiffItemTable,
+            eq(
+                maxdiffItemTable.id,
+                maxdiffItemExternalSourceTable.maxdiffItemId,
+            ),
+        )
         .where(
-            eq(maxdiffItemExternalSourceTable.externalId, externalId),
+            and(
+                eq(
+                    maxdiffItemExternalSourceTable.externalId,
+                    externalId,
+                ),
+                eq(maxdiffItemTable.conversationId, conversationId),
+            ),
         );
 
     if (existingRows.length === 0) {

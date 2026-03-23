@@ -140,6 +140,7 @@ export function useContentActions() {
   const showPostActions = (
     targetId: string,
     targetAuthor: string,
+    conversationOrganizationName: string,
     callbacks: {
       reportPostCallback: () => void;
       openUserReportsCallback: () => void | Promise<void>;
@@ -150,16 +151,26 @@ export function useContentActions() {
       editConversationCallback: () => void | Promise<void>;
       exportConversationCallback: () => void | Promise<void>;
       shareCallback: () => void | Promise<void>;
+      syncGitHubCallback: (() => void | Promise<void>) | null;
     }
   ): void => {
+    const currentUser = profileData.value.userName;
+    const isConversationOwner =
+      currentUser !== "" && currentUser === targetAuthor;
+    const isOrgMember =
+      conversationOrganizationName !== "" &&
+      profileData.value.organizationList.some(
+        (org) => org.name === conversationOrganizationName,
+      );
+
     const context = createActionContext({
       targetType: "post",
       targetId,
       targetAuthor,
-      currentUser: profileData.value.userName,
+      currentUser,
       isSiteModerator: profileData.value.isSiteModerator,
-      isConversationOwner: false,
-      isOrgMember: false,
+      isConversationOwner,
+      isOrgMember,
       isLoggedIn: isLoggedIn.value,
       isEmbeddedMode: isEmbeddedMode(),
     });
@@ -183,22 +194,24 @@ export function useContentActions() {
       moderate: t("moderate"),
       userReports: t("userReports"),
       exportConversation: t("exportConversation"),
+      syncGitHub: t("syncGitHub"),
     };
 
-    const availableActions = getAvailablePostActions(
+    const availableActions = getAvailablePostActions({
       context,
-      callbacks.reportPostCallback,
-      callbacks.openUserReportsCallback,
-      callbacks.muteUserCallback,
-      callbacks.moderatePostCallback,
-      callbacks.moderationHistoryCallback,
-      callbacks.copyEmbedLinkCallback,
+      reportPostCallback: callbacks.reportPostCallback,
+      openUserReportsCallback: callbacks.openUserReportsCallback,
+      muteUserCallback: callbacks.muteUserCallback,
+      moderatePostCallback: callbacks.moderatePostCallback,
+      moderationHistoryCallback: callbacks.moderationHistoryCallback,
+      copyEmbedLinkCallback: callbacks.copyEmbedLinkCallback,
       deletePostCallback,
-      callbacks.editConversationCallback,
-      callbacks.exportConversationCallback,
-      callbacks.shareCallback,
-      postTranslations
-    );
+      editConversationCallback: callbacks.editConversationCallback,
+      exportConversationCallback: callbacks.exportConversationCallback,
+      shareCallback: callbacks.shareCallback,
+      syncGitHubCallback: callbacks.syncGitHubCallback,
+      translations: postTranslations,
+    });
 
     dialogState.value = {
       isVisible: true,

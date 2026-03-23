@@ -9,7 +9,7 @@
     />
 
     <!-- Loading (initial results fetch) -->
-    <PageLoadingSpinner v-if="isLoading" />
+    <PageLoadingSpinner v-if="isInitialLoading" />
 
     <!-- Error -->
     <div v-else-if="hasError" class="info-message">
@@ -22,18 +22,18 @@
         v-if="currentTab === 'Summary' || currentTab === 'Results'"
         class="tabComponent"
       >
-        <MaxDiffResultsSection
-          v-if="rankings.length > 0"
-          :rankings="rankings"
+        <MaxDiffItemListSection
+          :section-title="t('title')"
+          :subtitle="t('subtitle')"
+          :items="resultItems"
+          :is-loading="false"
+          :no-items-message="t('noResults')"
+          :score-label="t('score')"
           :compact-mode="currentTab === 'Summary'"
-          :t="t"
           :on-click-item="openStatementDialog"
           :on-switch-tab="() => switchToTab('Results')"
           :on-learn-more="() => (showInfoDialog = true)"
         />
-        <div v-else class="info-message">
-          {{ t("noResults") }}
-        </div>
       </div>
 
       <!-- Active items -->
@@ -42,10 +42,13 @@
         class="tabComponent"
       >
         <MaxDiffItemListSection
-          :conversation-slug-id="conversationSlugId"
-          lifecycle="active"
+          :section-title="t('tabActive')"
+          :subtitle="null"
+          :items="activeItems"
+          :is-loading="isActiveLoading"
+          :no-items-message="t('noItems')"
+          :score-label="t('score')"
           :compact-mode="currentTab === 'Summary'"
-          :t="t"
           :on-click-item="openStatementDialog"
           :on-switch-tab="() => switchToTab('Active')"
           :on-learn-more="() => openLifecycleLearnMore('active')"
@@ -58,10 +61,13 @@
         class="tabComponent"
       >
         <MaxDiffItemListSection
-          :conversation-slug-id="conversationSlugId"
-          lifecycle="completed"
+          :section-title="t('tabCompleted')"
+          :subtitle="null"
+          :items="completedItems"
+          :is-loading="isCompletedLoading"
+          :no-items-message="t('noItems')"
+          :score-label="t('score')"
           :compact-mode="currentTab === 'Summary'"
-          :t="t"
           :on-click-item="openStatementDialog"
           :on-switch-tab="() => switchToTab('Completed')"
           :on-learn-more="() => openLifecycleLearnMore('completed')"
@@ -74,10 +80,13 @@
         class="tabComponent"
       >
         <MaxDiffItemListSection
-          :conversation-slug-id="conversationSlugId"
-          lifecycle="canceled"
+          :section-title="t('tabCanceled')"
+          :subtitle="null"
+          :items="canceledItems"
+          :is-loading="isCanceledLoading"
+          :no-items-message="t('noItems')"
+          :score-label="t('score')"
           :compact-mode="currentTab === 'Summary'"
-          :t="t"
           :on-click-item="openStatementDialog"
           :on-switch-tab="() => switchToTab('Canceled')"
           :on-learn-more="() => openLifecycleLearnMore('canceled')"
@@ -135,10 +144,10 @@ import type { ExtendedConversation } from "src/shared/types/zod";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import type { MaxDiffShortcutItem } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { maxdiffShortcutItemSchema } from "src/utils/component/analysis/maxdiffShortcutBar";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 
+import type { MaxDiffListItem } from "./MaxDiffItemListSection.vue";
 import MaxDiffItemListSection from "./MaxDiffItemListSection.vue";
-import MaxDiffResultsSection from "./MaxDiffResultsSection.vue";
 import {
   type MaxDiffResultsTabTranslations,
   maxDiffResultsTabTranslations,
@@ -153,7 +162,7 @@ const { t } = useComponentI18n<MaxDiffResultsTabTranslations>(
   maxDiffResultsTabTranslations,
 );
 
-const { getMaxDiffResults } = useMaxDiffApi();
+const { getMaxDiffResults, fetchMaxDiffItems } = useMaxDiffApi();
 
 const { currentTab, handleSameTabClick } = useTabNavigation({
   schema: maxdiffShortcutItemSchema,
@@ -191,23 +200,26 @@ function switchToTab(tab: MaxDiffShortcutItem): void {
   currentTab.value = tab;
 }
 
-interface RankingItem {
-  itemSlugId: string;
-  title: string;
-  body: string | null;
-  avgRank: number;
-  score: number;
-  participantCount: number;
-  lifecycleStatus: string;
-  externalUrl: string | null;
-}
-
 const isGitHubLinked =
   props.conversationData.metadata.externalSourceConfig !== null;
 
-const isLoading = ref(true);
+const conversationSlugId =
+  props.conversationData.metadata.conversationSlugId;
+
+// Results data
+const isInitialLoading = ref(true);
 const hasError = ref(false);
-const rankings = ref<RankingItem[]>([]);
+const resultItems = ref<MaxDiffListItem[]>([]);
+
+// Lifecycle data
+const activeItems = ref<MaxDiffListItem[]>([]);
+const isActiveLoading = ref(true);
+const completedItems = ref<MaxDiffListItem[]>([]);
+const isCompletedLoading = ref(true);
+const canceledItems = ref<MaxDiffListItem[]>([]);
+const isCanceledLoading = ref(true);
+
+// Dialog state
 const showInfoDialog = ref(false);
 const showLifecycleInfoDialog = ref(false);
 const lifecycleInfoContent = ref("");
@@ -262,31 +274,91 @@ function openLifecycleLearnMore(
   showLifecycleInfoDialog.value = true;
 }
 
-const conversationSlugId =
-  props.conversationData.metadata.conversationSlugId;
+function mapApiItemsToListItems(
+  apiItems: Array<{
+    slugId: string;
+    title: string;
+    body: string | null;
+    snapshotScore: number | null;
+    externalUrl: string | null;
+  }>,
+): MaxDiffListItem[] {
+  return apiItems.map((item) => ({
+    slugId: item.slugId,
+    title: item.title,
+    body: item.body ?? null,
+    score: item.snapshotScore ?? null,
+    externalUrl: item.externalUrl ?? null,
+  }));
+}
+
+async function fetchLifecycleItems({
+  lifecycle,
+  itemsRef,
+  loadingRef,
+}: {
+  lifecycle: "active" | "completed" | "canceled";
+  itemsRef: typeof activeItems;
+  loadingRef: typeof isActiveLoading;
+}): Promise<void> {
+  loadingRef.value = true;
+
+  const response = await fetchMaxDiffItems({
+    conversationSlugId,
+    lifecycleFilter: lifecycle,
+  });
+
+  if (response.status === "success") {
+    itemsRef.value = mapApiItemsToListItems(response.data.items);
+  }
+
+  loadingRef.value = false;
+}
 
 onMounted(async () => {
-  isLoading.value = true;
+  isInitialLoading.value = true;
   hasError.value = false;
 
   const response = await getMaxDiffResults({ conversationSlugId });
 
   if (response.status === "success") {
-    rankings.value = response.data.rankings.map((r) => ({
-      itemSlugId: r.itemSlugId,
+    resultItems.value = response.data.rankings.map((r) => ({
+      slugId: r.itemSlugId,
       title: r.title,
-      body: r.body,
-      avgRank: r.avgRank,
+      body: r.body ?? null,
       score: r.score,
-      participantCount: r.participantCount,
-      lifecycleStatus: r.lifecycleStatus,
-      externalUrl: r.externalUrl,
+      externalUrl: r.externalUrl ?? null,
     }));
   } else {
     hasError.value = true;
   }
 
-  isLoading.value = false;
+  isInitialLoading.value = false;
+
+  await Promise.all([
+    fetchLifecycleItems({ lifecycle: "active", itemsRef: activeItems, loadingRef: isActiveLoading }),
+    fetchLifecycleItems({ lifecycle: "completed", itemsRef: completedItems, loadingRef: isCompletedLoading }),
+    fetchLifecycleItems({ lifecycle: "canceled", itemsRef: canceledItems, loadingRef: isCanceledLoading }),
+  ]);
+});
+
+watch(currentTab, async (newTab, oldTab) => {
+  if (oldTab === "Summary" && newTab !== "Summary") {
+    const tabLifecycleMap: Partial<Record<MaxDiffShortcutItem, {
+      lifecycle: "active" | "completed" | "canceled";
+      itemsRef: typeof activeItems;
+      loadingRef: typeof isActiveLoading;
+    }>> = {
+      Active: { lifecycle: "active", itemsRef: activeItems, loadingRef: isActiveLoading },
+      Completed: { lifecycle: "completed", itemsRef: completedItems, loadingRef: isCompletedLoading },
+      Canceled: { lifecycle: "canceled", itemsRef: canceledItems, loadingRef: isCanceledLoading },
+    };
+
+    const config = tabLifecycleMap[newTab];
+    if (config !== undefined) {
+      await fetchLifecycleItems(config);
+    }
+  }
 });
 </script>
 
@@ -297,7 +369,7 @@ onMounted(async () => {
   border-radius: 25px;
   border-color: #e9e9f1;
   border-width: 1px;
-  margin-bottom: 10rem;
+  margin-bottom: 5rem;
   color: #333238;
 }
 
