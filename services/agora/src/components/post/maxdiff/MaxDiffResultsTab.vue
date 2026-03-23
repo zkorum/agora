@@ -369,7 +369,7 @@ watch(currentTab, async (newTab, oldTab) => {
   border-radius: 25px;
   border-color: #e9e9f1;
   border-width: 1px;
-  margin-bottom: 10rem;
+  margin-bottom: 5rem;
   color: #333238;
 }
 

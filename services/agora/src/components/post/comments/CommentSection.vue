@@ -245,6 +245,6 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding-bottom: 10rem;
+  padding-bottom: 5rem;
 }
 </style>
