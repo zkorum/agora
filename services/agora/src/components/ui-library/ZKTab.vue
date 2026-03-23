@@ -25,7 +25,7 @@
       :name="iconCode"
       size="1rem"
     />
-    <span v-if="text !== undefined" :style="{ paddingBottom: '3px' }">
+    <span v-if="text !== undefined" :style="{ paddingBottom: '0' }">
       {{ text }}
     </span>
   </SpaLink>
@@ -53,7 +53,7 @@
       :name="iconCode"
       size="1rem"
     />
-    <span v-if="text !== undefined" :style="{ paddingBottom: '3px' }">
+    <span v-if="text !== undefined" :style="{ paddingBottom: '0' }">
       {{ text }}
     </span>
   </button>
@@ -92,8 +92,8 @@ function handleClick(event: MouseEvent): void {
   cursor: pointer;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.3rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
   font-weight: var(--font-weight-medium);
   color: #7d7a85;
   user-select: none;

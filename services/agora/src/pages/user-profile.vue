@@ -232,7 +232,7 @@ function applyCurrentTab() {
 .tabCluster {
   display: flex;
   gap: 1rem;
-  padding-bottom: 1rem;
+  padding-bottom: 0.25rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
 }

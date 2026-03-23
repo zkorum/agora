@@ -122,7 +122,7 @@ function selectedTab(tab: HomeFeedSortOption) {
 
 .agoraLogoStyle {
   width: 2rem;
-  height: 2rem;
+  height: 1.75rem;
 }
 
 .tabCluster {
@@ -132,13 +132,13 @@ function selectedTab(tab: HomeFeedSortOption) {
   gap: 1rem;
   font-weight: var(--font-weight-semibold);
   font-size: 1rem;
-  padding-bottom: 0.8rem;
+  padding-bottom: 0.25rem;
 }
 
 .tabItem {
   min-width: 8rem;
-  padding-top: 0.3rem;
-  padding-bottom: 0.3rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
   padding-left: 1rem;
   padding-right: 1rem;
   border-radius: 15px;

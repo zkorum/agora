@@ -17,6 +17,6 @@ import WidthWrapper from "../WidthWrapper.vue";
   justify-content: space-between;
   width: 100%;
   height: 100%;
-  padding-top: 0.5rem;
+  padding-top: 0;
 }
 </style>
