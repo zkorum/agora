@@ -233,7 +233,7 @@ async function upsertItemFromGitHubIssue({
     authorId,
     externalId,
     issue,
-}: UpsertItemProps): Promise<void> {
+}: UpsertItemProps): Promise<"created" | "updated"> {
     const newLifecycle = mapGitHubStateToLifecycle({
         state: issue.state,
         stateReason: issue.stateReason,
@@ -322,6 +322,7 @@ async function upsertItemFromGitHubIssue({
         log.info(
             `[GitHub] Created item ${slugId} from ${externalId} (${newLifecycle})`,
         );
+        return "created";
     } else {
         // Update existing item
         const itemId = existingRows[0].maxdiffItemId;
@@ -419,6 +420,7 @@ async function upsertItemFromGitHubIssue({
         log.info(
             `[GitHub] Updated item from ${externalId} → ${newLifecycle}`,
         );
+        return "updated";
     }
 }
 
@@ -553,39 +555,18 @@ export async function syncGitHubIssues({
             issueNumber: issue.number,
         });
 
-        // Check if item already exists
-        const existingRows = await db
-            .select({
-                maxdiffItemId:
-                    maxdiffItemExternalSourceTable.maxdiffItemId,
-            })
-            .from(maxdiffItemExternalSourceTable)
-            .where(
-                eq(
-                    maxdiffItemExternalSourceTable.externalId,
-                    externalId,
-                ),
-            );
+        const result = await upsertItemFromGitHubIssue({
+            db,
+            conversationId: conversation.id,
+            conversationContentId: conversation.currentContentId,
+            authorId: conversation.authorId,
+            externalId,
+            issue,
+        });
 
-        if (existingRows.length === 0) {
-            await upsertItemFromGitHubIssue({
-                db,
-                conversationId: conversation.id,
-                conversationContentId: conversation.currentContentId,
-                authorId: conversation.authorId,
-                externalId,
-                issue,
-            });
+        if (result === "created") {
             created++;
         } else {
-            await upsertItemFromGitHubIssue({
-                db,
-                conversationId: conversation.id,
-                conversationContentId: conversation.currentContentId,
-                authorId: conversation.authorId,
-                externalId,
-                issue,
-            });
             updated++;
         }
     }
