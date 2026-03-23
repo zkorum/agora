@@ -14,14 +14,12 @@ export function useTabScrollRestoration({
   pendingScrollOverride,
   actionBarElement,
   scrollContainer,
-  onScrollOverride,
   onScrollComplete,
 }: {
   analysisRouteName: string;
   pendingScrollOverride: Ref<boolean>;
   actionBarElement: Ref<HTMLElement | null>;
   scrollContainer?: Ref<HTMLElement | null>;
-  onScrollOverride?: () => void;
   onScrollComplete?: () => void;
 }) {
   const route = useRoute();
@@ -57,53 +55,44 @@ export function useTabScrollRestoration({
     tabContentStyle.value = { minHeight };
   });
 
+  // Scroll to target with two-phase minHeight clearing to prevent scroll clamp.
+  // Phase 1: scroll with minHeight still set, disable sticky bar transitions.
+  // Phase 2 (rAF): clear minHeight, re-enable transitions, re-scroll after reflow.
+  function scrollAndClearMinHeight({ target }: { target: number }): void {
+    const container = scrollContainer?.value;
+    const actionBar = actionBarElement?.value;
+    if (actionBar) {
+      actionBar.style.transition = "none";
+    }
+
+    scrollTo({ top: target, scrollContainer: container });
+
+    requestAnimationFrame(() => {
+      if (actionBar) {
+        actionBar.style.transition = "";
+      }
+      tabContentStyle.value = {};
+      requestAnimationFrame(() => {
+        scrollTo({ top: target, scrollContainer: container });
+        onScrollComplete?.();
+      });
+    });
+  }
+
   watch(
     () => route.name,
     (newRouteName) => {
       if (pendingScrollOverride.value) {
         pendingScrollOverride.value = false;
-        tabContentStyle.value = {};
-        if (onScrollOverride) {
-          requestAnimationFrame(() => {
-            onScrollOverride();
-            onScrollComplete?.();
-          });
-        } else {
-          onScrollComplete?.();
-        }
+        scrollAndClearMinHeight({ target: getFloorScroll() });
         return;
       }
 
-      const container = scrollContainer?.value;
       const target = state.getRestorationTarget({
         routeName: String(newRouteName),
         floorScroll: getFloorScroll(),
       });
-
-      // Disable CSS transition on sticky bar to prevent visual jitter
-      // when --header-height changes during restoration
-      const actionBar = actionBarElement?.value;
-      if (actionBar) {
-        actionBar.style.transition = "none";
-      }
-
-      scrollTo({ top: target, scrollContainer: container });
-
-      // Clear the minHeight lock, then re-assert scroll position.
-      // The minHeight was set high (departing tab's scroll + viewport) to prevent
-      // page shrink during KeepAlive swap. Clearing it may cause the page to
-      // shrink below the target scroll position. The second rAF ensures the
-      // browser has reflowed after minHeight removal, then re-scrolls.
-      requestAnimationFrame(() => {
-        if (actionBar) {
-          actionBar.style.transition = "";
-        }
-        tabContentStyle.value = {};
-        requestAnimationFrame(() => {
-          scrollTo({ top: target, scrollContainer: container });
-          onScrollComplete?.();
-        });
-      });
+      scrollAndClearMinHeight({ target });
     },
     { flush: "post" }
   );

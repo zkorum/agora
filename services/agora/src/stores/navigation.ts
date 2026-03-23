@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { useQuasar } from "quasar";
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 
 import { usePageLayoutStore } from "./layout/pageLayout";
 
@@ -8,11 +8,16 @@ export const useNavigationStore = defineStore("navigation", () => {
   const $q = useQuasar();
   const pageLayoutStore = usePageLayoutStore();
 
+  // Derived from SCSS $breakpoint-xs via Quasar's runtime screen sizes.
+  // $q.screen.sizes.sm = $breakpoint-xs + 1 (555), so sm - 1 = 554.
+  const drawerBreakpoint = $q.screen.sizes.sm - 1;
+
   // $q.screen.gt.xs = true when width > $breakpoint-xs (554px)
   // This matches Figma: sidebar appears at 555px+
-  const isDesktop = $q.screen.gt.xs;
-  const showMobileDrawer = ref(isDesktop);
-  const drawerBehavior = ref<"desktop" | "mobile">(isDesktop ? "desktop" : "mobile");
+  const showMobileDrawer = ref($q.screen.gt.xs);
+  const drawerBehavior = computed<"desktop" | "mobile">(() =>
+    $q.screen.gt.xs ? "desktop" : "mobile"
+  );
   const cameFromConversationCreation = ref(false);
 
   const hasFooterBar = computed(() =>
@@ -26,20 +31,6 @@ export const useNavigationStore = defineStore("navigation", () => {
     return $q.screen.gt.sm ? 273 : 200;
   });
 
-  watch(() => $q.screen.gt.xs, () => {
-    updateDrawers();
-  }, { immediate: true });
-
-  function updateDrawers() {
-    if ($q.screen.gt.xs) {
-      drawerBehavior.value = "desktop";
-      showMobileDrawer.value = true;
-    } else {
-      drawerBehavior.value = "mobile";
-      showMobileDrawer.value = false;
-    }
-  }
-
   function setConversationCreationContext(value: boolean) {
     cameFromConversationCreation.value = value;
   }
@@ -51,6 +42,7 @@ export const useNavigationStore = defineStore("navigation", () => {
   return {
     showMobileDrawer,
     drawerBehavior,
+    drawerBreakpoint,
     drawerWidth,
     hasFooterBar,
     cameFromConversationCreation,

@@ -179,7 +179,6 @@ const { tabContentStyle } = useTabScrollRestoration({
   analysisRouteName: conversationConfig.analysisRouteName,
   pendingScrollOverride,
   actionBarElement,
-  onScrollOverride: () => scrollToActionBar(),
   onScrollComplete: refreshStickyState,
 });
 
