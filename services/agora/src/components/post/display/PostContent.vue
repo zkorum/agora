@@ -13,6 +13,8 @@
       :is-closed="extendedPostData.metadata.isClosed"
       :compact-mode="compactMode"
       :conversation-title="extendedPostData.payload.title"
+      :conversation-type="extendedPostData.metadata.conversationType"
+      :external-source-config="extendedPostData.metadata.externalSourceConfig ?? null"
       @open-moderation-history="$emit('openModerationHistory')"
     />
 

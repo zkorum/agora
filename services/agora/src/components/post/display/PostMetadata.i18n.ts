@@ -12,6 +12,8 @@ export interface PostMetadataTranslations {
   openNotAllowed: string;
   alreadyClosed: string;
   alreadyOpen: string;
+  syncSuccess: string;
+  syncError: string;
 }
 
 export const postMetadataTranslations: Record<
@@ -32,6 +34,8 @@ export const postMetadataTranslations: Record<
     openNotAllowed: "You are not allowed to open this conversation",
     alreadyClosed: "This conversation is already closed",
     alreadyOpen: "This conversation is already open",
+    syncSuccess: "Synced from GitHub successfully",
+    syncError: "Failed to sync from GitHub",
   },
   ar: {
     closeConfirmMessage:
@@ -47,6 +51,8 @@ export const postMetadataTranslations: Record<
     openNotAllowed: "غير مسموح لك بفتح هذه المحادثة",
     alreadyClosed: "هذه المحادثة مغلقة بالفعل",
     alreadyOpen: "هذه المحادثة مفتوحة بالفعل",
+    syncSuccess: "تمت المزامنة من GitHub بنجاح",
+    syncError: "فشلت المزامنة من GitHub",
   },
   es: {
     closeConfirmMessage:
@@ -62,6 +68,8 @@ export const postMetadataTranslations: Record<
     openNotAllowed: "No tienes permiso para abrir esta conversación",
     alreadyClosed: "Esta conversación ya está cerrada",
     alreadyOpen: "Esta conversación ya está abierta",
+    syncSuccess: "Sincronización desde GitHub exitosa",
+    syncError: "Error al sincronizar desde GitHub",
   },
   fa: {
     closeConfirmMessage: "آیا مطمئن هستید که می‌خواهید این گفتگو را ببندید؟ کاربران نمی‌توانند گزاره‌ها یا رأی‌های جدید ارسال کنند.",
@@ -75,6 +83,8 @@ export const postMetadataTranslations: Record<
     openNotAllowed: "شما مجاز به بازکردن این گفتگو نیستید",
     alreadyClosed: "این گفتگو قبلاً بسته شده است",
     alreadyOpen: "این گفتگو قبلاً باز است",
+    syncSuccess: "همگام‌سازی از GitHub با موفقیت انجام شد",
+    syncError: "همگام‌سازی از GitHub ناموفق بود",
   },
   fr: {
     closeConfirmMessage:
@@ -90,6 +100,8 @@ export const postMetadataTranslations: Record<
     openNotAllowed: "Vous n'êtes pas autorisé à ouvrir cette conversation",
     alreadyClosed: "Cette conversation est déjà fermée",
     alreadyOpen: "Cette conversation est déjà ouverte",
+    syncSuccess: "Synchronisation depuis GitHub réussie",
+    syncError: "Échec de la synchronisation depuis GitHub",
   },
   "zh-Hans": {
     closeConfirmMessage: "您确定要关闭此对话吗？用户将无法发布新观点或投票。",
@@ -103,6 +115,8 @@ export const postMetadataTranslations: Record<
     openNotAllowed: "您无权打开此对话",
     alreadyClosed: "此对话已关闭",
     alreadyOpen: "此对话已打开",
+    syncSuccess: "从 GitHub 同步成功",
+    syncError: "从 GitHub 同步失败",
   },
   "zh-Hant": {
     closeConfirmMessage: "您確定要關閉此對話嗎？用戶將無法發布新觀點或投票。",
@@ -116,6 +130,8 @@ export const postMetadataTranslations: Record<
     openNotAllowed: "您無權打開此對話",
     alreadyClosed: "此對話已關閉",
     alreadyOpen: "此對話已打開",
+    syncSuccess: "從 GitHub 同步成功",
+    syncError: "從 GitHub 同步失敗",
   },
   he: {
     closeConfirmMessage: "האם ברצונך לסגור שיחה זו? משתמשים לא יוכלו לפרסם הצהרות או הצבעות חדשות.",
@@ -129,6 +145,8 @@ export const postMetadataTranslations: Record<
     openNotAllowed: "אין לך הרשאה לפתוח שיחה זו",
     alreadyClosed: "שיחה זו כבר סגורה",
     alreadyOpen: "שיחה זו כבר פתוחה",
+    syncSuccess: "סנכרון מ-GitHub הצליח",
+    syncError: "סנכרון מ-GitHub נכשל",
   },
   ja: {
     closeConfirmMessage:
@@ -144,6 +162,8 @@ export const postMetadataTranslations: Record<
     openNotAllowed: "この会話を開く権限がありません",
     alreadyClosed: "この会話はすでに閉じられています",
     alreadyOpen: "この会話はすでに開いています",
+    syncSuccess: "GitHub からの同期に成功しました",
+    syncError: "GitHub からの同期に失敗しました",
   },
   ky: {
     closeConfirmMessage:
@@ -159,6 +179,8 @@ export const postMetadataTranslations: Record<
     openNotAllowed: "Сизге бул талкууну ачууга уруксат жок",
     alreadyClosed: "Бул талкуу мурунтан эле жабылган",
     alreadyOpen: "Бул талкуу мурунтан эле ачык",
+    syncSuccess: "GitHub'тен синхрондоо ийгиликтүү болду",
+    syncError: "GitHub'тен синхрондоо ишке ашпай калды",
   },
   ru: {
     closeConfirmMessage:
@@ -174,5 +196,7 @@ export const postMetadataTranslations: Record<
     openNotAllowed: "У вас нет прав для открытия этого обсуждения",
     alreadyClosed: "Это обсуждение уже закрыто",
     alreadyOpen: "Это обсуждение уже открыто",
+    syncSuccess: "Синхронизация с GitHub выполнена успешно",
+    syncError: "Не удалось синхронизировать с GitHub",
   },
 };

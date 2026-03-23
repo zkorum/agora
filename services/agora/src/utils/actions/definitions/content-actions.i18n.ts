@@ -11,6 +11,7 @@ export interface ActionsTranslations {
   moderationHistory: string;
   embedLink: string;
   exportConversation: string;
+  syncGitHub: string;
   cancel: string;
   confirm: string;
   confirmDeletePost: string;
@@ -34,6 +35,7 @@ export const actionsTranslations: Record<
     moderationHistory: "Moderation History",
     embedLink: "Copy Embed Link",
     exportConversation: "Export Conversation",
+    syncGitHub: "Sync from GitHub",
     cancel: "Cancel",
     confirm: "Confirm",
     confirmDeletePost: "Are you sure you want to delete this conversation?",
@@ -53,6 +55,7 @@ export const actionsTranslations: Record<
     moderationHistory: "سجل الإدارة",
     embedLink: "نسخ رابط التضمين",
     exportConversation: "تصدير المحادثة",
+    syncGitHub: "مزامنة من GitHub",
     cancel: "إلغاء",
     confirm: "تأكيد",
     confirmDeletePost: "هل أنت متأكد أنك تريد حذف هذه المحادثة؟",
@@ -72,6 +75,7 @@ export const actionsTranslations: Record<
     moderationHistory: "Historial de Moderación",
     embedLink: "Copiar Enlace de Inserción",
     exportConversation: "Exportar Conversación",
+    syncGitHub: "Sincronizar desde GitHub",
     cancel: "Cancelar",
     confirm: "Confirmar",
     confirmDeletePost: "¿Está seguro de que desea eliminar esta conversación?",
@@ -91,6 +95,7 @@ export const actionsTranslations: Record<
     moderationHistory: "تاریخچه مدیریت محتوا",
     embedLink: "کپی لینک جاسازی",
     exportConversation: "خروجی گفتگو",
+    syncGitHub: "همگام‌سازی از GitHub",
     cancel: "لغو",
     confirm: "تأیید",
     confirmDeletePost: "آیا مطمئن هستید که می‌خواهید این گفتگو را حذف کنید؟",
@@ -110,6 +115,7 @@ export const actionsTranslations: Record<
     moderationHistory: "היסטוריית ניהול תוכן",
     embedLink: "העתקת קישור הטמעה",
     exportConversation: "ייצוא שיחה",
+    syncGitHub: "סנכרון מ-GitHub",
     cancel: "ביטול",
     confirm: "אישור",
     confirmDeletePost: "האם ברצונכם למחוק שיחה זו?",
@@ -129,6 +135,7 @@ export const actionsTranslations: Record<
     moderationHistory: "Historique de Modération",
     embedLink: "Copier le Lien d'Intégration",
     exportConversation: "Exporter la Conversation",
+    syncGitHub: "Synchroniser depuis GitHub",
     cancel: "Annuler",
     confirm: "Confirmer",
     confirmDeletePost:
@@ -149,6 +156,7 @@ export const actionsTranslations: Record<
     moderationHistory: "审核历史",
     embedLink: "复制嵌入链接",
     exportConversation: "导出对话",
+    syncGitHub: "从 GitHub 同步",
     cancel: "取消",
     confirm: "确认",
     confirmDeletePost: "您确定要删除此对话吗？",
@@ -167,6 +175,7 @@ export const actionsTranslations: Record<
     moderationHistory: "審核歷史",
     embedLink: "複製嵌入連結",
     exportConversation: "匯出對話",
+    syncGitHub: "從 GitHub 同步",
     cancel: "取消",
     confirm: "確認",
     confirmDeletePost: "您確定要刪除此對話嗎？",
@@ -185,6 +194,7 @@ export const actionsTranslations: Record<
     moderationHistory: "審査履歴",
     embedLink: "埋め込みリンクをコピー",
     exportConversation: "会話をエクスポート",
+    syncGitHub: "GitHub から同期",
     cancel: "キャンセル",
     confirm: "確認",
     confirmDeletePost: "この会話を削除してもよろしいですか？",
@@ -204,6 +214,7 @@ export const actionsTranslations: Record<
     moderationHistory: "Модерация тарыхы",
     embedLink: "Кыстаруу шилтемесин көчүрүү",
     exportConversation: "Талкууну экспорттоо",
+    syncGitHub: "GitHub'тен синхрондоо",
     cancel: "Жокко чыгаруу",
     confirm: "Ырастоо",
     confirmDeletePost: "Бул талкууну жок кылганыңызга ишенесизби?",
@@ -223,6 +234,7 @@ export const actionsTranslations: Record<
     moderationHistory: "История модерации",
     embedLink: "Копировать ссылку для встраивания",
     exportConversation: "Экспорт обсуждения",
+    syncGitHub: "Синхронизировать с GitHub",
     cancel: "Отмена",
     confirm: "Подтвердить",
     confirmDeletePost: "Вы уверены, что хотите удалить это обсуждение?",

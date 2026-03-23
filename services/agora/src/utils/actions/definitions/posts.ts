@@ -21,33 +21,62 @@ interface PostActionTranslations {
   moderate: string;
   userReports: string;
   exportConversation: string;
+  syncGitHub: string;
 }
 
 /**
  * Get all available post actions with their handlers and visibility logic
  */
-export function getPostActions(
-  reportPostCallback: () => void,
-  openUserReportsCallback: () => void | Promise<void>,
-  muteUserCallback: () => void | Promise<void>,
-  moderatePostCallback: () => void | Promise<void>,
-  moderationHistoryCallback: () => void | Promise<void>,
-  copyEmbedLinkCallback: () => void | Promise<void>,
-  deletePostCallback: () => void | Promise<void>,
-  editConversationCallback: () => void | Promise<void>,
-  exportConversationCallback: () => void | Promise<void>,
-  shareCallback: () => void | Promise<void>,
-  translations: PostActionTranslations
-): ContentAction[] {
-  return [
+export function getPostActions({
+  reportPostCallback,
+  openUserReportsCallback,
+  muteUserCallback,
+  moderatePostCallback,
+  moderationHistoryCallback,
+  copyEmbedLinkCallback,
+  deletePostCallback,
+  editConversationCallback,
+  exportConversationCallback,
+  shareCallback,
+  syncGitHubCallback,
+  translations,
+}: {
+  reportPostCallback: () => void;
+  openUserReportsCallback: () => void | Promise<void>;
+  muteUserCallback: () => void | Promise<void>;
+  moderatePostCallback: () => void | Promise<void>;
+  moderationHistoryCallback: () => void | Promise<void>;
+  copyEmbedLinkCallback: () => void | Promise<void>;
+  deletePostCallback: () => void | Promise<void>;
+  editConversationCallback: () => void | Promise<void>;
+  exportConversationCallback: () => void | Promise<void>;
+  shareCallback: () => void | Promise<void>;
+  syncGitHubCallback: (() => void | Promise<void>) | null;
+  translations: PostActionTranslations;
+}): ContentAction[] {
+  const actions: ContentAction[] = [
     {
       id: "edit",
       label: translations.edit,
       icon: "mdi-pencil",
       handler: editConversationCallback,
       isVisible: (context: ContentActionContext) =>
-        context.isOwner && !context.isEmbeddedMode,
+        (context.isOwner || context.isOrgMember) && !context.isEmbeddedMode,
     },
+  ];
+
+  if (syncGitHubCallback !== null) {
+    actions.push({
+      id: "syncGitHub",
+      label: translations.syncGitHub,
+      icon: "mdi-sync",
+      handler: syncGitHubCallback,
+      isVisible: (context: ContentActionContext) =>
+        (context.isOwner || context.isOrgMember) && !context.isEmbeddedMode,
+    });
+  }
+
+  actions.push(
     {
       id: "share",
       label: translations.share,
@@ -122,29 +151,46 @@ export function getPostActions(
       variant: "destructive",
       handler: deletePostCallback,
       isVisible: (context: ContentActionContext) =>
-        context.isOwner && !context.isEmbeddedMode,
+        (context.isOwner || context.isOrgMember) && !context.isEmbeddedMode,
     },
-  ];
+  );
+
+  return actions;
 }
 
 /**
  * Get filtered actions based on context
  */
-export function getAvailablePostActions(
-  context: ContentActionContext,
-  reportPostCallback: () => void,
-  openUserReportsCallback: () => void | Promise<void>,
-  muteUserCallback: () => void | Promise<void>,
-  moderatePostCallback: () => void | Promise<void>,
-  moderationHistoryCallback: () => void | Promise<void>,
-  copyEmbedLinkCallback: () => void | Promise<void>,
-  deletePostCallback: () => void | Promise<void>,
-  editConversationCallback: () => void | Promise<void>,
-  exportConversationCallback: () => void | Promise<void>,
-  shareCallback: () => void | Promise<void>,
-  translations: PostActionTranslations
-): ContentAction[] {
-  const allActions = getPostActions(
+export function getAvailablePostActions({
+  context,
+  reportPostCallback,
+  openUserReportsCallback,
+  muteUserCallback,
+  moderatePostCallback,
+  moderationHistoryCallback,
+  copyEmbedLinkCallback,
+  deletePostCallback,
+  editConversationCallback,
+  exportConversationCallback,
+  shareCallback,
+  syncGitHubCallback,
+  translations,
+}: {
+  context: ContentActionContext;
+  reportPostCallback: () => void;
+  openUserReportsCallback: () => void | Promise<void>;
+  muteUserCallback: () => void | Promise<void>;
+  moderatePostCallback: () => void | Promise<void>;
+  moderationHistoryCallback: () => void | Promise<void>;
+  copyEmbedLinkCallback: () => void | Promise<void>;
+  deletePostCallback: () => void | Promise<void>;
+  editConversationCallback: () => void | Promise<void>;
+  exportConversationCallback: () => void | Promise<void>;
+  shareCallback: () => void | Promise<void>;
+  syncGitHubCallback: (() => void | Promise<void>) | null;
+  translations: PostActionTranslations;
+}): ContentAction[] {
+  const allActions = getPostActions({
     reportPostCallback,
     openUserReportsCallback,
     muteUserCallback,
@@ -155,8 +201,9 @@ export function getAvailablePostActions(
     editConversationCallback,
     exportConversationCallback,
     shareCallback,
-    translations
-  );
+    syncGitHubCallback,
+    translations,
+  });
 
   return allActions.filter((action) => action.isVisible(context));
 }
