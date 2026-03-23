@@ -23,4 +23,11 @@ const { t } = useComponentI18n<DisplayUsernameTranslations>(
 );
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+div {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+</style>
