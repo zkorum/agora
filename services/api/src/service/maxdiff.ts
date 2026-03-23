@@ -9,7 +9,7 @@ import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgre
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import { updateMaxdiffCounters } from "@/shared-backend/conversationCounters.js";
-import { eq, and, inArray, isNotNull } from "drizzle-orm";
+import { eq, and, inArray, isNotNull, sql } from "drizzle-orm";
 import type {
     MaxDiffLoadResponse,
     MaxDiffResultsResponse,
@@ -232,10 +232,14 @@ export async function saveMaxdiffResult({
         );
     }
 
-    // Check previous isComplete status (fast PK lookup) to avoid
+    // Check previous state (fast PK lookup) to avoid
     // unnecessary counter recalculation on every comparison round
     const previousState = await db
-        .select({ isComplete: maxdiffResultTable.isComplete })
+        .select({
+            isComplete: maxdiffResultTable.isComplete,
+            comparisonCount:
+                sql<number>`jsonb_array_length(${maxdiffResultTable.comparisons})`,
+        })
         .from(maxdiffResultTable)
         .where(
             and(
@@ -244,6 +248,8 @@ export async function saveMaxdiffResult({
             ),
         );
     const wasComplete = previousState[0]?.isComplete ?? false;
+    const hadComparisons = (previousState[0]?.comparisonCount ?? 0) > 0;
+    const hasComparisons = comparisons.length > 0;
 
     const now = new Date();
 
@@ -271,9 +277,9 @@ export async function saveMaxdiffResult({
             },
         });
 
-    // Only reconcile counters when completion status changes
-    // (completion or redo — at most twice per user per conversation)
-    if (isComplete !== wasComplete) {
+    // Reconcile counters when completion status changes OR when
+    // participant joins/leaves (comparisons transition to/from empty)
+    if (isComplete !== wasComplete || hasComparisons !== hadComparisons) {
         await updateMaxdiffCounters({ db, conversationId });
     }
 }
