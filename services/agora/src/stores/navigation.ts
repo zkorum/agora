@@ -27,7 +27,7 @@ export const useNavigationStore = defineStore("navigation", () => {
   // Small sidebar at 555–960px, large sidebar at >960px
   // Mobile overlay (≤554px): 300px — doesn't compete with feed
   const drawerWidth = computed(() => {
-    if (drawerBehavior.value === "mobile") return 300;
+    if (drawerBehavior.value === "mobile") return 280;
     return $q.screen.gt.sm ? 273 : 200;
   });
 
