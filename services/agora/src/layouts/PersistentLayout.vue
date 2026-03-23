@@ -35,9 +35,9 @@
 
     <q-drawer
       v-model="showMobileDrawer"
-      :behavior="drawerBehavior"
+      show-if-above
+      :breakpoint="drawerBreakpoint"
       :width="drawerWidth"
-      :overlay="drawerBehavior === 'mobile'"
       :no-swipe-open="true"
       bordered
     >
@@ -60,7 +60,9 @@ import { useNotificationRefresher } from "src/utils/component/notification/menuR
 import { ref } from "vue";
 
 const { config: layoutConfig } = storeToRefs(usePageLayoutStore());
-const { showMobileDrawer, drawerBehavior, drawerWidth } = storeToRefs(useNavigationStore());
+const navigationStore = useNavigationStore();
+const { showMobileDrawer, drawerBehavior, drawerWidth } = storeToRefs(navigationStore);
+const { drawerBreakpoint } = navigationStore;
 const { reveal: revealHeader } = storeToRefs(useLayoutHeaderStore());
 
 useNotificationRefresher();
