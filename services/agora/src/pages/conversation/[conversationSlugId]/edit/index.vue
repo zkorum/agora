@@ -1,18 +1,20 @@
 <template>
-  <NewConversationLayout>
-    <TopMenuWrapper>
-      <div>
-        <BackButton />
-      </div>
-
-      <PrimeButton
-        :label="t('saveButton')"
-        size="0.8rem"
-        :loading="isSaveButtonLoading"
-        :disabled="isSaveButtonLoading || !isDataLoaded || !hasUnsavedChanges || isTitleOverLimit || isBodyOverLimit"
-        @click="onSave()"
-      />
-    </TopMenuWrapper>
+  <NewConversationLayout v-slot="{ isActive }">
+    <Teleport v-if="isActive" to="#page-header">
+      <DefaultMenuBar :click-to-scroll-top="false">
+        <template #left>
+          <BackButton />
+        </template>
+        <template #right>
+          <PrimeButton
+            :label="t('saveButton')"
+            :loading="isSaveButtonLoading"
+            :disabled="isSaveButtonLoading || !isDataLoaded || !hasUnsavedChanges || isTitleOverLimit || isBodyOverLimit"
+            @click="onSave()"
+          />
+        </template>
+      </DefaultMenuBar>
+    </Teleport>
 
     <div v-if="loadError" class="error-container">
       <ZKCard class="error-card" padding="1.5rem">
@@ -112,7 +114,7 @@
 import Button from "primevue/button";
 import Editor from "src/components/editor/Editor.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
-import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import PollComponent from "src/components/newConversation/poll/PollComponent.vue";

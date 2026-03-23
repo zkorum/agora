@@ -1,18 +1,23 @@
 <template>
-  <NewConversationLayout>
-    <TopMenuWrapper>
-      <NavigationButton
-        icon="ci:chevron-left"
-        aria-label="Go back"
-        @click="handleBack"
-      />
-
-      <PrimeButton
-        :label="isSubmitButtonLoading ? t('posting') : t('post')"
-        :loading="isSubmitButtonLoading"
-        @click="onSubmit()"
-      />
-    </TopMenuWrapper>
+  <NewConversationLayout v-slot="{ isActive }">
+    <Teleport v-if="isActive" to="#page-header">
+      <DefaultMenuBar :click-to-scroll-top="false">
+        <template #left>
+          <NavigationButton
+            icon="ci:chevron-left"
+            aria-label="Go back"
+            @click="handleBack"
+          />
+        </template>
+        <template #right>
+          <PrimeButton
+            :label="isSubmitButtonLoading ? t('posting') : t('post')"
+            :loading="isSubmitButtonLoading"
+            @click="onSubmit()"
+          />
+        </template>
+      </DefaultMenuBar>
+    </Teleport>
 
     <div class="container">
       <!-- Title with Privacy Label -->
@@ -151,8 +156,8 @@ defineOptions({
 });
 
 import ConversationTitle from "src/components/features/conversation/ConversationTitle.vue";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import NavigationButton from "src/components/navigation/NavigationButton.vue";
-import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
