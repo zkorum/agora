@@ -25,7 +25,8 @@ const { t } = useComponentI18n<StartConversationButtonLongTranslations>(
 
 <style lang="scss" scoped>
 .start-conversation-button {
-  margin: 0 auto;
+  width: 100%;
+  gap: 8px;
 }
 
 .plus-icon {
@@ -67,5 +68,6 @@ const { t } = useComponentI18n<StartConversationButtonLongTranslations>(
   align-items: center;
   flex: 1;
   text-align: left;
+  white-space: nowrap;
 }
 </style>
