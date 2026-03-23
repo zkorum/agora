@@ -171,6 +171,9 @@ watch(data, (newData) => {
 
 onActivated(async () => {
   isActive.value = true;
+  if (data.value && partialHomeFeedList.value.length === 0) {
+    setFeedData(data.value);
+  }
   await hasNewPostCheck();
 });
 
