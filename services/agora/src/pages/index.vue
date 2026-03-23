@@ -132,6 +132,7 @@ function selectedTab(tab: HomeFeedSortOption) {
   gap: 1rem;
   font-weight: var(--font-weight-semibold);
   font-size: 1rem;
+  padding-top: 0.5rem;
   padding-bottom: 0.25rem;
 }
 
