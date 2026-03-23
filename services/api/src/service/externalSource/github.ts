@@ -194,24 +194,31 @@ export async function handleIssueWebhook({
 
         if (conversation.currentContentId === null) continue;
 
-        await upsertItemFromGitHubIssue({
-            db,
-            conversationId: conversation.id,
-            conversationContentId: conversation.currentContentId,
-            authorId: conversation.authorId,
-            externalId,
-            issue: {
-                number: issue.number,
-                title: issue.title,
-                body: issue.body,
-                state: issue.state,
-                stateReason: issue.state_reason,
-                htmlUrl: issue.html_url,
-                labels: issue.labels.map((l) => l.name),
-                assignees: issue.assignees.map((a) => a.login),
-                milestone: issue.milestone?.title ?? null,
-            },
-        });
+        try {
+            await upsertItemFromGitHubIssue({
+                db,
+                conversationId: conversation.id,
+                conversationContentId: conversation.currentContentId,
+                authorId: conversation.authorId,
+                externalId,
+                issue: {
+                    number: issue.number,
+                    title: issue.title,
+                    body: issue.body,
+                    state: issue.state,
+                    stateReason: issue.state_reason,
+                    htmlUrl: issue.html_url,
+                    labels: issue.labels.map((l) => l.name),
+                    assignees: issue.assignees.map((a) => a.login),
+                    milestone: issue.milestone?.title ?? null,
+                },
+            });
+        } catch (error) {
+            log.error(
+                error,
+                `[GitHub] Failed to upsert item from webhook for externalId=${externalId}`,
+            );
+        }
     }
 }
 
@@ -287,7 +294,11 @@ async function upsertItemFromGitHubIssue({
             .from(maxdiffItemTable)
             .where(eq(maxdiffItemTable.slugId, slugId));
 
-        if (itemRows.length === 0) return;
+        if (itemRows.length === 0) {
+            throw new Error(
+                `[GitHub] Failed to find newly created maxdiff item with slugId=${slugId} for externalId=${externalId}`,
+            );
+        }
 
         await db.insert(maxdiffItemExternalSourceTable).values({
             maxdiffItemId: itemRows[0].id,
@@ -364,7 +375,11 @@ async function upsertItemFromGitHubIssue({
             .from(maxdiffItemTable)
             .where(eq(maxdiffItemTable.id, itemId));
 
-        if (currentItemRows.length === 0) return;
+        if (currentItemRows.length === 0) {
+            throw new Error(
+                `[GitHub] Maxdiff item id=${String(itemId)} disappeared during update for externalId=${externalId}`,
+            );
+        }
         const currentItem = currentItemRows[0];
 
         const wasActive =
@@ -555,19 +570,26 @@ export async function syncGitHubIssues({
             issueNumber: issue.number,
         });
 
-        const result = await upsertItemFromGitHubIssue({
-            db,
-            conversationId: conversation.id,
-            conversationContentId: conversation.currentContentId,
-            authorId: conversation.authorId,
-            externalId,
-            issue,
-        });
+        try {
+            const result = await upsertItemFromGitHubIssue({
+                db,
+                conversationId: conversation.id,
+                conversationContentId: conversation.currentContentId,
+                authorId: conversation.authorId,
+                externalId,
+                issue,
+            });
 
-        if (result === "created") {
-            created++;
-        } else {
-            updated++;
+            if (result === "created") {
+                created++;
+            } else {
+                updated++;
+            }
+        } catch (error) {
+            log.error(
+                error,
+                `[GitHub] Failed to upsert item during sync for externalId=${externalId}`,
+            );
         }
     }
 
