@@ -1,5 +1,5 @@
 <template>
-  <img :src="svg" :alt="userIdentity" />
+  <img :src="svg" :alt="userIdentity" style="display: block" />
 </template>
 
 <script setup lang="ts">
