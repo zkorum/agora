@@ -98,6 +98,10 @@ function captureHeaderReveal(reveal: boolean) {
   height: 100%;
 }
 
+#page-header {
+  padding-bottom: 0.5rem;
+}
+
 .headerStyle {
   background-color: $app-background-color;
 }

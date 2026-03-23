@@ -107,7 +107,7 @@ function selectedTab(tab: HomeFeedSortOption) {
 
 <style scoped lang="scss">
 .pageContent {
-  padding-top: 1rem;
+  padding-top: 0.5rem;
 }
 
 .bannerWrapper {
