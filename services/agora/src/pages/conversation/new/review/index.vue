@@ -1,7 +1,11 @@
 <template>
   <NewConversationLayout>
     <TopMenuWrapper>
-      <BackButton />
+      <NavigationButton
+        icon="ci:chevron-left"
+        aria-label="Go back"
+        @click="handleBack"
+      />
 
       <PrimeButton
         :label="isSubmitButtonLoading ? t('posting') : t('post')"
@@ -147,7 +151,7 @@ defineOptions({
 });
 
 import ConversationTitle from "src/components/features/conversation/ConversationTitle.vue";
-import BackButton from "src/components/navigation/buttons/BackButton.vue";
+import NavigationButton from "src/components/navigation/NavigationButton.vue";
 import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
 import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
@@ -191,6 +195,12 @@ const showLoginDialog = ref(false);
 const isSubmitButtonLoading = ref(false);
 const currentActiveOpinionIndex = ref(-1);
 const routeGuard = ref<{ unlockRoute: () => void } | undefined>(undefined);
+
+async function handleBack(event: MouseEvent) {
+  event.preventDefault();
+  routeGuard.value?.unlockRoute();
+  await router.replace({ name: "/conversation/new/create/" });
+}
 
 // Validation state
 const opinionErrors = ref<Record<number, string>>({});

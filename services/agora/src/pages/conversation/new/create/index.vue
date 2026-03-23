@@ -483,7 +483,7 @@ async function handleImportSubmission(): Promise<void> {
 
 async function handleRegularSubmission(): Promise<void> {
   routeGuardRef.value?.unlockRoute();
-  await router.push({ name: "/conversation/new/review/" });
+  await router.replace({ name: "/conversation/new/review/" });
 }
 
 async function onSubmit(): Promise<void> {
