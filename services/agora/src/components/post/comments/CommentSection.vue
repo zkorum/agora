@@ -244,7 +244,6 @@ defineExpose({
 .container {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
   padding-bottom: 5rem;
 }
 </style>

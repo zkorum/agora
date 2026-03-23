@@ -170,7 +170,6 @@ async function handleShareActionSelected(action: ContentAction): Promise<void> {
 .postActionBarContainer {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
 }
 
 .buttonClusterBar {

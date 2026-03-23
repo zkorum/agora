@@ -30,48 +30,46 @@
           :conversation-type="conversationData.metadata.conversationType"
         />
 
-        <div v-if="!compactMode">
-          <AnalysisPage
-            v-if="currentTab == 'analysis'"
-            ref="analysisPageRef"
-            :conversation-slug-id="
-              props.conversationData.metadata.conversationSlugId
-            "
-            :participant-count="
-              props.conversationData.metadata.participantCount
-            "
-            :analysis-query="analysisQuery"
-            :navigate-to-discover-tab="navigateToDiscoverTab"
-          />
+        <AnalysisPage
+          v-if="!compactMode && currentTab === 'analysis'"
+          ref="analysisPageRef"
+          :conversation-slug-id="
+            props.conversationData.metadata.conversationSlugId
+          "
+          :participant-count="
+            props.conversationData.metadata.participantCount
+          "
+          :analysis-query="analysisQuery"
+          :navigate-to-discover-tab="navigateToDiscoverTab"
+        />
 
-          <CommentSection
-            v-if="currentTab == 'comment'"
-            ref="opinionSectionRef"
-            :post-slug-id="conversationData.metadata.conversationSlugId"
-            :conversation-author-username="conversationData.metadata.authorUsername"
-            :conversation-organization-name="conversationData.metadata.organization?.name ?? ''"
-            :participation-mode="
-              conversationData.metadata.participationMode
-            "
-            :requires-event-ticket="
-              conversationData.metadata.requiresEventTicket
-            "
-            :on-view-analysis="viewAnalysisTab"
-            :is-voting-disabled="isVotingDisabled"
-            :preloaded-queries="{
-              commentsDiscoverQuery,
-              commentsNewQuery,
-              commentsModeratedQuery,
-              hiddenCommentsQuery,
-              commentsMyVotesQuery,
-            }"
-            @deleted="decrementOpinionCount()"
-            @participant-count-delta="
-              (delta: number) => (participantCountLocal += delta)
-            "
-            @ticket-verified="(payload) => handleTicketVerified(payload)"
-          />
-        </div>
+        <CommentSection
+          v-if="!compactMode && currentTab === 'comment'"
+          ref="opinionSectionRef"
+          :post-slug-id="conversationData.metadata.conversationSlugId"
+          :conversation-author-username="conversationData.metadata.authorUsername"
+          :conversation-organization-name="conversationData.metadata.organization?.name ?? ''"
+          :participation-mode="
+            conversationData.metadata.participationMode
+          "
+          :requires-event-ticket="
+            conversationData.metadata.requiresEventTicket
+          "
+          :on-view-analysis="viewAnalysisTab"
+          :is-voting-disabled="isVotingDisabled"
+          :preloaded-queries="{
+            commentsDiscoverQuery,
+            commentsNewQuery,
+            commentsModeratedQuery,
+            hiddenCommentsQuery,
+            commentsMyVotesQuery,
+          }"
+          @deleted="decrementOpinionCount()"
+          @participant-count-delta="
+            (delta: number) => (participantCountLocal += delta)
+          "
+          @ticket-verified="(payload) => handleTicketVerified(payload)"
+        />
       </div>
     </ZKHoverEffect>
 
@@ -386,8 +384,8 @@ defineExpose({
 <style scoped lang="scss">
 .container {
   display: flex;
-  gap: 1rem;
   flex-direction: column;
+  gap: 1rem;
 }
 
 .standardStyle {

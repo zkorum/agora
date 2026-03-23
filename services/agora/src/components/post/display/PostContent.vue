@@ -115,11 +115,11 @@ const EventTicketRequirementBanner = defineAsyncComponent(
 }
 
 .pollContainer {
-  padding-bottom: 1rem;
+  padding-bottom: 0;
 }
 
 .bodyDiv {
-  padding-bottom: 1rem;
+  padding-bottom: 0;
 }
 
 .postDiv {
