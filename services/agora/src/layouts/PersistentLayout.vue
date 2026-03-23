@@ -11,7 +11,8 @@
 
     <q-footer
       v-if="drawerBehavior === 'mobile' && layoutConfig.enableFooter"
-      :reveal="revealHeader"
+      reveal
+      :model-value="revealHeader"
       class="footerBackground"
     >
       <FooterBar />
