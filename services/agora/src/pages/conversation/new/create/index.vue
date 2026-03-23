@@ -1,21 +1,26 @@
 <template>
-  <NewConversationLayout>
-    <TopMenuWrapper>
-      <BackButton />
-
-      <PrimeButton
-        :label="
-          isSubmitButtonLoading
-            ? t('importButton')
-            : conversationDraft.importSettings.importType !== null
-              ? t('importButton')
-              : t('nextButton')
-        "
-        :loading="isSubmitButtonLoading"
-        :disabled="isSubmitButtonLoading || hasActiveImport || isTitleOverLimit || isBodyOverLimit || isTitleEmpty"
-        @click="onSubmit()"
-      />
-    </TopMenuWrapper>
+  <NewConversationLayout v-slot="{ isActive }">
+    <Teleport v-if="isActive" to="#page-header">
+      <DefaultMenuBar :click-to-scroll-top="false">
+        <template #left>
+          <BackButton />
+        </template>
+        <template #right>
+          <PrimeButton
+            :label="
+              isSubmitButtonLoading
+                ? t('importButton')
+                : conversationDraft.importSettings.importType !== null
+                  ? t('importButton')
+                  : t('nextButton')
+            "
+            :loading="isSubmitButtonLoading"
+            :disabled="isSubmitButtonLoading || hasActiveImport || isTitleOverLimit || isBodyOverLimit || isTitleEmpty"
+            @click="onSubmit()"
+          />
+        </template>
+      </DefaultMenuBar>
+    </Teleport>
 
     <div class="container">
       <NewConversationControlBar
@@ -166,7 +171,7 @@ import Button from "primevue/button";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ActiveImportBanner from "src/components/conversation/import/ActiveImportBanner.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
-import TopMenuWrapper from "src/components/navigation/header/TopMenuWrapper.vue";
+import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import PolisCsvUpload from "src/components/newConversation/import/csv/PolisCsvUpload.vue";
 import PolisUrlInput from "src/components/newConversation/import/url/PolisUrlInput.vue";
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
@@ -483,7 +488,7 @@ async function handleImportSubmission(): Promise<void> {
 
 async function handleRegularSubmission(): Promise<void> {
   routeGuardRef.value?.unlockRoute();
-  await router.push({ name: "/conversation/new/review/" });
+  await router.replace({ name: "/conversation/new/review/" });
 }
 
 async function onSubmit(): Promise<void> {

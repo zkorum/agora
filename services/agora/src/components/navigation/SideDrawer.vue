@@ -197,7 +197,7 @@ function handleNavigationClick(): void {
 <style lang="scss" scoped>
 .container {
   height: 100dvh;
-  padding: 1rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -217,7 +217,8 @@ function handleNavigationClick(): void {
 
 .usernameBar {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   align-items: center;
   font-weight: var(--font-weight-semibold);
   padding-top: 2rem;
