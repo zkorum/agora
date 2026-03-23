@@ -98,6 +98,7 @@ function captureHeaderReveal(reveal: boolean) {
 .scrollContainer {
   width: 100%;
   height: 100%;
+  background-color: $app-background-color;
 }
 
 #page-header {
