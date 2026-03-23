@@ -24,6 +24,16 @@ export const signupOnboardingTranslations: Record<
     description:
       "En un mundo marcado por las crecientes polarizaciones, Agora se esfuerza por rehumanizar y despolarizar los diálogos ciudadanos sobre temas sociales clave.",
   },
+  fa: {
+    pageTitle: "چرا آگورا وجود دارد؟",
+    description:
+      "در جهانی که با قطب‌بندی‌های فزاینده مشخص شده است، آگورا تلاش می‌کند تا گفتگوهای شهروندی درباره مسائل کلیدی اجتماعی را انسانی‌تر و از قطب‌بندی خارج کند.",
+  },
+  he: {
+    pageTitle: "מדוע Agora קיימת?",
+    description:
+      "בעולם המאופיין בקיטוב גובר, Agora שואפת להחזיר את האנושיות ולהפחית את הקיטוב בדיאלוגים אזרחיים בנושאים חברתיים מרכזיים.",
+  },
   fr: {
     pageTitle: "Pourquoi Agora existe ?",
     description:

@@ -53,6 +53,28 @@ export const newConversationDraftsTranslations: Record<
     pollMinOptionsError: (minOptions: number) =>
       `Mínimo ${minOptions} opciones requeridas`,
   },
+  fa: {
+    titleRequired: "عنوان برای ادامه الزامی است",
+    bodyExceedsLimit: (characterCount: number, maxLength: number) =>
+      `محتوای متن از حد ${maxLength} کاراکتر فراتر رفته است (${characterCount}/${maxLength})`,
+    polisUrlInvalid: "لطفاً یک آدرس Polis معتبر وارد کنید.",
+    polisUrlRequired: "لطفاً یک آدرس Polis برای وارد کردن وارد کنید",
+    pollMaxOptionsError: (maxOptions: number) =>
+      `حداکثر ${maxOptions} گزینه نظرسنجی مجاز است`,
+    pollMinOptionsError: (minOptions: number) =>
+      `حداقل ${minOptions} گزینه الزامی است`,
+  },
+  he: {
+    titleRequired: "נדרשת כותרת כדי להמשיך",
+    bodyExceedsLimit: (characterCount: number, maxLength: number) =>
+      `תוכן הגוף חורג ממגבלת ${maxLength} תווים (${characterCount}/${maxLength})`,
+    polisUrlInvalid: "אנא הזינו כתובת Polis תקינה.",
+    polisUrlRequired: "אנא הזינו כתובת Polis לייבוא",
+    pollMaxOptionsError: (maxOptions: number) =>
+      `מותרות לכל היותר ${maxOptions} אפשרויות סקר`,
+    pollMinOptionsError: (minOptions: number) =>
+      `נדרשות לפחות ${minOptions} אפשרויות`,
+  },
   fr: {
     titleRequired: "Le titre est requis pour continuer",
     bodyExceedsLimit: (characterCount: number, maxLength: number) =>

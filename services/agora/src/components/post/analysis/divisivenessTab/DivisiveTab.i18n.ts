@@ -45,6 +45,16 @@ export const divisiveTabTranslations: Record<
       "Aún no se encontraron proposiciones divisivas significativas.",
     lowerRankedDivider: "Menos estadísticamente significativas",
   },
+  fa: {
+    divisiveTitle: "اختلاف‌برانگیز",
+    divisiveLongTitle: "چه چیزی افراد را در بین گروه‌ها {keyword}؟",
+    divisiveKeyword: "تفرقه می‌اندازد",
+    subtitle:
+      "گزاره‌هایی که گروه‌های نظر را در برابر یکدیگر قرار می‌دهند. فقط مهم‌ترین موارد از نظر آماری نمایش داده می‌شوند.",
+    loadMore: "بارگذاری همه",
+    noDivisiveOpinionsMessage: "هنوز گزاره اختلاف‌برانگیز مهمی یافت نشده است.",
+    lowerRankedDivider: "اهمیت آماری کمتر",
+  },
   fr: {
     divisiveTitle: "Controversé",
     divisiveLongTitle: "Qu'est-ce qui {keyword} les participants entre les groupes d'opinion ?",
@@ -75,6 +85,16 @@ export const divisiveTabTranslations: Record<
     loadMore: "全部載入",
     noDivisiveOpinionsMessage: "尚未找到顯著的分歧觀點。",
     lowerRankedDivider: "統計顯著性較低",
+  },
+  he: {
+    divisiveTitle: "מפלג",
+    divisiveLongTitle: "מה {keyword} את המשתתפים בין הקבוצות?",
+    divisiveKeyword: "מפלג",
+    subtitle:
+      "הצהרות שמפלגות בין קבוצות הדעה. רק המובהקות ביותר מבחינה סטטיסטית מוצגות.",
+    loadMore: "טעינת הכל",
+    noDivisiveOpinionsMessage: "טרם נמצאו הצהרות מפלגות מובהקות.",
+    lowerRankedDivider: "פחות מובהק מבחינה סטטיסטית",
   },
   ja: {
     divisiveTitle: "分断",

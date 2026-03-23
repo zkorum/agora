@@ -14,6 +14,12 @@ export const topicPageTranslations: Record<SupportedDisplayLanguageCodes, TopicP
   es: {
     loadPostsHere: "Cargar publicaciones aquí",
   },
+  fa: {
+    loadPostsHere: "بارگذاری پست‌ها در اینجا",
+  },
+  he: {
+    loadPostsHere: "טען פוסטים כאן",
+  },
   fr: {
     loadPostsHere: "Charger les publications ici",
   },

@@ -17,6 +17,12 @@ export const importStatusPageTranslations: Record<
   es: {
     pageTitle: "Estado de Importación",
   },
+  fa: {
+    pageTitle: "وضعیت وارد کردن",
+  },
+  he: {
+    pageTitle: "סטטוס ייבוא",
+  },
   fr: {
     pageTitle: "État de l'Import",
   },

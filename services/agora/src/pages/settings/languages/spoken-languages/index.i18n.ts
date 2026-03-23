@@ -17,6 +17,12 @@ export const spokenLanguagesSettingsTranslations: Record<
   es: {
     pageTitle: "Idiomas hablados",
   },
+  fa: {
+    pageTitle: "زبان‌های گفتاری",
+  },
+  he: {
+    pageTitle: "שפות דיבור",
+  },
   fr: {
     pageTitle: "Langues parlées",
   },

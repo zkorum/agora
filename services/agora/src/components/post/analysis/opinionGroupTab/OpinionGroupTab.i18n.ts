@@ -33,6 +33,13 @@ export const opinionGroupTabTranslations: Record<
     notEnoughGroupsMessage: "No hay suficientes grupos para mostrar.",
     imbalanceNotice: "La mayoría de los participantes están en el mismo grupo porque votaron de manera casi idéntica.",
   },
+  fa: {
+    groupsTitle: "گروه‌های نظر",
+    groupsSubtitle: "گروه‌ها بر اساس رفتار رأی‌گیری، بدون توجه به زبان، شکل می‌گیرند. سپس یک مدل هوش مصنوعی گزاره‌های هر گروه را می‌خواند تا نام و خلاصه‌ای تولید کند.",
+    groupsSubtitleNoAi: "گروه‌ها بر اساس رفتار رأی‌گیری، بدون توجه به زبان، شکل می‌گیرند.",
+    notEnoughGroupsMessage: "تعداد گروه‌ها برای نمایش کافی نیست.",
+    imbalanceNotice: "بیشتر شرکت‌کنندگان در یک گروه هستند زیرا تقریباً به‌طور یکسان رأی داده‌اند.",
+  },
   fr: {
     groupsTitle: "Groupes d'opinion",
     groupsSubtitle: "Les groupes sont créés en fonction des comportements de vote, sans tenir compte de la langue. Ensuite, un modèle d'intelligence artificielle lit les propositions de chaque groupe pour leur donner un nom et un résumé.",
@@ -53,6 +60,13 @@ export const opinionGroupTabTranslations: Record<
     groupsSubtitleNoAi: "群組根據投票行為建立，與語言無關。",
     notEnoughGroupsMessage: "群組數量不足以顯示。",
     imbalanceNotice: "大多數參與者在同一群組中，因為他們的投票幾乎完全相同。",
+  },
+  he: {
+    groupsTitle: "קבוצות דעה",
+    groupsSubtitle: "קבוצות נוצרות על בסיס התנהגות ההצבעה, ללא קשר לשפה. לאחר מכן מודל AI קורא את ההצהרות של כל קבוצה כדי ליצור שם וסיכום.",
+    groupsSubtitleNoAi: "קבוצות נוצרות על בסיס התנהגות ההצבעה, ללא קשר לשפה.",
+    notEnoughGroupsMessage: "אין מספיק קבוצות להצגה.",
+    imbalanceNotice: "רוב המשתתפים נמצאים באותה קבוצה כי הצביעו כמעט זהה.",
   },
   ja: {
     groupsTitle: "意見グループ",

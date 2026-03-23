@@ -21,6 +21,14 @@ export const conversationTitleTranslations: Record<
     privateLabel: "Privado",
     prioritizationLabel: "Priorización",
   },
+  fa: {
+    privateLabel: "خصوصی",
+    prioritizationLabel: "اولویت‌بندی",
+  },
+  he: {
+    privateLabel: "פרטי",
+    prioritizationLabel: "תעדוף",
+  },
   fr: {
     privateLabel: "Privé",
     prioritizationLabel: "Hiérarchisation",

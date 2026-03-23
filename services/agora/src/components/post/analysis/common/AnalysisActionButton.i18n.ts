@@ -25,6 +25,11 @@ export const analysisActionButtonTranslations: Record<
     viewMore: "Ver más",
     informationIconAriaLabel: "Información",
   },
+  fa: {
+    learnMore: "اطلاعات بیشتر",
+    viewMore: "مشاهده بیشتر",
+    informationIconAriaLabel: "اطلاعات",
+  },
   fr: {
     learnMore: "En savoir plus",
     viewMore: "Voir plus",
@@ -39,6 +44,11 @@ export const analysisActionButtonTranslations: Record<
     learnMore: "了解更多",
     viewMore: "查看更多",
     informationIconAriaLabel: "信息",
+  },
+  he: {
+    learnMore: "למידע נוסף",
+    viewMore: "הצגת עוד",
+    informationIconAriaLabel: "מידע",
   },
   ja: {
     learnMore: "詳細を見る",

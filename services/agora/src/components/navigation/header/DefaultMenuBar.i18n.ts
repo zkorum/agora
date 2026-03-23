@@ -17,6 +17,9 @@ export const defaultMenuBarTranslations: Record<
   es: {
     logIn: "Log in",
   },
+  fa: {
+    logIn: "ورود",
+  },
   fr: {
     logIn: "Log in",
   },
@@ -25,6 +28,9 @@ export const defaultMenuBarTranslations: Record<
   },
   "zh-Hant": {
     logIn: "登入",
+  },
+  he: {
+    logIn: "התחברות",
   },
   ja: {
     logIn: "ログイン",

@@ -14,6 +14,9 @@ export const staticIconTranslations: Record<SupportedDisplayLanguageCodes, Stati
   es: {
     stars: "Estrellas",
   },
+  fa: {
+    stars: "ستاره‌ها",
+  },
   fr: {
     stars: "Étoiles",
   },
@@ -22,6 +25,9 @@ export const staticIconTranslations: Record<SupportedDisplayLanguageCodes, Stati
   },
   "zh-Hant": {
     stars: "星星",
+  },
+  he: {
+    stars: "כוכבים",
   },
   ja: {
     stars: "スター",

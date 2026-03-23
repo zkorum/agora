@@ -24,6 +24,11 @@ export const activeImportBannerTranslations: Record<
       "Tiene una importación en progreso. Espere a que se complete antes de iniciar una nueva.",
     viewStatus: "Ver Estado de Importación",
   },
+  fa: {
+    message:
+      "شما یک واردات در حال انجام دارید. لطفاً قبل از شروع مورد جدید، منتظر تکمیل آن بمانید.",
+    viewStatus: "مشاهده وضعیت واردات",
+  },
   fr: {
     message:
       "Vous avez un import en cours. Veuillez attendre qu'il soit terminé avant d'en démarrer un nouveau.",
@@ -36,6 +41,11 @@ export const activeImportBannerTranslations: Record<
   "zh-Hant": {
     message: "您有一個正在進行的匯入。請等待完成後再開始新的匯入。",
     viewStatus: "查看匯入狀態",
+  },
+  he: {
+    message:
+      "יש לך ייבוא בתהליך. אנא המתן לסיומו לפני שתתחיל חדש.",
+    viewStatus: "צפייה בסטטוס הייבוא",
   },
   ja: {
     message:

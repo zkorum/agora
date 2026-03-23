@@ -37,6 +37,14 @@ export const commentGroupTranslations: Record<
     unexpectedErrorRetry: "Algo salió mal. Inténtalo de nuevo.",
     retryLoadOpinions: "Reintentar carga de proposiciones",
   },
+  fa: {
+    noOpinionsMessage: "هیچ گزاره‌ای در این فیلتر گفتگو وجود ندارد.",
+    loadingOpinions: "در حال بارگذاری گزاره‌ها...",
+    retrying: "تلاش مجدد...",
+    opinionsLoadFailed: "بارگذاری گزاره‌ها امکان‌پذیر نبود",
+    unexpectedErrorRetry: "مشکلی پیش آمد. لطفاً دوباره تلاش کنید.",
+    retryLoadOpinions: "تلاش مجدد بارگذاری گزاره‌ها",
+  },
   fr: {
     noOpinionsMessage:
       "Il n'y a pas de propositions dans ce filtre de conversation.",
@@ -61,6 +69,14 @@ export const commentGroupTranslations: Record<
     opinionsLoadFailed: "無法載入觀點",
     unexpectedErrorRetry: "發生了一些問題。請重試。",
     retryLoadOpinions: "重試載入觀點",
+  },
+  he: {
+    noOpinionsMessage: "אין הצהרות במסנן שיחה זה.",
+    loadingOpinions: "...טוען הצהרות",
+    retrying: "...מנסה שוב",
+    opinionsLoadFailed: "לא ניתן לטעון הצהרות",
+    unexpectedErrorRetry: "משהו השתבש. אנא נסו שוב.",
+    retryLoadOpinions: "נסה שוב לטעון הצהרות",
   },
   ja: {
     noOpinionsMessage: "この会話フィルターには主張がありません。",

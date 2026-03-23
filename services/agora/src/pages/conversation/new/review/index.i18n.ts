@@ -103,6 +103,56 @@ export const conversationReviewTranslations: Record<
     githubPreviewError: "Failed to load issues from GitHub",
     githubPreviewRetry: "Retry",
   },
+  fa: {
+    posting: "در حال انتشار...",
+    post: "انتشار",
+    addSeedOpinions: "افزودن گزاره‌های اولیه",
+    addMaxDiffItems: "افزودن گزاره‌ها برای رتبه‌بندی",
+    seedOpinionsDescription:
+      "توصیه می‌شود ۸ تا ۱۵ گزاره از دیدگاه‌های مختلف اضافه کنید. این تأثیر قدرتمندی بر مشارکت اولیه دارد.",
+    maxDiffSeedDescription:
+      "اولویت‌بندی حداقل به ۲ گزاره نیاز دارد. برای بهترین تجربه ۱۰ تا ۲۵ عدد توصیه می‌شود.",
+    needMinimumForMaxDiff:
+      "حداقل ۲ گزاره برای اولویت‌بندی لازم است.",
+    addOpinion: "افزودن گزاره",
+    addMaxDiffItem: "افزودن گزاره",
+    opinionCannotBeEmpty: "گزاره نمی‌تواند خالی باشد",
+    opinionExceedsLimit:
+      "گزاره از محدودیت {limit} کاراکتر فراتر رفته است ({count}/{limit})",
+    opinionDuplicate: "این گزاره تکراری است",
+    errorCreatingConversation: "خطا هنگام ایجاد گفتگوی جدید",
+    githubSyncTitle: "Items from GitHub",
+    githubSyncDescription: "These items will be synced from GitHub issues. They cannot be edited here — manage them on GitHub.",
+    loadingGithubPreview: "Loading issues from GitHub...",
+    noGithubIssuesFound: "No issues found with the configured label. Items will be synced when issues are created or labeled on GitHub.",
+    githubPreviewError: "Failed to load issues from GitHub",
+    githubPreviewRetry: "تلاش مجدد",
+  },
+  he: {
+    posting: "...מפרסם",
+    post: "פרסום",
+    addSeedOpinions: "הוספת הצהרות ראשוניות",
+    addMaxDiffItems: "הוספת הצהרות לדירוג",
+    seedOpinionsDescription:
+      "מומלץ להוסיף 8 עד 15 הצהרות ממגוון נקודות מבט. לכך השפעה חזקה על ההשתתפות המוקדמת.",
+    maxDiffSeedDescription:
+      "תיעדוף דורש לפחות 2 הצהרות. מומלץ 10 עד 25 לחוויה הטובה ביותר.",
+    needMinimumForMaxDiff:
+      "נדרשות לפחות 2 הצהרות לתיעדוף.",
+    addOpinion: "הוספת הצהרה",
+    addMaxDiffItem: "הוספת הצהרה",
+    opinionCannotBeEmpty: "ההצהרה לא יכולה להיות ריקה",
+    opinionExceedsLimit:
+      "ההצהרה חורגת ממגבלת {limit} תווים ({count}/{limit})",
+    opinionDuplicate: "הצהרה זו כפולה",
+    errorCreatingConversation: "שגיאה בעת ניסיון ליצור שיחה חדשה",
+    githubSyncTitle: "Items from GitHub",
+    githubSyncDescription: "These items will be synced from GitHub issues. They cannot be edited here — manage them on GitHub.",
+    loadingGithubPreview: "Loading issues from GitHub...",
+    noGithubIssuesFound: "No issues found with the configured label. Items will be synced when issues are created or labeled on GitHub.",
+    githubPreviewError: "Failed to load issues from GitHub",
+    githubPreviewRetry: "נסה שוב",
+  },
   fr: {
     posting: "Publication...",
     post: "Publier",

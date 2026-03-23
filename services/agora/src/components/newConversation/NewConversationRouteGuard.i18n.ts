@@ -21,6 +21,10 @@ export const newConversationRouteGuardTranslations: Record<
     saveConversationDraft: "¿Guardar conversación como borrador?",
     draftWillBeHere: "Tu borrador de conversación estará aquí cuando regreses.",
   },
+  fa: {
+    saveConversationDraft: "گفتگو به عنوان پیش‌نویس ذخیره شود؟",
+    draftWillBeHere: "پیش‌نویس گفتگوی شما هنگام بازگشت اینجا خواهد بود.",
+  },
   fr: {
     saveConversationDraft: "Sauvegarder la conversation comme brouillon ?",
     draftWillBeHere: "Votre brouillon de conversation sera ici à votre retour.",
@@ -32,6 +36,10 @@ export const newConversationRouteGuardTranslations: Record<
   "zh-Hant": {
     saveConversationDraft: "保存對話為草稿？",
     draftWillBeHere: "您的草稿對話將在您返回時在此處。",
+  },
+  he: {
+    saveConversationDraft: "לשמור את השיחה כטיוטה?",
+    draftWillBeHere: "טיוטת השיחה שלך תהיה כאן כשתחזור.",
   },
   ja: {
     saveConversationDraft: "会話を下書きとして保存しますか？",

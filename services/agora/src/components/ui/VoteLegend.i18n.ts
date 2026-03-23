@@ -29,6 +29,7 @@ export const voteLegendTranslations: Record<
     disagree: "En desacuerdo",
     noVote: "Sin voto",
   },
+  fa: { agree: "موافقم", unsure: "مطمئن نیستم", disagree: "مخالفم", noVote: "بدون رأی" },
   fr: {
     agree: "D'accord",
     unsure: "Incertain",
@@ -47,6 +48,7 @@ export const voteLegendTranslations: Record<
     disagree: "不同意",
     noVote: "不投票",
   },
+  he: { agree: "מסכים/ה", unsure: "לא בטוח/ה", disagree: "לא מסכים/ה", noVote: "ללא הצבעה" },
   ja: {
     agree: "同意",
     unsure: "わからない",

@@ -33,6 +33,13 @@ export const sideDrawerTranslations: Record<
     profile: "Perfil",
     settings: "Configuración",
   },
+  fa: {
+    home: "خانه",
+    explore: "کاوش",
+    dings: "Dings",
+    profile: "پروفایل",
+    settings: "تنظیمات",
+  },
   fr: {
     home: "Accueil",
     explore: "Explorer",
@@ -53,6 +60,13 @@ export const sideDrawerTranslations: Record<
     dings: "Dings",
     profile: "個人資料",
     settings: "設定",
+  },
+  he: {
+    home: "דף הבית",
+    explore: "גילוי",
+    dings: "Dings",
+    profile: "פרופיל",
+    settings: "הגדרות",
   },
   ja: {
     home: "ホーム",

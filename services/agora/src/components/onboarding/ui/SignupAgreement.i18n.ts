@@ -33,6 +33,13 @@ export const signupAgreementTranslations: Record<
     and: "y",
     privacyPolicy: "Política de Privacidad",
   },
+  fa: {
+    agreementText: "با ورود، شما با",
+    agreementTextVerify: "با تأیید، شما با",
+    termsOfService: "شرایط استفاده",
+    and: "و",
+    privacyPolicy: "سیاست حریم خصوصی",
+  },
   fr: {
     agreementText: "En vous connectant, vous acceptez nos",
     agreementTextVerify: "En vérifiant, vous acceptez nos",
@@ -53,6 +60,13 @@ export const signupAgreementTranslations: Record<
     termsOfService: "服務條款",
     and: "和",
     privacyPolicy: "隱私政策",
+  },
+  he: {
+    agreementText: "בהתחברות, אתם מסכימים ל",
+    agreementTextVerify: "באימות, אתם מסכימים ל",
+    termsOfService: "תנאי השירות",
+    and: "ו",
+    privacyPolicy: "מדיניות הפרטיות",
   },
   ja: {
     agreementText: "ログインすることで、私たちの",

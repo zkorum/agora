@@ -42,6 +42,15 @@ export const polisUrlInputTranslations: Record<
     termsOfUse: "Términos de uso",
     ccLicense: "CC BY 4.0",
   },
+  fa: {
+    importTitle: "واردات گفتگو از Polis",
+    description: "آدرس Polis را در زیر جای‌گذاری کنید تا گفتگو وارد شود.",
+    validUrlExamples: "نمونه‌های آدرس معتبر:",
+    urlPlaceholder: "مثلاً https://pol.is/xxxxx",
+    polisTerms: "شرایط Pol.is",
+    termsOfUse: "شرایط استفاده",
+    ccLicense: "CC BY 4.0",
+  },
   fr: {
     importTitle: "Importer une Conversation depuis Polis",
     description:
@@ -68,6 +77,15 @@ export const polisUrlInputTranslations: Record<
     urlPlaceholder: "例如，https://pol.is/xxxxx",
     polisTerms: "Pol.is 條款",
     termsOfUse: "使用條款",
+    ccLicense: "CC BY 4.0",
+  },
+  he: {
+    importTitle: "ייבוא שיחה מ-Polis",
+    description: "הדביקו כתובת Polis למטה כדי לייבא שיחה.",
+    validUrlExamples: "דוגמאות לכתובות תקינות:",
+    urlPlaceholder: "לדוגמה, https://pol.is/xxxxx",
+    polisTerms: "תנאי Pol.is",
+    termsOfUse: "תנאי שימוש",
     ccLicense: "CC BY 4.0",
   },
   ja: {

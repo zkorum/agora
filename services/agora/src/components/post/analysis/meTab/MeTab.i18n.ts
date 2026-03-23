@@ -25,6 +25,14 @@ export const meTabTranslations: Record<string, MeTabTranslations> = {
     keepVotingToRefineAnalysis: "Sigue votando para refinar el análisis",
     voteMore: "Vota más",
   },
+  fa: {
+    whereDoIStandTitle: "جایگاه من",
+    notAssignedToGroup: "شما به هیچ گروهی اختصاص داده نشده‌اید",
+    youAgreeWith: "شما موافق هستید با",
+    voteToUnlock: "برای باز کردن قفل، به گزاره‌های بیشتری رأی دهید",
+    keepVotingToRefineAnalysis: "برای دقیق‌تر شدن تحلیل به رأی‌گیری ادامه دهید",
+    voteMore: "رأی‌گیری بیشتر",
+  },
   fr: {
     whereDoIStandTitle: "Où je me situe",
     notAssignedToGroup: "Vous n'êtes assigné à aucun groupe",
@@ -48,6 +56,14 @@ export const meTabTranslations: Record<string, MeTabTranslations> = {
     voteToUnlock: "對更多觀點投票以解鎖",
     keepVotingToRefineAnalysis: "繼續投票以完善分析",
     voteMore: "投票更多",
+  },
+  he: {
+    whereDoIStandTitle: "איפה אני עומד/ת",
+    notAssignedToGroup: "לא שויכת לאף קבוצה",
+    youAgreeWith: "אתם מסכימים עם",
+    voteToUnlock: "הצביעו על עוד הצהרות כדי לפתוח",
+    keepVotingToRefineAnalysis: "המשיכו להצביע כדי לחדד את הניתוח",
+    voteMore: "הצביעו עוד",
   },
   ja: {
     whereDoIStandTitle: "私の立場",

@@ -79,6 +79,40 @@ export const emailOnboardingTranslations: Record<
       "Esta dirección de correo electrónico ya está vinculada a otra cuenta",
     somethingWrong: "¡Ups! Algo salió mal—intente de nuevo",
   },
+  fa: {
+    pageTitle: "آدرس ایمیل خود را وارد کنید",
+    emailDescription: "یک کد یک‌بار مصرف ۶ رقمی از طریق ایمیل دریافت خواهید کرد",
+    emailPlaceholder: "آدرس ایمیل",
+    preferPrivateLogin: "ترجیح می‌دهم با حریم خصوصی کامل وارد شوم",
+    preferPhoneLogin: "ترجیح می‌دهم از شماره تلفن خود استفاده کنم",
+    pleaseEnterValidEmail: "لطفاً یک آدرس ایمیل معتبر وارد کنید",
+    pleaseEnterEmail: "لطفاً یک آدرس ایمیل وارد کنید",
+    alreadyHasEmail: "قبلاً یک آدرس ایمیل به حساب شما متصل شده است",
+    throttled: "تعداد تلاش‌ها بیش از حد—لطفاً قبل از تلاش مجدد صبر کنید",
+    unreachable:
+      "به نظر می‌رسد این آدرس ایمیل وجود ندارد—لطفاً بررسی کرده و دوباره تلاش کنید",
+    disposable: "استفاده از آدرس‌های ایمیل موقت یا یک‌بار مصرف مجاز نیست",
+    credentialAlreadyLinked:
+      "این آدرس ایمیل قبلاً به حساب دیگری متصل شده است",
+    somethingWrong: "متأسفیم! مشکلی پیش آمد—لطفاً دوباره تلاش کنید",
+  },
+  he: {
+    pageTitle: "הזינו את כתובת האימייל שלכם",
+    emailDescription: "תקבלו קוד חד-פעמי בן 6 ספרות באימייל",
+    emailPlaceholder: "כתובת אימייל",
+    preferPrivateLogin: "אני מעדיף/ה להתחבר עם פרטיות מלאה",
+    preferPhoneLogin: "אני מעדיף/ה להשתמש במספר הטלפון שלי",
+    pleaseEnterValidEmail: "אנא הזינו כתובת אימייל תקינה",
+    pleaseEnterEmail: "אנא הזינו כתובת אימייל",
+    alreadyHasEmail: "כתובת אימייל כבר מקושרת לחשבון שלכם",
+    throttled: "יותר מדי ניסיונות—אנא המתינו לפני ניסיון נוסף",
+    unreachable:
+      "נראה שכתובת אימייל זו אינה קיימת—אנא בדקו ונסו שוב",
+    disposable: "כתובות אימייל זמניות או חד-פעמיות אינן מותרות",
+    credentialAlreadyLinked:
+      "כתובת אימייל זו כבר מקושרת לחשבון אחר",
+    somethingWrong: "אופס! משהו השתבש—אנא נסו שוב",
+  },
   fr: {
     pageTitle: "Entrez votre adresse e-mail",
     emailDescription:

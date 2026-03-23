@@ -57,6 +57,20 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationDescription:
       "Cualquiera con el enlace puede ver la conversación, votar y contribuir proposiciones",
   },
+  fa: {
+    requiresAccountTitle: "نیاز به حساب کاربری",
+    requiresAccountDescription:
+      "هر کسی که لینک را داشته باشد می‌تواند گفتگو را مشاهده کند، اما برای رأی دادن و ارائه گزاره نیاز به حساب کاربری دارد",
+    requiresLoginTitle: "نیاز به تأیید هویت قوی",
+    requiresLoginDescription:
+      "هر کسی که لینک را داشته باشد می‌تواند گفتگو را مشاهده کند، اما برای رأی دادن و ارائه گزاره نیاز به تأیید تلفن یا گذرنامه دارد",
+    requiresEmailVerificationTitle: "نیاز به تأیید ایمیل",
+    requiresEmailVerificationDescription:
+      "هر کسی که لینک را داشته باشد می‌تواند گفتگو را مشاهده کند، اما برای رأی دادن و ارائه گزاره نیاز به تأیید ایمیل دارد",
+    guestParticipationTitle: "مشارکت مهمان",
+    guestParticipationDescription:
+      "هر کسی که لینک را داشته باشد می‌تواند گفتگو را مشاهده کند، رأی دهد و گزاره ارائه کند",
+  },
   fr: {
     requiresAccountTitle: "Compte requis",
     requiresAccountDescription:
@@ -98,6 +112,20 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationTitle: "訪客參與",
     guestParticipationDescription:
       "任何有連結的人都可以查看對話、投票和貢獻觀點",
+  },
+  he: {
+    requiresAccountTitle: "נדרש חשבון",
+    requiresAccountDescription:
+      "כל מי שיש לו את הקישור יכול לצפות בשיחה, אך יידרש חשבון כדי להצביע ולהוסיף הצהרות",
+    requiresLoginTitle: "נדרש אימות חזק",
+    requiresLoginDescription:
+      "כל מי שיש לו את הקישור יכול לצפות בשיחה, אך יידרש אימות טלפון או דרכון כדי להצביע ולהוסיף הצהרות",
+    requiresEmailVerificationTitle: "נדרש אימות דוא\"ל",
+    requiresEmailVerificationDescription:
+      "כל מי שיש לו את הקישור יכול לצפות בשיחה, אך יידרש אימות דוא\"ל כדי להצביע ולהוסיף הצהרות",
+    guestParticipationTitle: "השתתפות אורחים",
+    guestParticipationDescription:
+      "כל מי שיש לו את הקישור יכול לצפות בשיחה, להצביע ולהוסיף הצהרות",
   },
   ja: {
     requiresAccountTitle: "アカウントが必要",

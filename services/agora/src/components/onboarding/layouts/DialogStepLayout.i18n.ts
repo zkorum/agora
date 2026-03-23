@@ -17,6 +17,9 @@ export const dialogStepLayoutTranslations: Record<
   es: {
     welcomeTitle: "¡Bienvenido a Ágora!",
   },
+  fa: {
+    welcomeTitle: "به Agora خوش آمدید!",
+  },
   fr: {
     welcomeTitle: "Bienvenue sur Agora !",
   },
@@ -25,6 +28,9 @@ export const dialogStepLayoutTranslations: Record<
   },
   "zh-Hant": {
     welcomeTitle: "歡迎來到 Agora！",
+  },
+  he: {
+    welcomeTitle: "!Agora-ברוכים הבאים ל",
   },
   ja: {
     welcomeTitle: "Agora へようこそ！",

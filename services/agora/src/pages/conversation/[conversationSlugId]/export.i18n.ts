@@ -83,6 +83,48 @@ export const exportPageTranslations: Record<
       "Esta conversación no tiene proposiciones para exportar. Añade algunas proposiciones primero.",
     exportFeatureDisabled: "La función de exportación está deshabilitada",
   },
+  fa: {
+    pageTitle: "خروجی گفتگو",
+    pageDescription:
+      "یک خروجی CSV از تمام گزاره‌ها و آراء این گفتگو دانلود کنید.",
+    previousExports: "خروجی‌های قبلی",
+    conversationLoadError:
+      "بارگذاری جزئیات گفتگو ناموفق بود. لطفاً دوباره تلاش کنید.",
+    exportRequestError: "ایجاد خروجی ناموفق بود. لطفاً دوباره تلاش کنید.",
+    exportCooldownMinutes:
+      "دوره انتظار خروجی فعال است. شما می‌توانید پس از {minutes} دقیقه خروجی دیگری درخواست کنید.",
+    exportCooldownSeconds:
+      "دوره انتظار خروجی فعال است. شما می‌توانید پس از {seconds} ثانیه خروجی دیگری درخواست کنید.",
+    viewConversation: "مشاهده گفتگو",
+    requestExportAriaLabel: "درخواست خروجی داده‌های گفتگو",
+    errorActiveExportInProgress:
+      "یک خروجی در حال انجام است. لطفاً تا تکمیل آن صبر کنید.",
+    errorConversationNotFound: "گفتگو یافت نشد.",
+    errorNoOpinions:
+      "این گفتگو گزاره‌ای برای خروجی ندارد. ابتدا چند گزاره اضافه کنید.",
+    exportFeatureDisabled: "قابلیت خروجی غیرفعال است",
+  },
+  he: {
+    pageTitle: "ייצוא שיחה",
+    pageDescription:
+      "הורידו קובץ CSV של כל ההצהרות וההצבעות עבור שיחה זו.",
+    previousExports: "ייצואים קודמים",
+    conversationLoadError:
+      "טעינת פרטי השיחה נכשלה. אנא נסו שוב.",
+    exportRequestError: "יצירת הייצוא נכשלה. אנא נסו שוב.",
+    exportCooldownMinutes:
+      "תקופת המתנה לייצוא פעילה. תוכלו לבקש ייצוא נוסף בעוד {minutes} דקות.",
+    exportCooldownSeconds:
+      "תקופת המתנה לייצוא פעילה. תוכלו לבקש ייצוא נוסף בעוד {seconds} שניות.",
+    viewConversation: "צפייה בשיחה",
+    requestExportAriaLabel: "בקשת ייצוא נתוני שיחה",
+    errorActiveExportInProgress:
+      "ייצוא כבר מתבצע. אנא המתינו לסיומו.",
+    errorConversationNotFound: "השיחה לא נמצאה.",
+    errorNoOpinions:
+      "לשיחה זו אין הצהרות לייצוא. הוסיפו הצהרות תחילה.",
+    exportFeatureDisabled: "תכונת הייצוא מושבתת",
+  },
   fr: {
     pageTitle: "Exporter la Conversation",
     pageDescription:

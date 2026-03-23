@@ -33,6 +33,7 @@ export const emailInputFormTranslations: Record<
     pleaseEnterEmail:
       "Por favor, ingrese una dirección de correo electrónico",
   },
+  fa: { emailDescription: "یک کد ۶ رقمی یکبار مصرف از طریق ایمیل دریافت خواهید کرد", emailPlaceholder: "آدرس ایمیل", pleaseEnterValidEmail: "لطفاً یک آدرس ایمیل معتبر وارد کنید", pleaseEnterEmail: "لطفاً یک آدرس ایمیل وارد کنید" },
   fr: {
     emailDescription:
       "Vous recevrez un code à usage unique de 6 chiffres par e-mail",
@@ -52,6 +53,7 @@ export const emailInputFormTranslations: Record<
     pleaseEnterValidEmail: "請輸入有效的電子郵箱地址",
     pleaseEnterEmail: "請輸入電子郵箱地址",
   },
+  he: { emailDescription: "תקבלו קוד חד-פעמי בן 6 ספרות בדוא\"ל", emailPlaceholder: "כתובת דוא\"ל", pleaseEnterValidEmail: "אנא הזינו כתובת דוא\"ל תקינה", pleaseEnterEmail: "אנא הזינו כתובת דוא\"ל" },
   ja: {
     emailDescription: "6桁の1回限りのコードをメールで受信します",
     emailPlaceholder: "メールアドレス",

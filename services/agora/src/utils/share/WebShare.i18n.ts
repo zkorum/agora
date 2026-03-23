@@ -22,6 +22,12 @@ export const webShareTranslations: Record<
   es: {
     copiedToClipboard: "Enlace copiado al portapapeles",
   },
+  fa: {
+    copiedToClipboard: "لینک در کلیپ‌بورد کپی شد",
+  },
+  he: {
+    copiedToClipboard: "הקישור הועתק ללוח",
+  },
   fr: {
     copiedToClipboard: "Lien copié dans le presse-papiers",
   },

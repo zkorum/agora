@@ -68,6 +68,19 @@ export const commentComposerTranslations: Record<
     validationWarningMultipleIdeas:
       "Consejo: Esto podría contener múltiples ideas - asegúrate de que los votantes puedan estar claramente de acuerdo o en desacuerdo",
   },
+  fa: {
+    placeholder: "گزاره خود را اضافه کنید",
+    placeholderExpanded: "بر یک نکته واحد تمرکز کنید که موافقت یا مخالفت با آن آسان باشد",
+    postButton: "ارسال",
+    conversationLockedError: "امکان ایجاد گزاره وجود ندارد زیرا گفتگو قفل شده است",
+    conversationClosedError: "این گفتگو بسته شده است",
+    createOpinionError: "خطا هنگام ایجاد گزاره جدید",
+    eventTicketRequiredTitle: "بلیط رویداد الزامی است",
+    eventTicketRequiredMessage: "برای مشارکت در این گفتگو باید بلیط Devconnect 2025 خود را تأیید کنید.",
+    exitPromptTitle: "گزاره به عنوان پیش‌نویس ذخیره شود؟",
+    exitPromptDescription: "پیش‌نویس شما هنگام بازگشت اینجا خواهد بود.",
+    validationWarningMultipleIdeas: "نکته: ممکن است این شامل چند ایده باشد — مطمئن شوید رأی‌دهندگان بتوانند به‌وضوح موافقت یا مخالفت کنند",
+  },
   fr: {
     placeholder: "Ajoutez votre proposition",
     placeholderExpanded: "Concentrez-vous sur un seul point avec lequel il est facile d'être d'accord ou en désaccord",
@@ -117,6 +130,19 @@ export const commentComposerTranslations: Record<
     exitPromptDescription: "您的草稿將在您返回時保留在這裡。",
     validationWarningMultipleIdeas:
       "提示：這可能包含多個想法 - 確保投票者可以清楚地同意或不同意",
+  },
+  he: {
+    placeholder: "הוסיפו הצהרה משלכם",
+    placeholderExpanded: "התמקדו בנקודה אחת שקל להסכים או לא להסכים איתה",
+    postButton: "פרסום",
+    conversationLockedError: "לא ניתן ליצור הצהרה כי השיחה נעולה",
+    conversationClosedError: "שיחה זו נסגרה",
+    createOpinionError: "שגיאה בעת ניסיון ליצור הצהרה חדשה",
+    eventTicketRequiredTitle: "נדרש כרטיס אירוע",
+    eventTicketRequiredMessage: "עליכם לאמת את כרטיס ה-Devconnect 2025 שלכם כדי להשתתף בשיחה זו.",
+    exitPromptTitle: "לשמור הצהרה כטיוטה?",
+    exitPromptDescription: "הטיוטה שלך תהיה כאן כשתחזור.",
+    validationWarningMultipleIdeas: "טיפ: ייתכן שזה מכיל מספר רעיונות — ודאו שהמצביעים יכולים להסכים או לא להסכים בבירור",
   },
   ja: {
     placeholder: "あなたの主張を追加",

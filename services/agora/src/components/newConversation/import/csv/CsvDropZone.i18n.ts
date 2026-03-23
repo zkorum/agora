@@ -45,6 +45,16 @@ export const csvDropZoneTranslations: Record<
     ariaViewDetails: "Ver detalles del error para {fileName}",
     ariaRemove: "Eliminar archivo {fileName}",
   },
+  fa: {
+    statusPending: "در انتظار",
+    statusUploaded: "بارگذاری شده",
+    statusValidating: "در حال اعتبارسنجی",
+    statusError: "خطا",
+    viewDetails: "مشاهده جزئیات",
+    remove: "حذف",
+    ariaViewDetails: "مشاهده جزئیات خطا برای {fileName}",
+    ariaRemove: "حذف فایل {fileName}",
+  },
   fr: {
     statusPending: "En attente",
     statusUploaded: "Téléchargé",
@@ -74,6 +84,16 @@ export const csvDropZoneTranslations: Record<
     remove: "移除",
     ariaViewDetails: "查看 {fileName} 的錯誤詳情",
     ariaRemove: "移除檔案 {fileName}",
+  },
+  he: {
+    statusPending: "ממתין",
+    statusUploaded: "הועלה",
+    statusValidating: "מאמת",
+    statusError: "שגיאה",
+    viewDetails: "צפייה בפרטים",
+    remove: "הסרה",
+    ariaViewDetails: "צפייה בפרטי שגיאה עבור {fileName}",
+    ariaRemove: "הסרת קובץ {fileName}",
   },
   ja: {
     statusPending: "保留中",

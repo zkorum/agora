@@ -21,6 +21,10 @@ export const commentLoadingErrorTranslations: Record<
     defaultRetryLabel: "Intentar de nuevo",
     defaultErrorMessage: "Algo salió mal. Inténtalo de nuevo.",
   },
+  fa: {
+    defaultRetryLabel: "تلاش مجدد",
+    defaultErrorMessage: "مشکلی پیش آمد. لطفاً دوباره تلاش کنید.",
+  },
   fr: {
     defaultRetryLabel: "Réessayer",
     defaultErrorMessage: "Quelque chose s'est mal passé. Veuillez réessayer.",
@@ -32,6 +36,10 @@ export const commentLoadingErrorTranslations: Record<
   "zh-Hant": {
     defaultRetryLabel: "重試",
     defaultErrorMessage: "發生了一些問題。請重試。",
+  },
+  he: {
+    defaultRetryLabel: "נסה שוב",
+    defaultErrorMessage: "משהו השתבש. אנא נסו שוב.",
   },
   ja: {
     defaultRetryLabel: "再試行",

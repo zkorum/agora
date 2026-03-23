@@ -21,6 +21,10 @@ export const spokenLanguageStepTranslations: Record<
     title: "¿Qué idiomas hablas?",
     nextButton: "Siguiente",
   },
+  fa: {
+    title: "شما به چه زبان‌هایی صحبت می‌کنید؟",
+    nextButton: "بعدی",
+  },
   fr: {
     title: "Quelles langues parlez-vous ?",
     nextButton: "Suivant",
@@ -32,6 +36,10 @@ export const spokenLanguageStepTranslations: Record<
   "zh-Hant": {
     title: "您會說哪些語言？",
     nextButton: "下一步",
+  },
+  he: {
+    title: "באילו שפות אתם מדברים?",
+    nextButton: "הבא",
   },
   ja: {
     title: "あなたはどの言語を話しますか？",

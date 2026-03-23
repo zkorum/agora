@@ -29,6 +29,18 @@ export const verifyIdentityTranslations: Record<
     verifyWithRarimo: "Verificar con Rarimo",
     verifyWithPhone: "Verificar con número de teléfono",
   },
+  fa: {
+    title: "تأیید هویت شما",
+    description: "یک روش تأیید هویت انتخاب کنید",
+    verifyWithRarimo: "تأیید هویت با Rarimo",
+    verifyWithPhone: "تأیید هویت با شماره تلفن",
+  },
+  he: {
+    title: "אמתו את זהותכם",
+    description: "בחרו שיטת אימות",
+    verifyWithRarimo: "אימות עם Rarimo",
+    verifyWithPhone: "אימות עם מספר טלפון",
+  },
   fr: {
     title: "Vérifiez votre identité",
     description: "Choisissez une méthode de vérification",

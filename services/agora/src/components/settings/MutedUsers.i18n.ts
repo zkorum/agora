@@ -18,6 +18,7 @@ export const mutedUsersTranslations: Record<SupportedDisplayLanguageCodes, Muted
     title: "Usuarios silenciados",
     emptyMessage: "No tienes usuarios silenciados",
   },
+  fa: { title: "کاربران بی‌صدا شده", emptyMessage: "شما هیچ کاربر بی‌صدا شده‌ای ندارید" },
   fr: {
     title: "Utilisateurs masqués",
     emptyMessage: "Vous n'avez pas d'utilisateurs masqués",
@@ -30,6 +31,7 @@ export const mutedUsersTranslations: Record<SupportedDisplayLanguageCodes, Muted
     title: "已靜音用戶",
     emptyMessage: "您沒有已靜音的用戶",
   },
+  he: { title: "משתמשים מושתקים", emptyMessage: "אין לך משתמשים מושתקים" },
   ja: {
     title: "ミュートされたユーザー",
     emptyMessage: "ミュートされたユーザーはいません",

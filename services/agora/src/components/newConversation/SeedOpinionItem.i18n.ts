@@ -34,6 +34,13 @@ export const seedOpinionItemTranslations: Record<
     confirmDeleteConfirm: "Eliminar",
     confirmDeleteCancel: "Cancelar",
   },
+  fa: {
+    inputTextPlaceholder: "متن را وارد کنید",
+    deleteOpinion: "حذف گزاره",
+    confirmDeleteMessage: "آیا مطمئن هستید که می‌خواهید این گزاره را حذف کنید؟",
+    confirmDeleteConfirm: "حذف",
+    confirmDeleteCancel: "لغو",
+  },
   fr: {
     inputTextPlaceholder: "Saisir le texte",
     deleteOpinion: "Supprimer la Proposition",
@@ -55,6 +62,13 @@ export const seedOpinionItemTranslations: Record<
     confirmDeleteMessage: "確定要刪除此觀點嗎？",
     confirmDeleteConfirm: "刪除",
     confirmDeleteCancel: "取消",
+  },
+  he: {
+    inputTextPlaceholder: "הזינו טקסט",
+    deleteOpinion: "מחיקת הצהרה",
+    confirmDeleteMessage: "האם ברצונך למחוק הצהרה זו?",
+    confirmDeleteConfirm: "מחק",
+    confirmDeleteCancel: "ביטול",
   },
   ja: {
     inputTextPlaceholder: "テキストを入力",

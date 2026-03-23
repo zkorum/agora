@@ -33,6 +33,20 @@ export const welcomeTranslations: Record<
     launchApp: "Abrir Aplicación",
     logOut: "Cerrar Sesión",
   },
+  fa: {
+    signUp: "ثبت‌نام",
+    login: "ورود",
+    skipAuthentication: "رد کردن احراز هویت",
+    launchApp: "اجرای برنامه",
+    logOut: "خروج",
+  },
+  he: {
+    signUp: "הרשמה",
+    login: "התחברות",
+    skipAuthentication: "דלג על אימות",
+    launchApp: "הפעלת האפליקציה",
+    logOut: "התנתקות",
+  },
   fr: {
     signUp: "S'inscrire",
     login: "Se Connecter",

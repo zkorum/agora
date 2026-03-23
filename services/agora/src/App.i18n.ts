@@ -25,6 +25,16 @@ export const appTranslations: Record<
     reconnecting: "Reconectando...",
     connected: "Conectado",
   },
+  fa: {
+    connectionLost: "اتصال قطع شد",
+    reconnecting: "در حال اتصال مجدد...",
+    connected: "متصل",
+  },
+  he: {
+    connectionLost: "החיבור אבד",
+    reconnecting: "מתחבר מחדש...",
+    connected: "מחובר",
+  },
   fr: {
     connectionLost: "Connexion perdue",
     reconnecting: "Reconnexion en cours...",

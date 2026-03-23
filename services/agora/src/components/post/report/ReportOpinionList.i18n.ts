@@ -26,6 +26,7 @@ export const reportOpinionListTranslations: Record<
     noItems:
       "No se encontraron elementos estadísticamente significativos para esta sección.",
   },
+  fa: { statement: "گزاره", overall: "کلی", noItems: "هیچ مورد مهم آماری برای این بخش یافت نشد." },
   fr: {
     statement: "Proposition",
     overall: "Global",
@@ -42,6 +43,7 @@ export const reportOpinionListTranslations: Record<
     overall: "總計",
     noItems: "本節未找到具有統計意義的項目。",
   },
+  he: { statement: "הצהרה", overall: "כולל", noItems: "לא נמצאו פריטים מובהקים סטטיסטית עבור חלק זה." },
   ja: {
     statement: "意見",
     overall: "全体",

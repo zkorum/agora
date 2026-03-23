@@ -40,6 +40,15 @@ export const pollComponentTranslations: Record<
     inputOptionText: "Ingresa el texto de la opción",
     addOption: "Agregar Opción",
   },
+  fa: {
+    addPoll: "افزودن نظرسنجی",
+    existingPoll: "نظرسنجی موجود",
+    readonlyExplanation:
+      "پس از ثبت رأی، گزینه‌های نظرسنجی قابل ویرایش نیستند. برای ایجاد نظرسنجی جدید، ابتدا این مورد را حذف کنید.",
+    option: "گزینه",
+    inputOptionText: "متن گزینه را وارد کنید",
+    addOption: "افزودن گزینه",
+  },
   fr: {
     addPoll: "Ajouter un sondage",
     existingPoll: "Sondage existant",
@@ -66,6 +75,15 @@ export const pollComponentTranslations: Record<
     option: "選項",
     inputOptionText: "輸入選項文本",
     addOption: "添加選項",
+  },
+  he: {
+    addPoll: "הוספת סקר",
+    existingPoll: "סקר קיים",
+    readonlyExplanation:
+      "לא ניתן לערוך אפשרויות סקר לאחר שהוצבעו הצבעות. ליצירת סקר חדש, הסירו תחילה את הסקר הנוכחי.",
+    option: "אפשרות",
+    inputOptionText: "הזינו טקסט אפשרות",
+    addOption: "הוספת אפשרות",
   },
   ja: {
     addPoll: "投票を追加",

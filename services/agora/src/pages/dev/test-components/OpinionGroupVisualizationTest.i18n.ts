@@ -28,6 +28,18 @@ export const opinionGroupVisualizationTestTranslations: Record<
       "Pruebe las pestañas de análisis completas (Grupos, Aprobadas, Rechazadas, Divisivas) con número de grupos, etiquetas IA y secciones vacías configurables.",
     openTestButton: "Abrir Prueba de Análisis",
   },
+  fa: {
+    analysisTabTest: "آزمایش زبانه تحلیل",
+    analysisTabTestDescription:
+      "آزمایش زبانه‌های کامل تحلیل (گروه‌ها، توافقات، مخالفت‌ها، اختلاف‌نظرها) با تعداد گروه‌ها، برچسب‌های هوش مصنوعی و بخش‌های خالی قابل پیکربندی.",
+    openTestButton: "باز کردن آزمایش تحلیل",
+  },
+  he: {
+    analysisTabTest: "בדיקת לשונית ניתוח",
+    analysisTabTestDescription:
+      "בדיקת לשוניות הניתוח המלאות (קבוצות, הסכמות, חילוקי דעות, שנויים במחלוקת) עם מספר קבוצות, תוויות AI וסעיפים ריקים הניתנים להתאמה.",
+    openTestButton: "פתיחת בדיקת ניתוח",
+  },
   fr: {
     analysisTabTest: "Test de l'Onglet Analyse",
     analysisTabTestDescription:

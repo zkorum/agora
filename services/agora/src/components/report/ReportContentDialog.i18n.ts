@@ -55,6 +55,17 @@ export const reportContentDialogTranslations: Record<
     reportTypeConversation: "conversación",
     reportTypeOpinion: "proposición",
   },
+  fa: {
+    submitReportTitle: "ارسال گزارش",
+    improveCommunityText: "از شما بابت کمک به بهبود جامعه سپاسگزاریم. مشکل این {reportType} چیست؟",
+    thanksForFeedbackTitle: "از بازخورد شما متشکریم!",
+    flaggingReasonText: "چرا این {reportType} را به عنوان {selectedReason} علامت‌گذاری می‌کنید؟",
+    addExplanationLabel: "افزودن توضیح",
+    skipButton: "رد شدن",
+    submitButton: "ارسال",
+    reportTypeConversation: "گفتگو",
+    reportTypeOpinion: "گزاره",
+  },
   fr: {
     submitReportTitle: "Soumettre un rapport",
     improveCommunityText:
@@ -91,6 +102,17 @@ export const reportContentDialogTranslations: Record<
     submitButton: "提交",
     reportTypeConversation: "對話",
     reportTypeOpinion: "觀點",
+  },
+  he: {
+    submitReportTitle: "שליחת דיווח",
+    improveCommunityText: "תודה שעוזרים לנו לשפר את הקהילה. מה הבעיה עם {reportType} זה?",
+    thanksForFeedbackTitle: "תודה על המשוב שלך!",
+    flaggingReasonText: "מדוע אתם מסמנים {reportType} זה כ-{selectedReason}?",
+    addExplanationLabel: "הוספת הסבר",
+    skipButton: "דילוג",
+    submitButton: "שלח",
+    reportTypeConversation: "שיחה",
+    reportTypeOpinion: "הצהרה",
   },
   ja: {
     submitReportTitle: "報告を送信",

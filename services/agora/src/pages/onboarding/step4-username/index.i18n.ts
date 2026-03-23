@@ -25,6 +25,16 @@ export const step4UsernameTranslations: Record<
     howToAppear: "¿Cómo quiere aparecer en Agora?",
     usernameInUse: "El nombre de usuario ya está en uso",
   },
+  fa: {
+    title: "نام کاربری خود را انتخاب کنید",
+    howToAppear: "می‌خواهید در آگورا چگونه نمایش داده شوید؟",
+    usernameInUse: "این نام کاربری قبلاً استفاده شده است",
+  },
+  he: {
+    title: "בחרו את שם המשתמש שלכם",
+    howToAppear: "כיצד ברצונכם להופיע ב-Agora?",
+    usernameInUse: "שם המשתמש כבר בשימוש",
+  },
   fr: {
     title: "Choisissez votre nom d'utilisateur",
     howToAppear: "Comment voulez-vous apparaître dans Agora ?",

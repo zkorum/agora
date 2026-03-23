@@ -23,6 +23,11 @@ export const pollWrapperTranslations: Record<SupportedDisplayLanguageCodes, Poll
       vote: "Votar",
       votes: "votos",
     },
+    fa: {
+      results: "نتایج",
+      vote: "رأی",
+      votes: "رأی",
+    },
     fr: {
       results: "Résultats",
       vote: "Vote",
@@ -37,6 +42,11 @@ export const pollWrapperTranslations: Record<SupportedDisplayLanguageCodes, Poll
       results: "結果",
       vote: "投票",
       votes: "票",
+    },
+    he: {
+      results: "תוצאות",
+      vote: "הצבעה",
+      votes: "הצבעות",
     },
     ja: {
       results: "結果",

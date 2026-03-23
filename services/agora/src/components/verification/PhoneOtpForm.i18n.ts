@@ -101,6 +101,7 @@ export const phoneOtpFormTranslations: Record<
     alreadyHasCredential:
       "Ya tienes un número de teléfono vinculado a tu cuenta",
   },
+  fa: { instructions: "کد ۶ رقمی ارسال شده به شماره تلفن را وارد کنید", expiresIn: "انقضا در", codeExpired: "کد منقضی شده", changeNumber: "تغییر شماره", resendCodeIn: "ارسال مجدد کد در", resendCode: "ارسال مجدد کد", pleaseEnterValidCode: "لطفاً یک کد ۶ رقمی معتبر وارد کنید", verificationSuccessful: "تأیید موفقیت‌آمیز", accountMerged: "موفقیت! حساب‌های شما ادغام شدند", codeExpiredResend: "کد منقضی شده—کد جدید ارسال کنید", wrongCodeTryAgain: "کد اشتباه—دوباره تلاش کنید", credentialAlreadyLinked: "این شماره تلفن قبلاً به حساب دیگری متصل شده است", authStateChanged: "وضعیت احراز هویت تغییر کرد—لطفاً کد جدید درخواست دهید", somethingWrong: "مشکلی پیش آمد!", tooManyAttempts: "تلاش‌های زیاد—لطفاً قبل از درخواست کد جدید صبر کنید", invalidPhoneNumber: "متأسفانه این شماره تلفن نامعتبر است. لطفاً بررسی و دوباره تلاش کنید.", restrictedPhoneType: "متأسفانه این شماره تلفن به دلایل امنیتی پشتیبانی نمی‌شود. لطفاً شماره دیگری امتحان کنید.", alreadyHasCredential: "حساب شما قبلاً به یک شماره تلفن متصل شده است" },
   fr: {
     instructions:
       "Entrez le code à 6 chiffres que nous avons envoyé au numéro de téléphone",
@@ -168,6 +169,7 @@ export const phoneOtpFormTranslations: Record<
     restrictedPhoneType: "抱歉，這個手機號因安全原因不支持。請嘗試其他號碼。",
     alreadyHasCredential: "您的帳戶已關聯手機號碼",
   },
+  he: { instructions: "הזינו את הקוד בן 6 הספרות ששלחנו למספר הטלפון", expiresIn: "פג ב", codeExpired: "הקוד פג", changeNumber: "שינוי מספר", resendCodeIn: "שליחת קוד מחדש בעוד", resendCode: "שליחת קוד מחדש", pleaseEnterValidCode: "אנא הזינו קוד תקין בן 6 ספרות", verificationSuccessful: "האימות הצליח", accountMerged: "הצלחה! החשבונות שלך מוזגו", codeExpiredResend: "הקוד פג—שלחו קוד חדש", wrongCodeTryAgain: "קוד שגוי—נסו שוב", credentialAlreadyLinked: "מספר טלפון זה כבר מקושר לחשבון אחר", authStateChanged: "מצב האימות השתנה—אנא בקשו קוד חדש", somethingWrong: "אופס! משהו לא תקין", tooManyAttempts: "ניסיונות רבים מדי—אנא המתינו לפני בקשת קוד חדש", invalidPhoneNumber: "מצטערים, מספר טלפון זה אינו תקין. אנא בדקו ונסו שוב.", restrictedPhoneType: "מצטערים, מספר טלפון זה אינו נתמך מטעמי אבטחה. אנא נסו מספר אחר.", alreadyHasCredential: "מספר טלפון כבר מקושר לחשבון שלך" },
   ja: {
     instructions: "携帯電話番号に送信された6桁のコードを入力してください",
     expiresIn: "有効期限",

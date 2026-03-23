@@ -21,6 +21,7 @@ export const exitRoutePromptTranslations: Record<
     saveAsDraft: "Guardar como borrador",
     discard: "Descartar",
   },
+  fa: { saveAsDraft: "ذخیره به عنوان پیش‌نویس", discard: "حذف" },
   fr: {
     saveAsDraft: "Enregistrer comme brouillon",
     discard: "Rejeter",
@@ -33,6 +34,7 @@ export const exitRoutePromptTranslations: Record<
     saveAsDraft: "保存為草稿",
     discard: "丟棄",
   },
+  he: { saveAsDraft: "שמירה כטיוטה", discard: "מחיקה" },
   ja: {
     saveAsDraft: "下書きとして保存",
     discard: "破棄",

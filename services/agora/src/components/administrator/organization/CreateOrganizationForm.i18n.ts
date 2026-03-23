@@ -44,6 +44,16 @@ export const createOrganizationFormTranslations: Record<
     websiteUrlLabel: "URL del sitio web",
     addOrganizationButton: "Agregar Organización",
   },
+  fa: {
+    nameLabel: "نام",
+    descriptionLabel: "توضیحات",
+    imagePathLabel: "مسیر تصویر (نام فایل یا مسیر https)",
+    fileNameExample: "نام فایل: avatar_default_0.png",
+    fullPathExample:
+      "مسیر کامل: https://agoracitizen.network/images/big_logo_agora.png",
+    websiteUrlLabel: "آدرس وب‌سایت",
+    addOrganizationButton: "افزودن سازمان",
+  },
   fr: {
     nameLabel: "Nom",
     descriptionLabel: "Description",
@@ -73,6 +83,16 @@ export const createOrganizationFormTranslations: Record<
       "完整路徑：https://agoracitizen.network/images/big_logo_agora.png",
     websiteUrlLabel: "網站網址",
     addOrganizationButton: "新增組織",
+  },
+  he: {
+    nameLabel: "שם",
+    descriptionLabel: "תיאור",
+    imagePathLabel: "נתיב תמונה (שם קובץ או נתיב https)",
+    fileNameExample: "שם קובץ: avatar_default_0.png",
+    fullPathExample:
+      "נתיב מלא: https://agoracitizen.network/images/big_logo_agora.png",
+    websiteUrlLabel: "כתובת אתר",
+    addOrganizationButton: "הוספת ארגון",
   },
   ja: {
     nameLabel: "名前",

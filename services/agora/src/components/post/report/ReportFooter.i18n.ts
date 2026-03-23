@@ -21,6 +21,7 @@ export const reportFooterTranslations: Record<
     generatedOn: "Informe generado el",
     poweredBy: "Desarrollado por Agora Citizen Network",
   },
+  fa: { generatedOn: "گزارش تولید شده در", poweredBy: "ارائه شده توسط Agora Citizen Network" },
   fr: {
     generatedOn: "Rapport généré le",
     poweredBy: "Propulsé par Agora Citizen Network",
@@ -33,6 +34,7 @@ export const reportFooterTranslations: Record<
     generatedOn: "報告生成於",
     poweredBy: "由 Agora Citizen Network 提供支持",
   },
+  he: { generatedOn: "הדיווח נוצר ב", poweredBy: "מופעל על ידי Agora Citizen Network" },
   ja: {
     generatedOn: "レポート生成日",
     poweredBy: "Agora Citizen Network 提供",

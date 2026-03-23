@@ -21,6 +21,10 @@ export const commentActionOptionsTranslations: Record<
     agoraOpinion: "Proposición de Agora",
     copiedToClipboard: "Enlace copiado al portapapeles",
   },
+  fa: {
+    agoraOpinion: "گزاره Agora",
+    copiedToClipboard: "لینک در کلیپ‌بورد کپی شد",
+  },
   fr: {
     agoraOpinion: "Proposition Agora",
     copiedToClipboard: "Lien copié dans le presse-papiers",
@@ -32,6 +36,10 @@ export const commentActionOptionsTranslations: Record<
   "zh-Hant": {
     agoraOpinion: "Agora 觀點",
     copiedToClipboard: "連結已複製到剪貼簿",
+  },
+  he: {
+    agoraOpinion: "הצהרת Agora",
+    copiedToClipboard: "הקישור הועתק ללוח",
   },
   ja: {
     agoraOpinion: "Agora 主張",

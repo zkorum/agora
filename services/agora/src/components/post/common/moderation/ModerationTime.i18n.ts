@@ -17,6 +17,9 @@ export const moderationTimeTranslations: Record<
   es: {
     edited: "(editado)",
   },
+  fa: {
+    edited: "(ویرایش شده)",
+  },
   fr: {
     edited: "(modifié)",
   },
@@ -25,6 +28,9 @@ export const moderationTimeTranslations: Record<
   },
   "zh-Hant": {
     edited: "(已編輯)",
+  },
+  he: {
+    edited: "(נערך)",
   },
   ja: {
     edited: "(編集済み)",

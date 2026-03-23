@@ -11,6 +11,8 @@ export const notFoundTranslations: Record<
   en: { pageNotFound: "Page not found." },
   ar: { pageNotFound: "الصفحة غير موجودة." },
   es: { pageNotFound: "Página no encontrada." },
+  fa: { pageNotFound: "صفحه یافت نشد." },
+  he: { pageNotFound: "הדף לא נמצא." },
   fr: { pageNotFound: "Page introuvable." },
   "zh-Hans": { pageNotFound: "页面未找到。" },
   "zh-Hant": { pageNotFound: "頁面未找到。" },

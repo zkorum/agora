@@ -48,6 +48,16 @@ export const analysisPageTranslations: Record<
     generateReport: "Generar informe",
     report: "Informe",
   },
+  fa: {
+    loadingAnalysis: "در حال بارگذاری تحلیل...",
+    retryingAnalysis: "تلاش مجدد برای بارگذاری تحلیل...",
+    analysisErrorTitle: "بارگذاری تحلیل ناموفق بود",
+    analysisErrorMessage: "بارگذاری داده‌های تحلیل امکان‌پذیر نیست. لطفاً دوباره تلاش کنید.",
+    noAnalysisData: "داده‌های تحلیل برای این گفتگو موجود نیست",
+    retryAnalysis: "تلاش مجدد",
+    generateReport: "تولید گزارش",
+    report: "گزارش",
+  },
   fr: {
     loadingAnalysis: "Chargement de l'analyse...",
     retryingAnalysis: "Nouvelle tentative de chargement de l'analyse...",
@@ -79,6 +89,16 @@ export const analysisPageTranslations: Record<
     retryAnalysis: "重試載入",
     generateReport: "生成報告",
     report: "報告",
+  },
+  he: {
+    loadingAnalysis: "...טוען ניתוח",
+    retryingAnalysis: "מנסה שוב לטעון ניתוח...",
+    analysisErrorTitle: "טעינת הניתוח נכשלה",
+    analysisErrorMessage: "לא ניתן לטעון את נתוני הניתוח. אנא נסו שוב.",
+    noAnalysisData: "נתוני ניתוח אינם זמינים לשיחה זו",
+    retryAnalysis: "נסה שוב",
+    generateReport: "יצירת דיווח",
+    report: "דיווח",
   },
   ja: {
     loadingAnalysis: "分析を読み込み中...",

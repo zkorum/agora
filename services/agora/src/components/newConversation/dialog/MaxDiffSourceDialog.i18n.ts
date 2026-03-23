@@ -29,6 +29,18 @@ export const maxDiffSourceDialogTranslations: Record<
     githubTitle: "GitHub",
     githubDescription: "Import items from GitHub issues with a specific label",
   },
+  fa: {
+    manualTitle: "دستی",
+    manualDescription: "گزاره‌ها را برای رتبه‌بندی به صورت دستی اضافه کنید",
+    githubTitle: "GitHub",
+    githubDescription: "موارد را از ایشوهای GitHub با برچسب مشخص وارد کنید",
+  },
+  he: {
+    manualTitle: "ידני",
+    manualDescription: "הוסיפו הצהרות לדירוג באופן ידני",
+    githubTitle: "GitHub",
+    githubDescription: "ייבאו פריטים מ-issues ב-GitHub עם תווית מסוימת",
+  },
   fr: {
     manualTitle: "Manuel",
     manualDescription: "Ajouter des propositions à classer manuellement",

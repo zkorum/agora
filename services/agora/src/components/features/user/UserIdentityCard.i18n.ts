@@ -34,6 +34,13 @@ export const userIdentityCardTranslations: Record<
       "Verificación de teléfono o pasaporte requerida",
     edited: "Editado",
   },
+  fa: {
+    guestParticipationTooltip: "مشارکت مهمان فعال است",
+    accountRequiredTooltip: "حساب کاربری الزامی است",
+    emailVerificationTooltip: "تأیید ایمیل الزامی است",
+    strongVerificationTooltip: "تأیید تلفن یا گذرنامه الزامی است",
+    edited: "ویرایش شده",
+  },
   fr: {
     guestParticipationTooltip: "Participation des invités activée",
     accountRequiredTooltip: "Compte requis",
@@ -55,6 +62,13 @@ export const userIdentityCardTranslations: Record<
     emailVerificationTooltip: "需要電子郵件驗證",
     strongVerificationTooltip: "需要手機或護照驗證",
     edited: "已編輯",
+  },
+  he: {
+    guestParticipationTooltip: "השתתפות אורחים מופעלת",
+    accountRequiredTooltip: "נדרש חשבון",
+    emailVerificationTooltip: "נדרש אימות דוא\"ל",
+    strongVerificationTooltip: "נדרש אימות טלפון או דרכון",
+    edited: "נערך",
   },
   ja: {
     guestParticipationTooltip: "ゲスト参加が有効",

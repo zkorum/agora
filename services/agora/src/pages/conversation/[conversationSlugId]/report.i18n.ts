@@ -48,6 +48,28 @@ export const reportPageTranslations: Record<
       "Este informe está diseñado para pantallas más grandes. Ábrelo en un ordenador o tableta.",
     goBack: "Volver",
   },
+  fa: {
+    pageTitle: "گزارش تحلیل",
+    downloadImages: "دانلود تصاویر (ZIP)",
+    downloadPdf: "دانلود PDF",
+    generating: "در حال تولید...",
+    loadingError: "بارگذاری داده‌های گفتگو ناموفق بود",
+    narrowScreenTitle: "صفحه بزرگ‌تر لازم است",
+    narrowScreenMessage:
+      "این گزارش برای صفحه‌های بزرگ‌تر طراحی شده است. لطفاً آن را در رایانه رومیزی یا تبلت باز کنید.",
+    goBack: "بازگشت",
+  },
+  he: {
+    pageTitle: "דוח ניתוח",
+    downloadImages: "הורדת תמונות (ZIP)",
+    downloadPdf: "הורדת PDF",
+    generating: "...מייצר",
+    loadingError: "טעינת נתוני השיחה נכשלה",
+    narrowScreenTitle: "נדרש מסך גדול יותר",
+    narrowScreenMessage:
+      "דוח זה מיועד למסכים גדולים יותר. אנא פתחו אותו במחשב שולחני או טאבלט.",
+    goBack: "חזרה",
+  },
   fr: {
     pageTitle: "Rapport d'analyse",
     downloadImages: "Télécharger les images (ZIP)",

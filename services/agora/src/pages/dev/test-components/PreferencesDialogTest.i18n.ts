@@ -28,6 +28,18 @@ export const preferencesDialogTestTranslations: Record<
       "Pruebe el diálogo de preferencias posterior al registro que permite a los usuarios seleccionar sus preferencias de idioma y tema después de crear una cuenta.",
     openPreferencesDialogButton: "Abrir diálogo de preferencias",
   },
+  fa: {
+    preferencesDialog: "پنجره تنظیمات",
+    preferencesDialogDescription:
+      "آزمایش پنجره تنظیمات پس از ثبت‌نام که به کاربران امکان انتخاب تنظیمات زبان و موضوع پس از ایجاد حساب کاربری را می‌دهد.",
+    openPreferencesDialogButton: "باز کردن پنجره تنظیمات",
+  },
+  he: {
+    preferencesDialog: "דו-שיח העדפות",
+    preferencesDialogDescription:
+      "בדיקת דו-שיח ההעדפות לאחר ההרשמה שמאפשר למשתמשים לבחור את העדפות השפה והנושא לאחר יצירת חשבון.",
+    openPreferencesDialogButton: "פתיחת דו-שיח העדפות",
+  },
   fr: {
     preferencesDialog: "Dialogue des Préférences",
     preferencesDialogDescription:

@@ -73,6 +73,22 @@ export const consensusTabTranslations: Record<
     noDisagreementsMessage: "Aún no ha surgido ningún consenso.",
     lowerRankedDivider: "Menos estadísticamente significativas",
   },
+  fa: {
+    agreementsTitle: "تأیید شده",
+    disagreementsTitle: "رد شده",
+    agreementsLongTitle: "کدام گزاره‌ها توسط همه گروه‌ها {keyword} شده‌اند؟",
+    disagreementsLongTitle: "کدام گزاره‌ها توسط همه گروه‌ها {keyword} شده‌اند؟",
+    agreementsKeyword: "تأیید",
+    disagreementsKeyword: "رد",
+    subtitleAgree:
+      "گزاره‌هایی که همه گروه‌های نظر بر تأیید آنها توافق دارند — نه اکثریت ساده، بلکه اجماع بین‌گروهی. فقط مهم‌ترین موارد از نظر آماری نمایش داده می‌شوند.",
+    subtitleDisagree:
+      "گزاره‌هایی که همه گروه‌های نظر بر رد آنها توافق دارند — نه اکثریت ساده، بلکه اجماع بین‌گروهی. فقط مهم‌ترین موارد از نظر آماری نمایش داده می‌شوند.",
+    loadMore: "بارگذاری همه",
+    noAgreementsMessage: "هنوز اجماعی شکل نگرفته است.",
+    noDisagreementsMessage: "هنوز اجماعی شکل نگرفته است.",
+    lowerRankedDivider: "اهمیت آماری کمتر",
+  },
   fr: {
     agreementsTitle: "Approuvés",
     disagreementsTitle: "Rejetés",
@@ -122,6 +138,22 @@ export const consensusTabTranslations: Record<
     noAgreementsMessage: "尚未形成共識。",
     noDisagreementsMessage: "尚未形成共識。",
     lowerRankedDivider: "統計顯著性較低",
+  },
+  he: {
+    agreementsTitle: "אושרו",
+    disagreementsTitle: "נדחו",
+    agreementsLongTitle: "אילו הצהרות {keyword} על ידי כל הקבוצות?",
+    disagreementsLongTitle: "אילו הצהרות {keyword} על ידי כל הקבוצות?",
+    agreementsKeyword: "אושרו",
+    disagreementsKeyword: "נדחו",
+    subtitleAgree:
+      "הצהרות שכל קבוצות הדעה מסכימות לאשר — לא רוב פשוט, אלא קונצנזוס בין-קבוצתי. רק המובהקות ביותר מבחינה סטטיסטית מוצגות.",
+    subtitleDisagree:
+      "הצהרות שכל קבוצות הדעה מסכימות לדחות — לא רוב פשוט, אלא קונצנזוס בין-קבוצתי. רק המובהקות ביותר מבחינה סטטיסטית מוצגות.",
+    loadMore: "טעינת הכל",
+    noAgreementsMessage: "טרם התגבש קונצנזוס.",
+    noDisagreementsMessage: "טרם התגבש קונצנזוס.",
+    lowerRankedDivider: "פחות מובהק מבחינה סטטיסטית",
   },
   ja: {
     agreementsTitle: "承認",

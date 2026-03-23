@@ -37,6 +37,14 @@ export const usernameChangeTranslations: Record<
     usernameCurrentlyInUse: "Este nombre de usuario está actualmente en uso",
     submitError: "Error al intentar enviar el cambio de nombre de usuario",
   },
+  fa: {
+    usernameLabel: "نام کاربری",
+    updateButton: "به‌روزرسانی",
+    usernameChanged: "نام کاربری تغییر کرد",
+    usernameAlreadyInUse: "این نام کاربری قبلاً استفاده شده است",
+    usernameCurrentlyInUse: "این نام کاربری در حال حاضر در حال استفاده است",
+    submitError: "خطا هنگام ارسال تغییر نام کاربری",
+  },
   fr: {
     usernameLabel: "Nom d'utilisateur",
     updateButton: "Mettre à jour",
@@ -61,6 +69,14 @@ export const usernameChangeTranslations: Record<
     usernameAlreadyInUse: "用戶名已被使用",
     usernameCurrentlyInUse: "此用戶名當前已被使用",
     submitError: "嘗試提交用戶名更改時出錯",
+  },
+  he: {
+    usernameLabel: "שם משתמש",
+    updateButton: "עדכון",
+    usernameChanged: "שם המשתמש שונה",
+    usernameAlreadyInUse: "שם המשתמש כבר בשימוש",
+    usernameCurrentlyInUse: "שם משתמש זה נמצא כעת בשימוש",
+    submitError: "שגיאה בעת ניסיון לשלוח שינוי שם משתמש",
   },
   ja: {
     usernameLabel: "ユーザー名",

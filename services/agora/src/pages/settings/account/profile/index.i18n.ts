@@ -21,6 +21,14 @@ export const profileSettingsTranslations: Record<
     pageTitle: "Configuración de Perfil",
     changeUsernameTitle: "Cambiar nombre de usuario",
   },
+  fa: {
+    pageTitle: "تنظیمات پروفایل",
+    changeUsernameTitle: "تغییر نام کاربری",
+  },
+  he: {
+    pageTitle: "הגדרות פרופיל",
+    changeUsernameTitle: "שינוי שם משתמש",
+  },
   fr: {
     pageTitle: "Paramètres du Profil",
     changeUsernameTitle: "Changer le nom d'utilisateur",

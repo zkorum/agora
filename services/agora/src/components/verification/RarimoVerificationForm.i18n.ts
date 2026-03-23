@@ -92,6 +92,7 @@ export const rarimoVerificationFormTranslations: Record<
     copiedToClipboard: "Enlace copiado al portapapeles",
     couldNotCopy: "No se pudo copiar al portapapeles",
   },
+  fa: { download: "دانلود", claimAnonymousId: "شناسه ناشناس خود را دریافت کنید", comeBackAndVerify: "به اینجا برگردید و روی تأیید کلیک کنید", scanQrCode: "کد QR را با Rarimo اسکن کنید تا هویت خود را تأیید کنید", failedToGenerateLink: "تولید لینک تأیید ناموفق بود", loadingVerificationLink: "بارگذاری لینک تأیید", openLinkOnMobile: "یا لینک زیر را در مرورگر موبایل خود باز کنید:", copy: "کپی", waitingForVerification: "در انتظار تأیید...", verify: "تأیید", verificationSuccessful: "تأیید موفقیت‌آمیز", accountMerged: "موفقیت! حساب‌های شما ادغام شدند", verificationFailed: "تلاش تأیید ناموفق بود. لطفاً دوباره تلاش کنید.", passportAlreadyLinked: "این گذرنامه قبلاً به حساب Rarimo دیگری متصل شده است. لطفاً گذرنامه دیگری امتحان کنید.", unexpectedError: "خطای غیرمنتظره—صفحه را بازخوانی کنید", credentialAlreadyLinked: "این گذرنامه قبلاً به حساب دیگری متصل شده است", copiedToClipboard: "لینک در کلیپ‌بورد کپی شد", couldNotCopy: "کپی در کلیپ‌بورد امکان‌پذیر نبود" },
   fr: {
     download: "Télécharger",
     claimAnonymousId: "Réclamez votre ID anonyme",
@@ -158,6 +159,7 @@ export const rarimoVerificationFormTranslations: Record<
     copiedToClipboard: "已複製連結到剪貼簿",
     couldNotCopy: "無法複製到剪貼簿",
   },
+  he: { download: "הורדה", claimAnonymousId: "קבלו את הזהות האנונימית שלכם", comeBackAndVerify: "חזרו לכאן ולחצו על אימות", scanQrCode: "סרקו את קוד ה-QR עם Rarimo כדי לאמת את זהותכם", failedToGenerateLink: "יצירת קישור אימות נכשלה", loadingVerificationLink: "טוען קישור אימות", openLinkOnMobile: "או פתחו את הקישור הבא בדפדפן הנייד:", copy: "העתקה", waitingForVerification: "ממתין לאימות...", verify: "אימות", verificationSuccessful: "האימות הצליח", accountMerged: "הצלחה! החשבונות שלך מוזגו", verificationFailed: "ניסיון האימות נכשל. אנא נסו שוב.", passportAlreadyLinked: "דרכון זה כבר מקושר לחשבון Rarimo אחר. אנא נסו דרכון אחר.", unexpectedError: "אופס! שגיאה בלתי צפויה—נסו לרענן את הדף", credentialAlreadyLinked: "דרכון זה כבר מקושר לחשבון אחר", copiedToClipboard: "הקישור הועתק ללוח", couldNotCopy: "לא ניתן להעתיק ללוח" },
   ja: {
     download: "ダウンロード",
     claimAnonymousId: "匿名 ID を取得",

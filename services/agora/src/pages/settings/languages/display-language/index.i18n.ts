@@ -17,6 +17,12 @@ export const displayLanguageSettingsTranslations: Record<
   es: {
     pageTitle: "Idioma de visualización",
   },
+  fa: {
+    pageTitle: "زبان نمایش",
+  },
+  he: {
+    pageTitle: "שפת תצוגה",
+  },
   fr: {
     pageTitle: "Langue d'affichage",
   },

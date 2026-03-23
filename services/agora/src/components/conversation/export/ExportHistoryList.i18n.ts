@@ -42,6 +42,15 @@ export const exportHistoryListTranslations: Record<
     statusFailed: "Fallido",
     statusCancelled: "Cancelado",
   },
+  fa: {
+    loadingExports: "در حال بارگذاری صادرات‌ها...",
+    noExportsYet: "هنوز صادراتی وجود ندارد. اولین صادرات خود را در بالا درخواست دهید!",
+    errorLoadingExports: "بارگذاری تاریخچه صادرات ناموفق بود",
+    statusProcessing: "در حال پردازش",
+    statusCompleted: "تکمیل شده",
+    statusFailed: "ناموفق",
+    statusCancelled: "لغو شده",
+  },
   fr: {
     loadingExports: "Chargement des exports...",
     noExportsYet:
@@ -69,6 +78,15 @@ export const exportHistoryListTranslations: Record<
     statusCompleted: "已完成",
     statusFailed: "失敗",
     statusCancelled: "已取消",
+  },
+  he: {
+    loadingExports: "...טוען ייצואים",
+    noExportsYet: "אין עדיין ייצואים. בקש את הייצוא הראשון שלך למעלה!",
+    errorLoadingExports: "טעינת היסטוריית הייצוא נכשלה",
+    statusProcessing: "מעבד",
+    statusCompleted: "הושלם",
+    statusFailed: "נכשל",
+    statusCancelled: "בוטל",
   },
   ja: {
     loadingExports: "エクスポートを読み込んでいます...",

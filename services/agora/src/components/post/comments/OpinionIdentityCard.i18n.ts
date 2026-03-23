@@ -17,6 +17,9 @@ export const opinionIdentityCardTranslations: Record<
   es: {
     seedOpinion: "Proposición semilla",
   },
+  fa: {
+    seedOpinion: "گزاره اولیه",
+  },
   fr: {
     seedOpinion: "Proposition germe",
   },
@@ -25,6 +28,9 @@ export const opinionIdentityCardTranslations: Record<
   },
   "zh-Hant": {
     seedOpinion: "種子觀點",
+  },
+  he: {
+    seedOpinion: "הצהרת זרע",
   },
   ja: {
     seedOpinion: "主張の種",

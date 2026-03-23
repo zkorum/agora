@@ -28,6 +28,18 @@ export const embeddedBrowserWarningTestTranslations: Record<
       "Prueba el diálogo de advertencia del navegador integrado que aparece cuando los usuarios abren la aplicación en un navegador integrado (Telegram, WeChat, etc.)",
     openWarningButton: "Abrir diálogo de advertencia",
   },
+  fa: {
+    embeddedBrowserWarning: "هشدار مرورگر تعبیه‌شده",
+    embeddedBrowserWarningDescription:
+      "آزمایش پنجره هشدار مرورگر تعبیه‌شده که هنگام باز کردن برنامه در مرورگر داخلی (Telegram، WeChat و غیره) ظاهر می‌شود",
+    openWarningButton: "باز کردن پنجره هشدار",
+  },
+  he: {
+    embeddedBrowserWarning: "אזהרת דפדפן מוטמע",
+    embeddedBrowserWarningDescription:
+      "בדיקת דו-שיח אזהרת הדפדפן המוטמע שמופיע כאשר משתמשים פותחים את האפליקציה בדפדפן מובנה (Telegram, WeChat וכו')",
+    openWarningButton: "פתיחת דו-שיח אזהרה",
+  },
   fr: {
     embeddedBrowserWarning: "Avertissement de navigateur intégré",
     embeddedBrowserWarningDescription:

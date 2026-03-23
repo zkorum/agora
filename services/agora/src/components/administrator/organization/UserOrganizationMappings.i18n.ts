@@ -30,6 +30,12 @@ export const userOrganizationMappingsTranslations: Record<
     removeUserOrganizationMappingButton:
       "Eliminar mapeo de usuario-organización",
   },
+  fa: {
+    usernameLabel: "نام کاربری",
+    fetchButton: "دریافت",
+    noOrganizationsMessage: "کاربر به هیچ سازمانی تعلق ندارد",
+    removeUserOrganizationMappingButton: "حذف ارتباط کاربر-سازمان",
+  },
   fr: {
     usernameLabel: "Nom d'utilisateur",
     fetchButton: "Récupérer",
@@ -48,6 +54,12 @@ export const userOrganizationMappingsTranslations: Record<
     fetchButton: "獲取",
     noOrganizationsMessage: "用戶不屬於任何組織",
     removeUserOrganizationMappingButton: "移除用戶組織映射",
+  },
+  he: {
+    usernameLabel: "שם משתמש",
+    fetchButton: "אחזור",
+    noOrganizationsMessage: "המשתמש אינו שייך לאף ארגון",
+    removeUserOrganizationMappingButton: "הסרת שיוך משתמש-ארגון",
   },
   ja: {
     usernameLabel: "ユーザー名",

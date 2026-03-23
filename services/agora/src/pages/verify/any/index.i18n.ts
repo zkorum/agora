@@ -34,6 +34,20 @@ export const verifyAnyTranslations: Record<
     verifyWithPhone: "Iniciar sesión con número de teléfono",
     verifyWithEmail: "Iniciar sesión con correo electrónico",
   },
+  fa: {
+    title: "ورود",
+    description: "یک اعتبارنامه تأیید کنید تا در این گفتگو مشارکت کنید",
+    verifyWithRarimo: "ورود با Rarimo",
+    verifyWithPhone: "ورود با شماره تلفن",
+    verifyWithEmail: "ورود با ایمیل",
+  },
+  he: {
+    title: "התחברות",
+    description: "אמתו אישורים כדי להשתתף בשיחה זו",
+    verifyWithRarimo: "התחברות עם Rarimo",
+    verifyWithPhone: "התחברות עם מספר טלפון",
+    verifyWithEmail: "התחברות עם אימייל",
+  },
   fr: {
     title: "Se connecter",
     description:
