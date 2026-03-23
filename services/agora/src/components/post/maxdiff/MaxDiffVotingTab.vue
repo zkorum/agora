@@ -163,6 +163,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ExtendedConversation, MaxDiffComparison } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
+import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
 import {
   createMaxDiff,
   type MaxDiffInstance,
@@ -191,6 +192,7 @@ const { t } = useComponentI18n<MaxDiffVotingTabTranslations>(
 const { isLoggedIn, hasStrongVerification, hasEmailVerification } =
   storeToRefs(useAuthenticationStore());
 const { saveMaxDiffResult, loadMaxDiffResult, fetchMaxDiffItems } = useMaxDiffApi();
+const { invalidateConversation } = useInvalidateConversationQuery();
 const $q = useQuasar();
 const { showNotifyMessage } = useNotify();
 
@@ -502,6 +504,7 @@ async function recordVote(): Promise<void> {
   const best = selectedBest.value;
   const worst = selectedWorst.value;
   const currentCandidates = [...candidates.value];
+  const isFirstVote = instance.value.exportState().comparisons.length === 0;
 
   // Record in the MaxDiff engine
   recordMaxDiffVote({
@@ -544,6 +547,8 @@ async function recordVote(): Promise<void> {
 
   if (saveResponse.status !== "success") {
     showNotifyMessage(t("savingError"));
+  } else if (isFirstVote || isComplete.value) {
+    invalidateConversation(conversationSlugId.value);
   }
 }
 
@@ -580,6 +585,8 @@ async function undoLastVote(): Promise<void> {
 
   if (saveResponse.status !== "success") {
     showNotifyMessage(t("undoError"));
+  } else if (remainingComparisons.length === 0) {
+    invalidateConversation(conversationSlugId.value);
   }
 }
 
@@ -607,6 +614,10 @@ function handleRedoRanking(): void {
       ranking: null,
       comparisons: [],
       isComplete: false,
+    }).then((response) => {
+      if (response.status === "success") {
+        invalidateConversation(conversationSlugId.value);
+      }
     });
   });
 }

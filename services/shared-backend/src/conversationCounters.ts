@@ -314,6 +314,17 @@ export async function reconcileConversationCounters({
     conversationId: number;
     doUpdateLastReactedAt?: boolean;
 }): Promise<void> {
+    // MaxDiff conversations use maxdiff_result table, not vote table
+    const convType = await db
+        .select({ conversationType: conversationTable.conversationType })
+        .from(conversationTable)
+        .where(eq(conversationTable.id, conversationId));
+
+    if (convType[0]?.conversationType === "maxdiff") {
+        await updateMaxdiffCounters({ db, conversationId });
+        return;
+    }
+
     const counters = await calculateConversationCounters({
         db,
         conversationId,
