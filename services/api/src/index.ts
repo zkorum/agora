@@ -64,7 +64,9 @@ import {
     saveMaxdiffResult,
     loadMaxdiffResult,
     getMaxdiffResults,
+    computeGlobalUncertainty,
 } from "./service/maxdiff.js";
+import { generateCandidateSets } from "./service/maxdiffRouting.js";
 import {
     fetchMaxdiffItems,
     updateMaxdiffItemLifecycle,
@@ -1776,6 +1778,35 @@ server.after(() => {
                 conversationSlugId: request.body.conversationSlugId,
                 lifecycleFilter: request.body.lifecycleFilter,
             });
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/maxdiff/route`,
+        schema: {
+            body: Dto.maxdiffRouteRequest,
+            response: {
+                200: Dto.maxdiffRouteResponse,
+            },
+        },
+        handler: async (request) => {
+            checkMaxdiffEnabled();
+            const { deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                });
+            const { items, uncertainty } = await computeGlobalUncertainty({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+            });
+            const candidateSets = generateCandidateSets({
+                userComparisons: request.body.comparisons,
+                items,
+                globalUncertainty: uncertainty,
+                bufferSize: request.body.bufferSize,
+            });
+            return { candidateSets };
         },
     });
 

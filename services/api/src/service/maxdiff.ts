@@ -116,6 +116,78 @@ export function parseResultRows({
     return { allComparisons, participantCounts };
 }
 
+// --- Global Uncertainty (for routing) ---
+
+/**
+ * Compute global uncertainty for all active items in a conversation.
+ * Uses comparison-count heuristic: uncertainty = 1/sqrt(count + 1).
+ * Cheap — no BT MLE, just counts how many comparisons reference each item.
+ */
+export async function computeGlobalUncertainty({
+    db,
+    conversationSlugId,
+}: {
+    db: PostgresDatabase;
+    conversationSlugId: string;
+}): Promise<{ items: string[]; uncertainty: Map<string, number> }> {
+    const { id: conversationId } =
+        await useCommonPost().getPostMetadataFromSlugId({
+            db,
+            conversationSlugId,
+        });
+
+    const activeItems = await db
+        .select({ slugId: maxdiffItemTable.slugId })
+        .from(maxdiffItemTable)
+        .where(
+            and(
+                eq(maxdiffItemTable.conversationId, conversationId),
+                isNotNull(maxdiffItemTable.currentContentId),
+                inArray(maxdiffItemTable.lifecycleStatus, [
+                    "active",
+                    "in_progress",
+                ]),
+            ),
+        );
+
+    const items = activeItems.map((r) => r.slugId);
+    if (items.length < 2) {
+        return { items, uncertainty: new Map() };
+    }
+
+    const allResults = await db
+        .select({
+            comparisons: maxdiffResultTable.comparisons,
+        })
+        .from(maxdiffResultTable)
+        .where(eq(maxdiffResultTable.conversationId, conversationId));
+
+    // Count how many times each item appears in any comparison set
+    const itemSet = new Set(items);
+    const counts = new Map<string, number>();
+    for (const item of items) counts.set(item, 0);
+
+    for (const row of allResults) {
+        const comparisons = z
+            .array(zodMaxdiffComparison)
+            .parse(row.comparisons);
+        for (const comp of comparisons) {
+            for (const item of comp.set) {
+                if (itemSet.has(item)) {
+                    counts.set(item, (counts.get(item) ?? 0) + 1);
+                }
+            }
+        }
+    }
+
+    const uncertainty = new Map<string, number>();
+    for (const [item, count] of counts) {
+        uncertainty.set(item, 1 / Math.sqrt(count + 1));
+    }
+
+    return { items, uncertainty };
+}
+
 // --- Save / Upsert ---
 
 interface SaveMaxdiffResultProps {
