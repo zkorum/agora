@@ -172,7 +172,7 @@ import {
 } from "src/utils/maxdiff";
 import { useNotify } from "src/utils/ui/notify";
 import type { ComponentPublicInstance } from "vue";
-import { computed, nextTick, ref, triggerRef, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, triggerRef, watch } from "vue";
 
 import MaxDiffStatementDialog from "./MaxDiffStatementDialog.vue";
 import {
@@ -265,6 +265,11 @@ const candidates = ref<string[]>([]);
 const selectedBest = ref<string | null>(null);
 const selectedWorst = ref<string | null>(null);
 const isTransitioning = ref(false);
+let transitionTimeout: ReturnType<typeof setTimeout> | null = null;
+
+onBeforeUnmount(() => {
+  if (transitionTimeout !== null) clearTimeout(transitionTimeout);
+});
 
 // Prefetch buffer: server-generated candidate sets for instant display
 const candidateBuffer = ref<string[][]>([]);
@@ -625,9 +630,11 @@ async function recordVote(): Promise<void> {
   selectedWorst.value = null;
   isTransitioning.value = true;
 
-  setTimeout(async () => {
-    await updateCandidates();
-    isTransitioning.value = false;
+  transitionTimeout = setTimeout(() => {
+    void (async () => {
+      await updateCandidates();
+      isTransitioning.value = false;
+    })();
   }, 400);
 
   // Auto-save to backend
@@ -755,7 +762,7 @@ function handleRedoRanking(): void {
     instance.value = createMaxDiff(slugIds);
     isComplete.value = false;
     finalRanking.value = [];
-    updateCandidates();
+    void updateCandidates();
 
     void saveMaxDiffResult({
       conversationSlugId: conversationSlugId.value,
