@@ -98,7 +98,7 @@
     <q-dialog v-model="showInfoDialog" position="bottom">
       <q-card class="learn-more-dialog">
         <q-card-section>
-          <div class="dialog-title">Best-Worst Scaling (MaxDiff)</div>
+          <div class="dialog-title">Scoring Methodology</div>
         </q-card-section>
         <q-card-section class="dialog-content">
           <p>{{ t("learnMoreMethod") }}</p>
@@ -112,6 +112,13 @@
               rel="noopener noreferrer"
               class="learn-more-link"
             >Best-Worst Scaling (Wikipedia)</a>
+            ·
+            <a
+              href="https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="learn-more-link"
+            >Bradley-Terry Model (Wikipedia)</a>
           </p>
         </q-card-section>
       </q-card>
