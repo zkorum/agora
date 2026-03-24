@@ -164,7 +164,7 @@ const { t } = useComponentI18n<MaxDiffResultsTabTranslations>(
 
 const { getMaxDiffResults, fetchMaxDiffItems } = useMaxDiffApi();
 
-const { currentTab, handleSameTabClick } = useTabNavigation({
+const { currentTab, handleSameTabClick, switchToTab } = useTabNavigation({
   schema: maxdiffShortcutItemSchema,
   defaultTab: "Summary",
 });
@@ -194,10 +194,6 @@ function onTabChange(value: string): void {
   if (parsed.success) {
     currentTab.value = parsed.data;
   }
-}
-
-function switchToTab(tab: MaxDiffShortcutItem): void {
-  currentTab.value = tab;
 }
 
 const isGitHubLinked =

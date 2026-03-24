@@ -1,7 +1,9 @@
 import type { Ref } from "vue";
-import { inject, onActivated, shallowRef, watch } from "vue";
+import { inject, nextTick, onActivated, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { z } from "zod";
+
+import { createSubtabScrollState } from "./subtabScrollLogic";
 
 export function useTabNavigation<T extends string>({
     schema,
@@ -12,6 +14,7 @@ export function useTabNavigation<T extends string>({
 }): {
     currentTab: Ref<T>;
     handleSameTabClick: () => void;
+    switchToTab: (tab: T) => void;
 } {
     const route = useRoute();
     const router = useRouter();
@@ -22,6 +25,19 @@ export function useTabNavigation<T extends string>({
         /* noop */
     });
 
+    const getScrollPosition = inject<() => number>(
+        "getScrollPosition",
+        () => 0,
+    );
+
+    const scrollToPosition = inject<
+        (params: { top: number; behavior?: ScrollBehavior }) => void
+    >("scrollToPosition", () => {
+        /* noop */
+    });
+
+    const subtabScroll = createSubtabScrollState<T>();
+
     const initialTab = schema.safeParse(route.query.tab);
     const currentTab: Ref<T> = shallowRef(
         initialTab.success ? initialTab.data : defaultTab,
@@ -29,6 +45,10 @@ export function useTabNavigation<T extends string>({
 
     // Guard: skip URL sync and scroll when currentTab changes from route-driven sync
     let syncingFromRoute = false;
+
+    // Flag: when true, the next tab change scrolls to action bar
+    // (used by "View More" / programmatic switchToTab)
+    let explicitNavigation = false;
 
     // Sync URL → currentTab on KeepAlive reactivation only.
     // Using onActivated (not a watch on route.query.tab) to avoid firing
@@ -53,6 +73,15 @@ export function useTabNavigation<T extends string>({
     // Sync: currentTab → URL + scroll (skipped during route-driven sync)
     watch(currentTab, (newTab, oldTab) => {
         if (!syncingFromRoute) {
+            // Save departing tab's scroll position (skip on initial render)
+            if (oldTab !== undefined) {
+                subtabScroll.savePosition({
+                    tab: oldTab,
+                    currentScroll: getScrollPosition(),
+                });
+            }
+
+            // Update URL
             const currentQuery = { ...route.query };
             if (newTab === defaultTab) {
                 delete currentQuery.tab;
@@ -61,8 +90,25 @@ export function useTabNavigation<T extends string>({
             }
             void router.replace({ query: currentQuery });
 
+            // Determine scroll target
             if (oldTab !== undefined) {
-                scrollToActionBar({ behavior: "smooth" });
+                const isExplicit = explicitNavigation;
+                explicitNavigation = false;
+
+                const target = subtabScroll.getRestorationTarget({
+                    tab: newTab,
+                    defaultTab,
+                    isExplicitNavigation: isExplicit,
+                });
+
+                if (target === "action-bar") {
+                    scrollToActionBar({ behavior: "smooth" });
+                } else {
+                    // Wait for DOM update since subtab content is rendered via v-if
+                    void nextTick(() => {
+                        scrollToPosition({ top: target });
+                    });
+                }
             }
         }
         syncingFromRoute = false;
@@ -72,5 +118,10 @@ export function useTabNavigation<T extends string>({
         scrollToActionBar({ behavior: "smooth" });
     }
 
-    return { currentTab, handleSameTabClick };
+    function switchToTab(tab: T): void {
+        explicitNavigation = true;
+        currentTab.value = tab;
+    }
+
+    return { currentTab, handleSameTabClick, switchToTab };
 }
