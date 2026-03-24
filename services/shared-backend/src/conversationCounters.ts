@@ -15,10 +15,12 @@
  * in the same query (3 queries total, same as before).
  */
 
-import { eq, isNotNull, and, count, sql } from "drizzle-orm";
+import { eq, isNotNull, and, count, sql, inArray } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { z } from "zod";
 import {
     conversationTable,
+    maxdiffItemTable,
     maxdiffResultTable,
     opinionTable,
     voteTable,
@@ -27,6 +29,12 @@ import {
     conversationUpdateQueueTable,
 } from "./schema.js";
 import { nowZeroMs } from "./util.js";
+
+const zodComparison = z.object({
+    best: z.string(),
+    worst: z.string(),
+    set: z.array(z.string()),
+});
 
 interface AllConversationCounters {
     opinionCount: number;
@@ -262,10 +270,9 @@ async function enqueueMathUpdate({
 /**
  * Update participantCount and voteCount for MaxDiff conversations.
  *
- * Counts all participants who have at least one comparison (not just completed rankings).
- * Vote count is the total number of comparison rounds across all participants.
- * No moderation distinction for MaxDiff — participantCount = totalParticipantCount,
- * voteCount = totalVoteCount.
+ * Total counts include all comparisons/participants.
+ * Filtered counts (participantCount, voteCount) exclude comparisons where
+ * best or worst is a completed/canceled item, matching live scoring logic.
  */
 export async function updateMaxdiffCounters({
     db,
@@ -274,26 +281,87 @@ export async function updateMaxdiffCounters({
     db: PostgresJsDatabase;
     conversationId: number;
 }): Promise<void> {
-    const result = await db
+    // Total counts (all comparisons, regardless of item lifecycle)
+    const totalResult = await db
         .select({
-            participantCount: sql<number>`count(*) FILTER (WHERE jsonb_array_length(${maxdiffResultTable.comparisons}) > 0)`,
-            voteCount: sql<number>`COALESCE(SUM(jsonb_array_length(${maxdiffResultTable.comparisons})), 0)`,
+            totalParticipantCount: sql<number>`count(*) FILTER (WHERE jsonb_array_length(${maxdiffResultTable.comparisons}) > 0)`,
+            totalVoteCount: sql<number>`COALESCE(SUM(jsonb_array_length(${maxdiffResultTable.comparisons})), 0)`,
         })
         .from(maxdiffResultTable)
+        .where(eq(maxdiffResultTable.conversationId, conversationId));
+
+    const totalParticipantCount =
+        totalResult[0]?.totalParticipantCount ?? 0;
+    const totalVoteCount = totalResult[0]?.totalVoteCount ?? 0;
+
+    // Active item slug IDs (only active/in_progress with content)
+    const activeItemRows = await db
+        .select({ slugId: maxdiffItemTable.slugId })
+        .from(maxdiffItemTable)
         .where(
-            eq(maxdiffResultTable.conversationId, conversationId),
+            and(
+                eq(maxdiffItemTable.conversationId, conversationId),
+                inArray(maxdiffItemTable.lifecycleStatus, [
+                    "active",
+                    "in_progress",
+                ]),
+                isNotNull(maxdiffItemTable.currentContentId),
+            ),
         );
 
-    const participantCount = result[0]?.participantCount ?? 0;
-    const voteCount = result[0]?.voteCount ?? 0;
+    const activeItemSet = new Set(activeItemRows.map((r) => r.slugId));
+
+    // If no active items, filtered counts are 0
+    if (activeItemSet.size === 0) {
+        await db
+            .update(conversationTable)
+            .set({
+                participantCount: 0,
+                totalParticipantCount,
+                voteCount: 0,
+                totalVoteCount,
+            })
+            .where(eq(conversationTable.id, conversationId));
+        return;
+    }
+
+    // Filtered counts: exclude comparisons involving completed/canceled items
+    const resultRows = await db
+        .select({ comparisons: maxdiffResultTable.comparisons })
+        .from(maxdiffResultTable)
+        .where(
+            and(
+                eq(maxdiffResultTable.conversationId, conversationId),
+                sql`jsonb_array_length(${maxdiffResultTable.comparisons}) > 0`,
+            ),
+        );
+
+    let voteCount = 0;
+    let participantCount = 0;
+
+    for (const row of resultRows) {
+        const comparisons = z.array(zodComparison).parse(row.comparisons);
+        let hasValidComparison = false;
+
+        for (const comp of comparisons) {
+            if (activeItemSet.has(comp.best) && activeItemSet.has(comp.worst)) {
+                voteCount++;
+                hasValidComparison = true;
+            }
+        }
+
+        if (hasValidComparison) {
+            participantCount++;
+        }
+    }
 
     await db
         .update(conversationTable)
         .set({
             participantCount,
-            totalParticipantCount: participantCount,
+            totalParticipantCount,
             voteCount,
-            totalVoteCount: voteCount,
+            totalVoteCount,
         })
         .where(eq(conversationTable.id, conversationId));
 }

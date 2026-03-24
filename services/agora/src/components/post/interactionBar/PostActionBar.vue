@@ -62,7 +62,7 @@
       :analysis-count="voteCount"
       :total-label="t('totalVotes')"
       :analysis-label="t('usedForAnalysis')"
-      :explanation-text="t('moderatedVotesExplanation')"
+      :explanation-text="votesExplanation"
     />
 
     <CountBreakdownDialog
@@ -71,7 +71,7 @@
       :analysis-count="participantCount"
       :total-label="t('totalParticipants')"
       :analysis-label="t('usedForAnalysis')"
-      :explanation-text="t('moderatedParticipantsExplanation')"
+      :explanation-text="participantsExplanation"
     />
 
     <slot name="dropdown" />
@@ -87,7 +87,7 @@ import type { ContentAction } from "src/utils/actions/core/types";
 import { formatAmount } from "src/utils/common";
 import { useNotify } from "src/utils/ui/notify";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 import ZKActionDialog from "../../ui-library/ZKActionDialog.vue";
 import ZKButton from "../../ui-library/ZKButton.vue";
@@ -132,6 +132,17 @@ const shareActions = useShareActions();
 const showVoteBreakdown = ref(false);
 const showParticipantBreakdown = ref(false);
 const notify = useNotify();
+
+const votesExplanation = computed(() =>
+  props.conversationType === "maxdiff"
+    ? t("maxdiffVotesExplanation")
+    : t("moderatedVotesExplanation"),
+);
+const participantsExplanation = computed(() =>
+  props.conversationType === "maxdiff"
+    ? t("maxdiffParticipantsExplanation")
+    : t("moderatedParticipantsExplanation"),
+);
 
 function shareClicked(): void {
   const sharePostUrl = getConversationUrl(props.conversationSlugId);

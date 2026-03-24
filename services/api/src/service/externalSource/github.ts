@@ -11,6 +11,7 @@ import {
 import { zodExternalSourceConfig } from "@/shared/types/zod.js";
 import { createMaxdiffItem } from "@/service/maxdiffItem.js";
 import { computeItemSnapshot } from "@/service/maxdiff.js";
+import { updateMaxdiffCounters } from "@/shared-backend/conversationCounters.js";
 import { log } from "@/app.js";
 import {
     processUserGeneratedHtml,
@@ -186,6 +187,10 @@ export async function handleIssueWebhook({
                 conversationId: conversation.id,
                 externalId,
             });
+            await updateMaxdiffCounters({
+                db,
+                conversationId: conversation.id,
+            });
             continue;
         }
 
@@ -212,6 +217,10 @@ export async function handleIssueWebhook({
                     assignees: issue.assignees.map((a) => a.login),
                     milestone: issue.milestone?.title ?? null,
                 },
+            });
+            await updateMaxdiffCounters({
+                db,
+                conversationId: conversation.id,
             });
         } catch (error) {
             log.error(
@@ -595,6 +604,8 @@ export async function syncGitHubIssues({
             );
         }
     }
+
+    await updateMaxdiffCounters({ db, conversationId: conversation.id });
 
     log.info(
         `[GitHub] Sync for ${conversationSlugId}: created=${String(created)}, updated=${String(updated)}`,
