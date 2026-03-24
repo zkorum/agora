@@ -68,6 +68,5 @@ const { t } = useComponentI18n<StartConversationButtonLongTranslations>(
   align-items: center;
   flex: 1;
   text-align: left;
-  white-space: nowrap;
 }
 </style>

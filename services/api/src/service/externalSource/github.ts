@@ -277,36 +277,29 @@ async function upsertItemFromGitHubIssue({
         );
 
     if (existingRows.length === 0) {
-        // Create new item
-        const { slugId } = await createMaxdiffItem({
-            db,
-            conversationId,
-            conversationContentId,
-            authorId,
-            title: issue.title,
-            body: convertMarkdownToHtml({ markdown: issue.body }),
-            isSeed: false,
-        });
+        // Create new item + external source in a single transaction
+        const { slugId, itemId } = await db.transaction(async (tx) => {
+            const result = await createMaxdiffItem({
+                db,
+                tx,
+                conversationId,
+                conversationContentId,
+                authorId,
+                title: issue.title,
+                body: convertMarkdownToHtml({ markdown: issue.body }),
+                isSeed: false,
+            });
 
-        // Look up the item ID from the slug
-        const itemRows = await db
-            .select({ id: maxdiffItemTable.id })
-            .from(maxdiffItemTable)
-            .where(eq(maxdiffItemTable.slugId, slugId));
+            await tx.insert(maxdiffItemExternalSourceTable).values({
+                maxdiffItemId: result.itemId,
+                sourceType: "github_issue",
+                externalId,
+                externalUrl: issue.htmlUrl,
+                externalMetadata: metadata,
+                lastSyncedAt: new Date(),
+            });
 
-        if (itemRows.length === 0) {
-            throw new Error(
-                `[GitHub] Failed to find newly created maxdiff item with slugId=${slugId} for externalId=${externalId}`,
-            );
-        }
-
-        await db.insert(maxdiffItemExternalSourceTable).values({
-            maxdiffItemId: itemRows[0].id,
-            sourceType: "github_issue",
-            externalId,
-            externalUrl: issue.htmlUrl,
-            externalMetadata: metadata,
-            lastSyncedAt: new Date(),
+            return result;
         });
 
         // If issue is already closed, transition to correct lifecycle
@@ -327,7 +320,7 @@ async function upsertItemFromGitHubIssue({
                         snapshot.snapshotParticipantCount,
                     updatedAt: new Date(),
                 })
-                .where(eq(maxdiffItemTable.id, itemRows[0].id));
+                .where(eq(maxdiffItemTable.id, itemId));
         }
 
         log.info(
@@ -455,8 +448,18 @@ async function deactivateItemByExternalId({
             maxdiffItemId: maxdiffItemExternalSourceTable.maxdiffItemId,
         })
         .from(maxdiffItemExternalSourceTable)
+        .innerJoin(
+            maxdiffItemTable,
+            eq(
+                maxdiffItemTable.id,
+                maxdiffItemExternalSourceTable.maxdiffItemId,
+            ),
+        )
         .where(
-            eq(maxdiffItemExternalSourceTable.externalId, externalId),
+            and(
+                eq(maxdiffItemExternalSourceTable.externalId, externalId),
+                eq(maxdiffItemTable.conversationId, conversationId),
+            ),
         );
 
     if (rows.length === 0) return;

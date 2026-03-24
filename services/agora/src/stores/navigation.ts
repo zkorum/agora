@@ -28,7 +28,7 @@ export const useNavigationStore = defineStore("navigation", () => {
   // Mobile overlay (≤554px): 300px — doesn't compete with feed
   const drawerWidth = computed(() => {
     if (drawerBehavior.value === "mobile") return 280;
-    return $q.screen.gt.sm ? 273 : 200;
+    return $q.screen.gt.sm ? 340 : 200;
   });
 
   function setConversationCreationContext(value: boolean) {
