@@ -193,7 +193,7 @@ const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const { createNewPost } = useBackendPostApi();
 const { syncMaxDiff, previewGitHubIssues } = useMaxDiffApi();
-const { invalidateFeed } = useInvalidateFeedQuery();
+const { invalidateFeedTab } = useInvalidateFeedQuery();
 const { handleAxiosErrorStatusCodes } = useCommonApi();
 
 const showLoginDialog = ref(false);
@@ -496,7 +496,7 @@ async function onSubmit() {
         });
       }
 
-      invalidateFeed();
+      invalidateFeedTab("new");
 
       // Set navigation context to indicate user came from conversation creation
       navigationStore.setConversationCreationContext(true);

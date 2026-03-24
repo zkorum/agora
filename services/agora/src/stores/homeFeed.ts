@@ -146,9 +146,12 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
       hasPendingFollowingTab.value = true;
       return;
     }
+    const TOP_N = 3;
+    const localTop = localList.slice(0, TOP_N);
+    const remoteTop = topSlugIds.slice(0, TOP_N);
     const changed =
-      topSlugIds.length !== localList.length ||
-      topSlugIds.some((id, i) => id !== localList[i]);
+      remoteTop.length !== localTop.length ||
+      remoteTop.some((id, i) => id !== localTop[i]);
     if (changed) {
       hasPendingFollowingTab.value = true;
     }
