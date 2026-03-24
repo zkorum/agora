@@ -1,14 +1,18 @@
 <template>
   <div class="maxdiff-container">
     <!-- Loading state -->
-    <PageLoadingSpinner v-if="isLoading" />
+    <PageLoadingSpinner v-if="isInitializingEngine || itemsQuery.isPending.value || (loadQuery.isPending.value && !loadQuery.isError.value)" />
 
-    <!-- Fetch error -->
-    <div v-else-if="itemsFetchError" class="info-message">
-      {{ t("loadingError") }}
-    </div>
+    <!-- Items fetch error -->
+    <ErrorRetryBlock
+      v-else-if="itemsQuery.isError.value"
+      :title="t('loadingError')"
+      :retry-label="t('retryButton')"
+      compact
+      @retry="retryInitialize"
+    />
 
-    <!-- Initialization error (e.g. failed to load saved state or route buffer) -->
+    <!-- Initialization error (e.g. route buffer fetch failed) -->
     <ErrorRetryBlock
       v-else-if="initError"
       :title="t('loadingError')"
@@ -176,9 +180,13 @@ import { useMaxDiffHistoryUndo } from "src/composables/maxdiff/useMaxDiffHistory
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ExtendedConversation, MaxDiffComparison } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useBackendAuthApi } from "src/utils/api/auth";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
-import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
+import {
+  type MaxDiffSaveContext,
+  useMaxDiffItemsQuery,
+  useMaxDiffLoadQuery,
+  useMaxDiffSaveMutation,
+} from "src/utils/api/maxdiff/useMaxDiffQueries";
 import {
   createMaxDiff,
   type MaxDiffInstance,
@@ -206,9 +214,7 @@ const { t } = useComponentI18n<MaxDiffVotingTabTranslations>(
 
 const { isLoggedIn, hasStrongVerification, hasEmailVerification } =
   storeToRefs(useAuthenticationStore());
-const { saveMaxDiffResult, loadMaxDiffResult, fetchMaxDiffItems, fetchMaxDiffRoute } = useMaxDiffApi();
-const { updateAuthState } = useBackendAuthApi();
-const { invalidateConversation } = useInvalidateConversationQuery();
+const { fetchMaxDiffRoute } = useMaxDiffApi();
 const $q = useQuasar();
 const { showNotifyMessage } = useNotify();
 
@@ -231,7 +237,17 @@ const conversationSlugId = computed(
   () => props.conversationData.metadata.conversationSlugId
 );
 
-// Fetch active MaxDiff items for this conversation
+// TanStack queries for items and saved state
+const itemsQuery = useMaxDiffItemsQuery({
+  conversationSlugId,
+  enabled: () => props.hasConversationData,
+});
+
+const loadQuery = useMaxDiffLoadQuery({
+  conversationSlugId,
+  enabled: () => props.hasConversationData,
+});
+
 interface MaxDiffItemDisplay {
   slugId: string;
   title: string;
@@ -239,10 +255,16 @@ interface MaxDiffItemDisplay {
   externalUrl: string | null;
 }
 
-const itemList = ref<MaxDiffItemDisplay[]>([]);
-const itemsFetched = ref(false);
-const itemsFetchError = ref(false);
-const initError = ref(false);
+const itemList = computed<MaxDiffItemDisplay[]>(() => {
+  const data = itemsQuery.data.value;
+  if (data === undefined) return [];
+  return data.map((item) => ({
+    slugId: item.slugId,
+    title: item.title,
+    body: item.body ?? null,
+    externalUrl: item.externalUrl ?? null,
+  }));
+});
 
 const itemContentMap = computed(() => {
   const map = new Map<string, string>();
@@ -273,9 +295,34 @@ function needsDialog(slugId: string): boolean {
   return false;
 }
 
+// Save mutation with rollback
+const saveMutation = useMaxDiffSaveMutation({
+  conversationSlugId,
+  onRollback: (context: MaxDiffSaveContext) => {
+    instance.value = restoreMaxDiff(context.previousState);
+    triggerRef(instance);
+    isComplete.value = context.previousIsComplete;
+    finalRanking.value = context.previousFinalRanking;
+    candidates.value = context.previousCandidates;
+    candidateBuffer.value = context.previousCandidateBuffer;
+    if (transitionTimeout !== null) {
+      clearTimeout(transitionTimeout);
+      isTransitioning.value = false;
+    }
+    consumeUndoEntry();
+    showNotifyMessage(t("savingError"));
+  },
+  onSaveSuccess: () => {
+    // Clear undo history once ranking is confirmed complete
+    if (isComplete.value) {
+      clearAllUndoEntries();
+    }
+  },
+});
+
 // MaxDiff engine state
 const instance = ref<MaxDiffInstance | null>(null);
-const isLoading = ref(true);
+const isInitializingEngine = ref(true);
 const isComplete = ref(false);
 const finalRanking = ref<string[]>([]);
 const candidates = ref<string[]>([]);
@@ -387,33 +434,60 @@ const { pushUndoEntry, consumeUndoEntry, clearAllUndoEntries } =
     canUndo: () => canUndo.value,
   });
 
-// Fetch items and initialize MaxDiff when conversation data is ready
+// Initialize engine when both queries resolve
+const engineInitialized = ref(false);
+const initError = ref(false);
+
 watch(
-  () => props.hasConversationData,
-  async (hasData) => {
-    if (hasData && !itemsFetched.value) {
-      const response = await fetchMaxDiffItems({
-        conversationSlugId: conversationSlugId.value,
-        lifecycleFilter: "active",
-      });
-      if (response.status === "success") {
-        itemList.value = response.data.items.map((item) => ({
-          slugId: item.slugId,
-          title: item.title,
-          body: item.body ?? null,
-          externalUrl: item.externalUrl ?? null,
-        }));
-        itemsFetched.value = true;
-        if (itemList.value.length >= 2 && !instance.value) {
-          await initializeMaxDiff();
-        } else {
-          isLoading.value = false;
-        }
-      } else {
-        itemsFetchError.value = true;
-        isLoading.value = false;
-      }
+  [() => itemsQuery.data.value, () => loadQuery.data.value, () => loadQuery.isError.value],
+  async ([items, loadData, loadError]) => {
+    if (items === undefined || engineInitialized.value) return;
+    // Wait for load query to settle (success or error)
+    if (loadData === undefined && !loadError) return;
+
+    const slugIds = items.map((item) => item.slugId);
+    if (slugIds.length < 2) {
+      isInitializingEngine.value = false;
+      engineInitialized.value = true;
+      return;
     }
+
+    isInitializingEngine.value = true;
+    initError.value = false;
+
+    if (loadData !== undefined && loadData.comparisons !== null) {
+      // Restore from saved state
+      const comparisons: MaxDiffComparison[] = loadData.comparisons.map(
+        (c) => ({ best: c.best, worst: c.worst, set: c.set })
+      );
+      const restored = restoreMaxDiff({ items: slugIds, comparisons });
+      instance.value = restored;
+      isComplete.value = restored.complete;
+      finalRanking.value = restored.result ?? [];
+    } else {
+      // No saved state or load failed — create fresh instance
+      const fresh = createMaxDiff(slugIds);
+      instance.value = fresh;
+      isComplete.value = false;
+      finalRanking.value = [];
+    }
+
+    // Fetch initial route buffer
+    await fetchRouteBuffer({
+      comparisons: instance.value.exportState().comparisons,
+      initialLoad: true,
+    });
+
+    if (candidateBuffer.value.length === 0 && !instance.value.complete) {
+      initError.value = true;
+      isInitializingEngine.value = false;
+      engineInitialized.value = true;
+      return;
+    }
+
+    await updateCandidates();
+    isInitializingEngine.value = false;
+    engineInitialized.value = true;
   },
   { immediate: true },
 );
@@ -423,74 +497,12 @@ watch(candidates, () => {
   void nextTick(checkTruncation);
 });
 
-async function initializeMaxDiff(): Promise<void> {
-  isLoading.value = true;
-  initError.value = false;
-
-  const slugIds = itemList.value.map((item) => item.slugId);
-
-  // Try to load saved state from backend
-  const loadResponse = await loadMaxDiffResult({
-    conversationSlugId: conversationSlugId.value,
-  });
-
-  if (
-    loadResponse.status === "success" &&
-    loadResponse.data.comparisons !== null
-  ) {
-    // Restore from saved state
-    const comparisons: MaxDiffComparison[] = loadResponse.data.comparisons.map(
-      (c) => ({
-        best: c.best,
-        worst: c.worst,
-        set: c.set,
-      })
-    );
-
-    const restored = restoreMaxDiff({
-      items: slugIds,
-      comparisons,
-    });
-
-    instance.value = restored;
-    isComplete.value = restored.complete;
-    finalRanking.value = restored.result ?? [];
-
-    // Don't push history entries for previously saved comparisons.
-    // Browser back should only undo votes made in the current session.
-  } else if (loadResponse.status === "success") {
-    // No saved state — create fresh instance
-    const fresh = createMaxDiff(slugIds);
-    instance.value = fresh;
-    isComplete.value = false;
-    finalRanking.value = [];
-  } else {
-    // Load failed — create fresh instance anyway (treat as no saved state)
-    const fresh = createMaxDiff(slugIds);
-    instance.value = fresh;
-    isComplete.value = false;
-    finalRanking.value = [];
-  }
-
-  // Fetch initial route buffer from server
-  await fetchRouteBuffer({
-    comparisons: instance.value.exportState().comparisons,
-    initialLoad: true,
-  });
-
-  // If buffer is empty after initial fetch and voting isn't complete, show error
-  if (candidateBuffer.value.length === 0 && !instance.value.complete) {
-    initError.value = true;
-    isLoading.value = false;
-    return;
-  }
-
-  await updateCandidates();
-  isLoading.value = false;
-}
-
 function retryInitialize(): void {
-  void initializeMaxDiff();
+  engineInitialized.value = false;
+  initError.value = false;
+  isInitializingEngine.value = true;
+  void itemsQuery.refetch();
+  void loadQuery.refetch();
 }
 
 const BUFFER_REFILL_THRESHOLD = 1;
@@ -507,7 +519,7 @@ async function updateCandidates(): Promise<void> {
     candidates.value = validSet;
   } else {
     // Buffer empty — fetch fresh sets with loading state
-    isLoading.value = true;
+    isInitializingEngine.value = true;
     await fetchRouteBuffer({
       comparisons: instance.value.exportState().comparisons,
       initialLoad: false,
@@ -520,7 +532,7 @@ async function updateCandidates(): Promise<void> {
       isComplete.value = true;
       candidates.value = [];
     }
-    isLoading.value = false;
+    isInitializingEngine.value = false;
     return;
   }
 
@@ -616,7 +628,7 @@ function selectCandidate(slugId: string): void {
   if (selectedWorst.value === null) {
     selectedWorst.value = slugId;
     // Both selected — record the vote
-    void recordVote();
+    recordVote();
     return;
   }
 
@@ -631,34 +643,36 @@ function selectCandidate(slugId: string): void {
   void recordVote();
 }
 
-async function recordVote(): Promise<void> {
+function recordVote(): void {
   if (!instance.value || !selectedBest.value || !selectedWorst.value) return;
+
+  // Snapshot state BEFORE optimistic update for rollback
+  const previousState = instance.value.exportState();
+  const context: MaxDiffSaveContext = {
+    previousState,
+    previousIsComplete: isComplete.value,
+    previousFinalRanking: [...finalRanking.value],
+    previousCandidates: [...candidates.value],
+    previousCandidateBuffer: [...candidateBuffer.value],
+    isFirstVote: previousState.comparisons.length === 0,
+  };
 
   const best = selectedBest.value;
   const worst = selectedWorst.value;
   const currentCandidates = [...candidates.value];
-  const isFirstVote = instance.value.exportState().comparisons.length === 0;
 
-  // Record in the MaxDiff engine
+  // Optimistic update: record in engine
   recordMaxDiffVote({
     instance: instance.value,
     candidates: currentCandidates,
     best,
     worst,
   });
-
-  // Force Vue to re-evaluate computeds that read from instance
   triggerRef(instance);
-
   pushUndoEntry();
 
-  // Check completion
   isComplete.value = instance.value.complete;
   finalRanking.value = instance.value.result ?? [];
-
-  if (isComplete.value) {
-    clearAllUndoEntries();
-  }
 
   // Reset selection and transition to next round
   selectedBest.value = null;
@@ -672,32 +686,30 @@ async function recordVote(): Promise<void> {
     })();
   }, 400);
 
-  // Auto-save to backend
-  const saveResponse = await saveMaxDiffResult({
-    conversationSlugId: conversationSlugId.value,
+  // Save to backend via mutation (rollback handled by onRollback callback)
+  saveMutation.mutate({
     ranking: instance.value.result ?? null,
     comparisons: instance.value.exportState().comparisons,
     isComplete: instance.value.complete,
+    context,
   });
-
-  if (saveResponse.status !== "success") {
-    // Save failed — possibly stale items. Refresh and reinitialize.
-    showNotifyMessage(t("savingError"));
-    void refreshAfterStaleData();
-  } else {
-    // Update auth state: guest user may have been created on first save
-    await updateAuthState({ partialLoginStatus: { isKnown: true } });
-    if (isFirstVote || isComplete.value) {
-      invalidateConversation(conversationSlugId.value);
-    }
-  }
 }
 
-async function undoLastVote(): Promise<void> {
+function undoLastVote(): void {
   if (!instance.value) return;
 
   const state = instance.value.exportState();
   if (state.comparisons.length === 0) return;
+
+  // Snapshot for rollback (undo should be reversible on save failure)
+  const context: MaxDiffSaveContext = {
+    previousState: state,
+    previousIsComplete: isComplete.value,
+    previousFinalRanking: [...finalRanking.value],
+    previousCandidates: [...candidates.value],
+    previousCandidateBuffer: [...candidateBuffer.value],
+    isFirstVote: false,
+  };
 
   const remainingComparisons = state.comparisons.slice(0, -1);
   const removedComparison = state.comparisons[state.comparisons.length - 1];
@@ -724,68 +736,17 @@ async function undoLastVote(): Promise<void> {
     initialLoad: false,
   });
 
-  const saveResponse = await saveMaxDiffResult({
-    conversationSlugId: conversationSlugId.value,
+  saveMutation.mutate({
     ranking: restored.result ?? null,
     comparisons: restored.exportState().comparisons,
     isComplete: restored.complete,
+    context,
   });
-
-  if (saveResponse.status !== "success") {
-    showNotifyMessage(t("undoError"));
-  } else if (remainingComparisons.length === 0) {
-    invalidateConversation(conversationSlugId.value);
-  }
 }
 
-/**
- * Refresh items and reinitialize after detecting stale data
- * (e.g., items removed/changed mid-voting via GitHub sync).
- */
-async function refreshAfterStaleData(): Promise<void> {
-  const response = await fetchMaxDiffItems({
-    conversationSlugId: conversationSlugId.value,
-    lifecycleFilter: "active",
-  });
-  if (response.status !== "success") return;
-
-  itemList.value = response.data.items.map((item) => ({
-    slugId: item.slugId,
-    title: item.title,
-    body: item.body ?? null,
-    externalUrl: item.externalUrl ?? null,
-  }));
-
-  // Clear stale buffer
-  candidateBuffer.value = [];
-
-  // Not enough items to continue voting
-  if (itemList.value.length < 2) {
-    candidates.value = [];
-    isLoading.value = false;
-    return;
-  }
-
-  // Reinitialize engine with updated items, preserving existing comparisons
-  if (instance.value !== null) {
-    const currentComparisons = instance.value.exportState().comparisons;
-    const newSlugIds = itemList.value.map((item) => item.slugId);
-    const restored = restoreMaxDiff({
-      items: newSlugIds,
-      comparisons: currentComparisons,
-    });
-    instance.value = restored;
-    triggerRef(instance);
-    isComplete.value = restored.complete;
-    finalRanking.value = restored.result ?? [];
-  }
-
-  // Fetch fresh candidate sets
-  await updateCandidates();
-}
 
 function handleUndoClick(): void {
-  void undoLastVote();
+  undoLastVote();
   consumeUndoEntry();
 }
 
@@ -796,6 +757,16 @@ function handleRedoRanking(): void {
     cancel: true,
     persistent: true,
   }).onOk(() => {
+    // Snapshot for rollback
+    const context: MaxDiffSaveContext = {
+      previousState: instance.value?.exportState() ?? { items: [], comparisons: [] },
+      previousIsComplete: isComplete.value,
+      previousFinalRanking: [...finalRanking.value],
+      previousCandidates: [...candidates.value],
+      previousCandidateBuffer: [...candidateBuffer.value],
+      isFirstVote: false,
+    };
+
     clearAllUndoEntries();
     const slugIds = itemList.value.map((item) => item.slugId);
     instance.value = createMaxDiff(slugIds);
@@ -803,15 +774,11 @@ function handleRedoRanking(): void {
     finalRanking.value = [];
     void updateCandidates();
 
-    void saveMaxDiffResult({
-      conversationSlugId: conversationSlugId.value,
+    saveMutation.mutate({
       ranking: null,
       comparisons: [],
       isComplete: false,
-    }).then((response) => {
-      if (response.status === "success") {
-        invalidateConversation(conversationSlugId.value);
-      }
+      context,
     });
   });
 }
