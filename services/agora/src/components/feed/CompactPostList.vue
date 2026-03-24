@@ -151,17 +151,23 @@ const { t } = useComponentI18n<CompactPostListTranslations>(
 
 // isPending: query has never resolved (waiting for auth init or first fetch).
 // isFetching: any fetch is in flight (first load or refetch).
-const { data, isPending, isError, refetch } = useFeedQuery({
+const { data, isPending, isError, isFetching, refetch } = useFeedQuery({
   enabled: isAuthInitialized,
 });
 
 const isOffline = isNetworkOffline;
 
-const showLoading = computed(() =>
-  isPending.value && !isError.value
-);
-
 const isActive = ref(true);
+
+watch(isOffline, (offline, wasOffline) => {
+  if (!offline && wasOffline && isError.value && isActive.value) {
+    void refetch();
+  }
+});
+
+const showLoading = computed(() =>
+  (isPending.value && !isError.value) || (isError.value && isFetching.value)
+);
 
 watch(data, (newData) => {
   if (newData && isActive.value) {

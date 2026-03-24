@@ -457,6 +457,26 @@ if (probabilities.length !== types.length) {
 - Data from untyped sources (raw SQL, environment variables)
 - Legacy code integration where types cannot be guaranteed
 
+### Prefer `async`/`await` Over `.then()` Chains
+
+Always use `async`/`await` for asynchronous code. Do not use `.then()` or `.catch()` chains. This makes control flow easier to follow, error handling more consistent, and avoids nesting.
+
+```typescript
+// ✅ GOOD: async/await
+async function loadData(): Promise<void> {
+    const response = await fetchData();
+    const parsed = processResponse(response);
+    await saveResult(parsed);
+}
+
+// ❌ BAD: .then() chains
+function loadData(): void {
+    fetchData()
+        .then((response) => processResponse(response))
+        .then((parsed) => saveResult(parsed));
+}
+```
+
 ### Parse, Don't Validate
 
 Follow the ["Parse, Don't Validate"](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) principle: use parsing to transform untyped data into typed data, rather than validating and then casting.
@@ -603,6 +623,29 @@ export function getUserById(userId: string): User {
 ### Avoid `!important` in CSS/SCSS
 
 Do not use `!important` in CSS or SCSS. It makes styles hard to override and debug. Instead, use more specific selectors or restructure the CSS to achieve the desired specificity.
+
+### RTL (Right-to-Left) Language Support
+
+The frontend supports RTL languages (Arabic, Persian, Hebrew). `postcss-rtlcss` automatically flips most directional CSS properties, but some things require manual attention.
+
+**Rules for new code:**
+- **Use CSS logical properties** instead of physical directional properties:
+  - `padding-inline-start` / `padding-inline-end` instead of `padding-left` / `padding-right`
+  - `margin-inline-start` / `margin-inline-end` instead of `margin-left` / `margin-right`
+  - `inset-inline-start` / `inset-inline-end` instead of `left` / `right`
+  - `text-align: start` / `text-align: end` instead of `text-align: left` / `text-align: right`
+  - `border-inline-start` / `border-inline-end` instead of `border-left` / `border-right`
+- **Use `flex-start` / `flex-end`** instead of `left` / `right` for `justify-content` (the latter are not valid flexbox values)
+- **Never hardcode directional icons** (e.g., `mdi-chevron-right`). Use a computed property that checks `$q.lang.rtl` to flip the icon direction
+- **Inline `:style` bindings** with `left`/`right` positioning must be made RTL-aware manually — `postcss-rtlcss` cannot process inline styles
+- **Quasar's `$q.lang.rtl`** is the source of truth for RTL state in components. Quasar language packs are loaded in `src/boot/i18n.ts` to enable this
+
+**What `postcss-rtlcss` handles automatically (no manual fix needed):**
+- `text-align: left` → `text-align: right` under `[dir="rtl"]`
+- `padding-left` / `margin-left` / `border-left` → flipped equivalents
+- `left` / `right` in positioned elements (including `transform: translateX`)
+
+**Test RTL** by switching display language to Persian/Arabic/Hebrew in Settings > Language.
 
 ### Props Drilling Over Inject/Provide (Vue)
 
