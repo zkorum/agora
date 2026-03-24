@@ -15,8 +15,6 @@ import type { MaxDiffComparison } from "@/shared/types/zod.js";
 
 // --- Types ---
 
-export type { MaxDiffComparison };
-
 export interface PairwiseWin {
     winner: number;
     loser: number;
@@ -33,6 +31,11 @@ export interface ScoredItem {
     item: string;
     score: number;
     uncertainty: number;
+}
+
+export interface BradleyTerryFromBWSResult {
+    items: ScoredItem[];
+    converged: boolean;
 }
 
 // --- Numerical utilities (ported from choix/utils.py) ---
@@ -216,12 +219,15 @@ export function bradleyTerryFromBWS({
     alpha?: number;
     maxIter?: number;
     tolerance?: number;
-}): ScoredItem[] {
+}): BradleyTerryFromBWSResult {
     // Defaults match mmPairwise: maxIter=10000, tol=1e-8
     const n = items.length;
-    if (n === 0) return [];
+    if (n === 0) return { items: [], converged: true };
     if (n === 1) {
-        return [{ item: items[0], score: 1, uncertainty: 1 }];
+        return {
+            items: [{ item: items[0], score: 1, uncertainty: 1 }],
+            converged: true,
+        };
     }
 
     const itemIndex = buildItemIndex(items);
@@ -248,12 +254,6 @@ export function bradleyTerryFromBWS({
         maxIter,
         tolerance,
     });
-    if (!converged) {
-        console.warn(
-            `[bradleyTerryFromBWS] MM algorithm did not converge after ${maxIter} iterations for ${n} items`,
-        );
-    }
-
     // Normalize scores to [0, 1] range
     let minParam = Infinity;
     let maxParam = -Infinity;
@@ -263,13 +263,15 @@ export function bradleyTerryFromBWS({
     }
     const range = maxParam - minParam;
 
-    return items
+    const scoredItems = items
         .map((item, i) => ({
             item,
             score: range > 0 ? (params[i] - minParam) / range : 1,
             uncertainty: 1 / Math.sqrt(comparisonCounts[i] + 1),
         }))
         .sort((a, b) => b.score - a.score);
+
+    return { items: scoredItems, converged };
 }
 
 // --- Utility ---

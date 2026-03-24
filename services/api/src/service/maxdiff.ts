@@ -9,7 +9,7 @@ import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgre
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import { updateMaxdiffCounters } from "@/shared-backend/conversationCounters.js";
-import { eq, and, inArray, isNotNull } from "drizzle-orm";
+import { eq, and, inArray, isNotNull, sql } from "drizzle-orm";
 import type {
     MaxDiffLoadResponse,
     MaxDiffResultsResponse,
@@ -22,6 +22,7 @@ import {
     type MaxdiffLifecycleStatus,
 } from "@/shared/types/zod.js";
 import { bradleyTerryFromBWS } from "./bradleyTerry.js";
+import { log } from "@/app.js";
 
 // --- Pure scoring functions (exported for testing) ---
 
@@ -49,12 +50,18 @@ export function computeScores({
     const n = items.length;
     if (n === 0) return [];
 
-    const scored = bradleyTerryFromBWS({
+    const { items: scoredItems, converged } = bradleyTerryFromBWS({
         comparisons: allComparisons,
         items,
     });
 
-    return scored.map((s, idx) => ({
+    if (!converged) {
+        log.warn(
+            `[computeScores] BT MLE did not converge for ${items.length} items`,
+        );
+    }
+
+    return scoredItems.map((s, idx) => ({
         itemSlugId: s.item,
         avgRank: idx + 1,
         score: s.score,
@@ -155,34 +162,30 @@ export async function computeGlobalUncertainty({
         return { items, uncertainty: new Map() };
     }
 
-    const allResults = await db
-        .select({
-            comparisons: maxdiffResultTable.comparisons,
-        })
-        .from(maxdiffResultTable)
-        .where(eq(maxdiffResultTable.conversationId, conversationId));
+    // Count item appearances via SQL aggregate (avoids loading full JSONB to app)
+    const countRows = await db.execute<{
+        item_text: string;
+        appearance_count: string;
+    }>(sql`
+        SELECT item_text, COUNT(*)::text AS appearance_count
+        FROM ${maxdiffResultTable},
+             jsonb_array_elements(${maxdiffResultTable.comparisons}) AS comp,
+             jsonb_array_elements_text(comp -> 'set') AS item_text
+        WHERE ${maxdiffResultTable.conversationId} = ${conversationId}
+        GROUP BY item_text
+    `);
 
-    // Count how many times each item appears in any comparison set
     const itemSet = new Set(items);
-    const counts = new Map<string, number>();
-    for (const item of items) counts.set(item, 0);
-
-    for (const row of allResults) {
-        const comparisons = z
-            .array(zodMaxdiffComparison)
-            .parse(row.comparisons);
-        for (const comp of comparisons) {
-            for (const item of comp.set) {
-                if (itemSet.has(item)) {
-                    counts.set(item, (counts.get(item) ?? 0) + 1);
-                }
-            }
-        }
-    }
-
     const uncertainty = new Map<string, number>();
-    for (const [item, count] of counts) {
-        uncertainty.set(item, 1 / Math.sqrt(count + 1));
+    // Default: all items start with max uncertainty (never compared)
+    for (const item of items) {
+        uncertainty.set(item, 1);
+    }
+    for (const row of countRows) {
+        if (itemSet.has(row.item_text)) {
+            const count = parseInt(row.appearance_count, 10);
+            uncertainty.set(row.item_text, 1 / Math.sqrt(count + 1));
+        }
     }
 
     return { items, uncertainty };

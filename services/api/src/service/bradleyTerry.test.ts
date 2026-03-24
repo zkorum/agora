@@ -307,17 +307,20 @@ describe("bwsToPairwise", () => {
 
 describe("bradleyTerryFromBWS", () => {
     it("returns empty for no items", () => {
-        expect(bradleyTerryFromBWS({ comparisons: [], items: [] })).toEqual([]);
+        const { items, converged } = bradleyTerryFromBWS({ comparisons: [], items: [] });
+        expect(items).toEqual([]);
+        expect(converged).toBe(true);
     });
 
     it("returns single item with score 1", () => {
-        const result = bradleyTerryFromBWS({
+        const { items, converged } = bradleyTerryFromBWS({
             comparisons: [],
             items: ["A"],
         });
-        expect(result).toHaveLength(1);
-        expect(result[0].item).toBe("A");
-        expect(result[0].score).toBe(1);
+        expect(converged).toBe(true);
+        expect(items).toHaveLength(1);
+        expect(items[0].item).toBe("A");
+        expect(items[0].score).toBe(1);
     });
 
     it("ranks clear winner highest from BWS data", () => {
@@ -326,12 +329,12 @@ describe("bradleyTerryFromBWS", () => {
             { best: "A", worst: "C", set: ["A", "B", "C"] },
             { best: "A", worst: "B", set: ["A", "B", "C"] },
         ];
-        const result = bradleyTerryFromBWS({
+        const { items } = bradleyTerryFromBWS({
             comparisons,
             items: ["A", "B", "C"],
         });
-        expect(result[0].item).toBe("A");
-        expect(result[result.length - 1].item).toBe("C");
+        expect(items[0].item).toBe("A");
+        expect(items[items.length - 1].item).toBe("C");
     });
 
     it("produces scores in [0, 1] range", () => {
@@ -340,61 +343,56 @@ describe("bradleyTerryFromBWS", () => {
             { best: "B", worst: "D", set: ["A", "B", "C", "D"] },
             { best: "A", worst: "C", set: ["A", "B", "C", "D"] },
         ];
-        const result = bradleyTerryFromBWS({
+        const { items } = bradleyTerryFromBWS({
             comparisons,
             items: ["A", "B", "C", "D"],
         });
-        for (const { score } of result) {
+        for (const { score } of items) {
             expect(score).toBeGreaterThanOrEqual(0);
             expect(score).toBeLessThanOrEqual(1);
         }
-        // Best item should have score 1, worst should have score 0
-        expect(result[0].score).toBeCloseTo(1);
-        expect(result[result.length - 1].score).toBeCloseTo(0);
+        expect(items[0].score).toBeCloseTo(1);
+        expect(items[items.length - 1].score).toBeCloseTo(0);
     });
 
     it("items with no comparisons get high uncertainty", () => {
         const comparisons: MaxDiffComparison[] = [
             { best: "A", worst: "B", set: ["A", "B"] },
         ];
-        const result = bradleyTerryFromBWS({
+        const { items } = bradleyTerryFromBWS({
             comparisons,
             items: ["A", "B", "C"],
         });
-        const itemC = result.find((r) => r.item === "C");
-        const itemA = result.find((r) => r.item === "A");
+        const itemC = items.find((r) => r.item === "C");
+        const itemA = items.find((r) => r.item === "A");
         if (itemC === undefined || itemA === undefined) {
             throw new Error("Expected items A and C in results");
         }
-        // C has never been compared → higher uncertainty than A
         expect(itemC.uncertainty).toBeGreaterThan(itemA.uncertainty);
     });
 
     it("filters out comparisons referencing unknown items", () => {
         const comparisons: MaxDiffComparison[] = [
             { best: "A", worst: "C", set: ["A", "B", "C"] },
-            { best: "X", worst: "Y", set: ["X", "Y"] }, // unknown items
+            { best: "X", worst: "Y", set: ["X", "Y"] },
         ];
-        const result = bradleyTerryFromBWS({
+        const { items } = bradleyTerryFromBWS({
             comparisons,
             items: ["A", "B", "C"],
         });
-        expect(result).toHaveLength(3);
+        expect(items).toHaveLength(3);
     });
 
     it("handles multiple users' comparisons pooled together", () => {
-        // User 1: A > B > C
-        // User 2: A > C > B
         const comparisons: MaxDiffComparison[] = [
             { best: "A", worst: "C", set: ["A", "B", "C"] },
             { best: "A", worst: "B", set: ["A", "B", "C"] },
         ];
-        const result = bradleyTerryFromBWS({
+        const { items } = bradleyTerryFromBWS({
             comparisons,
             items: ["A", "B", "C"],
         });
-        // A should be ranked first (both users agree)
-        expect(result[0].item).toBe("A");
+        expect(items[0].item).toBe("A");
     });
 
     it("handles 4-item choice sets correctly", () => {
@@ -402,16 +400,14 @@ describe("bradleyTerryFromBWS", () => {
             { best: "A", worst: "D", set: ["A", "B", "C", "D"] },
             { best: "B", worst: "C", set: ["A", "B", "C", "D"] },
         ];
-        const result = bradleyTerryFromBWS({
+        const { items } = bradleyTerryFromBWS({
             comparisons,
             items: ["A", "B", "C", "D"],
         });
-        // A and B should be top 2 (both chosen as best)
-        const topTwo = result.slice(0, 2).map((r) => r.item);
+        const topTwo = items.slice(0, 2).map((r) => r.item);
         expect(topTwo).toContain("A");
         expect(topTwo).toContain("B");
-        // C and D should be bottom 2 (both chosen as worst)
-        const bottomTwo = result.slice(2).map((r) => r.item);
+        const bottomTwo = items.slice(2).map((r) => r.item);
         expect(bottomTwo).toContain("C");
         expect(bottomTwo).toContain("D");
     });
