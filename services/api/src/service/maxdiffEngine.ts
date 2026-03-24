@@ -120,7 +120,11 @@ export function buildComparisonMatrix({ items }: { items: string[] }): {
     getUnorderedGroups: () => string[][];
 } {
     const n = items.length;
-    const indexOf = (item: string): number => items.indexOf(item);
+    const indexMap = new Map<string, number>();
+    for (let i = 0; i < n; i++) {
+        indexMap.set(items[i], i);
+    }
+    const indexOf = (item: string): number => indexMap.get(item) ?? -1;
 
     // comparisons[i][j] = -1 means i < j (i comes before j)
     // +1 means i > j, 0 means same item, undefined means unknown

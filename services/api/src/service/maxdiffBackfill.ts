@@ -7,10 +7,7 @@
  * are populated.
  */
 
-import {
-    maxdiffItemTable,
-    maxdiffResultTable,
-} from "@/shared-backend/schema.js";
+import { maxdiffItemTable } from "@/shared-backend/schema.js";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { eq, and, isNull, inArray, isNotNull } from "drizzle-orm";
 import { computeItemSnapshot } from "./maxdiff.js";

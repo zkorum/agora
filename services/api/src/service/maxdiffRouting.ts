@@ -74,8 +74,22 @@ export function generateCandidateSets({
         const pickIdx = Math.floor(Math.random() * topN);
         const selected = scored[pickIdx].group;
 
-        // Trim to candidateSetSize and shuffle positions
-        const candidates = selected.slice(0, candidateSetSize);
+        // Trim to candidateSetSize (before shuffle, for simulated vote)
+        const trimmed = selected.slice(0, candidateSetSize);
+
+        // Simulate a vote using unshuffled order to advance the comparison
+        // matrix for generating subsequent candidate sets in this buffer.
+        // Uses first/last from the deterministic order (not random).
+        if (trimmed.length >= 2) {
+            applyComparison({
+                best: trimmed[0],
+                worst: trimmed[trimmed.length - 1],
+                set: trimmed,
+            });
+        }
+
+        // Now shuffle positions for the actual candidate set
+        const candidates = [...trimmed];
         fisherYatesShuffle(candidates);
 
         candidateSets.push(candidates);
@@ -84,17 +98,6 @@ export function generateCandidateSets({
         for (const item of candidates) {
             const count = appearanceCounts.get(item) ?? 0;
             appearanceCounts.set(item, count + 1);
-        }
-
-        // Simulate this vote for future candidate generation
-        // (mark the first two items as having a comparison so the
-        // next getUnorderedGroups() call reflects progress)
-        if (candidates.length >= 2) {
-            applyComparison({
-                best: candidates[0],
-                worst: candidates[candidates.length - 1],
-                set: candidates,
-            });
         }
     }
 

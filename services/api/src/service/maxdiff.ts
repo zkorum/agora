@@ -25,47 +25,6 @@ import { bradleyTerryFromBWS } from "./bradleyTerry.js";
 
 // --- Pure scoring functions (exported for testing) ---
 
-/**
- * Derive a partial ranking from comparisons using Bradley-Terry MLE.
- * Only includes items that appeared in comparisons AND are in the provided items list.
- */
-export function derivePartialRanking({
-    comparisons,
-    items,
-}: {
-    comparisons: MaxDiffComparison[];
-    items: string[];
-}): string[] {
-    if (comparisons.length === 0) return [];
-
-    const itemSet = new Set(items);
-
-    // Filter comparisons to only include items in the active set
-    const filteredComparisons = comparisons
-        .filter(
-            (c) => itemSet.has(c.best) && itemSet.has(c.worst),
-        )
-        .map((c) => ({
-            ...c,
-            set: c.set.filter((item) => itemSet.has(item)),
-        }));
-
-    const comparedItems = new Set<string>();
-    for (const { set } of filteredComparisons) {
-        for (const item of set) comparedItems.add(item);
-    }
-
-    const comparedList = items.filter((item) => comparedItems.has(item));
-    if (comparedList.length < 2) return comparedList;
-
-    const scored = bradleyTerryFromBWS({
-        comparisons: filteredComparisons,
-        items: comparedList,
-    });
-
-    return scored.map((s) => s.item);
-}
-
 export interface RankedItem {
     itemSlugId: string;
     avgRank: number;

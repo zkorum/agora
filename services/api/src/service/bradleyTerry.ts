@@ -241,13 +241,18 @@ export function bradleyTerryFromBWS({
     }
 
     // Run MM algorithm
-    const { params } = mmPairwise({
+    const { params, converged } = mmPairwise({
         nItems: n,
         data: pairwiseData,
         alpha,
         maxIter,
         tolerance,
     });
+    if (!converged) {
+        console.warn(
+            `[bradleyTerryFromBWS] MM algorithm did not converge after ${maxIter} iterations for ${n} items`,
+        );
+    }
 
     // Normalize scores to [0, 1] range
     let minParam = Infinity;

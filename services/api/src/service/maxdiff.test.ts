@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-    derivePartialRanking,
     computeScores,
     parseResultRows,
     type RankedItem,
@@ -32,66 +31,6 @@ function comp({
 }): MaxDiffComparison {
     return { best, worst, set };
 }
-
-describe("derivePartialRanking", () => {
-    it("returns empty for no comparisons", () => {
-        expect(
-            derivePartialRanking({ comparisons: [], items: ["A", "B"] }),
-        ).toEqual([]);
-    });
-
-    it("ranks best above worst from a single comparison", () => {
-        const result = derivePartialRanking({
-            comparisons: [comp({ best: "A", worst: "C", set: ["A", "B", "C"] })],
-            items: ["A", "B", "C"],
-        });
-        expect(result.indexOf("A")).toBeLessThan(result.indexOf("C"));
-    });
-
-    it("applies transitive closure: A > B > C implies A > C", () => {
-        const result = derivePartialRanking({
-            comparisons: [
-                comp({ best: "A", worst: "B", set: ["A", "B"] }),
-                comp({ best: "B", worst: "C", set: ["B", "C"] }),
-            ],
-            items: ["A", "B", "C"],
-        });
-        expect(result).toEqual(["A", "B", "C"]);
-    });
-
-    it("filters out items not in the items list", () => {
-        const result = derivePartialRanking({
-            comparisons: [
-                comp({ best: "A", worst: "C", set: ["A", "B", "C"] }),
-                comp({ best: "B", worst: "D", set: ["B", "C", "D"] }),
-            ],
-            items: ["A", "C", "D"], // B removed
-        });
-        expect(result).not.toContain("B");
-        expect(result.indexOf("A")).toBeLessThan(result.indexOf("C"));
-    });
-
-    it("preserves transitive order when intermediate item is removed", () => {
-        const result = derivePartialRanking({
-            comparisons: [
-                comp({ best: "A", worst: "B", set: ["A", "B"] }),
-                comp({ best: "B", worst: "C", set: ["B", "C"] }),
-            ],
-            items: ["A", "C"], // B removed
-        });
-        expect(result.length).toBeLessThanOrEqual(2);
-    });
-
-    it("returns empty when all comparisons reference removed items only", () => {
-        const result = derivePartialRanking({
-            comparisons: [
-                comp({ best: "X", worst: "Y", set: ["X", "Y"] }),
-            ],
-            items: ["A", "B"],
-        });
-        expect(result).toEqual([]);
-    });
-});
 
 describe("computeScores", () => {
     it("returns empty for no items", () => {
