@@ -310,7 +310,7 @@ const saveMutation = useMaxDiffSaveMutation({
       isTransitioning.value = false;
     }
     consumeUndoEntry();
-    showNotifyMessage(t("savingError"));
+    showNotifyMessage({ message: t("savingError"), force: true });
   },
   onSaveSuccess: () => {
     // Clear undo history once ranking is confirmed complete
@@ -337,6 +337,9 @@ onBeforeUnmount(() => {
 
 // Prefetch buffer: server-generated candidate sets for instant display
 const candidateBuffer = ref<string[][]>([]);
+const BUFFER_REFILL_THRESHOLD = 1;
+const BUFFER_MAX_SIZE = 8;
+let isRefilling = false;
 
 // Statement dialog state
 const showStatementDialog = ref(false);
@@ -504,10 +507,6 @@ function retryInitialize(): void {
   void itemsQuery.refetch();
   void loadQuery.refetch();
 }
-
-const BUFFER_REFILL_THRESHOLD = 1;
-const BUFFER_MAX_SIZE = 8;
-let isRefilling = false;
 
 async function updateCandidates(): Promise<void> {
   if (!instance.value || instance.value.complete) {

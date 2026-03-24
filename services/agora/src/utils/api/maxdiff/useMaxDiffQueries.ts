@@ -118,7 +118,7 @@ export function useMaxDiffSaveMutation({
 
     onSuccess: async (_data, variables) => {
       await updateAuthState({ partialLoginStatus: { isKnown: true } });
-      if (variables.context.isFirstVote || variables.isComplete) {
+      if (variables.context.isFirstVote || variables.isComplete || variables.comparisons.length === 0) {
         invalidateConversation(toValue(conversationSlugId));
       }
       onSaveSuccess();
