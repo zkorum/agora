@@ -83,7 +83,9 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
+import { useUserClusteringSession } from "src/utils/api/vote/useVoteQueries";
 import { formatPercentage } from "src/utils/common";
+import { computeBannerState } from "src/utils/component/bannerState";
 import { MIN_VOTES_FOR_CLUSTER } from "src/utils/component/opinion";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, ref } from "vue";
@@ -131,6 +133,9 @@ const { t } = useComponentI18n<CommentActionBarTranslations>(
 // Zupass verification
 const { verifyTicket } = useTicketVerificationFlow();
 const { isVerifying: isVerifyingZupass } = useZupassVerification();
+
+// Session-level clustering state (reactive, shared across all CommentActionBar instances)
+const { isUserClusteredInSession } = useUserClusteringSession();
 
 // Track if user is clustered (from vote response during this mount)
 const userClusteredThisMount = ref(false);
@@ -306,26 +311,27 @@ async function castPersonalVote(
   }
 }
 
-// Vote banner logic (3 states)
+// Vote banner logic (3 states): uses pure function for testability
+const bannerState = computed(() =>
+  computeBannerState({
+    clusteredThisMount: userClusteredThisMount.value,
+    clusteredFromCache: !!userIsClusteredFromCache.value,
+    clusteredInSession: isUserClusteredInSession(props.postSlugId),
+  })
+);
+
 const bannerMessage = computed(() => {
-  // Just got clustered THIS mount (show celebration once)
-  if (userClusteredThisMount.value && !userIsClusteredFromCache.value) {
-    return t("assignedGroup"); // "You have been assigned a group!"
+  const state = bannerState.value;
+  if (state === "celebration") {
+    return t("assignedGroup");
   }
-
-  // User was clustered before OR just got clustered (show refinement)
-  if (userClusteredThisMount.value || userIsClusteredFromCache.value) {
-    return t("keepVotingToRefineAnalysis"); // "Keep voting to refine the analysis"
+  if (state === "refine") {
+    return t("keepVotingToRefineAnalysis");
   }
-
-  // Not clustered yet
   return t("keepVotingToDiscoverGroup", { minVotes: String(MIN_VOTES_FOR_CLUSTER) });
 });
 
-const showViewAnalysisLink = computed(() => {
-  // Only show link for "You have been assigned a group!" celebration message
-  return userClusteredThisMount.value && !userIsClusteredFromCache.value;
-});
+const showViewAnalysisLink = computed(() => bannerState.value === "celebration");
 
 const shouldShowBanner = computed(() => {
   // Show banner whenever user has voted this session
