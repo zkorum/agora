@@ -11,7 +11,7 @@
         :is-highlighted="model === 'comment' && !compactMode"
         :should-underline-on-highlight="true"
         :is-loading="isLoading && model === 'comment'"
-        :to="model === 'comment' ? (compactMode ? undefined : { name: commentRouteName, params: { postSlugId: conversationSlugId } }) : undefined"
+        :to="compactMode ? undefined : { name: commentRouteName, params: { postSlugId: conversationSlugId } }"
         :deferred="true"
         @click="handleCommentClick"
       />
@@ -22,7 +22,7 @@
         :is-highlighted="model === 'analysis'"
         :should-underline-on-highlight="true"
         :is-loading="isLoading && model === 'analysis'"
-        :to="model === 'analysis' ? undefined : { name: analysisRouteName, params: { postSlugId: conversationSlugId } }"
+        :to="{ name: analysisRouteName, params: { postSlugId: conversationSlugId } }"
         :deferred="true"
         @click="handleAnalysisClick"
       />

@@ -7,5 +7,6 @@ export default defineConfig({
         // optional: make sure Vitest uses the same alias resolution
         globals: true,
         environment: "node",
+        exclude: ["dist/**", "node_modules/**"],
     },
 });
