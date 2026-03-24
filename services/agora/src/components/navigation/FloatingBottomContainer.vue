@@ -38,7 +38,7 @@ const barStyle = computed(() => {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
   padding-top: 1.5rem;
-  background: linear-gradient(to bottom, transparent 0%, #f6f5f8 40%);
+  background: linear-gradient(to bottom, transparent 0%, $app-background-color 40%);
   pointer-events: none;
 
   > * {
