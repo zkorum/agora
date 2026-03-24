@@ -382,7 +382,7 @@ watch(
   display: flex;
   gap: 0.25rem;
   padding: 0.5rem;
-  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .bubble-menu-content {
