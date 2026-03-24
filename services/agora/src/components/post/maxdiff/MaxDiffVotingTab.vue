@@ -475,6 +475,10 @@ async function updateCandidates(): Promise<void> {
     const fresh = consumeValidBufferedSet();
     if (fresh !== undefined) {
       candidates.value = fresh;
+    } else {
+      // No candidates available — voting is likely complete
+      isComplete.value = true;
+      candidates.value = [];
     }
     isLoading.value = false;
     return;
@@ -709,6 +713,13 @@ async function refreshAfterStaleData(): Promise<void> {
   // Clear stale buffer
   candidateBuffer.value = [];
 
+  // Not enough items to continue voting
+  if (itemList.value.length < 2) {
+    candidates.value = [];
+    isLoading.value = false;
+    return;
+  }
+
   // Reinitialize engine with updated items, preserving existing comparisons
   if (instance.value !== null) {
     const currentComparisons = instance.value.exportState().comparisons;
@@ -724,7 +735,7 @@ async function refreshAfterStaleData(): Promise<void> {
   }
 
   // Fetch fresh candidate sets
-  updateCandidates();
+  await updateCandidates();
 }
 
 function handleUndoClick(): void {
