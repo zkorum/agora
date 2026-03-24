@@ -119,7 +119,11 @@
           @click="handleCandidateClick(slugId)"
         >
           <div :ref="(el) => setContentRef(slugId, el)" class="candidate-content-wrapper">
-            <span>{{ itemContentMap.get(slugId) ?? slugId }}</span>
+            <ZKHtmlContent
+              :html-body="itemContentMap.get(slugId) ?? slugId"
+              :compact-mode="false"
+              :enable-links="false"
+            />
             <span v-if="itemBySlugId.get(slugId)?.body" class="candidate-body-inline">
               — {{ stripHtml(itemBySlugId.get(slugId)?.body ?? "") }}
             </span>
