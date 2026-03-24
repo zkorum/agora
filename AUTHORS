@@ -20,3 +20,13 @@ With help from many libraries and frameworks including:
 - Vite
 - pnpm
 ...
+
+Algorithm inspiration:
+- MaxDiff scoring: Bradley-Terry MLE via MM algorithm
+  - choix (MIT): https://github.com/lucasmaystre/choix
+  - Solidago/Tournesol (LGPL): https://github.com/tournesol-app/tournesol
+  - SeregPie/MaxDiff (MIT): https://github.com/SeregPie/MaxDiff
+  - Hunter (2004), "MM algorithms for generalized Bradley-Terry models," Annals of Statistics
+- Polis clustering:
+  - red-dwarf (community rewrite): https://github.com/nicobao/red-dwarf
+  - Original Polis (inspiration): https://github.com/compdemocracy/polis

@@ -45,6 +45,7 @@ import { cleanupStuckExportsOnStartup } from "@/service/conversationExport/core.
 import { createImportNotification } from "@/service/conversationImport/notifications.js";
 import { createExportNotification } from "@/service/conversationExport/notifications.js";
 import { validateS3Access } from "./service/s3.js";
+import { backfillMaxdiffSnapshots } from "@/service/maxdiffBackfill.js";
 // import * as polisService from "@/service/polis.js";
 // import * as migrationService from "@/service/migration.js";
 import {
@@ -617,6 +618,9 @@ const performStartupCleanup = async (): Promise<void> => {
 
 // Run cleanup (non-blocking)
 void performStartupCleanup();
+
+// Backfill MaxDiff snapshot scores with BT MLE (non-blocking, idempotent)
+void backfillMaxdiffSnapshots({ db });
 
 interface ExpectedDeviceStatus {
     userId?: string;
