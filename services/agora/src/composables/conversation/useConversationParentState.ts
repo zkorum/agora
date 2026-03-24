@@ -13,6 +13,7 @@ import type { CommentFilterOptions } from "src/utils/component/opinion";
 import {
   getElementScrollTop,
   getHeaderHeight,
+  getScrollTop,
   scrollTo,
 } from "src/utils/html/scroll";
 import { computed, provide, type Ref, ref, watch } from "vue";
@@ -138,6 +139,14 @@ export function useConversationParentState({
     opinionCountOffset.value -= 1;
   });
   provide("scrollToActionBar", scrollToActionBar);
+  provide("getScrollPosition", () =>
+    getScrollTop({ scrollContainer: scrollContainer?.value }),
+  );
+  provide(
+    "scrollToPosition",
+    ({ top, behavior }: { top: number; behavior?: ScrollBehavior }) =>
+      scrollTo({ top, behavior, scrollContainer: scrollContainer?.value }),
+  );
 
   // Navigation functions for banner actions (parameterized by route prefix)
   function navigateToAnalysis({ initialTab }: { initialTab?: ShortcutItem } = {}) {

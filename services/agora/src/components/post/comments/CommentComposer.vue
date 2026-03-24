@@ -489,7 +489,7 @@ async function submitPostClicked() {
 .container {
   width: 100%;
   background-color: #ffffff;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 .actionBar {
@@ -504,7 +504,7 @@ async function submitPostClicked() {
 .actionButtonCluster {
   display: flex;
   align-items: center;
-  justify-content: right;
+  justify-content: flex-end;
   gap: 1rem;
   padding: 1rem;
 }
@@ -521,7 +521,7 @@ async function submitPostClicked() {
 
   &.focused {
     border-color: rgba(255, 255, 255, 0.6);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   }
 }
 

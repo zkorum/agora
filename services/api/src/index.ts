@@ -45,6 +45,7 @@ import { cleanupStuckExportsOnStartup } from "@/service/conversationExport/core.
 import { createImportNotification } from "@/service/conversationImport/notifications.js";
 import { createExportNotification } from "@/service/conversationExport/notifications.js";
 import { validateS3Access } from "./service/s3.js";
+import { backfillMaxdiffSnapshots } from "@/service/maxdiffBackfill.js";
 // import * as polisService from "@/service/polis.js";
 // import * as migrationService from "@/service/migration.js";
 import {
@@ -63,7 +64,9 @@ import {
     saveMaxdiffResult,
     loadMaxdiffResult,
     getMaxdiffResults,
+    computeGlobalUncertainty,
 } from "./service/maxdiff.js";
+import { generateCandidateSets } from "./service/maxdiffRouting.js";
 import {
     fetchMaxdiffItems,
     updateMaxdiffItemLifecycle,
@@ -617,6 +620,9 @@ const performStartupCleanup = async (): Promise<void> => {
 
 // Run cleanup (non-blocking)
 void performStartupCleanup();
+
+// Backfill MaxDiff snapshot scores with BT MLE (non-blocking, idempotent)
+void backfillMaxdiffSnapshots({ db });
 
 interface ExpectedDeviceStatus {
     userId?: string;
@@ -1777,6 +1783,35 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
+        url: `/api/${apiVersion}/maxdiff/route`,
+        schema: {
+            body: Dto.maxdiffRouteRequest,
+            response: {
+                200: Dto.maxdiffRouteResponse,
+            },
+        },
+        handler: async (request) => {
+            checkMaxdiffEnabled();
+            const { deviceStatus } =
+                await verifyUcanAndKnownDeviceStatus(db, request, {
+                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+                });
+            const { items, uncertainty } = await computeGlobalUncertainty({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+            });
+            const candidateSets = generateCandidateSets({
+                userComparisons: request.body.comparisons,
+                items,
+                globalUncertainty: uncertainty,
+                bufferSize: request.body.bufferSize,
+            });
+            return { candidateSets };
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
         url: `/api/${apiVersion}/maxdiff/items/fetch`,
         schema: {
             body: Dto.maxdiffItemsFetchRequest,
@@ -2283,10 +2318,11 @@ server.after(() => {
                     request.body.externalSourceConfig ?? null,
             });
 
-            // Broadcast to all connected clients that a new conversation exists
-            realtimeSSEManager.broadcastToAll({
+            // Broadcast to all connected clients (except the creator) that a new conversation exists
+            realtimeSSEManager.broadcastToAllExcept({
                 event: "new_conversation",
                 data: { timestamp: Date.now() },
+                excludeUserId: deviceStatus.userId,
             });
 
             reply.send({ conversationSlugId });

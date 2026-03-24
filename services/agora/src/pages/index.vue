@@ -1,7 +1,7 @@
 <template>
   <div class="pageContent">
     <Teleport v-if="isActive" to="#page-header">
-      <HomeMenuBar v-if="drawerBehavior === 'mobile'">
+      <HomeMenuBar>
         <template #center>
           <img
             v-if="drawerBehavior == 'mobile'"

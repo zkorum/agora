@@ -3149,6 +3149,88 @@
                 }
             }
         },
+        "/api/v1/maxdiff/route": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string"
+                                    },
+                                    "comparisons": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "best": {
+                                                    "type": "string"
+                                                },
+                                                "worst": {
+                                                    "type": "string"
+                                                },
+                                                "set": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "best",
+                                                "worst",
+                                                "set"
+                                            ]
+                                        }
+                                    },
+                                    "bufferSize": {
+                                        "default": 3,
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId",
+                                    "comparisons"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "candidateSets": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "candidateSets"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/maxdiff/items/fetch": {
             "post": {
                 "requestBody": {

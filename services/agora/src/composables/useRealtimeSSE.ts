@@ -232,7 +232,7 @@ export function useRealtimeSSE() {
           break;
         }
         case "new_conversation": {
-          homeFeedStore.hasPendingNewTab = true;
+          void homeFeedStore.hasNewPostCheck("new");
           break;
         }
         case "popular_conversation": {

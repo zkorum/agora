@@ -43,7 +43,7 @@ export const newConversationControlBarTranslations: Record<
     noVerification: "No verification",
     devconnect2025: "Devconnect 2025",
     typeStandard: "Standard",
-    typeMaxDiff: "Prioritization",
+    typeMaxDiff: "New Prioritization",
   },
   ar: {
     asLabel: "باسم {name}",
@@ -63,7 +63,7 @@ export const newConversationControlBarTranslations: Record<
     noVerification: "بدون تحقق",
     devconnect2025: "Devconnect 2025",
     typeStandard: "Standard",
-    typeMaxDiff: "ترتيب الأولويات",
+    typeMaxDiff: "ترتيب أولويات جديد",
   },
   es: {
     asLabel: "Como {name}",
@@ -83,7 +83,7 @@ export const newConversationControlBarTranslations: Record<
     noVerification: "Sin verificación",
     devconnect2025: "Devconnect 2025",
     typeStandard: "Standard",
-    typeMaxDiff: "Priorización",
+    typeMaxDiff: "Nueva Priorización",
   },
   fa: {
     asLabel: "به عنوان {name}",
@@ -103,7 +103,7 @@ export const newConversationControlBarTranslations: Record<
     noVerification: "بدون تأیید هویت",
     devconnect2025: "Devconnect 2025",
     typeStandard: "Standard",
-    typeMaxDiff: "اولویت‌بندی",
+    typeMaxDiff: "اولویت‌بندی جدید",
   },
   fr: {
     asLabel: "En tant que {name}",
@@ -123,7 +123,7 @@ export const newConversationControlBarTranslations: Record<
     noVerification: "Pas de vérification",
     devconnect2025: "Devconnect 2025",
     typeStandard: "Standard",
-    typeMaxDiff: "Hiérarchisation",
+    typeMaxDiff: "Nouvelle Hiérarchisation",
   },
   "zh-Hans": {
     asLabel: "作为 {name}",
@@ -143,7 +143,7 @@ export const newConversationControlBarTranslations: Record<
     noVerification: "无需验证",
     devconnect2025: "Devconnect 2025",
     typeStandard: "Standard",
-    typeMaxDiff: "优先排序",
+    typeMaxDiff: "新建优先排序",
   },
   "zh-Hant": {
     asLabel: "作為 {name}",
@@ -163,7 +163,7 @@ export const newConversationControlBarTranslations: Record<
     noVerification: "無需驗證",
     devconnect2025: "Devconnect 2025",
     typeStandard: "Standard",
-    typeMaxDiff: "優先排序",
+    typeMaxDiff: "新建優先排序",
   },
   he: {
     asLabel: "בתור {name}",
@@ -183,7 +183,7 @@ export const newConversationControlBarTranslations: Record<
     noVerification: "ללא אימות",
     devconnect2025: "Devconnect 2025",
     typeStandard: "Standard",
-    typeMaxDiff: "תיעדוף",
+    typeMaxDiff: "תיעדוף חדש",
   },
   ja: {
     asLabel: "{name} として",
@@ -203,7 +203,7 @@ export const newConversationControlBarTranslations: Record<
     noVerification: "検証不要",
     devconnect2025: "Devconnect 2025",
     typeStandard: "Standard",
-    typeMaxDiff: "優先順位付け",
+    typeMaxDiff: "新しい優先順位付け",
   },
   ky: {
     asLabel: "{name} катары",
@@ -223,7 +223,7 @@ export const newConversationControlBarTranslations: Record<
     noVerification: "Текшерүүсүз",
     devconnect2025: "Devconnect 2025",
     typeStandard: "Standard",
-    typeMaxDiff: "Артыкчылыктуу кылуу",
+    typeMaxDiff: "Жаңы артыкчылыктуу кылуу",
   },
   ru: {
     asLabel: "От имени {name}",
@@ -243,6 +243,6 @@ export const newConversationControlBarTranslations: Record<
     noVerification: "Без проверки",
     devconnect2025: "Devconnect 2025",
     typeStandard: "Standard",
-    typeMaxDiff: "Приоритизация",
+    typeMaxDiff: "Новая приоритизация",
   },
 };

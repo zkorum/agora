@@ -36,8 +36,7 @@ $hover-transition: background-color 0.2s ease;
     }
   }
 
-  // Focus states for accessibility
-  &:focus,
+  // Focus states for accessibility (focus-visible only to avoid persistent highlight on click)
   &:focus-visible {
     background-color: $normal-color;
   }
@@ -57,7 +56,6 @@ $hover-transition: background-color 0.2s ease;
         }
       }
 
-      &:focus,
       &:focus-visible {
         background-color: $selected-color;
       }

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
 import type { VotingAction } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { computed, type MaybeRefOrGetter, toValue } from "vue";
+import { computed, type MaybeRefOrGetter, reactive, toValue } from "vue";
 
 import { useNotify } from "../../ui/notify";
 import { useBackendAuthApi } from "../auth";
@@ -12,7 +12,8 @@ import { useCommonApi } from "../common";
 import { useBackendVoteApi } from "../vote";
 
 // Track clustering status across component mounts (session-level persistence)
-const userClusteredInSession = new Map<string, boolean>();
+// reactive() makes Vue track .get()/.set() so computed properties re-evaluate
+const userClusteredInSession = reactive(new Map<string, boolean>());
 
 export function useUserVotesQuery({ postSlugId }: { postSlugId: MaybeRefOrGetter<string> }) {
   const { fetchUserVotesForPostSlugIds } = useBackendVoteApi();

@@ -5,6 +5,7 @@ import type {
   ApiV1MaxdiffLoadPost200Response,
   ApiV1MaxdiffResultsPost200Response,
   ApiV1MaxdiffResultsPostRequest,
+  ApiV1MaxdiffRoutePost200Response,
   ApiV1MaxdiffSavePostRequest,
   ApiV1MaxdiffSyncPost200Response,
 } from "src/api";
@@ -274,11 +275,48 @@ export function useMaxDiffApi() {
     }
   }
 
+  interface FetchMaxDiffRouteParams {
+    conversationSlugId: string;
+    comparisons: MaxDiffComparison[];
+    bufferSize?: number;
+  }
+
+  type FetchMaxDiffRouteResponse =
+    | AxiosSuccessResponse<ApiV1MaxdiffRoutePost200Response>
+    | AxiosErrorResponse;
+
+  async function fetchMaxDiffRoute({
+    conversationSlugId,
+    comparisons,
+    bufferSize = 3,
+  }: FetchMaxDiffRouteParams): Promise<FetchMaxDiffRouteResponse> {
+    try {
+      const params = { conversationSlugId, comparisons, bufferSize };
+
+      const { url, options } =
+        await DefaultApiAxiosParamCreator().apiV1MaxdiffRoutePost(params);
+      const encodedUcan = await buildEncodedUcan(url, options);
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1MaxdiffRoutePost(
+        params,
+        createRawAxiosRequestConfig({ encodedUcan })
+      );
+
+      return { status: "success", data: response.data };
+    } catch (e) {
+      return createAxiosErrorResponse(e);
+    }
+  }
+
   return {
     saveMaxDiffResult,
     loadMaxDiffResult,
     getMaxDiffResults,
     fetchMaxDiffItems,
+    fetchMaxDiffRoute,
     updateMaxDiffItemLifecycle,
     syncMaxDiff,
     previewGitHubIssues,

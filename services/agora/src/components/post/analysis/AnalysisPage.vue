@@ -30,11 +30,12 @@
         class="tabComponent"
       >
         <MeTab
-          v-model="currentTab"
+          :model-value="currentTab"
           :cluster-key="userClusterData.clusterKey"
           :ai-label="userClusterData.aiLabel"
           :ai-summary="userClusterData.aiSummary"
           :navigate-to-discover-tab="props.navigateToDiscoverTab"
+          @update:model-value="switchToTab"
         />
       </div>
 
@@ -57,13 +58,14 @@
         class="tabComponent"
       >
         <ConsensusTab
-          v-model="currentTab"
+          :model-value="currentTab"
           direction="agree"
           :conversation-slug-id="props.conversationSlugId"
           :item-list="agreementItems"
           :compact-mode="currentTab === 'Summary'"
           :clusters="analysisQuery.data.value?.polisClusters || {}"
           :cluster-labels="clusterLabels"
+          @update:model-value="switchToTab"
         />
       </div>
 
@@ -73,13 +75,14 @@
         class="tabComponent"
       >
         <ConsensusTab
-          v-model="currentTab"
+          :model-value="currentTab"
           direction="disagree"
           :conversation-slug-id="props.conversationSlugId"
           :item-list="disagreementItems"
           :compact-mode="currentTab === 'Summary'"
           :clusters="analysisQuery.data.value?.polisClusters || {}"
           :cluster-labels="clusterLabels"
+          @update:model-value="switchToTab"
         />
       </div>
 
@@ -89,12 +92,13 @@
         class="tabComponent"
       >
         <DivisiveTab
-          v-model="currentTab"
+          :model-value="currentTab"
           :conversation-slug-id="props.conversationSlugId"
           :item-list="controversialItems"
           :compact-mode="currentTab === 'Summary'"
           :clusters="analysisQuery.data.value?.polisClusters || {}"
           :cluster-labels="clusterLabels"
+          @update:model-value="switchToTab"
         />
       </div>
     </div>
@@ -155,7 +159,7 @@ const { t: tShortcut } = useComponentI18n<ShortcutBarTranslations>(
   shortcutBarTranslations
 );
 
-const { currentTab, handleSameTabClick } = useTabNavigation({
+const { currentTab, handleSameTabClick, switchToTab } = useTabNavigation({
   schema: shortcutItemSchema,
   defaultTab: "Summary",
 });

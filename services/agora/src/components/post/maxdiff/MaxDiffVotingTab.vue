@@ -172,7 +172,7 @@ import {
 } from "src/utils/maxdiff";
 import { useNotify } from "src/utils/ui/notify";
 import type { ComponentPublicInstance } from "vue";
-import { computed, nextTick, ref, triggerRef, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, triggerRef, watch } from "vue";
 
 import MaxDiffStatementDialog from "./MaxDiffStatementDialog.vue";
 import {
@@ -191,7 +191,7 @@ const { t } = useComponentI18n<MaxDiffVotingTabTranslations>(
 
 const { isLoggedIn, hasStrongVerification, hasEmailVerification } =
   storeToRefs(useAuthenticationStore());
-const { saveMaxDiffResult, loadMaxDiffResult, fetchMaxDiffItems } = useMaxDiffApi();
+const { saveMaxDiffResult, loadMaxDiffResult, fetchMaxDiffItems, fetchMaxDiffRoute } = useMaxDiffApi();
 const { invalidateConversation } = useInvalidateConversationQuery();
 const $q = useQuasar();
 const { showNotifyMessage } = useNotify();
@@ -265,6 +265,14 @@ const candidates = ref<string[]>([]);
 const selectedBest = ref<string | null>(null);
 const selectedWorst = ref<string | null>(null);
 const isTransitioning = ref(false);
+let transitionTimeout: ReturnType<typeof setTimeout> | null = null;
+
+onBeforeUnmount(() => {
+  if (transitionTimeout !== null) clearTimeout(transitionTimeout);
+});
+
+// Prefetch buffer: server-generated candidate sets for instant display
+const candidateBuffer = ref<string[][]>([]);
 
 // Statement dialog state
 const showStatementDialog = ref(false);
@@ -440,16 +448,106 @@ async function initializeMaxDiff(): Promise<void> {
     finalRanking.value = [];
   }
 
-  updateCandidates();
+  // Fetch initial route buffer from server
+  await fetchRouteBuffer({
+    comparisons: instance.value.exportState().comparisons,
+    initialLoad: true,
+  });
+
+  await updateCandidates();
   isLoading.value = false;
 }
 
-function updateCandidates(): void {
+const BUFFER_REFILL_THRESHOLD = 1;
+const BUFFER_MAX_SIZE = 8;
+let isRefilling = false;
+
+async function updateCandidates(): Promise<void> {
   if (!instance.value || instance.value.complete) {
     candidates.value = [];
     return;
   }
-  candidates.value = instance.value.getCandidates(4);
+  const validSet = consumeValidBufferedSet();
+  if (validSet !== undefined) {
+    candidates.value = validSet;
+  } else {
+    // Buffer empty — fetch fresh sets with loading state
+    isLoading.value = true;
+    await fetchRouteBuffer({
+      comparisons: instance.value.exportState().comparisons,
+      initialLoad: false,
+    });
+    const fresh = consumeValidBufferedSet();
+    if (fresh !== undefined) {
+      candidates.value = fresh;
+    } else {
+      // No candidates available — voting is likely complete
+      isComplete.value = true;
+      candidates.value = [];
+    }
+    isLoading.value = false;
+    return;
+  }
+
+  // Refill buffer when running low (non-blocking)
+  if (
+    candidateBuffer.value.length <= BUFFER_REFILL_THRESHOLD &&
+    !isRefilling &&
+    instance.value !== null
+  ) {
+    void fetchRouteBuffer({
+      comparisons: instance.value.exportState().comparisons,
+      initialLoad: false,
+    });
+  }
+}
+
+/** Consume the next buffered set, skipping stale ones (items no longer active). */
+function consumeValidBufferedSet(): string[] | undefined {
+  const activeSlugIds = new Set(itemList.value.map((item) => item.slugId));
+  while (candidateBuffer.value.length > 0) {
+    const set = candidateBuffer.value.shift();
+    if (set === undefined) continue;
+    // Validate all items in the set still exist
+    if (set.length >= 2 && set.every((id) => activeSlugIds.has(id))) {
+      return set;
+    }
+    // Stale set — discard and try next
+  }
+  return undefined;
+}
+
+async function fetchRouteBuffer({
+  comparisons,
+  initialLoad,
+}: {
+  comparisons: MaxDiffComparison[];
+  initialLoad: boolean;
+}): Promise<void> {
+  if (isRefilling && !initialLoad) return; // Prevent concurrent refills
+  isRefilling = true;
+  try {
+    const currentBufferSize = candidateBuffer.value.length;
+    const requestSize = Math.min(
+      initialLoad ? 5 : 3,
+      BUFFER_MAX_SIZE - currentBufferSize,
+    );
+    if (requestSize <= 0) return;
+
+    const response = await fetchMaxDiffRoute({
+      conversationSlugId: conversationSlugId.value,
+      comparisons,
+      bufferSize: requestSize,
+    });
+    if (response.status === "success") {
+      // Respect cap
+      const spaceLeft = BUFFER_MAX_SIZE - candidateBuffer.value.length;
+      const toAdd = response.data.candidateSets.slice(0, spaceLeft);
+      candidateBuffer.value.push(...toAdd);
+    }
+  } finally {
+    isRefilling = false;
+  }
 }
 
 function handleCandidateClick(slugId: string): void {
@@ -532,9 +630,11 @@ async function recordVote(): Promise<void> {
   selectedWorst.value = null;
   isTransitioning.value = true;
 
-  setTimeout(() => {
-    updateCandidates();
-    isTransitioning.value = false;
+  transitionTimeout = setTimeout(() => {
+    void (async () => {
+      await updateCandidates();
+      isTransitioning.value = false;
+    })();
   }, 400);
 
   // Auto-save to backend
@@ -546,7 +646,9 @@ async function recordVote(): Promise<void> {
   });
 
   if (saveResponse.status !== "success") {
+    // Save failed — possibly stale items. Refresh and reinitialize.
     showNotifyMessage(t("savingError"));
+    void refreshAfterStaleData();
   } else if (isFirstVote || isComplete.value) {
     invalidateConversation(conversationSlugId.value);
   }
@@ -576,6 +678,13 @@ async function undoLastVote(): Promise<void> {
 
   candidates.value = removedComparison.set;
 
+  // Clear stale buffer (comparison state changed) and refill
+  candidateBuffer.value = [];
+  void fetchRouteBuffer({
+    comparisons: restored.exportState().comparisons,
+    initialLoad: false,
+  });
+
   const saveResponse = await saveMaxDiffResult({
     conversationSlugId: conversationSlugId.value,
     ranking: restored.result ?? null,
@@ -588,6 +697,52 @@ async function undoLastVote(): Promise<void> {
   } else if (remainingComparisons.length === 0) {
     invalidateConversation(conversationSlugId.value);
   }
+}
+
+/**
+ * Refresh items and reinitialize after detecting stale data
+ * (e.g., items removed/changed mid-voting via GitHub sync).
+ */
+async function refreshAfterStaleData(): Promise<void> {
+  const response = await fetchMaxDiffItems({
+    conversationSlugId: conversationSlugId.value,
+    lifecycleFilter: "active",
+  });
+  if (response.status !== "success") return;
+
+  itemList.value = response.data.items.map((item) => ({
+    slugId: item.slugId,
+    title: item.title,
+    body: item.body ?? null,
+    externalUrl: item.externalUrl ?? null,
+  }));
+
+  // Clear stale buffer
+  candidateBuffer.value = [];
+
+  // Not enough items to continue voting
+  if (itemList.value.length < 2) {
+    candidates.value = [];
+    isLoading.value = false;
+    return;
+  }
+
+  // Reinitialize engine with updated items, preserving existing comparisons
+  if (instance.value !== null) {
+    const currentComparisons = instance.value.exportState().comparisons;
+    const newSlugIds = itemList.value.map((item) => item.slugId);
+    const restored = restoreMaxDiff({
+      items: newSlugIds,
+      comparisons: currentComparisons,
+    });
+    instance.value = restored;
+    triggerRef(instance);
+    isComplete.value = restored.complete;
+    finalRanking.value = restored.result ?? [];
+  }
+
+  // Fetch fresh candidate sets
+  await updateCandidates();
 }
 
 function handleUndoClick(): void {
@@ -607,7 +762,7 @@ function handleRedoRanking(): void {
     instance.value = createMaxDiff(slugIds);
     isComplete.value = false;
     finalRanking.value = [];
-    updateCandidates();
+    void updateCandidates();
 
     void saveMaxDiffResult({
       conversationSlugId: conversationSlugId.value,

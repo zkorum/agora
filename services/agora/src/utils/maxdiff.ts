@@ -10,6 +10,8 @@
  * each round of best/worst voting.
  */
 
+import type { MaxDiffComparison } from "src/shared/types/zod";
+
 // --- Bron-Kerbosch algorithm (inline, from SeregPie/BronKerbosch) ---
 
 function setDifference<T>(a: Set<T>, b: Set<T>): Set<T> {
@@ -118,11 +120,7 @@ function minBy<T>(items: T[], fn: (item: T) => number): T {
 
 // --- MaxDiff Engine ---
 
-export interface MaxDiffComparison {
-    best: string;
-    worst: string;
-    set: string[];
-}
+export type { MaxDiffComparison };
 
 export interface MaxDiffState {
     items: string[];
@@ -370,95 +368,4 @@ export function recordMaxDiffVote({
     instance.orderBefore(best, otherItems);
     const otherItemsForWorst = candidates.filter((id) => id !== worst);
     instance.orderAfter(worst, otherItemsForWorst);
-}
-
-/**
- * Derive a partial ranking from comparisons.
- * Builds a "beats" relation with transitive closure, then sorts
- * by win count. Only includes items that appeared in comparisons.
- */
-export function derivePartialRanking({
-    comparisons,
-    items,
-}: {
-    comparisons: MaxDiffComparison[];
-    items: string[];
-}): string[] {
-    if (comparisons.length === 0) return [];
-
-    const comparedItems = new Set<string>();
-    for (const { set } of comparisons) {
-        for (const item of set) comparedItems.add(item);
-    }
-
-    const comparedList = items.filter((item) => comparedItems.has(item));
-    if (comparedList.length < 2) return comparedList;
-
-    // Build "beats" relation: beats[i] = set of items i is known to beat
-    const beats = new Map<string, Set<string>>();
-    for (const item of comparedList) beats.set(item, new Set());
-
-    for (const { best, worst, set } of comparisons) {
-        for (const other of set) {
-            if (other !== best) beats.get(best)?.add(other);
-        }
-        for (const other of set) {
-            if (other !== worst) beats.get(other)?.add(worst);
-        }
-    }
-
-    // Transitive closure (Floyd-Warshall)
-    for (const k of comparedList) {
-        for (const i of comparedList) {
-            for (const j of comparedList) {
-                if (beats.get(i)?.has(k) && beats.get(k)?.has(j)) {
-                    beats.get(i)?.add(j);
-                }
-            }
-        }
-    }
-
-    return [...comparedList].sort((a, b) => {
-        const aWins = beats.get(a)?.size ?? 0;
-        const bWins = beats.get(b)?.size ?? 0;
-        return bWins - aWins;
-    });
-}
-
-/**
- * Aggregate MaxDiff results across multiple users.
- * Each user's ranking is a list of opinionSlugIds from best to worst.
- */
-export function aggregateMaxDiffResults({
-    rankings,
-    allItems,
-}: {
-    rankings: string[][];
-    allItems: string[];
-}): Array<{ item: string; avgRank: number; score: number; participantCount: number }> {
-    const rankSums = new Map<string, { total: number; count: number }>();
-    for (const item of allItems) {
-        rankSums.set(item, { total: 0, count: 0 });
-    }
-
-    for (const ranking of rankings) {
-        for (let i = 0; i < ranking.length; i++) {
-            const entry = rankSums.get(ranking[i]);
-            if (entry) {
-                entry.total += i + 1; // 1-based rank
-                entry.count += 1;
-            }
-        }
-    }
-
-    const n = allItems.length;
-    return allItems
-        .map((item) => {
-            const entry = rankSums.get(item);
-            const avgRank = entry !== undefined && entry.count > 0 ? entry.total / entry.count : n;
-            // Normalized score: 1.0 = best, 0.0 = worst
-            const score = n > 1 ? (n - avgRank) / (n - 1) : 1;
-            return { item, avgRank, score, participantCount: entry?.count ?? 0 };
-        })
-        .sort((a, b) => a.avgRank - b.avgRank);
 }

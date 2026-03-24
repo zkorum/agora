@@ -21,73 +21,10 @@ import {
     type MaxDiffComparison,
     type MaxdiffLifecycleStatus,
 } from "@/shared/types/zod.js";
+import { bradleyTerryFromBWS } from "./bradleyTerry.js";
+import { log } from "@/app.js";
 
 // --- Pure scoring functions (exported for testing) ---
-
-/**
- * Derive a partial ranking from comparisons.
- * Builds a "beats" relation with transitive closure, then sorts
- * by win count. Only includes items that appeared in comparisons
- * AND are in the provided items list.
- */
-export function derivePartialRanking({
-    comparisons,
-    items,
-}: {
-    comparisons: MaxDiffComparison[];
-    items: string[];
-}): string[] {
-    if (comparisons.length === 0) return [];
-
-    const itemSet = new Set(items);
-
-    // Filter comparisons to only include items in the active set
-    const filteredComparisons = comparisons
-        .filter(
-            (c) => itemSet.has(c.best) && itemSet.has(c.worst),
-        )
-        .map((c) => ({
-            ...c,
-            set: c.set.filter((item) => itemSet.has(item)),
-        }));
-
-    const comparedItems = new Set<string>();
-    for (const { set } of filteredComparisons) {
-        for (const item of set) comparedItems.add(item);
-    }
-
-    const comparedList = items.filter((item) => comparedItems.has(item));
-    if (comparedList.length < 2) return comparedList;
-
-    const beats = new Map<string, Set<string>>();
-    for (const item of comparedList) beats.set(item, new Set());
-
-    for (const { best, worst, set } of filteredComparisons) {
-        for (const other of set) {
-            if (other !== best) beats.get(best)?.add(other);
-        }
-        for (const other of set) {
-            if (other !== worst) beats.get(other)?.add(worst);
-        }
-    }
-
-    // Transitive closure (Floyd-Warshall)
-    for (const k of comparedList) {
-        for (const i of comparedList) {
-            for (const j of comparedList) {
-                if (beats.get(i)?.has(k) && beats.get(k)?.has(j)) {
-                    beats.get(i)?.add(j);
-                }
-            }
-        }
-    }
-
-    return [...comparedList].sort((a, b) => {
-        const aWins = beats.get(a)?.size ?? 0;
-        const bWins = beats.get(b)?.size ?? 0;
-        return bWins - aWins;
-    });
-}
 
 export interface RankedItem {
     itemSlugId: string;
@@ -97,55 +34,45 @@ export interface RankedItem {
 }
 
 /**
- * Pure function: compute scores from parsed rankings and an item list.
+ * Compute scores from pooled comparisons using Bradley-Terry MLE.
+ * Pools all users' raw comparisons and runs BT directly.
  * No DB access, fully testable.
  */
 export function computeScores({
-    parsedRankings,
+    allComparisons,
     items,
+    participantCounts,
 }: {
-    parsedRankings: string[][];
+    allComparisons: MaxDiffComparison[];
     items: string[];
+    participantCounts: Map<string, number>;
 }): RankedItem[] {
     const n = items.length;
     if (n === 0) return [];
 
-    const rankSums = new Map<string, { total: number; count: number }>();
-    for (const item of items) {
-        rankSums.set(item, { total: 0, count: 0 });
+    const { items: scoredItems, converged } = bradleyTerryFromBWS({
+        comparisons: allComparisons,
+        items,
+    });
+
+    if (!converged) {
+        log.warn(
+            `[computeScores] BT MLE did not converge for ${items.length} items`,
+        );
     }
 
-    for (const ranking of parsedRankings) {
-        for (let i = 0; i < ranking.length; i++) {
-            const entry = rankSums.get(ranking[i]);
-            if (entry) {
-                entry.total += i + 1; // 1-based rank
-                entry.count += 1;
-            }
-        }
-    }
-
-    return items
-        .map((item) => {
-            const entry = rankSums.get(item);
-            const avgRank =
-                entry !== undefined && entry.count > 0
-                    ? entry.total / entry.count
-                    : n;
-            const score = n > 1 ? (n - avgRank) / (n - 1) : 1;
-            return {
-                itemSlugId: item,
-                avgRank,
-                score,
-                participantCount: entry?.count ?? 0,
-            };
-        })
-        .sort((a, b) => a.avgRank - b.avgRank);
+    return scoredItems.map((s, idx) => ({
+        itemSlugId: s.item,
+        avgRank: idx + 1,
+        score: s.score,
+        participantCount: participantCounts.get(s.item) ?? 0,
+    }));
 }
 
 /**
- * Parse raw JSONB result rows into rankings, deriving partial rankings
- * for incomplete sessions. Pure function, no DB access.
+ * Extract all comparisons from raw JSONB result rows, filtering to active items.
+ * Also counts how many users compared each item (for participant counts).
+ * Pure function, no DB access.
  */
 export function parseResultRows({
     rows,
@@ -153,32 +80,115 @@ export function parseResultRows({
 }: {
     rows: { ranking: unknown; comparisons: unknown }[];
     items: string[];
-}): string[][] {
-    const parsedRankings: string[][] = [];
-    for (const row of rows) {
-        if (row.ranking !== null) {
-            const ranking = z.array(z.string()).parse(row.ranking);
-            // Filter to only items in the active set
-            const filtered = ranking.filter((id) => items.includes(id));
-            if (filtered.length > 0) {
-                parsedRankings.push(filtered);
-            }
-        } else {
-            const comparisons = z
-                .array(zodMaxdiffComparison)
-                .parse(row.comparisons);
-            if (comparisons.length > 0) {
-                const partialRanking = derivePartialRanking({
-                    comparisons,
-                    items,
-                });
-                if (partialRanking.length > 0) {
-                    parsedRankings.push(partialRanking);
-                }
+}): {
+    allComparisons: MaxDiffComparison[];
+    participantCounts: Map<string, number>;
+} {
+    const itemSet = new Set(items);
+    const allComparisons: MaxDiffComparison[] = [];
+    // Track which items each user compared (for participant counts)
+    const itemParticipants = new Map<string, Set<number>>();
+    for (const item of items) {
+        itemParticipants.set(item, new Set());
+    }
+
+    for (let userIdx = 0; userIdx < rows.length; userIdx++) {
+        const row = rows[userIdx];
+        const comparisons = z
+            .array(zodMaxdiffComparison)
+            .parse(row.comparisons);
+
+        for (const comp of comparisons) {
+            if (!itemSet.has(comp.best) || !itemSet.has(comp.worst)) continue;
+            const filteredSet = comp.set.filter((id) => itemSet.has(id));
+            if (filteredSet.length < 2) continue;
+
+            allComparisons.push({
+                best: comp.best,
+                worst: comp.worst,
+                set: filteredSet,
+            });
+
+            for (const item of filteredSet) {
+                itemParticipants.get(item)?.add(userIdx);
             }
         }
     }
-    return parsedRankings;
+
+    const participantCounts = new Map<string, number>();
+    for (const [item, participants] of itemParticipants) {
+        participantCounts.set(item, participants.size);
+    }
+
+    return { allComparisons, participantCounts };
+}
+
+// --- Global Uncertainty (for routing) ---
+
+/**
+ * Compute global uncertainty for all active items in a conversation.
+ * Uses comparison-count heuristic: uncertainty = 1/sqrt(count + 1).
+ * Cheap — no BT MLE, just counts how many comparisons reference each item.
+ */
+export async function computeGlobalUncertainty({
+    db,
+    conversationSlugId,
+}: {
+    db: PostgresDatabase;
+    conversationSlugId: string;
+}): Promise<{ items: string[]; uncertainty: Map<string, number> }> {
+    const { id: conversationId } =
+        await useCommonPost().getPostMetadataFromSlugId({
+            db,
+            conversationSlugId,
+        });
+
+    const activeItems = await db
+        .select({ slugId: maxdiffItemTable.slugId })
+        .from(maxdiffItemTable)
+        .where(
+            and(
+                eq(maxdiffItemTable.conversationId, conversationId),
+                isNotNull(maxdiffItemTable.currentContentId),
+                inArray(maxdiffItemTable.lifecycleStatus, [
+                    "active",
+                    "in_progress",
+                ]),
+            ),
+        );
+
+    const items = activeItems.map((r) => r.slugId);
+    if (items.length < 2) {
+        return { items, uncertainty: new Map() };
+    }
+
+    // Count item appearances via SQL aggregate (avoids loading full JSONB to app)
+    const countRows = await db.execute<{
+        item_text: string;
+        appearance_count: string;
+    }>(sql`
+        SELECT item_text, COUNT(*)::text AS appearance_count
+        FROM ${maxdiffResultTable},
+             jsonb_array_elements(${maxdiffResultTable.comparisons}) AS comp,
+             jsonb_array_elements_text(comp -> 'set') AS item_text
+        WHERE ${maxdiffResultTable.conversationId} = ${conversationId}
+        GROUP BY item_text
+    `);
+
+    const itemSet = new Set(items);
+    const uncertainty = new Map<string, number>();
+    // Default: all items start with max uncertainty (never compared)
+    for (const item of items) {
+        uncertainty.set(item, 1);
+    }
+    for (const row of countRows) {
+        if (itemSet.has(row.item_text)) {
+            const count = Number(row.appearance_count);
+            uncertainty.set(row.item_text, 1 / Math.sqrt(count + 1));
+        }
+    }
+
+    return { items, uncertainty };
 }
 
 // --- Save / Upsert ---
@@ -232,25 +242,6 @@ export async function saveMaxdiffResult({
         );
     }
 
-    // Check previous state (fast PK lookup) to avoid
-    // unnecessary counter recalculation on every comparison round
-    const previousState = await db
-        .select({
-            isComplete: maxdiffResultTable.isComplete,
-            comparisonCount:
-                sql<number>`jsonb_array_length(${maxdiffResultTable.comparisons})`,
-        })
-        .from(maxdiffResultTable)
-        .where(
-            and(
-                eq(maxdiffResultTable.participantId, userId),
-                eq(maxdiffResultTable.conversationId, conversationId),
-            ),
-        );
-    const wasComplete = previousState[0]?.isComplete ?? false;
-    const hadComparisons = (previousState[0]?.comparisonCount ?? 0) > 0;
-    const hasComparisons = comparisons.length > 0;
-
     const now = new Date();
 
     await db
@@ -277,11 +268,7 @@ export async function saveMaxdiffResult({
             },
         });
 
-    // Reconcile counters when completion status changes OR when
-    // participant joins/leaves (comparisons transition to/from empty)
-    if (isComplete !== wasComplete || hasComparisons !== hadComparisons) {
-        await updateMaxdiffCounters({ db, conversationId });
-    }
+    await updateMaxdiffCounters({ db, conversationId });
 }
 
 // --- Load ---
@@ -442,13 +429,13 @@ export async function getMaxdiffResults({
         return { rankings };
     }
 
-    // For active/all: compute live scores from comparisons
-    const parsedRankings = parseResultRows({
+    // For active/all: compute live scores from pooled comparisons via BT MLE
+    const { allComparisons, participantCounts } = parseResultRows({
         rows: allResults,
         items,
     });
 
-    const scored = computeScores({ parsedRankings, items });
+    const scored = computeScores({ allComparisons, items, participantCounts });
 
     const contentMap = new Map(
         itemRows.map((r) => [
@@ -535,8 +522,11 @@ export async function computeItemSnapshot({
         .from(maxdiffResultTable)
         .where(eq(maxdiffResultTable.conversationId, conversationId));
 
-    const parsedRankings = parseResultRows({ rows: allResults, items });
-    const scored = computeScores({ parsedRankings, items });
+    const { allComparisons, participantCounts } = parseResultRows({
+        rows: allResults,
+        items,
+    });
+    const scored = computeScores({ allComparisons, items, participantCounts });
 
     const itemScore = scored.find((s) => s.itemSlugId === itemSlugId);
     if (itemScore === undefined) {
