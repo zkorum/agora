@@ -83,12 +83,16 @@
           </linearGradient>
         </defs>
       </svg>
+      <svg id="splash-text" width="200" height="20" viewBox="0 0 200 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-top:24px">
+        <text x="100" y="14" text-anchor="middle" fill="#6b4eff" font-size="14" font-family="sans-serif">Deliberationing...</text>
+      </svg>
     </div>
     <style>
       #app-loading {
         position: fixed;
         inset: 0;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
         background: #f6f5f8;
@@ -100,14 +104,56 @@
         pointer-events: none;
       }
       .splash-fill {
-        animation: splash-reveal 1.5s ease-in-out infinite;
+        animation: splash-reveal 1s ease-in-out infinite;
       }
       @keyframes splash-reveal {
         0% { clip-path: inset(100% 0 0 0); }
-        50% { clip-path: inset(0 0 0 0); }
-        100% { clip-path: inset(100% 0 0 0); }
+        100% { clip-path: inset(0 0 0 0); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .splash-fill { animation: none; }
       }
     </style>
+    <script>
+      (function() {
+        var W = ["Deliberationing","Bridgificating","Clusterizing","Depolarificating",
+          "Commongrounding","Senseificationing","Democraforming","Rehumanificating",
+          "Agora-rithming","Pluralitifying","d/accelerationing","Cosmo-localizing"];
+        var t = document.querySelector("#splash-text text");
+        if (!t) return;
+        var order = W.slice();
+        var idx = order.length;
+        var prev = "";
+        function shuffle() {
+          for (var i = order.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var tmp = order[i]; order[i] = order[j]; order[j] = tmp;
+          }
+        }
+        function next() {
+          if (idx >= order.length) {
+            do { shuffle(); } while (order[0] === prev);
+            idx = 0;
+          }
+          prev = order[idx];
+          return order[idx++];
+        }
+        t.textContent = next() + "...";
+        var timer = setInterval(function() { t.textContent = next() + "..."; }, 2000);
+        function cleanup() {
+          clearInterval(timer);
+          clearTimeout(maxLife);
+        }
+        // Stop cycling when splash is removed from DOM
+        if (typeof MutationObserver !== "undefined") {
+          new MutationObserver(function(_, o) {
+            if (!document.getElementById("splash-text")) { cleanup(); o.disconnect(); }
+          }).observe(document.body, { childList: true, subtree: true });
+        }
+        // Fallback: stop after 60s to prevent stale splash / leaked timer
+        var maxLife = setTimeout(cleanup, 60000);
+      })();
+    </script>
     <% } %>
     <!-- quasar:entry-point -->
   </body>
