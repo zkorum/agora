@@ -100,6 +100,14 @@ watch(isNetworkOffline, (offline) => {
 }, { flush: 'sync' });
 
 onMounted(async () => {
+  // Remove SPA splash screen (only present in SPA builds, see index.html)
+  const splash = document.getElementById("app-loading");
+  if (splash) {
+    splash.classList.add("fade-out");
+    splash.addEventListener("transitionend", () => splash.remove(), { once: true });
+    setTimeout(() => splash.remove(), 500);
+  }
+
   try {
     await authenticationStore.initializeAuthState();
   } catch (e) {
