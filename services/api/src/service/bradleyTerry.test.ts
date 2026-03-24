@@ -8,8 +8,8 @@ import {
     bradleyTerryFromBWS,
     fisherYatesShuffle,
     type PairwiseWin,
-    type MaxDiffComparison,
 } from "./bradleyTerry.js";
+import type { MaxDiffComparison } from "@/shared/types/zod.js";
 
 // Tolerance for floating-point comparisons
 const ATOL = 1e-4;
