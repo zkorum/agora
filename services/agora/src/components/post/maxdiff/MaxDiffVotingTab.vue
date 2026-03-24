@@ -449,7 +449,7 @@ async function initializeMaxDiff(): Promise<void> {
     initialLoad: true,
   });
 
-  updateCandidates();
+  await updateCandidates();
   isLoading.value = false;
 }
 
@@ -457,7 +457,7 @@ const BUFFER_REFILL_THRESHOLD = 1;
 const BUFFER_MAX_SIZE = 8;
 let isRefilling = false;
 
-function updateCandidates(): void {
+async function updateCandidates(): Promise<void> {
   if (!instance.value || instance.value.complete) {
     candidates.value = [];
     return;
@@ -466,18 +466,17 @@ function updateCandidates(): void {
   if (validSet !== undefined) {
     candidates.value = validSet;
   } else {
-    // Buffer empty — show loading, request fresh sets
+    // Buffer empty — fetch fresh sets with loading state
     isLoading.value = true;
-    void fetchRouteBuffer({
+    await fetchRouteBuffer({
       comparisons: instance.value.exportState().comparisons,
       initialLoad: false,
-    }).then(() => {
-      const fresh = consumeValidBufferedSet();
-      if (fresh !== undefined) {
-        candidates.value = fresh;
-      }
-      isLoading.value = false;
     });
+    const fresh = consumeValidBufferedSet();
+    if (fresh !== undefined) {
+      candidates.value = fresh;
+    }
+    isLoading.value = false;
     return;
   }
 
@@ -622,8 +621,8 @@ async function recordVote(): Promise<void> {
   selectedWorst.value = null;
   isTransitioning.value = true;
 
-  setTimeout(() => {
-    updateCandidates();
+  setTimeout(async () => {
+    await updateCandidates();
     isTransitioning.value = false;
   }, 400);
 

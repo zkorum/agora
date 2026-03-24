@@ -10,6 +10,8 @@
  * each round of best/worst voting.
  */
 
+import type { MaxDiffComparison } from "src/shared/types/zod";
+
 // --- Bron-Kerbosch algorithm (inline, from SeregPie/BronKerbosch) ---
 
 function setDifference<T>(a: Set<T>, b: Set<T>): Set<T> {
@@ -118,11 +120,7 @@ function minBy<T>(items: T[], fn: (item: T) => number): T {
 
 // --- MaxDiff Engine ---
 
-export interface MaxDiffComparison {
-    best: string;
-    worst: string;
-    set: string[];
-}
+export type { MaxDiffComparison };
 
 export interface MaxDiffState {
     items: string[];
