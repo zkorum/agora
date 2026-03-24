@@ -4,8 +4,14 @@
       <AnalysisTitleHeader :title="sectionTitle" :show-star-in-title="false">
         <template #action-button>
           <AnalysisActionButton
-            :type="compactMode ? 'viewMore' : 'learnMore'"
-            @action-click="compactMode ? props.onSwitchTab() : props.onLearnMore()"
+            v-if="compactMode"
+            type="viewMore"
+            @action-click="props.onSwitchTab()"
+          />
+          <AnalysisActionButton
+            v-else
+            type="learnMore"
+            @action-click="props.onLearnMore()"
           />
         </template>
       </AnalysisTitleHeader>
