@@ -2363,9 +2363,6 @@ export const maxdiffItemExternalSourceTable = pgTable(
             .notNull(),
     },
     (t) => [
-        uniqueIndex("maxdiff_external_source_dedup_idx").on(
-            t.sourceType,
-            t.externalId,
-        ),
+        index("maxdiff_external_source_external_id_idx").on(t.externalId),
     ],
 );

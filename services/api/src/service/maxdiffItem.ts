@@ -22,6 +22,7 @@ import { log } from "@/app.js";
 
 interface CreateMaxdiffItemProps {
     db: PostgresDatabase;
+    tx?: PostgresDatabase;
     conversationId: number;
     conversationContentId: number;
     authorId: string;
@@ -30,15 +31,69 @@ interface CreateMaxdiffItemProps {
     isSeed: boolean;
 }
 
+async function createMaxdiffItemInTx({
+    tx,
+    slugId,
+    conversationId,
+    conversationContentId,
+    authorId,
+    sanitizedTitle,
+    sanitizedBody,
+    isSeed,
+    now,
+}: {
+    tx: PostgresDatabase;
+    slugId: string;
+    conversationId: number;
+    conversationContentId: number;
+    authorId: string;
+    sanitizedTitle: string;
+    sanitizedBody: string | null;
+    isSeed: boolean;
+    now: Date;
+}): Promise<{ itemId: number; contentId: number }> {
+    const [itemRow] = await tx
+        .insert(maxdiffItemTable)
+        .values({
+            slugId,
+            authorId,
+            conversationId,
+            isSeed,
+            lifecycleStatus: "active",
+            createdAt: now,
+            updatedAt: now,
+        })
+        .returning({ id: maxdiffItemTable.id });
+
+    const [contentRow] = await tx
+        .insert(maxdiffItemContentTable)
+        .values({
+            maxdiffItemId: itemRow.id,
+            conversationContentId,
+            title: sanitizedTitle,
+            body: sanitizedBody,
+            createdAt: now,
+        })
+        .returning({ id: maxdiffItemContentTable.id });
+
+    await tx
+        .update(maxdiffItemTable)
+        .set({ currentContentId: contentRow.id })
+        .where(eq(maxdiffItemTable.id, itemRow.id));
+
+    return { itemId: itemRow.id, contentId: contentRow.id };
+}
+
 export async function createMaxdiffItem({
     db,
+    tx,
     conversationId,
     conversationContentId,
     authorId,
     title,
     body,
     isSeed,
-}: CreateMaxdiffItemProps): Promise<{ slugId: string }> {
+}: CreateMaxdiffItemProps): Promise<{ slugId: string; itemId: number }> {
     const slugId = generateRandomSlugId();
     const now = new Date();
 
@@ -46,44 +101,28 @@ export async function createMaxdiffItem({
     const sanitizedBody =
         body != null ? processUserGeneratedHtml(body, true, "input") : null;
 
-    const { itemId, contentId } = await db.transaction(async (tx) => {
-        const [itemRow] = await tx
-            .insert(maxdiffItemTable)
-            .values({
-                slugId,
-                authorId,
-                conversationId,
-                isSeed,
-                lifecycleStatus: "active",
-                createdAt: now,
-                updatedAt: now,
-            })
-            .returning({ id: maxdiffItemTable.id });
+    const params = {
+        slugId,
+        conversationId,
+        conversationContentId,
+        authorId,
+        sanitizedTitle,
+        sanitizedBody,
+        isSeed,
+        now,
+    };
 
-        const [contentRow] = await tx
-            .insert(maxdiffItemContentTable)
-            .values({
-                maxdiffItemId: itemRow.id,
-                conversationContentId,
-                title: sanitizedTitle,
-                body: sanitizedBody,
-                createdAt: now,
-            })
-            .returning({ id: maxdiffItemContentTable.id });
-
-        await tx
-            .update(maxdiffItemTable)
-            .set({ currentContentId: contentRow.id })
-            .where(eq(maxdiffItemTable.id, itemRow.id));
-
-        return { itemId: itemRow.id, contentId: contentRow.id };
-    });
+    const { itemId, contentId } = tx
+        ? await createMaxdiffItemInTx({ tx, ...params })
+        : await db.transaction(async (innerTx) =>
+              createMaxdiffItemInTx({ tx: innerTx, ...params }),
+          );
 
     log.info(
         `[MaxDiff] Created item ${slugId} (id=${String(itemId)}, content=${String(contentId)}) for conversation ${String(conversationId)}`,
     );
 
-    return { slugId };
+    return { slugId, itemId };
 }
 
 // --- Fetch ---
