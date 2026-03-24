@@ -183,7 +183,7 @@ export async function computeGlobalUncertainty({
     }
     for (const row of countRows) {
         if (itemSet.has(row.item_text)) {
-            const count = parseInt(row.appearance_count, 10);
+            const count = Number(row.appearance_count);
             uncertainty.set(row.item_text, 1 / Math.sqrt(count + 1));
         }
     }

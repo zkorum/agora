@@ -2266,6 +2266,8 @@ export const maxdiffResultTable = pgTable(
             t.conversationId,
             t.isComplete,
         ),
+        // For JSONB aggregate query in computeGlobalUncertainty (routing)
+        index("maxdiff_result_conversation_idx").on(t.conversationId),
     ],
 );
 

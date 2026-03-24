@@ -5,12 +5,17 @@
  * this function recomputes them using the new Bradley-Terry MLE algorithm.
  * Runs once on API startup, idempotent — becomes a no-op once all snapshots
  * are populated.
+ *
+ * Batches items by conversation to avoid N+1 queries.
  */
 
-import { maxdiffItemTable } from "@/shared-backend/schema.js";
+import {
+    maxdiffItemTable,
+    maxdiffResultTable,
+} from "@/shared-backend/schema.js";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { eq, and, isNull, inArray, isNotNull } from "drizzle-orm";
-import { computeItemSnapshot } from "./maxdiff.js";
+import { parseResultRows, computeScores } from "./maxdiff.js";
 import { log } from "@/app.js";
 
 export async function backfillMaxdiffSnapshots({
@@ -48,25 +53,74 @@ export async function backfillMaxdiffSnapshots({
         `[MaxDiff Backfill] Recomputing snapshots for ${itemsToBackfill.length} items`,
     );
 
+    // Group items by conversation to batch queries
+    const byConversation = new Map<
+        number,
+        Array<{ id: number; slugId: string }>
+    >();
+    for (const item of itemsToBackfill) {
+        const list = byConversation.get(item.conversationId) ?? [];
+        list.push({ id: item.id, slugId: item.slugId });
+        byConversation.set(item.conversationId, list);
+    }
+
     let successCount = 0;
     let errorCount = 0;
 
-    for (const item of itemsToBackfill) {
+    for (const [conversationId, conversationItems] of byConversation) {
         try {
-            const snapshot = await computeItemSnapshot({
-                db,
-                conversationId: item.conversationId,
-                itemSlugId: item.slugId,
+            // Fetch active items + all results ONCE per conversation
+            const activeItems = await db
+                .select({ slugId: maxdiffItemTable.slugId })
+                .from(maxdiffItemTable)
+                .where(
+                    and(
+                        eq(maxdiffItemTable.conversationId, conversationId),
+                        isNotNull(maxdiffItemTable.currentContentId),
+                        inArray(maxdiffItemTable.lifecycleStatus, [
+                            "active",
+                            "in_progress",
+                        ]),
+                    ),
+                );
+
+            const items = activeItems.map((r) => r.slugId);
+            if (items.length < 2) continue;
+
+            const allResults = await db
+                .select({
+                    ranking: maxdiffResultTable.ranking,
+                    comparisons: maxdiffResultTable.comparisons,
+                })
+                .from(maxdiffResultTable)
+                .where(
+                    eq(maxdiffResultTable.conversationId, conversationId),
+                );
+
+            const { allComparisons, participantCounts } = parseResultRows({
+                rows: allResults,
+                items,
+            });
+            const scored = computeScores({
+                allComparisons,
+                items,
+                participantCounts,
             });
 
-            if (snapshot.snapshotScore !== null) {
+            // Compute snapshot for each item in this conversation
+            for (const item of conversationItems) {
+                const itemScore = scored.find(
+                    (s) => s.itemSlugId === item.slugId,
+                );
+                if (itemScore === undefined) continue;
+
+                const rank = scored.indexOf(itemScore) + 1;
                 await db
                     .update(maxdiffItemTable)
                     .set({
-                        snapshotScore: snapshot.snapshotScore,
-                        snapshotRank: snapshot.snapshotRank,
-                        snapshotParticipantCount:
-                            snapshot.snapshotParticipantCount,
+                        snapshotScore: itemScore.score,
+                        snapshotRank: rank,
+                        snapshotParticipantCount: itemScore.participantCount,
                     })
                     .where(eq(maxdiffItemTable.id, item.id));
                 successCount++;
@@ -74,9 +128,9 @@ export async function backfillMaxdiffSnapshots({
         } catch (error) {
             log.error(
                 error,
-                `[MaxDiff Backfill] Failed to recompute snapshot for item ${item.slugId}`,
+                `[MaxDiff Backfill] Failed for conversation ${conversationId}`,
             );
-            errorCount++;
+            errorCount += conversationItems.length;
         }
     }
 
