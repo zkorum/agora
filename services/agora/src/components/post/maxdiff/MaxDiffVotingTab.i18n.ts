@@ -20,6 +20,7 @@ export interface MaxDiffVotingTabTranslations {
   cancelSelection: string;
   undoLastVote: string;
   undoError: string;
+  retryButton: string;
 }
 
 export const maxDiffVotingTabTranslations: Record<
@@ -46,6 +47,7 @@ export const maxDiffVotingTabTranslations: Record<
     cancelSelection: "Cancel selection",
     undoLastVote: "Undo",
     undoError: "Failed to undo. Please try again.",
+    retryButton: "Try again",
   },
   ar: {
     title: "رتّب العبارات حسب الأولوية",
@@ -67,6 +69,7 @@ export const maxDiffVotingTabTranslations: Record<
     cancelSelection: "إلغاء الاختيار",
     undoLastVote: "تراجع",
     undoError: "فشل التراجع. يرجى المحاولة مرة أخرى.",
+    retryButton: "حاول مرة أخرى",
   },
   es: {
     title: "Priorizar declaraciones",
@@ -88,6 +91,7 @@ export const maxDiffVotingTabTranslations: Record<
     cancelSelection: "Cancelar selección",
     undoLastVote: "Deshacer",
     undoError: "Error al deshacer. Inténtalo de nuevo.",
+    retryButton: "Intentar de nuevo",
   },
   fa: {
     title: "اولویت‌بندی گزاره‌ها",
@@ -109,6 +113,7 @@ export const maxDiffVotingTabTranslations: Record<
     cancelSelection: "لغو انتخاب",
     undoLastVote: "بازگردانی",
     undoError: "بازگردانی ناموفق بود. لطفاً دوباره تلاش کنید.",
+    retryButton: "دوباره تلاش کنید",
   },
   he: {
     title: "תעדוף הצהרות",
@@ -130,6 +135,7 @@ export const maxDiffVotingTabTranslations: Record<
     cancelSelection: "ביטול בחירה",
     undoLastVote: "ביטול",
     undoError: "הביטול נכשל. אנא נסו שוב.",
+    retryButton: "נסו שוב",
   },
   fr: {
     title: "Hiérarchiser les propositions",
@@ -151,6 +157,7 @@ export const maxDiffVotingTabTranslations: Record<
     cancelSelection: "Annuler la sélection",
     undoLastVote: "Annuler",
     undoError: "Échec de l'annulation. Veuillez réessayer.",
+    retryButton: "Réessayer",
   },
   "zh-Hans": {
     title: "优先排列陈述",
@@ -172,6 +179,7 @@ export const maxDiffVotingTabTranslations: Record<
     cancelSelection: "取消选择",
     undoLastVote: "撤销",
     undoError: "撤销失败，请重试。",
+    retryButton: "重试",
   },
   "zh-Hant": {
     title: "優先排列陳述",
@@ -193,6 +201,7 @@ export const maxDiffVotingTabTranslations: Record<
     cancelSelection: "取消選擇",
     undoLastVote: "復原",
     undoError: "復原失敗，請重試。",
+    retryButton: "重試",
   },
   ja: {
     title: "ステートメントの優先順位付け",
@@ -214,6 +223,7 @@ export const maxDiffVotingTabTranslations: Record<
     cancelSelection: "選択を取り消す",
     undoLastVote: "元に戻す",
     undoError: "元に戻せませんでした。もう一度お試しください。",
+    retryButton: "再試行",
   },
   ky: {
     title: "Билдирүүлөрдү артыкчылыктуу кылуу",
@@ -235,6 +245,7 @@ export const maxDiffVotingTabTranslations: Record<
     cancelSelection: "Тандоону жокко чыгаруу",
     undoLastVote: "Артка кайтаруу",
     undoError: "Артка кайтаруу ишке ашкан жок. Кайра аракет кылыңыз.",
+    retryButton: "Кайра аракет кылуу",
   },
   ru: {
     title: "Расставьте приоритеты",
@@ -256,5 +267,6 @@ export const maxDiffVotingTabTranslations: Record<
     cancelSelection: "Отменить выбор",
     undoLastVote: "Отменить",
     undoError: "Не удалось отменить. Попробуйте ещё раз.",
+    retryButton: "Попробовать ещё раз",
   },
 };

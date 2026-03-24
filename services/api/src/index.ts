@@ -864,6 +864,45 @@ async function verifyUcanAndDeviceStatus(
     };
 }
 
+// Validates the UCAN and gets device status without enforcing any status
+// requirements. Use for endpoints that serve both known and unknown devices
+// (e.g. public pages with optional personalization).
+// When no auth header is present, returns an unauthenticated response with
+// didWrite/encodedUcan undefined and isKnown: false.
+type VerifyUcanOptionalAuthReturn =
+    | {
+          didWrite: string;
+          encodedUcan: string;
+          deviceStatus: DeviceLoginStatusInternal;
+      }
+    | {
+          didWrite: undefined;
+          encodedUcan: undefined;
+          deviceStatus: Extract<DeviceLoginStatusInternal, { isKnown: false }>;
+      };
+
+async function verifyUcanOptionalAuth(
+    db: PostgresDatabase,
+    request: FastifyRequest,
+): Promise<VerifyUcanOptionalAuthReturn> {
+    const authHeader = request.headers.authorization;
+    if (authHeader === undefined || !authHeader.startsWith("Bearer ")) {
+        return {
+            didWrite: undefined,
+            encodedUcan: undefined,
+            deviceStatus: {
+                isKnown: false,
+                isLoggedIn: false,
+                isRegistered: false,
+                credentials: { email: null, phone: null, rarimo: null },
+            },
+        };
+    }
+    return await verifyUcanAndDeviceStatus(db, request, {
+        expectedDeviceStatus: undefined,
+    });
+}
+
 // always return userId !== undefined
 async function verifyUcanAndKnownDeviceStatus(
     db: PostgresDatabase,
@@ -1207,35 +1246,18 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            let isAuthenticatedRequest = false;
-            const authHeader = request.headers.authorization;
-            if (authHeader !== undefined) {
-                isAuthenticatedRequest = true;
-            } else {
-                isAuthenticatedRequest = false;
-            }
-            if (isAuthenticatedRequest) {
-                const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
-                    db,
-                    request,
-                    {
-                        expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                    },
-                );
-
-                return await feedService.fetchFeed({
-                    db: db,
-                    personalizationUserId: deviceStatus.userId,
-                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
-                    sortAlgorithm: request.body.sortAlgorithm,
-                });
-            } else {
-                return await feedService.fetchFeed({
-                    db: db,
-                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
-                    sortAlgorithm: request.body.sortAlgorithm,
-                });
-            }
+            const { deviceStatus } = await verifyUcanOptionalAuth(
+                db,
+                request,
+            );
+            return await feedService.fetchFeed({
+                db: db,
+                personalizationUserId: deviceStatus.isKnown
+                    ? deviceStatus.userId
+                    : undefined,
+                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+                sortAlgorithm: request.body.sortAlgorithm,
+            });
         },
     });
 
@@ -1750,10 +1772,17 @@ server.after(() => {
         },
         handler: async (request) => {
             checkMaxdiffEnabled();
-            const { deviceStatus } =
-                await verifyUcanAndKnownDeviceStatus(db, request, {
-                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                });
+            const { deviceStatus } = await verifyUcanOptionalAuth(
+                db,
+                request,
+            );
+            if (!deviceStatus.isKnown) {
+                return {
+                    ranking: null,
+                    comparisons: null,
+                    isComplete: false,
+                };
+            }
             return await loadMaxdiffResult({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
@@ -1792,10 +1821,7 @@ server.after(() => {
         },
         handler: async (request) => {
             checkMaxdiffEnabled();
-            const { deviceStatus } =
-                await verifyUcanAndKnownDeviceStatus(db, request, {
-                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                });
+            await verifyUcanOptionalAuth(db, request);
             const { items, uncertainty } = await computeGlobalUncertainty({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
@@ -2027,39 +2053,20 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            let isAuthenticatedRequest = false;
-            const authHeader = request.headers.authorization;
-            if (authHeader !== undefined) {
-                isAuthenticatedRequest = true;
-            } else {
-                isAuthenticatedRequest = false;
-            }
-            if (isAuthenticatedRequest) {
-                const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
-                    db,
-                    request,
-                    {
-                        expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                    },
-                );
-
-                const opinionItemsPerSlugId = await fetchOpinionsByPostSlugId({
-                    db: db,
-                    postSlugId: request.body.conversationSlugId,
-                    filterTarget: request.body.filter,
-                    personalizationUserId: deviceStatus.userId,
-                    limit: 3000,
-                });
-                return Array.from(opinionItemsPerSlugId.values());
-            } else {
-                const opinionItemsPerSlugId = await fetchOpinionsByPostSlugId({
-                    db: db,
-                    postSlugId: request.body.conversationSlugId,
-                    filterTarget: request.body.filter,
-                    limit: 3000,
-                });
-                return Array.from(opinionItemsPerSlugId.values());
-            }
+            const { deviceStatus } = await verifyUcanOptionalAuth(
+                db,
+                request,
+            );
+            const opinionItemsPerSlugId = await fetchOpinionsByPostSlugId({
+                db: db,
+                postSlugId: request.body.conversationSlugId,
+                filterTarget: request.body.filter,
+                personalizationUserId: deviceStatus.isKnown
+                    ? deviceStatus.userId
+                    : undefined,
+                limit: 3000,
+            });
+            return Array.from(opinionItemsPerSlugId.values());
         },
     });
 
@@ -2073,60 +2080,42 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            let isAuthenticatedRequest = false;
-            const authHeader = request.headers.authorization;
-            if (authHeader !== undefined) {
-                isAuthenticatedRequest = true;
-            } else {
-                isAuthenticatedRequest = false;
-            }
-            if (isAuthenticatedRequest) {
-                const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
-                    db,
-                    request,
-                    {
-                        expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                    },
+            const { deviceStatus } = await verifyUcanOptionalAuth(
+                db,
+                request,
+            );
+
+            // Get display language from validated header or use default "en"
+            const parsedHeaderDisplayLanguage =
+                ZodSupportedDisplayLanguageCodes.safeParse(
+                    request.headers["accept-language"],
                 );
+            const headerDisplayLanguage: SupportedDisplayLanguageCodes =
+                parsedHeaderDisplayLanguage.success
+                    ? parsedHeaderDisplayLanguage.data
+                    : "en";
 
-                // Get display language from validated header or use default "en"
-                const parsedHeaderDisplayLanguage =
-                    ZodSupportedDisplayLanguageCodes.safeParse(
-                        request.headers["accept-language"],
-                    );
-                const headerDisplayLanguage: SupportedDisplayLanguageCodes =
-                    parsedHeaderDisplayLanguage.success
-                        ? parsedHeaderDisplayLanguage.data
-                        : "en";
+            // Get user's display language from DB if known (falls back to header language)
+            const displayLanguage = deviceStatus.isKnown
+                ? await getLanguagePreferences({
+                      db,
+                      userId: deviceStatus.userId,
+                      request: {
+                          currentDisplayLanguage: headerDisplayLanguage,
+                      },
+                  }).then((prefs) => prefs.displayLanguage)
+                : headerDisplayLanguage;
 
-                // Get user's display language from DB (falls back to header language)
-                const displayLanguage = await getLanguagePreferences({
-                    db,
-                    userId: deviceStatus.userId,
-                    request: { currentDisplayLanguage: headerDisplayLanguage },
-                }).then((prefs) => prefs.displayLanguage);
-
-                const analysis = await fetchAnalysisByConversationSlugId({
-                    db: db,
-                    conversationSlugId: request.body.conversationSlugId,
-                    personalizationUserId: deviceStatus.userId,
-                    displayLanguage,
-                    googleCloudCredentials,
-                });
-                return analysis;
-            } else {
-                // Get display language from validated header or use default "en"
-                const displayLanguage =
-                    request.headers["accept-language"] ?? "en";
-
-                const analysis = await fetchAnalysisByConversationSlugId({
-                    db: db,
-                    conversationSlugId: request.body.conversationSlugId,
-                    displayLanguage,
-                    googleCloudCredentials,
-                });
-                return analysis;
-            }
+            const analysis = await fetchAnalysisByConversationSlugId({
+                db: db,
+                conversationSlugId: request.body.conversationSlugId,
+                personalizationUserId: deviceStatus.isKnown
+                    ? deviceStatus.userId
+                    : undefined,
+                displayLanguage,
+                googleCloudCredentials,
+            });
+            return analysis;
         },
     });
 
@@ -2615,45 +2604,23 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            let isAuthenticatedRequest = false;
-            const authHeader = request.headers.authorization;
-            if (authHeader !== undefined) {
-                isAuthenticatedRequest = true;
-            } else {
-                isAuthenticatedRequest = false;
-            }
-            if (isAuthenticatedRequest) {
-                const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
-                    db,
-                    request,
-                    {
-                        expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                    },
-                );
+            const { deviceStatus } = await verifyUcanOptionalAuth(
+                db,
+                request,
+            );
+            const postItem = await postService.fetchPostBySlugId({
+                db: db,
+                conversationSlugId: request.body.conversationSlugId,
+                personalizedUserId: deviceStatus.isKnown
+                    ? deviceStatus.userId
+                    : undefined,
+                baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
+            });
 
-                const postItem = await postService.fetchPostBySlugId({
-                    db: db,
-                    conversationSlugId: request.body.conversationSlugId,
-                    personalizedUserId: deviceStatus.userId,
-                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
-                });
-
-                const response: GetConversationResponse = {
-                    conversationData: postItem,
-                };
-                return response;
-            } else {
-                const postItem = await postService.fetchPostBySlugId({
-                    db: db,
-                    conversationSlugId: request.body.conversationSlugId,
-                    baseImageServiceUrl: config.IMAGES_SERVICE_BASE_URL,
-                });
-
-                const response: GetConversationResponse = {
-                    conversationData: postItem,
-                };
-                return response;
-            }
+            const response: GetConversationResponse = {
+                conversationData: postItem,
+            };
+            return response;
         },
     });
 
