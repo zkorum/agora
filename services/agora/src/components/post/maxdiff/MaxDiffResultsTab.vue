@@ -4,6 +4,7 @@
       :model-value="currentTab"
       :items="maxdiffTabItems"
       :get-label="getTabLabel"
+      :get-route="getMaxDiffTabRoute"
       :on-same-tab-click="handleSameTabClick"
       @update:model-value="onTabChange"
     />
@@ -152,6 +153,8 @@ import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import type { MaxDiffShortcutItem } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { maxdiffShortcutItemSchema } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { onMounted, ref, watch } from "vue";
+import type { RouteLocationRaw } from "vue-router";
+import { useRoute } from "vue-router";
 
 import type { MaxDiffListItem } from "./MaxDiffItemListSection.vue";
 import MaxDiffItemListSection from "./MaxDiffItemListSection.vue";
@@ -171,10 +174,19 @@ const { t } = useComponentI18n<MaxDiffResultsTabTranslations>(
 
 const { getMaxDiffResults, fetchMaxDiffItems } = useMaxDiffApi();
 
+const route = useRoute();
+
 const { currentTab, handleSameTabClick, switchToTab } = useTabNavigation({
   schema: maxdiffShortcutItemSchema,
   defaultTab: "Summary",
 });
+
+function getMaxDiffTabRoute(item: string): RouteLocationRaw {
+  if (item === "Summary") {
+    return { path: route.path };
+  }
+  return { path: route.path, query: { tab: item } };
+}
 
 const maxdiffTabItems: MaxDiffShortcutItem[] = [
   "Summary",

@@ -6,6 +6,7 @@
           :model-value="currentTab"
           :items="polisTabItems"
           :get-label="getPolisTabLabel"
+          :get-route="getPolisTabRoute"
           :on-same-tab-click="handleSameTabClick"
           @update:model-value="onTabChange"
         />
@@ -117,6 +118,8 @@ import type {
 } from "src/shared/types/zod";
 import { type ShortcutItem, shortcutItemSchema } from "src/utils/component/analysis/shortcutBar";
 import { computed } from "vue";
+import type { RouteLocationRaw } from "vue-router";
+import { useRoute } from "vue-router";
 
 import {
   type AnalysisPageTranslations,
@@ -159,10 +162,19 @@ const { t: tShortcut } = useComponentI18n<ShortcutBarTranslations>(
   shortcutBarTranslations
 );
 
+const route = useRoute();
+
 const { currentTab, handleSameTabClick, switchToTab } = useTabNavigation({
   schema: shortcutItemSchema,
   defaultTab: "Summary",
 });
+
+function getPolisTabRoute(item: string): RouteLocationRaw {
+  if (item === "Summary") {
+    return { path: route.path };
+  }
+  return { path: route.path, query: { tab: item } };
+}
 
 const polisTabItems: ShortcutItem[] = [
   "Summary",

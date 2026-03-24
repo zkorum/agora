@@ -1,7 +1,8 @@
 <template>
-  <PrimeButton
-    variant="outlined"
-    rounded
+  <SpaLink
+    v-if="to"
+    :to="to"
+    :deferred="true"
     :class="{
       rootStyleSelected: props.isSelected,
       rootStyleUnselected: !props.isSelected,
@@ -9,26 +10,35 @@
     class="commonStyle"
   >
     <div>{{ label }}</div>
-  </PrimeButton>
+  </SpaLink>
+  <button
+    v-else
+    :class="{
+      rootStyleSelected: props.isSelected,
+      rootStyleUnselected: !props.isSelected,
+    }"
+    class="commonStyle"
+  >
+    <div>{{ label }}</div>
+  </button>
 </template>
 
 <script setup lang="ts">
-import Button from "primevue/button";
-
-defineOptions({
-  components: {
-    PrimeButton: Button,
-  },
-});
+import SpaLink from "src/components/ui-library/SpaLink.vue";
+import type { RouteLocationRaw } from "vue-router";
 
 const props = defineProps<{
   isSelected: boolean;
   label: string;
+  to?: RouteLocationRaw;
 }>();
 </script>
 
 <style lang="postcss" scoped>
 .commonStyle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 10px;
   border-style: solid;
   border-width: 1px;
@@ -36,12 +46,22 @@ const props = defineProps<{
   padding-bottom: 0.4rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+  background: none;
+  font: inherit;
 }
 
 .commonStyle:hover {
-  background-color: #c6c4ff !important;
-  border-color: #6b4eff !important;
-  color: #6b4eff !important;
+  background-color: #c6c4ff;
+  border-color: #6b4eff;
+  color: #6b4eff;
+}
+
+.commonStyle:focus-visible {
+  outline: 2px solid #6b4eff;
+  outline-offset: 2px;
 }
 
 .rootStyleSelected {

@@ -6,6 +6,7 @@
         :key="item"
         :is-selected="item === currentTab"
         :label="getLabel(item)"
+        :to="getRoute?.(item)"
         @click="clickedShortcutButton(item)"
       />
     </div>
@@ -13,11 +14,14 @@
 </template>
 
 <script setup lang="ts">
+import type { RouteLocationRaw } from "vue-router";
+
 import ShortcutButton from "./ShortcutButton.vue";
 
 const props = defineProps<{
   items: string[];
   getLabel: (item: string) => string;
+  getRoute?: (item: string) => RouteLocationRaw;
   onSameTabClick?: () => void;
 }>();
 
