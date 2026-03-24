@@ -2,9 +2,36 @@ import { describe, expect, it } from "vitest";
 
 import {
     createMaxDiff,
+    estimateRemainingVotes,
+    type MaxDiffInstance,
     recordMaxDiffVote,
     restoreMaxDiff,
 } from "./maxdiff";
+
+/** Deterministic voting simulation: always picks first as best, last as worst. */
+function simulateVotingToCompletion({
+    instance,
+    candidateLimit = 4,
+    maxRounds = 500,
+}: {
+    instance: MaxDiffInstance;
+    candidateLimit?: number;
+    maxRounds?: number;
+}): number {
+    let rounds = 0;
+    while (!instance.complete && rounds < maxRounds) {
+        const candidates = instance.getCandidates(candidateLimit);
+        if (candidates.length < 2) break;
+        recordMaxDiffVote({
+            instance,
+            candidates,
+            best: candidates[0],
+            worst: candidates[candidates.length - 1],
+        });
+        rounds++;
+    }
+    return rounds;
+}
 
 describe("createMaxDiff", () => {
     describe("single item", () => {
@@ -136,24 +163,12 @@ describe("recordMaxDiffVote", () => {
     it("reaches completion through repeated votes", () => {
         const instance = createMaxDiff(["a", "b", "c", "d", "e"]);
 
-        let rounds = 0;
-        while (!instance.complete) {
-            const candidates = instance.getCandidates(4);
-            if (candidates.length < 2) break;
+        const rounds = simulateVotingToCompletion({
+            instance,
+            maxRounds: 20,
+        });
 
-            // Always pick first as best, last as worst (deterministic)
-            recordMaxDiffVote({
-                instance,
-                candidates,
-                best: candidates[0],
-                worst: candidates[candidates.length - 1],
-            });
-            rounds++;
-
-            // Safety: should not take more rounds than N*(N-1)/2
-            expect(rounds).toBeLessThan(20);
-        }
-
+        expect(rounds).toBeLessThan(20);
         expect(instance.complete).toBe(true);
         expect(instance.result).toBeDefined();
         expect(instance.result?.length).toBe(5);
@@ -380,6 +395,104 @@ describe("undo via restoreMaxDiff", () => {
 
         expect(restored.complete).toBe(false);
         expect(restored.result).toBeUndefined();
+    });
+});
+
+describe("estimateRemainingVotes", () => {
+    it("returns 0 when no unordered pairs remain", () => {
+        const result = estimateRemainingVotes({
+            votesDone: 10,
+            orderedPairs: 820,
+            unorderedPairs: 0,
+            itemCount: 41,
+        });
+        expect(result).toBe(0);
+    });
+
+    it("uses heuristic for first vote (votesDone === 0)", () => {
+        // For 41 items: ceil(41 * log2(41) / 5) ≈ 44
+        const result = estimateRemainingVotes({
+            votesDone: 0,
+            orderedPairs: 0,
+            unorderedPairs: 820,
+            itemCount: 41,
+        });
+        expect(result).toBeGreaterThan(30);
+        expect(result).toBeLessThan(60);
+    });
+
+    it("uses heuristic when avg pairs per vote is below 1", () => {
+        // Edge case: 1 vote resolved 0 pairs (redundant vote)
+        const result = estimateRemainingVotes({
+            votesDone: 1,
+            orderedPairs: 0,
+            unorderedPairs: 820,
+            itemCount: 41,
+        });
+        // Should fall back to heuristic, not return 820
+        expect(result).toBeLessThan(100);
+    });
+
+    it("blends heuristic with actual rate for early votes (votesDone < 3)", () => {
+        const heuristic = Math.ceil((41 * Math.log2(41)) / 5);
+
+        const result1 = estimateRemainingVotes({
+            votesDone: 1,
+            orderedPairs: 8,
+            unorderedPairs: 812,
+            itemCount: 41,
+        });
+        const result2 = estimateRemainingVotes({
+            votesDone: 2,
+            orderedPairs: 16,
+            unorderedPairs: 804,
+            itemCount: 41,
+        });
+
+        // With weight=1/3 and weight=2/3, blended estimates should be
+        // between pure heuristic and pure rate estimate
+        const pureRate1 = Math.ceil(812 / (8 / 1));
+        const pureRate2 = Math.ceil(804 / (16 / 2));
+        expect(result1).toBeGreaterThanOrEqual(Math.min(heuristic, pureRate1));
+        expect(result2).toBeGreaterThanOrEqual(Math.min(heuristic, pureRate2));
+    });
+
+    it("refines estimate based on actual voting rate after 3+ votes", () => {
+        // After 10 votes resolved 80 pairs, 740 remain
+        const result = estimateRemainingVotes({
+            votesDone: 10,
+            orderedPairs: 80,
+            unorderedPairs: 740,
+            itemCount: 41,
+        });
+        // 740 / (80/10) = 92.5 → ceil = 93
+        expect(result).toBe(93);
+    });
+
+    it("estimate decreases as more votes are done", () => {
+        const early = estimateRemainingVotes({
+            votesDone: 5,
+            orderedPairs: 30,
+            unorderedPairs: 790,
+            itemCount: 41,
+        });
+        const late = estimateRemainingVotes({
+            votesDone: 50,
+            orderedPairs: 600,
+            unorderedPairs: 220,
+            itemCount: 41,
+        });
+        expect(late).toBeLessThan(early);
+    });
+
+    it("handles 2 items (minimal case)", () => {
+        const result = estimateRemainingVotes({
+            votesDone: 0,
+            orderedPairs: 0,
+            unorderedPairs: 1,
+            itemCount: 2,
+        });
+        expect(result).toBeGreaterThanOrEqual(1);
     });
 });
 

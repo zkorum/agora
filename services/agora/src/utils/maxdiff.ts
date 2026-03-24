@@ -332,6 +332,46 @@ export function createMaxDiff(items: Iterable<string>): MaxDiffInstance {
 }
 
 /**
+ * Estimate remaining votes needed to complete a full ranking.
+ *
+ * Uses a blend of heuristic (for early votes) and actual resolution rate
+ * (once enough data is available) to produce a stable estimate.
+ */
+export function estimateRemainingVotes({
+    votesDone,
+    orderedPairs,
+    unorderedPairs,
+    itemCount,
+}: {
+    votesDone: number;
+    orderedPairs: number;
+    unorderedPairs: number;
+    itemCount: number;
+}): number {
+    if (unorderedPairs === 0) return 0;
+
+    // Heuristic: ~N*log2(N)/5 votes for N items with 4-item sets + transitive closure
+    const heuristic = Math.ceil((itemCount * Math.log2(Math.max(itemCount, 2))) / 5);
+
+    const avgPairsPerVote = votesDone > 0 ? orderedPairs / votesDone : 0;
+
+    // Use pure heuristic when we have no data or unreliable rate
+    if (votesDone === 0 || avgPairsPerVote < 1) {
+        return heuristic;
+    }
+
+    const rateEstimate = Math.ceil(unorderedPairs / avgPairsPerVote);
+
+    // Blend heuristic with actual rate for the first few votes
+    if (votesDone < 3) {
+        const weight = votesDone / 3;
+        return Math.ceil(heuristic * (1 - weight) + rateEstimate * weight);
+    }
+
+    return rateEstimate;
+}
+
+/**
  * Restore a MaxDiff instance from saved state.
  * Replays all comparisons to rebuild the comparison matrix.
  */

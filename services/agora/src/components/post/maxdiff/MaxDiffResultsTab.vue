@@ -97,14 +97,14 @@
 
     <!-- Learn more dialog -->
     <q-dialog v-model="showInfoDialog" position="bottom">
-      <q-card class="learn-more-dialog">
-        <q-card-section>
-          <div class="dialog-title">Scoring Methodology</div>
-        </q-card-section>
-        <q-card-section class="dialog-content">
-          <p>{{ t("learnMoreMethod") }}</p>
-          <p>{{ t("learnMoreHow") }}</p>
-          <p>{{ t("learnMoreWhy") }}</p>
+      <ZKBottomDialogContainer>
+        <div class="learn-more-title">{{ t("learnMore") }}</div>
+        <div class="learn-more-content">
+          <p>{{ t("learnMoreCollection") }}</p>
+          <p>{{ t("learnMoreSelection") }}</p>
+          <p>{{ t("learnMoreInference") }}</p>
+          <p>{{ t("learnMoreFairness") }}</p>
+          <p>{{ t("learnMoreScoring") }}</p>
           <p class="learn-more-reference">
             {{ t("learnMoreReference") }}
             <a
@@ -112,26 +112,40 @@
               target="_blank"
               rel="noopener noreferrer"
               class="learn-more-link"
-            >Best-Worst Scaling (Wikipedia)</a>
+            >Best-Worst Scaling</a>
             ·
             <a
               href="https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model"
               target="_blank"
               rel="noopener noreferrer"
               class="learn-more-link"
-            >Bradley-Terry Model (Wikipedia)</a>
+            >Bradley-Terry Model</a>
+            ·
+            <a
+              href="https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="learn-more-link"
+            >Fisher-Yates Shuffle</a>
+            ·
+            <a
+              href="https://github.com/tournesol-app/tournesol/tree/main/solidago"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="learn-more-link"
+            >Tournesol/Solidago</a>
           </p>
-        </q-card-section>
-      </q-card>
+        </div>
+      </ZKBottomDialogContainer>
     </q-dialog>
 
     <!-- Lifecycle learn-more dialog -->
     <q-dialog v-model="showLifecycleInfoDialog" position="bottom">
-      <q-card class="learn-more-dialog">
-        <q-card-section class="dialog-content">
+      <ZKBottomDialogContainer>
+        <div class="learn-more-content">
           <p>{{ lifecycleInfoContent }}</p>
-        </q-card-section>
-      </q-card>
+        </div>
+      </ZKBottomDialogContainer>
     </q-dialog>
 
     <MaxDiffStatementDialog
@@ -146,6 +160,7 @@
 <script setup lang="ts">
 import ShortcutBar from "src/components/post/analysis/shortcutBar/ShortcutBar.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
+import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
 import type { ExtendedConversation } from "src/shared/types/zod";
@@ -406,19 +421,13 @@ watch(currentTab, async (newTab, oldTab) => {
   font-size: 0.95rem;
 }
 
-.learn-more-dialog {
-  width: 100%;
-  max-width: 600px;
-  border-radius: 16px 16px 0 0;
-}
-
-.dialog-title {
+.learn-more-title {
   font-size: 1.1rem;
   font-weight: var(--font-weight-semibold);
   color: $color-text-strong;
 }
 
-.dialog-content {
+.learn-more-content {
   font-size: 0.9rem;
   line-height: 1.5;
   color: $color-text-weak;
@@ -430,6 +439,15 @@ watch(currentTab, async (newTab, oldTab) => {
 
 .learn-more-reference {
   font-size: 0.85rem;
+}
+
+.learn-more-link {
+  color: $primary;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .learn-more-link {

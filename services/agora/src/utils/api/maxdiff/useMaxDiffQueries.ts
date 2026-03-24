@@ -1,9 +1,9 @@
-import { useMutation, useQuery } from "@tanstack/vue-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import type {
   ApiV1MaxdiffItemsFetchPost200ResponseItemsInner,
   ApiV1MaxdiffLoadPost200Response,
 } from "src/api";
-import type { MaxDiffComparison } from "src/shared/types/zod";
+import type { ExtendedConversation, MaxDiffComparison } from "src/shared/types/zod";
 import type { MaxDiffState } from "src/utils/maxdiff";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
@@ -102,6 +102,7 @@ export function useMaxDiffSaveMutation({
   const { saveMaxDiffResult } = useMaxDiffApi();
   const { updateAuthState } = useBackendAuthApi();
   const { invalidateConversation } = useInvalidateConversationQuery();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (params: MaxDiffSaveMutationParams) => {
@@ -118,8 +119,33 @@ export function useMaxDiffSaveMutation({
 
     onSuccess: async (_data, variables) => {
       await updateAuthState({ partialLoginStatus: { isKnown: true } });
+
+      // Optimistically bump counts in the conversation query cache
+      const slugId = toValue(conversationSlugId);
+      queryClient.setQueryData(
+        ["conversation", slugId],
+        (old: ExtendedConversation | undefined) => {
+          if (old === undefined) return old;
+          return {
+            ...old,
+            metadata: {
+              ...old.metadata,
+              voteCount: old.metadata.voteCount + 1,
+              totalVoteCount: old.metadata.totalVoteCount + 1,
+              ...(variables.context.isFirstVote
+                ? {
+                    participantCount: old.metadata.participantCount + 1,
+                    totalParticipantCount: old.metadata.totalParticipantCount + 1,
+                  }
+                : {}),
+            },
+          };
+        },
+      );
+
+      // Full server sync on key transitions
       if (variables.context.isFirstVote || variables.isComplete || variables.comparisons.length === 0) {
-        invalidateConversation(toValue(conversationSlugId));
+        invalidateConversation(slugId);
       }
       onSaveSuccess();
     },

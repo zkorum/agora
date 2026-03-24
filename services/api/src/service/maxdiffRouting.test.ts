@@ -274,3 +274,128 @@ describe("generateCandidateSets", () => {
         expect(hCount).toBeGreaterThanOrEqual(avgCount);
     });
 });
+
+// --- pairwise information gain ---
+
+describe("pairwise information gain", () => {
+    it("candidate set items have unresolved pairwise relationships", () => {
+        const items = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+        // After this comparison: A>B, A>C, A>J, B>J, C>J (+ transitive)
+        const comparisons = [
+            { best: "A", worst: "J", set: ["A", "B", "C", "J"] },
+        ];
+        const result = generateCandidateSets({
+            userComparisons: comparisons,
+            items,
+            globalUncertainty: new Map(items.map((id) => [id, 1.0])),
+            bufferSize: 1,
+            candidateSetSize: 4,
+        });
+        expect(result).toHaveLength(1);
+        expect(result[0].length).toBe(4);
+
+        // Verify: build the comparison matrix and check that items in the
+        // candidate set have at least some unresolved pairs between them
+        const { applyComparison, getUnorderedPairs } = buildComparisonMatrix({
+            items,
+        });
+        for (const c of comparisons) {
+            applyComparison(c);
+        }
+        const unorderedSet = new Set(
+            getUnorderedPairs().map(([a, b]) => `${a}|${b}`),
+        );
+        const isUnordered = (a: string, b: string): boolean =>
+            unorderedSet.has(`${a}|${b}`) || unorderedSet.has(`${b}|${a}`);
+
+        let unorderedCount = 0;
+        const set = result[0];
+        for (let i = 0; i < set.length; i++) {
+            for (let j = i + 1; j < set.length; j++) {
+                if (isUnordered(set[i], set[j])) {
+                    unorderedCount++;
+                }
+            }
+        }
+        // With 4 items, max 6 pairs — should have several unresolved
+        expect(unorderedCount).toBeGreaterThan(0);
+    });
+
+    it("prefers items with unresolved pairs over isolated items", () => {
+        // 6 items: A-D are all unresolved, E and F are only unresolved with each other
+        // (A>E, A>F, B>E, B>F, C>E, C>F, D>E, D>F already ordered)
+        const items = ["A", "B", "C", "D", "E", "F"];
+        const comparisons = [
+            { best: "A", worst: "E", set: ["A", "B", "E", "F"] },
+            { best: "C", worst: "F", set: ["C", "D", "E", "F"] },
+            { best: "B", worst: "F", set: ["B", "E", "F"] },
+            { best: "D", worst: "E", set: ["D", "E"] },
+        ];
+
+        // With uniform uncertainty, pairwise bonus should favor grouping
+        // A,B,C,D together (many unresolved pairs between them)
+        const result = generateCandidateSets({
+            userComparisons: comparisons,
+            items,
+            globalUncertainty: new Map(items.map((id) => [id, 1.0])),
+            bufferSize: 1,
+            candidateSetSize: 4,
+        });
+        expect(result).toHaveLength(1);
+
+        // A,B,C,D should be favored over E,F since they share many
+        // unresolved pairs. Check that at least 3 of A-D are present.
+        const abcdCount = result[0].filter((id) =>
+            ["A", "B", "C", "D"].includes(id),
+        ).length;
+        expect(abcdCount).toBeGreaterThanOrEqual(3);
+    });
+
+    it("still respects global uncertainty with pairwise bonus active", () => {
+        const manyItems = ["A", "B", "C", "D", "E", "F", "G", "H"];
+        // H has much higher uncertainty
+        const biasedUnc = new Map(
+            manyItems.map((id) => [id, id === "H" ? 10.0 : 0.1]),
+        );
+        const counts = new Map(manyItems.map((id) => [id, 0]));
+        for (let trial = 0; trial < 10; trial++) {
+            const result = generateCandidateSets({
+                userComparisons: [],
+                items: manyItems,
+                globalUncertainty: biasedUnc,
+                bufferSize: 3,
+                candidateSetSize: 4,
+            });
+            for (const set of result) {
+                for (const item of set) {
+                    counts.set(item, (counts.get(item) ?? 0) + 1);
+                }
+            }
+        }
+        const hCount = counts.get("H") ?? 0;
+        const totalAppearances = [...counts.values()].reduce(
+            (a, b) => a + b,
+            0,
+        );
+        const avgCount = totalAppearances / manyItems.length;
+        expect(hCount).toBeGreaterThanOrEqual(avgCount);
+    });
+
+    it("still produces shuffled orderings (randomness preserved)", () => {
+        const items = ["A", "B", "C", "D", "E"];
+        const uniformUnc = new Map(items.map((id) => [id, 1.0]));
+        const orderings = new Set<string>();
+        for (let i = 0; i < 30; i++) {
+            const result = generateCandidateSets({
+                userComparisons: [],
+                items,
+                globalUncertainty: uniformUnc,
+                bufferSize: 1,
+            });
+            if (result.length > 0) {
+                orderings.add(result[0].join(","));
+            }
+        }
+        expect(orderings.size).toBeGreaterThan(1);
+    });
+});
