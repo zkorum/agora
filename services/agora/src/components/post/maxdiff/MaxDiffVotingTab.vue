@@ -8,6 +8,15 @@
       {{ t("loadingError") }}
     </div>
 
+    <!-- Initialization error (e.g. failed to load saved state or route buffer) -->
+    <ErrorRetryBlock
+      v-else-if="initError"
+      :title="t('loadingError')"
+      :retry-label="t('retryButton')"
+      compact
+      @retry="retryInitialize"
+    />
+
     <!-- Completed ranking (check before statement count so users with saved rankings still see them) -->
     <div v-else-if="isComplete && finalRanking.length > 0" class="ranking-section">
       <div class="section-header">{{ t("complete") }}</div>
@@ -155,6 +164,7 @@
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
@@ -226,6 +236,7 @@ interface MaxDiffItemDisplay {
 const itemList = ref<MaxDiffItemDisplay[]>([]);
 const itemsFetched = ref(false);
 const itemsFetchError = ref(false);
+const initError = ref(false);
 
 const itemContentMap = computed(() => {
   const map = new Map<string, string>();
@@ -408,6 +419,7 @@ watch(candidates, () => {
 
 async function initializeMaxDiff(): Promise<void> {
   isLoading.value = true;
+  initError.value = false;
 
   const slugIds = itemList.value.map((item) => item.slugId);
 
@@ -440,8 +452,14 @@ async function initializeMaxDiff(): Promise<void> {
 
     // Don't push history entries for previously saved comparisons.
     // Browser back should only undo votes made in the current session.
+  } else if (loadResponse.status === "success") {
+    // No saved state — create fresh instance
+    const fresh = createMaxDiff(slugIds);
+    instance.value = fresh;
+    isComplete.value = false;
+    finalRanking.value = [];
   } else {
-    // Create fresh instance
+    // Load failed — create fresh instance anyway (treat as no saved state)
     const fresh = createMaxDiff(slugIds);
     instance.value = fresh;
     isComplete.value = false;
@@ -454,8 +472,19 @@ async function initializeMaxDiff(): Promise<void> {
     initialLoad: true,
   });
 
+  // If buffer is empty after initial fetch and voting isn't complete, show error
+  if (candidateBuffer.value.length === 0 && !instance.value.complete) {
+    initError.value = true;
+    isLoading.value = false;
+    return;
+  }
+
   await updateCandidates();
   isLoading.value = false;
+}
+
+function retryInitialize(): void {
+  void initializeMaxDiff();
 }
 
 const BUFFER_REFILL_THRESHOLD = 1;
