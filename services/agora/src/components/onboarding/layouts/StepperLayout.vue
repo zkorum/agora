@@ -63,6 +63,6 @@ withDefaults(
 
 .nextButton {
   display: flex;
-  justify-content: right;
+  justify-content: flex-end;
 }
 </style>

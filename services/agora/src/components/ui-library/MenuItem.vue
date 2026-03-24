@@ -32,7 +32,7 @@
         <slot name="right-icon">
           <ZKIcon
             color="#7D7A85"
-            name="mdi-chevron-right"
+            :name="chevronForward"
             size="1.5rem"
             class="menu-item__chevron"
           />
@@ -45,6 +45,9 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from "quasar";
+import { computed } from "vue";
+
 import ZKIcon from "../ui-library/ZKIcon.vue";
 
 defineProps<{
@@ -55,6 +58,11 @@ defineProps<{
   showSeparator?: boolean;
   borderRadius?: "none" | "top" | "bottom" | "both";
 }>();
+const $q = useQuasar();
+const chevronForward = computed(() =>
+  $q.lang.rtl ? "mdi-chevron-left" : "mdi-chevron-right"
+);
+
 </script>
 
 <style scoped lang="scss">

@@ -12,7 +12,7 @@
           flat
           round
           dense
-          icon="mdi-chevron-left"
+          :icon="chevronBack"
           @click="togglePreviousMode"
         />
         <span class="group-name">{{ currentModeName }}</span>
@@ -20,7 +20,7 @@
           flat
           round
           dense
-          icon="mdi-chevron-right"
+          :icon="chevronForward"
           @click="toggleNextMode"
         />
       </div>
@@ -46,15 +46,10 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from "quasar";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { AnalysisOpinionItem, PolisKey } from "src/shared/types/zod";
 import { computed, ref, watch } from "vue";
-
-import ConsensusItem from "../consensusTab/ConsensusItem.vue";
-import {
-  type OpinionGroupCommentsTranslations,
-  opinionGroupCommentsTranslations,
-} from "./OpinionGroupComments.i18n";
 
 const props = defineProps<{
   conversationSlugId: string;
@@ -63,6 +58,19 @@ const props = defineProps<{
   hasUngroupedParticipants: boolean;
   clusterLabels: Partial<Record<PolisKey, string>>;
 }>();
+const $q = useQuasar();
+const chevronForward = computed(() =>
+  $q.lang.rtl ? "mdi-chevron-left" : "mdi-chevron-right"
+);
+const chevronBack = computed(() =>
+  $q.lang.rtl ? "mdi-chevron-right" : "mdi-chevron-left"
+);
+
+import ConsensusItem from "../consensusTab/ConsensusItem.vue";
+import {
+  type OpinionGroupCommentsTranslations,
+  opinionGroupCommentsTranslations,
+} from "./OpinionGroupComments.i18n";
 
 const { t } = useComponentI18n<OpinionGroupCommentsTranslations>(
   opinionGroupCommentsTranslations
