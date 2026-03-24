@@ -228,4 +228,49 @@ describe("generateCandidateSets", () => {
         // Should see at least 2 different orderings over 30 runs
         expect(orderings.size).toBeGreaterThan(1);
     });
+
+    it("buffer includes diverse items, not just the same subset", () => {
+        const manyItems = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+        const uniformUnc = new Map(manyItems.map((id) => [id, 1.0]));
+        const result = generateCandidateSets({
+            userComparisons: [],
+            items: manyItems,
+            globalUncertainty: uniformUnc,
+            bufferSize: 5,
+            candidateSetSize: 4,
+        });
+        // Collect all unique items across all sets
+        const allItems = new Set(result.flat());
+        // With 10 items and 5 sets of 4, should see more than just 4 items
+        expect(allItems.size).toBeGreaterThan(4);
+    });
+
+    it("high-uncertainty items appear more often across buffer", () => {
+        const manyItems = ["A", "B", "C", "D", "E", "F", "G", "H"];
+        // H has much higher uncertainty
+        const biasedUnc = new Map(
+            manyItems.map((id) => [id, id === "H" ? 10.0 : 0.1]),
+        );
+        const counts = new Map(manyItems.map((id) => [id, 0]));
+        // Run several times to get statistical tendency
+        for (let trial = 0; trial < 10; trial++) {
+            const result = generateCandidateSets({
+                userComparisons: [],
+                items: manyItems,
+                globalUncertainty: biasedUnc,
+                bufferSize: 3,
+                candidateSetSize: 4,
+            });
+            for (const set of result) {
+                for (const item of set) {
+                    counts.set(item, (counts.get(item) ?? 0) + 1);
+                }
+            }
+        }
+        // H (highest uncertainty) should appear at least as often as average
+        const hCount = counts.get("H") ?? 0;
+        const totalAppearances = [...counts.values()].reduce((a, b) => a + b, 0);
+        const avgCount = totalAppearances / manyItems.length;
+        expect(hCount).toBeGreaterThanOrEqual(avgCount);
+    });
 });

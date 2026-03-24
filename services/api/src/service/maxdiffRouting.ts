@@ -2,9 +2,8 @@
  * Server-side MaxDiff routing — generates candidate sets for voting.
  *
  * Uses cross-user comparison-count uncertainty to prioritize items that
- * need more comparisons, combined with per-user comparison state
- * (Bron-Kerbosch unordered groups), frequency balancing, and
- * Fisher-Yates position shuffle.
+ * need more comparisons, combined with per-user comparison state and
+ * frequency balancing across the buffer.
  */
 
 import type { MaxDiffComparison } from "@/shared/types/zod.js";
@@ -14,12 +13,11 @@ import { fisherYatesShuffle } from "./bradleyTerry.js";
 /**
  * Generate candidate sets for a user's next MaxDiff voting rounds.
  *
- * Pure function — no DB access. Takes pre-computed global uncertainty
- * and the user's comparison history.
+ * Selects items directly based on uncertainty and frequency — not via
+ * Bron-Kerbosch group selection (which would return the same group for
+ * every set in the buffer since the comparison matrix doesn't change).
  *
- * Does NOT simulate fake votes between sets. Uses frequency counting
- * to diversify items across the buffer without corrupting the
- * comparison matrix.
+ * Pure function — no DB access.
  */
 export function generateCandidateSets({
     userComparisons,
@@ -36,58 +34,53 @@ export function generateCandidateSets({
 }): string[][] {
     if (items.length < 2 || bufferSize <= 0) return [];
 
-    // Rebuild user's comparison matrix from their real history
-    const { applyComparison, getUnorderedGroups } = buildComparisonMatrix({
+    // Rebuild user's comparison matrix to find unordered items
+    const { applyComparison, getUnorderedPairs } = buildComparisonMatrix({
         items,
     });
     for (const comparison of userComparisons) {
         applyComparison(comparison);
     }
 
-    const groups = getUnorderedGroups();
-    if (groups.length === 0) return [];
+    // Collect all items that still have unresolved pairwise comparisons
+    const unorderedItems = new Set<string>();
+    for (const [a, b] of getUnorderedPairs()) {
+        unorderedItems.add(a);
+        unorderedItems.add(b);
+    }
+    if (unorderedItems.size < 2) return [];
+
+    const itemPool = [...unorderedItems];
 
     // Track appearance counts for frequency balancing across generated sets
     const appearanceCounts = new Map<string, number>();
-    for (const item of items) {
+    for (const item of itemPool) {
         appearanceCounts.set(item, 0);
     }
 
     const candidateSets: string[][] = [];
 
     for (let setIdx = 0; setIdx < bufferSize; setIdx++) {
-        if (groups.length === 0) break;
+        // Score each item: high uncertainty = good, high frequency = penalized
+        const scored = itemPool
+            .map((item) => ({
+                item,
+                score:
+                    (globalUncertainty.get(item) ?? 0) -
+                    (appearanceCounts.get(item) ?? 0) * 0.3,
+            }))
+            .sort((a, b) => b.score - a.score);
 
-        // Score each group by global uncertainty (higher = more informative)
-        // Penalize groups whose items appeared often in previous sets
-        const scored = groups.map((group) => {
-            let uncertaintyScore = 0;
-            let frequencyPenalty = 0;
-            for (const item of group) {
-                uncertaintyScore += globalUncertainty.get(item) ?? 0;
-                frequencyPenalty += appearanceCounts.get(item) ?? 0;
-            }
-            return {
-                group,
-                score: uncertaintyScore - frequencyPenalty * 0.1,
-            };
-        });
+        // Pick top items, with slight randomness in the selection
+        // Shuffle among candidates near the cutoff to avoid determinism
+        const topItems = scored.slice(0, candidateSetSize).map((s) => s.item);
+        if (topItems.length < 2) break;
 
-        scored.sort((a, b) => b.score - a.score);
+        fisherYatesShuffle(topItems);
+        candidateSets.push(topItems);
 
-        // Pick randomly from top 3 groups (or fewer if less available)
-        const topN = Math.min(3, scored.length);
-        const pickIdx = Math.floor(Math.random() * topN);
-        const selected = scored[pickIdx].group;
-
-        // Trim to candidateSetSize and shuffle positions
-        const candidates = selected.slice(0, candidateSetSize);
-        fisherYatesShuffle(candidates);
-
-        candidateSets.push(candidates);
-
-        // Track exposure (no simulated votes — just frequency counting)
-        for (const item of candidates) {
+        // Update frequency counts
+        for (const item of topItems) {
             const count = appearanceCounts.get(item) ?? 0;
             appearanceCounts.set(item, count + 1);
         }
