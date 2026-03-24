@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import {
     conversationTable,
     maxdiffItemTable,
@@ -262,32 +262,41 @@ async function upsertItemFromGitHubIssue({
         issueNumber: issue.number,
     };
 
-    // Check if item already exists for this conversation
-    const existingRows = await db
-        .select({
-            maxdiffItemId: maxdiffItemExternalSourceTable.maxdiffItemId,
-        })
-        .from(maxdiffItemExternalSourceTable)
-        .innerJoin(
-            maxdiffItemTable,
-            eq(
-                maxdiffItemTable.id,
-                maxdiffItemExternalSourceTable.maxdiffItemId,
-            ),
-        )
-        .where(
-            and(
-                eq(
-                    maxdiffItemExternalSourceTable.externalId,
-                    externalId,
-                ),
-                eq(maxdiffItemTable.conversationId, conversationId),
-            ),
+    // Wrap the entire upsert in a transaction with an advisory lock to prevent
+    // the TOCTOU race condition that previously caused duplicate items.
+    return await db.transaction(async (tx) => {
+        // Advisory lock serializes concurrent upserts for the same
+        // (externalId, conversationId) pair, preventing duplicate creation.
+        await tx.execute(
+            sql`SELECT pg_advisory_xact_lock(hashtext(${externalId} || '::' || ${String(conversationId)}))`,
         );
 
-    if (existingRows.length === 0) {
-        // Create new item + external source in a single transaction
-        const { slugId, itemId } = await db.transaction(async (tx) => {
+        // Check if item already exists for this conversation
+        const existingRows = await tx
+            .select({
+                maxdiffItemId:
+                    maxdiffItemExternalSourceTable.maxdiffItemId,
+            })
+            .from(maxdiffItemExternalSourceTable)
+            .innerJoin(
+                maxdiffItemTable,
+                eq(
+                    maxdiffItemTable.id,
+                    maxdiffItemExternalSourceTable.maxdiffItemId,
+                ),
+            )
+            .where(
+                and(
+                    eq(
+                        maxdiffItemExternalSourceTable.externalId,
+                        externalId,
+                    ),
+                    eq(maxdiffItemTable.conversationId, conversationId),
+                ),
+            );
+
+        if (existingRows.length === 0) {
+            // Create new item + external source
             const result = await createMaxdiffItem({
                 db,
                 tx,
@@ -301,6 +310,7 @@ async function upsertItemFromGitHubIssue({
 
             await tx.insert(maxdiffItemExternalSourceTable).values({
                 maxdiffItemId: result.itemId,
+                conversationId,
                 sourceType: "github_issue",
                 externalId,
                 externalUrl: issue.htmlUrl,
@@ -308,137 +318,138 @@ async function upsertItemFromGitHubIssue({
                 lastSyncedAt: new Date(),
             });
 
-            return result;
-        });
+            // If issue is already closed, transition to correct lifecycle
+            if (newLifecycle !== "active") {
+                const snapshot = await computeItemSnapshot({
+                    db,
+                    conversationId,
+                    itemSlugId: result.slugId,
+                });
 
-        // If issue is already closed, transition to correct lifecycle
-        if (newLifecycle !== "active") {
-            const snapshot = await computeItemSnapshot({
-                db,
-                conversationId,
-                itemSlugId: slugId,
-            });
+                await tx
+                    .update(maxdiffItemTable)
+                    .set({
+                        lifecycleStatus: newLifecycle,
+                        snapshotScore: snapshot.snapshotScore,
+                        snapshotRank: snapshot.snapshotRank,
+                        snapshotParticipantCount:
+                            snapshot.snapshotParticipantCount,
+                        updatedAt: new Date(),
+                    })
+                    .where(eq(maxdiffItemTable.id, result.itemId));
+            }
 
-            await db
-                .update(maxdiffItemTable)
-                .set({
-                    lifecycleStatus: newLifecycle,
-                    snapshotScore: snapshot.snapshotScore,
-                    snapshotRank: snapshot.snapshotRank,
-                    snapshotParticipantCount:
-                        snapshot.snapshotParticipantCount,
-                    updatedAt: new Date(),
-                })
-                .where(eq(maxdiffItemTable.id, itemId));
-        }
-
-        log.info(
-            `[GitHub] Created item ${slugId} from ${externalId} (${newLifecycle})`,
-        );
-        return "created";
-    } else {
-        // Update existing item
-        const itemId = existingRows[0].maxdiffItemId;
-
-        // Update external source metadata
-        await db
-            .update(maxdiffItemExternalSourceTable)
-            .set({
-                externalUrl: issue.htmlUrl,
-                externalMetadata: metadata,
-                lastSyncedAt: new Date(),
-            })
-            .where(
-                eq(
-                    maxdiffItemExternalSourceTable.maxdiffItemId,
-                    itemId,
-                ),
+            log.info(
+                `[GitHub] Created item ${result.slugId} from ${externalId} (${newLifecycle})`,
             );
-
-        // Update content (title/body)
-        const now = new Date();
-        const [contentRow] = await db
-            .insert(maxdiffItemContentTable)
-            .values({
-                maxdiffItemId: itemId,
-                conversationContentId,
-                title: issue.title,
-                body: convertMarkdownToHtml({ markdown: issue.body }),
-                createdAt: now,
-            })
-            .returning({ id: maxdiffItemContentTable.id });
-
-        // Get current item state
-        const currentItemRows = await db
-            .select({
-                slugId: maxdiffItemTable.slugId,
-                lifecycleStatus: maxdiffItemTable.lifecycleStatus,
-            })
-            .from(maxdiffItemTable)
-            .where(eq(maxdiffItemTable.id, itemId));
-
-        if (currentItemRows.length === 0) {
-            throw new Error(
-                `[GitHub] Maxdiff item id=${String(itemId)} disappeared during update for externalId=${externalId}`,
-            );
-        }
-        const currentItem = currentItemRows[0];
-
-        const wasActive =
-            currentItem.lifecycleStatus === "active" ||
-            currentItem.lifecycleStatus === "in_progress";
-        const isDeactivating =
-            newLifecycle === "completed" || newLifecycle === "canceled";
-
-        if (wasActive && isDeactivating) {
-            // Snapshot before deactivating
-            const snapshot = await computeItemSnapshot({
-                db,
-                conversationId,
-                itemSlugId: currentItem.slugId,
-            });
-
-            await db
-                .update(maxdiffItemTable)
-                .set({
-                    currentContentId: contentRow.id,
-                    lifecycleStatus: newLifecycle,
-                    snapshotScore: snapshot.snapshotScore,
-                    snapshotRank: snapshot.snapshotRank,
-                    snapshotParticipantCount:
-                        snapshot.snapshotParticipantCount,
-                    updatedAt: now,
-                })
-                .where(eq(maxdiffItemTable.id, itemId));
-        } else if (!wasActive && newLifecycle === "active") {
-            // Reactivating: clear snapshot
-            await db
-                .update(maxdiffItemTable)
-                .set({
-                    currentContentId: contentRow.id,
-                    lifecycleStatus: newLifecycle,
-                    snapshotScore: null,
-                    snapshotRank: null,
-                    snapshotParticipantCount: null,
-                    updatedAt: now,
-                })
-                .where(eq(maxdiffItemTable.id, itemId));
+            return "created";
         } else {
-            await db
-                .update(maxdiffItemTable)
-                .set({
-                    currentContentId: contentRow.id,
-                    lifecycleStatus: newLifecycle,
-                    updatedAt: now,
-                })
-                .where(eq(maxdiffItemTable.id, itemId));
-        }
+            // Update existing item
+            const itemId = existingRows[0].maxdiffItemId;
 
-        log.info(
-            `[GitHub] Updated item from ${externalId} → ${newLifecycle}`,
-        );
-        return "updated";
-    }
+            // Update external source metadata
+            await tx
+                .update(maxdiffItemExternalSourceTable)
+                .set({
+                    externalUrl: issue.htmlUrl,
+                    externalMetadata: metadata,
+                    lastSyncedAt: new Date(),
+                })
+                .where(
+                    eq(
+                        maxdiffItemExternalSourceTable.maxdiffItemId,
+                        itemId,
+                    ),
+                );
+
+            // Update content (title/body)
+            const now = new Date();
+            const [contentRow] = await tx
+                .insert(maxdiffItemContentTable)
+                .values({
+                    maxdiffItemId: itemId,
+                    conversationContentId,
+                    title: issue.title,
+                    body: convertMarkdownToHtml({
+                        markdown: issue.body,
+                    }),
+                    createdAt: now,
+                })
+                .returning({ id: maxdiffItemContentTable.id });
+
+            // Get current item state
+            const currentItemRows = await tx
+                .select({
+                    slugId: maxdiffItemTable.slugId,
+                    lifecycleStatus: maxdiffItemTable.lifecycleStatus,
+                })
+                .from(maxdiffItemTable)
+                .where(eq(maxdiffItemTable.id, itemId));
+
+            if (currentItemRows.length === 0) {
+                throw new Error(
+                    `[GitHub] Maxdiff item id=${String(itemId)} disappeared during update for externalId=${externalId}`,
+                );
+            }
+            const currentItem = currentItemRows[0];
+
+            const wasActive =
+                currentItem.lifecycleStatus === "active" ||
+                currentItem.lifecycleStatus === "in_progress";
+            const isDeactivating =
+                newLifecycle === "completed" ||
+                newLifecycle === "canceled";
+
+            if (wasActive && isDeactivating) {
+                // Snapshot before deactivating
+                const snapshot = await computeItemSnapshot({
+                    db,
+                    conversationId,
+                    itemSlugId: currentItem.slugId,
+                });
+
+                await tx
+                    .update(maxdiffItemTable)
+                    .set({
+                        currentContentId: contentRow.id,
+                        lifecycleStatus: newLifecycle,
+                        snapshotScore: snapshot.snapshotScore,
+                        snapshotRank: snapshot.snapshotRank,
+                        snapshotParticipantCount:
+                            snapshot.snapshotParticipantCount,
+                        updatedAt: now,
+                    })
+                    .where(eq(maxdiffItemTable.id, itemId));
+            } else if (!wasActive && newLifecycle === "active") {
+                // Reactivating: clear snapshot
+                await tx
+                    .update(maxdiffItemTable)
+                    .set({
+                        currentContentId: contentRow.id,
+                        lifecycleStatus: newLifecycle,
+                        snapshotScore: null,
+                        snapshotRank: null,
+                        snapshotParticipantCount: null,
+                        updatedAt: now,
+                    })
+                    .where(eq(maxdiffItemTable.id, itemId));
+            } else {
+                await tx
+                    .update(maxdiffItemTable)
+                    .set({
+                        currentContentId: contentRow.id,
+                        lifecycleStatus: newLifecycle,
+                        updatedAt: now,
+                    })
+                    .where(eq(maxdiffItemTable.id, itemId));
+            }
+
+            log.info(
+                `[GitHub] Updated item from ${externalId} → ${newLifecycle}`,
+            );
+            return "updated";
+        }
+    });
 }
 
 // --- Deactivate item when label is removed ---

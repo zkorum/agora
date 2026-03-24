@@ -1,0 +1,3 @@
+-- Add column as nullable initially; backfill + NOT NULL applied in V0048.1
+ALTER TABLE "maxdiff_item_external_source" ADD COLUMN "conversation_id" integer;--> statement-breakpoint
+ALTER TABLE "maxdiff_item_external_source" ADD CONSTRAINT "maxdiff_item_external_source_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;

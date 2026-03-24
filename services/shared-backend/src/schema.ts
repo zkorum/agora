@@ -2349,6 +2349,10 @@ export const maxdiffItemExternalSourceTable = pgTable(
             .notNull()
             .references(() => maxdiffItemTable.id)
             .unique(),
+        // Denormalized from maxdiff_item for the unique constraint below.
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
         sourceType: externalSourceTypeEnum("source_type").notNull(),
         externalId: text("external_id").notNull(), // e.g. "owner/repo#42"
         externalUrl: text("external_url"), // clickable link to GitHub issue
@@ -2366,5 +2370,11 @@ export const maxdiffItemExternalSourceTable = pgTable(
     },
     (t) => [
         index("maxdiff_external_source_external_id_idx").on(t.externalId),
+        // Prevents duplicate items for the same external source within a conversation.
+        // Scoped per-conversation so the same issue can exist in multiple conversations.
+        uniqueIndex("maxdiff_external_source_dedup_idx").on(
+            t.externalId,
+            t.conversationId,
+        ),
     ],
 );

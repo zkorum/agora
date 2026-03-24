@@ -1,0 +1,3 @@
+ALTER TABLE "maxdiff_item_external_source" ADD COLUMN "conversation_id" integer NOT NULL;--> statement-breakpoint
+ALTER TABLE "maxdiff_item_external_source" ADD CONSTRAINT "maxdiff_item_external_source_conversation_id_conversation_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversation"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "maxdiff_external_source_dedup_idx" ON "maxdiff_item_external_source" USING btree ("external_id","conversation_id");
