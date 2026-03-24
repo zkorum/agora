@@ -9,6 +9,7 @@
  */
 
 import type { MaxDiffComparison } from "@/shared/types/zod.js";
+import { buildItemIndex } from "./bradleyTerry.js";
 
 // --- Set utilities ---
 
@@ -120,10 +121,7 @@ export function buildComparisonMatrix({ items }: { items: string[] }): {
     getUnorderedGroups: () => string[][];
 } {
     const n = items.length;
-    const indexMap = new Map<string, number>();
-    for (let i = 0; i < n; i++) {
-        indexMap.set(items[i], i);
-    }
+    const indexMap = buildItemIndex(items);
     const indexOf = (item: string): number => indexMap.get(item) ?? -1;
 
     // comparisons[i][j] = -1 means i < j (i comes before j)

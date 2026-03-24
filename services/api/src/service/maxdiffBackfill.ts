@@ -11,7 +11,7 @@ import { maxdiffItemTable } from "@/shared-backend/schema.js";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { eq, and, isNull, inArray, isNotNull } from "drizzle-orm";
 import { computeItemSnapshot } from "./maxdiff.js";
-import log from "@/log.js";
+import { log } from "@/app.js";
 
 export async function backfillMaxdiffSnapshots({
     db,
