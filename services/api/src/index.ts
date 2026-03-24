@@ -35,6 +35,7 @@ import * as csvImportService from "@/service/csvImport.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
 import * as postEditService from "@/service/postEdit.js";
+import { useCommonPost } from "@/service/common.js";
 import { MAX_CSV_FILE_SIZE } from "@/shared-app-api/csvUpload.js";
 import { checkMaxDiffAllowed } from "@/shared-app-api/maxdiffLogic.js";
 import { zodCsvFiles } from "@/service/csvImport.js";
@@ -1744,14 +1745,26 @@ server.after(() => {
         },
         handler: async (request, reply) => {
             checkMaxdiffEnabled();
-            const { deviceStatus } =
-                await verifyUcanAndKnownDeviceStatus(db, request, {
-                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
+            const { didWrite } = await verifyUcan(request);
+            const now = nowZeroMs();
+            const { participationMode } =
+                await useCommonPost().getPostMetadataFromSlugId({
+                    db,
+                    conversationSlugId: request.body.conversationSlugId,
+                });
+            const userId =
+                await authUtilService.getOrRegisterUserIdFromDeviceStatus({
+                    db,
+                    didWrite,
+                    participationMode,
+                    userAgent:
+                        request.headers["user-agent"] ?? "Unknown device",
+                    now,
                 });
             await saveMaxdiffResult({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
-                userId: deviceStatus.userId,
+                userId,
                 ranking: request.body.ranking,
                 comparisons: request.body.comparisons,
                 isComplete: request.body.isComplete,

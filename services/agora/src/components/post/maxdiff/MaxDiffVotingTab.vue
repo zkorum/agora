@@ -172,6 +172,7 @@ import { useMaxDiffHistoryUndo } from "src/composables/maxdiff/useMaxDiffHistory
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ExtendedConversation, MaxDiffComparison } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { useBackendAuthApi } from "src/utils/api/auth";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
 import {
@@ -202,6 +203,7 @@ const { t } = useComponentI18n<MaxDiffVotingTabTranslations>(
 const { isLoggedIn, hasStrongVerification, hasEmailVerification } =
   storeToRefs(useAuthenticationStore());
 const { saveMaxDiffResult, loadMaxDiffResult, fetchMaxDiffItems, fetchMaxDiffRoute } = useMaxDiffApi();
+const { updateAuthState } = useBackendAuthApi();
 const { invalidateConversation } = useInvalidateConversationQuery();
 const $q = useQuasar();
 const { showNotifyMessage } = useNotify();
@@ -678,8 +680,12 @@ async function recordVote(): Promise<void> {
     // Save failed — possibly stale items. Refresh and reinitialize.
     showNotifyMessage(t("savingError"));
     void refreshAfterStaleData();
-  } else if (isFirstVote || isComplete.value) {
-    invalidateConversation(conversationSlugId.value);
+  } else {
+    // Update auth state: guest user may have been created on first save
+    await updateAuthState({ partialLoginStatus: { isKnown: true } });
+    if (isFirstVote || isComplete.value) {
+      invalidateConversation(conversationSlugId.value);
+    }
   }
 }
 
