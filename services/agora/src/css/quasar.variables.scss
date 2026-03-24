@@ -13,8 +13,8 @@
 // Tip: Use the "Theme Builder" on Quasar's documentation website.
 
 // Breakpoints from Figma design system (node 770:5839)
-$breakpoint-xs: 554px;  // ≤554: mobile (no sidebar)
-$breakpoint-sm: 960px;  // 555–960: small sidebar (179px)
+$breakpoint-xs: 680px;  // ≤680: mobile (no sidebar)
+$breakpoint-sm: 960px;  // 681–960: small sidebar (200px)
 $breakpoint-md: 1060px; // 961–1060: large sidebar (273px), feed relative to sidebar
 $breakpoint-lg: 1440px; // >1060: large sidebar, feed viewport-centered
 
