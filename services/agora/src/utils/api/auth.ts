@@ -100,7 +100,6 @@ export function useBackendAuthApi() {
         (oldLoginStatus.isKnown !== newLoginStatus.isKnown || forceRefresh) &&
         newLoginStatus.isKnown == false
       ) {
-        console.log("Cleaning data from detecting change to unknown device");
         await logoutDataCleanup({
           shouldClearLanguagePreferences:
             oldIsGuestOrLoggedIn && !newIsGuestOrLoggedIn,
@@ -127,9 +126,6 @@ export function useBackendAuthApi() {
         if (newIsGuestOrLoggedIn) {
           // Check if we should defer cache operations
           if (deferCacheOperations) {
-            console.log(
-              "Auth state changed but deferring cache operations for caller to handle"
-            );
             return { authStateChanged: true, needsCacheRefresh: true };
           }
 
@@ -138,23 +134,20 @@ export function useBackendAuthApi() {
           // (oldIsGuestOrLoggedIn === newIsGuestOrLoggedIn), so we skip cache
           // clearing to avoid wiping the feed and causing a "..." spinner.
           if (authStateChanged) {
-            console.log(
-              "Clearing query cache upon detecting new login, guest user, or userId change"
-            );
-
             // Detect if this is a new guest creation (anonymous → guest)
             const newIsGuest = newLoginStatus.isKnown && !newLoginStatus.isRegistered;
             const isNewGuestCreation = !oldIsGuestOrLoggedIn && newIsGuest;
 
             if (isNewGuestCreation) {
-              // For new guests: preserve vote/comment caches, invalidate everything else
-              console.log("New guest detected - preserving vote/comment caches");
+              // For new guests: preserve in-flight caches, invalidate everything else
               await queryClient.invalidateQueries({
                 predicate: (query) => {
                   const queryKey = query.queryKey[0];
-                  // Preserve vote and comment caches (optimistic updates)
+                  // Preserve caches with in-flight optimistic updates
                   if (queryKey === 'userVotes') return false;
                   if (queryKey === 'comments') return false;
+                  if (queryKey === 'maxdiff-items') return false;
+                  if (queryKey === 'maxdiff-load') return false;
                   // Invalidate everything else (user profile, etc.)
                   return true;
                 }
@@ -165,11 +158,9 @@ export function useBackendAuthApi() {
             }
           }
 
-          console.log("Loading authenticated modules");
           await loadAuthenticatedModules();
           return { authStateChanged: true, needsCacheRefresh: false };
         } else {
-          console.log("Cleaning data from logging out");
           await logoutDataCleanup({
             shouldClearLanguagePreferences:
               oldIsGuestOrLoggedIn && !newIsGuestOrLoggedIn,

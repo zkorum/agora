@@ -7,6 +7,7 @@ import {
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { eq, and, inArray, isNotNull } from "drizzle-orm";
 import { generateRandomSlugId } from "@/crypto.js";
+import { updateMaxdiffCounters } from "@/shared-backend/conversationCounters.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import { computeItemSnapshot } from "./maxdiff.js";
@@ -312,4 +313,6 @@ export async function updateMaxdiffItemLifecycle({
             `[MaxDiff] Item ${itemSlugId} transitioned to ${newStatus}`,
         );
     }
+
+    await updateMaxdiffCounters({ db, conversationId });
 }

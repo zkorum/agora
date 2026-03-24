@@ -10,7 +10,12 @@
         />
       </div>
       <div class="dialog-body">
-        <div class="dialog-title-text">{{ title }}</div>
+        <ZKHtmlContent
+          class="dialog-title-text"
+          :html-body="title"
+          :compact-mode="false"
+          :enable-links="false"
+        />
         <ZKHtmlContent
           v-if="htmlBody"
           :html-body="htmlBody"
