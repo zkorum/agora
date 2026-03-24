@@ -262,10 +262,11 @@ export function createImportBuffer(
                 realtimeSSEManager,
             });
 
-            // Broadcast to all connected clients that a new conversation exists
-            realtimeSSEManager.broadcastToAll({
+            // Broadcast to all connected clients (except the importer) that a new conversation exists
+            realtimeSSEManager.broadcastToAllExcept({
                 event: "new_conversation",
                 data: { timestamp: Date.now() },
+                excludeUserId: request.userId,
             });
 
             log.info(

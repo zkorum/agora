@@ -2283,10 +2283,11 @@ server.after(() => {
                     request.body.externalSourceConfig ?? null,
             });
 
-            // Broadcast to all connected clients that a new conversation exists
-            realtimeSSEManager.broadcastToAll({
+            // Broadcast to all connected clients (except the creator) that a new conversation exists
+            realtimeSSEManager.broadcastToAllExcept({
                 event: "new_conversation",
                 data: { timestamp: Date.now() },
+                excludeUserId: deviceStatus.userId,
             });
 
             reply.send({ conversationSlugId });

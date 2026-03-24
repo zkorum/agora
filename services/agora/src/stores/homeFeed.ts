@@ -28,7 +28,10 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
 
   const currentHomeFeedTab = ref<HomeFeedSortOption>("following");
 
-  let localTopConversationSlugIdList: string[] = [];
+  let localTopSlugIds: Record<HomeFeedSortOption, string[]> = {
+    new: [],
+    following: [],
+  };
 
   const emptyPost: ExtendedConversation = {
     metadata: {
@@ -76,30 +79,29 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     } else {
       hasPendingFollowingTab.value = false;
     }
-    localTopConversationSlugIdList = [...data.topConversationSlugIdList];
+    localTopSlugIds[currentHomeFeedTab.value] = [...data.topConversationSlugIdList];
 
     canLoadMore.value = true;
     loadMore();
   }
 
-  async function hasNewPostCheck(): Promise<void> {
-    if (hasPendingCurrentTab.value) {
-      return;
-    }
+  async function hasNewPostCheck(tabOverride?: HomeFeedSortOption): Promise<void> {
+    const tab = tabOverride ?? currentHomeFeedTab.value;
+    const localList = localTopSlugIds[tab];
 
-    if (localTopConversationSlugIdList.length === 0) {
+    if (localList.length === 0) {
       return;
     }
 
     const pendingRef =
-      currentHomeFeedTab.value === "new"
+      tab === "new"
         ? hasPendingNewTab
         : hasPendingFollowingTab;
 
     try {
       const response = await fetchRecentPost({
         loadUserPollData: isGuestOrLoggedIn.value,
-        sortAlgorithm: currentHomeFeedTab.value,
+        sortAlgorithm: tab,
       });
 
       if (
@@ -107,10 +109,10 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
         response.data.topConversationSlugIdList.length > 0
       ) {
         const newItems = response.data.topConversationSlugIdList.filter(
-          (slugId: string) => !localTopConversationSlugIdList.includes(slugId)
+          (slugId: string) => !localList.includes(slugId)
         );
         if (newItems.length > 0) {
-          localTopConversationSlugIdList =
+          localTopSlugIds[tab] =
             response.data.topConversationSlugIdList;
           pendingRef.value = true;
         } else {
@@ -139,9 +141,14 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
   }
 
   function onPopularConversationUpdate(topSlugIds: string[]): void {
+    const localList = localTopSlugIds["following"];
+    if (localList.length === 0) {
+      hasPendingFollowingTab.value = true;
+      return;
+    }
     const changed =
-      topSlugIds.length !== localTopConversationSlugIdList.length ||
-      topSlugIds.some((id, i) => id !== localTopConversationSlugIdList[i]);
+      topSlugIds.length !== localList.length ||
+      topSlugIds.some((id, i) => id !== localList[i]);
     if (changed) {
       hasPendingFollowingTab.value = true;
     }
@@ -158,7 +165,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     partialHomeFeedList.value = [];
     hasPendingNewTab.value = false;
     hasPendingFollowingTab.value = false;
-    localTopConversationSlugIdList = [];
+    localTopSlugIds = { new: [], following: [] };
     canLoadMore.value = true;
   }
 

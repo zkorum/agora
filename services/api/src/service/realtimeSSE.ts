@@ -253,6 +253,53 @@ export class RealtimeSSEManager {
     }
 
     /**
+     * Broadcast a global event to all connected clients except the specified user
+     */
+    public broadcastToAllExcept({
+        event,
+        data,
+        excludeUserId,
+    }: {
+        event: string;
+        data: unknown;
+        excludeUserId: string;
+    }): void {
+        const deadAuthenticated: { userId: string; reply: FastifyReply }[] = [];
+        const deadAnonymous: FastifyReply[] = [];
+
+        // Send to all authenticated connections except the excluded user
+        for (const [userId, userConnections] of this.connections) {
+            if (userId === excludeUserId) {
+                continue;
+            }
+            for (const reply of userConnections) {
+                reply.sse
+                    .send({ event, data })
+                    .catch(() => {
+                        deadAuthenticated.push({ userId, reply });
+                    });
+            }
+        }
+
+        // Send to all anonymous connections
+        for (const reply of this.anonymousConnections) {
+            reply.sse
+                .send({ event, data })
+                .catch(() => {
+                    deadAnonymous.push(reply);
+                });
+        }
+
+        // Clean up dead connections
+        for (const { userId, reply } of deadAuthenticated) {
+            this.disconnect(userId, reply);
+        }
+        for (const deadReply of deadAnonymous) {
+            this.disconnectAnonymous(deadReply);
+        }
+    }
+
+    /**
      * Cleanup stale connections that exceed timeout
      */
     private cleanupStaleConnections(): void {
