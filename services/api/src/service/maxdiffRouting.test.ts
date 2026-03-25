@@ -11,7 +11,7 @@ describe("bronKerbosch", () => {
     });
 
     it("finds single clique for complete graph", () => {
-        const edges: Array<[string, string]> = [
+        const edges: [string, string][] = [
             ["A", "B"],
             ["A", "C"],
             ["B", "C"],
@@ -22,7 +22,7 @@ describe("bronKerbosch", () => {
     });
 
     it("finds two cliques for disconnected pairs", () => {
-        const edges: Array<[string, string]> = [
+        const edges: [string, string][] = [
             ["A", "B"],
             ["C", "D"],
         ];
@@ -37,7 +37,7 @@ describe("bronKerbosch", () => {
 
     it("finds overlapping cliques", () => {
         // Triangle + one extra edge
-        const edges: Array<[string, string]> = [
+        const edges: [string, string][] = [
             ["A", "B"],
             ["B", "C"],
             ["A", "C"],

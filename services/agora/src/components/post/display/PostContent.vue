@@ -50,6 +50,11 @@
         />
       </div>
 
+      <ImportedConversationIndicator
+        v-if="!compactMode && extendedPostData.metadata.importInfo"
+        :import-info="extendedPostData.metadata.importInfo"
+      />
+
       <div v-if="extendedPostData.payload.poll" class="pollContainer">
         <PollWrapper
           :participation-mode="
@@ -104,6 +109,10 @@ defineEmits<{
 
 const EventTicketRequirementBanner = defineAsyncComponent(
   () => import("../EventTicketRequirementBanner.vue")
+);
+
+const ImportedConversationIndicator = defineAsyncComponent(
+  () => import("./ImportedConversationIndicator.vue")
 );
 </script>
 

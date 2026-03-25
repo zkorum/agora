@@ -944,6 +944,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
     'moderation': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration;
     'requiresEventTicket'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataRequiresEventTicketEnum;
     'externalSourceConfig': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfig | null;
+    'importInfo'?: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfo;
 }
 
 export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataParticipationModeEnum = {
@@ -977,6 +978,22 @@ export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInne
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfigSourceTypeEnum];
+
+export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfo {
+    'method': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfoMethodEnum;
+    'sourceUrl'?: string;
+    'conversationUrl'?: string;
+    'exportUrl'?: string;
+    'createdAt'?: string;
+    'author'?: string;
+}
+
+export const ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfoMethodEnum = {
+    Url: 'url',
+    Csv: 'csv',
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfoMethodEnum = typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfoMethodEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfoMethodEnum];
 
 /**
  * @type ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration

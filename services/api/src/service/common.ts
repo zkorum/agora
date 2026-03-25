@@ -170,6 +170,13 @@ export function useCommonPost() {
                 isEdited: conversationTable.isEdited,
                 requiresEventTicket: conversationTable.requiresEventTicket,
                 externalSourceConfig: conversationTable.externalSourceConfig,
+                // import metadata
+                importUrl: conversationTable.importUrl,
+                importConversationUrl: conversationTable.importConversationUrl,
+                importExportUrl: conversationTable.importExportUrl,
+                importCreatedAt: conversationTable.importCreatedAt,
+                importAuthor: conversationTable.importAuthor,
+                importMethod: conversationTable.importMethod,
                 // moderation
                 moderationAction: conversationModerationTable.moderationAction,
                 moderationExplanation:
@@ -296,6 +303,27 @@ export function useCommonPost() {
                     );
                     return parsed.success ? parsed.data : null;
                 })(),
+                importInfo:
+                    postItem.importUrl !== null ||
+                    postItem.importConversationUrl !== null ||
+                    postItem.importExportUrl !== null ||
+                    postItem.importAuthor !== null ||
+                    postItem.importCreatedAt !== null
+                        ? {
+                              method: postItem.importMethod,
+                              sourceUrl: toUnionUndefined(postItem.importUrl),
+                              conversationUrl: toUnionUndefined(
+                                  postItem.importConversationUrl,
+                              ),
+                              exportUrl: toUnionUndefined(
+                                  postItem.importExportUrl,
+                              ),
+                              createdAt: toUnionUndefined(
+                                  postItem.importCreatedAt,
+                              ),
+                              author: toUnionUndefined(postItem.importAuthor),
+                          }
+                        : undefined,
             };
 
             // For MaxDiff conversations, override opinionCount with active item count

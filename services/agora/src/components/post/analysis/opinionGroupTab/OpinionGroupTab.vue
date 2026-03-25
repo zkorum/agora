@@ -81,6 +81,26 @@ import {
 import VoteLegend from "src/components/ui/VoteLegend.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisClusters, PolisKey } from "src/shared/types/zod";
+
+const props = withDefaults(
+  defineProps<{
+    conversationSlugId: string;
+    clusters: Partial<PolisClusters>;
+    totalParticipantCount: number;
+    compactMode?: boolean;
+  }>(),
+  {
+    compactMode: false,
+  },
+);
+function findUserClusterKey(clusters: Partial<PolisClusters>): PolisKey {
+  for (const cluster of Object.values(clusters)) {
+    if (cluster?.isUserInCluster) {
+      return cluster.key;
+    }
+  }
+  return "0";
+}
 import { useNavigationStore } from "src/stores/navigation";
 import { isClustersImbalanced } from "src/utils/component/opinion";
 import { computed, ref } from "vue";
@@ -98,18 +118,6 @@ import {
   type OpinionGroupTabTranslations,
   opinionGroupTabTranslations,
 } from "./OpinionGroupTab.i18n";
-
-const props = withDefaults(
-  defineProps<{
-    conversationSlugId: string;
-    clusters: Partial<PolisClusters>;
-    totalParticipantCount: number;
-    compactMode?: boolean;
-  }>(),
-  {
-    compactMode: false,
-  },
-);
 
 const { t } = useComponentI18n<OpinionGroupTabTranslations>(
   opinionGroupTabTranslations
@@ -148,7 +156,7 @@ const analysisLegendItems = computed(() => [
   { label: tLegend("noVote"), type: "noVote" as const },
 ]);
 
-const currentClusterTab = ref<PolisKey>("0");
+const currentClusterTab = ref<PolisKey>(findUserClusterKey(props.clusters));
 const showClusterInformation = ref(false);
 
 const currentAiSummary = computed(() => {

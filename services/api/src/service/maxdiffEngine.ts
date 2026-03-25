@@ -45,7 +45,7 @@ function setUnion<T>(a: Set<T>, b: Set<T>): Set<T> {
  * Find all maximal cliques in an undirected graph.
  * Input: list of edges [a, b]. Output: list of cliques (each a list of nodes).
  */
-export function bronKerbosch<T>(edges: Array<[T, T]>): T[][] {
+export function bronKerbosch<T>(edges: [T, T][]): T[][] {
     const nodes = new Set<T>();
     for (const [a, b] of edges) {
         nodes.add(a);
@@ -99,8 +99,8 @@ export function bronKerbosch<T>(edges: Array<[T, T]>): T[][] {
 
 // --- Utility ---
 
-function allPairs<T>(items: T[]): Array<[T, T]> {
-    const result: Array<[T, T]> = [];
+function allPairs<T>(items: T[]): [T, T][] {
+    const result: [T, T][] = [];
     for (let i = 0; i < items.length - 1; i++) {
         for (let j = i + 1; j < items.length; j++) {
             result.push([items[i], items[j]]);
@@ -127,7 +127,7 @@ export function buildComparisonMatrix({ items }: { items: string[] }): {
 
     // comparisons[i][j] = -1 means i < j (i comes before j)
     // +1 means i > j, 0 means same item, undefined means unknown
-    const matrix: Array<Array<number | undefined>> = Array.from(
+    const matrix: (number | undefined)[][] = Array.from(
         { length: n },
         () => Array.from({ length: n }, () => undefined),
     );
@@ -143,7 +143,7 @@ export function buildComparisonMatrix({ items }: { items: string[] }): {
         const j = indexOf(after);
         if (i < 0 || j < 0) return;
         matrix[i][j] = -1;
-        matrix[j][i] = +1;
+        matrix[j][i] = 1;
     };
 
     const getItemsBefore = (item: string): string[] =>

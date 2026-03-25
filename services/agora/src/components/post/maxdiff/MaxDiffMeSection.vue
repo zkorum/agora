@@ -22,7 +22,10 @@
   <div v-else>
     <div class="me-incomplete-header">
       <span class="me-incomplete-title">{{ t("meTitle") }}</span>
-      <a class="me-learn-more-link" @click="props.onLearnMore()">{{ t("learnMore") }}</a>
+      <AnalysisActionButton
+        type="learnMore"
+        @action-click="props.onLearnMore()"
+      />
     </div>
     <div class="me-banner">
       <div class="me-banner-content">
@@ -40,6 +43,7 @@
 
 <script setup lang="ts">
 import type { ApiV1MaxdiffLoadPost200Response } from "src/api";
+import AnalysisActionButton from "src/components/post/analysis/common/AnalysisActionButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { MaxDiffComparison } from "src/shared/types/zod";
 import { formatAmount } from "src/utils/common";
@@ -129,16 +133,6 @@ const hasVoted = computed(() => progress.value.votes > 0);
   font-size: 1rem;
   font-weight: var(--font-weight-semibold);
   color: $color-text-strong;
-}
-
-.me-learn-more-link {
-  font-size: 0.8rem;
-  color: $color-text-weak;
-  cursor: pointer;
-
-  &:hover {
-    color: $primary;
-  }
 }
 
 .me-banner {

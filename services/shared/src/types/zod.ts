@@ -466,6 +466,18 @@ export const zodExternalSourceConfig = z.discriminatedUnion("sourceType", [
 ]);
 export type ExternalSourceConfig = z.infer<typeof zodExternalSourceConfig>;
 
+export const zodImportMethod = z.enum(["url", "csv"]);
+
+export const zodImportInfo = z.object({
+    method: zodImportMethod,
+    sourceUrl: z.string().optional(),
+    conversationUrl: z.string().optional(),
+    exportUrl: z.string().optional(),
+    createdAt: zodDateTimeFlexible.optional(),
+    author: z.string().optional(),
+});
+export type ImportInfo = z.infer<typeof zodImportInfo>;
+
 export const zodConversationMetadata = z
     .object({
         conversationSlugId: zodSlugId,
@@ -490,6 +502,7 @@ export const zodConversationMetadata = z
         moderation: zodConversationModerationProperties,
         requiresEventTicket: zodEventSlug.optional(),
         externalSourceConfig: zodExternalSourceConfig.nullable(),
+        importInfo: zodImportInfo.optional(),
     })
     .strict();
 export const zodConversationMetadataWithId = z
@@ -517,6 +530,16 @@ export const zodConversationMetadataWithId = z
         moderation: zodConversationModerationProperties,
         requiresEventTicket: zodEventSlug.optional(),
         externalSourceConfig: zodExternalSourceConfig.nullable(),
+        importInfo: z
+            .object({
+                method: zodImportMethod,
+                sourceUrl: z.string().optional(),
+                conversationUrl: z.string().optional(),
+                exportUrl: z.string().optional(),
+                createdAt: z.date().optional(),
+                author: z.string().optional(),
+            })
+            .optional(),
     })
     .strict();
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
