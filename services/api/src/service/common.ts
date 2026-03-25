@@ -310,7 +310,7 @@ export function useCommonPost() {
                     postItem.importAuthor !== null ||
                     postItem.importCreatedAt !== null
                         ? {
-                              method: postItem.importMethod,
+                              method: postItem.importMethod ?? "url",
                               sourceUrl: toUnionUndefined(postItem.importUrl),
                               conversationUrl: toUnionUndefined(
                                   postItem.importConversationUrl,
