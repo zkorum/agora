@@ -1,0 +1,1 @@
+UPDATE "conversation" SET "import_method" = NULL WHERE "import_url" IS NULL AND "import_conversation_url" IS NULL AND "import_export_url" IS NULL AND "import_author" IS NULL AND "import_created_at" IS NULL;

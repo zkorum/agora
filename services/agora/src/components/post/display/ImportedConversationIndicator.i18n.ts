@@ -46,7 +46,7 @@ export const importedConversationIndicatorTranslations: Record<
     analysisNote: "تم إعادة حساب البيانات في علامة تبويب التحليل بالكامل بواسطة Agora.",
   },
   es: {
-    importedLabel: "Importado de datos externos",
+    importedLabel: "Importada de datos externos",
     dialogTitle: "Detalles de importación",
     importMethodLabel: "Método de importación",
     importMethodUrl: "URL",
@@ -73,7 +73,7 @@ export const importedConversationIndicatorTranslations: Record<
     analysisNote: "داده‌های تب تحلیل به طور کامل توسط Agora محاسبه مجدد شده است.",
   },
   fr: {
-    importedLabel: "Importé depuis des données externes",
+    importedLabel: "Importée depuis des données externes",
     dialogTitle: "Détails de l'importation",
     importMethodLabel: "Méthode d'importation",
     importMethodUrl: "URL",

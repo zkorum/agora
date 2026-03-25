@@ -1,0 +1,1 @@
+ALTER TABLE "conversation" ALTER COLUMN "import_method" DROP DEFAULT;
