@@ -69,22 +69,18 @@ export async function backfillMaxdiffSnapshots({
 
     for (const [conversationId, conversationItems] of byConversation) {
         try {
-            // Fetch active items + all results ONCE per conversation
-            const activeItems = await db
+            // Fetch ALL items (including completed/canceled) + all results ONCE per conversation
+            const allItems = await db
                 .select({ slugId: maxdiffItemTable.slugId })
                 .from(maxdiffItemTable)
                 .where(
                     and(
                         eq(maxdiffItemTable.conversationId, conversationId),
                         isNotNull(maxdiffItemTable.currentContentId),
-                        inArray(maxdiffItemTable.lifecycleStatus, [
-                            "active",
-                            "in_progress",
-                        ]),
                     ),
                 );
 
-            const items = activeItems.map((r) => r.slugId);
+            const items = allItems.map((r) => r.slugId);
             if (items.length < 2) continue;
 
             const allResults = await db
