@@ -14,7 +14,7 @@
       :on-learn-more="props.onLearnMore"
     />
     <div class="me-stats">
-      {{ t("meProgress", { percent: String(progress.percent), votes: String(progress.votes) }) }}
+      {{ t("meProgress", { percent: String(progress.percent), votes: formatAmount(progress.votes) }) }}
     </div>
   </template>
 
@@ -28,7 +28,7 @@
       <div class="me-banner-content">
         <div v-if="hasVoted" class="me-banner-message">{{ t("meVotesCounted") }}</div>
         <div class="me-banner-progress">
-          {{ t("meProgress", { percent: String(progress.percent), votes: String(progress.votes) }) }}
+          {{ t("meProgress", { percent: String(progress.percent), votes: formatAmount(progress.votes) }) }}
         </div>
         <a class="me-keep-voting-link" @click="props.navigateToVotingTab()">
           {{ hasVoted ? t("meKeepVoting") : t("meStartVoting") }}
@@ -42,6 +42,7 @@
 import type { ApiV1MaxdiffLoadPost200Response } from "src/api";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { MaxDiffComparison } from "src/shared/types/zod";
+import { formatAmount } from "src/utils/common";
 import { restoreMaxDiff } from "src/utils/maxdiff";
 import { computed } from "vue";
 
