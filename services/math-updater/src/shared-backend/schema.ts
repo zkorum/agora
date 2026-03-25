@@ -1316,7 +1316,7 @@ export const conversationTable = pgTable(
             precision: 0,
         }),
         importAuthor: text("import_author"),
-        importMethod: importMethodType("import_method").default("url"),
+        importMethod: importMethodType("import_method"),
         externalSourceConfig: jsonb("external_source_config"), // Typed via zodExternalSourceConfig; e.g. { sourceType: "github_issue", repository: "owner/repo", label: "roadmap" }
         createdAt: timestamp("created_at", {
             mode: "date",
