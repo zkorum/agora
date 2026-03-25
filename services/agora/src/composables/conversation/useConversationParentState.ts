@@ -22,6 +22,8 @@ import type { RouteNamedMap } from "vue-router/auto-routes";
 
 type RouteName = keyof RouteNamedMap;
 
+const PULL_TO_REFRESH_MIN_DELAY_MS = 500;
+
 export interface ConversationParentConfig {
   analysisRouteName: RouteName;
   commentRouteNames: RouteName[];
@@ -248,10 +250,12 @@ export function useConversationParentState({
     // Each layer refreshes what it owns:
     // - Parent: conversation metadata + user votes
     // - Child tab: its own queries (comments or analysis) via registered handler
+    // Minimum delay ensures the pull-to-refresh spinner stays visible (matches feed behavior)
     await Promise.all([
       conversationQuery.refetch(),
       invalidateUserVotes(slugId),
       childRefreshHandler.value?.() ?? Promise.resolve(),
+      new Promise((resolve) => setTimeout(resolve, PULL_TO_REFRESH_MIN_DELAY_MS)),
     ]);
 
     done();

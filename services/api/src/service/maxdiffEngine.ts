@@ -117,7 +117,8 @@ function allPairs<T>(items: T[]): Array<[T, T]> {
  */
 export function buildComparisonMatrix({ items }: { items: string[] }): {
     applyComparison: (comparison: MaxDiffComparison) => void;
-    getUnorderedPairs: () => Array<[string, string]>;
+    getUnorderedPairs: () => [string, string][];
+    getOrderedPairs: () => [string, string][];
     getUnorderedGroups: () => string[][];
 } {
     const n = items.length;
@@ -201,12 +202,29 @@ export function buildComparisonMatrix({ items }: { items: string[] }): {
         return a.length - b.length;
     };
 
-    const getUnorderedPairs = (): Array<[string, string]> => {
+    const getUnorderedPairs = (): [string, string][] => {
         const pairs = allPairs(items).filter(
             ([a, b]) => getComparison(a, b) === undefined,
         );
         for (const pair of pairs) pair.sort(compareItemsByIndex);
         pairs.sort(compareGroupsByIndex);
+        return pairs;
+    };
+
+    /** Return all pairs where the ordering is known (before, after). */
+    const getOrderedPairs = (): [string, string][] => {
+        const pairs: [string, string][] = [];
+        for (let i = 0; i < items.length; i++) {
+            for (let j = i + 1; j < items.length; j++) {
+                const c = getComparison(items[i], items[j]);
+                if (c === undefined || c === 0) continue;
+                if (c < 0) {
+                    pairs.push([items[i], items[j]]); // i before j
+                } else {
+                    pairs.push([items[j], items[i]]); // j before i
+                }
+            }
+        }
         return pairs;
     };
 
@@ -219,5 +237,5 @@ export function buildComparisonMatrix({ items }: { items: string[] }): {
         return groups;
     };
 
-    return { applyComparison, getUnorderedPairs, getUnorderedGroups };
+    return { applyComparison, getUnorderedPairs, getOrderedPairs, getUnorderedGroups };
 }

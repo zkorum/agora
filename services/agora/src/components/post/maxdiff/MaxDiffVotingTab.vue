@@ -254,7 +254,7 @@ import {
 } from "src/utils/maxdiff";
 import { useNotify } from "src/utils/ui/notify";
 import type { ComponentPublicInstance } from "vue";
-import { computed, nextTick, onBeforeUnmount, ref, triggerRef, watch } from "vue";
+import { computed, inject, nextTick, onBeforeUnmount, ref, triggerRef, watch } from "vue";
 
 import MaxDiffStatementDialog from "./MaxDiffStatementDialog.vue";
 import {
@@ -276,6 +276,16 @@ const { isLoggedIn, hasStrongVerification, hasEmailVerification } =
 const { fetchMaxDiffRoute } = useMaxDiffApi();
 const $q = useQuasar();
 const { showNotifyMessage } = useNotify();
+
+// Inject parent refresh handler (same pattern as ConversationCommentTab)
+const registerChildRefreshHandler = inject<
+  (handler: () => Promise<void>) => void
+>(
+  "registerChildRefreshHandler",
+  () => {
+    /* noop */
+  },
+);
 
 const needsLogin = computed(() => {
   const mode = props.conversationData.metadata.participationMode;
@@ -305,6 +315,11 @@ const itemsQuery = useMaxDiffItemsQuery({
 const loadQuery = useMaxDiffLoadQuery({
   conversationSlugId,
   enabled: () => props.hasConversationData,
+});
+
+// Register pull-to-refresh handler: refetch items and saved state
+registerChildRefreshHandler(async () => {
+  await Promise.all([itemsQuery.refetch(), loadQuery.refetch()]);
 });
 
 interface MaxDiffItemDisplay {

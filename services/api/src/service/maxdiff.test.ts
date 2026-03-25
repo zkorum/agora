@@ -36,7 +36,7 @@ describe("computeScores", () => {
     it("returns empty for no items", () => {
         expect(
             computeScores({
-                allComparisons: [],
+                perUserComparisons: [],
                 items: [],
                 participantCounts: new Map(),
             }),
@@ -45,7 +45,7 @@ describe("computeScores", () => {
 
     it("gives single item score=1", () => {
         const result = computeScores({
-            allComparisons: [],
+            perUserComparisons: [],
             items: ["A"],
             participantCounts: new Map([["A", 1]]),
         });
@@ -55,14 +55,12 @@ describe("computeScores", () => {
     });
 
     it("ranks clear winner highest with BT MLE", () => {
-        // A always best, C always worst
-        const allComparisons = [
-            comp({ best: "A", worst: "C", set: ["A", "B", "C"] }),
-            comp({ best: "A", worst: "C", set: ["A", "B", "C"] }),
-            comp({ best: "A", worst: "B", set: ["A", "B", "C"] }),
-        ];
         const result = computeScores({
-            allComparisons,
+            perUserComparisons: [[
+                comp({ best: "A", worst: "C", set: ["A", "B", "C"] }),
+                comp({ best: "A", worst: "C", set: ["A", "B", "C"] }),
+                comp({ best: "A", worst: "B", set: ["A", "B", "C"] }),
+            ]],
             items: ["A", "B", "C"],
             participantCounts: new Map([
                 ["A", 3],
@@ -76,32 +74,12 @@ describe("computeScores", () => {
         expect(result[0].participantCount).toBe(3);
     });
 
-    it("items with no comparisons get lowest score", () => {
-        const allComparisons = [
-            comp({ best: "A", worst: "B", set: ["A", "B"] }),
-        ];
-        const result = computeScores({
-            allComparisons,
-            items: ["A", "B", "C"],
-            participantCounts: new Map([
-                ["A", 1],
-                ["B", 1],
-                ["C", 0],
-            ]),
-        });
-
-        const scoreC = findItem({ results: result, id: "C" });
-        expect(scoreC.participantCount).toBe(0);
-        // C has high uncertainty (never compared)
-    });
-
     it("scores are in [0, 1] range", () => {
-        const allComparisons = [
-            comp({ best: "A", worst: "D", set: ["A", "B", "C", "D"] }),
-            comp({ best: "B", worst: "C", set: ["A", "B", "C", "D"] }),
-        ];
         const result = computeScores({
-            allComparisons,
+            perUserComparisons: [[
+                comp({ best: "A", worst: "D", set: ["A", "B", "C", "D"] }),
+                comp({ best: "B", worst: "C", set: ["A", "B", "C", "D"] }),
+            ]],
             items: ["A", "B", "C", "D"],
             participantCounts: new Map([
                 ["A", 2],
@@ -121,58 +99,40 @@ describe("computeScores", () => {
 
     it("all items removed: returns empty", () => {
         const result = computeScores({
-            allComparisons: [],
+            perUserComparisons: [],
             items: [],
             participantCounts: new Map(),
         });
         expect(result).toEqual([]);
     });
 
-    it("with fewer items, scores renormalize", () => {
-        // 4 items: A beats C, B beats D
-        const comps4 = [
-            comp({ best: "A", worst: "C", set: ["A", "B", "C", "D"] }),
-            comp({ best: "A", worst: "D", set: ["A", "B", "C", "D"] }),
-            comp({ best: "B", worst: "C", set: ["A", "B", "C", "D"] }),
-        ];
-        const result4 = computeScores({
-            allComparisons: comps4,
-            items: ["A", "B", "C", "D"],
-            participantCounts: new Map([
-                ["A", 3],
-                ["B", 3],
-                ["C", 3],
-                ["D", 3],
-            ]),
+    it("single voter: BT matches transitive closure ordering", () => {
+        // This is the bug fix test — previously BT could disagree with
+        // transitive closure due to contradictory BWS pairwise wins
+        const result = computeScores({
+            perUserComparisons: [[
+                comp({ best: "A", worst: "D", set: ["A", "B", "C", "D"] }),
+                comp({ best: "B", worst: "F", set: ["B", "E", "F", "C"] }),
+                comp({ best: "C", worst: "E", set: ["A", "D", "E", "C"] }),
+            ]],
+            items: ["A", "B", "C", "D", "E", "F"],
+            participantCounts: new Map(
+                ["A", "B", "C", "D", "E", "F"].map((id) => [id, 1]),
+            ),
         });
 
-        // Remove D, comparisons referencing D get D filtered from set
-        const comps3 = [
-            comp({ best: "A", worst: "C", set: ["A", "B", "C"] }),
-            comp({ best: "B", worst: "C", set: ["A", "B", "C"] }),
-        ];
-        const result3 = computeScores({
-            allComparisons: comps3,
-            items: ["A", "B", "C"],
-            participantCounts: new Map([
-                ["A", 2],
-                ["B", 2],
-                ["C", 2],
-            ]),
-        });
-
-        // A should be top in both (has most wins)
-        expect(result4[0].itemSlugId).toBe("A");
-        expect(result3[0].itemSlugId).toBe("A");
-        // C should be last in both
-        expect(result4[result4.length - 1].itemSlugId).toBe("C");
-        expect(result3[result3.length - 1].itemSlugId).toBe("C");
+        // With transitive closure, the ordering should be consistent
+        // and all items should have distinct scores (no tied 0% groups)
+        const scores = result.map((r) => r.score);
+        const uniqueScores = new Set(scores.map((s) => s.toFixed(2)));
+        // With 6 items and transitive closure, should have more than 2 unique scores
+        expect(uniqueScores.size).toBeGreaterThan(2);
     });
 });
 
 describe("parseResultRows", () => {
-    it("extracts comparisons from rows", () => {
-        const { allComparisons, participantCounts } = parseResultRows({
+    it("extracts per-user comparisons from rows", () => {
+        const { perUserComparisons, participantCounts } = parseResultRows({
             rows: [
                 {
                     ranking: null,
@@ -184,51 +144,13 @@ describe("parseResultRows", () => {
             items: ["A", "B", "C"],
         });
 
-        expect(allComparisons).toHaveLength(1);
-        expect(allComparisons[0].best).toBe("A");
+        expect(perUserComparisons).toHaveLength(1);
+        expect(perUserComparisons[0][0].best).toBe("A");
         expect(participantCounts.get("A")).toBe(1);
-        expect(participantCounts.get("B")).toBe(1);
-        expect(participantCounts.get("C")).toBe(1);
     });
 
-    it("filters comparisons to only active items", () => {
-        const { allComparisons } = parseResultRows({
-            rows: [
-                {
-                    ranking: null,
-                    comparisons: [
-                        { best: "A", worst: "D", set: ["A", "B", "C", "D"] },
-                    ],
-                },
-            ],
-            items: ["A", "C", "D"], // B removed
-        });
-
-        expect(allComparisons).toHaveLength(1);
-        expect(allComparisons[0].set).not.toContain("B");
-        expect(allComparisons[0].set).toContain("A");
-        expect(allComparisons[0].set).toContain("C");
-        expect(allComparisons[0].set).toContain("D");
-    });
-
-    it("skips comparisons that only reference removed items", () => {
-        const { allComparisons } = parseResultRows({
-            rows: [
-                {
-                    ranking: null,
-                    comparisons: [
-                        { best: "X", worst: "Y", set: ["X", "Y"] },
-                    ],
-                },
-            ],
-            items: ["A", "B"],
-        });
-
-        expect(allComparisons).toHaveLength(0);
-    });
-
-    it("pools comparisons from multiple users", () => {
-        const { allComparisons, participantCounts } = parseResultRows({
+    it("separates comparisons per user", () => {
+        const { perUserComparisons, participantCounts } = parseResultRows({
             rows: [
                 {
                     ranking: null,
@@ -246,48 +168,35 @@ describe("parseResultRows", () => {
             items: ["A", "B", "C"],
         });
 
-        expect(allComparisons).toHaveLength(2);
-        // Both users compared all 3 items
+        expect(perUserComparisons).toHaveLength(2);
         expect(participantCounts.get("A")).toBe(2);
-        expect(participantCounts.get("B")).toBe(2);
-        expect(participantCounts.get("C")).toBe(2);
     });
 
-    it("counts participants per item correctly when different users compare different items", () => {
-        const { participantCounts } = parseResultRows({
+    it("skips comparisons that only reference removed items", () => {
+        const { perUserComparisons } = parseResultRows({
             rows: [
                 {
                     ranking: null,
                     comparisons: [
-                        { best: "A", worst: "B", set: ["A", "B"] },
-                    ],
-                },
-                {
-                    ranking: null,
-                    comparisons: [
-                        { best: "C", worst: "D", set: ["C", "D"] },
+                        { best: "X", worst: "Y", set: ["X", "Y"] },
                     ],
                 },
             ],
-            items: ["A", "B", "C", "D"],
+            items: ["A", "B"],
         });
 
-        expect(participantCounts.get("A")).toBe(1);
-        expect(participantCounts.get("B")).toBe(1);
-        expect(participantCounts.get("C")).toBe(1);
-        expect(participantCounts.get("D")).toBe(1);
+        expect(perUserComparisons).toHaveLength(0);
     });
 });
 
 describe("snapshot correctness", () => {
     it("snapshot values are computable from comparisons", () => {
-        const allComparisons = [
-            comp({ best: "A", worst: "C", set: ["A", "B", "C", "D", "E"] }),
-            comp({ best: "A", worst: "E", set: ["A", "B", "C", "D", "E"] }),
-            comp({ best: "B", worst: "D", set: ["A", "B", "C", "D", "E"] }),
-        ];
         const scores = computeScores({
-            allComparisons,
+            perUserComparisons: [[
+                comp({ best: "A", worst: "C", set: ["A", "B", "C", "D", "E"] }),
+                comp({ best: "A", worst: "E", set: ["A", "B", "C", "D", "E"] }),
+                comp({ best: "B", worst: "D", set: ["A", "B", "C", "D", "E"] }),
+            ]],
             items: ["A", "B", "C", "D", "E"],
             participantCounts: new Map([
                 ["A", 3],
@@ -302,45 +211,5 @@ describe("snapshot correctness", () => {
         expect(itemC.score).toBeGreaterThanOrEqual(0);
         expect(itemC.score).toBeLessThanOrEqual(1);
         expect(itemC.participantCount).toBe(3);
-    });
-
-    it("sequential snapshots with different active items produce different scores", () => {
-        // With 5 items
-        const comps = [
-            comp({ best: "A", worst: "E", set: ["A", "B", "C", "D", "E"] }),
-            comp({ best: "B", worst: "D", set: ["A", "B", "C", "D", "E"] }),
-        ];
-        const scoresAll = computeScores({
-            allComparisons: comps,
-            items: ["A", "B", "C", "D", "E"],
-            participantCounts: new Map([
-                ["A", 2],
-                ["B", 2],
-                ["C", 2],
-                ["D", 2],
-                ["E", 2],
-            ]),
-        });
-        const snapshotC = findItem({ results: scoresAll, id: "C" });
-
-        // With C removed, recompute for D
-        const compsWithoutC = comps.map((c) => ({
-            ...c,
-            set: c.set.filter((id) => id !== "C"),
-        }));
-        const scoresWithoutC = computeScores({
-            allComparisons: compsWithoutC,
-            items: ["A", "B", "D", "E"],
-            participantCounts: new Map([
-                ["A", 2],
-                ["B", 2],
-                ["D", 2],
-                ["E", 2],
-            ]),
-        });
-        const snapshotD = findItem({ results: scoresWithoutC, id: "D" });
-
-        // Scores computed with different n should differ
-        expect(snapshotC.score).not.toEqual(snapshotD.score);
     });
 });

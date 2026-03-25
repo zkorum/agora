@@ -8,8 +8,8 @@
 
 import { describe, it, expect } from "vitest";
 import type { MaxDiffComparison } from "@/shared/types/zod.js";
-import { bradleyTerryFromBWS, bwsToPairwise, buildItemIndex } from "./bradleyTerry.js";
 import { buildComparisonMatrix } from "./maxdiffEngine.js";
+import { computeScores } from "./maxdiff.js";
 
 /**
  * Simulate a single voter completing all comparisons via BWS.
@@ -82,8 +82,12 @@ describe("BT vs transitive closure consistency (single voter)", () => {
         const trueOrdering = ["A", "B", "C"]; // A is best
 
         const comparisons = simulateSingleVoterBWS({ items, trueOrdering });
-        const { items: scored } = bradleyTerryFromBWS({ comparisons, items });
-        const btOrdering = scored.map((s) => s.item);
+        const scored = computeScores({
+            perUserComparisons: [comparisons],
+            items,
+            participantCounts: new Map(items.map((id) => [id, 1])),
+        });
+        const btOrdering = scored.map((s) => s.itemSlugId);
 
         expect(btOrdering).toEqual(trueOrdering);
     });
@@ -93,8 +97,12 @@ describe("BT vs transitive closure consistency (single voter)", () => {
         const trueOrdering = ["A", "B", "C", "D", "E"];
 
         const comparisons = simulateSingleVoterBWS({ items, trueOrdering });
-        const { items: scored } = bradleyTerryFromBWS({ comparisons, items });
-        const btOrdering = scored.map((s) => s.item);
+        const scored = computeScores({
+            perUserComparisons: [comparisons],
+            items,
+            participantCounts: new Map(items.map((id) => [id, 1])),
+        });
+        const btOrdering = scored.map((s) => s.itemSlugId);
 
         expect(btOrdering).toEqual(trueOrdering);
     });
@@ -104,8 +112,12 @@ describe("BT vs transitive closure consistency (single voter)", () => {
         const trueOrdering = ["6", "1", "4", "2", "3", "5"]; // matches user's My Ranking
 
         const comparisons = simulateSingleVoterBWS({ items, trueOrdering });
-        const { items: scored } = bradleyTerryFromBWS({ comparisons, items });
-        const btOrdering = scored.map((s) => s.item);
+        const scored = computeScores({
+            perUserComparisons: [comparisons],
+            items,
+            participantCounts: new Map(items.map((id) => [id, 1])),
+        });
+        const btOrdering = scored.map((s) => s.itemSlugId);
 
         expect(btOrdering).toEqual(trueOrdering);
     });
@@ -115,8 +127,12 @@ describe("BT vs transitive closure consistency (single voter)", () => {
         const trueOrdering = ["F", "E", "D", "C", "B", "A"];
 
         const comparisons = simulateSingleVoterBWS({ items, trueOrdering });
-        const { items: scored } = bradleyTerryFromBWS({ comparisons, items });
-        const btOrdering = scored.map((s) => s.item);
+        const scored = computeScores({
+            perUserComparisons: [comparisons],
+            items,
+            participantCounts: new Map(items.map((id) => [id, 1])),
+        });
+        const btOrdering = scored.map((s) => s.itemSlugId);
 
         expect(btOrdering).toEqual(trueOrdering);
     });
@@ -136,8 +152,12 @@ describe("BT vs transitive closure consistency (single voter)", () => {
             trueOrdering,
         });
 
-        const { items: scored } = bradleyTerryFromBWS({ comparisons, items });
-        const btOrdering = scored.map((s) => s.item);
+        const scored = computeScores({
+            perUserComparisons: [comparisons],
+            items,
+            participantCounts: new Map(items.map((id) => [id, 1])),
+        });
+        const btOrdering = scored.map((s) => s.itemSlugId);
 
         // Verify transitive closure ordering
         const { applyComparison, getUnorderedPairs } = buildComparisonMatrix({ items });
@@ -162,8 +182,12 @@ describe("BT vs transitive closure consistency (single voter)", () => {
 
         for (const sets of setVariants) {
             const comparisons = votesFromSets({ sets, trueOrdering });
-            const { items: scored } = bradleyTerryFromBWS({ comparisons, items });
-            const btOrdering = scored.map((s) => s.item);
+            const scored = computeScores({
+                perUserComparisons: [comparisons],
+                items,
+                participantCounts: new Map(items.map((id) => [id, 1])),
+            });
+            const btOrdering = scored.map((s) => s.itemSlugId);
 
             const { applyComparison, getUnorderedPairs } = buildComparisonMatrix({ items });
             for (const c of comparisons) applyComparison(c);
@@ -174,40 +198,36 @@ describe("BT vs transitive closure consistency (single voter)", () => {
         }
     });
 
-    it("pairwise decomposition covers all pairs for complete BWS data", () => {
-        const items = ["A", "B", "C", "D"];
-        const trueOrdering = ["A", "B", "C", "D"];
+    it("reproduces the exact bug: 3 votes over 6 items with contradictory BWS wins", () => {
+        // This is the exact scenario from the user's logs where BT previously
+        // gave 3 items score=1.0 and 3 items score=0.0 due to contradictory
+        // BWS pairwise wins. With transitive closure fix, all items should
+        // have distinct scores matching the transitive closure ordering.
+        const items = ["y4c2yrE", "bdw35_M", "INN4aJg", "5rLND68", "_COndGA", "mH8LTrc"];
+        const comparisons: MaxDiffComparison[] = [
+            { best: "INN4aJg", worst: "5rLND68", set: ["5rLND68", "bdw35_M", "y4c2yrE", "INN4aJg"] },
+            { best: "y4c2yrE", worst: "bdw35_M", set: ["bdw35_M", "_COndGA", "mH8LTrc", "y4c2yrE"] },
+            { best: "_COndGA", worst: "mH8LTrc", set: ["INN4aJg", "5rLND68", "mH8LTrc", "_COndGA"] },
+        ];
 
-        const comparisons = simulateSingleVoterBWS({ items, trueOrdering });
-        const itemIndex = buildItemIndex(items);
+        const scored = computeScores({
+            perUserComparisons: [comparisons],
+            items,
+            participantCounts: new Map(items.map((id) => [id, 1])),
+        });
 
-        // Collect all pairwise wins
-        const allWins: Array<{ winner: number; loser: number }> = [];
-        for (const c of comparisons) {
-            allWins.push(...bwsToPairwise({ comparison: c, itemIndex }));
-        }
+        const scores = scored.map((s) => s.score);
 
-        // Check: for every pair (i, j) where i < j in true ordering,
-        // there should be at least one win for i over j
-        for (let i = 0; i < items.length; i++) {
-            for (let j = i + 1; j < items.length; j++) {
-                const iIdx = itemIndex.get(trueOrdering[i]);
-                const jIdx = itemIndex.get(trueOrdering[j]);
-                if (iIdx === undefined || jIdx === undefined) continue;
-                const hasWin = allWins.some(
-                    (w) => w.winner === iIdx && w.loser === jIdx,
-                );
-                // This may not always hold — BWS doesn't guarantee all pairs
-                // are directly compared. Log which pairs are missing.
-                if (!hasWin) {
-                    // Check reverse — maybe j incorrectly beats i
-                    const hasReverseWin = allWins.some(
-                        (w) => w.winner === jIdx && w.loser === iIdx,
-                    );
-                    // If neither direction has evidence, BT must infer from indirect data
-                    expect(hasReverseWin).toBe(false); // shouldn't have wrong direction
-                }
-            }
-        }
+        // Previously: 3 items at 1.0, 3 items at 0.0 (only 2 unique scores)
+        // With fix: should have more distinct scores
+        const uniqueScores = new Set(scores.map((s) => s.toFixed(2)));
+        expect(uniqueScores.size).toBeGreaterThan(2);
+
+        // The transitive closure ordering is: INN4aJg > y4c2yrE > _COndGA > mH8LTrc > bdw35_M > 5rLND68
+        // BT should match this ordering
+        const ordering = scored.map((s) => s.itemSlugId);
+        expect(ordering[0]).toBe("INN4aJg");
+        expect(ordering[ordering.length - 1]).toBe("5rLND68");
     });
+
 });

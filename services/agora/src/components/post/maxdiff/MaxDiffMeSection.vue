@@ -3,7 +3,7 @@
   <template v-if="rankingComplete">
     <MaxDiffItemListSection
       :section-title="t('meTitle')"
-      :subtitle="null"
+      :subtitle="t('meSubtitle')"
       :items="rankingItems"
       :is-loading="false"
       no-items-message=""

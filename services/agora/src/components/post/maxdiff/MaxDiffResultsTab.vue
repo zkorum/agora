@@ -184,7 +184,7 @@ import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import { useMaxDiffLoadQuery } from "src/utils/api/maxdiff/useMaxDiffQueries";
 import type { MaxDiffShortcutItem } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { maxdiffShortcutItemSchema } from "src/utils/component/analysis/maxdiffShortcutBar";
-import { onMounted, ref, watch } from "vue";
+import { inject, onMounted, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import { useRoute } from "vue-router";
 
@@ -250,6 +250,16 @@ function onTabChange(value: string): void {
     currentTab.value = parsed.data;
   }
 }
+
+// Inject parent refresh handler (same pattern as ConversationAnalysisTab)
+const registerChildRefreshHandler = inject<
+  (handler: () => Promise<void>) => void
+>(
+  "registerChildRefreshHandler",
+  () => {
+    /* noop */
+  },
+);
 
 const isGitHubLinked =
   props.conversationData.metadata.externalSourceConfig !== null;
@@ -353,12 +363,16 @@ async function fetchLifecycleItems({
   lifecycle,
   itemsRef,
   loadingRef,
+  showLoading,
 }: {
   lifecycle: "active" | "completed" | "canceled";
   itemsRef: typeof activeItems;
   loadingRef: typeof isActiveLoading;
+  showLoading: boolean;
 }): Promise<void> {
-  loadingRef.value = true;
+  if (showLoading) {
+    loadingRef.value = true;
+  }
 
   const response = await fetchMaxDiffItems({
     conversationSlugId,
@@ -369,11 +383,15 @@ async function fetchLifecycleItems({
     itemsRef.value = mapApiItemsToListItems(response.data.items);
   }
 
-  loadingRef.value = false;
+  if (showLoading) {
+    loadingRef.value = false;
+  }
 }
 
-onMounted(async () => {
-  isInitialLoading.value = true;
+async function fetchResults({ showLoading }: { showLoading: boolean }): Promise<void> {
+  if (showLoading) {
+    isInitialLoading.value = true;
+  }
   hasError.value = false;
 
   const response = await getMaxDiffResults({ conversationSlugId });
@@ -390,13 +408,32 @@ onMounted(async () => {
     hasError.value = true;
   }
 
-  isInitialLoading.value = false;
+  if (showLoading) {
+    isInitialLoading.value = false;
+  }
+}
 
+async function fetchAllLifecycleItems({ showLoading }: { showLoading: boolean }): Promise<void> {
   await Promise.all([
-    fetchLifecycleItems({ lifecycle: "active", itemsRef: activeItems, loadingRef: isActiveLoading }),
-    fetchLifecycleItems({ lifecycle: "completed", itemsRef: completedItems, loadingRef: isCompletedLoading }),
-    fetchLifecycleItems({ lifecycle: "canceled", itemsRef: canceledItems, loadingRef: isCanceledLoading }),
+    fetchLifecycleItems({ lifecycle: "active", itemsRef: activeItems, loadingRef: isActiveLoading, showLoading }),
+    fetchLifecycleItems({ lifecycle: "completed", itemsRef: completedItems, loadingRef: isCompletedLoading, showLoading }),
+    fetchLifecycleItems({ lifecycle: "canceled", itemsRef: canceledItems, loadingRef: isCanceledLoading, showLoading }),
   ]);
+}
+
+// Register pull-to-refresh handler: silently refetch without toggling loading spinners
+// (the pull-to-refresh spinner already indicates activity)
+registerChildRefreshHandler(async () => {
+  await fetchResults({ showLoading: false });
+  await Promise.all([
+    loadQuery.refetch(),
+    fetchAllLifecycleItems({ showLoading: false }),
+  ]);
+});
+
+onMounted(async () => {
+  await fetchResults({ showLoading: true });
+  await fetchAllLifecycleItems({ showLoading: true });
 });
 
 watch(currentTab, async (newTab, oldTab) => {
@@ -413,7 +450,7 @@ watch(currentTab, async (newTab, oldTab) => {
 
     const config = tabLifecycleMap[newTab];
     if (config !== undefined) {
-      await fetchLifecycleItems(config);
+      await fetchLifecycleItems({ ...config, showLoading: true });
     }
   }
 });
