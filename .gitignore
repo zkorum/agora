@@ -82,3 +82,6 @@ AGENTS_*.md
 agents_tmp_doc/
 
 .playwright-mcp/
+
+# generated test data
+generated_test/

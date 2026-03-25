@@ -73,63 +73,41 @@ export async function loadImportedPolisConversation({
             : undefined;
     let conversationUrl: string | undefined;
     let reportUrl: string | undefined;
-    let trimmedBody = importedPolisConversation.conversation_data.description;
-    const bodyRoomLengthForAppending = 500;
-    if (
-        trimmedBody.length >
-        MAX_LENGTH_BODY_HTML - bodyRoomLengthForAppending
-    ) {
-        trimmedBody = trimmedBody.slice(
-            0,
-            MAX_LENGTH_BODY_HTML - bodyRoomLengthForAppending,
-        ); // TODO: this is to keep room to the following text... it may break html in the middle, so this is a work-around until we move what's below outside of the body, and then we'll just trim
-        trimmedBody = `${trimmedBody} [...].`;
-    }
-    let conversationBody = `${trimmedBody}<br /><br />--------------`;
 
-    // Handle messaging based on import method
+    // Determine conversation and report URLs for DB storage
     if (importConfig.method === "csv") {
-        // CSV imports
-        conversationBody = `${conversationBody}<br />This conversation was imported from Polis CSV files.`;
-        // For CSV imports, link_url might be available from summary.csv
         if (importedPolisConversation.conversation_data.link_url) {
             conversationUrl =
                 importedPolisConversation.conversation_data.link_url;
-            conversationBody = `${conversationBody}<br />The original conversation url is ${conversationUrl}.`;
         }
     } else {
-        // URL imports (existing behavior)
         if (importConfig.polisUrlType === "conversation") {
             conversationUrl = importConfig.polisUrl;
-            conversationBody = `${conversationBody}<br />This conversation was initially imported from ${conversationUrl}.`;
             reportUrl =
                 importedPolisConversation.report_id !== null
                     ? `https://pol.is/report/${importedPolisConversation.report_id}`
                     : undefined;
-            if (reportUrl !== undefined) {
-                conversationBody = `${conversationBody}<br />The original report url is ${reportUrl}.`;
-            }
         } else {
             conversationUrl =
                 importedPolisConversation.conversation_data.link_url ??
                 (importedPolisConversation.conversation_data.conversation_id !==
                 null
                     ? `https://pol.is/${String(importedPolisConversation.conversation_data.conversation_id)}`
-                    : undefined); // should never be undefined, but as we rely on external systems we don't control, better safe than sorry
+                    : undefined);
             reportUrl = importConfig.polisUrl;
-            conversationBody = `${conversationBody}<br />This conversation was initially imported from ${reportUrl}.`;
-            if (conversationUrl !== undefined) {
-                conversationBody = `${conversationBody}<br />The original conversation url is ${conversationUrl}.`;
-            }
         }
     }
-    if (ownername !== null) {
-        conversationBody = `${conversationBody}<br />The original author is "${ownername}".`;
+
+    let conversationBody =
+        importedPolisConversation.conversation_data.description;
+    const ellipsis = " [...].";
+    if (conversationBody.length > MAX_LENGTH_BODY_HTML) {
+        conversationBody = conversationBody.slice(
+            0,
+            MAX_LENGTH_BODY_HTML - ellipsis.length,
+        );
+        conversationBody = `${conversationBody}${ellipsis}`;
     }
-    if (importCreatedAt !== undefined) {
-        conversationBody = `${conversationBody}<br />The original creation date is ${importCreatedAt.toDateString()}.`;
-    }
-    conversationBody = `${conversationBody}<br />The data in the Analysis tab has been completely recalculated by Agora.`;
     let trimmedTitle = importedPolisConversation.conversation_data.topic;
     // Handle empty topic from Polis - provide a fallback title
     if (trimmedTitle.trim().length === 0) {

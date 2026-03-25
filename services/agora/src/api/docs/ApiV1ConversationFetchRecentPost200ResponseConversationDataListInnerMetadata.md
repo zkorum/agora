@@ -27,6 +27,7 @@ Name | Type | Description | Notes
 **moderation** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataModeration.md) |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
 **externalSourceConfig** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfig**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataExternalSourceConfig.md) |  | [default to undefined]
+**importInfo** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfo**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataImportInfo.md) |  | [optional] [default to undefined]
 
 ## Example
 
@@ -56,6 +57,7 @@ const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListI
     moderation,
     requiresEventTicket,
     externalSourceConfig,
+    importInfo,
 };
 ```
 

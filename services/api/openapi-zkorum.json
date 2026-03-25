@@ -1125,6 +1125,38 @@
                                                                         "additionalProperties": false
                                                                     }
                                                                 ]
+                                                            },
+                                                            "importInfo": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "method": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "url",
+                                                                            "csv"
+                                                                        ]
+                                                                    },
+                                                                    "sourceUrl": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "conversationUrl": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "exportUrl": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "createdAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    "author": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "method"
+                                                                ],
+                                                                "additionalProperties": false
                                                             }
                                                         },
                                                         "required": [
@@ -2020,6 +2052,38 @@
                                                                 "additionalProperties": false
                                                             }
                                                         ]
+                                                    },
+                                                    "importInfo": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "method": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "url",
+                                                                    "csv"
+                                                                ]
+                                                            },
+                                                            "sourceUrl": {
+                                                                "type": "string"
+                                                            },
+                                                            "conversationUrl": {
+                                                                "type": "string"
+                                                            },
+                                                            "exportUrl": {
+                                                                "type": "string"
+                                                            },
+                                                            "createdAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "author": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "method"
+                                                        ],
+                                                        "additionalProperties": false
                                                     }
                                                 },
                                                 "required": [
@@ -2370,6 +2434,38 @@
                                                                         "additionalProperties": false
                                                                     }
                                                                 ]
+                                                            },
+                                                            "importInfo": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "method": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "url",
+                                                                            "csv"
+                                                                        ]
+                                                                    },
+                                                                    "sourceUrl": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "conversationUrl": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "exportUrl": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "createdAt": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    "author": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "method"
+                                                                ],
+                                                                "additionalProperties": false
                                                             }
                                                         },
                                                         "required": [
@@ -5987,6 +6083,38 @@
                                                                     "additionalProperties": false
                                                                 }
                                                             ]
+                                                        },
+                                                        "importInfo": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "method": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "url",
+                                                                        "csv"
+                                                                    ]
+                                                                },
+                                                                "sourceUrl": {
+                                                                    "type": "string"
+                                                                },
+                                                                "conversationUrl": {
+                                                                    "type": "string"
+                                                                },
+                                                                "exportUrl": {
+                                                                    "type": "string"
+                                                                },
+                                                                "createdAt": {
+                                                                    "type": "string",
+                                                                    "format": "date-time"
+                                                                },
+                                                                "author": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "method"
+                                                            ],
+                                                            "additionalProperties": false
                                                         }
                                                     },
                                                     "required": [

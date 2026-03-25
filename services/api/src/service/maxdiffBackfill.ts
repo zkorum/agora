@@ -50,13 +50,13 @@ export async function backfillMaxdiffSnapshots({
     }
 
     log.info(
-        `[MaxDiff Backfill] Recomputing snapshots for ${itemsToBackfill.length} items`,
+        `[MaxDiff Backfill] Recomputing snapshots for ${String(itemsToBackfill.length)} items`,
     );
 
     // Group items by conversation to batch queries
     const byConversation = new Map<
         number,
-        Array<{ id: number; slugId: string }>
+        { id: number; slugId: string }[]
     >();
     for (const item of itemsToBackfill) {
         const list = byConversation.get(item.conversationId) ?? [];
@@ -124,13 +124,13 @@ export async function backfillMaxdiffSnapshots({
         } catch (error) {
             log.error(
                 error,
-                `[MaxDiff Backfill] Failed for conversation ${conversationId}`,
+                `[MaxDiff Backfill] Failed for conversation ${String(conversationId)}`,
             );
             errorCount += conversationItems.length;
         }
     }
 
     log.info(
-        `[MaxDiff Backfill] Complete: ${successCount} succeeded, ${errorCount} failed`,
+        `[MaxDiff Backfill] Complete: ${String(successCount)} succeeded, ${String(errorCount)} failed`,
     );
 }
