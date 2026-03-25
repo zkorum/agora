@@ -11,8 +11,6 @@
  *   Annals of Statistics 32(1):384-406
  */
 
-import type { MaxDiffComparison } from "@/shared/types/zod.js";
-
 // --- Types ---
 
 export interface PairwiseWin {
@@ -24,17 +22,6 @@ export interface BradleyTerryResult {
     /** Log-scale strength parameters (centered, mean = 0) */
     params: number[];
     /** Whether the algorithm converged within maxIter */
-    converged: boolean;
-}
-
-export interface ScoredItem {
-    item: string;
-    score: number;
-    uncertainty: number;
-}
-
-export interface BradleyTerryFromBWSResult {
-    items: ScoredItem[];
     converged: boolean;
 }
 
@@ -150,44 +137,6 @@ export function mmPairwise({
     return { params, converged: false };
 }
 
-// --- BWS decomposition ---
-
-/**
- * Decompose a Best-Worst Scaling vote into pairwise wins.
- *
- * From a vote {best, worst, set}:
- * - best beats every other item in set
- * - every other item beats worst
- *
- * Returns pairwise wins using numeric indices (relative to the provided items array).
- */
-export function bwsToPairwise({
-    comparison,
-    itemIndex,
-}: {
-    comparison: MaxDiffComparison;
-    itemIndex: Map<string, number>;
-}): PairwiseWin[] {
-    const bestIdx = itemIndex.get(comparison.best);
-    const worstIdx = itemIndex.get(comparison.worst);
-    if (bestIdx === undefined || worstIdx === undefined) return [];
-
-    const wins: PairwiseWin[] = [];
-    for (const item of comparison.set) {
-        const idx = itemIndex.get(item);
-        if (idx === undefined) continue;
-        // best beats everyone else
-        if (idx !== bestIdx) {
-            wins.push({ winner: bestIdx, loser: idx });
-        }
-        // everyone else beats worst
-        if (idx !== worstIdx && idx !== bestIdx) {
-            wins.push({ winner: idx, loser: worstIdx });
-        }
-    }
-    return wins;
-}
-
 /**
  * Build an item-to-index mapping from a list of item IDs.
  */
@@ -197,81 +146,6 @@ export function buildItemIndex(items: string[]): Map<string, number> {
         index.set(items[i], i);
     }
     return index;
-}
-
-// --- High-level API ---
-
-/**
- * Run Bradley-Terry MLE on MaxDiff (BWS) comparison data.
- *
- * Decomposes BWS votes into pairwise wins, runs MM algorithm,
- * and returns scored items sorted best-first.
- */
-export function bradleyTerryFromBWS({
-    comparisons,
-    items,
-    alpha = 0.01,
-    maxIter = 10000,
-    tolerance = 1e-8,
-}: {
-    comparisons: MaxDiffComparison[];
-    items: string[];
-    alpha?: number;
-    maxIter?: number;
-    tolerance?: number;
-}): BradleyTerryFromBWSResult {
-    // Defaults match mmPairwise: maxIter=10000, tol=1e-8
-    const n = items.length;
-    if (n === 0) return { items: [], converged: true };
-    if (n === 1) {
-        return {
-            items: [{ item: items[0], score: 1, uncertainty: 1 }],
-            converged: true,
-        };
-    }
-
-    const itemIndex = buildItemIndex(items);
-
-    // Decompose all BWS votes into pairwise wins
-    const pairwiseData: PairwiseWin[] = [];
-    for (const comparison of comparisons) {
-        const wins = bwsToPairwise({ comparison, itemIndex });
-        pairwiseData.push(...wins);
-    }
-
-    // Count comparisons per item (for uncertainty estimation)
-    const comparisonCounts = new Array<number>(n).fill(0);
-    for (const { winner, loser } of pairwiseData) {
-        comparisonCounts[winner] += 1;
-        comparisonCounts[loser] += 1;
-    }
-
-    // Run MM algorithm
-    const { params, converged } = mmPairwise({
-        nItems: n,
-        data: pairwiseData,
-        alpha,
-        maxIter,
-        tolerance,
-    });
-    // Normalize scores to [0, 1] range
-    let minParam = Infinity;
-    let maxParam = -Infinity;
-    for (const p of params) {
-        if (p < minParam) minParam = p;
-        if (p > maxParam) maxParam = p;
-    }
-    const range = maxParam - minParam;
-
-    const scoredItems = items
-        .map((item, i) => ({
-            item,
-            score: range > 0 ? (params[i] - minParam) / range : 1,
-            uncertainty: 1 / Math.sqrt(comparisonCounts[i] + 1),
-        }))
-        .sort((a, b) => b.score - a.score);
-
-    return { items: scoredItems, converged };
 }
 
 // --- Utility ---

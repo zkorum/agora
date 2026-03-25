@@ -62,7 +62,18 @@
 
     <!-- Active voting -->
     <div v-else-if="candidates.length > 0" class="voting-section">
-      <div class="section-header">{{ t("title") }}</div>
+      <div class="section-header-row">
+        <div class="section-header">{{ t("title") }}</div>
+        <q-btn
+          flat
+          dense
+          round
+          size="sm"
+          icon="mdi-information-outline"
+          color="grey-7"
+          @click="showLearnMoreDialog = true"
+        />
+      </div>
 
       <div class="step-indicator">
         <div class="step-item">
@@ -92,6 +103,10 @@
       </div>
 
       <div class="progress-row">
+        <div class="progress-top-line">
+          <span class="progress-percent">{{ progressPercent }}%</span>
+          <span class="progress-encouragement">{{ t("votesCountMessage") }}</span>
+        </div>
         <div class="progress-bar">
           <div
             class="progress-fill"
@@ -165,6 +180,49 @@
       :needs-auth="needsLogin"
       :participation-mode="conversationData.metadata.participationMode"
     />
+
+    <q-dialog v-model="showLearnMoreDialog" position="bottom">
+      <ZKBottomDialogContainer>
+        <div class="learn-more-title">{{ t("learnMoreTitle") }}</div>
+        <div class="learn-more-content">
+          <p>{{ t("learnMoreCollection") }}</p>
+          <p>{{ t("learnMoreSelection") }}</p>
+          <p>{{ t("learnMoreInference") }}</p>
+          <p>{{ t("learnMoreFairness") }}</p>
+          <p>{{ t("learnMoreScoring") }}</p>
+          <p class="learn-more-reference">
+            {{ t("learnMoreReference") }}
+            <a
+              href="https://en.wikipedia.org/wiki/Best%E2%80%93worst_scaling"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="learn-more-link"
+            >Best-Worst Scaling</a>
+            ·
+            <a
+              href="https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="learn-more-link"
+            >Bradley-Terry Model</a>
+            ·
+            <a
+              href="https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="learn-more-link"
+            >Fisher-Yates Shuffle</a>
+            ·
+            <a
+              href="https://github.com/tournesol-app/tournesol/tree/main/solidago"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="learn-more-link"
+            >Tournesol/Solidago</a>
+          </p>
+        </div>
+      </ZKBottomDialogContainer>
+    </q-dialog>
   </div>
 </template>
 
@@ -174,6 +232,7 @@ import { useQuasar } from "quasar";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
+import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
 import { useMaxDiffHistoryUndo } from "src/composables/maxdiff/useMaxDiffHistoryUndo";
@@ -195,7 +254,7 @@ import {
 } from "src/utils/maxdiff";
 import { useNotify } from "src/utils/ui/notify";
 import type { ComponentPublicInstance } from "vue";
-import { computed, nextTick, onBeforeUnmount, ref, triggerRef, watch } from "vue";
+import { computed, inject, nextTick, onBeforeUnmount, ref, triggerRef, watch } from "vue";
 
 import MaxDiffStatementDialog from "./MaxDiffStatementDialog.vue";
 import {
@@ -217,6 +276,16 @@ const { isLoggedIn, hasStrongVerification, hasEmailVerification } =
 const { fetchMaxDiffRoute } = useMaxDiffApi();
 const $q = useQuasar();
 const { showNotifyMessage } = useNotify();
+
+// Inject parent refresh handler (same pattern as ConversationCommentTab)
+const registerChildRefreshHandler = inject<
+  (handler: () => Promise<void>) => void
+>(
+  "registerChildRefreshHandler",
+  () => {
+    /* noop */
+  },
+);
 
 const needsLogin = computed(() => {
   const mode = props.conversationData.metadata.participationMode;
@@ -246,6 +315,11 @@ const itemsQuery = useMaxDiffItemsQuery({
 const loadQuery = useMaxDiffLoadQuery({
   conversationSlugId,
   enabled: () => props.hasConversationData,
+});
+
+// Register pull-to-refresh handler: refetch items and saved state
+registerChildRefreshHandler(async () => {
+  await Promise.all([itemsQuery.refetch(), loadQuery.refetch()]);
 });
 
 interface MaxDiffItemDisplay {
@@ -424,6 +498,8 @@ const progressPercent = computed(() => {
   if (!instance.value) return 0;
   return Math.round(instance.value.progress * 100);
 });
+
+const showLearnMoreDialog = ref(false);
 
 const canUndo = computed(() => {
   if (!instance.value) return false;
@@ -799,6 +875,12 @@ function handleRedoRanking(): void {
   font-size: 0.95rem;
 }
 
+.section-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .section-header {
   font-size: 1.1rem;
   font-weight: var(--font-weight-semibold);
@@ -887,8 +969,33 @@ function handleRedoRanking(): void {
 .progress-row {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
   align-items: flex-start;
+  width: 100%;
+}
+
+.progress-top-line {
+  display: flex;
+  align-items: baseline;
+  width: 100%;
+  position: relative;
+}
+
+.progress-percent {
+  font-size: 0.85rem;
+  font-weight: var(--font-weight-medium);
+  color: $color-text-weak;
+}
+
+.progress-encouragement {
+  font-size: 0.8rem;
+  color: $color-text-weak;
+  opacity: 0.7;
+  position: absolute;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  text-align: center;
+  pointer-events: none;
 }
 
 .progress-bar {
@@ -1028,5 +1135,34 @@ function handleRedoRanking(): void {
 .rank-content {
   flex: 1;
   min-width: 0;
+}
+
+.learn-more-title {
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-semibold);
+  color: $color-text-strong;
+}
+
+.learn-more-content {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: $color-text-weak;
+
+  p {
+    margin: 0 0 0.75rem;
+  }
+}
+
+.learn-more-reference {
+  font-size: 0.85rem;
+}
+
+.learn-more-link {
+  color: $primary;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 </style>

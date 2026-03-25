@@ -97,12 +97,12 @@ export async function backfillMaxdiffSnapshots({
                     eq(maxdiffResultTable.conversationId, conversationId),
                 );
 
-            const { allComparisons, participantCounts } = parseResultRows({
+            const { perUserComparisons, participantCounts } = parseResultRows({
                 rows: allResults,
                 items,
             });
             const scored = computeScores({
-                allComparisons,
+                perUserComparisons,
                 items,
                 participantCounts,
             });

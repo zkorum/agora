@@ -18,7 +18,23 @@
     </div>
 
     <template v-else>
-      <!-- Rankings section -->
+      <!-- Me section (above community ranking in Summary) -->
+      <div
+        v-if="currentTab === 'Summary' || currentTab === 'Me'"
+        class="tabComponent"
+      >
+        <MaxDiffMeSection
+          :load-data="loadQuery.data.value"
+          :all-items="resultItems"
+          :compact-mode="currentTab === 'Summary'"
+          :on-click-item="openStatementDialog"
+          :on-switch-tab="() => switchToTab('Me')"
+          :on-learn-more="() => (showInfoDialog = true)"
+          :navigate-to-voting-tab="props.navigateToVotingTab"
+        />
+      </div>
+
+      <!-- Community Rankings -->
       <div
         v-if="currentTab === 'Summary' || currentTab === 'Results'"
         class="tabComponent"
@@ -97,14 +113,14 @@
 
     <!-- Learn more dialog -->
     <q-dialog v-model="showInfoDialog" position="bottom">
-      <q-card class="learn-more-dialog">
-        <q-card-section>
-          <div class="dialog-title">Scoring Methodology</div>
-        </q-card-section>
-        <q-card-section class="dialog-content">
-          <p>{{ t("learnMoreMethod") }}</p>
-          <p>{{ t("learnMoreHow") }}</p>
-          <p>{{ t("learnMoreWhy") }}</p>
+      <ZKBottomDialogContainer>
+        <div class="learn-more-title">{{ t("learnMore") }}</div>
+        <div class="learn-more-content">
+          <p>{{ t("learnMoreCollection") }}</p>
+          <p>{{ t("learnMoreSelection") }}</p>
+          <p>{{ t("learnMoreInference") }}</p>
+          <p>{{ t("learnMoreFairness") }}</p>
+          <p>{{ t("learnMoreScoring") }}</p>
           <p class="learn-more-reference">
             {{ t("learnMoreReference") }}
             <a
@@ -112,26 +128,40 @@
               target="_blank"
               rel="noopener noreferrer"
               class="learn-more-link"
-            >Best-Worst Scaling (Wikipedia)</a>
+            >Best-Worst Scaling</a>
             ·
             <a
               href="https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model"
               target="_blank"
               rel="noopener noreferrer"
               class="learn-more-link"
-            >Bradley-Terry Model (Wikipedia)</a>
+            >Bradley-Terry Model</a>
+            ·
+            <a
+              href="https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="learn-more-link"
+            >Fisher-Yates Shuffle</a>
+            ·
+            <a
+              href="https://github.com/tournesol-app/tournesol/tree/main/solidago"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="learn-more-link"
+            >Tournesol/Solidago</a>
           </p>
-        </q-card-section>
-      </q-card>
+        </div>
+      </ZKBottomDialogContainer>
     </q-dialog>
 
     <!-- Lifecycle learn-more dialog -->
     <q-dialog v-model="showLifecycleInfoDialog" position="bottom">
-      <q-card class="learn-more-dialog">
-        <q-card-section class="dialog-content">
+      <ZKBottomDialogContainer>
+        <div class="learn-more-content">
           <p>{{ lifecycleInfoContent }}</p>
-        </q-card-section>
-      </q-card>
+        </div>
+      </ZKBottomDialogContainer>
     </q-dialog>
 
     <MaxDiffStatementDialog
@@ -146,18 +176,21 @@
 <script setup lang="ts">
 import ShortcutBar from "src/components/post/analysis/shortcutBar/ShortcutBar.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
+import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
+import { useMaxDiffLoadQuery } from "src/utils/api/maxdiff/useMaxDiffQueries";
 import type { MaxDiffShortcutItem } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { maxdiffShortcutItemSchema } from "src/utils/component/analysis/maxdiffShortcutBar";
-import { onMounted, ref, watch } from "vue";
+import { inject, onMounted, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import { useRoute } from "vue-router";
 
 import type { MaxDiffListItem } from "./MaxDiffItemListSection.vue";
 import MaxDiffItemListSection from "./MaxDiffItemListSection.vue";
+import MaxDiffMeSection from "./MaxDiffMeSection.vue";
 import {
   type MaxDiffResultsTabTranslations,
   maxDiffResultsTabTranslations,
@@ -166,6 +199,7 @@ import MaxDiffStatementDialog from "./MaxDiffStatementDialog.vue";
 
 const props = defineProps<{
   conversationData: ExtendedConversation;
+  navigateToVotingTab: () => void;
 }>();
 
 const { t } = useComponentI18n<MaxDiffResultsTabTranslations>(
@@ -190,6 +224,7 @@ function getMaxDiffTabRoute(item: string): RouteLocationRaw {
 
 const maxdiffTabItems: MaxDiffShortcutItem[] = [
   "Summary",
+  "Me",
   "Results",
   "Active",
   "Completed",
@@ -198,6 +233,7 @@ const maxdiffTabItems: MaxDiffShortcutItem[] = [
 
 const tabLabelMap: Record<string, string> = {
   Summary: t("tabSummary"),
+  Me: t("tabMe"),
   Results: t("tabResults"),
   Active: t("tabActive"),
   Completed: t("tabCompleted"),
@@ -215,6 +251,16 @@ function onTabChange(value: string): void {
   }
 }
 
+// Inject parent refresh handler (same pattern as ConversationAnalysisTab)
+const registerChildRefreshHandler = inject<
+  (handler: () => Promise<void>) => void
+>(
+  "registerChildRefreshHandler",
+  () => {
+    /* noop */
+  },
+);
+
 const isGitHubLinked =
   props.conversationData.metadata.externalSourceConfig !== null;
 
@@ -225,6 +271,12 @@ const conversationSlugId =
 const isInitialLoading = ref(true);
 const hasError = ref(false);
 const resultItems = ref<MaxDiffListItem[]>([]);
+
+// Me tab: user's personal ranking (data passed to MaxDiffMeSection)
+const loadQuery = useMaxDiffLoadQuery({
+  conversationSlugId,
+  enabled: true,
+});
 
 // Lifecycle data
 const activeItems = ref<MaxDiffListItem[]>([]);
@@ -311,12 +363,16 @@ async function fetchLifecycleItems({
   lifecycle,
   itemsRef,
   loadingRef,
+  showLoading,
 }: {
   lifecycle: "active" | "completed" | "canceled";
   itemsRef: typeof activeItems;
   loadingRef: typeof isActiveLoading;
+  showLoading: boolean;
 }): Promise<void> {
-  loadingRef.value = true;
+  if (showLoading) {
+    loadingRef.value = true;
+  }
 
   const response = await fetchMaxDiffItems({
     conversationSlugId,
@@ -327,11 +383,15 @@ async function fetchLifecycleItems({
     itemsRef.value = mapApiItemsToListItems(response.data.items);
   }
 
-  loadingRef.value = false;
+  if (showLoading) {
+    loadingRef.value = false;
+  }
 }
 
-onMounted(async () => {
-  isInitialLoading.value = true;
+async function fetchResults({ showLoading }: { showLoading: boolean }): Promise<void> {
+  if (showLoading) {
+    isInitialLoading.value = true;
+  }
   hasError.value = false;
 
   const response = await getMaxDiffResults({ conversationSlugId });
@@ -348,13 +408,32 @@ onMounted(async () => {
     hasError.value = true;
   }
 
-  isInitialLoading.value = false;
+  if (showLoading) {
+    isInitialLoading.value = false;
+  }
+}
 
+async function fetchAllLifecycleItems({ showLoading }: { showLoading: boolean }): Promise<void> {
   await Promise.all([
-    fetchLifecycleItems({ lifecycle: "active", itemsRef: activeItems, loadingRef: isActiveLoading }),
-    fetchLifecycleItems({ lifecycle: "completed", itemsRef: completedItems, loadingRef: isCompletedLoading }),
-    fetchLifecycleItems({ lifecycle: "canceled", itemsRef: canceledItems, loadingRef: isCanceledLoading }),
+    fetchLifecycleItems({ lifecycle: "active", itemsRef: activeItems, loadingRef: isActiveLoading, showLoading }),
+    fetchLifecycleItems({ lifecycle: "completed", itemsRef: completedItems, loadingRef: isCompletedLoading, showLoading }),
+    fetchLifecycleItems({ lifecycle: "canceled", itemsRef: canceledItems, loadingRef: isCanceledLoading, showLoading }),
   ]);
+}
+
+// Register pull-to-refresh handler: silently refetch without toggling loading spinners
+// (the pull-to-refresh spinner already indicates activity)
+registerChildRefreshHandler(async () => {
+  await fetchResults({ showLoading: false });
+  await Promise.all([
+    loadQuery.refetch(),
+    fetchAllLifecycleItems({ showLoading: false }),
+  ]);
+});
+
+onMounted(async () => {
+  await fetchResults({ showLoading: true });
+  await fetchAllLifecycleItems({ showLoading: true });
 });
 
 watch(currentTab, async (newTab, oldTab) => {
@@ -371,7 +450,7 @@ watch(currentTab, async (newTab, oldTab) => {
 
     const config = tabLifecycleMap[newTab];
     if (config !== undefined) {
-      await fetchLifecycleItems(config);
+      await fetchLifecycleItems({ ...config, showLoading: true });
     }
   }
 });
@@ -406,19 +485,13 @@ watch(currentTab, async (newTab, oldTab) => {
   font-size: 0.95rem;
 }
 
-.learn-more-dialog {
-  width: 100%;
-  max-width: 600px;
-  border-radius: 16px 16px 0 0;
-}
-
-.dialog-title {
+.learn-more-title {
   font-size: 1.1rem;
   font-weight: var(--font-weight-semibold);
   color: $color-text-strong;
 }
 
-.dialog-content {
+.learn-more-content {
   font-size: 0.9rem;
   line-height: 1.5;
   color: $color-text-weak;
@@ -440,4 +513,6 @@ watch(currentTab, async (newTab, oldTab) => {
     text-decoration: underline;
   }
 }
+
+
 </style>

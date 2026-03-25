@@ -21,7 +21,8 @@ import {
     type MaxDiffComparison,
     type MaxdiffLifecycleStatus,
 } from "@/shared/types/zod.js";
-import { bradleyTerryFromBWS } from "./bradleyTerry.js";
+import { mmPairwise, buildItemIndex, type PairwiseWin } from "./bradleyTerry.js";
+import { buildComparisonMatrix } from "./maxdiffEngine.js";
 import { log } from "@/app.js";
 
 // --- Pure scoring functions (exported for testing) ---
@@ -35,31 +36,83 @@ export interface RankedItem {
 
 /**
  * Compute scores from pooled comparisons using Bradley-Terry MLE.
- * Pools all users' raw comparisons and runs BT directly.
+ *
+ * Instead of raw BWS decomposition (which creates contradictory pairwise
+ * wins when candidate sets overlap with transitively-ordered items), this
+ * applies transitive closure per user first, then extracts ALL consistent
+ * pairwise orderings for BT. This ensures BT gets the same complete
+ * information that each user's personal ranking has.
+ *
  * No DB access, fully testable.
  */
 export function computeScores({
-    allComparisons,
+    perUserComparisons,
     items,
     participantCounts,
 }: {
-    allComparisons: MaxDiffComparison[];
+    perUserComparisons: MaxDiffComparison[][];
     items: string[];
     participantCounts: Map<string, number>;
 }): RankedItem[] {
     const n = items.length;
     if (n === 0) return [];
 
-    const { items: scoredItems, converged } = bradleyTerryFromBWS({
-        comparisons: allComparisons,
-        items,
+    const itemIndex = buildItemIndex(items);
+
+    // For each user, apply transitive closure and extract all ordered pairs
+    const pairwiseData: PairwiseWin[] = [];
+    for (const userComparisons of perUserComparisons) {
+        const { applyComparison, getOrderedPairs } = buildComparisonMatrix({
+            items,
+        });
+        for (const comp of userComparisons) {
+            applyComparison(comp);
+        }
+        // Extract all ordered pairs (including transitive inferences)
+        for (const [before, after] of getOrderedPairs()) {
+            const winnerIdx = itemIndex.get(before);
+            const loserIdx = itemIndex.get(after);
+            if (winnerIdx !== undefined && loserIdx !== undefined) {
+                pairwiseData.push({ winner: winnerIdx, loser: loserIdx });
+            }
+        }
+    }
+
+    // Count comparisons per item (for uncertainty estimation)
+    const comparisonCounts = new Array<number>(n).fill(0);
+    for (const { winner, loser } of pairwiseData) {
+        comparisonCounts[winner] += 1;
+        comparisonCounts[loser] += 1;
+    }
+
+    // Run BT MLE
+    const { params, converged } = mmPairwise({
+        nItems: n,
+        data: pairwiseData,
     });
 
     if (!converged) {
         log.warn(
-            `[computeScores] BT MLE did not converge for ${items.length} items`,
+            `[computeScores] BT MLE did not converge for ${String(items.length)} items`,
         );
     }
+
+    // Normalize scores to [0, 1] range
+    let minParam = Infinity;
+    let maxParam = -Infinity;
+    for (const p of params) {
+        if (p < minParam) minParam = p;
+        if (p > maxParam) maxParam = p;
+    }
+    const range = maxParam - minParam;
+
+    const scoredItems = items
+        .map((item, i) => ({
+            item,
+            score: range > 0 ? (params[i] - minParam) / range : 1,
+            uncertainty: 1 / Math.sqrt(comparisonCounts[i] + 1),
+        }))
+        .sort((a, b) => b.score - a.score);
 
     return scoredItems.map((s, idx) => ({
         itemSlugId: s.item,
@@ -81,11 +134,11 @@ export function parseResultRows({
     rows: { ranking: unknown; comparisons: unknown }[];
     items: string[];
 }): {
-    allComparisons: MaxDiffComparison[];
+    perUserComparisons: MaxDiffComparison[][];
     participantCounts: Map<string, number>;
 } {
     const itemSet = new Set(items);
-    const allComparisons: MaxDiffComparison[] = [];
+    const perUserComparisons: MaxDiffComparison[][] = [];
     // Track which items each user compared (for participant counts)
     const itemParticipants = new Map<string, Set<number>>();
     for (const item of items) {
@@ -98,12 +151,13 @@ export function parseResultRows({
             .array(zodMaxdiffComparison)
             .parse(row.comparisons);
 
+        const userComps: MaxDiffComparison[] = [];
         for (const comp of comparisons) {
             if (!itemSet.has(comp.best) || !itemSet.has(comp.worst)) continue;
             const filteredSet = comp.set.filter((id) => itemSet.has(id));
             if (filteredSet.length < 2) continue;
 
-            allComparisons.push({
+            userComps.push({
                 best: comp.best,
                 worst: comp.worst,
                 set: filteredSet,
@@ -113,6 +167,9 @@ export function parseResultRows({
                 itemParticipants.get(item)?.add(userIdx);
             }
         }
+        if (userComps.length > 0) {
+            perUserComparisons.push(userComps);
+        }
     }
 
     const participantCounts = new Map<string, number>();
@@ -120,7 +177,7 @@ export function parseResultRows({
         participantCounts.set(item, participants.size);
     }
 
-    return { allComparisons, participantCounts };
+    return { perUserComparisons, participantCounts };
 }
 
 // --- Global Uncertainty (for routing) ---
@@ -429,13 +486,13 @@ export async function getMaxdiffResults({
         return { rankings };
     }
 
-    // For active/all: compute live scores from pooled comparisons via BT MLE
-    const { allComparisons, participantCounts } = parseResultRows({
+    // For active/all: compute live scores via BT MLE with transitive closure
+    const { perUserComparisons, participantCounts } = parseResultRows({
         rows: allResults,
         items,
     });
 
-    const scored = computeScores({ allComparisons, items, participantCounts });
+    const scored = computeScores({ perUserComparisons, items, participantCounts });
 
     const contentMap = new Map(
         itemRows.map((r) => [
@@ -522,11 +579,11 @@ export async function computeItemSnapshot({
         .from(maxdiffResultTable)
         .where(eq(maxdiffResultTable.conversationId, conversationId));
 
-    const { allComparisons, participantCounts } = parseResultRows({
+    const { perUserComparisons, participantCounts } = parseResultRows({
         rows: allResults,
         items,
     });
-    const scored = computeScores({ allComparisons, items, participantCounts });
+    const scored = computeScores({ perUserComparisons, items, participantCounts });
 
     const itemScore = scored.find((s) => s.itemSlugId === itemSlugId);
     if (itemScore === undefined) {
