@@ -244,6 +244,15 @@ export async function saveMaxdiffResult({
 
     const now = new Date();
 
+    log.info(
+        `[MaxDiff Save] user=${userId} conv=${conversationSlugId} comparisons=${comparisons.length} isComplete=${isComplete}`,
+    );
+    for (const comp of comparisons) {
+        log.info(
+            `[MaxDiff Save]   best=${comp.best} worst=${comp.worst} set=[${comp.set.join(",")}]`,
+        );
+    }
+
     await db
         .insert(maxdiffResultTable)
         .values({
@@ -435,7 +444,20 @@ export async function getMaxdiffResults({
         items,
     });
 
+    log.info(
+        `[MaxDiff Results] conv=${conversationSlugId} rows=${allResults.length} items=${items.length} comparisons=${allComparisons.length}`,
+    );
+    for (const comp of allComparisons) {
+        log.info(
+            `[MaxDiff Results]   best=${comp.best} worst=${comp.worst} set=[${comp.set.join(",")}]`,
+        );
+    }
+
     const scored = computeScores({ allComparisons, items, participantCounts });
+
+    log.info(
+        `[MaxDiff Results] BT scores: ${scored.map((s) => `${s.itemSlugId}=${s.score.toFixed(3)}`).join(", ")}`,
+    );
 
     const contentMap = new Map(
         itemRows.map((r) => [

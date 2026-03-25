@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const maxdiffShortcutItemSchema = z.enum([
     "Summary",
+    "Me",
     "Results",
     "Active",
     "Completed",

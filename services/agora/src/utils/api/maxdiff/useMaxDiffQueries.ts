@@ -143,6 +143,11 @@ export function useMaxDiffSaveMutation({
         },
       );
 
+      // Invalidate load query so Analysis "Me" tab updates reactively
+      void queryClient.invalidateQueries({
+        queryKey: ["maxdiff-load", slugId],
+      });
+
       // Full server sync on key transitions
       if (variables.context.isFirstVote || variables.isComplete || variables.comparisons.length === 0) {
         invalidateConversation(slugId);

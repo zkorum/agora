@@ -18,7 +18,23 @@
     </div>
 
     <template v-else>
-      <!-- Rankings section -->
+      <!-- Me section (above community ranking in Summary) -->
+      <div
+        v-if="currentTab === 'Summary' || currentTab === 'Me'"
+        class="tabComponent"
+      >
+        <MaxDiffMeSection
+          :load-data="loadQuery.data.value"
+          :all-items="resultItems"
+          :compact-mode="currentTab === 'Summary'"
+          :on-click-item="openStatementDialog"
+          :on-switch-tab="() => switchToTab('Me')"
+          :on-learn-more="() => (showInfoDialog = true)"
+          :navigate-to-voting-tab="props.navigateToVotingTab"
+        />
+      </div>
+
+      <!-- Community Rankings -->
       <div
         v-if="currentTab === 'Summary' || currentTab === 'Results'"
         class="tabComponent"
@@ -165,6 +181,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
+import { useMaxDiffLoadQuery } from "src/utils/api/maxdiff/useMaxDiffQueries";
 import type { MaxDiffShortcutItem } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { maxdiffShortcutItemSchema } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { onMounted, ref, watch } from "vue";
@@ -173,6 +190,7 @@ import { useRoute } from "vue-router";
 
 import type { MaxDiffListItem } from "./MaxDiffItemListSection.vue";
 import MaxDiffItemListSection from "./MaxDiffItemListSection.vue";
+import MaxDiffMeSection from "./MaxDiffMeSection.vue";
 import {
   type MaxDiffResultsTabTranslations,
   maxDiffResultsTabTranslations,
@@ -181,6 +199,7 @@ import MaxDiffStatementDialog from "./MaxDiffStatementDialog.vue";
 
 const props = defineProps<{
   conversationData: ExtendedConversation;
+  navigateToVotingTab: () => void;
 }>();
 
 const { t } = useComponentI18n<MaxDiffResultsTabTranslations>(
@@ -205,6 +224,7 @@ function getMaxDiffTabRoute(item: string): RouteLocationRaw {
 
 const maxdiffTabItems: MaxDiffShortcutItem[] = [
   "Summary",
+  "Me",
   "Results",
   "Active",
   "Completed",
@@ -213,6 +233,7 @@ const maxdiffTabItems: MaxDiffShortcutItem[] = [
 
 const tabLabelMap: Record<string, string> = {
   Summary: t("tabSummary"),
+  Me: t("tabMe"),
   Results: t("tabResults"),
   Active: t("tabActive"),
   Completed: t("tabCompleted"),
@@ -240,6 +261,12 @@ const conversationSlugId =
 const isInitialLoading = ref(true);
 const hasError = ref(false);
 const resultItems = ref<MaxDiffListItem[]>([]);
+
+// Me tab: user's personal ranking (data passed to MaxDiffMeSection)
+const loadQuery = useMaxDiffLoadQuery({
+  conversationSlugId,
+  enabled: true,
+});
 
 // Lifecycle data
 const activeItems = ref<MaxDiffListItem[]>([]);
@@ -450,12 +477,5 @@ watch(currentTab, async (newTab, oldTab) => {
   }
 }
 
-.learn-more-link {
-  color: $primary;
-  text-decoration: none;
 
-  &:hover {
-    text-decoration: underline;
-  }
-}
 </style>

@@ -2,6 +2,7 @@
   <MaxDiffResultsTab
     v-if="conversationData.metadata.conversationType === 'maxdiff'"
     :conversation-data="conversationData"
+    :navigate-to-voting-tab="navigateToDiscoverTab"
   />
   <ConversationAnalysisTab
     v-else
