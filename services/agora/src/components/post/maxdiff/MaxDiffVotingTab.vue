@@ -64,14 +64,9 @@
     <div v-else-if="candidates.length > 0" class="voting-section">
       <div class="section-header-row">
         <div class="section-header">{{ t("title") }}</div>
-        <q-btn
-          flat
-          dense
-          round
-          size="sm"
-          icon="mdi-information-outline"
-          color="grey-7"
-          @click="showLearnMoreDialog = true"
+        <AnalysisActionButton
+          type="learnMore"
+          @action-click="showLearnMoreDialog = true"
         />
       </div>
 
@@ -103,16 +98,14 @@
       </div>
 
       <div class="progress-row">
-        <div class="progress-top-line">
-          <span class="progress-percent">{{ progressPercent }}%</span>
-          <span class="progress-encouragement">{{ t("votesCountMessage") }}</span>
-        </div>
+        <span class="progress-percent">{{ progressPercent }}%</span>
         <div class="progress-bar">
           <div
             class="progress-fill"
             :style="{ width: `${progressPercent}%` }"
           ></div>
         </div>
+        <span class="progress-encouragement">{{ t("votesCountMessage") }}</span>
         <q-btn
           v-if="canUndo"
           flat
@@ -185,11 +178,8 @@
       <ZKBottomDialogContainer>
         <div class="learn-more-title">{{ t("learnMoreTitle") }}</div>
         <div class="learn-more-content">
-          <p>{{ t("learnMoreCollection") }}</p>
-          <p>{{ t("learnMoreSelection") }}</p>
-          <p>{{ t("learnMoreInference") }}</p>
-          <p>{{ t("learnMoreFairness") }}</p>
-          <p>{{ t("learnMoreScoring") }}</p>
+          <p>{{ t("learnMoreHow") }}</p>
+          <p>{{ t("learnMoreWhy") }}</p>
           <p class="learn-more-reference">
             {{ t("learnMoreReference") }}
             <a
@@ -205,20 +195,6 @@
               rel="noopener noreferrer"
               class="learn-more-link"
             >Bradley-Terry Model</a>
-            ·
-            <a
-              href="https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="learn-more-link"
-            >Fisher-Yates Shuffle</a>
-            ·
-            <a
-              href="https://github.com/tournesol-app/tournesol/tree/main/solidago"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="learn-more-link"
-            >Tournesol/Solidago</a>
           </p>
         </div>
       </ZKBottomDialogContainer>
@@ -230,6 +206,7 @@
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import AnalysisActionButton from "src/components/post/analysis/common/AnalysisActionButton.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
@@ -878,7 +855,7 @@ function handleRedoRanking(): void {
 .section-header-row {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  justify-content: space-between;
 }
 
 .section-header {
@@ -974,13 +951,6 @@ function handleRedoRanking(): void {
   width: 100%;
 }
 
-.progress-top-line {
-  display: flex;
-  align-items: baseline;
-  width: 100%;
-  position: relative;
-}
-
 .progress-percent {
   font-size: 0.85rem;
   font-weight: var(--font-weight-medium);
@@ -988,14 +958,9 @@ function handleRedoRanking(): void {
 }
 
 .progress-encouragement {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: $color-text-weak;
-  opacity: 0.7;
-  position: absolute;
-  inset-inline-start: 0;
-  inset-inline-end: 0;
-  text-align: center;
-  pointer-events: none;
+  opacity: 0.6;
 }
 
 .progress-bar {

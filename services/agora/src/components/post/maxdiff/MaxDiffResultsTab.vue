@@ -29,7 +29,7 @@
           :compact-mode="currentTab === 'Summary'"
           :on-click-item="openStatementDialog"
           :on-switch-tab="() => switchToTab('Me')"
-          :on-learn-more="() => (showInfoDialog = true)"
+          :on-learn-more="() => (learnMoreContext = 'me')"
           :navigate-to-voting-tab="props.navigateToVotingTab"
         />
       </div>
@@ -49,26 +49,7 @@
           :compact-mode="currentTab === 'Summary'"
           :on-click-item="openStatementDialog"
           :on-switch-tab="() => switchToTab('Results')"
-          :on-learn-more="() => (showInfoDialog = true)"
-        />
-      </div>
-
-      <!-- Active items -->
-      <div
-        v-if="currentTab === 'Summary' || currentTab === 'Active'"
-        class="tabComponent"
-      >
-        <MaxDiffItemListSection
-          :section-title="t('tabActive')"
-          :subtitle="null"
-          :items="activeItems"
-          :is-loading="isActiveLoading"
-          :no-items-message="t('noItems')"
-          :score-label="t('score')"
-          :compact-mode="currentTab === 'Summary'"
-          :on-click-item="openStatementDialog"
-          :on-switch-tab="() => switchToTab('Active')"
-          :on-learn-more="() => openLifecycleLearnMore('active')"
+          :on-learn-more="() => (learnMoreContext = 'community')"
         />
       </div>
 
@@ -114,43 +95,33 @@
     <!-- Learn more dialog -->
     <q-dialog v-model="showInfoDialog" position="bottom">
       <ZKBottomDialogContainer>
-        <div class="learn-more-title">{{ t("learnMore") }}</div>
+        <div class="learn-more-title">{{ learnMoreContext === 'community' ? t("title") : t("meTitle") }}</div>
         <div class="learn-more-content">
-          <p>{{ t("learnMoreCollection") }}</p>
-          <p>{{ t("learnMoreSelection") }}</p>
-          <p>{{ t("learnMoreInference") }}</p>
-          <p>{{ t("learnMoreFairness") }}</p>
-          <p>{{ t("learnMoreScoring") }}</p>
-          <p class="learn-more-reference">
-            {{ t("learnMoreReference") }}
-            <a
-              href="https://en.wikipedia.org/wiki/Best%E2%80%93worst_scaling"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="learn-more-link"
-            >Best-Worst Scaling</a>
-            ·
-            <a
-              href="https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="learn-more-link"
-            >Bradley-Terry Model</a>
-            ·
-            <a
-              href="https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="learn-more-link"
-            >Fisher-Yates Shuffle</a>
-            ·
-            <a
-              href="https://github.com/tournesol-app/tournesol/tree/main/solidago"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="learn-more-link"
-            >Tournesol/Solidago</a>
-          </p>
+          <template v-if="learnMoreContext === 'community'">
+            <p>{{ t("communityLearnMoreHow") }}</p>
+            <p>{{ t("communityLearnMoreFair") }}</p>
+            <p>{{ isGitHubLinked ? t("communityLearnMoreSourceGitHub") : t("communityLearnMoreSourceManual") }}</p>
+            <p class="learn-more-reference">
+              {{ t("communityLearnMoreReference") }}
+              <a
+                href="https://en.wikipedia.org/wiki/Best%E2%80%93worst_scaling"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="learn-more-link"
+              >Best-Worst Scaling</a>
+              ·
+              <a
+                href="https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="learn-more-link"
+              >Bradley-Terry Model</a>
+            </p>
+          </template>
+          <template v-else>
+            <p>{{ t("meLearnMorePersonal") }}</p>
+            <p>{{ t("meLearnMoreCounts") }}</p>
+          </template>
         </div>
       </ZKBottomDialogContainer>
     </q-dialog>
@@ -158,6 +129,7 @@
     <!-- Lifecycle learn-more dialog -->
     <q-dialog v-model="showLifecycleInfoDialog" position="bottom">
       <ZKBottomDialogContainer>
+        <div class="learn-more-title">{{ lifecycleInfoTitle }}</div>
         <div class="learn-more-content">
           <p>{{ lifecycleInfoContent }}</p>
         </div>
@@ -184,7 +156,7 @@ import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import { useMaxDiffLoadQuery } from "src/utils/api/maxdiff/useMaxDiffQueries";
 import type { MaxDiffShortcutItem } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { maxdiffShortcutItemSchema } from "src/utils/component/analysis/maxdiffShortcutBar";
-import { inject, onMounted, ref, watch } from "vue";
+import { computed, inject, onMounted, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import { useRoute } from "vue-router";
 
@@ -226,7 +198,6 @@ const maxdiffTabItems: MaxDiffShortcutItem[] = [
   "Summary",
   "Me",
   "Results",
-  "Active",
   "Completed",
   "Canceled",
 ];
@@ -235,7 +206,6 @@ const tabLabelMap: Record<string, string> = {
   Summary: t("tabSummary"),
   Me: t("tabMe"),
   Results: t("tabResults"),
-  Active: t("tabActive"),
   Completed: t("tabCompleted"),
   Canceled: t("tabCanceled"),
 };
@@ -279,16 +249,21 @@ const loadQuery = useMaxDiffLoadQuery({
 });
 
 // Lifecycle data
-const activeItems = ref<MaxDiffListItem[]>([]);
-const isActiveLoading = ref(true);
 const completedItems = ref<MaxDiffListItem[]>([]);
 const isCompletedLoading = ref(true);
 const canceledItems = ref<MaxDiffListItem[]>([]);
 const isCanceledLoading = ref(true);
 
 // Dialog state
-const showInfoDialog = ref(false);
+const learnMoreContext = ref<"community" | "me" | null>(null);
+const showInfoDialog = computed({
+  get: () => learnMoreContext.value !== null,
+  set: (val: boolean) => {
+    if (!val) learnMoreContext.value = null;
+  },
+});
 const showLifecycleInfoDialog = ref(false);
+const lifecycleInfoTitle = ref("");
 const lifecycleInfoContent = ref("");
 const showStatementDialog = ref(false);
 const expandedTitle = ref("");
@@ -311,30 +286,30 @@ function openStatementDialog({
 }
 
 function openLifecycleLearnMore(
-  lifecycle: "active" | "completed" | "canceled",
+  lifecycle: "completed" | "canceled",
 ): void {
   const keyMap: Record<
-    "active" | "completed" | "canceled",
+    "completed" | "canceled",
     {
+      title: keyof MaxDiffResultsTabTranslations;
       manual: keyof MaxDiffResultsTabTranslations;
       github: keyof MaxDiffResultsTabTranslations;
     }
   > = {
-    active: {
-      manual: "activeLearnMoreManual",
-      github: "activeLearnMoreGitHub",
-    },
     completed: {
+      title: "tabCompleted",
       manual: "completedLearnMoreManual",
       github: "completedLearnMoreGitHub",
     },
     canceled: {
+      title: "tabCanceled",
       manual: "canceledLearnMoreManual",
       github: "canceledLearnMoreGitHub",
     },
   };
 
   const keys = keyMap[lifecycle];
+  lifecycleInfoTitle.value = t(keys.title);
   lifecycleInfoContent.value = t(
     isGitHubLinked ? keys.github : keys.manual,
   );
@@ -365,9 +340,9 @@ async function fetchLifecycleItems({
   loadingRef,
   showLoading,
 }: {
-  lifecycle: "active" | "completed" | "canceled";
-  itemsRef: typeof activeItems;
-  loadingRef: typeof isActiveLoading;
+  lifecycle: "completed" | "canceled";
+  itemsRef: typeof completedItems;
+  loadingRef: typeof isCompletedLoading;
   showLoading: boolean;
 }): Promise<void> {
   if (showLoading) {
@@ -415,7 +390,6 @@ async function fetchResults({ showLoading }: { showLoading: boolean }): Promise<
 
 async function fetchAllLifecycleItems({ showLoading }: { showLoading: boolean }): Promise<void> {
   await Promise.all([
-    fetchLifecycleItems({ lifecycle: "active", itemsRef: activeItems, loadingRef: isActiveLoading, showLoading }),
     fetchLifecycleItems({ lifecycle: "completed", itemsRef: completedItems, loadingRef: isCompletedLoading, showLoading }),
     fetchLifecycleItems({ lifecycle: "canceled", itemsRef: canceledItems, loadingRef: isCanceledLoading, showLoading }),
   ]);
@@ -439,11 +413,10 @@ onMounted(async () => {
 watch(currentTab, async (newTab, oldTab) => {
   if (oldTab === "Summary" && newTab !== "Summary") {
     const tabLifecycleMap: Partial<Record<MaxDiffShortcutItem, {
-      lifecycle: "active" | "completed" | "canceled";
-      itemsRef: typeof activeItems;
-      loadingRef: typeof isActiveLoading;
+      lifecycle: "completed" | "canceled";
+      itemsRef: typeof completedItems;
+      loadingRef: typeof isCompletedLoading;
     }>> = {
-      Active: { lifecycle: "active", itemsRef: activeItems, loadingRef: isActiveLoading },
       Completed: { lifecycle: "completed", itemsRef: completedItems, loadingRef: isCompletedLoading },
       Canceled: { lifecycle: "canceled", itemsRef: canceledItems, loadingRef: isCanceledLoading },
     };

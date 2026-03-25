@@ -20,11 +20,8 @@ export interface MaxDiffVotingTabTranslations {
   undoLastVote: string;
   retryButton: string;
   learnMoreTitle: string;
-  learnMoreCollection: string;
-  learnMoreSelection: string;
-  learnMoreInference: string;
-  learnMoreFairness: string;
-  learnMoreScoring: string;
+  learnMoreHow: string;
+  learnMoreWhy: string;
   learnMoreReference: string;
 }
 
@@ -52,11 +49,8 @@ export const maxDiffVotingTabTranslations: Record<
     undoLastVote: "Undo",
     retryButton: "Try again",
     learnMoreTitle: "How this works",
-    learnMoreCollection: "You compare statements in small groups of 4, picking the most and least important. This is Best-Worst Scaling (MaxDiff) — forcing trade-offs produces more reliable data than rating scales.",
-    learnMoreSelection: "The system selects which statements to show you based on global uncertainty (items needing more data across all voters) and your unresolved pairs (items you haven't compared yet). This minimizes the number of rounds needed.",
-    learnMoreInference: "When you rank A > B and B > C, the system infers A > C automatically (transitive closure). This dramatically reduces the comparisons needed — you won't be asked redundant questions.",
-    learnMoreFairness: "The order of statements within each group is randomized (Fisher-Yates shuffle) to prevent position bias.",
-    learnMoreScoring: "All votes from all participants are combined using Bradley-Terry maximum likelihood estimation — a probabilistic model that estimates each statement's strength from pairwise comparisons. Your votes count immediately, even before you finish your personal ranking.",
+    learnMoreHow: "You compare statements in groups of 4, choosing the most and least important. The system picks groups based on what needs more data and skips redundant comparisons automatically.",
+    learnMoreWhy: "This method (Best-Worst Scaling) produces more reliable rankings than rating scales because it forces trade-offs between options. Your votes count immediately.",
     learnMoreReference: "Learn more:",
   },
   ar: {
@@ -79,11 +73,8 @@ export const maxDiffVotingTabTranslations: Record<
     undoLastVote: "تراجع",
     retryButton: "حاول مرة أخرى",
     learnMoreTitle: "كيف يعمل هذا",
-    learnMoreCollection: "تقارن العبارات في مجموعات صغيرة من 4، وتختار الأكثر والأقل أهمية. هذا هو Best-Worst Scaling (MaxDiff) — فرض المفاضلات ينتج بيانات أكثر موثوقية من مقاييس التقييم.",
-    learnMoreSelection: "يختار النظام العبارات التي يعرضها لك بناءً على عدم اليقين العالمي (العناصر التي تحتاج مزيداً من البيانات) وأزواجك غير المحلولة (العناصر التي لم تقارنها بعد). هذا يقلل عدد الجولات المطلوبة.",
-    learnMoreInference: "عندما ترتب أ > ب و ب > ج، يستنتج النظام أ > ج تلقائياً (الإغلاق المتعدي). هذا يقلل المقارنات المطلوبة بشكل كبير.",
-    learnMoreFairness: "ترتيب العبارات داخل كل مجموعة عشوائي (خوارزمية Fisher-Yates) لمنع التحيز الموضعي.",
-    learnMoreScoring: "يتم دمج جميع الأصوات من جميع المشاركين باستخدام تقدير الاحتمال الأقصى Bradley-Terry. أصواتك تُحتسب فوراً، حتى قبل إكمال ترتيبك الشخصي.",
+    learnMoreHow: "تقارن العبارات في مجموعات من 4، وتختار الأكثر والأقل أهمية. يختار النظام المجموعات بناءً على ما يحتاج مزيداً من البيانات ويتخطى المقارنات المكررة تلقائياً.",
+    learnMoreWhy: "هذه الطريقة (Best-Worst Scaling) تنتج ترتيبات أكثر موثوقية من مقاييس التقييم لأنها تفرض المفاضلة بين الخيارات. أصواتك تُحتسب فوراً.",
     learnMoreReference: "اعرف المزيد:",
   },
   es: {
@@ -106,11 +97,8 @@ export const maxDiffVotingTabTranslations: Record<
     undoLastVote: "Deshacer",
     retryButton: "Intentar de nuevo",
     learnMoreTitle: "Cómo funciona",
-    learnMoreCollection: "Comparas declaraciones en grupos de 4, eligiendo la más y menos importante. Esto es Best-Worst Scaling (MaxDiff) — forzar elecciones produce datos más fiables que las escalas de valoración.",
-    learnMoreSelection: "El sistema selecciona qué declaraciones mostrarte según la incertidumbre global (ítems que necesitan más datos) y tus pares no resueltos (ítems que aún no has comparado). Esto minimiza el número de rondas.",
-    learnMoreInference: "Cuando clasificas A > B y B > C, el sistema infiere A > C automáticamente (cierre transitivo). Esto reduce drásticamente las comparaciones necesarias.",
-    learnMoreFairness: "El orden de las declaraciones dentro de cada grupo es aleatorio (Fisher-Yates shuffle) para evitar sesgo de posición.",
-    learnMoreScoring: "Todos los votos de todos los participantes se combinan mediante la estimación de máxima verosimilitud de Bradley-Terry. Tus votos cuentan inmediatamente, incluso antes de completar tu clasificación personal.",
+    learnMoreHow: "Comparas declaraciones en grupos de 4, eligiendo la más y menos importante. El sistema elige los grupos según lo que necesita más datos y omite comparaciones redundantes automáticamente.",
+    learnMoreWhy: "Este método (Best-Worst Scaling) produce clasificaciones más fiables que las escalas de valoración porque fuerza elecciones entre opciones. Tus votos cuentan inmediatamente.",
     learnMoreReference: "Más información:",
   },
   fa: {
@@ -133,11 +121,8 @@ export const maxDiffVotingTabTranslations: Record<
     undoLastVote: "بازگردانی",
     retryButton: "دوباره تلاش کنید",
     learnMoreTitle: "نحوه عملکرد",
-    learnMoreCollection: "شما گزاره‌ها را در گروه‌های ۴ تایی مقایسه می‌کنید و مهم‌ترین و کم‌اهمیت‌ترین را انتخاب می‌کنید. این روش Best-Worst Scaling (MaxDiff) است — مجبور کردن به انتخاب، داده‌های قابل اطمینان‌تری تولید می‌کند.",
-    learnMoreSelection: "سیستم بر اساس عدم قطعیت جهانی (موارد نیازمند داده بیشتر) و جفت‌های حل‌نشده شما (مواردی که هنوز مقایسه نکرده‌اید) انتخاب می‌کند. این تعداد دورها را به حداقل می‌رساند.",
-    learnMoreInference: "وقتی الف > ب و ب > ج را رتبه‌بندی می‌کنید، سیستم الف > ج را خودکار استنتاج می‌کند (بستار متعدی). این مقایسه‌های مورد نیاز را به شدت کاهش می‌دهد.",
-    learnMoreFairness: "ترتیب گزاره‌ها در هر گروه تصادفی است (الگوریتم Fisher-Yates) تا از تعصب موقعیتی جلوگیری شود.",
-    learnMoreScoring: "همه آرا از همه شرکت‌کنندگان با استفاده از تخمین حداکثر درست‌نمایی Bradley-Terry ترکیب می‌شوند. آرای شما فوراً حساب می‌شوند، حتی قبل از تکمیل رتبه‌بندی شخصی‌تان.",
+    learnMoreHow: "شما گزاره‌ها را در گروه‌های ۴ تایی مقایسه می‌کنید و مهم‌ترین و کم‌اهمیت‌ترین را انتخاب می‌کنید. سیستم بر اساس نیاز به داده بیشتر گروه‌ها را انتخاب می‌کند و مقایسه‌های تکراری را خودکار حذف می‌کند.",
+    learnMoreWhy: "این روش (Best-Worst Scaling) رتبه‌بندی‌های قابل اطمینان‌تری نسبت به مقیاس‌های امتیازدهی ایجاد می‌کند زیرا انتخاب بین گزینه‌ها را اجباری می‌کند. آرای شما فوراً محاسبه می‌شوند.",
     learnMoreReference: "اطلاعات بیشتر:",
   },
   he: {
@@ -160,11 +145,8 @@ export const maxDiffVotingTabTranslations: Record<
     undoLastVote: "ביטול",
     retryButton: "נסו שוב",
     learnMoreTitle: "איך זה עובד",
-    learnMoreCollection: "אתם משווים הצהרות בקבוצות של 4, ובוחרים את החשובה ביותר ואת הפחות חשובה. זהו Best-Worst Scaling (MaxDiff) — כפיית בחירות מייצרת נתונים אמינים יותר מסולמות דירוג.",
-    learnMoreSelection: "המערכת בוחרת אילו הצהרות להציג לכם על בסיס אי-ודאות גלובלית (פריטים שצריכים יותר נתונים) וזוגות לא פתורים שלכם (פריטים שעדיין לא השוויתם). זה ממזער את מספר הסיבובים.",
-    learnMoreInference: "כשאתם מדרגים א > ב ו-ב > ג, המערכת מסיקה א > ג אוטומטית (סגירה טרנזיטיבית). זה מצמצם דרמטית את ההשוואות הנדרשות.",
-    learnMoreFairness: "סדר ההצהרות בכל קבוצה אקראי (Fisher-Yates shuffle) כדי למנוע הטיית מיקום.",
-    learnMoreScoring: "כל ההצבעות מכל המשתתפים משולבות באמצעות הערכת נראות מקסימלית של Bradley-Terry. ההצבעות שלכם נספרות מיידית, גם לפני השלמת הדירוג האישי.",
+    learnMoreHow: "אתם משווים הצהרות בקבוצות של 4, ובוחרים את החשובה ביותר ואת הפחות חשובה. המערכת בוחרת קבוצות לפי מה שצריך יותר נתונים ומדלגת על השוואות מיותרות באופן אוטומטי.",
+    learnMoreWhy: "שיטה זו (Best-Worst Scaling) מייצרת דירוגים אמינים יותר מסולמות הערכה כי היא מכריחה בחירה בין אפשרויות. ההצבעות שלכם נספרות מיידית.",
     learnMoreReference: "מידע נוסף:",
   },
   fr: {
@@ -187,11 +169,8 @@ export const maxDiffVotingTabTranslations: Record<
     undoLastVote: "Annuler",
     retryButton: "Réessayer",
     learnMoreTitle: "Comment ça marche",
-    learnMoreCollection: "Vous comparez des propositions par groupes de 4, en choisissant la plus et la moins importante. C'est le Best-Worst Scaling (MaxDiff) — forcer les arbitrages produit des données plus fiables que les échelles de notation.",
-    learnMoreSelection: "Le système sélectionne les propositions à vous montrer selon l'incertitude globale (éléments nécessitant plus de données) et vos paires non résolues (éléments pas encore comparés). Cela minimise le nombre de tours.",
-    learnMoreInference: "Quand vous classez A > B et B > C, le système déduit A > C automatiquement (fermeture transitive). Cela réduit considérablement les comparaisons nécessaires.",
-    learnMoreFairness: "L'ordre des propositions dans chaque groupe est aléatoire (mélange de Fisher-Yates) pour éviter le biais de position.",
-    learnMoreScoring: "Tous les votes de tous les participants sont combinés via l'estimation du maximum de vraisemblance de Bradley-Terry. Vos votes comptent immédiatement, même avant de terminer votre classement personnel.",
+    learnMoreHow: "Vous comparez des propositions par groupes de 4, en choisissant la plus et la moins importante. Le système choisit les groupes selon les besoins en données et évite automatiquement les comparaisons redondantes.",
+    learnMoreWhy: "Cette méthode (Best-Worst Scaling) produit des classements plus fiables que les échelles de notation car elle force le choix entre les options. Vos votes comptent immédiatement.",
     learnMoreReference: "En savoir plus :",
   },
   "zh-Hans": {
@@ -214,11 +193,8 @@ export const maxDiffVotingTabTranslations: Record<
     undoLastVote: "撤销",
     retryButton: "重试",
     learnMoreTitle: "工作原理",
-    learnMoreCollection: "您在4个一组的陈述中比较，选出最重要和最不重要的。这是Best-Worst Scaling (MaxDiff)——强制取舍产生比评分量表更可靠的数据。",
-    learnMoreSelection: "系统根据全局不确定性（所有投票者中需要更多数据的项目）和您的未解决配对（您尚未比较的项目）选择向您展示的陈述。这最大限度地减少了所需轮数。",
-    learnMoreInference: "当您排列 A > B 和 B > C 时，系统自动推断 A > C（传递闭包）。这大幅减少了所需的比较次数。",
-    learnMoreFairness: "每组中陈述的顺序是随机的（Fisher-Yates 洗牌），以防止位置偏差。",
-    learnMoreScoring: "所有参与者的所有投票通过 Bradley-Terry 最大似然估计进行组合。您的投票立即生效，即使在完成个人排名之前。",
+    learnMoreHow: "您在4个一组的陈述中比较，选出最重要和最不重要的。系统根据数据需求选择分组，并自动跳过重复比较。",
+    learnMoreWhy: "这种方法（Best-Worst Scaling）比评分量表产生更可靠的排名，因为它迫使您在选项之间做出取舍。您的投票立即生效。",
     learnMoreReference: "了解更多：",
   },
   "zh-Hant": {
@@ -241,11 +217,8 @@ export const maxDiffVotingTabTranslations: Record<
     undoLastVote: "復原",
     retryButton: "重試",
     learnMoreTitle: "運作方式",
-    learnMoreCollection: "您在4個一組的陳述中比較，選出最重要和最不重要的。這是Best-Worst Scaling (MaxDiff)——強制取捨產生比評分量表更可靠的數據。",
-    learnMoreSelection: "系統根據全域不確定性（所有投票者中需要更多數據的項目）和您的未解決配對（您尚未比較的項目）選擇向您展示的陳述。這最大限度地減少了所需輪數。",
-    learnMoreInference: "當您排列 A > B 和 B > C 時，系統自動推斷 A > C（遞移閉包）。這大幅減少了所需的比較次數。",
-    learnMoreFairness: "每組中陳述的順序是隨機的（Fisher-Yates 洗牌），以防止位置偏差。",
-    learnMoreScoring: "所有參與者的所有投票透過 Bradley-Terry 最大概似估計進行組合。您的投票立即生效，即使在完成個人排名之前。",
+    learnMoreHow: "您在4個一組的陳述中比較，選出最重要和最不重要的。系統根據資料需求選擇分組，並自動跳過重複比較。",
+    learnMoreWhy: "這種方法（Best-Worst Scaling）比評分量表產生更可靠的排名，因為它迫使您在選項之間做出取捨。您的投票立即生效。",
     learnMoreReference: "了解更多：",
   },
   ja: {
@@ -268,11 +241,8 @@ export const maxDiffVotingTabTranslations: Record<
     undoLastVote: "元に戻す",
     retryButton: "再試行",
     learnMoreTitle: "仕組み",
-    learnMoreCollection: "4つのグループでステートメントを比較し、最も重要なものと最も重要でないものを選びます。これはBest-Worst Scaling (MaxDiff)です — トレードオフを強制することで評価スケールより信頼性の高いデータを生成します。",
-    learnMoreSelection: "システムはグローバルな不確実性（全投票者でデータが不足しているアイテム）とあなたの未解決ペア（まだ比較していないアイテム）に基づいて表示するステートメントを選択します。これにより必要なラウンド数を最小化します。",
-    learnMoreInference: "A > B と B > C をランク付けすると、システムは A > C を自動的に推論します（推移的閉包）。これにより必要な比較回数が大幅に削減されます。",
-    learnMoreFairness: "各グループ内のステートメントの順序はランダム化されています（Fisher-Yatesシャッフル）。これにより位置バイアスを防ぎます。",
-    learnMoreScoring: "全参加者の全投票はBradley-Terry最尤推定で統合されます。あなたの投票は個人ランキングの完了前でも即座に反映されます。",
+    learnMoreHow: "4つのグループでステートメントを比較し、最も重要なものと最も重要でないものを選びます。システムはデータが必要なものに基づいてグループを選び、冗長な比較を自動的にスキップします。",
+    learnMoreWhy: "この方法（Best-Worst Scaling）は選択肢間のトレードオフを強制するため、評価スケールより信頼性の高いランキングを生成します。あなたの投票は即座に反映されます。",
     learnMoreReference: "詳しくはこちら：",
   },
   ky: {
@@ -295,11 +265,8 @@ export const maxDiffVotingTabTranslations: Record<
     undoLastVote: "Артка кайтаруу",
     retryButton: "Кайра аракет кылуу",
     learnMoreTitle: "Бул кантип иштейт",
-    learnMoreCollection: "Сиз билдирүүлөрдү 4түк топтордо салыштырасыз, эң маанилүүсүн жана эң аз маанилүүсүн тандайсыз. Бул Best-Worst Scaling (MaxDiff) — тандоого мажбурлоо баалоо шкалаларына караганда ишенимдүү маалыматтарды берет.",
-    learnMoreSelection: "Система глобалдык белгисиздик (бардык добуш берүүчүлөр үчүн көбүрөөк маалымат керек болгон элементтер) жана сиздин чечилбеген жуптарыңыз (сиз азырынча салыштыра элек элементтер) негизинде тандайт. Бул раунддардын санын азайтат.",
-    learnMoreInference: "А > Б жана Б > В деп рейтингдесеңиз, система А > В автоматтык түрдө чыгарат (транзитивдүү жабуу). Бул керектүү салыштырууларды кескин азайтат.",
-    learnMoreFairness: "Ар бир топтогу билдирүүлөрдүн тартиби туш келди (Fisher-Yates аралаштыруу) позиция тарабынан жасалган калыстыксыздыкты алдын алуу үчүн.",
-    learnMoreScoring: "Бардык катышуучулардын бардык добуштары Bradley-Terry максималдуу ыктымалдык баалоосу аркылуу бириктирилет. Сиздин добуштарыңыз жеке рейтингиңизди аяктоодон мурун дароо эсепке алынат.",
+    learnMoreHow: "Сиз билдирүүлөрдү 4түк топтордо салыштырасыз, эң маанилүүсүн жана эң аз маанилүүсүн тандайсыз. Система көбүрөөк маалымат керек болгондорго жараша топторду тандайт жана кайталанган салыштырууларды автоматтык түрдө өткөрүп жиберет.",
+    learnMoreWhy: "Бул ыкма (Best-Worst Scaling) баалоо шкалаларына караганда ишенимдүү рейтингдерди берет, анткени ал варианттардын ортосунда тандоого мажбурлайт. Сиздин добуштарыңыз дароо эсепке алынат.",
     learnMoreReference: "Көбүрөөк билүү:",
   },
   ru: {
@@ -322,11 +289,8 @@ export const maxDiffVotingTabTranslations: Record<
     undoLastVote: "Отменить",
     retryButton: "Попробовать ещё раз",
     learnMoreTitle: "Как это работает",
-    learnMoreCollection: "Вы сравниваете утверждения в группах по 4, выбирая самое и наименее важное. Это Best-Worst Scaling (MaxDiff) — принудительный выбор даёт более надёжные данные, чем шкалы оценки.",
-    learnMoreSelection: "Система выбирает, какие утверждения показать, на основе глобальной неопределённости (элементы, которым нужно больше данных) и ваших неразрешённых пар (элементы, которые вы ещё не сравнивали). Это минимизирует количество раундов.",
-    learnMoreInference: "Когда вы ранжируете А > Б и Б > В, система автоматически выводит А > В (транзитивное замыкание). Это значительно сокращает необходимые сравнения.",
-    learnMoreFairness: "Порядок утверждений в каждой группе случаен (перемешивание Фишера-Йетса) для предотвращения позиционного смещения.",
-    learnMoreScoring: "Все голоса всех участников объединяются с помощью оценки максимального правдоподобия Брэдли-Терри. Ваши голоса учитываются сразу, даже до завершения личного ранжирования.",
+    learnMoreHow: "Вы сравниваете утверждения в группах по 4, выбирая самое и наименее важное. Система выбирает группы на основе потребности в данных и автоматически пропускает избыточные сравнения.",
+    learnMoreWhy: "Этот метод (Best-Worst Scaling) даёт более надёжные рейтинги, чем шкалы оценки, потому что заставляет делать выбор между вариантами. Ваши голоса учитываются сразу.",
     learnMoreReference: "Подробнее:",
   },
 };
