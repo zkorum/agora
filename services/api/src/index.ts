@@ -129,6 +129,7 @@ import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
 import { createExportBuffer } from "./service/exportBuffer.js";
 import { createImportBuffer } from "./service/importBuffer.js";
+import { createRankingComparisonBuffer } from "./service/rankingComparisonBuffer.js";
 import { createUcanReplayGuard } from "./service/ucanReplayGuard.js";
 import { RealtimeSSEManager } from "./service/realtimeSSE.js";
 import {
@@ -512,6 +513,26 @@ const voteBuffer = createVoteBuffer({
 log.info(
     `[API] Vote buffer initialized (flush interval: ${String(config.VOTE_BUFFER_FLUSH_INTERVAL_MS)}ms, batch limit: ${String(config.VOTE_BUFFER_VALKEY_BATCH_LIMIT)}, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
+
+// Initialize RankingComparisonBuffer (buffers MaxDiff comparisons, flushes to DB + python-bridge Solidago scoring)
+const rankingComparisonBuffer =
+    axiosPolis !== undefined
+        ? createRankingComparisonBuffer({
+              db,
+              valkey: queueValkey,
+              axiosPythonBridge: axiosPolis,
+              flushIntervalMs: config.VOTE_BUFFER_FLUSH_INTERVAL_MS,
+              valkeyBatchLimit: config.VOTE_BUFFER_VALKEY_BATCH_LIMIT,
+          })
+        : undefined;
+
+if (rankingComparisonBuffer !== undefined) {
+    log.info("[API] Ranking comparison buffer initialized");
+} else {
+    log.info(
+        "[API] Ranking comparison buffer not initialized (POLIS_BASE_URL not configured)",
+    );
+}
 
 // Initialize ExportBuffer (batches export requests to reduce system load)
 const exportBuffer = createExportBuffer({
@@ -1773,6 +1794,7 @@ server.after(() => {
                 comparisons: request.body.comparisons,
                 isComplete: request.body.isComplete,
                 isMaxdiffOrgOnly: config.IS_MAXDIFF_ORG_ONLY,
+                rankingComparisonBuffer,
             });
             reply.send({});
         },
@@ -1823,6 +1845,7 @@ server.after(() => {
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 lifecycleFilter: request.body.lifecycleFilter,
+                axiosPythonBridge: axiosPolis,
             });
         },
     });
@@ -3577,6 +3600,11 @@ const shutdown = async (signal: string) => {
     try {
         // Flush pending votes before shutdown
         await voteBuffer.shutdown();
+
+        // Flush pending ranking comparisons before shutdown
+        if (rankingComparisonBuffer !== undefined) {
+            await rankingComparisonBuffer.shutdown();
+        }
 
         // Flush pending exports before shutdown
         await exportBuffer.shutdown();
