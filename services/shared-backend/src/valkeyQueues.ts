@@ -35,14 +35,18 @@ export const VALKEY_QUEUE_KEYS = {
     IMPORT_BUFFER: "queue:imports",
 
     /**
-     * MaxDiff scoring queue - sorted set for ordering scoring requests by timestamp
-     * Used by: maxdiffScoringBuffer.ts
-     * Pattern: Member = conversationId, Score = timestamp
-     * When a MaxDiff vote is saved, the conversationId is pushed here.
-     * The API periodically flushes this queue, calls python-bridge for
-     * Solidago scoring, and writes results to the maxdiff_score DB table.
+     * Ranking comparison buffer index - sorted set for ordering by timestamp
+     * Used by: rankingComparisonBuffer.ts
+     * Pattern: Member = "userId:conversationId", Score = timestamp
      */
-    RANKING_SCORING_INDEX: "queue:ranking-scoring:index",
+    RANKING_COMPARISONS_INDEX: "queue:ranking-comparisons:index",
+
+    /**
+     * Ranking comparison buffer data - hash storing full comparison JSON
+     * Used by: rankingComparisonBuffer.ts
+     * Pattern: Field = "userId:conversationId", Value = JSON comparison data
+     */
+    RANKING_COMPARISONS_DATA: "queue:ranking-comparisons:data",
 
     /**
      * UCAN replay protection - key prefix for used UCAN hashes
