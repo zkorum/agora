@@ -124,7 +124,7 @@ export interface RankingComparisonBuffer {
 interface CreateRankingComparisonBufferParams {
     db: PostgresJsDatabase;
     valkey?: Valkey;
-    axiosPythonBridge: AxiosInstance;
+    axiosPythonBridge?: AxiosInstance;
     flushIntervalMs: number;
     valkeyBatchLimit: number;
 }
@@ -330,19 +330,21 @@ export function createRankingComparisonBuffer({
                 await updateMaxdiffCounters({ db, conversationId });
             }
 
-            // 5. Score each conversation via python-bridge
-            for (const conversationId of conversationIds) {
-                try {
-                    await scoreConversation({
-                        db,
-                        axiosPythonBridge,
-                        conversationId,
-                    });
-                } catch (scoreError: unknown) {
-                    log.error(
-                        scoreError,
-                        `[RankingBuffer] Failed to score conversation ${String(conversationId)} (comparisons were saved successfully)`,
-                    );
+            // 5. Score each conversation via python-bridge (if configured)
+            if (axiosPythonBridge !== undefined) {
+                for (const conversationId of conversationIds) {
+                    try {
+                        await scoreConversation({
+                            db,
+                            axiosPythonBridge,
+                            conversationId,
+                        });
+                    } catch (scoreError: unknown) {
+                        log.error(
+                            scoreError,
+                            `[RankingBuffer] Failed to score conversation ${String(conversationId)} (comparisons were saved successfully)`,
+                        );
+                    }
                 }
             }
 

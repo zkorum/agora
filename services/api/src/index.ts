@@ -515,24 +515,16 @@ log.info(
 );
 
 // Initialize RankingComparisonBuffer (buffers MaxDiff comparisons, flushes to DB + python-bridge Solidago scoring)
-const rankingComparisonBuffer =
-    axiosPolis !== undefined
-        ? createRankingComparisonBuffer({
-              db,
-              valkey: queueValkey,
-              axiosPythonBridge: axiosPolis,
-              flushIntervalMs: config.VOTE_BUFFER_FLUSH_INTERVAL_MS,
-              valkeyBatchLimit: config.VOTE_BUFFER_VALKEY_BATCH_LIMIT,
-          })
-        : undefined;
-
-if (rankingComparisonBuffer !== undefined) {
-    log.info("[API] Ranking comparison buffer initialized");
-} else {
-    log.info(
-        "[API] Ranking comparison buffer not initialized (POLIS_BASE_URL not configured)",
-    );
-}
+const rankingComparisonBuffer = createRankingComparisonBuffer({
+    db,
+    valkey: queueValkey,
+    axiosPythonBridge: axiosPolis,
+    flushIntervalMs: config.VOTE_BUFFER_FLUSH_INTERVAL_MS,
+    valkeyBatchLimit: config.VOTE_BUFFER_VALKEY_BATCH_LIMIT,
+});
+log.info(
+    `[API] Ranking comparison buffer initialized (scoring: ${axiosPolis !== undefined ? "python-bridge" : "disabled"}, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
+);
 
 // Initialize ExportBuffer (batches export requests to reduce system load)
 const exportBuffer = createExportBuffer({
@@ -3602,9 +3594,7 @@ const shutdown = async (signal: string) => {
         await voteBuffer.shutdown();
 
         // Flush pending ranking comparisons before shutdown
-        if (rankingComparisonBuffer !== undefined) {
-            await rankingComparisonBuffer.shutdown();
-        }
+        await rankingComparisonBuffer.shutdown();
 
         // Flush pending exports before shutdown
         await exportBuffer.shutdown();

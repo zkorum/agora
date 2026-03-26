@@ -9,7 +9,7 @@ import {
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import { updateMaxdiffCounters } from "@/shared-backend/conversationCounters.js";
+
 import { eq, and, inArray, isNotNull, sql } from "drizzle-orm";
 import type {
     MaxDiffLoadResponse,
@@ -27,6 +27,7 @@ import { mmPairwise, buildItemIndex, type PairwiseWin } from "./bradleyTerry.js"
 import { buildComparisonMatrix } from "./maxdiffEngine.js";
 import { log } from "@/app.js";
 import type { AxiosInstance } from "axios";
+import type { RankingComparisonBuffer } from "./rankingComparisonBuffer.js";
 
 // --- Pure scoring functions (exported for testing) ---
 
@@ -261,7 +262,7 @@ interface SaveMaxdiffResultProps {
     comparisons: MaxDiffComparison[];
     isComplete: boolean;
     isMaxdiffOrgOnly: boolean;
-    rankingComparisonBuffer?: import("./rankingComparisonBuffer.js").RankingComparisonBuffer;
+    rankingComparisonBuffer: RankingComparisonBuffer;
 }
 
 export async function saveMaxdiffResult({
@@ -304,50 +305,18 @@ export async function saveMaxdiffResult({
         );
     }
 
-    // If buffer is available, push to Valkey buffer (flushed periodically)
-    // Otherwise, write directly to DB (fallback for tests/dev)
-    if (rankingComparisonBuffer !== undefined) {
-        rankingComparisonBuffer.add({
-            comparison: {
-                userId,
-                conversationId,
-                conversationSlugId,
-                ranking,
-                comparisons,
-                isComplete,
-                timestamp: new Date(),
-            },
-        });
-    } else {
-        // Direct DB write (legacy path / when buffer not configured)
-        const now = new Date();
-
-        await db
-            .insert(maxdiffResultTable)
-            .values({
-                participantId: userId,
-                conversationId,
-                ranking: ranking,
-                comparisons: comparisons,
-                isComplete,
-                createdAt: now,
-                updatedAt: now,
-            })
-            .onConflictDoUpdate({
-                target: [
-                    maxdiffResultTable.participantId,
-                    maxdiffResultTable.conversationId,
-                ],
-                set: {
-                    ranking: ranking,
-                    comparisons: comparisons,
-                    isComplete,
-                    updatedAt: now,
-                },
-            });
-
-        await updateMaxdiffCounters({ db, conversationId });
-    }
+    // Push to Valkey buffer (flushed periodically to DB + python-bridge)
+    rankingComparisonBuffer.add({
+        comparison: {
+            userId,
+            conversationId,
+            conversationSlugId,
+            ranking,
+            comparisons,
+            isComplete,
+            timestamp: new Date(),
+        },
+    });
 }
 
 // --- Load ---
