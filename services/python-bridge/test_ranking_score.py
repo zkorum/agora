@@ -1,4 +1,4 @@
-"""TDD tests for the /maxdiff-score endpoint.
+"""TDD tests for the /ranking-score endpoint.
 
 Tests the full scoring pipeline: BWS/pairwise input → entity mapping →
 Solidago pipeline → normalized scores with string entity IDs.
@@ -35,7 +35,7 @@ def score_request(
     group_sources: list[dict] | None = None,
     group_combination_strategy: str = "composite",
 ) -> tuple[int, dict]:
-    """POST to /maxdiff-score and return (status_code, json_body)."""
+    """POST to /ranking-score and return (status_code, json_body)."""
     body: dict = {
         "conversation_slug_id": "test-convo",
         "entity_ids": entity_ids,
@@ -51,7 +51,7 @@ def score_request(
         body["group_combination_strategy"] = group_combination_strategy
 
     resp = client.post(
-        "/maxdiff-score",
+        "/ranking-score",
         data=json.dumps(body),
         content_type="application/json",
     )
@@ -252,3 +252,130 @@ class TestTrustWeights:
         assert status == 200
         score_by_id = {s["entity_id"]: s["score"] for s in body["scores"]}
         assert abs(score_by_id["A"] - score_by_id["B"]) < 0.1
+
+
+# ===========================================================================
+# Batch endpoint
+# ===========================================================================
+
+
+# ===========================================================================
+# Pure scoring function tests (no HTTP, no Flask)
+# ===========================================================================
+
+
+from main import score_conversation, RankingScoreRequest
+
+
+class TestScoreConversationPure:
+    """Test the pure scoring function directly (no HTTP layer)."""
+
+    def test_returns_scores_for_valid_bws(self) -> None:
+        req = RankingScoreRequest(
+            conversation_slug_id="test",
+            entity_ids=["A", "B"],
+            bws_comparisons=[
+                {"user_id": 0, "best": "A", "worst": "B", "candidate_set": ["A", "B"]},
+            ],
+        )
+        result = score_conversation(req)
+        assert "scores" in result
+        score_by_id = {s["entity_id"]: s["score"] for s in result["scores"]}
+        assert score_by_id["A"] > score_by_id["B"]
+
+    def test_returns_error_for_invalid_input(self) -> None:
+        req = RankingScoreRequest(
+            conversation_slug_id="test",
+            entity_ids=["A", "B"],
+            bws_comparisons=[
+                {"user_id": 0, "best": "A", "worst": "B", "candidate_set": ["A", "B"]},
+            ],
+            pairwise_comparisons=[
+                {"user_id": 0, "entity_a": "A", "entity_b": "B",
+                 "comparison": 1.0, "comparison_max": 1.0},
+            ],
+        )
+        result = score_conversation(req)
+        assert "error" in result
+
+    def test_empty_comparisons_returns_empty_scores(self) -> None:
+        req = RankingScoreRequest(
+            conversation_slug_id="test",
+            entity_ids=["A", "B"],
+            bws_comparisons=[],
+        )
+        result = score_conversation(req)
+        assert result["scores"] == []
+
+
+# ===========================================================================
+# Batch endpoint tests (only batch-specific behavior)
+# ===========================================================================
+
+
+def batch_request(client, *, conversations: list[dict]) -> tuple[int, dict]:
+    """POST to /ranking-score-batch."""
+    resp = client.post(
+        "/ranking-score-batch",
+        data=json.dumps({"conversations": conversations}),
+        content_type="application/json",
+    )
+    return resp.status_code, resp.get_json()
+
+
+class TestBatchScoring:
+    def test_multiple_conversations_scored_independently(self, client) -> None:
+        """Core batch test: N conversations in, N results out, each independent."""
+        status, body = batch_request(client, conversations=[
+            {
+                "conversation_slug_id": "conv1",
+                "entity_ids": ["A", "B"],
+                "bws_comparisons": [
+                    {"user_id": 0, "best": "A", "worst": "B", "candidate_set": ["A", "B"]},
+                ],
+            },
+            {
+                "conversation_slug_id": "conv2",
+                "entity_ids": ["X", "Y", "Z"],
+                "bws_comparisons": [
+                    {"user_id": 0, "best": "Z", "worst": "X", "candidate_set": ["X", "Y", "Z"]},
+                ],
+            },
+        ])
+        assert status == 200
+        assert len(body["results"]) == 2
+        result_by_id = {r["conversation_slug_id"]: r for r in body["results"]}
+        assert result_by_id["conv1"]["scores"][0]["entity_id"] == "A"
+        assert result_by_id["conv2"]["scores"][0]["entity_id"] == "Z"
+
+    def test_empty_batch(self, client) -> None:
+        status, body = batch_request(client, conversations=[])
+        assert status == 200
+        assert body["results"] == []
+
+    def test_error_isolation(self, client) -> None:
+        """One bad conversation doesn't fail others."""
+        status, body = batch_request(client, conversations=[
+            {
+                "conversation_slug_id": "good",
+                "entity_ids": ["A", "B"],
+                "bws_comparisons": [
+                    {"user_id": 0, "best": "A", "worst": "B", "candidate_set": ["A", "B"]},
+                ],
+            },
+            {
+                "conversation_slug_id": "bad",
+                "entity_ids": ["A", "B"],
+                "bws_comparisons": [
+                    {"user_id": 0, "best": "A", "worst": "B", "candidate_set": ["A", "B"]},
+                ],
+                "pairwise_comparisons": [
+                    {"user_id": 0, "entity_a": "A", "entity_b": "B",
+                     "comparison": 1.0, "comparison_max": 1.0},
+                ],
+            },
+        ])
+        assert status == 200
+        result_by_id = {r["conversation_slug_id"]: r for r in body["results"]}
+        assert len(result_by_id["good"]["scores"]) == 2
+        assert "error" in result_by_id["bad"]

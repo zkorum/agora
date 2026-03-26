@@ -1301,6 +1301,15 @@ export const zodMaxdiffLifecycleStatus = z.enum([
 ]);
 export type MaxdiffLifecycleStatus = z.infer<typeof zodMaxdiffLifecycleStatus>;
 
+// Solidago score output (stored in maxdiff_score.scores JSONB)
+export const zodSolidagoEntityScore = z.object({
+    entityId: z.string(),
+    score: z.number(),
+    uncertaintyLeft: z.number(),
+    uncertaintyRight: z.number(),
+});
+export type SolidagoEntityScore = z.infer<typeof zodSolidagoEntityScore>;
+
 export const zodExternalSourceType = z.enum(["github_issue"]);
 export type ExternalSourceType = z.infer<typeof zodExternalSourceType>;
 

@@ -673,7 +673,7 @@ class GroupSource(BaseModel):
     memberships: list[UserGroupEntry]
 
 
-class MaxDiffScoreRequest(BaseModel):
+class RankingScoreRequest(BaseModel):
     conversation_slug_id: str
     entity_ids: list[str]
     bws_comparisons: list[BWSComparisonInput] | None = None
@@ -700,30 +700,32 @@ def _warmup_solidago() -> None:
 _warmup_solidago()
 
 
-@app.route("/maxdiff-score", methods=["POST"])
-def maxdiff_score():
-    start_time = datetime.now()
-    try:
-        json_data = request.get_json()
-        if json_data is None:
-            return jsonify({"error": "Request body must be valid JSON"}), 400
+from bws_conversion import PairwiseWin
 
-        payload = MaxDiffScoreRequest(**json_data)
-    except ValidationError as e:
-        return jsonify({"error": str(e)}), 400
 
+class ScoreResult(BaseModel):
+    """Successful scoring result for one conversation."""
+    scores: list[dict]
+    conversation_slug_id: str | None = None
+
+
+class ScoreError(BaseModel):
+    """Error result for one conversation."""
+    error: str
+    conversation_slug_id: str | None = None
+
+
+def score_conversation(payload: RankingScoreRequest) -> dict[str, object]:
+    """Pure scoring function: takes a request, returns scores or error.
+
+    No HTTP, no Flask — can be called directly or from endpoints.
+    Returns dict with either {"scores": [...]} or {"error": "..."}.
+    """
     # Validate: exactly one comparison type
     has_bws = payload.bws_comparisons is not None
     has_pairwise = payload.pairwise_comparisons is not None
     if has_bws == has_pairwise:
-        return jsonify({
-            "error": "Provide exactly one of bws_comparisons or pairwise_comparisons",
-        }), 400
-
-    logger.info(
-        f"[MaxDiff] Scoring '{payload.conversation_slug_id}' "
-        f"with {len(payload.entity_ids)} entities"
-    )
+        return {"error": "Provide exactly one of bws_comparisons or pairwise_comparisons"}
 
     # Convert BWS to pairwise if needed
     if payload.bws_comparisons is not None:
@@ -741,9 +743,6 @@ def maxdiff_score():
             entity_ids=payload.entity_ids,
         )
     else:
-        # Pairwise mode: convert PairwiseComparisonInput to PairwiseWin-like format
-        # for entity mapping (winner=entity_a when comparison>0)
-        from bws_conversion import PairwiseWin
         pairwise_wins = []
         for c in payload.pairwise_comparisons:
             if c.comparison > 0:
@@ -752,7 +751,7 @@ def maxdiff_score():
                 pairwise_wins.append(PairwiseWin(user_id=c.user_id, winner=c.entity_b, loser=c.entity_a))
 
     if not pairwise_wins:
-        return jsonify({"scores": []})
+        return {"scores": []}
 
     # Map string entity IDs to ints for Solidago
     mapper = EntityIdMapper(entity_ids=payload.entity_ids)
@@ -761,7 +760,7 @@ def maxdiff_score():
     comparisons_df = pd.DataFrame(solidago_comparisons)
 
     if comparisons_df.empty:
-        return jsonify({"scores": []})
+        return {"scores": []}
 
     # Build user DataFrame with trust scores
     user_ids = sorted(comparisons_df["user_id"].unique())
@@ -813,7 +812,7 @@ def maxdiff_score():
     )
 
     if not entity_scores:
-        return jsonify({"scores": []})
+        return {"scores": []}
 
     # Normalize scores to [0, 1]
     raw_scores = [s.score for s in entity_scores]
@@ -823,7 +822,6 @@ def maxdiff_score():
 
     result_scores = []
     for s in entity_scores:
-        # When scores are effectively equal (range < epsilon), treat as tied at 0.5
         if score_range < 1e-6:
             normalized = 0.5
         else:
@@ -836,11 +834,92 @@ def maxdiff_score():
         })
 
     result_scores.sort(key=lambda x: x["score"], reverse=True)
+    return {"scores": result_scores}
+
+
+@app.route("/ranking-score", methods=["POST"])
+def ranking_score():
+    start_time = datetime.now()
+    try:
+        json_data = request.get_json()
+        if json_data is None:
+            return jsonify({"error": "Request body must be valid JSON"}), 400
+        payload = RankingScoreRequest(**json_data)
+    except ValidationError as e:
+        return jsonify({"error": str(e)}), 400
+
+    logger.info(
+        f"[MaxDiff] Scoring '{payload.conversation_slug_id}' "
+        f"with {len(payload.entity_ids)} entities"
+    )
+
+    result = score_conversation(payload)
+
+    if "error" in result:
+        return jsonify(result), 400
 
     elapsed = (datetime.now() - start_time).total_seconds()
-    logger.info(f"[MaxDiff] Scored {len(result_scores)} entities in {elapsed:.2f}s")
+    logger.info(f"[MaxDiff] Scored {len(result.get('scores', []))} entities in {elapsed:.2f}s")
+    return jsonify(result)
 
-    return jsonify({"scores": result_scores})
+
+class RankingBatchRequest(BaseModel):
+    conversations: list[RankingScoreRequest]
+
+
+@app.route("/ranking-score-batch", methods=["POST"])
+def ranking_score_batch():
+    start_time = datetime.now()
+    try:
+        json_data = request.get_json()
+        if json_data is None:
+            return jsonify({"error": "Request body must be valid JSON"}), 400
+        batch = RankingBatchRequest(**json_data)
+    except ValidationError as e:
+        return jsonify({"error": str(e)}), 400
+
+    logger.info(f"[MaxDiff Batch] Scoring {len(batch.conversations)} conversation(s)")
+
+    if not batch.conversations:
+        return jsonify({"results": []})
+
+    # Process conversations in parallel using ProcessPoolExecutor
+    # Each conversation is independent — no shared state
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+
+    results: list[dict] = []
+
+    # For small batches, sequential is fine (avoids process spawn overhead)
+    # For larger batches, use parallel processing
+    if len(batch.conversations) <= 2:
+        for conv in batch.conversations:
+            try:
+                result = score_conversation(conv)
+                result["conversation_slug_id"] = conv.conversation_slug_id
+            except Exception as e:
+                result = {"conversation_slug_id": conv.conversation_slug_id, "error": str(e)}
+            results.append(result)
+    else:
+        # Parallel: use threads (ProcessPoolExecutor has pickle issues with Pydantic)
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=min(len(batch.conversations), 4)) as executor:
+            future_to_slug = {}
+            for conv in batch.conversations:
+                future = executor.submit(score_conversation, conv)
+                future_to_slug[future] = conv.conversation_slug_id
+
+            for future in as_completed(future_to_slug):
+                slug_id = future_to_slug[future]
+                try:
+                    result = future.result()
+                    result["conversation_slug_id"] = slug_id
+                except Exception as e:
+                    result = {"conversation_slug_id": slug_id, "error": str(e)}
+                results.append(result)
+
+    elapsed = (datetime.now() - start_time).total_seconds()
+    logger.info(f"[MaxDiff Batch] Scored {len(results)} conversation(s) in {elapsed:.2f}s")
+    return jsonify({"results": results})
 
 
 @app.before_request
