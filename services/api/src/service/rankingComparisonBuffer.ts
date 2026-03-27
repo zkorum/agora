@@ -442,7 +442,19 @@ async function scoreConversation({
         );
 
     const entityIds = activeItems.map((r) => r.slugId);
-    if (entityIds.length < 2) return;
+
+    // Helper: clear stale cached scores when there's nothing to score
+    const clearStaleCachedScores = async (): Promise<void> => {
+        await db
+            .update(conversationTable)
+            .set({ currentRankingScoreId: null })
+            .where(eq(conversationTable.id, conversationId));
+    };
+
+    if (entityIds.length < 2) {
+        await clearStaleCachedScores();
+        return;
+    }
 
     // Fetch all comparisons from DB
     const allResults = await db
@@ -450,7 +462,10 @@ async function scoreConversation({
         .from(maxdiffResultTable)
         .where(eq(maxdiffResultTable.conversationId, conversationId));
 
-    if (allResults.length === 0) return;
+    if (allResults.length === 0) {
+        await clearStaleCachedScores();
+        return;
+    }
 
     // Build BWS comparisons for python-bridge
     const entityIdSet = new Set(entityIds);
@@ -481,7 +496,10 @@ async function scoreConversation({
         }
     }
 
-    if (bwsComparisons.length === 0) return;
+    if (bwsComparisons.length === 0) {
+        await clearStaleCachedScores();
+        return;
+    }
 
     // Get conversation slugId
     const convRows = await db
