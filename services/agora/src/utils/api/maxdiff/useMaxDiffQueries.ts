@@ -91,11 +91,9 @@ interface MaxDiffSaveMutationParams {
 export function useMaxDiffSaveMutation({
   conversationSlugId,
   onRollback,
-  onSaveSuccess,
 }: {
   conversationSlugId: MaybeRefOrGetter<string>;
   onRollback: (context: MaxDiffSaveContext) => void;
-  onSaveSuccess: () => void;
 }) {
   const { saveMaxDiffResult } = useMaxDiffApi();
   const { updateAuthState } = useBackendAuthApi();
@@ -179,7 +177,6 @@ export function useMaxDiffSaveMutation({
       // read replica lag overwriting the optimistic counts above.
       // The conversation query refreshes naturally on analysis tab switch
       // (via the route watcher in useConversationParentState).
-      onSaveSuccess();
     },
 
     onError: (_error, variables) => {
