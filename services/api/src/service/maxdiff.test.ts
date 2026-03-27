@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseResultRows } from "./maxdiff.js";
+import { parseResultRows } from "@/utils/maxdiffParsing.js";
 
 describe("parseResultRows", () => {
     it("extracts per-user comparisons from rows", () => {
