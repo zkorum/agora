@@ -21,6 +21,8 @@ COPY --from=build /app/dist/spa /usr/share/nginx/html
 # preventing "Failed to fetch dynamically imported module" errors for users
 # whose browser loaded index.html before the deployment.
 COPY --from=build /app/dist/spa/assets /app/new-assets
+# Sourcemaps were uploaded to Sentry during build; remove from image to save ~20 MB
+RUN find /usr/share/nginx/html /app/new-assets -name "*.map" -delete
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 EXPOSE 80
