@@ -215,7 +215,6 @@ import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
-import { useMaxDiffHistoryUndo } from "src/composables/maxdiff/useMaxDiffHistoryUndo";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ExtendedConversation, MaxDiffComparison } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -367,14 +366,7 @@ const saveMutation = useMaxDiffSaveMutation({
     finalRanking.value = context.previousFinalRanking;
     candidates.value = context.previousCandidates;
     cancelTransition();
-    consumeUndoEntry();
     showNotifyMessage({ message: t("savingError"), force: true });
-  },
-  onSaveSuccess: () => {
-    // Clear undo history once ranking is confirmed complete
-    if (isComplete.value) {
-      clearAllUndoEntries();
-    }
   },
 });
 
@@ -492,11 +484,6 @@ const canUndo = computed(() => {
   return instance.value.exportState().comparisons.length > 0;
 });
 
-const { pushUndoEntry, consumeUndoEntry, clearAllUndoEntries } =
-  useMaxDiffHistoryUndo({
-    onUndo: () => void undoLastVote(),
-    canUndo: () => canUndo.value,
-  });
 
 // Initialize engine when both queries resolve
 const engineInitialized = ref(false);
@@ -668,7 +655,6 @@ function recordVote(): void {
     worst,
   });
   triggerRef(instance);
-  pushUndoEntry();
 
   isComplete.value = instance.value.complete;
   finalRanking.value = instance.value.result ?? [];
@@ -747,7 +733,6 @@ function undoLastVote(): void {
 
 function handleUndoClick(): void {
   undoLastVote();
-  consumeUndoEntry();
 }
 
 function handleRedoRanking(): void {
@@ -767,7 +752,6 @@ function handleRedoRanking(): void {
     };
 
     cancelTransition();
-    clearAllUndoEntries();
     const slugIds = itemList.value.map((item) => item.slugId);
     instance.value = createMaxDiff(slugIds);
     isComplete.value = false;

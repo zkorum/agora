@@ -142,6 +142,7 @@ export function createRankingComparisonBuffer({
 }: CreateRankingComparisonBufferParams): RankingComparisonBuffer {
     const pendingComparisons = new Map<string, BufferedComparison>();
     let isShuttingDown = false;
+    let isFlushing = false;
 
     let addScript: Script | undefined;
     let cleanupScript: Script | undefined;
@@ -198,6 +199,18 @@ export function createRankingComparisonBuffer({
     // ------------------------------------------------------------------
 
     const flush = async (): Promise<void> => {
+        if (isFlushing) {
+            return;
+        }
+        isFlushing = true;
+        try {
+            await flushInternal();
+        } finally {
+            isFlushing = false;
+        }
+    };
+
+    const flushInternal = async (): Promise<void> => {
         // 1. Collect from in-memory
         const localComparisons = Array.from(pendingComparisons.values());
         pendingComparisons.clear();
