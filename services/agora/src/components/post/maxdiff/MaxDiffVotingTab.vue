@@ -183,18 +183,18 @@
           <p class="learn-more-reference">
             {{ t("learnMoreReference") }}
             <a
+              href="https://github.com/tournesol-app/tournesol/tree/main/solidago"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="learn-more-link"
+            >Solidago</a>
+            ·
+            <a
               href="https://en.wikipedia.org/wiki/Best%E2%80%93worst_scaling"
               target="_blank"
               rel="noopener noreferrer"
               class="learn-more-link"
             >Best-Worst Scaling</a>
-            ·
-            <a
-              href="https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="learn-more-link"
-            >Bradley-Terry Model</a>
           </p>
         </div>
       </ZKBottomDialogContainer>
