@@ -120,9 +120,10 @@
           "Commongrounding","Senseificationing","Democraforming","Rehumanificating",
           "Agora-rithming","Pluralitifying","d/accelerationing","Cosmo-localizing"];
         var t = document.querySelector("#splash-text text");
-        if (!t) return;
+        var splashG = document.querySelector(".splash-fill");
+        if (!t || !splashG) return;
         var order = W.slice();
-        var idx = order.length;
+        var idx = 0;
         var prev = "";
         function shuffle() {
           for (var i = order.length - 1; i > 0; i--) {
@@ -138,19 +139,19 @@
           prev = order[idx];
           return order[idx++];
         }
+        shuffle();
         t.textContent = next() + "...";
-        var timer = setInterval(function() { t.textContent = next() + "..."; }, 2000);
+        function onIteration() { t.textContent = next() + "..."; }
+        splashG.addEventListener("animationiteration", onIteration);
         function cleanup() {
-          clearInterval(timer);
+          splashG.removeEventListener("animationiteration", onIteration);
           clearTimeout(maxLife);
         }
-        // Stop cycling when splash is removed from DOM
         if (typeof MutationObserver !== "undefined") {
           new MutationObserver(function(_, o) {
             if (!document.getElementById("splash-text")) { cleanup(); o.disconnect(); }
           }).observe(document.body, { childList: true, subtree: true });
         }
-        // Fallback: stop after 60s to prevent stale splash / leaked timer
         var maxLife = setTimeout(cleanup, 60000);
       })();
     </script>
