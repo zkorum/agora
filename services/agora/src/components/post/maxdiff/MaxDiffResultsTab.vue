@@ -116,6 +116,13 @@
                 rel="noopener noreferrer"
                 class="learn-more-link"
               >Best-Worst Scaling</a>
+              ·
+              <a
+                href="https://www.plurality.net"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="learn-more-link"
+              >Plurality</a>
             </p>
           </template>
           <template v-else>
