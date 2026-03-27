@@ -1282,6 +1282,9 @@ export const conversationTable = pgTable(
         currentPolisContentId: integer("current_polis_content_id")
             .references((): AnyPgColumn => polisContentTable.id)
             .unique(), // null if conversation was deleted or if conversation was just started (no opinion/vote was cast)
+        currentRankingScoreId: integer("current_ranking_score_id")
+            .references((): AnyPgColumn => rankingScoreTable.id)
+            .unique(), // null for polis conversations or if no scores computed yet
         indexConversationAt: timestamp("index_conversation_at", {
             mode: "date",
             precision: 0,
@@ -2379,3 +2382,40 @@ export const maxdiffItemExternalSourceTable = pgTable(
         ),
     ],
 );
+
+// Computed Solidago scores for MaxDiff conversations.
+// Like polisContentTable: multiple rows per conversation over time,
+// conversation.currentRankingScoreId points to the latest.
+// Populated by the API's periodic Valkey queue flush (calls python-bridge).
+export const rankingScoreTable = pgTable("ranking_score", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    conversationId: integer("conversation_id")
+        .notNull()
+        .references(() => conversationTable.id),
+    // --- Output: Solidago scores ---
+    // Array of { entityId, score, uncertaintyLeft, uncertaintyRight }
+    // Scores normalized to [0, 1]. Parsed with zodCachedScore.
+    scores: jsonb("scores").notNull(),
+    // Record<entityId, participantCount> for display
+    participantCounts: jsonb("participant_counts").notNull(),
+    // --- Input context: what parameters produced these scores ---
+    // Snapshot of group sources used for COCM voting rights (if any).
+    // Null if no group weighting was applied.
+    groupSourcesSnapshot: jsonb("group_sources_snapshot"),
+    // Snapshot of user trust weights used (if any).
+    // Null if all users had equal trust.
+    userWeightsSnapshot: jsonb("user_weights_snapshot"),
+    // Pipeline config (aggregation method, parameters, etc.)
+    pipelineConfig: jsonb("pipeline_config").notNull(),
+    // --- Metadata ---
+    computedAt: timestamp("computed_at", {
+        mode: "date",
+        precision: 0,
+    }).notNull(),
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
