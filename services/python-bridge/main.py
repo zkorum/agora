@@ -620,7 +620,7 @@ from entity_mapping import EntityIdMapper, map_pairwise_wins_to_solidago, map_sc
 
 from solidago.pipeline import Pipeline
 from solidago.trust_propagation import TrustPropagation
-from solidago.preference_learning import UniformGBT
+from solidago.preference_learning import LBFGSUniformGBT
 from solidago.voting_rights import AffineOvertrust
 from solidago.scaling import NoScaling
 from solidago.aggregation import EntitywiseQrQuantile
@@ -684,7 +684,7 @@ class RankingScoreRequest(BaseModel):
 
 
 def _warmup_solidago() -> None:
-    """Trigger Numba JIT compilation at import time with a tiny dummy dataset."""
+    """Warmup LBFGS solver with a tiny dummy dataset."""
     dummy_df = pd.DataFrame({
         "user_id": [0, 0],
         "entity_a": [0, 1],
@@ -692,9 +692,9 @@ def _warmup_solidago() -> None:
         "comparison": [1.0, 1.0],
         "comparison_max": [1.0, 1.0],
     })
-    gbt = UniformGBT(prior_std_dev=7.0, convergence_error=1e-5)
+    gbt = LBFGSUniformGBT(prior_std_dev=7.0, convergence_error=1e-5)
     gbt.comparison_learning(dummy_df)
-    logger.info("Solidago JIT warmup complete")
+    logger.info("Solidago LBFGS warmup complete")
 
 
 _warmup_solidago()
@@ -796,7 +796,7 @@ def score_conversation(payload: RankingScoreRequest) -> dict[str, object]:
     # Configure Solidago pipeline (production-tested defaults)
     pipeline = Pipeline(
         trust_propagation=IdentityTrustPropagation(),
-        preference_learning=UniformGBT(prior_std_dev=7.0, convergence_error=1e-5),
+        preference_learning=LBFGSUniformGBT(prior_std_dev=7.0, convergence_error=1e-5),
         voting_rights=AffineOvertrust(
             privacy_penalty=0.5,
             min_overtrust=2.0,
