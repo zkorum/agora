@@ -9,7 +9,7 @@
  */
 
 import type { MaxDiffComparison } from "@/shared/types/zod.js";
-import { buildItemIndex } from "./bradleyTerry.js";
+import { buildItemIndex } from "@/utils/maxdiffUtils.js";
 
 // --- Set utilities ---
 

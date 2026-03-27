@@ -11,7 +11,7 @@
 
 import type { MaxDiffComparison } from "@/shared/types/zod.js";
 import { buildComparisonMatrix } from "./maxdiffEngine.js";
-import { fisherYatesShuffle } from "./bradleyTerry.js";
+import { fisherYatesShuffle } from "@/utils/maxdiffUtils.js";
 
 /** Weight for pairwise information bonus relative to base uncertainty score. */
 const PAIRWISE_WEIGHT = 0.5;

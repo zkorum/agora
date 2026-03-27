@@ -23,107 +23,16 @@ import {
     type MaxDiffComparison,
     type MaxdiffLifecycleStatus,
 } from "@/shared/types/zod.js";
-import { mmPairwise, buildItemIndex, type PairwiseWin } from "./bradleyTerry.js";
-import { buildComparisonMatrix } from "./maxdiffEngine.js";
-import { log } from "@/app.js";
 import type { AxiosInstance } from "axios";
 import type { RankingComparisonBuffer } from "./rankingComparisonBuffer.js";
 
-// --- Pure scoring functions (exported for testing) ---
+// --- Types ---
 
 export interface RankedItem {
     itemSlugId: string;
     avgRank: number;
     score: number;
     participantCount: number;
-}
-
-/**
- * Compute scores from pooled comparisons using Bradley-Terry MLE.
- *
- * Instead of raw BWS decomposition (which creates contradictory pairwise
- * wins when candidate sets overlap with transitively-ordered items), this
- * applies transitive closure per user first, then extracts ALL consistent
- * pairwise orderings for BT. This ensures BT gets the same complete
- * information that each user's personal ranking has.
- *
- * No DB access, fully testable.
- */
-export function computeScores({
-    perUserComparisons,
-    items,
-    participantCounts,
-}: {
-    perUserComparisons: MaxDiffComparison[][];
-    items: string[];
-    participantCounts: Map<string, number>;
-}): RankedItem[] {
-    const n = items.length;
-    if (n === 0) return [];
-
-    const itemIndex = buildItemIndex(items);
-
-    // For each user, apply transitive closure and extract all ordered pairs
-    const pairwiseData: PairwiseWin[] = [];
-    for (const userComparisons of perUserComparisons) {
-        const { applyComparison, getOrderedPairs } = buildComparisonMatrix({
-            items,
-        });
-        for (const comp of userComparisons) {
-            applyComparison(comp);
-        }
-        // Extract all ordered pairs (including transitive inferences)
-        for (const [before, after] of getOrderedPairs()) {
-            const winnerIdx = itemIndex.get(before);
-            const loserIdx = itemIndex.get(after);
-            if (winnerIdx !== undefined && loserIdx !== undefined) {
-                pairwiseData.push({ winner: winnerIdx, loser: loserIdx });
-            }
-        }
-    }
-
-    // Count comparisons per item (for uncertainty estimation)
-    const comparisonCounts = new Array<number>(n).fill(0);
-    for (const { winner, loser } of pairwiseData) {
-        comparisonCounts[winner] += 1;
-        comparisonCounts[loser] += 1;
-    }
-
-    // Run BT MLE
-    const { params, converged } = mmPairwise({
-        nItems: n,
-        data: pairwiseData,
-    });
-
-    if (!converged) {
-        log.warn(
-            `[computeScores] BT MLE did not converge for ${String(items.length)} items`,
-        );
-    }
-
-    // Normalize scores to [0, 1] range
-    let minParam = Infinity;
-    let maxParam = -Infinity;
-    for (const p of params) {
-        if (p < minParam) minParam = p;
-        if (p > maxParam) maxParam = p;
-    }
-    const range = maxParam - minParam;
-
-    const scoredItems = items
-        .map((item, i) => ({
-            item,
-            score: range > 0 ? (params[i] - minParam) / range : 1,
-            uncertainty: 1 / Math.sqrt(comparisonCounts[i] + 1),
-        }))
-        .sort((a, b) => b.score - a.score);
-
-    return scoredItems.map((s, idx) => ({
-        itemSlugId: s.item,
-        avgRank: idx + 1,
-        score: s.score,
-        participantCount: participantCounts.get(s.item) ?? 0,
-    }));
 }
 
 /**
@@ -693,9 +602,9 @@ interface ComputeSnapshotProps {
 }
 
 /**
- * Compute the current score and rank for a specific item
- * by running the full scoring algorithm on all active items.
- * Returns the snapshot values to freeze on the item row.
+ * Read the current score and rank for a specific item from the
+ * pre-computed ranking_score table. Returns snapshot values to freeze
+ * on the item row during lifecycle transitions.
  */
 export async function computeItemSnapshot({
     db,
@@ -706,25 +615,18 @@ export async function computeItemSnapshot({
     snapshotRank: number | null;
     snapshotParticipantCount: number | null;
 }> {
-    // Get all active items for this conversation
-    const activeItems = await db
-        .select({ slugId: maxdiffItemTable.slugId })
-        .from(maxdiffItemTable)
-        .where(
-            and(
-                eq(maxdiffItemTable.conversationId, conversationId),
-                isNotNull(maxdiffItemTable.currentContentId),
-                inArray(maxdiffItemTable.lifecycleStatus, [
-                    "active",
-                    "in_progress",
-                ]),
-            ),
-        );
+    // Read latest scores from ranking_score table
+    const convRows = await db
+        .select({
+            currentRankingScoreId: conversationTable.currentRankingScoreId,
+        })
+        .from(conversationTable)
+        .where(eq(conversationTable.id, conversationId));
 
-    const items = activeItems.map((r) => r.slugId);
+    const currentScoreId =
+        convRows.length > 0 ? convRows[0].currentRankingScoreId : null;
 
-    // If the item isn't in the active set (already removed), can't snapshot
-    if (!items.includes(itemSlugId)) {
+    if (currentScoreId === null) {
         return {
             snapshotScore: null,
             snapshotRank: null,
@@ -732,21 +634,30 @@ export async function computeItemSnapshot({
         };
     }
 
-    const allResults = await db
+    const scoreRows = await db
         .select({
-            ranking: maxdiffResultTable.ranking,
-            comparisons: maxdiffResultTable.comparisons,
+            scores: rankingScoreTable.scores,
+            participantCounts: rankingScoreTable.participantCounts,
         })
-        .from(maxdiffResultTable)
-        .where(eq(maxdiffResultTable.conversationId, conversationId));
+        .from(rankingScoreTable)
+        .where(eq(rankingScoreTable.id, currentScoreId));
 
-    const { perUserComparisons, participantCounts } = parseResultRows({
-        rows: allResults,
-        items,
-    });
-    const scored = computeScores({ perUserComparisons, items, participantCounts });
+    if (scoreRows.length === 0) {
+        return {
+            snapshotScore: null,
+            snapshotRank: null,
+            snapshotParticipantCount: null,
+        };
+    }
 
-    const itemScore = scored.find((s) => s.itemSlugId === itemSlugId);
+    const cachedScores = z
+        .array(zodSolidagoEntityScore)
+        .parse(scoreRows[0].scores);
+    const cachedParticipantCounts = z
+        .record(z.string(), z.number())
+        .parse(scoreRows[0].participantCounts);
+
+    const itemScore = cachedScores.find((s) => s.entityId === itemSlugId);
     if (itemScore === undefined) {
         return {
             snapshotScore: null,
@@ -755,10 +666,16 @@ export async function computeItemSnapshot({
         };
     }
 
-    const rank = scored.indexOf(itemScore) + 1;
+    // Rank = position in sorted scores (1-based)
+    const rank =
+        cachedScores
+            .filter((s) => s.score >= itemScore.score)
+            .length;
+
     return {
         snapshotScore: itemScore.score,
         snapshotRank: rank,
-        snapshotParticipantCount: itemScore.participantCount,
+        snapshotParticipantCount:
+            cachedParticipantCounts[itemSlugId] ?? 0,
     };
 }
