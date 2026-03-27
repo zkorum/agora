@@ -728,6 +728,7 @@ def score_conversation(payload: RankingScoreRequest) -> dict[str, object]:
         return {"error": "Provide exactly one of bws_comparisons or pairwise_comparisons"}
 
     # Convert BWS to pairwise if needed
+    from datetime import datetime as _dt
     if payload.bws_comparisons is not None:
         bws_list = [
             BWSComparison(
@@ -738,9 +739,16 @@ def score_conversation(payload: RankingScoreRequest) -> dict[str, object]:
             )
             for c in payload.bws_comparisons
         ]
+        _bws_start = _dt.now()
         pairwise_wins = bws_to_pairwise(
             bws_comparisons=bws_list,
             entity_ids=payload.entity_ids,
+        )
+        _bws_elapsed = (_dt.now() - _bws_start).total_seconds()
+        logger.info(
+            f"[MaxDiff] BWS conversion: {len(bws_list)} BWS comparisons -> "
+            f"{len(pairwise_wins)} pairwise wins in {_bws_elapsed:.3f}s "
+            f"(expansion ratio: {len(pairwise_wins) / max(len(bws_list), 1):.1f}x)"
         )
     else:
         pairwise_wins = []
@@ -779,6 +787,11 @@ def score_conversation(payload: RankingScoreRequest) -> dict[str, object]:
         index=pd.Index(mapper.all_int_ids(), name="entity_id"),
     )
     vouches_df = pd.DataFrame(columns=["voucher", "vouchee", "vouch"])
+
+    logger.info(
+        f"[MaxDiff] Solidago input: {len(comparisons_df)} comparison rows, "
+        f"{len(user_ids)} users, {len(mapper.all_int_ids())} entities"
+    )
 
     # Configure Solidago pipeline (production-tested defaults)
     pipeline = Pipeline(
