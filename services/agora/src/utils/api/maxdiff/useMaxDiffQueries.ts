@@ -8,7 +8,6 @@ import type { MaxDiffState } from "src/utils/maxdiff";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 import { useBackendAuthApi } from "../auth";
-import { useInvalidateConversationQuery } from "../post/useConversationQuery";
 import { useMaxDiffApi } from "./maxdiff";
 
 export function useMaxDiffItemsQuery({
@@ -101,7 +100,6 @@ export function useMaxDiffSaveMutation({
 }) {
   const { saveMaxDiffResult } = useMaxDiffApi();
   const { updateAuthState } = useBackendAuthApi();
-  const { invalidateConversation } = useInvalidateConversationQuery();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -120,8 +118,26 @@ export function useMaxDiffSaveMutation({
     onSuccess: async (_data, variables) => {
       await updateAuthState({ partialLoginStatus: { isKnown: true } });
 
-      // Optimistically bump counts in the conversation query cache
       const slugId = toValue(conversationSlugId);
+
+      // Cancel in-flight refetches to prevent read replica stale data
+      // from overwriting our optimistic updates (same pattern as Polis useVoteMutation)
+      await queryClient.cancelQueries({ queryKey: ["conversation", slugId] });
+      await queryClient.cancelQueries({ queryKey: ["maxdiff-load", slugId] });
+
+      // Compute count deltas (supports vote, undo, and redo)
+      const comparisonDelta =
+        variables.comparisons.length -
+        variables.context.previousState.comparisons.length;
+      const becameParticipant =
+        variables.context.previousState.comparisons.length === 0 &&
+        variables.comparisons.length > 0;
+      const lostParticipant =
+        variables.context.previousState.comparisons.length > 0 &&
+        variables.comparisons.length === 0;
+      const participantDelta = becameParticipant ? 1 : lostParticipant ? -1 : 0;
+
+      // Optimistically update conversation counts
       queryClient.setQueryData(
         ["conversation", slugId],
         (old: ExtendedConversation | undefined) => {
@@ -130,12 +146,14 @@ export function useMaxDiffSaveMutation({
             ...old,
             metadata: {
               ...old.metadata,
-              voteCount: old.metadata.voteCount + 1,
-              totalVoteCount: old.metadata.totalVoteCount + 1,
-              ...(variables.context.isFirstVote
+              voteCount: old.metadata.voteCount + comparisonDelta,
+              totalVoteCount: old.metadata.totalVoteCount + comparisonDelta,
+              ...(participantDelta !== 0
                 ? {
-                    participantCount: old.metadata.participantCount + 1,
-                    totalParticipantCount: old.metadata.totalParticipantCount + 1,
+                    participantCount:
+                      old.metadata.participantCount + participantDelta,
+                    totalParticipantCount:
+                      old.metadata.totalParticipantCount + participantDelta,
                   }
                 : {}),
             },
@@ -143,14 +161,25 @@ export function useMaxDiffSaveMutation({
         },
       );
 
-      // Invalidate load query so Analysis "Me" tab updates reactively
-      void queryClient.invalidateQueries({
-        queryKey: ["maxdiff-load", slugId],
-      });
+      // Write saved state directly to cache instead of invalidating
+      // (avoids read replica lag returning stale data before buffer flushes)
+      queryClient.setQueryData<ApiV1MaxdiffLoadPost200Response>(
+        ["maxdiff-load", slugId],
+        {
+          ranking: variables.ranking,
+          comparisons: variables.comparisons.map((c) => ({
+            best: c.best,
+            worst: c.worst,
+            set: c.set,
+          })),
+          isComplete: variables.isComplete,
+        },
+      );
 
-      // Invalidate community results so Results tab re-fetches fresh scores
-      // (scores are recomputed by python-bridge on each flush)
-      invalidateConversation(slugId);
+      // Note: We don't invalidate the conversation query here to avoid
+      // read replica lag overwriting the optimistic counts above.
+      // The conversation query refreshes naturally on analysis tab switch
+      // (via the route watcher in useConversationParentState).
       onSaveSuccess();
     },
 

@@ -191,9 +191,6 @@ export function createRankingComparisonBuffer({
                 });
         }
 
-        log.info(
-            `[RankingBuffer] Buffered comparison for user ${comparison.userId} on conversation ${comparison.conversationSlugId}`,
-        );
     };
 
     // ------------------------------------------------------------------

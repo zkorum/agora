@@ -99,6 +99,7 @@
         <div class="learn-more-content">
           <template v-if="learnMoreContext === 'community'">
             <p>{{ t("communityLearnMoreHow") }}</p>
+            <p>{{ t("communityLearnMoreDiversity") }}</p>
             <p>{{ t("communityLearnMoreFair") }}</p>
             <p>{{ isGitHubLinked ? t("communityLearnMoreSourceGitHub") : t("communityLearnMoreSourceManual") }}</p>
             <p class="learn-more-reference">
@@ -163,7 +164,7 @@ import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import { useMaxDiffLoadQuery } from "src/utils/api/maxdiff/useMaxDiffQueries";
 import type { MaxDiffShortcutItem } from "src/utils/component/analysis/maxdiffShortcutBar";
 import { maxdiffShortcutItemSchema } from "src/utils/component/analysis/maxdiffShortcutBar";
-import { computed, inject, onMounted, ref, watch } from "vue";
+import { computed, inject, onActivated, onMounted, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import { useRoute } from "vue-router";
 
@@ -402,19 +403,34 @@ async function fetchAllLifecycleItems({ showLoading }: { showLoading: boolean })
   ]);
 }
 
-// Register pull-to-refresh handler: silently refetch without toggling loading spinners
+// Pull-to-refresh handler: silently refetch without toggling loading spinners
 // (the pull-to-refresh spinner already indicates activity)
-registerChildRefreshHandler(async () => {
+async function handleChildRefresh(): Promise<void> {
   await fetchResults({ showLoading: false });
   await Promise.all([
     loadQuery.refetch(),
     fetchAllLifecycleItems({ showLoading: false }),
   ]);
-});
+}
+
+// Register on initial setup and re-register on KeepAlive reactivation
+// (whichever tab activates last must own the handler)
+registerChildRefreshHandler(handleChildRefresh);
+
+const hasInitiallyLoaded = ref(false);
 
 onMounted(async () => {
   await fetchResults({ showLoading: true });
   await fetchAllLifecycleItems({ showLoading: true });
+  hasInitiallyLoaded.value = true;
+});
+
+// Silently refresh data when reactivated from KeepAlive (tab switch back)
+// Shows stale cached data immediately, then updates in background
+onActivated(async () => {
+  registerChildRefreshHandler(handleChildRefresh);
+  if (!hasInitiallyLoaded.value) return;
+  await handleChildRefresh();
 });
 
 watch(currentTab, async (newTab, oldTab) => {

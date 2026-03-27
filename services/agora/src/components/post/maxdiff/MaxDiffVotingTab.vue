@@ -21,26 +21,24 @@
       @retry="retryInitialize"
     />
 
-    <!-- Completed ranking (check before statement count so users with saved rankings still see them) -->
-    <div v-else-if="isComplete && finalRanking.length > 0" class="ranking-section">
-      <div class="section-header">{{ t("complete") }}</div>
-      <div class="section-subheader">{{ t("ranking") }}</div>
-      <ol class="ranking-list">
-        <li
-          v-for="(slugId, index) in finalRanking"
-          :key="slugId"
-          class="ranking-item"
-          @click="openStatementDialog(slugId)"
-        >
-          <span class="rank-number">{{ index + 1 }}</span>
-          <ZKHtmlContent
-            class="rank-content"
-            :html-body="itemContentMap.get(slugId) ?? slugId"
-            :compact-mode="true"
-            :enable-links="false"
-          />
-        </li>
-      </ol>
+    <!-- Completed ranking -->
+    <div v-else-if="isComplete && finalRanking.length > 0" class="voting-section">
+      <div class="section-header-row">
+        <div class="section-header">{{ t("complete") }}</div>
+        <AnalysisActionButton
+          type="learnMore"
+          @action-click="showLearnMoreDialog = true"
+        />
+      </div>
+      <div class="complete-message">{{ t("completeMessage") }}</div>
+      <q-btn
+        unelevated
+        no-caps
+        color="primary"
+        :label="t('viewMyRanking')"
+        class="view-ranking-btn"
+        @click="props.onViewAnalysis()"
+      />
       <q-btn
         flat
         no-caps
@@ -231,7 +229,7 @@ import {
 } from "src/utils/maxdiff";
 import { useNotify } from "src/utils/ui/notify";
 import type { ComponentPublicInstance } from "vue";
-import { computed, inject, nextTick, onBeforeUnmount, ref, triggerRef, watch } from "vue";
+import { computed, inject, nextTick, onActivated, onBeforeUnmount, ref, triggerRef, watch } from "vue";
 
 import MaxDiffStatementDialog from "./MaxDiffStatementDialog.vue";
 import {
@@ -242,6 +240,7 @@ import {
 const props = defineProps<{
   conversationData: ExtendedConversation;
   hasConversationData: boolean;
+  onViewAnalysis: () => void;
 }>();
 
 const { t } = useComponentI18n<MaxDiffVotingTabTranslations>(
@@ -294,9 +293,16 @@ const loadQuery = useMaxDiffLoadQuery({
   enabled: () => props.hasConversationData,
 });
 
-// Register pull-to-refresh handler: refetch items and saved state
-registerChildRefreshHandler(async () => {
+// Pull-to-refresh handler: refetch items and saved state
+async function handleChildRefresh(): Promise<void> {
   await Promise.all([itemsQuery.refetch(), loadQuery.refetch()]);
+}
+
+// Register on initial setup and re-register on KeepAlive reactivation
+// (whichever tab activates last must own the handler)
+registerChildRefreshHandler(handleChildRefresh);
+onActivated(() => {
+  registerChildRefreshHandler(handleChildRefresh);
 });
 
 interface MaxDiffItemDisplay {
@@ -399,18 +405,6 @@ const dialogVoteLabel = ref<string | undefined>(undefined);
 const dialogVoteColor = ref<string | undefined>(undefined);
 const dialogVoteFlat = ref(false);
 const dialogVoteCallback = ref<(() => void) | undefined>(undefined);
-
-function openStatementDialog(slugId: string): void {
-  const item = itemBySlugId.value.get(slugId);
-  dialogTitle.value = item?.title ?? slugId;
-  expandedContent.value = item?.body ?? "";
-  dialogExternalUrl.value = item?.externalUrl ?? null;
-  dialogVoteLabel.value = undefined;
-  dialogVoteColor.value = undefined;
-  dialogVoteFlat.value = false;
-  dialogVoteCallback.value = undefined;
-  showStatementDialog.value = true;
-}
 
 const dialogTitle = ref("");
 const dialogExternalUrl = ref<string | null>(null);
@@ -1060,46 +1054,15 @@ function handleRedoRanking(): void {
   gap: 1rem;
 }
 
-.ranking-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+.complete-message {
+  font-size: 0.95rem;
+  color: $color-text-weak;
+  line-height: 1.5;
 }
 
-.ranking-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.ranking-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: $app-background-color;
+.view-ranking-btn {
+  align-self: flex-start;
   border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
-}
-
-.rank-number {
-  font-weight: var(--font-weight-semibold);
-  color: $primary;
-  min-width: 1.5rem;
-  text-align: center;
-}
-
-.rank-content {
-  flex: 1;
-  min-width: 0;
 }
 
 .learn-more-title {
