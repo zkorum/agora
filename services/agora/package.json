@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@dicebear/collection": "^9.3.2",
-    "@dicebear/core": "^9.3.2",
+    "@dicebear/core": "^9.4.1",
     "@parcnet-js/app-connector": "^1.1.10",
     "@parcnet-js/podspec": "^1.2.0",
     "@parcnet-js/ticket-spec": "^1.1.9",
