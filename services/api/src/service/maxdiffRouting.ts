@@ -1,31 +1,99 @@
 /**
  * Server-side MaxDiff routing — generates candidate sets for voting.
  *
- * Uses greedy sequential selection combining:
- * 1. Global uncertainty (items needing more comparisons across all voters)
- * 2. Pairwise information gain (items specifically unresolved against each
- *    other for this user — maximizes transitive closure per vote)
- * 3. Frequency balancing (avoids repeating the same items across buffer)
- * 4. Fisher-Yates shuffle (prevents position bias)
+ * Uses greedy set cover to guarantee all item pairs co-appear in at
+ * least one set, then fills remaining buffer slots with diverse sets.
+ * Within each set, items are selected to maximize uncovered pairs
+ * (covering design), weighted by global uncertainty (items needing
+ * more data across all voters) and pairwise information gain (items
+ * unresolved for this specific user).
+ *
+ * Pure function — no DB access.
  */
 
 import type { MaxDiffComparison } from "@/shared/types/zod.js";
 import { buildComparisonMatrix } from "./maxdiffEngine.js";
 import { fisherYatesShuffle } from "@/utils/maxdiffUtils.js";
 
-/** Weight for pairwise information bonus relative to base uncertainty score. */
-const PAIRWISE_WEIGHT = 0.5;
+/** Canonical key for an unordered pair (alphabetical order). */
+export function pairKey(a: string, b: string): string {
+    return a < b ? `${a}|${b}` : `${b}|${a}`;
+}
+
+/**
+ * Count how many uncovered pairs a candidate item would create
+ * with the already-selected items in the current set.
+ */
+function countUncoveredWith({
+    candidate,
+    selected,
+    coveredPairs,
+}: {
+    candidate: string;
+    selected: string[];
+    coveredPairs: Set<string>;
+}): number {
+    let count = 0;
+    for (const sel of selected) {
+        if (!coveredPairs.has(pairKey(candidate, sel))) {
+            count++;
+        }
+    }
+    return count;
+}
+
+/**
+ * Count how many uncovered pairs a candidate item has with ALL
+ * items in the pool (used for first-item selection).
+ */
+function countUncoveredInPool({
+    candidate,
+    pool,
+    coveredPairs,
+}: {
+    candidate: string;
+    pool: string[];
+    coveredPairs: Set<string>;
+}): number {
+    let count = 0;
+    for (const other of pool) {
+        if (other !== candidate && !coveredPairs.has(pairKey(candidate, other))) {
+            count++;
+        }
+    }
+    return count;
+}
+
+/**
+ * Count how many unresolved (unordered for this user) pairs a candidate
+ * would create with the already-selected items.
+ */
+function countUnresolvedWith({
+    candidate,
+    selected,
+    isUnordered,
+}: {
+    candidate: string;
+    selected: string[];
+    isUnordered: (a: string, b: string) => boolean;
+}): number {
+    let count = 0;
+    for (const sel of selected) {
+        if (isUnordered(candidate, sel)) {
+            count++;
+        }
+    }
+    return count;
+}
 
 /**
  * Build a bidirectional adjacency map from unordered pairs for O(1) lookup.
- * Returns a function that checks if two items are unordered (unresolved).
  */
 function buildUnorderedLookup(
     unorderedPairs: [string, string][],
 ): (a: string, b: string) => boolean {
     const adjacency = new Map<string, Set<string>>();
     for (const [a, b] of unorderedPairs) {
-        // Safe to use get() after set() — both keys guaranteed to exist
         if (!adjacency.has(a)) adjacency.set(a, new Set());
         if (!adjacency.has(b)) adjacency.set(b, new Set());
         adjacency.get(a)?.add(b);
@@ -36,14 +104,104 @@ function buildUnorderedLookup(
 }
 
 /**
+ * Greedily build one candidate set that maximizes uncovered pair coverage.
+ *
+ * Scoring per candidate = uncoveredPairs (primary) + uncertainty (secondary)
+ *                        + unresolvedPairs (tertiary)
+ *
+ * The uncovered pair count is the dominant signal (multiplied by a weight
+ * larger than the max possible uncertainty). This ensures pair coverage
+ * drives item selection, with uncertainty breaking ties.
+ */
+function buildOneSet({
+    pool,
+    size,
+    coveredPairs,
+    globalUncertainty,
+    isUnordered,
+}: {
+    pool: string[];
+    size: number;
+    coveredPairs: Set<string>;
+    globalUncertainty: Map<string, number>;
+    isUnordered: (a: string, b: string) => boolean;
+}): string[] {
+    const selected: string[] = [];
+    const selectedSet = new Set<string>();
+    const effectiveSize = Math.min(size, pool.length);
+
+    // Coverage weight must exceed the max possible uncertainty so that
+    // one additional uncovered pair always outweighs any uncertainty difference.
+    const maxUncertainty = Math.max(
+        ...pool.map((id) => globalUncertainty.get(id) ?? 0),
+        0,
+    );
+    const coverageWeight = maxUncertainty + 1;
+
+    for (let i = 0; i < effectiveSize; i++) {
+        let bestItem: string | undefined;
+        let bestScore = -Infinity;
+
+        for (const item of pool) {
+            if (selectedSet.has(item)) continue;
+
+            // Primary: uncovered pairs (dominates)
+            const uncovered = selected.length > 0
+                ? countUncoveredWith({ candidate: item, selected, coveredPairs })
+                : countUncoveredInPool({ candidate: item, pool, coveredPairs });
+
+            // Secondary: global uncertainty (breaks ties among equal coverage)
+            const uncertainty = globalUncertainty.get(item) ?? 0;
+
+            // Tertiary: unresolved pairs for this user (further tie-breaking)
+            const unresolved = selected.length > 0
+                ? countUnresolvedWith({ candidate: item, selected, isUnordered })
+                : 0;
+
+            const score =
+                uncovered * coverageWeight +
+                uncertainty +
+                unresolved * 0.1;
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestItem = item;
+            }
+        }
+
+        if (bestItem === undefined) break;
+        selected.push(bestItem);
+        selectedSet.add(bestItem);
+    }
+
+    return selected;
+}
+
+/**
+ * Record all C(k,2) pairs from a set as covered.
+ */
+function markPairsCovered({
+    set,
+    coveredPairs,
+}: {
+    set: string[];
+    coveredPairs: Set<string>;
+}): void {
+    for (let i = 0; i < set.length; i++) {
+        for (let j = i + 1; j < set.length; j++) {
+            coveredPairs.add(pairKey(set[i], set[j]));
+        }
+    }
+}
+
+/**
  * Generate candidate sets for a user's next MaxDiff voting rounds.
  *
- * Uses greedy sequential selection: picks the first item by global
- * uncertainty, then greedily adds items that maximize unresolved pairwise
- * relationships with already-selected items. This ensures each candidate
- * set produces maximum information gain via transitive closure.
- *
- * Pure function — no DB access.
+ * Algorithm:
+ * 1. Build user's comparison matrix → find unordered items
+ * 2. Greedy set cover: each set maximizes uncovered pair coverage,
+ *    weighted by global uncertainty and user-specific pairwise gain
+ * 3. Sets are shuffled (Fisher-Yates) to prevent position bias
  */
 export function generateCandidateSets({
     userComparisons,
@@ -78,74 +236,49 @@ export function generateCandidateSets({
     }
     if (unorderedItems.size < 2) return [];
 
-    const itemPool = [...unorderedItems];
+    const pool = [...unorderedItems];
     const isUnordered = buildUnorderedLookup(unorderedPairs);
-
-    // Track appearance counts for frequency balancing across generated sets
-    const appearanceCounts = new Map<string, number>();
-    for (const item of itemPool) {
-        appearanceCounts.set(item, 0);
-    }
-
+    const coveredPairs = new Set<string>();
     const candidateSets: string[][] = [];
+    const usedSignatures = new Set<string>();
+    const totalPairs = (pool.length * (pool.length - 1)) / 2;
 
-    for (let setIdx = 0; setIdx < bufferSize; setIdx++) {
-        const baseScores = new Map<string, number>();
-        for (const item of itemPool) {
-            baseScores.set(
-                item,
-                (globalUncertainty.get(item) ?? 0) -
-                    (appearanceCounts.get(item) ?? 0) * 0.3,
-            );
+    for (let i = 0; i < bufferSize; i++) {
+        // Reset coverage when all pairs are covered so the greedy
+        // algorithm can differentiate items again in the next cycle.
+        if (coveredPairs.size >= totalPairs) {
+            coveredPairs.clear();
         }
 
-        // Greedy sequential selection
-        const selected: string[] = [];
-        const selectedSet = new Set<string>();
+        // Build a set. If it duplicates an earlier one, rotate the pool
+        // and retry (up to pool.length attempts). This guarantees
+        // distinct sets as long as C(n,k) > bufferSize.
+        let set: string[] = [];
+        for (let offset = 0; offset <= pool.length; offset++) {
+            const rotatedPool = offset === 0
+                ? pool
+                : [...pool.slice(offset), ...pool.slice(0, offset)];
 
-        for (let i = 0; i < candidateSetSize; i++) {
-            let bestItem: string | undefined;
-            let bestScore = -Infinity;
+            set = buildOneSet({
+                pool: rotatedPool,
+                size: candidateSetSize,
+                coveredPairs,
+                globalUncertainty,
+                isUnordered,
+            });
 
-            for (const item of itemPool) {
-                if (selectedSet.has(item)) continue;
-
-                let score = baseScores.get(item) ?? 0;
-
-                // Pairwise bonus: count how many already-selected items
-                // are specifically unresolved against this candidate
-                if (selected.length > 0) {
-                    let pairwiseCount = 0;
-                    for (const sel of selected) {
-                        if (isUnordered(item, sel)) {
-                            pairwiseCount++;
-                        }
-                    }
-                    score += pairwiseCount * PAIRWISE_WEIGHT;
-                }
-
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestItem = item;
-                }
+            const sig = [...set].sort().join(",");
+            if (!usedSignatures.has(sig) || offset === pool.length) {
+                usedSignatures.add(sig);
+                break;
             }
-
-            if (bestItem === undefined) break;
-            selected.push(bestItem);
-            selectedSet.add(bestItem);
         }
 
-        if (selected.length < 2) break;
+        if (set.length < 2) break;
 
-        // Randomize order to prevent position bias
-        fisherYatesShuffle(selected);
-        candidateSets.push(selected);
-
-        // Update frequency counts
-        for (const item of selected) {
-            const count = appearanceCounts.get(item) ?? 0;
-            appearanceCounts.set(item, count + 1);
-        }
+        fisherYatesShuffle(set);
+        candidateSets.push(set);
+        markPairsCovered({ set, coveredPairs });
     }
 
     return candidateSets;
