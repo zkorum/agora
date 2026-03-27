@@ -78,7 +78,6 @@ export interface MaxDiffSaveContext {
   previousIsComplete: boolean;
   previousFinalRanking: string[];
   previousCandidates: string[];
-  previousCandidateBuffer: string[][];
   isFirstVote: boolean;
 }
 

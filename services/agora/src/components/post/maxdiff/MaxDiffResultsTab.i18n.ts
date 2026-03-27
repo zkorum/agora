@@ -7,6 +7,7 @@ export interface MaxDiffResultsTabTranslations {
   subtitle: string;
   score: string;
   loadingError: string;
+  retryButton: string;
   communityLearnMoreHow: string;
   communityLearnMoreDiversity: string;
   communityLearnMoreFair: string;
@@ -43,6 +44,7 @@ export const maxDiffResultsTabTranslations: Record<
     subtitle: "Aggregated from all participants' votes",
     score: "Score: {score}",
     loadingError: "Failed to load results.",
+    retryButton: "Try again",
     communityLearnMoreHow: "Individual preferences are learned from each participant's comparisons, then aggregated into a community ranking using Solidago, an open-source algorithm from the Tournesol project. Votes count immediately.",
     communityLearnMoreDiversity: "The system accounts for user trust levels and uses opinion group information to ensure diverse perspectives are fairly represented, drawing on research from the Plurality framework.",
     communityLearnMoreFair: "Groups are selected to prioritize items needing more data, with randomized order to prevent position bias. Indirect comparisons are inferred (if A > B and B > C, then A > C) to minimize rounds.",
@@ -73,6 +75,7 @@ export const maxDiffResultsTabTranslations: Record<
     subtitle: "مجمّع من أصوات جميع المشاركين",
     score: "النتيجة: {score}",
     loadingError: "فشل تحميل النتائج.",
+    retryButton: "حاول مرة أخرى",
     communityLearnMoreHow: "يتم تعلّم تفضيلات كل مشارك من مقارناته، ثم تُجمع في ترتيب مجتمعي باستخدام Solidago، خوارزمية مفتوحة المصدر من مشروع Tournesol. الأصوات تُحتسب فوراً.",
     communityLearnMoreDiversity: "يراعي النظام مستويات ثقة المستخدمين ويستخدم معلومات مجموعات الرأي لضمان تمثيل عادل للوجهات المتنوعة، استناداً إلى أبحاث إطار التعددية.",
     communityLearnMoreFair: "تُختار المجموعات لإعطاء الأولوية للعناصر التي تحتاج بيانات أكثر، مع ترتيب عشوائي لمنع التحيز الموضعي. تُستنتج المقارنات غير المباشرة (إذا أ > ب و ب > ج، فإن أ > ج) لتقليل الجولات.",
@@ -104,6 +107,7 @@ export const maxDiffResultsTabTranslations: Record<
     subtitle: "Agregado a partir de los votos de todos los participantes",
     score: "Puntuación: {score}",
     loadingError: "Error al cargar los resultados.",
+    retryButton: "Intentar de nuevo",
     communityLearnMoreHow: "Las preferencias de cada participante se aprenden de sus comparaciones y se agregan en una clasificacion comunitaria usando Solidago, un algoritmo de codigo abierto del proyecto Tournesol. Los votos cuentan inmediatamente.",
     communityLearnMoreDiversity: "El sistema tiene en cuenta los niveles de confianza de los usuarios y utiliza informacion de grupos de opinion para garantizar una representacion justa de las perspectivas diversas, basandose en la investigacion del marco Plurality.",
     communityLearnMoreFair: "Los grupos se seleccionan priorizando elementos que necesitan mas datos, con orden aleatorio para evitar sesgo de posicion. Se infieren comparaciones indirectas (si A > B y B > C, entonces A > C) para minimizar rondas.",
@@ -136,6 +140,7 @@ export const maxDiffResultsTabTranslations: Record<
     subtitle: "تجمیع شده از آرای همه شرکت‌کنندگان",
     score: "امتیاز: {score}",
     loadingError: "بارگذاری نتایج ناموفق بود.",
+    retryButton: "دوباره تلاش کنید",
     communityLearnMoreHow: "ترجیحات هر شرکت‌کننده از مقایسه‌هایش یاد گرفته شده و با الگوریتم Solidago، سیستم متن‌باز پروژه Tournesol، در رتبه‌بندی جمعی تجمیع می‌شوند. آرا فوراً محاسبه می‌شوند.",
     communityLearnMoreDiversity: "سیستم سطوح اعتماد کاربران را در نظر می‌گیرد و از اطلاعات گروه‌های نظری برای نمایندگی عادلانه دیدگاه‌های متنوع استفاده می‌کند، بر اساس تحقیقات چارچوب Plurality.",
     communityLearnMoreFair: "گروه‌ها برای اولویت‌دهی به گزاره‌هایی که داده بیشتری نیاز دارند انتخاب می‌شوند، با ترتیب تصادفی برای جلوگیری از تعصب موقعیتی. مقایسه‌های غیرمستقیم استنتاج می‌شوند (اگر الف > ب و ب > ج، پس الف > ج) تا دورها کمینه شوند.",
@@ -167,6 +172,7 @@ export const maxDiffResultsTabTranslations: Record<
     subtitle: "מצטבר מהצבעות כל המשתתפים",
     score: "ציון: {score}",
     loadingError: "טעינת התוצאות נכשלה.",
+    retryButton: "נסו שוב",
     communityLearnMoreHow: "ההעדפות של כל משתתף נלמדות מההשוואות שביצע ומצטברות לדירוג קהילתי באמצעות Solidago, אלגוריתם בקוד פתוח מפרויקט Tournesol. ההצבעות נספרות מיידית.",
     communityLearnMoreDiversity: "המערכת מתחשבת ברמות האמון של המשתמשים ומשתמשת במידע על קבוצות דעה כדי להבטיח ייצוג הוגן של נקודות מבט מגוונות, בהתבסס על מחקר מסגרת Plurality.",
     communityLearnMoreFair: "קבוצות נבחרות כדי לתעדף פריטים שצריכים יותר נתונים, עם סדר אקראי למניעת הטיית מיקום. השוואות עקיפות מוסקות (אם א > ב ו-ב > ג, אז א > ג) כדי למזער סיבובים.",
@@ -197,6 +203,7 @@ export const maxDiffResultsTabTranslations: Record<
     subtitle: "Agrégé à partir des votes de tous les participants",
     score: "Score : {score}",
     loadingError: "Échec du chargement des résultats.",
+    retryButton: "Réessayer",
     communityLearnMoreHow: "Les preferences de chaque participant sont apprises a partir de ses comparaisons, puis agregees en un classement communautaire via Solidago, un algorithme open source du projet Tournesol. Les votes comptent immediatement.",
     communityLearnMoreDiversity: "Le systeme tient compte des niveaux de confiance des utilisateurs et utilise les informations de groupes d'opinion pour garantir une representation equitable des perspectives diverses, s'appuyant sur les recherches du cadre Plurality.",
     communityLearnMoreFair: "Les groupes sont selectionnes pour prioriser les elements necessitant plus de donnees, avec un ordre aleatoire pour eviter le biais de position. Les comparaisons indirectes sont deduites (si A > B et B > C, alors A > C) pour minimiser les tours.",
@@ -228,6 +235,7 @@ export const maxDiffResultsTabTranslations: Record<
     subtitle: "汇总所有参与者的投票",
     score: "得分：{score}",
     loadingError: "加载结果失败。",
+    retryButton: "重试",
     communityLearnMoreHow: "每位参与者的偏好从其比较中学习，然后使用 Solidago（Tournesol 项目的开源算法）汇总为社区排名。投票立即生效。",
     communityLearnMoreDiversity: "系统考虑用户信任级别，并利用意见群体信息确保多元视角的公平代表，借鉴 Plurality 框架的研究。",
     communityLearnMoreFair: "分组优先展示需要更多数据的项目，组内顺序随机化以防止位置偏差。间接比较会被推断（如果 A > B 且 B > C，则 A > C）以减少轮数。",
@@ -259,6 +267,7 @@ export const maxDiffResultsTabTranslations: Record<
     subtitle: "匯總所有參與者的投票",
     score: "得分：{score}",
     loadingError: "載入結果失敗。",
+    retryButton: "重試",
     communityLearnMoreHow: "每位參與者的偏好從其比較中學習，然後使用 Solidago（Tournesol 項目的開源演算法）匯總為社區排名。投票立即生效。",
     communityLearnMoreDiversity: "系統考慮使用者信任級別，並利用意見群體資訊確保多元觀點的公平代表，借鑒 Plurality 框架的研究。",
     communityLearnMoreFair: "分組優先展示需要更多資料的項目，組內順序隨機化以防止位置偏差。間接比較會被推斷（如果 A > B 且 B > C，則 A > C）以減少輪數。",
@@ -290,6 +299,7 @@ export const maxDiffResultsTabTranslations: Record<
     subtitle: "全参加者の投票を集計",
     score: "スコア：{score}",
     loadingError: "結果の読み込みに失敗しました。",
+    retryButton: "再試行",
     communityLearnMoreHow: "各参加者の好みは比較から個別に学習され、Solidago（Tournesolプロジェクトのオープンソースアルゴリズム）でコミュニティランキングに集約されます。投票は即座に反映されます。",
     communityLearnMoreDiversity: "システムはユーザーの信頼レベルを考慮し、意見グループの情報を活用して多様な視点の公正な代表を確保します（Pluralityフレームワークの研究に基づく）。",
     communityLearnMoreFair: "グループはデータが必要な項目を優先して選択され、位置バイアス防止のため順序はランダム化されます。間接比較も推論されます（A > B かつ B > C なら A > C）。",
@@ -321,6 +331,7 @@ export const maxDiffResultsTabTranslations: Record<
     subtitle: "Бардык катышуучулардын добуштарынан топтолгон",
     score: "Упай: {score}",
     loadingError: "Натыйжаларды жүктөө ишке ашкан жок.",
+    retryButton: "Кайра аракет кылуу",
     communityLearnMoreHow: "Ар бир катышуучунун каалоолору анын салыштырууларынан үйрөнүлүп, Solidago (Tournesol долбоорунун ачык булак алгоритми) менен коомдук рейтингге бириктирилет. Добуштар дароо эсепке алынат.",
     communityLearnMoreDiversity: "Система колдонуучулардын ишеним деңгээлдерин эсепке алат жана ар түрдүү көз караштардын адилеттүү өкүлчүлүгүн камсыз кылуу үчүн пикир топторунун маалыматын колдонот (Plurality алкагынын изилдөөлөрүнө негизделген).",
     communityLearnMoreFair: "Топтор көбүрөөк маалымат керек болгон элементтерге артыкчылык берүү үчүн тандалат, позициялык калыстыксыздыкты алдын алуу үчүн кокустук тартип менен. Кыйыр салыштыруулар чыгарылат (А > Б жана Б > В болсо, анда А > В) раунддарды азайтуу үчүн.",
@@ -352,6 +363,7 @@ export const maxDiffResultsTabTranslations: Record<
     subtitle: "Агрегировано из голосов всех участников",
     score: "Оценка: {score}",
     loadingError: "Не удалось загрузить результаты.",
+    retryButton: "Попробовать ещё раз",
     communityLearnMoreHow: "Предпочтения каждого участника изучаются из его сравнений и агрегируются в общий рейтинг с помощью Solidago, алгоритма с открытым кодом от проекта Tournesol. Голоса учитываются сразу.",
     communityLearnMoreDiversity: "Система учитывает уровни доверия пользователей и использует информацию о группах мнений для справедливого представительства разных точек зрения, опираясь на исследования фреймворка Plurality.",
     communityLearnMoreFair: "Группы подбираются с приоритетом элементов, которым нужно больше данных, с рандомизированным порядком для предотвращения позиционного смещения. Косвенные сравнения выводятся автоматически (если А > Б и Б > В, то А > В) для минимизации раундов.",

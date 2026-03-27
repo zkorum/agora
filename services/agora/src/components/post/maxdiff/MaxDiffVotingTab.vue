@@ -12,7 +12,7 @@
       @retry="retryInitialize"
     />
 
-    <!-- Initialization error (e.g. route buffer fetch failed) -->
+    <!-- Initialization error (e.g. candidate set fetch failed) -->
     <ErrorRetryBlock
       v-else-if="initError"
       :title="t('loadingError')"
@@ -117,36 +117,41 @@
         />
       </div>
 
-      <div class="candidates-grid" :class="{ 'candidates-transitioning': isTransitioning }">
-        <button
-          v-for="slugId in candidates"
-          :key="slugId"
-          class="candidate-card"
-          :class="{
-            'selected-best': selectedBest === slugId,
-            'selected-worst': selectedWorst === slugId,
-          }"
-          @click="handleCandidateClick(slugId)"
-        >
-          <div :ref="(el) => setContentRef(slugId, el)" class="candidate-content-wrapper">
-            <ZKHtmlContent
-              :html-body="itemContentMap.get(slugId) ?? slugId"
-              :compact-mode="false"
-              :enable-links="false"
-            />
-            <span v-if="itemBySlugId.get(slugId)?.body" class="candidate-body-inline">
-              — {{ stripHtml(itemBySlugId.get(slugId)?.body ?? "") }}
-            </span>
-          </div>
-          <div class="candidate-label">
-            <span v-if="selectedBest === slugId" class="label-best">
-              {{ t("mostImportant") }}
-            </span>
-            <span v-else-if="selectedWorst === slugId" class="label-worst">
-              {{ t("leastImportant") }}
-            </span>
-          </div>
-        </button>
+      <div class="candidates-grid-wrapper">
+        <div class="candidates-grid" :class="{ 'candidates-transitioning': isTransitioning }">
+          <button
+            v-for="slugId in candidates"
+            :key="slugId"
+            class="candidate-card"
+            :class="{
+              'selected-best': selectedBest === slugId,
+              'selected-worst': selectedWorst === slugId,
+            }"
+            @click="handleCandidateClick(slugId)"
+          >
+            <div :ref="(el) => setContentRef(slugId, el)" class="candidate-content-wrapper">
+              <ZKHtmlContent
+                :html-body="itemContentMap.get(slugId) ?? slugId"
+                :compact-mode="false"
+                :enable-links="false"
+              />
+              <span v-if="itemBySlugId.get(slugId)?.body" class="candidate-body-inline">
+                — {{ stripHtml(itemBySlugId.get(slugId)?.body ?? "") }}
+              </span>
+            </div>
+            <div class="candidate-label">
+              <span v-if="selectedBest === slugId" class="label-best">
+                {{ t("mostImportant") }}
+              </span>
+              <span v-else-if="selectedWorst === slugId" class="label-worst">
+                {{ t("leastImportant") }}
+              </span>
+            </div>
+          </button>
+        </div>
+        <div v-if="showTransitionSpinner" class="transition-spinner-overlay">
+          <q-spinner-dots color="primary" size="2.5rem" />
+        </div>
       </div>
     </div>
 
@@ -361,11 +366,7 @@ const saveMutation = useMaxDiffSaveMutation({
     isComplete.value = context.previousIsComplete;
     finalRanking.value = context.previousFinalRanking;
     candidates.value = context.previousCandidates;
-    candidateBuffer.value = context.previousCandidateBuffer;
-    if (transitionTimeout !== null) {
-      clearTimeout(transitionTimeout);
-      isTransitioning.value = false;
-    }
+    cancelTransition();
     consumeUndoEntry();
     showNotifyMessage({ message: t("savingError"), force: true });
   },
@@ -386,17 +387,30 @@ const candidates = ref<string[]>([]);
 const selectedBest = ref<string | null>(null);
 const selectedWorst = ref<string | null>(null);
 const isTransitioning = ref(false);
+const showTransitionSpinner = ref(false);
 let transitionTimeout: ReturnType<typeof setTimeout> | null = null;
+let transitionSpinnerTimeout: ReturnType<typeof setTimeout> | null = null;
+
+function clearTransitionSpinner(): void {
+  if (transitionSpinnerTimeout !== null) {
+    clearTimeout(transitionSpinnerTimeout);
+    transitionSpinnerTimeout = null;
+  }
+  showTransitionSpinner.value = false;
+}
+
+function cancelTransition(): void {
+  if (transitionTimeout !== null) {
+    clearTimeout(transitionTimeout);
+    transitionTimeout = null;
+  }
+  clearTransitionSpinner();
+  isTransitioning.value = false;
+}
 
 onBeforeUnmount(() => {
-  if (transitionTimeout !== null) clearTimeout(transitionTimeout);
+  cancelTransition();
 });
-
-// Prefetch buffer: server-generated candidate sets for instant display
-const candidateBuffer = ref<string[][]>([]);
-const BUFFER_REFILL_THRESHOLD = 1;
-const BUFFER_MAX_SIZE = 8;
-let isRefilling = false;
 
 // Statement dialog state
 const showStatementDialog = ref(false);
@@ -522,20 +536,16 @@ watch(
       finalRanking.value = [];
     }
 
-    // Fetch initial route buffer
-    await fetchRouteBuffer({
-      comparisons: instance.value.exportState().comparisons,
-      initialLoad: true,
-    });
-
-    if (candidateBuffer.value.length === 0 && !instance.value.complete) {
+    // Fetch initial candidate set
+    const initialResult = await fetchNextCandidateSet();
+    if (!("candidates" in initialResult) && !instance.value.complete) {
       initError.value = true;
       isInitializingEngine.value = false;
       engineInitialized.value = true;
       return;
     }
 
-    await updateCandidates();
+    candidates.value = "candidates" in initialResult ? initialResult.candidates : [];
     isInitializingEngine.value = false;
     engineInitialized.value = true;
   },
@@ -555,91 +565,35 @@ function retryInitialize(): void {
   void loadQuery.refetch();
 }
 
+async function fetchNextCandidateSet(): Promise<{ candidates: string[] } | { error: "network" } | { error: "empty" }> {
+  const comparisons = instance.value?.exportState().comparisons ?? [];
+  const response = await fetchMaxDiffRoute({
+    conversationSlugId: conversationSlugId.value,
+    comparisons,
+    bufferSize: 1,
+  });
+  if (response.status === "success" && response.data.candidateSets.length > 0) {
+    return { candidates: response.data.candidateSets[0] };
+  }
+  if (response.status === "success") {
+    return { error: "empty" };
+  }
+  return { error: "network" };
+}
+
 async function updateCandidates(): Promise<void> {
   if (!instance.value || instance.value.complete) {
     candidates.value = [];
     return;
   }
-  const validSet = consumeValidBufferedSet();
-  if (validSet !== undefined) {
-    candidates.value = validSet;
+  const result = await fetchNextCandidateSet();
+  if ("candidates" in result) {
+    candidates.value = result.candidates;
+  } else if (result.error === "network") {
+    showNotifyMessage({ message: t("loadingError"), force: true });
   } else {
-    // Buffer empty — fetch fresh sets with loading state
-    isInitializingEngine.value = true;
-    await fetchRouteBuffer({
-      comparisons: instance.value.exportState().comparisons,
-      initialLoad: false,
-    });
-    const fresh = consumeValidBufferedSet();
-    if (fresh !== undefined) {
-      candidates.value = fresh;
-    } else {
-      // No candidates available — voting is likely complete
-      isComplete.value = true;
-      candidates.value = [];
-    }
-    isInitializingEngine.value = false;
-    return;
-  }
-
-  // Refill buffer when running low (non-blocking)
-  if (
-    candidateBuffer.value.length <= BUFFER_REFILL_THRESHOLD &&
-    !isRefilling &&
-    instance.value !== null
-  ) {
-    void fetchRouteBuffer({
-      comparisons: instance.value.exportState().comparisons,
-      initialLoad: false,
-    });
-  }
-}
-
-/** Consume the next buffered set, skipping stale ones (items no longer active). */
-function consumeValidBufferedSet(): string[] | undefined {
-  const activeSlugIds = new Set(itemList.value.map((item) => item.slugId));
-  while (candidateBuffer.value.length > 0) {
-    const set = candidateBuffer.value.shift();
-    if (set === undefined) continue;
-    // Validate all items in the set still exist
-    if (set.length >= 2 && set.every((id) => activeSlugIds.has(id))) {
-      return set;
-    }
-    // Stale set — discard and try next
-  }
-  return undefined;
-}
-
-async function fetchRouteBuffer({
-  comparisons,
-  initialLoad,
-}: {
-  comparisons: MaxDiffComparison[];
-  initialLoad: boolean;
-}): Promise<void> {
-  if (isRefilling && !initialLoad) return; // Prevent concurrent refills
-  isRefilling = true;
-  try {
-    const currentBufferSize = candidateBuffer.value.length;
-    const requestSize = Math.min(
-      initialLoad ? 5 : 3,
-      BUFFER_MAX_SIZE - currentBufferSize,
-    );
-    if (requestSize <= 0) return;
-
-    const response = await fetchMaxDiffRoute({
-      conversationSlugId: conversationSlugId.value,
-      comparisons,
-      bufferSize: requestSize,
-    });
-    if (response.status === "success") {
-      // Respect cap
-      const spaceLeft = BUFFER_MAX_SIZE - candidateBuffer.value.length;
-      const toAdd = response.data.candidateSets.slice(0, spaceLeft);
-      candidateBuffer.value.push(...toAdd);
-    }
-  } finally {
-    isRefilling = false;
+    isComplete.value = true;
+    candidates.value = [];
   }
 }
 
@@ -699,7 +653,6 @@ function recordVote(): void {
     previousIsComplete: isComplete.value,
     previousFinalRanking: [...finalRanking.value],
     previousCandidates: [...candidates.value],
-    previousCandidateBuffer: [...candidateBuffer.value],
     isFirstVote: previousState.comparisons.length === 0,
   };
 
@@ -725,10 +678,16 @@ function recordVote(): void {
   selectedWorst.value = null;
   isTransitioning.value = true;
 
+  // Show spinner if fetch takes longer than 2s
+  clearTransitionSpinner();
+  transitionSpinnerTimeout = setTimeout(() => {
+    showTransitionSpinner.value = true;
+  }, 2000);
+
   transitionTimeout = setTimeout(() => {
     void (async () => {
       await updateCandidates();
-      isTransitioning.value = false;
+      cancelTransition();
     })();
   }, 400);
 
@@ -747,13 +706,15 @@ function undoLastVote(): void {
   const state = instance.value.exportState();
   if (state.comparisons.length === 0) return;
 
+  // Cancel any in-flight transition from the vote being undone
+  cancelTransition();
+
   // Snapshot for rollback (undo should be reversible on save failure)
   const context: MaxDiffSaveContext = {
     previousState: state,
     previousIsComplete: isComplete.value,
     previousFinalRanking: [...finalRanking.value],
     previousCandidates: [...candidates.value],
-    previousCandidateBuffer: [...candidateBuffer.value],
     isFirstVote: false,
   };
 
@@ -774,13 +735,6 @@ function undoLastVote(): void {
   selectedWorst.value = null;
 
   candidates.value = removedComparison.set;
-
-  // Clear stale buffer (comparison state changed) and refill
-  candidateBuffer.value = [];
-  void fetchRouteBuffer({
-    comparisons: restored.exportState().comparisons,
-    initialLoad: false,
-  });
 
   saveMutation.mutate({
     ranking: restored.result ?? null,
@@ -809,10 +763,10 @@ function handleRedoRanking(): void {
       previousIsComplete: isComplete.value,
       previousFinalRanking: [...finalRanking.value],
       previousCandidates: [...candidates.value],
-      previousCandidateBuffer: [...candidateBuffer.value],
       isFirstVote: false,
     };
 
+    cancelTransition();
     clearAllUndoEntries();
     const slugIds = itemList.value.map((item) => item.slugId);
     instance.value = createMaxDiff(slugIds);
@@ -856,13 +810,6 @@ function handleRedoRanking(): void {
   font-size: 1.1rem;
   font-weight: var(--font-weight-semibold);
   color: $color-text-strong;
-}
-
-.section-subheader {
-  font-size: 0.95rem;
-  font-weight: var(--font-weight-medium);
-  color: $color-text-weak;
-  margin-top: 0.5rem;
 }
 
 .step-indicator {
@@ -972,6 +919,10 @@ function handleRedoRanking(): void {
   transition: width 0.3s ease;
 }
 
+.candidates-grid-wrapper {
+  position: relative;
+}
+
 .candidates-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -982,6 +933,15 @@ function handleRedoRanking(): void {
     opacity: 0.3;
     pointer-events: none;
   }
+}
+
+.transition-spinner-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
 
 .candidate-card {

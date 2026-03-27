@@ -13,9 +13,12 @@
     <PageLoadingSpinner v-if="isInitialLoading" />
 
     <!-- Error -->
-    <div v-else-if="hasError" class="info-message">
-      {{ t("loadingError") }}
-    </div>
+    <ErrorRetryBlock
+      v-else-if="hasError"
+      :title="t('loadingError')"
+      :retry-label="t('retryButton')"
+      @retry="retryFetchResults"
+    />
 
     <template v-else>
       <!-- Me section (above community ranking in Summary) -->
@@ -155,6 +158,7 @@
 
 <script setup lang="ts">
 import ShortcutBar from "src/components/post/analysis/shortcutBar/ShortcutBar.vue";
+import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -371,6 +375,10 @@ async function fetchLifecycleItems({
   }
 }
 
+function retryFetchResults(): void {
+  void fetchResults({ showLoading: true });
+}
+
 async function fetchResults({ showLoading }: { showLoading: boolean }): Promise<void> {
   if (showLoading) {
     isInitialLoading.value = true;
@@ -472,13 +480,6 @@ watch(currentTab, async (newTab, oldTab) => {
 .tabComponent {
   border-radius: 12px;
   padding: 0.5rem;
-}
-
-.info-message {
-  text-align: center;
-  color: $color-text-weak;
-  padding: 2rem 1rem;
-  font-size: 0.95rem;
 }
 
 .learn-more-title {
