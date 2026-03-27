@@ -148,10 +148,9 @@ export function useMaxDiffSaveMutation({
         queryKey: ["maxdiff-load", slugId],
       });
 
-      // Full server sync on key transitions
-      if (variables.context.isFirstVote || variables.isComplete || variables.comparisons.length === 0) {
-        invalidateConversation(slugId);
-      }
+      // Invalidate community results so Results tab re-fetches fresh scores
+      // (scores are recomputed by python-bridge on each flush)
+      invalidateConversation(slugId);
       onSaveSuccess();
     },
 

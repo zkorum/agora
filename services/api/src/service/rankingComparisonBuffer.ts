@@ -452,6 +452,9 @@ async function scoreConversation({
     };
 
     if (entityIds.length < 2) {
+        log.info(
+            `[RankingScoring] Conversation ${String(conversationId)}: <2 active items (${String(entityIds.length)}), clearing stale scores`,
+        );
         await clearStaleCachedScores();
         return;
     }
@@ -463,6 +466,9 @@ async function scoreConversation({
         .where(eq(maxdiffResultTable.conversationId, conversationId));
 
     if (allResults.length === 0) {
+        log.info(
+            `[RankingScoring] Conversation ${String(conversationId)}: no result rows in DB, clearing stale scores`,
+        );
         await clearStaleCachedScores();
         return;
     }
@@ -497,9 +503,16 @@ async function scoreConversation({
     }
 
     if (bwsComparisons.length === 0) {
+        log.info(
+            `[RankingScoring] Conversation ${String(conversationId)}: 0 valid BWS comparisons after filtering (${String(allResults.length)} result rows, all comparisons empty or referencing inactive items), clearing stale scores`,
+        );
         await clearStaleCachedScores();
         return;
     }
+
+    log.info(
+        `[RankingScoring] Conversation ${String(conversationId)}: calling python-bridge with ${String(bwsComparisons.length)} BWS comparisons, ${String(entityIds.length)} entities`,
+    );
 
     // Get conversation slugId
     const convRows = await db
