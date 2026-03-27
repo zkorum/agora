@@ -3,6 +3,7 @@
     v-if="conversationData.metadata.conversationType === 'maxdiff'"
     :conversation-data="conversationData"
     :has-conversation-data="hasConversationData"
+    :on-view-analysis="onViewAnalysis"
   />
   <ConversationCommentTab
     v-else

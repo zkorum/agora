@@ -46,7 +46,7 @@ import { cleanupStuckExportsOnStartup } from "@/service/conversationExport/core.
 import { createImportNotification } from "@/service/conversationImport/notifications.js";
 import { createExportNotification } from "@/service/conversationExport/notifications.js";
 import { validateS3Access } from "./service/s3.js";
-import { backfillMaxdiffSnapshots } from "@/service/maxdiffBackfill.js";
+
 import { backfillImportBodies } from "@/service/importBodyBackfill.js";
 // import * as polisService from "@/service/polis.js";
 // import * as migrationService from "@/service/migration.js";
@@ -129,6 +129,7 @@ import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
 import { createExportBuffer } from "./service/exportBuffer.js";
 import { createImportBuffer } from "./service/importBuffer.js";
+import { createRankingComparisonBuffer } from "./service/rankingComparisonBuffer.js";
 import { createUcanReplayGuard } from "./service/ucanReplayGuard.js";
 import { RealtimeSSEManager } from "./service/realtimeSSE.js";
 import {
@@ -513,6 +514,18 @@ log.info(
     `[API] Vote buffer initialized (flush interval: ${String(config.VOTE_BUFFER_FLUSH_INTERVAL_MS)}ms, batch limit: ${String(config.VOTE_BUFFER_VALKEY_BATCH_LIMIT)}, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
+// Initialize RankingComparisonBuffer (buffers MaxDiff comparisons, flushes to DB + python-bridge Solidago scoring)
+const rankingComparisonBuffer = createRankingComparisonBuffer({
+    db,
+    valkey: queueValkey,
+    axiosPythonBridge: axiosPolis,
+    flushIntervalMs: config.VOTE_BUFFER_FLUSH_INTERVAL_MS,
+    valkeyBatchLimit: config.VOTE_BUFFER_VALKEY_BATCH_LIMIT,
+});
+log.info(
+    `[API] Ranking comparison buffer initialized (scoring: ${axiosPolis !== undefined ? "python-bridge" : "disabled"}, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
+);
+
 // Initialize ExportBuffer (batches export requests to reduce system load)
 const exportBuffer = createExportBuffer({
     db,
@@ -623,8 +636,6 @@ const performStartupCleanup = async (): Promise<void> => {
 // Run cleanup (non-blocking)
 void performStartupCleanup();
 
-// Backfill MaxDiff snapshot scores with BT MLE (non-blocking, idempotent)
-void backfillMaxdiffSnapshots({ db });
 
 // Backfill: clean import metadata from conversation bodies (non-blocking, idempotent)
 void backfillImportBodies({ db });
@@ -1773,6 +1784,7 @@ server.after(() => {
                 comparisons: request.body.comparisons,
                 isComplete: request.body.isComplete,
                 isMaxdiffOrgOnly: config.IS_MAXDIFF_ORG_ONLY,
+                rankingComparisonBuffer,
             });
             reply.send({});
         },
@@ -1823,6 +1835,7 @@ server.after(() => {
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 lifecycleFilter: request.body.lifecycleFilter,
+                axiosPythonBridge: axiosPolis,
             });
         },
     });
@@ -3577,6 +3590,9 @@ const shutdown = async (signal: string) => {
     try {
         // Flush pending votes before shutdown
         await voteBuffer.shutdown();
+
+        // Flush pending ranking comparisons before shutdown
+        await rankingComparisonBuffer.shutdown();
 
         // Flush pending exports before shutdown
         await exportBuffer.shutdown();

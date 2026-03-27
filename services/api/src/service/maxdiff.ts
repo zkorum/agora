@@ -4,11 +4,12 @@ import {
     maxdiffItemTable,
     maxdiffItemContentTable,
     maxdiffItemExternalSourceTable,
+    rankingScoreTable,
 } from "@/shared-backend/schema.js";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import { updateMaxdiffCounters } from "@/shared-backend/conversationCounters.js";
+
 import { eq, and, inArray, isNotNull, sql } from "drizzle-orm";
 import type {
     MaxDiffLoadResponse,
@@ -18,14 +19,15 @@ import type {
 import { z } from "zod";
 import {
     zodMaxdiffComparison,
+    zodSolidagoEntityScore,
     type MaxDiffComparison,
     type MaxdiffLifecycleStatus,
 } from "@/shared/types/zod.js";
-import { mmPairwise, buildItemIndex, type PairwiseWin } from "./bradleyTerry.js";
-import { buildComparisonMatrix } from "./maxdiffEngine.js";
-import { log } from "@/app.js";
+import type { AxiosInstance } from "axios";
+import type { RankingComparisonBuffer } from "./rankingComparisonBuffer.js";
+import { parseResultRows } from "@/utils/maxdiffParsing.js";
 
-// --- Pure scoring functions (exported for testing) ---
+// --- Types ---
 
 export interface RankedItem {
     itemSlugId: string;
@@ -34,151 +36,8 @@ export interface RankedItem {
     participantCount: number;
 }
 
-/**
- * Compute scores from pooled comparisons using Bradley-Terry MLE.
- *
- * Instead of raw BWS decomposition (which creates contradictory pairwise
- * wins when candidate sets overlap with transitively-ordered items), this
- * applies transitive closure per user first, then extracts ALL consistent
- * pairwise orderings for BT. This ensures BT gets the same complete
- * information that each user's personal ranking has.
- *
- * No DB access, fully testable.
- */
-export function computeScores({
-    perUserComparisons,
-    items,
-    participantCounts,
-}: {
-    perUserComparisons: MaxDiffComparison[][];
-    items: string[];
-    participantCounts: Map<string, number>;
-}): RankedItem[] {
-    const n = items.length;
-    if (n === 0) return [];
-
-    const itemIndex = buildItemIndex(items);
-
-    // For each user, apply transitive closure and extract all ordered pairs
-    const pairwiseData: PairwiseWin[] = [];
-    for (const userComparisons of perUserComparisons) {
-        const { applyComparison, getOrderedPairs } = buildComparisonMatrix({
-            items,
-        });
-        for (const comp of userComparisons) {
-            applyComparison(comp);
-        }
-        // Extract all ordered pairs (including transitive inferences)
-        for (const [before, after] of getOrderedPairs()) {
-            const winnerIdx = itemIndex.get(before);
-            const loserIdx = itemIndex.get(after);
-            if (winnerIdx !== undefined && loserIdx !== undefined) {
-                pairwiseData.push({ winner: winnerIdx, loser: loserIdx });
-            }
-        }
-    }
-
-    // Count comparisons per item (for uncertainty estimation)
-    const comparisonCounts = new Array<number>(n).fill(0);
-    for (const { winner, loser } of pairwiseData) {
-        comparisonCounts[winner] += 1;
-        comparisonCounts[loser] += 1;
-    }
-
-    // Run BT MLE
-    const { params, converged } = mmPairwise({
-        nItems: n,
-        data: pairwiseData,
-    });
-
-    if (!converged) {
-        log.warn(
-            `[computeScores] BT MLE did not converge for ${String(items.length)} items`,
-        );
-    }
-
-    // Normalize scores to [0, 1] range
-    let minParam = Infinity;
-    let maxParam = -Infinity;
-    for (const p of params) {
-        if (p < minParam) minParam = p;
-        if (p > maxParam) maxParam = p;
-    }
-    const range = maxParam - minParam;
-
-    const scoredItems = items
-        .map((item, i) => ({
-            item,
-            score: range > 0 ? (params[i] - minParam) / range : 1,
-            uncertainty: 1 / Math.sqrt(comparisonCounts[i] + 1),
-        }))
-        .sort((a, b) => b.score - a.score);
-
-    return scoredItems.map((s, idx) => ({
-        itemSlugId: s.item,
-        avgRank: idx + 1,
-        score: s.score,
-        participantCount: participantCounts.get(s.item) ?? 0,
-    }));
-}
-
-/**
- * Extract all comparisons from raw JSONB result rows, filtering to active items.
- * Also counts how many users compared each item (for participant counts).
- * Pure function, no DB access.
- */
-export function parseResultRows({
-    rows,
-    items,
-}: {
-    rows: { ranking: unknown; comparisons: unknown }[];
-    items: string[];
-}): {
-    perUserComparisons: MaxDiffComparison[][];
-    participantCounts: Map<string, number>;
-} {
-    const itemSet = new Set(items);
-    const perUserComparisons: MaxDiffComparison[][] = [];
-    // Track which items each user compared (for participant counts)
-    const itemParticipants = new Map<string, Set<number>>();
-    for (const item of items) {
-        itemParticipants.set(item, new Set());
-    }
-
-    for (let userIdx = 0; userIdx < rows.length; userIdx++) {
-        const row = rows[userIdx];
-        const comparisons = z
-            .array(zodMaxdiffComparison)
-            .parse(row.comparisons);
-
-        const userComps: MaxDiffComparison[] = [];
-        for (const comp of comparisons) {
-            if (!itemSet.has(comp.best) || !itemSet.has(comp.worst)) continue;
-            const filteredSet = comp.set.filter((id) => itemSet.has(id));
-            if (filteredSet.length < 2) continue;
-
-            userComps.push({
-                best: comp.best,
-                worst: comp.worst,
-                set: filteredSet,
-            });
-
-            for (const item of filteredSet) {
-                itemParticipants.get(item)?.add(userIdx);
-            }
-        }
-        if (userComps.length > 0) {
-            perUserComparisons.push(userComps);
-        }
-    }
-
-    const participantCounts = new Map<string, number>();
-    for (const [item, participants] of itemParticipants) {
-        participantCounts.set(item, participants.size);
-    }
-
-    return { perUserComparisons, participantCounts };
-}
+// parseResultRows moved to @/utils/maxdiffParsing.ts (pure function, no DB deps)
+export { parseResultRows } from "@/utils/maxdiffParsing.js";
 
 // --- Global Uncertainty (for routing) ---
 
@@ -258,6 +117,7 @@ interface SaveMaxdiffResultProps {
     comparisons: MaxDiffComparison[];
     isComplete: boolean;
     isMaxdiffOrgOnly: boolean;
+    rankingComparisonBuffer: RankingComparisonBuffer;
 }
 
 export async function saveMaxdiffResult({
@@ -268,6 +128,7 @@ export async function saveMaxdiffResult({
     comparisons,
     isComplete,
     isMaxdiffOrgOnly,
+    rankingComparisonBuffer,
 }: SaveMaxdiffResultProps): Promise<void> {
     const { id: conversationId } =
         await useCommonPost().getPostMetadataFromSlugId({
@@ -299,33 +160,18 @@ export async function saveMaxdiffResult({
         );
     }
 
-    const now = new Date();
-
-    await db
-        .insert(maxdiffResultTable)
-        .values({
-            participantId: userId,
+    // Push to Valkey buffer (flushed periodically to DB + python-bridge)
+    rankingComparisonBuffer.add({
+        comparison: {
+            userId,
             conversationId,
-            ranking: ranking,
-            comparisons: comparisons,
+            conversationSlugId,
+            ranking,
+            comparisons,
             isComplete,
-            createdAt: now,
-            updatedAt: now,
-        })
-        .onConflictDoUpdate({
-            target: [
-                maxdiffResultTable.participantId,
-                maxdiffResultTable.conversationId,
-            ],
-            set: {
-                ranking: ranking,
-                comparisons: comparisons,
-                isComplete,
-                updatedAt: now,
-            },
-        });
-
-    await updateMaxdiffCounters({ db, conversationId });
+            timestamp: new Date(),
+        },
+    });
 }
 
 // --- Load ---
@@ -394,12 +240,14 @@ interface GetMaxdiffResultsProps {
     db: PostgresDatabase;
     conversationSlugId: string;
     lifecycleFilter?: LifecycleFilter;
+    axiosPythonBridge?: AxiosInstance;
 }
 
 export async function getMaxdiffResults({
     db,
     conversationSlugId,
     lifecycleFilter = "active",
+    axiosPythonBridge,
 }: GetMaxdiffResultsProps): Promise<MaxDiffResultsResponse> {
     const { id: conversationId } =
         await useCommonPost().getPostMetadataFromSlugId({
@@ -486,13 +334,78 @@ export async function getMaxdiffResults({
         return { rankings };
     }
 
-    // For active/all: compute live scores via BT MLE with transitive closure
-    const { perUserComparisons, participantCounts } = parseResultRows({
-        rows: allResults,
-        items,
-    });
+    // For active/all: read pre-computed Solidago scores from ranking_score table.
+    // If no cache, call python-bridge synchronously.
+    const cachedScoreRow = await db
+        .select({
+            currentRankingScoreId: conversationTable.currentRankingScoreId,
+        })
+        .from(conversationTable)
+        .where(eq(conversationTable.id, conversationId));
 
-    const scored = computeScores({ perUserComparisons, items, participantCounts });
+    const currentScoreId =
+        cachedScoreRow.length > 0
+            ? cachedScoreRow[0].currentRankingScoreId
+            : null;
+
+    let scored: RankedItem[];
+
+    if (currentScoreId !== null) {
+        // Read from ranking_score table (Solidago pre-computed)
+        const scoreRows = await db
+            .select({
+                scores: rankingScoreTable.scores,
+                participantCounts: rankingScoreTable.participantCounts,
+            })
+            .from(rankingScoreTable)
+            .where(eq(rankingScoreTable.id, currentScoreId));
+
+        if (scoreRows.length > 0) {
+            const cachedScores = z
+                .array(zodSolidagoEntityScore)
+                .parse(scoreRows[0].scores);
+            const cachedParticipantCounts = z
+                .record(z.string(), z.number())
+                .parse(scoreRows[0].participantCounts);
+
+            scored = cachedScores
+                .filter((s) => items.includes(s.entityId))
+                .map((s, idx) => ({
+                    itemSlugId: s.entityId,
+                    avgRank: idx + 1,
+                    score: s.score,
+                    participantCount:
+                        cachedParticipantCounts[s.entityId] ?? 0,
+                }));
+        } else {
+            scored = [];
+        }
+    } else {
+        scored = [];
+    }
+
+    // If no cached scores and python-bridge is available, call synchronously.
+    // This happens on first load before any flush, or if cache was cleared.
+    if (
+        scored.length === 0 &&
+        items.length >= 2 &&
+        allResults.length > 0 &&
+        axiosPythonBridge !== undefined
+    ) {
+        const { perUserComparisons, participantCounts } = parseResultRows({
+            rows: allResults,
+            items,
+        });
+        scored = await scoreSynchronouslyViaPythonBridge({
+            db,
+            conversationId,
+            conversationSlugId,
+            items,
+            perUserComparisons,
+            participantCounts,
+            axiosPythonBridge,
+        });
+    }
 
     const contentMap = new Map(
         itemRows.map((r) => [
@@ -523,6 +436,109 @@ export async function getMaxdiffResults({
     return { rankings };
 }
 
+// --- Synchronous python-bridge scoring (cache miss fallback) ---
+
+async function scoreSynchronouslyViaPythonBridge({
+    db,
+    conversationId,
+    conversationSlugId,
+    items,
+    perUserComparisons,
+    participantCounts,
+    axiosPythonBridge,
+}: {
+    db: PostgresDatabase;
+    conversationId: number;
+    conversationSlugId: string;
+    items: string[];
+    perUserComparisons: MaxDiffComparison[][];
+    participantCounts: Map<string, number>;
+    axiosPythonBridge: AxiosInstance;
+}): Promise<RankedItem[]> {
+    // Build BWS comparisons for python-bridge
+    const entityIdSet = new Set(items);
+    const bwsComparisons: {
+        user_id: number;
+        best: string;
+        worst: string;
+        candidate_set: string[];
+    }[] = [];
+
+    for (let userIdx = 0; userIdx < perUserComparisons.length; userIdx++) {
+        for (const comp of perUserComparisons[userIdx]) {
+            if (!entityIdSet.has(comp.best) || !entityIdSet.has(comp.worst))
+                continue;
+            const filteredSet = comp.set.filter((id) => entityIdSet.has(id));
+            if (filteredSet.length < 2) continue;
+            bwsComparisons.push({
+                user_id: userIdx,
+                best: comp.best,
+                worst: comp.worst,
+                candidate_set: filteredSet,
+            });
+        }
+    }
+
+    if (bwsComparisons.length === 0) return [];
+
+    const zodPythonBridgeResponse = z.object({
+        scores: z.array(
+            z.object({
+                entity_id: z.string(),
+                score: z.number(),
+                uncertainty_left: z.number(),
+                uncertainty_right: z.number(),
+            }),
+        ),
+    });
+
+    const response = await axiosPythonBridge.post("/ranking-score", {
+        conversation_slug_id: conversationSlugId,
+        entity_ids: items,
+        bws_comparisons: bwsComparisons,
+    });
+
+    const { scores } = zodPythonBridgeResponse.parse(response.data);
+
+    // Also write to ranking_score table so next read is cached
+    const now = new Date();
+    now.setMilliseconds(0);
+
+    const [insertedScore] = await db
+        .insert(rankingScoreTable)
+        .values({
+            conversationId,
+            scores: scores.map((s) => ({
+                entityId: s.entity_id,
+                score: s.score,
+                uncertaintyLeft: s.uncertainty_left,
+                uncertaintyRight: s.uncertainty_right,
+            })),
+            participantCounts: Object.fromEntries(participantCounts),
+            groupSourcesSnapshot: null,
+            userWeightsSnapshot: null,
+            pipelineConfig: {
+                preferenceLearning: "UniformGBT",
+                votingRights: "AffineOvertrust",
+                aggregation: "EntitywiseQrQuantile(quantile=0.5)",
+            },
+            computedAt: now,
+        })
+        .returning({ id: rankingScoreTable.id });
+
+    await db
+        .update(conversationTable)
+        .set({ currentRankingScoreId: insertedScore.id })
+        .where(eq(conversationTable.id, conversationId));
+
+    return scores.map((s, idx) => ({
+        itemSlugId: s.entity_id,
+        avgRank: idx + 1,
+        score: s.score,
+        participantCount: participantCounts.get(s.entity_id) ?? 0,
+    }));
+}
+
 // --- Snapshot scores for lifecycle transitions ---
 
 interface ComputeSnapshotProps {
@@ -532,9 +548,9 @@ interface ComputeSnapshotProps {
 }
 
 /**
- * Compute the current score and rank for a specific item
- * by running the full scoring algorithm on all active items.
- * Returns the snapshot values to freeze on the item row.
+ * Read the current score and rank for a specific item from the
+ * pre-computed ranking_score table. Returns snapshot values to freeze
+ * on the item row during lifecycle transitions.
  */
 export async function computeItemSnapshot({
     db,
@@ -545,25 +561,18 @@ export async function computeItemSnapshot({
     snapshotRank: number | null;
     snapshotParticipantCount: number | null;
 }> {
-    // Get all active items for this conversation
-    const activeItems = await db
-        .select({ slugId: maxdiffItemTable.slugId })
-        .from(maxdiffItemTable)
-        .where(
-            and(
-                eq(maxdiffItemTable.conversationId, conversationId),
-                isNotNull(maxdiffItemTable.currentContentId),
-                inArray(maxdiffItemTable.lifecycleStatus, [
-                    "active",
-                    "in_progress",
-                ]),
-            ),
-        );
+    // Read latest scores from ranking_score table
+    const convRows = await db
+        .select({
+            currentRankingScoreId: conversationTable.currentRankingScoreId,
+        })
+        .from(conversationTable)
+        .where(eq(conversationTable.id, conversationId));
 
-    const items = activeItems.map((r) => r.slugId);
+    const currentScoreId =
+        convRows.length > 0 ? convRows[0].currentRankingScoreId : null;
 
-    // If the item isn't in the active set (already removed), can't snapshot
-    if (!items.includes(itemSlugId)) {
+    if (currentScoreId === null) {
         return {
             snapshotScore: null,
             snapshotRank: null,
@@ -571,21 +580,30 @@ export async function computeItemSnapshot({
         };
     }
 
-    const allResults = await db
+    const scoreRows = await db
         .select({
-            ranking: maxdiffResultTable.ranking,
-            comparisons: maxdiffResultTable.comparisons,
+            scores: rankingScoreTable.scores,
+            participantCounts: rankingScoreTable.participantCounts,
         })
-        .from(maxdiffResultTable)
-        .where(eq(maxdiffResultTable.conversationId, conversationId));
+        .from(rankingScoreTable)
+        .where(eq(rankingScoreTable.id, currentScoreId));
 
-    const { perUserComparisons, participantCounts } = parseResultRows({
-        rows: allResults,
-        items,
-    });
-    const scored = computeScores({ perUserComparisons, items, participantCounts });
+    if (scoreRows.length === 0) {
+        return {
+            snapshotScore: null,
+            snapshotRank: null,
+            snapshotParticipantCount: null,
+        };
+    }
 
-    const itemScore = scored.find((s) => s.itemSlugId === itemSlugId);
+    const cachedScores = z
+        .array(zodSolidagoEntityScore)
+        .parse(scoreRows[0].scores);
+    const cachedParticipantCounts = z
+        .record(z.string(), z.number())
+        .parse(scoreRows[0].participantCounts);
+
+    const itemScore = cachedScores.find((s) => s.entityId === itemSlugId);
     if (itemScore === undefined) {
         return {
             snapshotScore: null,
@@ -594,10 +612,16 @@ export async function computeItemSnapshot({
         };
     }
 
-    const rank = scored.indexOf(itemScore) + 1;
+    // Rank = position in sorted scores (1-based)
+    const rank =
+        cachedScores
+            .filter((s) => s.score >= itemScore.score)
+            .length;
+
     return {
         snapshotScore: itemScore.score,
         snapshotRank: rank,
-        snapshotParticipantCount: itemScore.participantCount,
+        snapshotParticipantCount:
+            cachedParticipantCounts[itemSlugId] ?? 0,
     };
 }

@@ -611,6 +611,317 @@ def get_math_results():
         abort(500, description=f"Error during math calculation: {str(e)}")
 
 
+# ---------------------------------------------------------------------------
+# MaxDiff scoring endpoint (Solidago integration)
+# ---------------------------------------------------------------------------
+
+from bws_conversion import BWSComparison, bws_to_pairwise
+from entity_mapping import EntityIdMapper, map_pairwise_wins_to_solidago, map_scores_from_solidago
+
+from solidago.pipeline import Pipeline
+from solidago.trust_propagation import TrustPropagation
+from solidago.preference_learning import UniformGBT
+from solidago.voting_rights import AffineOvertrust
+from solidago.scaling import NoScaling
+from solidago.aggregation import EntitywiseQrQuantile
+from solidago.post_process import NoPostProcess
+from solidago.judgments import DataFrameJudgments
+from solidago.privacy_settings import PrivacySettings
+
+
+class IdentityTrustPropagation(TrustPropagation):
+    """Pass-through trust propagation that preserves pre-set trust_score values.
+
+    Solidago's built-in classes (TrustAll, NoTrustPropagation, LipschiTrust)
+    all overwrite trust_score. This class keeps the values we set in the
+    users DataFrame, allowing the caller to control trust via user_weights.
+    """
+
+    def __call__(self, users: pd.DataFrame, vouches: pd.DataFrame) -> pd.DataFrame:
+        if "trust_score" not in users.columns:
+            return users.assign(trust_score=1.0)
+        return users
+
+
+class BWSComparisonInput(BaseModel):
+    user_id: int
+    best: str
+    worst: str
+    candidate_set: list[str]
+
+
+class PairwiseComparisonInput(BaseModel):
+    user_id: int
+    entity_a: str
+    entity_b: str
+    comparison: float
+    comparison_max: float
+
+
+class UserWeight(BaseModel):
+    user_id: int
+    weight: float
+
+
+class UserGroupEntry(BaseModel):
+    user_id: int
+    group_id: int
+
+
+class GroupSource(BaseModel):
+    source_id: str
+    memberships: list[UserGroupEntry]
+
+
+class RankingScoreRequest(BaseModel):
+    conversation_slug_id: str
+    entity_ids: list[str]
+    bws_comparisons: list[BWSComparisonInput] | None = None
+    pairwise_comparisons: list[PairwiseComparisonInput] | None = None
+    user_weights: list[UserWeight] | None = None
+    group_sources: list[GroupSource] | None = None
+    group_combination_strategy: str = "composite"
+
+
+def _warmup_solidago() -> None:
+    """Trigger Numba JIT compilation at import time with a tiny dummy dataset."""
+    dummy_df = pd.DataFrame({
+        "user_id": [0, 0],
+        "entity_a": [0, 1],
+        "entity_b": [1, 2],
+        "comparison": [1.0, 1.0],
+        "comparison_max": [1.0, 1.0],
+    })
+    gbt = UniformGBT(prior_std_dev=7.0, convergence_error=1e-5)
+    gbt.comparison_learning(dummy_df)
+    logger.info("Solidago JIT warmup complete")
+
+
+_warmup_solidago()
+
+
+from bws_conversion import PairwiseWin
+
+
+class ScoreResult(BaseModel):
+    """Successful scoring result for one conversation."""
+    scores: list[dict]
+    conversation_slug_id: str | None = None
+
+
+class ScoreError(BaseModel):
+    """Error result for one conversation."""
+    error: str
+    conversation_slug_id: str | None = None
+
+
+def score_conversation(payload: RankingScoreRequest) -> dict[str, object]:
+    """Pure scoring function: takes a request, returns scores or error.
+
+    No HTTP, no Flask — can be called directly or from endpoints.
+    Returns dict with either {"scores": [...]} or {"error": "..."}.
+    """
+    # Validate: exactly one comparison type
+    has_bws = payload.bws_comparisons is not None
+    has_pairwise = payload.pairwise_comparisons is not None
+    if has_bws == has_pairwise:
+        return {"error": "Provide exactly one of bws_comparisons or pairwise_comparisons"}
+
+    # Convert BWS to pairwise if needed
+    if payload.bws_comparisons is not None:
+        bws_list = [
+            BWSComparison(
+                user_id=c.user_id,
+                best=c.best,
+                worst=c.worst,
+                candidate_set=c.candidate_set,
+            )
+            for c in payload.bws_comparisons
+        ]
+        pairwise_wins = bws_to_pairwise(
+            bws_comparisons=bws_list,
+            entity_ids=payload.entity_ids,
+        )
+    else:
+        pairwise_wins = []
+        for c in payload.pairwise_comparisons:
+            if c.comparison > 0:
+                pairwise_wins.append(PairwiseWin(user_id=c.user_id, winner=c.entity_a, loser=c.entity_b))
+            elif c.comparison < 0:
+                pairwise_wins.append(PairwiseWin(user_id=c.user_id, winner=c.entity_b, loser=c.entity_a))
+
+    if not pairwise_wins:
+        return {"scores": []}
+
+    # Map string entity IDs to ints for Solidago
+    mapper = EntityIdMapper(entity_ids=payload.entity_ids)
+    solidago_comparisons = map_pairwise_wins_to_solidago(wins=pairwise_wins, mapper=mapper)
+
+    comparisons_df = pd.DataFrame(solidago_comparisons)
+
+    if comparisons_df.empty:
+        return {"scores": []}
+
+    # Build user DataFrame with trust scores
+    user_ids = sorted(comparisons_df["user_id"].unique())
+    weight_map: dict[int, float] = {}
+    if payload.user_weights is not None:
+        weight_map = {w.user_id: w.weight for w in payload.user_weights}
+
+    users_df = pd.DataFrame(
+        {
+            "is_pretrusted": [True] * len(user_ids),
+            "trust_score": [weight_map.get(int(uid), 1.0) for uid in user_ids],
+        },
+        index=pd.Index(user_ids, name="user_id"),
+    )
+    entities_df = pd.DataFrame(
+        index=pd.Index(mapper.all_int_ids(), name="entity_id"),
+    )
+    vouches_df = pd.DataFrame(columns=["voucher", "vouchee", "vouch"])
+
+    # Configure Solidago pipeline (production-tested defaults)
+    pipeline = Pipeline(
+        trust_propagation=IdentityTrustPropagation(),
+        preference_learning=UniformGBT(prior_std_dev=7.0, convergence_error=1e-5),
+        voting_rights=AffineOvertrust(
+            privacy_penalty=0.5,
+            min_overtrust=2.0,
+            overtrust_ratio=0.1,
+        ),
+        scaling=NoScaling(),
+        aggregation=EntitywiseQrQuantile(quantile=0.5, lipschitz=0.1),
+        post_process=NoPostProcess(),
+    )
+
+    judgments = DataFrameJudgments(comparisons=comparisons_df)
+    privacy = PrivacySettings()
+
+    _, _, _, global_model = pipeline(
+        users=users_df,
+        vouches=vouches_df,
+        entities=entities_df,
+        privacy=privacy,
+        judgments=judgments,
+    )
+
+    # Map int IDs back to strings
+    solidago_scores = list(global_model.iter_entities())
+    entity_scores = map_scores_from_solidago(
+        solidago_scores=solidago_scores, mapper=mapper,
+    )
+
+    if not entity_scores:
+        return {"scores": []}
+
+    # Normalize scores to [0, 1]
+    raw_scores = [s.score for s in entity_scores]
+    min_score = min(raw_scores)
+    max_score = max(raw_scores)
+    score_range = max_score - min_score
+
+    result_scores = []
+    for s in entity_scores:
+        if score_range < 1e-6:
+            normalized = 0.5
+        else:
+            normalized = (s.score - min_score) / score_range
+        result_scores.append({
+            "entity_id": s.entity_id,
+            "score": normalized,
+            "uncertainty_left": s.uncertainty_left,
+            "uncertainty_right": s.uncertainty_right,
+        })
+
+    result_scores.sort(key=lambda x: x["score"], reverse=True)
+    return {"scores": result_scores}
+
+
+@app.route("/ranking-score", methods=["POST"])
+def ranking_score():
+    start_time = datetime.now()
+    try:
+        json_data = request.get_json()
+        if json_data is None:
+            return jsonify({"error": "Request body must be valid JSON"}), 400
+        payload = RankingScoreRequest(**json_data)
+    except ValidationError as e:
+        return jsonify({"error": str(e)}), 400
+
+    logger.info(
+        f"[MaxDiff] Scoring '{payload.conversation_slug_id}' "
+        f"with {len(payload.entity_ids)} entities"
+    )
+
+    result = score_conversation(payload)
+
+    if "error" in result:
+        return jsonify(result), 400
+
+    elapsed = (datetime.now() - start_time).total_seconds()
+    logger.info(f"[MaxDiff] Scored {len(result.get('scores', []))} entities in {elapsed:.2f}s")
+    return jsonify(result)
+
+
+class RankingBatchRequest(BaseModel):
+    conversations: list[RankingScoreRequest]
+
+
+@app.route("/ranking-score-batch", methods=["POST"])
+def ranking_score_batch():
+    start_time = datetime.now()
+    try:
+        json_data = request.get_json()
+        if json_data is None:
+            return jsonify({"error": "Request body must be valid JSON"}), 400
+        batch = RankingBatchRequest(**json_data)
+    except ValidationError as e:
+        return jsonify({"error": str(e)}), 400
+
+    logger.info(f"[MaxDiff Batch] Scoring {len(batch.conversations)} conversation(s)")
+
+    if not batch.conversations:
+        return jsonify({"results": []})
+
+    # Process conversations in parallel using ProcessPoolExecutor
+    # Each conversation is independent — no shared state
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+
+    results: list[dict] = []
+
+    # For small batches, sequential is fine (avoids process spawn overhead)
+    # For larger batches, use parallel processing
+    if len(batch.conversations) <= 2:
+        for conv in batch.conversations:
+            try:
+                result = score_conversation(conv)
+                result["conversation_slug_id"] = conv.conversation_slug_id
+            except Exception as e:
+                result = {"conversation_slug_id": conv.conversation_slug_id, "error": str(e)}
+            results.append(result)
+    else:
+        # Parallel: use threads (ProcessPoolExecutor has pickle issues with Pydantic)
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=min(len(batch.conversations), 4)) as executor:
+            future_to_slug = {}
+            for conv in batch.conversations:
+                future = executor.submit(score_conversation, conv)
+                future_to_slug[future] = conv.conversation_slug_id
+
+            for future in as_completed(future_to_slug):
+                slug_id = future_to_slug[future]
+                try:
+                    result = future.result()
+                    result["conversation_slug_id"] = slug_id
+                except Exception as e:
+                    result = {"conversation_slug_id": slug_id, "error": str(e)}
+                results.append(result)
+
+    elapsed = (datetime.now() - start_time).total_seconds()
+    logger.info(f"[MaxDiff Batch] Scored {len(results)} conversation(s) in {elapsed:.2f}s")
+    return jsonify({"results": results})
+
+
 @app.before_request
 def log_request_info():
     logger.info(

@@ -344,6 +344,13 @@
       "when": 1774471727756,
       "tag": "0048_spotty_true_believers",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1774615719153,
+      "tag": "0049_perpetual_gambit",
+      "breakpoints": true
     }
   ]
 }

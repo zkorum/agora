@@ -1,5 +1,5 @@
 # ---- Builder ----
-FROM python:3.11.12-slim-bookworm AS builder
+FROM python:3.13-slim-bookworm AS builder
 WORKDIR /app
 
 RUN apt-get update && \
@@ -13,7 +13,7 @@ COPY . .
 RUN pip install --no-cache-dir .
 
 # ---- Production ----
-FROM python:3.11.12-slim-bookworm
+FROM python:3.13-slim-bookworm
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends tini && \
@@ -24,7 +24,7 @@ WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY main.py gunicorn.conf.py ./
+COPY main.py bws_conversion.py entity_mapping.py gunicorn.conf.py ./
 
 RUN groupadd --system --gid 1000 appuser && \
     useradd --system --uid 1000 --gid appuser appuser && \

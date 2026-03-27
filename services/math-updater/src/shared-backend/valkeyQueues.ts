@@ -36,6 +36,20 @@ export const VALKEY_QUEUE_KEYS = {
     IMPORT_BUFFER: "queue:imports",
 
     /**
+     * Ranking comparison buffer index - sorted set for ordering by timestamp
+     * Used by: rankingComparisonBuffer.ts
+     * Pattern: Member = "userId:conversationId", Score = timestamp
+     */
+    RANKING_COMPARISONS_INDEX: "queue:ranking-comparisons:index",
+
+    /**
+     * Ranking comparison buffer data - hash storing full comparison JSON
+     * Used by: rankingComparisonBuffer.ts
+     * Pattern: Field = "userId:conversationId", Value = JSON comparison data
+     */
+    RANKING_COMPARISONS_DATA: "queue:ranking-comparisons:data",
+
+    /**
      * UCAN replay protection - key prefix for used UCAN hashes
      * Used by: index.ts (verifyUcan)
      * Pattern: Key = prefix + SHA-256(encodedUcan), Value = issuer DID, TTL = token remaining lifetime + 5s

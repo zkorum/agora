@@ -275,6 +275,225 @@ describe("generateCandidateSets", () => {
     });
 });
 
+// --- pair coverage across buffer ---
+
+describe("pair coverage", () => {
+    /** Canonical key for an unordered pair. */
+    function pairKey(a: string, b: string): string {
+        return a < b ? `${a}|${b}` : `${b}|${a}`;
+    }
+
+    /** Collect all co-appearing pairs across all sets. */
+    function collectCoveredPairs(sets: string[][]): Set<string> {
+        const covered = new Set<string>();
+        for (const set of sets) {
+            for (let i = 0; i < set.length; i++) {
+                for (let j = i + 1; j < set.length; j++) {
+                    covered.add(pairKey(set[i], set[j]));
+                }
+            }
+        }
+        return covered;
+    }
+
+    /** All C(n,2) pairs from an item list. */
+    function allPairs(items: string[]): Set<string> {
+        const pairs = new Set<string>();
+        for (let i = 0; i < items.length; i++) {
+            for (let j = i + 1; j < items.length; j++) {
+                pairs.add(pairKey(items[i], items[j]));
+            }
+        }
+        return pairs;
+    }
+
+    /** Collect item sets ignoring order (for duplicate detection). */
+    function setSignature(items: string[]): string {
+        return [...items].sort().join(",");
+    }
+
+    // --- Core guarantee ---
+
+    it("6 items, 5 sets: all 15 pairs co-appear in at least one set", () => {
+        const items = ["A", "B", "C", "D", "E", "F"];
+        const uncertainty = new Map(items.map((id) => [id, 1.0]));
+        const result = generateCandidateSets({
+            userComparisons: [],
+            items,
+            globalUncertainty: uncertainty,
+            bufferSize: 5,
+            candidateSetSize: 4,
+        });
+        const covered = collectCoveredPairs(result);
+        const expected = allPairs(items);
+        for (const pair of expected) {
+            expect(covered.has(pair), `missing pair: ${pair}`).toBe(true);
+        }
+    });
+
+    it("10 items, 10 sets: all 45 pairs covered", () => {
+        const items = Array.from({ length: 10 }, (_, i) =>
+            String.fromCharCode(65 + i),
+        );
+        const uncertainty = new Map(items.map((id) => [id, 1.0]));
+        const result = generateCandidateSets({
+            userComparisons: [],
+            items,
+            globalUncertainty: uncertainty,
+            bufferSize: 10,
+            candidateSetSize: 4,
+        });
+        const covered = collectCoveredPairs(result);
+        const expected = allPairs(items);
+        for (const pair of expected) {
+            expect(covered.has(pair), `missing pair: ${pair}`).toBe(true);
+        }
+    });
+
+    it("no identical sets in buffer with uniform uncertainty", () => {
+        const items = ["A", "B", "C", "D", "E", "F"];
+        const uncertainty = new Map(items.map((id) => [id, 1.0]));
+        const result = generateCandidateSets({
+            userComparisons: [],
+            items,
+            globalUncertainty: uncertainty,
+            bufferSize: 5,
+            candidateSetSize: 4,
+        });
+        const signatures = result.map(setSignature);
+        expect(new Set(signatures).size).toBe(signatures.length);
+    });
+
+    // --- Edge cases ---
+
+    it("2 items, 1 set: the single pair is covered", () => {
+        const items = ["A", "B"];
+        const uncertainty = new Map(items.map((id) => [id, 1.0]));
+        const result = generateCandidateSets({
+            userComparisons: [],
+            items,
+            globalUncertainty: uncertainty,
+            bufferSize: 1,
+            candidateSetSize: 4,
+        });
+        expect(result).toHaveLength(1);
+        expect(result[0].sort()).toEqual(["A", "B"]);
+    });
+
+    it("3 items, candidateSetSize=3: single set covers all 3 pairs", () => {
+        const items = ["A", "B", "C"];
+        const uncertainty = new Map(items.map((id) => [id, 1.0]));
+        const result = generateCandidateSets({
+            userComparisons: [],
+            items,
+            globalUncertainty: uncertainty,
+            bufferSize: 1,
+            candidateSetSize: 3,
+        });
+        expect(result).toHaveLength(1);
+        expect(result[0].sort()).toEqual(["A", "B", "C"]);
+    });
+
+    it("items fewer than candidateSetSize: set contains all items", () => {
+        const items = ["A", "B", "C"];
+        const uncertainty = new Map(items.map((id) => [id, 1.0]));
+        const result = generateCandidateSets({
+            userComparisons: [],
+            items,
+            globalUncertainty: uncertainty,
+            bufferSize: 1,
+            candidateSetSize: 4,
+        });
+        expect(result).toHaveLength(1);
+        expect(result[0].sort()).toEqual(["A", "B", "C"]);
+    });
+
+    it("partially ordered: all remaining unordered pairs covered", () => {
+        const items = ["A", "B", "C", "D", "E", "F"];
+        const uncertainty = new Map(items.map((id) => [id, 1.0]));
+        // A>B, A>C, B>C resolved. 12 pairs remain unordered.
+        const comparisons = [
+            { best: "A", worst: "C", set: ["A", "B", "C"] },
+        ];
+        const result = generateCandidateSets({
+            userComparisons: comparisons,
+            items,
+            globalUncertainty: uncertainty,
+            bufferSize: 5,
+            candidateSetSize: 4,
+        });
+        // All 12 remaining unordered pairs should co-appear across 5 sets
+        const covered = collectCoveredPairs(result);
+        const { applyComparison, getUnorderedPairs } = buildComparisonMatrix({
+            items,
+        });
+        for (const c of comparisons) applyComparison(c);
+        for (const [a, b] of getUnorderedPairs()) {
+            expect(
+                covered.has(pairKey(a, b)),
+                `missing unordered pair: ${a},${b}`,
+            ).toBe(true);
+        }
+    });
+
+    // --- Voting simulation (the user's actual bug) ---
+
+    it("6 items, min=best/max=worst voting: unique sets resolve more pairs than duplicates would", () => {
+        const items = ["A", "B", "C", "D", "E", "F"];
+        const uncertainty = new Map(items.map((id) => [id, 1.0]));
+        const sets = generateCandidateSets({
+            userComparisons: [],
+            items,
+            globalUncertainty: uncertainty,
+            bufferSize: 5,
+            candidateSetSize: 4,
+        });
+
+        // Simulate "pick min as best, max as worst" voting on generated sets
+        const { applyComparison, getUnorderedPairs } = buildComparisonMatrix({
+            items,
+        });
+        for (const set of sets) {
+            const sorted = [...set].sort();
+            applyComparison({
+                best: sorted[0],
+                worst: sorted[sorted.length - 1],
+                set,
+            });
+        }
+        const remaining = getUnorderedPairs().length;
+        // With 5 unique sets and transitive closure, at most 3 pairs
+        // can remain unordered (vs 3 unordered with the old duplicate sets).
+        // The key: with unique sets we should resolve strictly more.
+        // 15 total pairs. Old behavior: 12 resolved (3 unordered).
+        // Fixed behavior: should resolve at least 13 (ideally all 15).
+        expect(remaining).toBeLessThanOrEqual(2);
+    });
+
+    // --- Scale ---
+
+    it("20 items, 10 sets: no duplicate sets and maximizes unique pairs", () => {
+        const items = Array.from({ length: 20 }, (_, i) =>
+            String.fromCharCode(65 + i),
+        );
+        const uncertainty = new Map(items.map((id) => [id, 1.0]));
+        const result = generateCandidateSets({
+            userComparisons: [],
+            items,
+            globalUncertainty: uncertainty,
+            bufferSize: 10,
+            candidateSetSize: 4,
+        });
+        // No duplicate sets
+        const signatures = result.map(setSignature);
+        expect(new Set(signatures).size).toBe(signatures.length);
+        // 10 sets of 4 → 60 pair slots. Should cover at least 50 unique pairs
+        // (C(20,2)=190 total, but 60 slots can cover at most 60 unique pairs)
+        const covered = collectCoveredPairs(result);
+        expect(covered.size).toBeGreaterThanOrEqual(50);
+    });
+});
+
 // --- pairwise information gain ---
 
 describe("pairwise information gain", () => {
