@@ -6,7 +6,8 @@
  * ============================================================================
  *
  * Same pattern as voteBuffer.ts: comparisons go to Valkey first, then
- * are flushed to PostgreSQL + scored via python-bridge in one operation.
+ * are flushed to PostgreSQL periodically. Scoring happens asynchronously
+ * after each flush via python-bridge's /ranking-score-batch endpoint.
  *
  * DATA STRUCTURE: Sorted Set + Hash (identical to voteBuffer)
  * -----------------------------------------------------------
@@ -20,27 +21,25 @@
  *    - Value: Full comparison JSON (ranking, comparisons[], isComplete)
  *    - Purpose: Store complete comparison state
  *
- * WHY BUFFER INSTEAD OF DIRECT DB WRITE?
- * ---------------------------------------
- * - Batches writes: reduces DB pressure when multiple users vote rapidly
- * - Combines persistence + scoring: write to DB AND compute scores in one
- *   flush, instead of write-then-trigger-then-score
- * - Same UX guarantee as Polis: votes are durable in Valkey immediately,
- *   flushed to DB + scored periodically
+ * FLUSH + ASYNC SCORING
+ * ---------------------
+ * Flush (fast, ~100ms): drain buffer → write to DB → cleanup Valkey
+ * Scoring (async, non-blocking): build payloads → POST /ranking-score-batch
  *
- * FRONTEND: OPTIMISTIC UPDATES
- * ----------------------------
- * The frontend uses local state (maxdiff.ts client-side engine) for the
- * voting UX. It does NOT re-fetch from the backend after each vote.
- * This means the flush latency (~1-2s) is invisible to the voting user.
- * The "Results" tab reads from the ranking_score DB table.
+ * This separation keeps flushes fast so new votes are never blocked.
+ * Scoring uses two Sets for dedup:
+ * - pendingScoring: conversations that need scoring (added by flush)
+ * - scoringInProgress: conversations currently being scored (prevents duplicates)
+ *
+ * A while loop in scoreAllPending drains new entries that arrive during scoring,
+ * ensuring eventual consistency with a ~0.7s stale window per conversation.
  *
  * AT-LEAST-ONCE DELIVERY
  * ----------------------
  * - In-memory Map is ALWAYS written (primary)
  * - Valkey is ALSO written (durable backup, cross-instance)
  * - Flush merges both sources (latest timestamp wins)
- * - Entries deleted from Valkey only after successful DB write + scoring
+ * - Entries deleted from Valkey only after successful DB write
  * - Same Lua scripts as voteBuffer for atomic operations
  *
  * ============================================================================
@@ -130,6 +129,189 @@ interface CreateRankingComparisonBufferParams {
 }
 
 // ============================================================================
+// Scoring payload builder (extracted from scoreConversation)
+// ============================================================================
+
+const _zodScoringPayload = z.object({
+    conversation_slug_id: z.string(),
+    entity_ids: z.array(z.string()),
+    bws_comparisons: z.array(
+        z.object({
+            user_id: z.number(),
+            best: z.string(),
+            worst: z.string(),
+            candidate_set: z.array(z.string()),
+        }),
+    ),
+});
+type ScoringPayload = z.infer<typeof _zodScoringPayload>;
+
+async function buildScoringPayload({
+    db,
+    conversationId,
+}: {
+    db: PostgresJsDatabase;
+    conversationId: number;
+}): Promise<
+    | { type: "payload"; conversationId: number; payload: ScoringPayload }
+    | { type: "clear_scores"; conversationId: number }
+    | { type: "skip" }
+> {
+    const activeItems = await db
+        .select({ slugId: maxdiffItemTable.slugId })
+        .from(maxdiffItemTable)
+        .where(
+            and(
+                eq(maxdiffItemTable.conversationId, conversationId),
+                isNotNull(maxdiffItemTable.currentContentId),
+                inArray(maxdiffItemTable.lifecycleStatus, [
+                    "active",
+                    "in_progress",
+                ]),
+            ),
+        );
+
+    const entityIds = activeItems.map((r) => r.slugId);
+
+    if (entityIds.length < 2) {
+        log.info(
+            `[RankingScoring] Conversation ${String(conversationId)}: <2 active items (${String(entityIds.length)}), clearing stale scores`,
+        );
+        return { type: "clear_scores", conversationId };
+    }
+
+    const allResults = await db
+        .select({ comparisons: maxdiffResultTable.comparisons })
+        .from(maxdiffResultTable)
+        .where(eq(maxdiffResultTable.conversationId, conversationId));
+
+    if (allResults.length === 0) {
+        log.info(
+            `[RankingScoring] Conversation ${String(conversationId)}: no result rows in DB, clearing stale scores`,
+        );
+        return { type: "clear_scores", conversationId };
+    }
+
+    const entityIdSet = new Set(entityIds);
+    const bwsComparisons: ScoringPayload["bws_comparisons"] = [];
+
+    for (let userIdx = 0; userIdx < allResults.length; userIdx++) {
+        const comparisons = z
+            .array(zodMaxdiffComparison)
+            .parse(allResults[userIdx].comparisons);
+
+        for (const comp of comparisons) {
+            if (!entityIdSet.has(comp.best) || !entityIdSet.has(comp.worst))
+                continue;
+            const filteredSet = comp.set.filter((id) => entityIdSet.has(id));
+            if (filteredSet.length < 2) continue;
+
+            bwsComparisons.push({
+                user_id: userIdx,
+                best: comp.best,
+                worst: comp.worst,
+                candidate_set: filteredSet,
+            });
+        }
+    }
+
+    if (bwsComparisons.length === 0) {
+        log.info(
+            `[RankingScoring] Conversation ${String(conversationId)}: 0 valid BWS comparisons after filtering, clearing stale scores`,
+        );
+        return { type: "clear_scores", conversationId };
+    }
+
+    const convRows = await db
+        .select({ slugId: conversationTable.slugId })
+        .from(conversationTable)
+        .where(eq(conversationTable.id, conversationId));
+    if (convRows.length === 0) return { type: "skip" };
+
+    log.info(
+        `[RankingScoring] Conversation ${String(conversationId)}: ${String(bwsComparisons.length)} BWS comparisons, ${String(entityIds.length)} entities`,
+    );
+
+    return {
+        type: "payload",
+        conversationId,
+        payload: {
+            conversation_slug_id: convRows[0].slugId,
+            entity_ids: entityIds,
+            bws_comparisons: bwsComparisons,
+        },
+    };
+}
+
+// ============================================================================
+// Score result writer
+// ============================================================================
+
+const zodScoreResult = z.object({
+    conversation_slug_id: z.string().nullable().optional(),
+    scores: z
+        .array(
+            z.object({
+                entity_id: z.string(),
+                score: z.number(),
+                uncertainty_left: z.number(),
+                uncertainty_right: z.number(),
+            }),
+        )
+        .optional(),
+    error: z.string().optional(),
+});
+
+const zodBatchResponse = z.object({
+    results: z.array(zodScoreResult),
+});
+
+async function writeScoringResult({
+    db,
+    conversationId,
+    scores,
+}: {
+    db: PostgresJsDatabase;
+    conversationId: number;
+    scores: {
+        entity_id: string;
+        score: number;
+        uncertainty_left: number;
+        uncertainty_right: number;
+    }[];
+}): Promise<void> {
+    const now = new Date();
+    now.setMilliseconds(0);
+
+    const [insertedScore] = await db
+        .insert(rankingScoreTable)
+        .values({
+            conversationId,
+            scores: scores.map((s) => ({
+                entityId: s.entity_id,
+                score: s.score,
+                uncertaintyLeft: s.uncertainty_left,
+                uncertaintyRight: s.uncertainty_right,
+            })),
+            participantCounts: {},
+            groupSourcesSnapshot: null,
+            userWeightsSnapshot: null,
+            pipelineConfig: {
+                preferenceLearning: "UniformGBT",
+                votingRights: "AffineOvertrust",
+                aggregation: "EntitywiseQrQuantile(quantile=0.5)",
+            },
+            computedAt: now,
+        })
+        .returning({ id: rankingScoreTable.id });
+
+    await db
+        .update(conversationTable)
+        .set({ currentRankingScoreId: insertedScore.id })
+        .where(eq(conversationTable.id, conversationId));
+}
+
+// ============================================================================
 // Implementation
 // ============================================================================
 
@@ -143,6 +325,11 @@ export function createRankingComparisonBuffer({
     const pendingComparisons = new Map<string, BufferedComparison>();
     let isShuttingDown = false;
     let isFlushing = false;
+
+    // Async scoring state
+    const pendingScoring = new Set<number>();
+    let isScoringRunning = false;
+    let activeScoringPromise: Promise<void> | null = null;
 
     let addScript: Script | undefined;
     let cleanupScript: Script | undefined;
@@ -191,7 +378,116 @@ export function createRankingComparisonBuffer({
                     );
                 });
         }
+    };
 
+    // ------------------------------------------------------------------
+    // scoreAllPending (async, non-blocking)
+    // ------------------------------------------------------------------
+
+    const scoreAllPending = async (): Promise<void> => {
+        if (axiosPythonBridge === undefined) return;
+        if (isScoringRunning) return;
+        isScoringRunning = true;
+        try {
+            // Loop drains new entries that arrive (via flush) during scoring.
+            // isScoringRunning prevents concurrent runs, so no interleaving
+            // between the synchronous drain and the async HTTP call.
+            while (pendingScoring.size > 0) {
+                const toScore = Array.from(pendingScoring);
+                pendingScoring.clear();
+
+                try {
+                    const payloads: {
+                        conversationId: number;
+                        payload: ScoringPayload;
+                    }[] = [];
+                    const clearScoreIds: number[] = [];
+
+                    for (const conversationId of toScore) {
+                        const result = await buildScoringPayload({
+                            db,
+                            conversationId,
+                        });
+                        if (result.type === "payload") {
+                            payloads.push({
+                                conversationId: result.conversationId,
+                                payload: result.payload,
+                            });
+                        } else if (result.type === "clear_scores") {
+                            clearScoreIds.push(result.conversationId);
+                        }
+                    }
+
+                    for (const conversationId of clearScoreIds) {
+                        await db
+                            .update(conversationTable)
+                            .set({ currentRankingScoreId: null })
+                            .where(eq(conversationTable.id, conversationId));
+                    }
+
+                    if (payloads.length === 0) continue;
+
+                    const slugToConversationId = new Map<string, number>();
+                    for (const p of payloads) {
+                        slugToConversationId.set(
+                            p.payload.conversation_slug_id,
+                            p.conversationId,
+                        );
+                    }
+
+                    log.info(
+                        `[RankingBuffer] Batch scoring ${String(payloads.length)} conversation(s)`,
+                    );
+
+                    const response = await axiosPythonBridge.post(
+                        "/ranking-score-batch",
+                        {
+                            conversations: payloads.map((p) => p.payload),
+                        },
+                    );
+
+                    const { results } = zodBatchResponse.parse(response.data);
+
+                    for (const result of results) {
+                        const slugId = result.conversation_slug_id;
+                        if (slugId === undefined || slugId === null) continue;
+
+                        const conversationId =
+                            slugToConversationId.get(slugId);
+                        if (conversationId === undefined) continue;
+
+                        if (result.error !== undefined) {
+                            log.error(
+                                `[RankingBuffer] Scoring failed for ${slugId}: ${result.error}`,
+                            );
+                            continue;
+                        }
+
+                        if (
+                            result.scores !== undefined &&
+                            result.scores.length > 0
+                        ) {
+                            await writeScoringResult({
+                                db,
+                                conversationId,
+                                scores: result.scores,
+                            });
+                            log.info(
+                                `[RankingBuffer] Scored ${slugId}: ${String(result.scores.length)} entities`,
+                            );
+                        }
+                    }
+                } catch (error: unknown) {
+                    log.error(
+                        error,
+                        "[RankingBuffer] Async batch scoring failed",
+                    );
+                }
+            }
+        } finally {
+            isScoringRunning = false;
+            activeScoringPromise = null;
+        }
     };
 
     // ------------------------------------------------------------------
@@ -340,29 +636,11 @@ export function createRankingComparisonBuffer({
                 await updateMaxdiffCounters({ db, conversationId });
             }
 
-            // 5. Score each conversation via python-bridge (if configured)
-            if (axiosPythonBridge !== undefined) {
-                for (const conversationId of conversationIds) {
-                    try {
-                        await scoreConversation({
-                            db,
-                            axiosPythonBridge,
-                            conversationId,
-                        });
-                    } catch (scoreError: unknown) {
-                        log.error(
-                            scoreError,
-                            `[RankingBuffer] Failed to score conversation ${String(conversationId)} (comparisons were saved successfully)`,
-                        );
-                    }
-                }
-            }
-
             log.info(
                 `[RankingBuffer] Flushed ${String(batch.length)} comparison(s) across ${String(conversationIds.size)} conversation(s)`,
             );
 
-            // 6. Cleanup Valkey (at-least-once: only after success)
+            // 5. Cleanup Valkey (at-least-once: votes are in DB now)
             if (
                 valkey !== undefined &&
                 cleanupScript !== undefined &&
@@ -388,6 +666,16 @@ export function createRankingComparisonBuffer({
                     );
                 }
             }
+
+            // 6. Enqueue conversations for async scoring
+            for (const conversationId of conversationIds) {
+                pendingScoring.add(conversationId);
+            }
+
+            // 7. Trigger async scoring (non-blocking)
+            // Only assign if no scoring is already running; otherwise
+            // the while loop inside the active run will pick up the new entries.
+            activeScoringPromise ??= scoreAllPending();
         } catch (error: unknown) {
             log.error(error, "[RankingBuffer] Failed to flush");
             throw error;
@@ -402,6 +690,9 @@ export function createRankingComparisonBuffer({
         isShuttingDown = true;
         clearInterval(flushInterval);
         await flush();
+        if (activeScoringPromise !== null) {
+            await activeScoringPromise;
+        }
         if (addScript !== undefined) {
             addScript.release();
             addScript = undefined;
@@ -421,168 +712,4 @@ export function createRankingComparisonBuffer({
     flushInterval.unref();
 
     return { add, flush, shutdown };
-}
-
-// ============================================================================
-// Per-conversation scoring (called during flush)
-// ============================================================================
-
-async function scoreConversation({
-    db,
-    axiosPythonBridge,
-    conversationId,
-}: {
-    db: PostgresJsDatabase;
-    axiosPythonBridge: AxiosInstance;
-    conversationId: number;
-}): Promise<void> {
-    // Fetch active items
-    const activeItems = await db
-        .select({ slugId: maxdiffItemTable.slugId })
-        .from(maxdiffItemTable)
-        .where(
-            and(
-                eq(maxdiffItemTable.conversationId, conversationId),
-                isNotNull(maxdiffItemTable.currentContentId),
-                inArray(maxdiffItemTable.lifecycleStatus, [
-                    "active",
-                    "in_progress",
-                ]),
-            ),
-        );
-
-    const entityIds = activeItems.map((r) => r.slugId);
-
-    // Helper: clear stale cached scores when there's nothing to score
-    const clearStaleCachedScores = async (): Promise<void> => {
-        await db
-            .update(conversationTable)
-            .set({ currentRankingScoreId: null })
-            .where(eq(conversationTable.id, conversationId));
-    };
-
-    if (entityIds.length < 2) {
-        log.info(
-            `[RankingScoring] Conversation ${String(conversationId)}: <2 active items (${String(entityIds.length)}), clearing stale scores`,
-        );
-        await clearStaleCachedScores();
-        return;
-    }
-
-    // Fetch all comparisons from DB
-    const allResults = await db
-        .select({ comparisons: maxdiffResultTable.comparisons })
-        .from(maxdiffResultTable)
-        .where(eq(maxdiffResultTable.conversationId, conversationId));
-
-    if (allResults.length === 0) {
-        log.info(
-            `[RankingScoring] Conversation ${String(conversationId)}: no result rows in DB, clearing stale scores`,
-        );
-        await clearStaleCachedScores();
-        return;
-    }
-
-    // Build BWS comparisons for python-bridge
-    const entityIdSet = new Set(entityIds);
-    const bwsComparisons: {
-        user_id: number;
-        best: string;
-        worst: string;
-        candidate_set: string[];
-    }[] = [];
-
-    for (let userIdx = 0; userIdx < allResults.length; userIdx++) {
-        const comparisons = z
-            .array(zodMaxdiffComparison)
-            .parse(allResults[userIdx].comparisons);
-
-        for (const comp of comparisons) {
-            if (!entityIdSet.has(comp.best) || !entityIdSet.has(comp.worst))
-                continue;
-            const filteredSet = comp.set.filter((id) => entityIdSet.has(id));
-            if (filteredSet.length < 2) continue;
-
-            bwsComparisons.push({
-                user_id: userIdx,
-                best: comp.best,
-                worst: comp.worst,
-                candidate_set: filteredSet,
-            });
-        }
-    }
-
-    if (bwsComparisons.length === 0) {
-        log.info(
-            `[RankingScoring] Conversation ${String(conversationId)}: 0 valid BWS comparisons after filtering (${String(allResults.length)} result rows, all comparisons empty or referencing inactive items), clearing stale scores`,
-        );
-        await clearStaleCachedScores();
-        return;
-    }
-
-    log.info(
-        `[RankingScoring] Conversation ${String(conversationId)}: calling python-bridge with ${String(bwsComparisons.length)} BWS comparisons, ${String(entityIds.length)} entities`,
-    );
-
-    // Get conversation slugId
-    const convRows = await db
-        .select({ slugId: conversationTable.slugId })
-        .from(conversationTable)
-        .where(eq(conversationTable.id, conversationId));
-    if (convRows.length === 0) return;
-
-    // Call python-bridge
-    const response = await axiosPythonBridge.post("/ranking-score", {
-        conversation_slug_id: convRows[0].slugId,
-        entity_ids: entityIds,
-        bws_comparisons: bwsComparisons,
-    });
-
-    const zodPythonBridgeResponse = z.object({
-        scores: z.array(
-            z.object({
-                entity_id: z.string(),
-                score: z.number(),
-                uncertainty_left: z.number(),
-                uncertainty_right: z.number(),
-            }),
-        ),
-    });
-    const { scores } = zodPythonBridgeResponse.parse(response.data);
-
-    // Write scores to DB
-    const now = new Date();
-    now.setMilliseconds(0);
-
-    const [insertedScore] = await db
-        .insert(rankingScoreTable)
-        .values({
-            conversationId,
-            scores: scores.map((s) => ({
-                entityId: s.entity_id,
-                score: s.score,
-                uncertaintyLeft: s.uncertainty_left,
-                uncertaintyRight: s.uncertainty_right,
-            })),
-            participantCounts: {},
-            groupSourcesSnapshot: null,
-            userWeightsSnapshot: null,
-            pipelineConfig: {
-                preferenceLearning: "UniformGBT",
-                votingRights: "AffineOvertrust",
-                aggregation: "EntitywiseQrQuantile(quantile=0.5)",
-            },
-            computedAt: now,
-        })
-        .returning({ id: rankingScoreTable.id });
-
-    // Update conversation pointer
-    await db
-        .update(conversationTable)
-        .set({ currentRankingScoreId: insertedScore.id })
-        .where(eq(conversationTable.id, conversationId));
-
-    log.info(
-        `[RankingBuffer] Scored conversation ${convRows[0].slugId}: ${String(scores.length)} entities`,
-    );
 }
