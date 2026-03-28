@@ -808,7 +808,7 @@ def score_conversation(payload: RankingScoreRequest) -> dict[str, object]:
             overtrust_ratio=0.1,
         ),
         scaling=NoScaling(),
-        aggregation=EntitywiseQrQuantile(quantile=0.5, lipschitz=0.1),
+        aggregation=EntitywiseQrQuantile(quantile=0.5, lipschitz=0.1, error=1e-3),
         post_process=NoPostProcess(),
     )
 
