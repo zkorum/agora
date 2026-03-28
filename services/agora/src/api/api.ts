@@ -1410,6 +1410,7 @@ export interface ApiV1MaxdiffLoadPost200Response {
     'ranking': Array<string> | null;
     'comparisons': Array<ApiV1MaxdiffLoadPost200ResponseComparisonsInner> | null;
     'isComplete': boolean;
+    'candidateSets': Array<Array<string>>;
 }
 export interface ApiV1MaxdiffLoadPost200ResponseComparisonsInner {
     'best': string;
@@ -1457,13 +1458,8 @@ export const ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum = {
 
 export type ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum = typeof ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum[keyof typeof ApiV1MaxdiffResultsPostRequestLifecycleFilterEnum];
 
-export interface ApiV1MaxdiffRoutePost200Response {
+export interface ApiV1MaxdiffSavePost200Response {
     'candidateSets': Array<Array<string>>;
-}
-export interface ApiV1MaxdiffRoutePostRequest {
-    'conversationSlugId': string;
-    'comparisons': Array<ApiV1MaxdiffSavePostRequestComparisonsInner>;
-    'bufferSize'?: number;
 }
 export interface ApiV1MaxdiffSavePostRequest {
     'conversationSlugId': string;
@@ -3739,44 +3735,6 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1MaxdiffRoutePostRequest} apiV1MaxdiffRoutePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffRoutePost: async (apiV1MaxdiffRoutePostRequest: ApiV1MaxdiffRoutePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1MaxdiffRoutePostRequest' is not null or undefined
-            assertParamExists('apiV1MaxdiffRoutePost', 'apiV1MaxdiffRoutePostRequest', apiV1MaxdiffRoutePostRequest)
-            const localVarPath = `/api/v1/maxdiff/route`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1MaxdiffRoutePostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
          * @param {ApiV1MaxdiffSavePostRequest} apiV1MaxdiffSavePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3801,6 +3759,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -5683,23 +5642,11 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1MaxdiffRoutePostRequest} apiV1MaxdiffRoutePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1MaxdiffRoutePost(apiV1MaxdiffRoutePostRequest: ApiV1MaxdiffRoutePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffRoutePost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffRoutePost(apiV1MaxdiffRoutePostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffRoutePost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
          * @param {ApiV1MaxdiffSavePostRequest} apiV1MaxdiffSavePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1MaxdiffSavePost200Response>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1MaxdiffSavePost']?.[localVarOperationServerIndex]?.url;
@@ -6516,20 +6463,11 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1MaxdiffRoutePostRequest} apiV1MaxdiffRoutePostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1MaxdiffRoutePost(apiV1MaxdiffRoutePostRequest: ApiV1MaxdiffRoutePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffRoutePost200Response> {
-            return localVarFp.apiV1MaxdiffRoutePost(apiV1MaxdiffRoutePostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
          * @param {ApiV1MaxdiffSavePostRequest} apiV1MaxdiffSavePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+        apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest: ApiV1MaxdiffSavePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1MaxdiffSavePost200Response> {
             return localVarFp.apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
@@ -7263,16 +7201,6 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1MaxdiffResultsPost(apiV1MaxdiffResultsPostRequest: ApiV1MaxdiffResultsPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1MaxdiffResultsPost(apiV1MaxdiffResultsPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {ApiV1MaxdiffRoutePostRequest} apiV1MaxdiffRoutePostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiV1MaxdiffRoutePost(apiV1MaxdiffRoutePostRequest: ApiV1MaxdiffRoutePostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1MaxdiffRoutePost(apiV1MaxdiffRoutePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

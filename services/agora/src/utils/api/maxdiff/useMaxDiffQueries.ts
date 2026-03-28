@@ -110,6 +110,7 @@ export function useMaxDiffSaveMutation({
       if (response.status !== "success") {
         throw new Error("Failed to save MaxDiff result");
       }
+      return response.data;
     },
 
     onSuccess: async (_data, variables) => {
@@ -162,7 +163,7 @@ export function useMaxDiffSaveMutation({
       // (avoids read replica lag returning stale data before buffer flushes)
       queryClient.setQueryData<ApiV1MaxdiffLoadPost200Response>(
         ["maxdiff-load", slugId],
-        {
+        (old) => ({
           ranking: variables.ranking,
           comparisons: variables.comparisons.map((c) => ({
             best: c.best,
@@ -170,7 +171,8 @@ export function useMaxDiffSaveMutation({
             set: c.set,
           })),
           isComplete: variables.isComplete,
-        },
+          candidateSets: old?.candidateSets ?? [],
+        }),
       );
 
       // Note: We don't invalidate the conversation query here to avoid

@@ -111,8 +111,7 @@ docs/ApiV1MaxdiffLoadPostRequest.md
 docs/ApiV1MaxdiffResultsPost200Response.md
 docs/ApiV1MaxdiffResultsPost200ResponseRankingsInner.md
 docs/ApiV1MaxdiffResultsPostRequest.md
-docs/ApiV1MaxdiffRoutePost200Response.md
-docs/ApiV1MaxdiffRoutePostRequest.md
+docs/ApiV1MaxdiffSavePost200Response.md
 docs/ApiV1MaxdiffSavePostRequest.md
 docs/ApiV1MaxdiffSavePostRequestComparisonsInner.md
 docs/ApiV1MaxdiffSyncPost200Response.md

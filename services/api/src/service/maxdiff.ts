@@ -48,16 +48,11 @@ export { parseResultRows } from "@/utils/maxdiffParsing.js";
  */
 export async function computeGlobalUncertainty({
     db,
-    conversationSlugId,
+    conversationId,
 }: {
     db: PostgresDatabase;
-    conversationSlugId: string;
+    conversationId: number;
 }): Promise<{ items: string[]; uncertainty: Map<string, number> }> {
-    const { id: conversationId } =
-        await useCommonPost().getPostMetadataFromSlugId({
-            db,
-            conversationSlugId,
-        });
 
     const activeItems = await db
         .select({ slugId: maxdiffItemTable.slugId })
@@ -129,7 +124,7 @@ export async function saveMaxdiffResult({
     isComplete,
     isMaxdiffOrgOnly,
     rankingComparisonBuffer,
-}: SaveMaxdiffResultProps): Promise<void> {
+}: SaveMaxdiffResultProps): Promise<{ conversationId: number }> {
     const { id: conversationId } =
         await useCommonPost().getPostMetadataFromSlugId({
             db,
@@ -160,7 +155,37 @@ export async function saveMaxdiffResult({
         );
     }
 
-    // Push to Valkey buffer (flushed periodically to DB + python-bridge)
+    // Synchronous DB upsert — user state is immediately consistent.
+    // Counter update is handled by the buffer flush (~1s delay);
+    // the frontend optimistically updates counts for the current user.
+    const now = new Date();
+    now.setMilliseconds(0);
+
+    await db
+        .insert(maxdiffResultTable)
+        .values({
+            participantId: userId,
+            conversationId,
+            ranking,
+            comparisons,
+            isComplete,
+            createdAt: now,
+            updatedAt: now,
+        })
+        .onConflictDoUpdate({
+            target: [
+                maxdiffResultTable.participantId,
+                maxdiffResultTable.conversationId,
+            ],
+            set: {
+                ranking,
+                comparisons,
+                isComplete,
+                updatedAt: now,
+            },
+        });
+
+    // Push to Valkey buffer for async scoring + counter update
     rankingComparisonBuffer.add({
         comparison: {
             userId,
@@ -169,29 +194,26 @@ export async function saveMaxdiffResult({
             ranking,
             comparisons,
             isComplete,
-            timestamp: new Date(),
+            timestamp: now,
         },
     });
+
+    return { conversationId };
 }
 
 // --- Load ---
 
 interface LoadMaxdiffResultProps {
     db: PostgresDatabase;
-    conversationSlugId: string;
+    conversationId: number;
     userId: string;
 }
 
 export async function loadMaxdiffResult({
     db,
-    conversationSlugId,
+    conversationId,
     userId,
 }: LoadMaxdiffResultProps): Promise<MaxDiffLoadResponse> {
-    const { id: conversationId } =
-        await useCommonPost().getPostMetadataFromSlugId({
-            db,
-            conversationSlugId,
-        });
 
     const results = await db
         .select({

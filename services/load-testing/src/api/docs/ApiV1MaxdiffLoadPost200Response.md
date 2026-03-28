@@ -8,6 +8,7 @@ Name | Type | Description | Notes
 **ranking** | **Array&lt;string&gt;** |  | [default to undefined]
 **comparisons** | [**Array&lt;ApiV1MaxdiffLoadPost200ResponseComparisonsInner&gt;**](ApiV1MaxdiffLoadPost200ResponseComparisonsInner.md) |  | [default to undefined]
 **isComplete** | **boolean** |  | [default to undefined]
+**candidateSets** | **Array&lt;Array&lt;string&gt;&gt;** |  | [default to undefined]
 
 ## Example
 
@@ -18,6 +19,7 @@ const instance: ApiV1MaxdiffLoadPost200Response = {
     ranking,
     comparisons,
     isComplete,
+    candidateSets,
 };
 ```
 

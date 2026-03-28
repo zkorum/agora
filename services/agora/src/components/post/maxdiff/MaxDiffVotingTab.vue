@@ -217,7 +217,6 @@ import { useConversationLoginIntentions } from "src/composables/auth/useConversa
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ExtendedConversation, MaxDiffComparison } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import {
   type MaxDiffSaveContext,
   useMaxDiffItemsQuery,
@@ -252,7 +251,6 @@ const { t } = useComponentI18n<MaxDiffVotingTabTranslations>(
 
 const { isLoggedIn, hasStrongVerification, hasEmailVerification } =
   storeToRefs(useAuthenticationStore());
-const { fetchMaxDiffRoute } = useMaxDiffApi();
 const $q = useQuasar();
 const { showNotifyMessage } = useNotify();
 
@@ -490,7 +488,7 @@ const initError = ref(false);
 
 watch(
   [() => itemsQuery.data.value, () => loadQuery.data.value, () => loadQuery.isError.value],
-  async ([items, loadData, loadError]) => {
+  ([items, loadData, loadError]) => {
     if (items === undefined || engineInitialized.value) return;
     // Wait for load query to settle (success or error)
     if (loadData === undefined && !loadError) return;
@@ -522,16 +520,16 @@ watch(
       finalRanking.value = [];
     }
 
-    // Fetch initial candidate set
-    const initialResult = await fetchNextCandidateSet();
-    if (!("candidates" in initialResult) && !instance.value.complete) {
+    // Use candidate sets from load response (computed server-side)
+    if (loadData !== undefined) {
+      candidates.value = loadData.candidateSets[0] ?? [];
+    } else if (!instance.value.complete) {
       initError.value = true;
       isInitializingEngine.value = false;
       engineInitialized.value = true;
       return;
     }
 
-    candidates.value = "candidates" in initialResult ? initialResult.candidates : [];
     isInitializingEngine.value = false;
     engineInitialized.value = true;
   },
@@ -549,36 +547,6 @@ function retryInitialize(): void {
   isInitializingEngine.value = true;
   void itemsQuery.refetch();
   void loadQuery.refetch();
-}
-
-async function fetchNextCandidateSet(): Promise<{ candidates: string[] } | { error: "network" } | { error: "empty" }> {
-  const response = await fetchMaxDiffRoute({
-    conversationSlugId: conversationSlugId.value,
-    bufferSize: 1,
-  });
-  if (response.status === "success" && response.data.candidateSets.length > 0) {
-    return { candidates: response.data.candidateSets[0] };
-  }
-  if (response.status === "success") {
-    return { error: "empty" };
-  }
-  return { error: "network" };
-}
-
-async function updateCandidates(): Promise<void> {
-  if (!instance.value || instance.value.complete) {
-    candidates.value = [];
-    return;
-  }
-  const result = await fetchNextCandidateSet();
-  if ("candidates" in result) {
-    candidates.value = result.candidates;
-  } else if (result.error === "network") {
-    showNotifyMessage({ message: t("loadingError"), force: true });
-  } else {
-    isComplete.value = true;
-    candidates.value = [];
-  }
 }
 
 function handleCandidateClick(slugId: string): void {
@@ -667,21 +635,24 @@ function recordVote(): void {
     showTransitionSpinner.value = true;
   }, 2000);
 
-  // Save to DB first (route reads from DB, so save must land before route).
+  // Save + get next candidates from server response.
   // Runs in parallel with the 400ms transition animation.
   const savePromise = saveMutation.mutateAsync({
     ranking: instance.value.result ?? null,
     comparisons: instance.value.exportState().comparisons,
     isComplete: instance.value.complete,
     context,
-  }).catch(() => {
-    // onError already handles rollback — swallow to avoid unhandled rejection
-  });
+  }).catch(() => undefined);
+  // onError already handles rollback — catch returns undefined on failure
 
   transitionTimeout = setTimeout(() => {
     void (async () => {
-      await savePromise;
-      await updateCandidates();
+      const saveResult = await savePromise;
+      if (saveResult !== undefined && !instance.value?.complete) {
+        candidates.value = saveResult.candidateSets[0] ?? [];
+      } else {
+        candidates.value = [];
+      }
       cancelTransition();
     })();
   }, 400);
@@ -758,15 +729,17 @@ function handleRedoRanking(): void {
     isComplete.value = false;
     finalRanking.value = [];
 
-    // Save empty state to DB first, then fetch candidates (route reads from DB)
+    // Save empty state, use candidateSets from response
     void (async () => {
-      await saveMutation.mutateAsync({
+      const result = await saveMutation.mutateAsync({
         ranking: null,
         comparisons: [],
         isComplete: false,
         context,
-      }).catch(() => {});
-      await updateCandidates();
+      }).catch(() => undefined);
+      if (result !== undefined) {
+        candidates.value = result.candidateSets[0] ?? [];
+      }
     })();
   });
 }

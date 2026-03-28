@@ -932,6 +932,9 @@ export class Dto {
             isComplete: z.boolean(),
         })
         .strict();
+    static maxdiffSaveResponse = z.object({
+        candidateSets: z.array(z.array(z.string())),
+    });
     static maxdiffLoadRequest = z
         .object({
             conversationSlugId: z.string(),
@@ -941,6 +944,7 @@ export class Dto {
         ranking: z.array(z.string()).nullable(),
         comparisons: z.array(zodMaxdiffComparison).nullable(),
         isComplete: z.boolean(),
+        candidateSets: z.array(z.array(z.string())),
     });
     static maxdiffResultsRequest = z
         .object({
@@ -964,17 +968,6 @@ export class Dto {
     static maxdiffResultsResponse = z.object({
         rankings: z.array(Dto.maxdiffResultItem),
     });
-    static maxdiffRouteRequest = z
-        .object({
-            conversationSlugId: z.string(),
-            comparisons: z.array(zodMaxdiffComparison),
-            bufferSize: z.number().int().min(1).max(10).default(3),
-        })
-        .strict();
-    static maxdiffRouteResponse = z.object({
-        candidateSets: z.array(z.array(z.string())),
-    });
-
     // MaxDiff item CRUD
     static maxdiffItemsFetchRequest = z
         .object({
@@ -1192,9 +1185,7 @@ export type MaxDiffResultItem = z.infer<typeof Dto.maxdiffResultItem>;
 export type MaxDiffResultsResponse = z.infer<
     typeof Dto.maxdiffResultsResponse
 >;
-export type MaxDiffRouteResponse = z.infer<
-    typeof Dto.maxdiffRouteResponse
->;
+export type MaxDiffSaveResponse = z.infer<typeof Dto.maxdiffSaveResponse>;
 export type MaxDiffItem = z.infer<typeof Dto.maxdiffItem>;
 export type MaxDiffItemsFetchResponse = z.infer<
     typeof Dto.maxdiffItemsFetchResponse

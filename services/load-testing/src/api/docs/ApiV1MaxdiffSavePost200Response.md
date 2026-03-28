@@ -1,21 +1,19 @@
-# ApiV1MaxdiffRoutePostRequest
+# ApiV1MaxdiffSavePost200Response
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**conversationSlugId** | **string** |  | [default to undefined]
-**bufferSize** | **number** |  | [optional] [default to 3]
+**candidateSets** | **Array&lt;Array&lt;string&gt;&gt;** |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { ApiV1MaxdiffRoutePostRequest } from './api';
+import { ApiV1MaxdiffSavePost200Response } from './api';
 
-const instance: ApiV1MaxdiffRoutePostRequest = {
-    conversationSlugId,
-    bufferSize,
+const instance: ApiV1MaxdiffSavePost200Response = {
+    candidateSets,
 };
 ```
 

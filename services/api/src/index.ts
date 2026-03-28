@@ -1757,26 +1757,33 @@ server.after(() => {
         url: `/api/${apiVersion}/maxdiff/save`,
         schema: {
             body: Dto.maxdiffSaveRequest,
+            response: {
+                200: Dto.maxdiffSaveResponse,
+            },
         },
-        handler: async (request, reply) => {
+        handler: async (request) => {
             checkMaxdiffEnabled();
             const { didWrite } = await verifyUcan(request);
             const now = nowZeroMs();
             const { participationMode } =
                 await useCommonPost().getPostMetadataFromSlugId({
                     db,
-                    conversationSlugId: request.body.conversationSlugId,
+                    conversationSlugId:
+                        request.body.conversationSlugId,
                 });
             const userId =
-                await authUtilService.getOrRegisterUserIdFromDeviceStatus({
-                    db,
-                    didWrite,
-                    participationMode,
-                    userAgent:
-                        request.headers["user-agent"] ?? "Unknown device",
-                    now,
-                });
-            await saveMaxdiffResult({
+                await authUtilService.getOrRegisterUserIdFromDeviceStatus(
+                    {
+                        db,
+                        didWrite,
+                        participationMode,
+                        userAgent:
+                            request.headers["user-agent"] ??
+                            "Unknown device",
+                        now,
+                    },
+                );
+            const { conversationId } = await saveMaxdiffResult({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 userId,
@@ -1786,7 +1793,18 @@ server.after(() => {
                 isMaxdiffOrgOnly: config.IS_MAXDIFF_ORG_ONLY,
                 rankingComparisonBuffer,
             });
-            reply.send({});
+            const { items, uncertainty } =
+                await computeGlobalUncertainty({
+                    db,
+                    conversationId,
+                });
+            const candidateSets = generateCandidateSets({
+                userComparisons: request.body.comparisons,
+                items,
+                globalUncertainty: uncertainty,
+                bufferSize: 1,
+            });
+            return { candidateSets };
         },
     });
 
@@ -1805,18 +1823,34 @@ server.after(() => {
                 db,
                 request,
             );
-            if (!deviceStatus.isKnown) {
-                return {
-                    ranking: null,
-                    comparisons: null,
-                    isComplete: false,
-                };
-            }
-            return await loadMaxdiffResult({
-                db,
-                conversationSlugId: request.body.conversationSlugId,
-                userId: deviceStatus.userId,
+            const { id: conversationId } =
+                await useCommonPost().getPostMetadataFromSlugId({
+                    db,
+                    conversationSlugId:
+                        request.body.conversationSlugId,
+                });
+            const [loadData, { items, uncertainty }] =
+                await Promise.all([
+                    deviceStatus.isKnown
+                        ? loadMaxdiffResult({
+                              db,
+                              conversationId,
+                              userId: deviceStatus.userId,
+                          })
+                        : Promise.resolve({
+                              ranking: null,
+                              comparisons: null,
+                              isComplete: false,
+                          }),
+                    computeGlobalUncertainty({ db, conversationId }),
+                ]);
+            const candidateSets = generateCandidateSets({
+                userComparisons: loadData.comparisons ?? [],
+                items,
+                globalUncertainty: uncertainty,
+                bufferSize: 1,
             });
+            return { ...loadData, candidateSets };
         },
     });
 
@@ -1837,32 +1871,6 @@ server.after(() => {
                 lifecycleFilter: request.body.lifecycleFilter,
                 axiosPythonBridge: axiosPolis,
             });
-        },
-    });
-
-    server.withTypeProvider<ZodTypeProvider>().route({
-        method: "POST",
-        url: `/api/${apiVersion}/maxdiff/route`,
-        schema: {
-            body: Dto.maxdiffRouteRequest,
-            response: {
-                200: Dto.maxdiffRouteResponse,
-            },
-        },
-        handler: async (request) => {
-            checkMaxdiffEnabled();
-            await verifyUcanOptionalAuth(db, request);
-            const { items, uncertainty } = await computeGlobalUncertainty({
-                db,
-                conversationSlugId: request.body.conversationSlugId,
-            });
-            const candidateSets = generateCandidateSets({
-                userComparisons: request.body.comparisons,
-                items,
-                globalUncertainty: uncertainty,
-                bufferSize: request.body.bufferSize,
-            });
-            return { candidateSets };
         },
     });
 
