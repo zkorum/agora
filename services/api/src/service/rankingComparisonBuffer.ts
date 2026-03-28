@@ -297,7 +297,7 @@ async function writeScoringResult({
             groupSourcesSnapshot: null,
             userWeightsSnapshot: null,
             pipelineConfig: {
-                preferenceLearning: "LBFGSUniformGBT",
+                preferenceLearning: "UniformGBT",
                 votingRights: "AffineOvertrust",
                 aggregation: "EntitywiseQrQuantile(quantile=0.5)",
             },
