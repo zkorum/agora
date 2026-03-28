@@ -4,7 +4,7 @@ import {
   getViewportHeight,
   scrollTo,
 } from "src/utils/html/scroll";
-import { type Ref, ref, watch } from "vue";
+import { onScopeDispose, type Ref, ref, watch } from "vue";
 import { onBeforeRouteUpdate, useRoute } from "vue-router";
 
 import { computeFloorScroll, createTabScrollState } from "./tabScrollLogic";
@@ -55,10 +55,20 @@ export function useTabScrollRestoration({
     tabContentStyle.value = { minHeight };
   });
 
+  // Track pending rAF IDs so they can be cancelled on unmount.
+  // Without this, navigating away mid-animation leaves stale rAF callbacks
+  // that call window.scrollTo() with the conversation's scroll position,
+  // briefly shifting the feed before the browser corrects it.
+  let outerRafId: number | undefined;
+  let innerRafId: number | undefined;
+
   // Scroll to target with two-phase minHeight clearing to prevent scroll clamp.
   // Phase 1: scroll with minHeight still set, disable sticky bar transitions.
   // Phase 2 (rAF): clear minHeight, re-enable transitions, re-scroll after reflow.
   function scrollAndClearMinHeight({ target }: { target: number }): void {
+    if (outerRafId !== undefined) cancelAnimationFrame(outerRafId);
+    if (innerRafId !== undefined) cancelAnimationFrame(innerRafId);
+
     const container = scrollContainer?.value;
     const actionBar = actionBarElement?.value;
     if (actionBar) {
@@ -67,17 +77,24 @@ export function useTabScrollRestoration({
 
     scrollTo({ top: target, scrollContainer: container });
 
-    requestAnimationFrame(() => {
+    outerRafId = requestAnimationFrame(() => {
+      outerRafId = undefined;
       if (actionBar) {
         actionBar.style.transition = "";
       }
       tabContentStyle.value = {};
-      requestAnimationFrame(() => {
+      innerRafId = requestAnimationFrame(() => {
+        innerRafId = undefined;
         scrollTo({ top: target, scrollContainer: container });
         onScrollComplete?.();
       });
     });
   }
+
+  onScopeDispose(() => {
+    if (outerRafId !== undefined) cancelAnimationFrame(outerRafId);
+    if (innerRafId !== undefined) cancelAnimationFrame(innerRafId);
+  });
 
   watch(
     () => route.name,
