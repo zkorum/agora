@@ -1,9 +1,7 @@
 <template>
   <div>
     <q-dialog v-model="showDialog" position="bottom">
-      <ZKBottomDialogContainer>
-        <div class="title">{{ title }}</div>
-
+      <ZKBottomDialogContainer :title="title">
         <div class="description">
           {{ description }}
         </div>
@@ -46,12 +44,6 @@ const description = computed(() =>
 </script>
 
 <style lang="scss" scoped>
-.title {
-  font-size: 1.1rem;
-  font-weight: var(--font-weight-medium);
-  padding-bottom: 1rem;
-}
-
 .description {
   white-space: pre-line;
 }

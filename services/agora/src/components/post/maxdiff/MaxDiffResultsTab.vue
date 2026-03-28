@@ -97,13 +97,11 @@
 
     <!-- Learn more dialog -->
     <q-dialog v-model="showInfoDialog" position="bottom">
-      <ZKBottomDialogContainer>
-        <div class="learn-more-title">{{ learnMoreContext === 'community' ? t("title") : t("meTitle") }}</div>
+      <ZKBottomDialogContainer :title="learnMoreContext === 'community' ? t('title') : t('meTitle')">
         <div class="learn-more-content">
           <template v-if="learnMoreContext === 'community'">
             <p>{{ t("communityLearnMoreHow") }}</p>
             <p>{{ t("communityLearnMoreDiversity") }}</p>
-            <p>{{ t("communityLearnMoreFair") }}</p>
             <p>{{ isGitHubLinked ? t("communityLearnMoreSourceGitHub") : t("communityLearnMoreSourceManual") }}</p>
             <p class="learn-more-reference">
               {{ t("communityLearnMoreReference") }}
@@ -139,8 +137,7 @@
 
     <!-- Lifecycle learn-more dialog -->
     <q-dialog v-model="showLifecycleInfoDialog" position="bottom">
-      <ZKBottomDialogContainer>
-        <div class="learn-more-title">{{ lifecycleInfoTitle }}</div>
+      <ZKBottomDialogContainer :title="lifecycleInfoTitle">
         <div class="learn-more-content">
           <p>{{ lifecycleInfoContent }}</p>
         </div>
@@ -480,12 +477,6 @@ watch(currentTab, async (newTab, oldTab) => {
 .tabComponent {
   border-radius: 12px;
   padding: 0.5rem;
-}
-
-.learn-more-title {
-  font-size: 1.1rem;
-  font-weight: var(--font-weight-semibold);
-  color: $color-text-strong;
 }
 
 .learn-more-content {

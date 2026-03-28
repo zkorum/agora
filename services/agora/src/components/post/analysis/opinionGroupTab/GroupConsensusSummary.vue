@@ -18,9 +18,7 @@
     </div>
 
     <q-dialog v-model="showInformationDialog" position="bottom">
-      <ZKBottomDialogContainer>
-        <div class="titleStyle">{{ t("aiSummaryTitle") }}</div>
-
+      <ZKBottomDialogContainer :title="t('aiSummaryTitle')">
         <div>
           {{ t("aiSummaryDescription") }}
         </div>
@@ -86,8 +84,4 @@ const showInformationDialog = ref(false);
   gap: 0.5rem;
 }
 
-.titleStyle {
-  font-weight: var(--font-weight-medium);
-  font-size: 1.1rem;
-}
 </style>

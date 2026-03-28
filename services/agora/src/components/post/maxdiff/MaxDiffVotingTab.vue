@@ -178,8 +178,7 @@
     />
 
     <q-dialog v-model="showLearnMoreDialog" position="bottom">
-      <ZKBottomDialogContainer>
-        <div class="learn-more-title">{{ t("learnMoreTitle") }}</div>
+      <ZKBottomDialogContainer :title="t('learnMoreTitle')">
         <div class="learn-more-content">
           <p>{{ t("learnMoreHow") }}</p>
           <p>{{ t("learnMoreWhy") }}</p>
@@ -553,10 +552,8 @@ function retryInitialize(): void {
 }
 
 async function fetchNextCandidateSet(): Promise<{ candidates: string[] } | { error: "network" } | { error: "empty" }> {
-  const comparisons = instance.value?.exportState().comparisons ?? [];
   const response = await fetchMaxDiffRoute({
     conversationSlugId: conversationSlugId.value,
-    comparisons,
     bufferSize: 1,
   });
   if (response.status === "success" && response.data.candidateSets.length > 0) {
@@ -670,20 +667,24 @@ function recordVote(): void {
     showTransitionSpinner.value = true;
   }, 2000);
 
-  transitionTimeout = setTimeout(() => {
-    void (async () => {
-      await updateCandidates();
-      cancelTransition();
-    })();
-  }, 400);
-
-  // Save to backend via mutation (rollback handled by onRollback callback)
-  saveMutation.mutate({
+  // Save to DB first (route reads from DB, so save must land before route).
+  // Runs in parallel with the 400ms transition animation.
+  const savePromise = saveMutation.mutateAsync({
     ranking: instance.value.result ?? null,
     comparisons: instance.value.exportState().comparisons,
     isComplete: instance.value.complete,
     context,
+  }).catch(() => {
+    // onError already handles rollback — swallow to avoid unhandled rejection
   });
+
+  transitionTimeout = setTimeout(() => {
+    void (async () => {
+      await savePromise;
+      await updateCandidates();
+      cancelTransition();
+    })();
+  }, 400);
 }
 
 function undoLastVote(): void {
@@ -756,14 +757,17 @@ function handleRedoRanking(): void {
     instance.value = createMaxDiff(slugIds);
     isComplete.value = false;
     finalRanking.value = [];
-    void updateCandidates();
 
-    saveMutation.mutate({
-      ranking: null,
-      comparisons: [],
-      isComplete: false,
-      context,
-    });
+    // Save empty state to DB first, then fetch candidates (route reads from DB)
+    void (async () => {
+      await saveMutation.mutateAsync({
+        ranking: null,
+        comparisons: [],
+        isComplete: false,
+        context,
+      }).catch(() => {});
+      await updateCandidates();
+    })();
   });
 }
 </script>
@@ -1007,12 +1011,6 @@ function handleRedoRanking(): void {
 .view-ranking-btn {
   align-self: flex-start;
   border-radius: 8px;
-}
-
-.learn-more-title {
-  font-size: 1.1rem;
-  font-weight: var(--font-weight-semibold);
-  color: $color-text-strong;
 }
 
 .learn-more-content {

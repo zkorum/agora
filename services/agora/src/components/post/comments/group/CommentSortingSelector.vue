@@ -15,9 +15,7 @@
     </ZKButton>
 
     <q-dialog v-model="showDialog" position="bottom">
-      <ZKBottomDialogContainer>
-        <div class="titleStyle">{{ t("filterTitle") }}</div>
-
+      <ZKBottomDialogContainer :title="t('filterTitle')">
         <div class="optionListStyle">
           <div
             v-for="optionItem in currentOptionList"
@@ -175,10 +173,6 @@ function selectedAlgorithm(filterValue: CommentFilterOptions) {
   min-height: calc(2 * 0.8rem * 1.3);
   color: $color-text-weak;
   padding-left: 0.5rem;
-}
-
-.titleStyle {
-  font-weight: var(--font-weight-medium);
 }
 
 .buttonGrid {
