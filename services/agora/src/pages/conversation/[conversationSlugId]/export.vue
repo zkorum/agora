@@ -93,6 +93,7 @@ import PostDetails from "src/components/post/PostDetails.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { isNetworkOffline } from "src/composables/useNetworkStatus";
 import { useAuthenticationStore } from "src/stores/authentication";
 import {
   useExportHistoryQuery,
@@ -162,6 +163,11 @@ async function navigateToConversation(): Promise<void> {
 }
 
 function handleRefresh(done: () => void): void {
+  if (isNetworkOffline.value) {
+    done();
+    return;
+  }
+
   const minDelay = new Promise((resolve) => setTimeout(resolve, 500));
 
   void Promise.all([

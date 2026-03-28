@@ -106,6 +106,7 @@ import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { isNetworkOffline } from "src/composables/useNetworkStatus";
 import type { NotificationType, RouteTarget } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotificationStore } from "src/stores/notification";
@@ -296,11 +297,18 @@ function getTitleFromNotification(
 }
 
 function pullDownTriggered(done: () => void) {
+  if (isNetworkOffline.value) {
+    done();
+    return;
+  }
   setTimeout(() => {
     void (async () => {
-      await loadNotificationData(false);
-      hasMore.value = true;
-      done();
+      try {
+        await loadNotificationData(false);
+        hasMore.value = true;
+      } finally {
+        done();
+      }
     })();
   }, 500);
 }
