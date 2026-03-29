@@ -53,22 +53,22 @@ COLLUDING_GROUPS = [
 
 
 def _score(**kw):  # type: ignore[no-untyped-def]
-    return {
-        r.entity_id: r.score
-        for r in score_comparisons(
-            entity_ids=kw.pop("entity_ids", IDS),
-            comparisons=kw.pop("comparisons", COMPS),
-            **kw,
-        )
-    }
-
-
-def _score_raw(**kw):  # type: ignore[no-untyped-def]
-    return score_comparisons(
+    output = score_comparisons(
         entity_ids=kw.pop("entity_ids", IDS),
         comparisons=kw.pop("comparisons", COMPS),
         **kw,
     )
+    assert output is not None
+    return {r.entity_id: r.score for r in output.global_scores}
+
+
+def _score_raw(**kw):  # type: ignore[no-untyped-def]
+    output = score_comparisons(
+        entity_ids=kw.pop("entity_ids", IDS),
+        comparisons=kw.pop("comparisons", COMPS),
+        **kw,
+    )
+    return output
 
 
 # --- Edge cases ---
@@ -76,29 +76,36 @@ def _score_raw(**kw):  # type: ignore[no-untyped-def]
 
 class TestEdgeCases:
     def test_empty_comparisons(self) -> None:
-        assert _score_raw(comparisons=[]) == []
+        assert _score_raw(comparisons=[]) is None
 
     def test_single_entity(self) -> None:
-        assert _score_raw(entity_ids=["A"]) == []
+        assert _score_raw(entity_ids=["A"]) is None
 
     def test_comparisons_reference_unknown_items(self) -> None:
-        assert _score_raw(entity_ids=["X", "Y"]) == []
+        assert _score_raw(entity_ids=["X", "Y"]) is None
 
     def test_two_items_one_vote(self) -> None:
         comps = [_row(0, "X", "Y", ["X", "Y"])]
-        results = score_comparisons(
+        output = score_comparisons(
             entity_ids=["X", "Y"], comparisons=comps,
         )
+        assert output is not None
+        results = output.global_scores
         assert len(results) == 2
         assert results[0].entity_id == "X"
         assert results[0].score == 1.0
         assert results[1].score == 0.0
+        # Per-user scores should also be present
+        assert len(output.user_scores) == 1
+        assert 0 in output.user_scores
 
     def test_single_user(self) -> None:
         comps = [_row(0, "A", "B", ["A", "B"])]
-        results = score_comparisons(
+        output = score_comparisons(
             entity_ids=["A", "B"], comparisons=comps,
         )
+        assert output is not None
+        results = output.global_scores
         assert len(results) == 2
         assert results[0].score > results[1].score
 
@@ -108,12 +115,16 @@ class TestEdgeCases:
 
 class TestDefault:
     def test_shape_and_invariants(self) -> None:
-        results = _score_raw()
+        output = _score_raw()
+        assert output is not None
+        results = output.global_scores
         assert len(results) == 4
         assert {r.entity_id for r in results} == set(IDS)
         scores = [r.score for r in results]
         assert all(0.0 <= s <= 1.0 for s in scores)
         assert scores == sorted(scores, reverse=True)
+        # Per-user scores: 3 users
+        assert len(output.user_scores) == 3
 
     def test_majority_preference_wins(self) -> None:
         """2 users prefer B>C, 1 prefers C>B. B should rank above C."""
@@ -170,6 +181,8 @@ class TestCOCM:
     def test_empty_group_sources_matches_default(self) -> None:
         default = _score_raw()
         empty = _score_raw(group_sources=[])
-        for d, e in zip(default, empty, strict=True):
+        assert default is not None
+        assert empty is not None
+        for d, e in zip(default.global_scores, empty.global_scores, strict=True):
             assert d.entity_id == e.entity_id
             assert abs(d.score - e.score) < 0.01

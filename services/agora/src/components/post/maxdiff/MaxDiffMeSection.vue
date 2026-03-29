@@ -103,10 +103,13 @@ const rankingItems = computed<MaxDiffListItem[]>(() => {
   const instance = restoredInstance.value;
   if (instance === null || !instance.complete || instance.result === undefined) return [];
   const itemMap = new Map(props.allItems.map((i) => [i.slugId, i]));
+  const scoreMap = new Map(
+    (props.loadData?.perUserScores ?? []).map((s) => [s.entitySlugId, s.score]),
+  );
   return instance.result
     .map((slugId) => itemMap.get(slugId))
     .filter((item): item is MaxDiffListItem => item !== undefined)
-    .map((item) => ({ ...item, score: null }));
+    .map((item) => ({ ...item, score: scoreMap.get(item.slugId) ?? null }));
 });
 
 const progress = computed(() => {

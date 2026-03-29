@@ -9,6 +9,7 @@ Name | Type | Description | Notes
 **comparisons** | [**Array&lt;ApiV1MaxdiffLoadPost200ResponseComparisonsInner&gt;**](ApiV1MaxdiffLoadPost200ResponseComparisonsInner.md) |  | [default to undefined]
 **isComplete** | **boolean** |  | [default to undefined]
 **candidateSets** | **Array&lt;Array&lt;string&gt;&gt;** |  | [default to undefined]
+**perUserScores** | [**Array&lt;ApiV1MaxdiffLoadPost200ResponsePerUserScoresInner&gt;**](ApiV1MaxdiffLoadPost200ResponsePerUserScoresInner.md) |  | [default to undefined]
 
 ## Example
 
@@ -20,6 +21,7 @@ const instance: ApiV1MaxdiffLoadPost200Response = {
     comparisons,
     isComplete,
     candidateSets,
+    perUserScores,
 };
 ```
 

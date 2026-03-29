@@ -6,6 +6,7 @@ import {
     maxdiffItemExternalSourceTable,
     rankingScoreTable,
     maxdiffComparisonTable,
+    maxdiffUserEntityScoreTable,
 } from "@/shared-backend/schema.js";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
@@ -159,8 +160,7 @@ export async function saveMaxdiffResult({
     const now = new Date();
     now.setMilliseconds(0);
 
-    // Transaction: upsert JSONB + delete/insert normalized comparisons atomically.
-    // If normalized insert fails, the JSONB upsert rolls back too.
+    // Transaction: upsert JSONB + soft-delete/insert normalized comparisons atomically.
     await db.transaction(async (tx) => {
         const [result] = await tx
             .insert(maxdiffResultTable)
@@ -187,13 +187,14 @@ export async function saveMaxdiffResult({
             })
             .returning({ id: maxdiffResultTable.id });
 
-        // Dual-write: normalized comparisons (backup JSONB kept above)
+        // Dual-write: soft-delete old normalized comparisons, insert new ones
         await tx
-            .delete(maxdiffComparisonTable)
+            .update(maxdiffComparisonTable)
+            .set({ deletedAt: now })
             .where(
-                eq(
-                    maxdiffComparisonTable.maxdiffResultId,
-                    result.id,
+                and(
+                    eq(maxdiffComparisonTable.maxdiffResultId, result.id),
+                    sql`${maxdiffComparisonTable.deletedAt} IS NULL`,
                 ),
             );
         if (comparisons.length > 0) {
@@ -238,10 +239,16 @@ interface LoadMaxdiffResultProps {
     userId: string;
 }
 
+interface PerUserScore {
+    entitySlugId: string;
+    score: number;
+}
+
 interface LoadMaxdiffResultData {
     ranking: string[] | null;
     comparisons: MaxDiffComparison[] | null;
     isComplete: boolean;
+    perUserScores: PerUserScore[] | null;
 }
 
 export async function loadMaxdiffResult({
@@ -252,6 +259,7 @@ export async function loadMaxdiffResult({
 
     const results = await db
         .select({
+            id: maxdiffResultTable.id,
             ranking: maxdiffResultTable.ranking,
             comparisons: maxdiffResultTable.comparisons,
             isComplete: maxdiffResultTable.isComplete,
@@ -269,6 +277,7 @@ export async function loadMaxdiffResult({
             ranking: null,
             comparisons: null,
             isComplete: false,
+            perUserScores: null,
         };
     }
 
@@ -282,10 +291,21 @@ export async function loadMaxdiffResult({
             ? z.array(z.string()).parse(row.ranking)
             : null;
 
+    // Fetch per-user Solidago scores (written by scoring worker)
+    const scoreRows = await db
+        .select({
+            entitySlugId: maxdiffUserEntityScoreTable.entitySlugId,
+            score: maxdiffUserEntityScoreTable.score,
+        })
+        .from(maxdiffUserEntityScoreTable)
+        .where(eq(maxdiffUserEntityScoreTable.maxdiffResultId, row.id))
+        .orderBy(sql`${maxdiffUserEntityScoreTable.score} DESC`);
+
     return {
         ranking,
         comparisons: comparisonsResult,
         isComplete: row.isComplete,
+        perUserScores: scoreRows.length > 0 ? scoreRows : null,
     };
 }
 

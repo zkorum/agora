@@ -2473,8 +2473,29 @@ export const maxdiffComparisonTable = pgTable(
         candidateSet: text("candidate_set")
             .array()
             .notNull(), // slugIds of all items shown in this comparison
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
     },
     (t) => [
         index("maxdiff_comparison_result_idx").on(t.maxdiffResultId),
+    ],
+);
+
+// Per-user Solidago scores, written by the scoring worker alongside global scores.
+// One set of scores per user per conversation, upserted each scoring run.
+/** @service scoring-worker, api */
+export const maxdiffUserEntityScoreTable = pgTable(
+    "maxdiff_user_entity_score",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        maxdiffResultId: integer("maxdiff_result_id")
+            .notNull()
+            .references(() => maxdiffResultTable.id),
+        entitySlugId: varchar("entity_slug_id", { length: 8 }).notNull(),
+        score: real("score").notNull(),
+        uncertaintyLeft: real("uncertainty_left").notNull(),
+        uncertaintyRight: real("uncertainty_right").notNull(),
+    },
+    (t) => [
+        unique().on(t.maxdiffResultId, t.entitySlugId),
     ],
 );

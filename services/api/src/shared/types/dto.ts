@@ -945,6 +945,14 @@ export class Dto {
         comparisons: z.array(zodMaxdiffComparison).nullable(),
         isComplete: z.boolean(),
         candidateSets: z.array(z.array(z.string())),
+        perUserScores: z
+            .array(
+                z.object({
+                    entitySlugId: z.string(),
+                    score: z.number(),
+                }),
+            )
+            .nullable(),
     });
     static maxdiffResultsRequest = z
         .object({

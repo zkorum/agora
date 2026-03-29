@@ -182,8 +182,24 @@
         <div class="learn-more-content">
           <p>{{ t("learnMoreHow") }}</p>
           <p>{{ t("learnMoreWhy") }}</p>
+          <p>
+            <a
+              href="#"
+              class="learn-more-link"
+              @click.prevent="openScoringDetail"
+            >{{ t("learnMoreScoringLink") }}</a>
+          </p>
+        </div>
+      </ZKBottomDialogContainer>
+    </q-dialog>
+
+    <q-dialog v-model="showScoringDetailDialog" position="bottom">
+      <ZKBottomDialogContainer :title="t('scoringDetailTitle')">
+        <div class="learn-more-content">
+          <p>{{ t("scoringDetailPipeline") }}</p>
+          <p>{{ t("scoringDetailCocm") }}</p>
           <p class="learn-more-reference">
-            {{ t("learnMoreReference") }}
+            {{ t("scoringDetailReference") }}
             <a
               href="https://github.com/tournesol-app/tournesol/tree/main/solidago"
               target="_blank"
@@ -197,6 +213,13 @@
               rel="noopener noreferrer"
               class="learn-more-link"
             >Best-Worst Scaling</a>
+            ·
+            <a
+              href="https://ssrn.com/abstract=4311507"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="learn-more-link"
+            >COCM</a>
           </p>
         </div>
       </ZKBottomDialogContainer>
@@ -474,6 +497,12 @@ const progressPercent = computed(() => {
 });
 
 const showLearnMoreDialog = ref(false);
+const showScoringDetailDialog = ref(false);
+
+function openScoringDetail(): void {
+  showLearnMoreDialog.value = false;
+  showScoringDetailDialog.value = true;
+}
 
 const canUndo = computed(() => {
   if (!instance.value) return false;

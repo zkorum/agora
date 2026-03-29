@@ -1829,6 +1829,7 @@ server.after(() => {
                               ranking: null,
                               comparisons: null,
                               isComplete: false,
+                              perUserScores: null,
                           }),
                     computeGlobalUncertainty({ db, conversationId }),
                 ]);

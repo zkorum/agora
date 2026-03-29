@@ -103,6 +103,7 @@ class MaxdiffComparison(Base):
     best_slug_id: Mapped[str] = mapped_column(String(8))
     worst_slug_id: Mapped[str] = mapped_column(String(8))
     candidate_set: Mapped[list[str]] = mapped_column(ARRAY(Text))
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class MaxdiffItem(Base):
@@ -135,6 +136,17 @@ class MaxdiffResult(Base):
     is_complete: Mapped[bool] = mapped_column(Boolean, server_default="false")
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class MaxdiffUserEntityScore(Base):
+    __tablename__ = "maxdiff_user_entity_score"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    maxdiff_result_id: Mapped[int] = mapped_column(Integer)
+    entity_slug_id: Mapped[str] = mapped_column(String(8))
+    score: Mapped[float] = mapped_column(Float)
+    uncertainty_left: Mapped[float] = mapped_column(Float)
+    uncertainty_right: Mapped[float] = mapped_column(Float)
 
 
 class RankingScoreEntity(Base):

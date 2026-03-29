@@ -1411,11 +1411,16 @@ export interface ApiV1MaxdiffLoadPost200Response {
     'comparisons': Array<ApiV1MaxdiffLoadPost200ResponseComparisonsInner> | null;
     'isComplete': boolean;
     'candidateSets': Array<Array<string>>;
+    'perUserScores': Array<ApiV1MaxdiffLoadPost200ResponsePerUserScoresInner> | null;
 }
 export interface ApiV1MaxdiffLoadPost200ResponseComparisonsInner {
     'best': string;
     'worst': string;
     'set': Array<string>;
+}
+export interface ApiV1MaxdiffLoadPost200ResponsePerUserScoresInner {
+    'entitySlugId': string;
+    'score': number;
 }
 export interface ApiV1MaxdiffLoadPostRequest {
     'conversationSlugId': string;

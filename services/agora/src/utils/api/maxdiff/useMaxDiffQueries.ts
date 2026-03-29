@@ -172,6 +172,7 @@ export function useMaxDiffSaveMutation({
           })),
           isComplete: variables.isComplete,
           candidateSets: old?.candidateSets ?? [],
+          perUserScores: old?.perUserScores ?? null,
         }),
       );
 

@@ -28,6 +28,7 @@ from scoring_worker.config import Settings
 from scoring_worker.db import (
     ComparisonRow,
     ScoredEntity,
+    UserScoreEntry,
     clear_scores_batch,
     fetch_active_items_batch,
     fetch_comparisons_batch,
@@ -35,7 +36,11 @@ from scoring_worker.db import (
     update_maxdiff_counters_batch,
     write_scores_batch,
 )
-from scoring_worker.scoring import ScoringResult, score_comparisons, warmup
+from scoring_worker.scoring import (
+    ConversationScoringOutput,
+    score_comparisons,
+    warmup,
+)
 from scoring_worker.valkey_client import (
     DirtyConversation,
     mark_dirty,
@@ -78,7 +83,7 @@ def _score_one(
     *,
     entity_ids: list[str],
     comparisons: list[ComparisonRow],
-) -> list[ScoringResult]:
+) -> ConversationScoringOutput | None:
     """Score a single conversation (called in thread pool)."""
     return score_comparisons(
         entity_ids=entity_ids, comparisons=comparisons
@@ -180,9 +185,11 @@ def main() -> None:
             active_items = fetch_active_items_batch(
                 read_engine, conversation_ids=conv_ids
             )
-            comparisons = fetch_comparisons_batch(
+            comparisons_result = fetch_comparisons_batch(
                 read_engine, conversation_ids=conv_ids
             )
+            comparisons = comparisons_result.comparisons
+            user_idx_to_result_id = comparisons_result.user_idx_to_result_id
 
             # Update counters
             update_maxdiff_counters_batch(
@@ -218,6 +225,7 @@ def main() -> None:
             scoring_results: dict[
                 int, tuple[list[ScoredEntity], dict[str, int]]
             ] = {}
+            all_user_score_entries: list[UserScoreEntry] = []
             failed_items: list[DirtyConversation] = []
 
             if to_score:
@@ -238,8 +246,8 @@ def main() -> None:
                     for future in as_completed(future_to_item):
                         item = future_to_item[future]
                         try:
-                            results = future.result()
-                            if results:
+                            output = future.result()
+                            if output is not None:
                                 pc = _build_participant_counts(
                                     comparisons[item.conversation_id]
                                 )
@@ -253,16 +261,36 @@ def main() -> None:
                                             r.entity_id, 0
                                         ),
                                     )
-                                    for r in results
+                                    for r in output.global_scores
                                 ]
                                 scoring_results[
                                     item.conversation_id
                                 ] = (scored, pc)
                                 log.info(
-                                    "[Worker] %s: scored %d entities",
+                                    "[Worker] %s: scored %d entities, %d users",
                                     item.slug_id,
-                                    len(results),
+                                    len(output.global_scores),
+                                    len(output.user_scores),
                                 )
+
+                                # Map per-user scores to DB entries
+                                idx_map = user_idx_to_result_id.get(
+                                    item.conversation_id, {}
+                                )
+                                for user_idx, user_results in output.user_scores.items():
+                                    result_id = idx_map.get(user_idx)
+                                    if result_id is None:
+                                        continue
+                                    for r in user_results:
+                                        all_user_score_entries.append(
+                                            UserScoreEntry(
+                                                maxdiff_result_id=result_id,
+                                                entity_slug_id=r.entity_id,
+                                                score=r.score,
+                                                uncertainty_left=r.uncertainty_left,
+                                                uncertainty_right=r.uncertainty_right,
+                                            )
+                                        )
                             else:
                                 to_clear.append(item.conversation_id)
                         except Exception:
@@ -275,7 +303,9 @@ def main() -> None:
             # Step 4: Batch WRITE
             if scoring_results:
                 write_scores_batch(
-                    primary_engine, results=scoring_results
+                    primary_engine,
+                    results=scoring_results,
+                    user_scores=all_user_score_entries,
                 )
 
             if to_clear:

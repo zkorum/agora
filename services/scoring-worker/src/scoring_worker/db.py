@@ -20,6 +20,7 @@ from scoring_worker.generated_models import (
     MaxdiffItem,
     MaxdiffLifecycleStatus,
     MaxdiffResult,
+    MaxdiffUserEntityScore,
     RankingScore,
     RankingScoreEntity,
     User,
@@ -87,18 +88,31 @@ def fetch_active_items_batch(
     return result
 
 
+@dataclass(frozen=True)
+class ComparisonsBatchResult:
+    comparisons: dict[int, list[ComparisonRow]]
+    # Reverse map: conv_id → {user_idx → maxdiff_result_id}
+    user_idx_to_result_id: dict[int, dict[int, int]]
+
+
 def fetch_comparisons_batch(
     engine: Engine,
     *,
     conversation_ids: list[int],
-) -> dict[int, list[ComparisonRow]]:
+) -> ComparisonsBatchResult:
     """Fetch normalized comparisons grouped by conversation_id.
 
     Assigns a 0-based user_idx per distinct maxdiff_result_id within
     each conversation (each result = one user's session).
+
+    Also returns a reverse mapping from user_idx to maxdiff_result.id
+    for writing per-user scores back.
     """
     if not conversation_ids:
-        return {}
+        return ComparisonsBatchResult(
+            comparisons={},
+            user_idx_to_result_id={},
+        )
 
     stmt = (
         select(
@@ -113,7 +127,12 @@ def fetch_comparisons_batch(
             MaxdiffComparison,
             MaxdiffComparison.maxdiff_result_id == MaxdiffResult.id,
         )
-        .where(MaxdiffResult.conversation_id.in_(conversation_ids))
+        .where(
+            and_(
+                MaxdiffResult.conversation_id.in_(conversation_ids),
+                MaxdiffComparison.deleted_at.is_(None),
+            ),
+        )
         .order_by(
             MaxdiffResult.conversation_id,
             MaxdiffComparison.maxdiff_result_id,
@@ -121,43 +140,62 @@ def fetch_comparisons_batch(
         )
     )
 
-    result: dict[int, list[ComparisonRow]] = {
+    comparisons: dict[int, list[ComparisonRow]] = {
         cid: [] for cid in conversation_ids
     }
+    # Forward: conv_id → {result_id → user_idx}
+    user_idx_maps: dict[int, dict[int, int]] = {}
+    # Reverse: conv_id → {user_idx → result_id}
+    reverse_maps: dict[int, dict[int, int]] = {}
 
     with Session(engine) as session:
-        # Assign user_idx per conversation
-        user_idx_maps: dict[int, dict[int, int]] = {}
         for row in session.execute(stmt):
             cid = row.conversation_id
             rid = row.maxdiff_result_id
             if cid not in user_idx_maps:
                 user_idx_maps[cid] = {}
+                reverse_maps[cid] = {}
             idx_map = user_idx_maps[cid]
             if rid not in idx_map:
-                idx_map[rid] = len(idx_map)
+                idx = len(idx_map)
+                idx_map[rid] = idx
+                reverse_maps[cid][idx] = rid
 
-            result[cid].append(ComparisonRow(
+            comparisons[cid].append(ComparisonRow(
                 best_slug_id=row.best_slug_id,
                 worst_slug_id=row.worst_slug_id,
                 candidate_set=row.candidate_set,
                 user_idx=idx_map[rid],
             ))
 
-    return result
+    return ComparisonsBatchResult(
+        comparisons=comparisons,
+        user_idx_to_result_id=reverse_maps,
+    )
 
 
 # --- Batch WRITE ---
+
+
+@dataclass(frozen=True)
+class UserScoreEntry:
+    maxdiff_result_id: int
+    entity_slug_id: str
+    score: float
+    uncertainty_left: float
+    uncertainty_right: float
 
 
 def write_scores_batch(
     engine: Engine,
     *,
     results: dict[int, tuple[list[ScoredEntity], dict[str, int]]],
+    user_scores: list[UserScoreEntry] | None = None,
 ) -> None:
     """Write scoring results for multiple conversations in one transaction.
 
     `results` maps conversation_id -> (scored_entities, participant_counts).
+    `user_scores` is a flat list of per-user entity scores to upsert.
     Skips conversations with empty scores.
     """
     if not results:
@@ -229,6 +267,34 @@ def write_scores_batch(
                 .values(current_ranking_score_id=ranking_score.id),
             )
 
+        # Bulk upsert per-user entity scores
+        if user_scores:
+            from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+            values = [
+                {
+                    "maxdiff_result_id": e.maxdiff_result_id,
+                    "entity_slug_id": e.entity_slug_id,
+                    "score": e.score,
+                    "uncertainty_left": e.uncertainty_left,
+                    "uncertainty_right": e.uncertainty_right,
+                }
+                for e in user_scores
+            ]
+            stmt = pg_insert(MaxdiffUserEntityScore).values(values)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=[
+                    MaxdiffUserEntityScore.maxdiff_result_id,
+                    MaxdiffUserEntityScore.entity_slug_id,
+                ],
+                set_={
+                    "score": stmt.excluded.score,
+                    "uncertainty_left": stmt.excluded.uncertainty_left,
+                    "uncertainty_right": stmt.excluded.uncertainty_right,
+                },
+            )
+            session.execute(stmt)
+
         session.commit()
 
 
@@ -274,7 +340,7 @@ def update_maxdiff_counters_batch(
         for conv_id in conversation_ids:
             active_slugs = set(active_items_by_conv.get(conv_id, []))
 
-            # Total counts (all comparisons, excluding deleted users)
+            # Total counts (all comparisons, excluding deleted users + soft-deleted rows)
             total_row = session.execute(
                 select(
                     func.count(
@@ -296,6 +362,7 @@ def update_maxdiff_counters_batch(
                     and_(
                         MaxdiffResult.conversation_id == conv_id,
                         User.is_deleted.is_(False),
+                        MaxdiffComparison.deleted_at.is_(None),
                     ),
                 ),
             ).one()
@@ -313,7 +380,7 @@ def update_maxdiff_counters_batch(
                 )
                 continue
 
-            # Filtered counts (only active items, excluding deleted users)
+            # Filtered counts (only active items, excluding deleted users + soft-deleted rows)
             filtered_row = session.execute(
                 select(
                     func.count(
@@ -335,6 +402,7 @@ def update_maxdiff_counters_batch(
                     and_(
                         MaxdiffResult.conversation_id == conv_id,
                         User.is_deleted.is_(False),
+                        MaxdiffComparison.deleted_at.is_(None),
                         MaxdiffComparison.best_slug_id.in_(active_slugs),
                         MaxdiffComparison.worst_slug_id.in_(active_slugs),
                     ),

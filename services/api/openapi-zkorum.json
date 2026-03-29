@@ -3149,13 +3149,34 @@
                                                     "type": "string"
                                                 }
                                             }
+                                        },
+                                        "perUserScores": {
+                                            "nullable": true,
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "entitySlugId": {
+                                                        "type": "string"
+                                                    },
+                                                    "score": {
+                                                        "type": "number"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "entitySlugId",
+                                                    "score"
+                                                ],
+                                                "additionalProperties": false
+                                            }
                                         }
                                     },
                                     "required": [
                                         "ranking",
                                         "comparisons",
                                         "isComplete",
-                                        "candidateSets"
+                                        "candidateSets",
+                                        "perUserScores"
                                     ],
                                     "additionalProperties": false
                                 }

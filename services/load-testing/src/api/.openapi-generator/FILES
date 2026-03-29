@@ -107,6 +107,7 @@ docs/ApiV1MaxdiffItemsFetchPost200ResponseItemsInner.md
 docs/ApiV1MaxdiffItemsLifecycleUpdatePostRequest.md
 docs/ApiV1MaxdiffLoadPost200Response.md
 docs/ApiV1MaxdiffLoadPost200ResponseComparisonsInner.md
+docs/ApiV1MaxdiffLoadPost200ResponsePerUserScoresInner.md
 docs/ApiV1MaxdiffLoadPostRequest.md
 docs/ApiV1MaxdiffResultsPost200Response.md
 docs/ApiV1MaxdiffResultsPost200ResponseRankingsInner.md

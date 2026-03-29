@@ -26,6 +26,7 @@ from scoring_worker.bws_conversion import BWSComparison, bws_to_pairwise
 from scoring_worker.cocm_voting import COCMVotingRights, GroupSource
 from scoring_worker.entity_mapping import (
     EntityIdMapper,
+    SolidagoEntityScore,
     map_pairwise_wins_to_solidago,
     map_scores_from_solidago,
 )
@@ -143,6 +144,12 @@ class ScoringResult:
     uncertainty_right: float
 
 
+@dataclass(frozen=True)
+class ConversationScoringOutput:
+    global_scores: list[ScoringResult]
+    user_scores: dict[int, list[ScoringResult]]  # user_idx → per-entity scores
+
+
 def warmup() -> None:
     """Run a tiny dummy scoring to initialize PyTorch/LBFGS.
 
@@ -184,8 +191,8 @@ def score_comparisons(
     comparisons: list[ComparisonRow],
     trust_scores: dict[int, float] | None = None,
     group_sources: list[GroupSource] | None = None,
-) -> list[ScoringResult]:
-    """Run Solidago on BWS comparisons and return normalized scores.
+) -> ConversationScoringOutput | None:
+    """Run Solidago on BWS comparisons and return global + per-user scores.
 
     Args:
         entity_ids: All active item slugIds for this conversation.
@@ -195,10 +202,10 @@ def score_comparisons(
             When provided, uses COCM attenuation instead of AffineOvertrust.
 
     Returns:
-        Scored entities sorted by score descending, normalized to [0, 1].
+        ConversationScoringOutput with global and per-user scores, or None if not enough data.
     """
     if len(entity_ids) < 2 or not comparisons:
-        return []
+        return None
 
     # Filter comparisons to only active items
     entity_id_set = set(entity_ids)
@@ -219,7 +226,7 @@ def score_comparisons(
         )
 
     if not bws_list:
-        return []
+        return None
 
     # BWS to pairwise conversion
     pairwise_wins = bws_to_pairwise(bws_comparisons=bws_list, entity_ids=entity_ids)
@@ -231,7 +238,7 @@ def score_comparisons(
     )
 
     if not pairwise_wins:
-        return []
+        return None
 
     # Map string IDs to ints for Solidago
     mapper = EntityIdMapper(entity_ids=entity_ids)
@@ -239,7 +246,7 @@ def score_comparisons(
     comparisons_df = pd.DataFrame(solidago_comparisons)
 
     if comparisons_df.empty:
-        return []
+        return None
 
     # Build Solidago input DataFrames
     user_ids = sorted(comparisons_df["user_id"].unique())
@@ -273,7 +280,7 @@ def score_comparisons(
     # Run Solidago pipeline
     judgments = DataFrameJudgments(comparisons=comparisons_df)
     privacy = PrivacySettings()
-    _, _, _, global_model = pipeline(
+    _, _, user_models, global_model = pipeline(
         users=users_df,
         vouches=vouches_df,
         entities=entities_df,
@@ -281,14 +288,35 @@ def score_comparisons(
         judgments=judgments,
     )
 
-    # Map back to string IDs
+    # --- Global scores ---
     solidago_scores = list(global_model.iter_entities())
     entity_scores = map_scores_from_solidago(solidago_scores=solidago_scores, mapper=mapper)
 
     if not entity_scores:
-        return []
+        return None
 
-    # Normalize scores to [0, 1]
+    global_results = _normalize_scores(entity_scores)
+
+    # --- Per-user scores ---
+    per_user_results: dict[int, list[ScoringResult]] = {}
+    for solidago_user_id, user_model in user_models.items():
+        user_solidago_scores = list(user_model.iter_entities())
+        user_entity_scores = map_scores_from_solidago(
+            solidago_scores=user_solidago_scores, mapper=mapper,
+        )
+        if user_entity_scores:
+            per_user_results[int(solidago_user_id)] = _normalize_scores(user_entity_scores)
+
+    return ConversationScoringOutput(
+        global_scores=global_results,
+        user_scores=per_user_results,
+    )
+
+
+def _normalize_scores(
+    entity_scores: list[SolidagoEntityScore],
+) -> list[ScoringResult]:
+    """Normalize raw Solidago scores to [0, 1] and sort descending."""
     raw_scores = [s.score for s in entity_scores]
     min_score = min(raw_scores)
     max_score = max(raw_scores)
