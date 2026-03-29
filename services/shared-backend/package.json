@@ -6,6 +6,7 @@
     "main": "index.js",
     "scripts": {
         "sync": "bash scripts/rsync_and_sed.sh",
+        "test": "vitest run",
         "format:write": "prettier --write \"**/*.{js,ts,jsx,tsx,vue,scss,html,md,json}\"",
         "format:check": "prettier . --check"
     },
@@ -30,7 +31,8 @@
         "@types/node": "^25.3.5",
         "pino": "^10.3.1",
         "prettier": "^3.8.1",
-        "typescript": "^5.8.3"
+        "typescript": "^5.8.3",
+        "vitest": "^4.1.2"
     },
     "pnpm": {
         "overrides": {

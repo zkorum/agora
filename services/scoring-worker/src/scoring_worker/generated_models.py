@@ -1,17 +1,21 @@
 # WARNING: GENERATED FROM shared-backend/src/schema.ts
-# DO NOT MODIFY -- Re-generate with: make sync-python-models
+# DO NOT MODIFY -- Re-generate with: make sync
 # Service: scoring-worker
 
 from __future__ import annotations
 
+import uuid as uuid_pkg
+from datetime import datetime
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from pydantic import BaseModel
+from sqlalchemy import ARRAY, JSON, Boolean, DateTime, Float, Integer, String, Text, Uuid
+from sqlalchemy import Enum as SaEnum
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-if TYPE_CHECKING:
-    from datetime import datetime
-    from uuid import UUID
+
+class Base(DeclarativeBase):
+    pass
 
 
 class ParticipationMode(StrEnum):
@@ -42,110 +46,122 @@ class MaxdiffLifecycleStatus(StrEnum):
     canceled = "canceled"
 
 
-class Conversation(BaseModel):
-    """Table: conversation"""
+class Conversation(Base):
+    __tablename__ = "conversation"
 
-    id: int | None = None
-    slug_id: str
-    author_id: UUID
-    organization_id: int | None = None
-    current_content_id: int | None = None
-    current_polis_content_id: int | None = None
-    current_ranking_score_id: int | None = None
-    index_conversation_at: datetime | None = None
-    is_indexed: bool = True
-    participation_mode: ParticipationMode | None = None
-    conversation_type: ConversationType | None = None
-    is_importing: bool = False
-    is_closed: bool = False
-    is_edited: bool = False
-    requires_event_ticket: EventSlug | None = None
-    opinion_count: int = 0
-    vote_count: int = 0
-    participant_count: int = 0
-    total_opinion_count: int = 0
-    total_vote_count: int = 0
-    total_participant_count: int = 0
-    moderated_opinion_count: int = 0
-    hidden_opinion_count: int = 0
-    import_url: str | None = None
-    import_conversation_url: str | None = None
-    import_export_url: str | None = None
-    import_created_at: datetime | None = None
-    import_author: str | None = None
-    import_method: ImportMethod | None = None
-    external_source_config: Any | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    last_reacted_at: datetime | None = None
-
-
-class MaxdiffComparison(BaseModel):
-    """Table: maxdiff_comparison"""
-
-    id: int | None = None
-    maxdiff_result_id: int
-    position: int
-    best_slug_id: str
-    worst_slug_id: str
-    candidate_set: list[str]
-
-
-class MaxdiffItem(BaseModel):
-    """Table: maxdiff_item"""
-
-    id: int | None = None
-    slug_id: str
-    author_id: UUID
-    conversation_id: int
-    current_content_id: int | None = None
-    is_seed: bool = False
-    lifecycle_status: MaxdiffLifecycleStatus | None = None
-    snapshot_score: float | None = None
-    snapshot_rank: int | None = None
-    snapshot_participant_count: int | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug_id: Mapped[str] = mapped_column(String(8))
+    author_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    organization_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    current_polis_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    index_conversation_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    participation_mode: Mapped[ParticipationMode] = mapped_column(
+        SaEnum(ParticipationMode, native_enum=False),
+    )
+    conversation_type: Mapped[ConversationType] = mapped_column(
+        SaEnum(ConversationType, native_enum=False),
+    )
+    is_importing: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    is_closed: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    is_edited: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    requires_event_ticket: Mapped[EventSlug | None] = mapped_column(
+        SaEnum(EventSlug, native_enum=False),
+        nullable=True,
+    )
+    opinion_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    vote_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    participant_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    total_opinion_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    total_vote_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    total_participant_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    moderated_opinion_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    hidden_opinion_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    import_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    import_conversation_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    import_export_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    import_created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    import_author: Mapped[str | None] = mapped_column(Text, nullable=True)
+    import_method: Mapped[ImportMethod | None] = mapped_column(
+        SaEnum(ImportMethod, native_enum=False),
+        nullable=True,
+    )
+    external_source_config: Mapped[Any | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+    last_reacted_at: Mapped[datetime] = mapped_column(DateTime)
 
 
-class MaxdiffResult(BaseModel):
-    """Table: maxdiff_result"""
+class MaxdiffComparison(Base):
+    __tablename__ = "maxdiff_comparison"
 
-    id: int | None = None
-    participant_id: UUID
-    conversation_id: int
-    ranking: Any | None = None
-    comparisons: Any
-    is_complete: bool = False
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    maxdiff_result_id: Mapped[int] = mapped_column(Integer)
+    position: Mapped[int] = mapped_column(Integer)
+    best_slug_id: Mapped[str] = mapped_column(String(8))
+    worst_slug_id: Mapped[str] = mapped_column(String(8))
+    candidate_set: Mapped[list[str]] = mapped_column(ARRAY(Text))
 
 
-class RankingScoreEntity(BaseModel):
-    """Table: ranking_score_entity"""
+class MaxdiffItem(Base):
+    __tablename__ = "maxdiff_item"
 
-    id: int | None = None
-    ranking_score_id: int
-    entity_slug_id: str
-    score: float
-    uncertainty_left: float
-    uncertainty_right: float
-    participant_count: int = 0
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug_id: Mapped[str] = mapped_column(String(8))
+    author_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    is_seed: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    lifecycle_status: Mapped[MaxdiffLifecycleStatus] = mapped_column(
+        SaEnum(MaxdiffLifecycleStatus, native_enum=False),
+    )
+    snapshot_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    snapshot_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    snapshot_participant_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
 
 
-class RankingScore(BaseModel):
-    """Table: ranking_score"""
+class MaxdiffResult(Base):
+    __tablename__ = "maxdiff_result"
 
-    id: int | None = None
-    conversation_id: int
-    scores: Any
-    participant_counts: Any
-    group_sources_snapshot: Any | None = None
-    user_weights_snapshot: Any | None = None
-    pipeline_config: Any
-    preference_learning: str | None = None
-    voting_rights: str | None = None
-    aggregation_config: str | None = None
-    computed_at: datetime
-    created_at: datetime | None = None
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    participant_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    ranking: Mapped[Any | None] = mapped_column(JSON, nullable=True)
+    comparisons: Mapped[Any] = mapped_column(JSON)
+    is_complete: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class RankingScoreEntity(Base):
+    __tablename__ = "ranking_score_entity"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ranking_score_id: Mapped[int] = mapped_column(Integer)
+    entity_slug_id: Mapped[str] = mapped_column(String(8))
+    score: Mapped[float] = mapped_column(Float)
+    uncertainty_left: Mapped[float] = mapped_column(Float)
+    uncertainty_right: Mapped[float] = mapped_column(Float)
+    participant_count: Mapped[int] = mapped_column(Integer, server_default="0")
+
+
+class RankingScore(Base):
+    __tablename__ = "ranking_score"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    scores: Mapped[Any] = mapped_column(JSON)
+    participant_counts: Mapped[Any] = mapped_column(JSON)
+    group_sources_snapshot: Mapped[Any | None] = mapped_column(JSON, nullable=True)
+    user_weights_snapshot: Mapped[Any | None] = mapped_column(JSON, nullable=True)
+    pipeline_config: Mapped[Any] = mapped_column(JSON)
+    preference_learning: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    voting_rights: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    aggregation_config: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    computed_at: Mapped[datetime] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
 

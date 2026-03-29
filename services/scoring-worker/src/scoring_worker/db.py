@@ -1,22 +1,39 @@
 """Database queries for the scoring worker.
 
-Uses psycopg3 with class_row for typed query results.
-Read queries use the read replica; writes use the primary.
+Uses SQLAlchemy 2.0 ORM with generated models for type-safe queries.
+Column name typos are caught by basedpyright at static analysis time.
 """
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
-from datetime import UTC
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
+from sqlalchemy import and_, func, select, update
+from sqlalchemy.orm import Session
+
+from scoring_worker.generated_models import (
+    Conversation,
+    MaxdiffComparison,
+    MaxdiffItem,
+    MaxdiffLifecycleStatus,
+    MaxdiffResult,
+    RankingScore,
+    RankingScoreEntity,
+)
+
 if TYPE_CHECKING:
-    from psycopg import Connection
+    from sqlalchemy import Engine
 
 
-@dataclass(frozen=True)
-class ActiveItem:
-    slug_id: str
+# Pipeline config (single source of truth for JSONB blob + typed columns)
+PIPELINE_CONFIG = {
+    "preference_learning": "LBFGSUniformGBT",
+    "voting_rights": "AffineOvertrust",
+    "aggregation": "EntitywiseQrQuantile(quantile=0.5)",
+}
 
 
 @dataclass(frozen=True)
@@ -24,12 +41,7 @@ class ComparisonRow:
     best_slug_id: str
     worst_slug_id: str
     candidate_set: list[str]
-    user_idx: int  # 0-based index per user within conversation
-
-
-@dataclass(frozen=True)
-class ConversationSlug:
-    slug_id: str
+    user_idx: int
 
 
 @dataclass(frozen=True)
@@ -41,269 +53,317 @@ class ScoredEntity:
     participant_count: int
 
 
-def fetch_active_items(
-    conn: Connection[tuple[object, ...]],
-    *,
-    conversation_id: int,
-) -> list[ActiveItem]:
-    """Fetch active MaxDiff items for a conversation (read replica)."""
-    from psycopg.rows import class_row
+# --- Batch READ queries (one query per data type for all conversations) ---
 
-    with conn.cursor(row_factory=class_row(ActiveItem)) as cur:
-        cur.execute(
-            """
-            SELECT slug_id
-            FROM maxdiff_item
-            WHERE conversation_id = %s
-              AND current_content_id IS NOT NULL
-              AND lifecycle_status IN ('active', 'in_progress')
-            """,
-            (conversation_id,),
+
+def fetch_active_items_batch(
+    engine: Engine,
+    *,
+    conversation_ids: list[int],
+) -> dict[int, list[str]]:
+    """Fetch active item slugIds grouped by conversation_id."""
+    if not conversation_ids:
+        return {}
+
+    stmt = (
+        select(MaxdiffItem.conversation_id, MaxdiffItem.slug_id)
+        .where(
+            and_(
+                MaxdiffItem.conversation_id.in_(conversation_ids),
+                MaxdiffItem.current_content_id.is_not(None),
+                MaxdiffItem.lifecycle_status.in_([
+                    MaxdiffLifecycleStatus.active,
+                    MaxdiffLifecycleStatus.in_progress,
+                ]),
+            ),
         )
-        return cur.fetchall()
+    )
+
+    result: dict[int, list[str]] = {cid: [] for cid in conversation_ids}
+    with Session(engine) as session:
+        for row in session.execute(stmt):
+            result[row.conversation_id].append(row.slug_id)
+    return result
 
 
-def fetch_comparisons(
-    conn: Connection[tuple[object, ...]],
+def fetch_comparisons_batch(
+    engine: Engine,
     *,
-    conversation_id: int,
-) -> list[ComparisonRow]:
-    """Fetch all normalized comparisons for a conversation (read replica).
+    conversation_ids: list[int],
+) -> dict[int, list[ComparisonRow]]:
+    """Fetch normalized comparisons grouped by conversation_id.
 
-    Returns comparisons with a 0-based user_idx assigned per distinct
-    maxdiff_result_id (each result = one user's session).
+    Assigns a 0-based user_idx per distinct maxdiff_result_id within
+    each conversation (each result = one user's session).
     """
-    from psycopg.rows import class_row
+    if not conversation_ids:
+        return {}
 
-    with conn.cursor(row_factory=class_row(ComparisonRow)) as cur:
-        cur.execute(
-            """
-            SELECT
-                mc.best_slug_id,
-                mc.worst_slug_id,
-                mc.candidate_set,
-                (DENSE_RANK() OVER (ORDER BY mc.maxdiff_result_id) - 1)::int AS user_idx
-            FROM maxdiff_comparison mc
-            JOIN maxdiff_result mr ON mr.id = mc.maxdiff_result_id
-            WHERE mr.conversation_id = %s
-            ORDER BY mc.maxdiff_result_id, mc.position
-            """,
-            (conversation_id,),
+    stmt = (
+        select(
+            MaxdiffResult.conversation_id,
+            MaxdiffComparison.maxdiff_result_id,
+            MaxdiffComparison.best_slug_id,
+            MaxdiffComparison.worst_slug_id,
+            MaxdiffComparison.candidate_set,
+            MaxdiffComparison.position,
         )
-        return cur.fetchall()
-
-
-def fetch_conversation_slug(
-    conn: Connection[tuple[object, ...]],
-    *,
-    conversation_id: int,
-) -> str | None:
-    """Fetch the slug_id for a conversation."""
-    from psycopg.rows import class_row
-
-    with conn.cursor(row_factory=class_row(ConversationSlug)) as cur:
-        cur.execute(
-            "SELECT slug_id FROM conversation WHERE id = %s",
-            (conversation_id,),
+        .join(
+            MaxdiffComparison,
+            MaxdiffComparison.maxdiff_result_id == MaxdiffResult.id,
         )
-        row = cur.fetchone()
-        return row.slug_id if row else None
+        .where(MaxdiffResult.conversation_id.in_(conversation_ids))
+        .order_by(
+            MaxdiffResult.conversation_id,
+            MaxdiffComparison.maxdiff_result_id,
+            MaxdiffComparison.position,
+        )
+    )
+
+    result: dict[int, list[ComparisonRow]] = {
+        cid: [] for cid in conversation_ids
+    }
+
+    with Session(engine) as session:
+        # Assign user_idx per conversation
+        user_idx_maps: dict[int, dict[int, int]] = {}
+        for row in session.execute(stmt):
+            cid = row.conversation_id
+            rid = row.maxdiff_result_id
+            if cid not in user_idx_maps:
+                user_idx_maps[cid] = {}
+            idx_map = user_idx_maps[cid]
+            if rid not in idx_map:
+                idx_map[rid] = len(idx_map)
+
+            result[cid].append(ComparisonRow(
+                best_slug_id=row.best_slug_id,
+                worst_slug_id=row.worst_slug_id,
+                candidate_set=row.candidate_set,
+                user_idx=idx_map[rid],
+            ))
+
+    return result
 
 
-# Pipeline config (single source of truth for both JSONB blob and typed columns)
-PIPELINE_CONFIG = {
-    "preference_learning": "LBFGSUniformGBT",
-    "voting_rights": "AffineOvertrust",
-    "aggregation": "EntitywiseQrQuantile(quantile=0.5)",
-}
+# --- Batch WRITE ---
 
 
-def write_scores(
-    conn: Connection[tuple[object, ...]],
+def write_scores_batch(
+    engine: Engine,
     *,
-    conversation_id: int,
-    scores: list[ScoredEntity],
-    participant_counts: dict[str, int],
+    results: dict[int, tuple[list[ScoredEntity], dict[str, int]]],
 ) -> None:
-    """Write scoring results to DB (primary connection).
+    """Write scoring results for multiple conversations in one transaction.
 
-    Inserts into ranking_score (with JSONB backup) and ranking_score_entity
-    (normalized), then updates conversation.current_ranking_score_id.
-
-    Skips entirely if scores is empty (avoids orphaned ranking_score rows).
+    `results` maps conversation_id -> (scored_entities, participant_counts).
+    Skips conversations with empty scores.
     """
-    if not scores:
+    if not results:
         return
-
-    import json
-    from datetime import datetime
 
     now = datetime.now(tz=UTC).replace(microsecond=0)
 
-    scores_jsonb = json.dumps([
-        {
-            "entityId": s.entity_slug_id,
-            "score": s.score,
-            "uncertaintyLeft": s.uncertainty_left,
-            "uncertaintyRight": s.uncertainty_right,
-        }
-        for s in scores
-    ])
-    participant_counts_jsonb = json.dumps(participant_counts)
-    pipeline_config_jsonb = json.dumps({
-        "preferenceLearning": PIPELINE_CONFIG["preference_learning"],
-        "votingRights": PIPELINE_CONFIG["voting_rights"],
-        "aggregation": PIPELINE_CONFIG["aggregation"],
-    })
+    with Session(engine) as session:
+        for conv_id, (scores, participant_counts) in results.items():
+            if not scores:
+                continue
 
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            INSERT INTO ranking_score (
-                conversation_id, scores, participant_counts,
-                group_sources_snapshot, user_weights_snapshot,
-                pipeline_config, preference_learning, voting_rights,
-                aggregation_config, computed_at
-            ) VALUES (
-                %s, %s::jsonb, %s::jsonb,
-                NULL, NULL,
-                %s::jsonb, %s, %s,
-                %s, %s
-            ) RETURNING id
-            """,
-            (
-                conversation_id,
-                scores_jsonb,
-                participant_counts_jsonb,
-                pipeline_config_jsonb,
-                PIPELINE_CONFIG["preference_learning"],
-                PIPELINE_CONFIG["voting_rights"],
-                PIPELINE_CONFIG["aggregation"],
-                now,
+            # Insert ranking_score (JSONB backup + typed columns)
+            ranking_score = RankingScore(
+                conversation_id=conv_id,
+                scores=json.dumps([{
+                    "entityId": s.entity_slug_id,
+                    "score": s.score,
+                    "uncertaintyLeft": s.uncertainty_left,
+                    "uncertaintyRight": s.uncertainty_right,
+                } for s in scores]),
+                participant_counts=json.dumps(participant_counts),
+                group_sources_snapshot=None,
+                user_weights_snapshot=None,
+                pipeline_config=json.dumps({
+                    "preferenceLearning": PIPELINE_CONFIG[
+                        "preference_learning"
+                    ],
+                    "votingRights": PIPELINE_CONFIG["voting_rights"],
+                    "aggregation": PIPELINE_CONFIG["aggregation"],
+                }),
+                preference_learning=PIPELINE_CONFIG["preference_learning"],
+                voting_rights=PIPELINE_CONFIG["voting_rights"],
+                aggregation_config=PIPELINE_CONFIG["aggregation"],
+                computed_at=now,
+                created_at=now,
+            )
+            session.add(ranking_score)
+            session.flush()  # get the auto-generated ID
+
+            # Insert normalized entity scores
+            for s in scores:
+                session.add(RankingScoreEntity(
+                    ranking_score_id=ranking_score.id,
+                    entity_slug_id=s.entity_slug_id,
+                    score=s.score,
+                    uncertainty_left=s.uncertainty_left,
+                    uncertainty_right=s.uncertainty_right,
+                    participant_count=participant_counts.get(
+                        s.entity_slug_id, 0
+                    ),
+                ))
+
+            # Conditional update: only if our ID is newer
+            session.execute(
+                update(Conversation)
+                .where(
+                    and_(
+                        Conversation.id == conv_id,
+                        (
+                            Conversation.current_ranking_score_id.is_(None)
+                            | (
+                                Conversation.current_ranking_score_id
+                                < ranking_score.id
+                            )
+                        ),
+                    ),
+                )
+                .values(current_ranking_score_id=ranking_score.id),
+            )
+
+        session.commit()
+
+
+def clear_scores_batch(
+    engine: Engine,
+    *,
+    conversation_ids: list[int],
+) -> None:
+    """Clear scores for conversations with <2 active items."""
+    if not conversation_ids:
+        return
+    with Session(engine) as session:
+        session.execute(
+            update(Conversation)
+            .where(Conversation.id.in_(conversation_ids))
+            .values(current_ranking_score_id=None),
+        )
+        session.commit()
+
+
+# --- Counter update ---
+
+
+def update_maxdiff_counters_batch(
+    engine: Engine,
+    *,
+    conversation_ids: list[int],
+    active_items_by_conv: dict[int, list[str]],
+) -> None:
+    """Update conversation-level MaxDiff counters for a batch.
+
+    Matches TypeScript updateMaxdiffCounters logic:
+    - total_participant_count: users with any comparisons
+    - total_vote_count: all comparisons
+    - participant_count: users with comparisons where both best AND worst
+      are active items
+    - vote_count: comparisons where both best AND worst are active items
+    """
+    if not conversation_ids:
+        return
+
+    with Session(engine) as session:
+        for conv_id in conversation_ids:
+            active_slugs = set(active_items_by_conv.get(conv_id, []))
+
+            # Total counts (all comparisons)
+            total_row = session.execute(
+                select(
+                    func.count(
+                        func.distinct(MaxdiffResult.participant_id)
+                    ).label("total_participants"),
+                    func.count().label("total_votes"),
+                )
+                .select_from(MaxdiffComparison)
+                .join(
+                    MaxdiffResult,
+                    MaxdiffResult.id
+                    == MaxdiffComparison.maxdiff_result_id,
+                )
+                .where(MaxdiffResult.conversation_id == conv_id),
+            ).one()
+
+            if not active_slugs:
+                session.execute(
+                    update(Conversation)
+                    .where(Conversation.id == conv_id)
+                    .values(
+                        participant_count=0,
+                        total_participant_count=total_row.total_participants,
+                        vote_count=0,
+                        total_vote_count=total_row.total_votes,
+                    ),
+                )
+                continue
+
+            # Filtered counts (only active items)
+            filtered_row = session.execute(
+                select(
+                    func.count(
+                        func.distinct(MaxdiffResult.participant_id)
+                    ).label("participants"),
+                    func.count().label("votes"),
+                )
+                .select_from(MaxdiffComparison)
+                .join(
+                    MaxdiffResult,
+                    MaxdiffResult.id
+                    == MaxdiffComparison.maxdiff_result_id,
+                )
+                .where(
+                    and_(
+                        MaxdiffResult.conversation_id == conv_id,
+                        MaxdiffComparison.best_slug_id.in_(active_slugs),
+                        MaxdiffComparison.worst_slug_id.in_(active_slugs),
+                    ),
+                ),
+            ).one()
+
+            session.execute(
+                update(Conversation)
+                .where(Conversation.id == conv_id)
+                .values(
+                    participant_count=filtered_row.participants,
+                    total_participant_count=total_row.total_participants,
+                    vote_count=filtered_row.votes,
+                    total_vote_count=total_row.total_votes,
+                ),
+            )
+
+        session.commit()
+
+
+# --- Reconciliation ---
+
+
+def reconcile_unscored_conversations(engine: Engine) -> list[int]:
+    """Find conversations needing scoring (safety net for missed ZADDs)."""
+    stmt = (
+        select(func.distinct(MaxdiffResult.conversation_id))
+        .join(
+            Conversation,
+            Conversation.id == MaxdiffResult.conversation_id,
+        )
+        .outerjoin(
+            RankingScore,
+            RankingScore.id == Conversation.current_ranking_score_id,
+        )
+        .where(
+            and_(
+                Conversation.conversation_type == "maxdiff",
+                (
+                    RankingScore.computed_at.is_(None)
+                    | (MaxdiffResult.updated_at > RankingScore.computed_at)
+                ),
             ),
         )
-        row = cur.fetchone()
-        if row is None:
-            msg = f"Failed to insert ranking_score for conversation {conversation_id}"
-            raise RuntimeError(msg)
-        ranking_score_id: int = row[0]
-
-        # Insert normalized entity scores using executemany (safe, no f-string)
-        cur.executemany(
-            """
-            INSERT INTO ranking_score_entity (
-                ranking_score_id, entity_slug_id, score,
-                uncertainty_left, uncertainty_right, participant_count
-            ) VALUES (%s, %s, %s, %s, %s, %s)
-            """,
-            [
-                (
-                    ranking_score_id,
-                    s.entity_slug_id,
-                    s.score,
-                    s.uncertainty_left,
-                    s.uncertainty_right,
-                    participant_counts.get(s.entity_slug_id, 0),
-                )
-                for s in scores
-            ],
-        )
-
-        # Conditional update: only if our score ID is newer than the current one.
-        cur.execute(
-            """
-            UPDATE conversation
-            SET current_ranking_score_id = %s
-            WHERE id = %s
-              AND (current_ranking_score_id IS NULL
-                   OR current_ranking_score_id < %s)
-            """,
-            (ranking_score_id, conversation_id, ranking_score_id),
-        )
-
-    conn.commit()
-
-
-def clear_scores(
-    conn: Connection[tuple[object, ...]],
-    *,
-    conversation_id: int,
-) -> None:
-    """Clear scores for a conversation (when <2 active items)."""
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            UPDATE conversation
-            SET current_ranking_score_id = NULL
-            WHERE id = %s
-            """,
-            (conversation_id,),
-        )
-    conn.commit()
-
-
-def reconcile_unscored_conversations(
-    conn: Connection[tuple[object, ...]],
-) -> list[int]:
-    """Find conversations with comparisons newer than their latest scores.
-
-    Safety net for missed Valkey SADDs.
-    """
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT DISTINCT mr.conversation_id
-            FROM maxdiff_result mr
-            JOIN conversation c ON c.id = mr.conversation_id
-            LEFT JOIN ranking_score rs
-                ON rs.id = c.current_ranking_score_id
-            WHERE c.conversation_type = 'maxdiff'
-              AND (rs.computed_at IS NULL OR mr.updated_at > rs.computed_at)
-            """
-        )
-        return [row[0] for row in cur.fetchall()]
-
-
-def update_maxdiff_counters(
-    conn: Connection[tuple[object, ...]],
-    *,
-    conversation_id: int,
-) -> None:
-    """Update conversation-level MaxDiff counters (participant count, etc.).
-
-    Mirrors the TypeScript updateMaxdiffCounters in conversationCounters.ts.
-    """
-    with conn.cursor() as cur:
-        # Count distinct participants who have at least one comparison
-        cur.execute(
-            """
-            UPDATE conversation
-            SET participant_count = sub.cnt
-            FROM (
-                SELECT COUNT(DISTINCT mr.participant_id) AS cnt
-                FROM maxdiff_result mr
-                WHERE mr.conversation_id = %s
-            ) sub
-            WHERE conversation.id = %s
-            """,
-            (conversation_id, conversation_id),
-        )
-
-        # Count total comparisons across all participants
-        cur.execute(
-            """
-            UPDATE conversation
-            SET vote_count = sub.cnt,
-                total_vote_count = sub.cnt
-            FROM (
-                SELECT COUNT(*) AS cnt
-                FROM maxdiff_comparison mc
-                JOIN maxdiff_result mr ON mr.id = mc.maxdiff_result_id
-                WHERE mr.conversation_id = %s
-            ) sub
-            WHERE conversation.id = %s
-            """,
-            (conversation_id, conversation_id),
-        )
-
-    conn.commit()
+    )
+    with Session(engine) as session:
+        return [row[0] for row in session.execute(stmt)]

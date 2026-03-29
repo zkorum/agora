@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     # to a dedicated service to avoid redundant DB queries from every worker.
     reconcile_interval_seconds: int = 300
     batch_size: int = 50  # max conversations to ZPOPMIN per cycle
+    max_workers: int = 4  # ThreadPoolExecutor size for parallel Solidago
+    backoff_seconds: float = 10.0  # per-conversation retry delay after failure
 
     model_config = {"env_prefix": "SCORING_WORKER_", "env_file": ".env"}
 

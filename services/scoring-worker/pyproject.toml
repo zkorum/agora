@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 dependencies = [
     "solidago[torch]==0.5.0",
     "psycopg[binary]>=3.2",
+    "sqlalchemy[postgresql-psycopg]>=2.0",
     "valkey>=6.0",
     "pydantic>=2.12",
     "pydantic-settings>=2.0",
@@ -30,6 +31,10 @@ packages = ["src/scoring_worker"]
 [tool.ruff]
 target-version = "py313"
 line-length = 100
+
+[tool.ruff.lint.per-file-ignores]
+# SQLAlchemy Mapped[] needs runtime access to datetime/uuid (not TYPE_CHECKING)
+"src/scoring_worker/generated_models.py" = ["TCH003"]
 
 [tool.ruff.lint]
 select = [
