@@ -101,6 +101,7 @@
         <div class="learn-more-content">
           <template v-if="learnMoreContext === 'community'">
             <p>{{ t("communityLearnMoreHow") }}</p>
+            <p>{{ t("communityLearnMoreCocm") }}</p>
             <p>{{ t("communityLearnMoreDiversity") }}</p>
             <p>{{ isGitHubLinked ? t("communityLearnMoreSourceGitHub") : t("communityLearnMoreSourceManual") }}</p>
             <p class="learn-more-reference">
@@ -120,11 +121,11 @@
               >Best-Worst Scaling</a>
               ·
               <a
-                href="https://www.plurality.net"
+                href="https://ssrn.com/abstract=4311507"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="learn-more-link"
-              >Plurality</a>
+              >COCM</a>
             </p>
           </template>
           <template v-else>
