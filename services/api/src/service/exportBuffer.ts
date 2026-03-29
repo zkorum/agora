@@ -184,6 +184,7 @@ export function createExportBuffer({
     // Encapsulated mutable state (private to closure)
     const pendingExports = new Map<string, BufferedExport & { exportSlugId: string }>(); // Key: conversationId:userId
     let isShuttingDown = false;
+    let flushInProgress: Promise<void> | null = null;
     let flushCount = 0;
     let flushTimer: NodeJS.Timeout | undefined;
 
@@ -757,6 +758,12 @@ export function createExportBuffer({
             flushTimer = undefined;
         }
 
+        // Wait for any in-flight flush to complete before the final flush,
+        // so no pending Valkey operations remain when the connection is closed.
+        if (flushInProgress !== null) {
+            await flushInProgress;
+        }
+
         await flush();
 
         log.info("[ExportBuffer] Shutdown complete");
@@ -771,9 +778,13 @@ export function createExportBuffer({
 
     // Start automatic flush interval
     flushTimer = setInterval(() => {
-        flush().catch((error: unknown) => {
-            log.error(error, "[ExportBuffer] Flush interval error");
-        });
+        flushInProgress ??= flush()
+            .catch((error: unknown) => {
+                log.error(error, "[ExportBuffer] Flush interval error");
+            })
+            .finally(() => {
+                flushInProgress = null;
+            });
     }, flushIntervalMs);
 
     // Prevent interval from keeping process alive (Node.js specific)

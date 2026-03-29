@@ -75,12 +75,19 @@ let dismissOfflineFn: (() => void) | null = null;
 
 const offlineController = createOfflineNotificationController({
   showOffline: () => {
-    dismissOfflineFn = showPersistentNotifyMessage({
+    let thisDismiss: (() => void) | null = null;
+    thisDismiss = showPersistentNotifyMessage({
       message: t("connectionLost"),
       caption: t("reconnecting"),
       showSpinner: true,
-      onDismiss: () => { dismissOfflineFn = null; },
+      group: "offline-notification",
+      onDismiss: () => {
+        if (dismissOfflineFn === thisDismiss) {
+          dismissOfflineFn = null;
+        }
+      },
     });
+    dismissOfflineFn = thisDismiss;
   },
   dismissOffline: () => {
     dismissOfflineFn?.();

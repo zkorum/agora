@@ -8,6 +8,7 @@ import type {
 import type { LanguagePreferences } from "src/shared/types/zod";
 import { zodLanguagePreferences } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { isNetworkError } from "src/utils/api/common";
 import { useBackendLanguageApi } from "src/utils/api/language";
 import { parseBrowserLanguage } from "src/utils/language";
 import { useNotify } from "src/utils/ui/notify";
@@ -79,9 +80,9 @@ export const useLanguageStore = defineStore("language", () => {
         );
 
         if (!validationResult.success) {
-          throw new Error(
-            `Invalid language preferences data: ${validationResult.error.message}`
-          );
+          showNotifyMessage("Failed to fetch language preferences from backend");
+          console.error("Invalid language preferences data:", validationResult.error);
+          return null;
         }
 
         const validated = validationResult.data;
@@ -94,7 +95,12 @@ export const useLanguageStore = defineStore("language", () => {
 
         return validated;
       } else {
-        throw new Error("Failed to fetch language preferences from backend");
+        // Network errors are covered by the "Connection lost" notification
+        if (!isNetworkError(response.code)) {
+          showNotifyMessage("Failed to fetch language preferences from backend");
+          console.error("Failed to fetch language preferences from backend:", response.code, response.message);
+        }
+        return null;
       }
     } catch (err) {
       showNotifyMessage("Failed to fetch language preferences from backend");
