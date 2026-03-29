@@ -47,7 +47,7 @@ For detailed information about each service, licenses, and documentation, see [C
 
 **[Python Bridge](./services/python-bridge)** - A Flask application enabling the Node.js backend to communicate with Python data science libraries, particularly [reddwarf](https://github.com/polis-community/red-dwarf) for clustering algorithms.
 
-**[Scoring Worker](./services/scoring-worker)** - Python worker that runs [Tournesol's Solidago](https://github.com/tournesol-app/tournesol) algorithm to produce community rankings from MaxDiff (Best-Worst Scaling) comparisons. Uses Valkey for job queuing and supports parallel scoring.
+**[Scoring Worker](./services/scoring-worker)** - Python worker that runs [Solidago](https://solidago.tournesol.app/) algorithm to produce community rankings from MaxDiff (Best-Worst Scaling) comparisons. Uses Valkey for job queuing and supports parallel scoring.
 
 ### Shared Libraries
 

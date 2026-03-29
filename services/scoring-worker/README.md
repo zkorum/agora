@@ -1,6 +1,6 @@
 # Scoring Worker
 
-Background worker that runs [Tournesol's Solidago](https://github.com/tournesol-app/tournesol) algorithm to produce community rankings from MaxDiff (Best-Worst Scaling) comparisons.
+Background worker that runs [Solidago](https://solidago.tournesol.app/) algorithm to produce community rankings from MaxDiff (Best-Worst Scaling) comparisons.
 
 ## How It Works
 
