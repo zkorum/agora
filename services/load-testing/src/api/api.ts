@@ -1427,8 +1427,8 @@ export interface ApiV1MaxdiffResultsPost200ResponseRankingsInner {
     'itemSlugId': string;
     'title': string;
     'body': string | null;
-    'avgRank': number;
-    'score': number;
+    'avgRank': number | null;
+    'score': number | null;
     'participantCount': number;
     'lifecycleStatus': ApiV1MaxdiffResultsPost200ResponseRankingsInnerLifecycleStatusEnum;
     'externalUrl': string | null;

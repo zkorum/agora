@@ -16,13 +16,10 @@
  * in the same query (3 queries total, same as before).
  */
 
-import { eq, isNotNull, and, count, sql, inArray } from "drizzle-orm";
+import { eq, isNotNull, and, count, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { z } from "zod";
 import {
     conversationTable,
-    maxdiffItemTable,
-    maxdiffResultTable,
     opinionTable,
     voteTable,
     userTable,
@@ -30,12 +27,6 @@ import {
     conversationUpdateQueueTable,
 } from "./schema.js";
 import { nowZeroMs } from "./util.js";
-
-const zodComparison = z.object({
-    best: z.string(),
-    worst: z.string(),
-    set: z.array(z.string()),
-});
 
 interface AllConversationCounters {
     opinionCount: number;
@@ -269,105 +260,6 @@ async function enqueueMathUpdate({
 }
 
 /**
- * Update participantCount and voteCount for MaxDiff conversations.
- *
- * Total counts include all comparisons/participants.
- * Filtered counts (participantCount, voteCount) exclude comparisons where
- * best or worst is a completed/canceled item, matching live scoring logic.
- */
-export async function updateMaxdiffCounters({
-    db,
-    conversationId,
-}: {
-    db: PostgresJsDatabase;
-    conversationId: number;
-}): Promise<void> {
-    // Total counts (all comparisons, regardless of item lifecycle)
-    const totalResult = await db
-        .select({
-            totalParticipantCount: sql<number>`count(*) FILTER (WHERE jsonb_array_length(${maxdiffResultTable.comparisons}) > 0)`,
-            totalVoteCount: sql<number>`COALESCE(SUM(jsonb_array_length(${maxdiffResultTable.comparisons})), 0)`,
-        })
-        .from(maxdiffResultTable)
-        .where(eq(maxdiffResultTable.conversationId, conversationId));
-
-    const totalParticipantCount =
-        totalResult[0]?.totalParticipantCount ?? 0;
-    const totalVoteCount = totalResult[0]?.totalVoteCount ?? 0;
-
-    // Active item slug IDs (only active/in_progress with content)
-    const activeItemRows = await db
-        .select({ slugId: maxdiffItemTable.slugId })
-        .from(maxdiffItemTable)
-        .where(
-            and(
-                eq(maxdiffItemTable.conversationId, conversationId),
-                inArray(maxdiffItemTable.lifecycleStatus, [
-                    "active",
-                    "in_progress",
-                ]),
-                isNotNull(maxdiffItemTable.currentContentId),
-            ),
-        );
-
-    const activeItemSet = new Set(activeItemRows.map((r) => r.slugId));
-
-    // If no active items, filtered counts are 0
-    if (activeItemSet.size === 0) {
-        await db
-            .update(conversationTable)
-            .set({
-                participantCount: 0,
-                totalParticipantCount,
-                voteCount: 0,
-                totalVoteCount,
-            })
-            .where(eq(conversationTable.id, conversationId));
-        return;
-    }
-
-    // Filtered counts: exclude comparisons involving completed/canceled items
-    const resultRows = await db
-        .select({ comparisons: maxdiffResultTable.comparisons })
-        .from(maxdiffResultTable)
-        .where(
-            and(
-                eq(maxdiffResultTable.conversationId, conversationId),
-                sql`jsonb_array_length(${maxdiffResultTable.comparisons}) > 0`,
-            ),
-        );
-
-    let voteCount = 0;
-    let participantCount = 0;
-
-    for (const row of resultRows) {
-        const comparisons = z.array(zodComparison).parse(row.comparisons);
-        let hasValidComparison = false;
-
-        for (const comp of comparisons) {
-            if (activeItemSet.has(comp.best) && activeItemSet.has(comp.worst)) {
-                voteCount++;
-                hasValidComparison = true;
-            }
-        }
-
-        if (hasValidComparison) {
-            participantCount++;
-        }
-    }
-
-    await db
-        .update(conversationTable)
-        .set({
-            participantCount,
-            totalParticipantCount,
-            voteCount,
-            totalVoteCount,
-        })
-        .where(eq(conversationTable.id, conversationId));
-}
-
-/**
  * Reconcile all conversation counters by recalculating from database
  *
  * Sets both unmoderated and total counts in a single UPDATE.
@@ -383,14 +275,14 @@ export async function reconcileConversationCounters({
     conversationId: number;
     doUpdateLastReactedAt?: boolean;
 }): Promise<void> {
-    // MaxDiff conversations use maxdiff_result table, not vote table
+    // MaxDiff counters are owned by the scoring worker (Python).
+    // Skip here -- the worker updates counters alongside scoring.
     const convType = await db
         .select({ conversationType: conversationTable.conversationType })
         .from(conversationTable)
         .where(eq(conversationTable.id, conversationId));
 
     if (convType[0]?.conversationType === "maxdiff") {
-        await updateMaxdiffCounters({ db, conversationId });
         return;
     }
 

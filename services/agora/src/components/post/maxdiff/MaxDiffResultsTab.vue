@@ -390,7 +390,7 @@ async function fetchResults({ showLoading }: { showLoading: boolean }): Promise<
       slugId: r.itemSlugId,
       title: r.title,
       body: r.body ?? null,
-      score: r.score,
+      score: r.score ?? null,
       externalUrl: r.externalUrl ?? null,
     }));
   } else {

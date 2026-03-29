@@ -58,6 +58,9 @@
                     {{ scoreLabel.replace("{score}", (item.score * 100).toFixed(0) + "%") }}
                   </span>
                 </div>
+                <div v-else-if="scoreLabel !== ''" class="item-meta">
+                  <span class="score-text unranked-text">—</span>
+                </div>
               </div>
             </li>
           </ol>
@@ -200,6 +203,10 @@ const hasMore = computed(() => props.items.length > COMPACT_LIMIT);
   font-size: 0.75rem;
   color: $color-text-weak;
   white-space: nowrap;
+}
+
+.unranked-text {
+  font-style: italic;
 }
 
 .fade-overlay {

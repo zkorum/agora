@@ -656,6 +656,7 @@ export const importStatusEnum = pgEnum("import_status_enum", [
 // The association between users and devices/emails can change over time.
 // A user must have at least 1 validated primary email and 1 device associated with it.
 // The "at least one" conditon is not enforced directly in the SQL model yet. It is done in the application code.
+/** @service scoring-worker */
 export const userTable = pgTable(
     "user",
     {

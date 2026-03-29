@@ -11,6 +11,7 @@ export interface Column {
     nullable: boolean;
     hasDefault: boolean;
     defaultValue: string | null;
+    isPrimaryKey: boolean;
 }
 
 export interface TypeMapping {
@@ -78,6 +79,7 @@ export function parseSqlTables(
                 /DEFAULT\s+(.+?)(?:\s+NOT NULL|\s*$)/i,
             );
             if (defaultMatch) defaultValue = defaultMatch[1].trim();
+            const isPrimaryKey = /PRIMARY KEY/i.test(rest);
             let sqlType = rest
                 .replace(/\s+NOT NULL/g, "")
                 .replace(/\s+NULL/g, "")
@@ -95,6 +97,7 @@ export function parseSqlTables(
                 nullable,
                 hasDefault,
                 defaultValue,
+                isPrimaryKey,
             });
         }
         if (columns.length > 0) tables.set(tableName, columns);
@@ -247,10 +250,12 @@ export function generateSqlAlchemyModels({
         for (const col of columns) {
             const { pyType, saType } = mapSqlType(col.sqlType, enums);
             const mcArgs: string[] = [saType];
-            const isPk = col.hasDefault && col.sqlType.toLowerCase().includes("integer") && col.name === "id";
+            const isPk = col.isPrimaryKey;
             if (isPk) {
                 mcArgs.push("primary_key=True");
-                mcArgs.push("autoincrement=True");
+                if (col.hasDefault && col.sqlType.toLowerCase().includes("integer")) {
+                    mcArgs.push("autoincrement=True");
+                }
             }
             if (col.nullable && !isPk) mcArgs.push("nullable=True");
             if (col.hasDefault && col.defaultValue !== null) {

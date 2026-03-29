@@ -474,6 +474,8 @@ export async function getMaxdiffResults({
         ]),
     );
 
+    const scoredSlugIds = new Set(scored.map((s) => s.itemSlugId));
+
     const rankings: MaxDiffResultItem[] = scored.map((s) => {
         const content = contentMap.get(s.itemSlugId);
         return {
@@ -487,6 +489,22 @@ export async function getMaxdiffResults({
             externalUrl: content?.externalUrl ?? null,
         };
     });
+
+    // Append unscored active items at the end (never appeared in comparisons)
+    for (const slugId of items) {
+        if (scoredSlugIds.has(slugId)) continue;
+        const content = contentMap.get(slugId);
+        rankings.push({
+            itemSlugId: slugId,
+            title: content?.title ?? "",
+            body: content?.body ?? null,
+            avgRank: null,
+            score: null,
+            participantCount: 0,
+            lifecycleStatus: content?.lifecycleStatus ?? "active",
+            externalUrl: content?.externalUrl ?? null,
+        });
+    }
 
     return { rankings };
 }

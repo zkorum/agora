@@ -22,6 +22,7 @@ from scoring_worker.generated_models import (
     MaxdiffResult,
     RankingScore,
     RankingScoreEntity,
+    User,
 )
 
 if TYPE_CHECKING:
@@ -259,12 +260,12 @@ def update_maxdiff_counters_batch(
 ) -> None:
     """Update conversation-level MaxDiff counters for a batch.
 
-    Matches TypeScript updateMaxdiffCounters logic:
-    - total_participant_count: users with any comparisons
-    - total_vote_count: all comparisons
-    - participant_count: users with comparisons where both best AND worst
-      are active items
-    - vote_count: comparisons where both best AND worst are active items
+    Single source of truth for MaxDiff counters (API no longer computes these):
+    - total_participant_count: distinct users with any comparisons
+    - total_vote_count: total comparison rows across all users
+    - participant_count: distinct users with comparisons where both best
+      AND worst are active items
+    - vote_count: comparison rows where both best AND worst are active items
     """
     if not conversation_ids:
         return
@@ -273,7 +274,7 @@ def update_maxdiff_counters_batch(
         for conv_id in conversation_ids:
             active_slugs = set(active_items_by_conv.get(conv_id, []))
 
-            # Total counts (all comparisons)
+            # Total counts (all comparisons, excluding deleted users)
             total_row = session.execute(
                 select(
                     func.count(
@@ -287,7 +288,16 @@ def update_maxdiff_counters_batch(
                     MaxdiffResult.id
                     == MaxdiffComparison.maxdiff_result_id,
                 )
-                .where(MaxdiffResult.conversation_id == conv_id),
+                .join(
+                    User,
+                    User.id == MaxdiffResult.participant_id,
+                )
+                .where(
+                    and_(
+                        MaxdiffResult.conversation_id == conv_id,
+                        User.is_deleted.is_(False),
+                    ),
+                ),
             ).one()
 
             if not active_slugs:
@@ -303,7 +313,7 @@ def update_maxdiff_counters_batch(
                 )
                 continue
 
-            # Filtered counts (only active items)
+            # Filtered counts (only active items, excluding deleted users)
             filtered_row = session.execute(
                 select(
                     func.count(
@@ -317,9 +327,14 @@ def update_maxdiff_counters_batch(
                     MaxdiffResult.id
                     == MaxdiffComparison.maxdiff_result_id,
                 )
+                .join(
+                    User,
+                    User.id == MaxdiffResult.participant_id,
+                )
                 .where(
                     and_(
                         MaxdiffResult.conversation_id == conv_id,
+                        User.is_deleted.is_(False),
                         MaxdiffComparison.best_slug_id.in_(active_slugs),
                         MaxdiffComparison.worst_slug_id.in_(active_slugs),
                     ),

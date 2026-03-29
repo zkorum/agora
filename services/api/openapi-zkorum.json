@@ -3230,9 +3230,11 @@
                                                         "type": "string"
                                                     },
                                                     "avgRank": {
+                                                        "nullable": true,
                                                         "type": "number"
                                                     },
                                                     "score": {
+                                                        "nullable": true,
                                                         "type": "number"
                                                     },
                                                     "participantCount": {

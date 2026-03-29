@@ -753,6 +753,15 @@ The frontend has a dedicated component testing page at `/dev/component-testing` 
 3. Generated files include `/** WARNING: GENERATED FROM ... **/` comments
 4. Never directly edit synced files - changes will be overwritten
 
+### Scoring Worker Schema Codegen
+
+The scoring worker's SQLAlchemy models (`services/scoring-worker/src/scoring_worker/generated_models.py`) are auto-generated from `services/shared-backend/src/schema.ts`. **Never hand-write table definitions in the Python code.**
+
+To add a table to the scoring worker:
+1. Add `/** @service scoring-worker */` JSDoc comment above the table definition in `schema.ts`
+2. Run `make sync` to regenerate `generated_models.py`
+3. Import the model from `scoring_worker.generated_models`
+
 ### Running Tests for a Specific Module
 
 ```bash

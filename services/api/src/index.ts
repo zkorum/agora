@@ -1899,6 +1899,7 @@ server.after(() => {
                 itemSlugId: request.body.itemSlugId,
                 newStatus: request.body.newStatus,
                 requestingUserId: deviceStatus.userId,
+                valkey: queueValkey,
             });
             reply.send({});
         },
@@ -1932,6 +1933,7 @@ server.after(() => {
                 conversationSlugId: request.body.conversationSlugId,
                 requestingUserId: deviceStatus.userId,
                 githubClient,
+                valkey: queueValkey,
             });
         },
     });
@@ -2014,7 +2016,7 @@ server.after(() => {
             const payload = parseWebhookPayload({
                 rawPayload: request.body,
             });
-            await handleIssueWebhook({ db, payload });
+            await handleIssueWebhook({ db, payload, valkey: queueValkey });
             reply.send({ ok: true });
         },
     });

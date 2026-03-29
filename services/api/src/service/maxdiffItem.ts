@@ -7,7 +7,6 @@ import {
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { eq, and, inArray, isNotNull } from "drizzle-orm";
 import { generateRandomSlugId } from "@/crypto.js";
-import { updateMaxdiffCounters } from "@/shared-backend/conversationCounters.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import { computeItemSnapshot } from "./maxdiff.js";
@@ -18,6 +17,33 @@ import type {
 import type { MaxdiffLifecycleStatus } from "@/shared/types/zod.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import { log } from "@/app.js";
+import type { Valkey } from "@/shared-backend/valkey.js";
+import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
+
+/**
+ * Mark a MaxDiff conversation as dirty so the scoring worker re-scores
+ * and updates counters. Fire-and-forget (errors are logged, not thrown).
+ */
+function markScoringDirty({
+    valkey,
+    conversationId,
+    conversationSlugId,
+}: {
+    valkey: Valkey | undefined;
+    conversationId: number;
+    conversationSlugId: string;
+}): void {
+    if (valkey === undefined) return;
+    const member = `${String(conversationId)}:${conversationSlugId}`;
+    valkey
+        .zadd(VALKEY_QUEUE_KEYS.SCORING_DIRTY_SOLIDAGO, { [member]: 0 })
+        .catch((error: unknown) => {
+            log.error(
+                error,
+                `[MaxDiff] Failed to ZADD scoring:dirty:solidago for ${member}`,
+            );
+        });
+}
 
 // --- Create ---
 
@@ -25,11 +51,13 @@ interface CreateMaxdiffItemProps {
     db: PostgresDatabase;
     tx?: PostgresDatabase;
     conversationId: number;
+    conversationSlugId?: string;
     conversationContentId: number;
     authorId: string;
     title: string;
     body?: string | null;
     isSeed: boolean;
+    valkey?: Valkey;
 }
 
 async function createMaxdiffItemInTx({
@@ -89,11 +117,13 @@ export async function createMaxdiffItem({
     db,
     tx,
     conversationId,
+    conversationSlugId,
     conversationContentId,
     authorId,
     title,
     body,
     isSeed,
+    valkey,
 }: CreateMaxdiffItemProps): Promise<{ slugId: string; itemId: number }> {
     const slugId = generateRandomSlugId();
     const now = new Date();
@@ -122,6 +152,10 @@ export async function createMaxdiffItem({
     log.info(
         `[MaxDiff] Created item ${slugId} (id=${String(itemId)}, content=${String(contentId)}) for conversation ${String(conversationId)}`,
     );
+
+    if (conversationSlugId !== undefined) {
+        markScoringDirty({ valkey, conversationId, conversationSlugId });
+    }
 
     return { slugId, itemId };
 }
@@ -213,6 +247,7 @@ interface UpdateMaxdiffItemLifecycleProps {
     itemSlugId: string;
     newStatus: MaxdiffLifecycleStatus;
     requestingUserId: string;
+    valkey?: Valkey;
 }
 
 export async function updateMaxdiffItemLifecycle({
@@ -221,6 +256,7 @@ export async function updateMaxdiffItemLifecycle({
     itemSlugId,
     newStatus,
     requestingUserId,
+    valkey,
 }: UpdateMaxdiffItemLifecycleProps): Promise<void> {
     const { id: conversationId } =
         await useCommonPost().getPostMetadataFromSlugId({
@@ -314,5 +350,5 @@ export async function updateMaxdiffItemLifecycle({
         );
     }
 
-    await updateMaxdiffCounters({ db, conversationId });
+    markScoringDirty({ valkey, conversationId, conversationSlugId });
 }

@@ -165,3 +165,21 @@ class RankingScore(Base):
     computed_at: Mapped[datetime] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
+
+class User(Base):
+    __tablename__ = "user"
+
+    id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)
+    polis_participant_id: Mapped[int] = mapped_column(Integer)
+    username: Mapped[str] = mapped_column(String(20))
+    is_site_moderator: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    is_site_org_admin: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    is_imported: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    is_deleted: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    active_conversation_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    total_conversation_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    total_opinion_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
