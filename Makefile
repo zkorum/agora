@@ -12,7 +12,7 @@ generate:
 		-g typescript-axios \
 		-o /local/services/load-testing/src/api
 
-sync: sync-all sync-app-api sync-backend
+sync: sync-all sync-app-api sync-backend sync-python-models
 
 sync-all:
 	cd services/shared && pnpm run sync
@@ -31,6 +31,17 @@ dev-sync-app-api:
 
 dev-sync-backend:
 	watchman-make -p 'services/shared-backend/src/**/*.ts' -t sync-backend
+
+sync-python-models:
+	cd services/api && npx drizzle-kit export > /tmp/agora-schema.sql
+	node script/sync-schema.mjs \
+		--service scoring-worker \
+		--schema-ts services/shared-backend/src/schema.ts \
+		--sql /tmp/agora-schema.sql \
+		--output services/scoring-worker/src/scoring_worker/generated_models.py
+
+dev-sync-python-models:
+	watchman-make -p 'services/shared-backend/src/schema.ts' -t sync-python-models
 
 dev-generate:
 	watchman-make -p 'services/api/openapi-zkorum.json' -t generate
@@ -52,3 +63,6 @@ dev-x-analyzer:
 
 dev-polis:
 	cd services/python-bridge && source .venv/bin/activate && make dev
+
+dev-scoring-worker:
+	cd services/scoring-worker && uv run python -m scoring_worker.worker

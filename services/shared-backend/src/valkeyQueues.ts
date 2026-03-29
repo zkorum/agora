@@ -35,18 +35,11 @@ export const VALKEY_QUEUE_KEYS = {
     IMPORT_BUFFER: "queue:imports",
 
     /**
-     * Ranking comparison buffer index - sorted set for ordering by timestamp
-     * Used by: rankingComparisonBuffer.ts
-     * Pattern: Member = "userId:conversationId", Score = timestamp
+     * Scoring dirty set: conversations needing Solidago rescoring.
+     * Used by: maxdiff.ts (API writes SADD), scoring-worker (SPOP to process)
+     * Pattern: SET of conversationId strings. SADD deduplicates, SPOP is atomic.
      */
-    RANKING_COMPARISONS_INDEX: "queue:ranking-comparisons:index",
-
-    /**
-     * Ranking comparison buffer data - hash storing full comparison JSON
-     * Used by: rankingComparisonBuffer.ts
-     * Pattern: Field = "userId:conversationId", Value = JSON comparison data
-     */
-    RANKING_COMPARISONS_DATA: "queue:ranking-comparisons:data",
+    SCORING_DIRTY_SOLIDAGO: "scoring:dirty:solidago",
 
     /**
      * UCAN replay protection - key prefix for used UCAN hashes

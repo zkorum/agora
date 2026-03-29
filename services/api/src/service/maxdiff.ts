@@ -5,6 +5,7 @@ import {
     maxdiffItemContentTable,
     maxdiffItemExternalSourceTable,
     rankingScoreTable,
+    maxdiffComparisonTable,
 } from "@/shared-backend/schema.js";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
@@ -12,7 +13,6 @@ import { httpErrors } from "@fastify/sensible";
 
 import { eq, and, inArray, isNotNull, sql } from "drizzle-orm";
 import type {
-    MaxDiffLoadResponse,
     MaxDiffResultsResponse,
     MaxDiffResultItem,
 } from "@/shared/types/dto.js";
@@ -23,9 +23,9 @@ import {
     type MaxDiffComparison,
     type MaxdiffLifecycleStatus,
 } from "@/shared/types/zod.js";
-import type { AxiosInstance } from "axios";
-import type { RankingComparisonBuffer } from "./rankingComparisonBuffer.js";
-import { parseResultRows } from "@/utils/maxdiffParsing.js";
+import type { Valkey } from "@/shared-backend/valkey.js";
+import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
+import { log } from "@/app.js";
 
 // --- Types ---
 
@@ -36,8 +36,6 @@ export interface RankedItem {
     participantCount: number;
 }
 
-// parseResultRows moved to @/utils/maxdiffParsing.ts (pure function, no DB deps)
-export { parseResultRows } from "@/utils/maxdiffParsing.js";
 
 // --- Global Uncertainty (for routing) ---
 
@@ -112,7 +110,7 @@ interface SaveMaxdiffResultProps {
     comparisons: MaxDiffComparison[];
     isComplete: boolean;
     isMaxdiffOrgOnly: boolean;
-    rankingComparisonBuffer: RankingComparisonBuffer;
+    valkey?: Valkey;
 }
 
 export async function saveMaxdiffResult({
@@ -123,7 +121,7 @@ export async function saveMaxdiffResult({
     comparisons,
     isComplete,
     isMaxdiffOrgOnly,
-    rankingComparisonBuffer,
+    valkey,
 }: SaveMaxdiffResultProps): Promise<{ conversationId: number }> {
     const { id: conversationId } =
         await useCommonPost().getPostMetadataFromSlugId({
@@ -156,47 +154,78 @@ export async function saveMaxdiffResult({
     }
 
     // Synchronous DB upsert — user state is immediately consistent.
-    // Counter update is handled by the buffer flush (~1s delay);
+    // Counter update is handled by the scoring worker (~2s delay);
     // the frontend optimistically updates counts for the current user.
     const now = new Date();
     now.setMilliseconds(0);
 
-    await db
-        .insert(maxdiffResultTable)
-        .values({
-            participantId: userId,
-            conversationId,
-            ranking,
-            comparisons,
-            isComplete,
-            createdAt: now,
-            updatedAt: now,
-        })
-        .onConflictDoUpdate({
-            target: [
-                maxdiffResultTable.participantId,
-                maxdiffResultTable.conversationId,
-            ],
-            set: {
+    // Transaction: upsert JSONB + delete/insert normalized comparisons atomically.
+    // If normalized insert fails, the JSONB upsert rolls back too.
+    await db.transaction(async (tx) => {
+        const [result] = await tx
+            .insert(maxdiffResultTable)
+            .values({
+                participantId: userId,
+                conversationId,
                 ranking,
                 comparisons,
                 isComplete,
+                createdAt: now,
                 updatedAt: now,
-            },
-        });
+            })
+            .onConflictDoUpdate({
+                target: [
+                    maxdiffResultTable.participantId,
+                    maxdiffResultTable.conversationId,
+                ],
+                set: {
+                    ranking,
+                    comparisons,
+                    isComplete,
+                    updatedAt: now,
+                },
+            })
+            .returning({ id: maxdiffResultTable.id });
 
-    // Push to Valkey buffer for async scoring + counter update
-    rankingComparisonBuffer.add({
-        comparison: {
-            userId,
-            conversationId,
-            conversationSlugId,
-            ranking,
-            comparisons,
-            isComplete,
-            timestamp: now,
-        },
+        // Dual-write: normalized comparisons (backup JSONB kept above)
+        await tx
+            .delete(maxdiffComparisonTable)
+            .where(
+                eq(
+                    maxdiffComparisonTable.maxdiffResultId,
+                    result.id,
+                ),
+            );
+        if (comparisons.length > 0) {
+            await tx.insert(maxdiffComparisonTable).values(
+                comparisons.map((comp, idx) => ({
+                    maxdiffResultId: result.id,
+                    position: idx,
+                    bestSlugId: comp.best,
+                    worstSlugId: comp.worst,
+                    candidateSet: comp.set,
+                })),
+            );
+        }
+
     });
+
+    // Mark conversation as dirty for the scoring worker to pick up.
+    // Member = "convId:slugId" (slugId for worker logging without extra DB query).
+    // Score = comparison count (proxy for Solidago runtime).
+    if (valkey !== undefined) {
+        const member = `${String(conversationId)}:${conversationSlugId}`;
+        valkey
+            .zadd(VALKEY_QUEUE_KEYS.SCORING_DIRTY_SOLIDAGO, {
+                [member]: comparisons.length,
+            })
+            .catch((error: unknown) => {
+                log.error(
+                    error,
+                    `[MaxDiff] Failed to ZADD scoring:dirty:solidago for ${member}`,
+                );
+            });
+    }
 
     return { conversationId };
 }
@@ -209,11 +238,17 @@ interface LoadMaxdiffResultProps {
     userId: string;
 }
 
+interface LoadMaxdiffResultData {
+    ranking: string[] | null;
+    comparisons: MaxDiffComparison[] | null;
+    isComplete: boolean;
+}
+
 export async function loadMaxdiffResult({
     db,
     conversationId,
     userId,
-}: LoadMaxdiffResultProps): Promise<MaxDiffLoadResponse> {
+}: LoadMaxdiffResultProps): Promise<LoadMaxdiffResultData> {
 
     const results = await db
         .select({
@@ -262,14 +297,14 @@ interface GetMaxdiffResultsProps {
     db: PostgresDatabase;
     conversationSlugId: string;
     lifecycleFilter?: LifecycleFilter;
-    axiosPythonBridge?: AxiosInstance;
+    valkey?: Valkey;
 }
 
 export async function getMaxdiffResults({
     db,
     conversationSlugId,
     lifecycleFilter = "active",
-    axiosPythonBridge,
+    valkey,
 }: GetMaxdiffResultsProps): Promise<MaxDiffResultsResponse> {
     const { id: conversationId } =
         await useCommonPost().getPostMetadataFromSlugId({
@@ -406,27 +441,25 @@ export async function getMaxdiffResults({
         scored = [];
     }
 
-    // If no cached scores and python-bridge is available, call synchronously.
-    // This happens on first load before any flush, or if cache was cleared.
+    // No cached scores yet: ensure the conversation is in the dirty set
+    // so the scoring worker picks it up. Frontend handles empty results.
     if (
         scored.length === 0 &&
         items.length >= 2 &&
         allResults.length > 0 &&
-        axiosPythonBridge !== undefined
+        valkey !== undefined
     ) {
-        const { perUserComparisons, participantCounts } = parseResultRows({
-            rows: allResults,
-            items,
-        });
-        scored = await scoreSynchronouslyViaPythonBridge({
-            db,
-            conversationId,
-            conversationSlugId,
-            items,
-            perUserComparisons,
-            participantCounts,
-            axiosPythonBridge,
-        });
+        const member = `${String(conversationId)}:${conversationSlugId}`;
+        valkey
+            .zadd(VALKEY_QUEUE_KEYS.SCORING_DIRTY_SOLIDAGO, {
+                [member]: allResults.length,
+            })
+            .catch((error: unknown) => {
+                log.error(
+                    error,
+                    `[MaxDiff] Failed to ZADD for cache-miss re-queue of ${member}`,
+                );
+            });
     }
 
     const contentMap = new Map(
@@ -458,108 +491,6 @@ export async function getMaxdiffResults({
     return { rankings };
 }
 
-// --- Synchronous python-bridge scoring (cache miss fallback) ---
-
-async function scoreSynchronouslyViaPythonBridge({
-    db,
-    conversationId,
-    conversationSlugId,
-    items,
-    perUserComparisons,
-    participantCounts,
-    axiosPythonBridge,
-}: {
-    db: PostgresDatabase;
-    conversationId: number;
-    conversationSlugId: string;
-    items: string[];
-    perUserComparisons: MaxDiffComparison[][];
-    participantCounts: Map<string, number>;
-    axiosPythonBridge: AxiosInstance;
-}): Promise<RankedItem[]> {
-    // Build BWS comparisons for python-bridge
-    const entityIdSet = new Set(items);
-    const bwsComparisons: {
-        user_id: number;
-        best: string;
-        worst: string;
-        candidate_set: string[];
-    }[] = [];
-
-    for (let userIdx = 0; userIdx < perUserComparisons.length; userIdx++) {
-        for (const comp of perUserComparisons[userIdx]) {
-            if (!entityIdSet.has(comp.best) || !entityIdSet.has(comp.worst))
-                continue;
-            const filteredSet = comp.set.filter((id) => entityIdSet.has(id));
-            if (filteredSet.length < 2) continue;
-            bwsComparisons.push({
-                user_id: userIdx,
-                best: comp.best,
-                worst: comp.worst,
-                candidate_set: filteredSet,
-            });
-        }
-    }
-
-    if (bwsComparisons.length === 0) return [];
-
-    const zodPythonBridgeResponse = z.object({
-        scores: z.array(
-            z.object({
-                entity_id: z.string(),
-                score: z.number(),
-                uncertainty_left: z.number(),
-                uncertainty_right: z.number(),
-            }),
-        ),
-    });
-
-    const response = await axiosPythonBridge.post("/ranking-score", {
-        conversation_slug_id: conversationSlugId,
-        entity_ids: items,
-        bws_comparisons: bwsComparisons,
-    });
-
-    const { scores } = zodPythonBridgeResponse.parse(response.data);
-
-    // Also write to ranking_score table so next read is cached
-    const now = new Date();
-    now.setMilliseconds(0);
-
-    const [insertedScore] = await db
-        .insert(rankingScoreTable)
-        .values({
-            conversationId,
-            scores: scores.map((s) => ({
-                entityId: s.entity_id,
-                score: s.score,
-                uncertaintyLeft: s.uncertainty_left,
-                uncertaintyRight: s.uncertainty_right,
-            })),
-            participantCounts: Object.fromEntries(participantCounts),
-            groupSourcesSnapshot: null,
-            userWeightsSnapshot: null,
-            pipelineConfig: {
-                preferenceLearning: "UniformGBT",
-                votingRights: "AffineOvertrust",
-                aggregation: "EntitywiseQrQuantile(quantile=0.5)",
-            },
-            computedAt: now,
-        })
-        .returning({ id: rankingScoreTable.id });
-
-    await db
-        .update(conversationTable)
-        .set({ currentRankingScoreId: insertedScore.id })
-        .where(eq(conversationTable.id, conversationId));
-
-    return scores.map((s, idx) => ({
-        itemSlugId: s.entity_id,
-        avgRank: idx + 1,
-        score: s.score,
-        participantCount: participantCounts.get(s.entity_id) ?? 0,
-    }));
-}
 
 // --- Snapshot scores for lifecycle transitions ---
 

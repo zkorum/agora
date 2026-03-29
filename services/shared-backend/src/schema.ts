@@ -1264,6 +1264,7 @@ export const conversationContentTable = pgTable("conversation_content", {
         .notNull(),
 });
 
+/** @service scoring-worker, api, math-updater */
 export const conversationTable = pgTable(
     "conversation",
     {
@@ -2232,6 +2233,7 @@ export const conversationImportTable = pgTable(
 // MaxDiff (Best-Worst Scaling) results per user per conversation.
 // Stores both the final ranking and the individual comparisons made,
 // so the adaptive MaxDiff session can be resumed from saved state.
+/** @service scoring-worker, api, math-updater */
 export const maxdiffResultTable = pgTable(
     "maxdiff_result",
     {
@@ -2276,6 +2278,7 @@ export const maxdiffResultTable = pgTable(
 
 // MaxDiff item: a statement/proposition in a MaxDiff conversation.
 // Separate from opinionTable to allow independent evolution of MaxDiff format.
+/** @service scoring-worker, api, math-updater */
 export const maxdiffItemTable = pgTable(
     "maxdiff_item",
     {
@@ -2386,16 +2389,19 @@ export const maxdiffItemExternalSourceTable = pgTable(
 // Like polisContentTable: multiple rows per conversation over time,
 // conversation.currentRankingScoreId points to the latest.
 // Populated by the API's periodic Valkey queue flush (calls python-bridge).
+/** @service scoring-worker, api */
 export const rankingScoreTable = pgTable("ranking_score", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     conversationId: integer("conversation_id")
         .notNull()
         .references(() => conversationTable.id),
-    // --- Output: Solidago scores ---
+    // --- Output: Solidago scores (JSONB backup blob) ---
     // Array of { entityId, score, uncertaintyLeft, uncertaintyRight }
     // Scores normalized to [0, 1]. Parsed with zodCachedScore.
+    // Kept as backup; canonical data is in ranking_score_entity table.
     scores: jsonb("scores").notNull(),
-    // Record<entityId, participantCount> for display
+    // Record<entityId, participantCount> for display (JSONB backup blob)
+    // Kept as backup; canonical data is in ranking_score_entity.participant_count.
     participantCounts: jsonb("participant_counts").notNull(),
     // --- Input context: what parameters produced these scores ---
     // Snapshot of group sources used for COCM voting rights (if any).
@@ -2404,8 +2410,12 @@ export const rankingScoreTable = pgTable("ranking_score", {
     // Snapshot of user trust weights used (if any).
     // Null if all users had equal trust.
     userWeightsSnapshot: jsonb("user_weights_snapshot"),
-    // Pipeline config (aggregation method, parameters, etc.)
+    // Pipeline config: typed columns replace the old JSONB blob.
+    // The old pipelineConfig JSONB is kept for backward compat during migration.
     pipelineConfig: jsonb("pipeline_config").notNull(),
+    preferenceLearning: varchar("preference_learning", { length: 100 }),
+    votingRights: varchar("voting_rights", { length: 100 }),
+    aggregationConfig: varchar("aggregation_config", { length: 200 }),
     // --- Metadata ---
     computedAt: timestamp("computed_at", {
         mode: "date",
@@ -2418,3 +2428,52 @@ export const rankingScoreTable = pgTable("ranking_score", {
         .defaultNow()
         .notNull(),
 });
+
+// Normalized entity-level scores from ranking_score.scores JSONB.
+// Each row represents one entity's score within a ranking_score computation.
+// The JSONB `scores` column on ranking_score is kept as a backup blob.
+/** @service scoring-worker, api */
+export const rankingScoreEntityTable = pgTable(
+    "ranking_score_entity",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        rankingScoreId: integer("ranking_score_id")
+            .notNull()
+            .references(() => rankingScoreTable.id),
+        entitySlugId: varchar("entity_slug_id", { length: 8 }).notNull(),
+        score: real("score").notNull(),
+        uncertaintyLeft: real("uncertainty_left").notNull(),
+        uncertaintyRight: real("uncertainty_right").notNull(),
+        participantCount: integer("participant_count").notNull().default(0),
+    },
+    (t) => [
+        index("ranking_score_entity_score_idx").on(t.rankingScoreId),
+        index("ranking_score_entity_slug_idx").on(
+            t.rankingScoreId,
+            t.entitySlugId,
+        ),
+    ],
+);
+
+// Normalized comparisons from maxdiff_result.comparisons JSONB.
+// Each row represents one BWS comparison made by a user.
+// The JSONB `comparisons` column on maxdiff_result is kept as a backup blob.
+/** @service scoring-worker, api */
+export const maxdiffComparisonTable = pgTable(
+    "maxdiff_comparison",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        maxdiffResultId: integer("maxdiff_result_id")
+            .notNull()
+            .references(() => maxdiffResultTable.id),
+        position: integer("position").notNull(), // 0-based order within the session
+        bestSlugId: varchar("best_slug_id", { length: 8 }).notNull(),
+        worstSlugId: varchar("worst_slug_id", { length: 8 }).notNull(),
+        candidateSet: text("candidate_set")
+            .array()
+            .notNull(), // slugIds of all items shown in this comparison
+    },
+    (t) => [
+        index("maxdiff_comparison_result_idx").on(t.maxdiffResultId),
+    ],
+);

@@ -47,6 +47,22 @@ services:
     expose:
       - "8080"
     restart: unless-stopped
+  scoring-worker:
+    container_name: agora_scoring_worker
+    image: quay.io/zkorum/agora-scoring-worker:1.0.0
+    environment:
+      SCORING_WORKER_CONNECTION_STRING: "postgres://postgres:CHANGEME@postgres:5432/agora"
+      SCORING_WORKER_CONNECTION_STRING_READ: "postgres://postgres:CHANGEME@postgres-replica:5432/agora"
+      SCORING_WORKER_VALKEY_URL: "valkey://valkey:6379"
+      SCORING_WORKER_POLL_INTERVAL_SECONDS: "2"
+      SCORING_WORKER_BATCH_SIZE: "50"
+      SCORING_WORKER_RECONCILE_INTERVAL_SECONDS: "300"
+    restart: unless-stopped
+    logging:
+      driver: awslogs
+      options:
+        <<: *aws-logging-options
+        awslogs-stream: scoring-worker
   math-updater:
     container_name: agora_math_updater
     image: quay.io/zkorum/agora-math-updater:2.0.3

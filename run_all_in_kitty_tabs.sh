@@ -8,6 +8,7 @@ kitty @ launch --type=tab --title "App" --cwd=$BASE_DIR zsh -ic "make dev-app" >
 kitty @ launch --type=tab --title "API" --cwd=$BASE_DIR zsh -ic "make dev-api" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
 kitty @ launch --type=tab --title "Math-Updater" --cwd=$BASE_DIR zsh -ic "make dev-math-updater" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
 kitty @ launch --type=tab --title "Polis" --cwd=$BASE_DIR zsh -ic "make dev-polis" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
+kitty @ launch --type=tab --title "Scoring-Worker" --cwd=$BASE_DIR zsh -ic "make dev-scoring-worker" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
 kitty @ launch --type=tab --title "OpenAPI" --cwd=$BASE_DIR zsh -ic "make dev-generate" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
 kitty @ launch --type=tab --title "Shared" --cwd=$BASE_DIR zsh -ic "make dev-sync" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
 kitty @ launch --type=tab --title "Shared-App-API" --cwd=$BASE_DIR zsh -ic "make dev-sync-app-api" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc

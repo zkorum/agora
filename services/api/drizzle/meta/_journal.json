@@ -351,6 +351,13 @@
       "when": 1774615719153,
       "tag": "0049_perpetual_gambit",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1774746316541,
+      "tag": "0050_sour_electro",
+      "breakpoints": true
     }
   ]
 }
