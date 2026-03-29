@@ -26,6 +26,7 @@ Agora Citizen Network is a privacy-preserving social platform using zero-knowled
 - **`services/api`** (Fastify) - Backend API
 - **`services/math-updater`** - Background worker for clustering
 - **`services/python-bridge`** - Python clustering service
+- **`services/scoring-worker`** (Python) - Solidago scoring worker for MaxDiff rankings
 
 ### Why SvelteKit for the Landing Page?
 
@@ -109,6 +110,9 @@ make dev-math-updater
 
 # Python bridge (clustering service)
 make dev-polis
+
+# Scoring worker (Solidago MaxDiff rankings)
+cd services/scoring-worker && make dev
 ```
 
 ### Code Generation & Syncing
@@ -144,6 +148,9 @@ cd services/api && pnpm lint && pnpm test
 
 # Math updater
 cd services/math-updater && pnpm lint && pnpm test
+
+# Scoring worker
+cd services/scoring-worker && make test && make lint && make typecheck
 ```
 
 ### Git Commits
@@ -207,7 +214,7 @@ Deploy: math-updater"
 - Reference issue numbers, design decisions, or related PRs in the body or footer
 - **ALWAYS include a deployment footer** listing which services need to be redeployed:
   - Format: `Deploy: <service1>, <service2>, ...`
-  - Services: `app` (landing page), `agora` (main frontend), `api` (backend), `math-updater` (worker), `python-bridge` (clustering)
+  - Services: `app` (landing page), `agora` (main frontend), `api` (backend), `math-updater` (worker), `python-bridge` (clustering), `scoring-worker` (Solidago rankings)
   - Example: `Deploy: agora, api` or `Deploy: none` (for docs-only changes)
 - Do NOT mention AI assistants or tools in commit messages (e.g., "Claude", "AI-generated", "with assistance from")
   - This restriction applies ONLY to commit messages - code comments can mention tools/AI if helpful for context
@@ -255,10 +262,12 @@ cd services/math-updater && pnpm image:build
 Frontend (Vue/Quasar) → OpenAPI Client → API (Fastify)
                                            ↓
                                     PostgreSQL (primary + read replica)
-                                           ↑
-Math-updater (pg-boss jobs) ←──────────────┘
-       ↓
-Python-bridge (Flask/reddwarf clustering)
+                                           ↑              ↑
+Math-updater (pg-boss jobs) ←──────────────┘              │
+       ↓                                                  │
+Python-bridge (Flask/reddwarf clustering)                  │
+                                                          │
+API → Valkey dirty set → Scoring-worker (Solidago) ───────┘
 ```
 
 ### Services
@@ -268,6 +277,7 @@ Python-bridge (Flask/reddwarf clustering)
 - **api** (`services/api/`): Fastify backend with Drizzle ORM, handles auth/conversations/voting
 - **math-updater** (`services/math-updater/`): Background worker using pg-boss for clustering updates and AI label generation
 - **python-bridge** (`services/python-bridge/`): Flask service wrapping reddwarf clustering algorithms
+- **scoring-worker** (`services/scoring-worker/`): Python worker running Solidago algorithm for MaxDiff community rankings via Valkey dirty set
 - **shared**, **shared-app-api**, **shared-backend**: Shared TypeScript code synced via rsync
 
 ### Shared Code Strategy
@@ -821,7 +831,9 @@ cd services/app && pnpm test:e2e    # Playwright
 
 - Node.js 20+ (frontend uses 22/24)
 - pnpm (all services)
-- Python 3.11+ (python-bridge)
+- Python 3.11+ (python-bridge), Python 3.13+ (scoring-worker)
+- [uv](https://docs.astral.sh/uv/) (scoring-worker package manager)
 - Docker (for Flyway migrations and production builds)
+- Valkey or Redis-compatible server (scoring-worker)
 - watchman (for file watching during development)
 - rsync, make, jq, sed (build tools)
