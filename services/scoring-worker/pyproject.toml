@@ -1,7 +1,7 @@
 [project]
 name = "scoring-worker"
 version = "0.1.0"
-description = "Background worker for Solidago/MaxDiff scoring via Valkey dirty set + distributed lock"
+description = "Solidago scoring worker for MaxDiff community rankings (BWS-to-pairwise, COCM voting rights)"
 requires-python = ">=3.13"
 dependencies = [
     "solidago[torch]==0.5.0",

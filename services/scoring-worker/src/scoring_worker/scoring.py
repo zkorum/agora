@@ -20,8 +20,10 @@ from solidago.privacy_settings import PrivacySettings
 from solidago.scaling import NoScaling
 from solidago.trust_propagation import TrustPropagation
 from solidago.voting_rights import AffineOvertrust
+from solidago.voting_rights.base import VotingRights, VotingRightsAssignment
 
 from scoring_worker.bws_conversion import BWSComparison, bws_to_pairwise
+from scoring_worker.cocm_voting import COCMVotingRights, GroupSource
 from scoring_worker.entity_mapping import (
     EntityIdMapper,
     map_pairwise_wins_to_solidago,
@@ -29,6 +31,8 @@ from scoring_worker.entity_mapping import (
 )
 
 if TYPE_CHECKING:
+    from solidago.scoring_model import ScoringModel
+
     from scoring_worker.db import ComparisonRow
 
 log = logging.getLogger(__name__)
@@ -43,26 +47,92 @@ class _IdentityTrustPropagation(TrustPropagation):
         return users
 
 
-def _create_pipeline() -> Pipeline:
+class _COCMVotingRightsAssignment(VotingRightsAssignment):
+    """Solidago VotingRightsAssignment backed by COCM.
+
+    Uses group membership data to attenuate connected voters.
+    Trust scores from the users DataFrame are preserved and used
+    as the base weight before COCM attenuation:
+        voting_right = trust_score / sqrt(1 + connected_co_scorers)
+    """
+
+    def __init__(self, *, group_sources: list[GroupSource]) -> None:
+        self._cocm = COCMVotingRights(group_sources=group_sources)
+
+    def __call__(
+        self,
+        users: pd.DataFrame,
+        entities: pd.DataFrame,
+        vouches: pd.DataFrame,
+        privacy: PrivacySettings,
+        user_models: dict[int, ScoringModel] | None,
+    ) -> tuple[VotingRights, pd.DataFrame]:
+        voting_rights = VotingRights()
+        if len(users) == 0 or len(entities) == 0:
+            return voting_rights, entities
+
+        # Determine which users scored each entity
+        entity_to_users: dict[int, set[int]] = {
+            entity_id: set() for entity_id in entities.index
+        }
+        if user_models is None:
+            for entity_id in privacy.entities():
+                entity_to_users[entity_id] = privacy.users(entity_id)
+        else:
+            for user_id, model in user_models.items():
+                for entity_id in model.scored_entities():
+                    entity_to_users[entity_id].add(user_id)
+
+        trust_scores_series = users["trust_score"]
+        all_user_ids = list(users.index)
+        trust_dict = {int(uid): float(trust_scores_series[uid]) for uid in all_user_ids}
+
+        for entity_id, user_ids in entity_to_users.items():
+            if not user_ids:
+                continue
+            rights = self._cocm.compute_entity_voting_rights(
+                scorers=list(user_ids),
+                trust_scores=trust_dict,
+                user_ids=all_user_ids,
+            )
+            for user_id, right in rights.items():
+                voting_rights[user_id, entity_id] = right
+
+        return voting_rights, entities
+
+    def to_json(self):
+        return "COCMVotingRights", {}
+
+    def __str__(self) -> str:
+        return "COCMVotingRights"
+
+
+_DEFAULT_VOTING_RIGHTS = AffineOvertrust(
+    privacy_penalty=0.5,
+    min_overtrust=2.0,
+    overtrust_ratio=0.1,
+)
+
+
+def _create_pipeline(
+    *,
+    voting_rights: VotingRightsAssignment | None = None,
+) -> Pipeline:
     return Pipeline(
         trust_propagation=_IdentityTrustPropagation(),
         preference_learning=LBFGSUniformGBT(
             prior_std_dev=7.0,
             convergence_error=1e-5,
         ),
-        voting_rights=AffineOvertrust(
-            privacy_penalty=0.5,
-            min_overtrust=2.0,
-            overtrust_ratio=0.1,
-        ),
+        voting_rights=voting_rights or _DEFAULT_VOTING_RIGHTS,
         scaling=NoScaling(),
         aggregation=EntitywiseQrQuantile(quantile=0.5, lipschitz=0.1, error=1e-3),
         post_process=NoPostProcess(),
     )
 
 
-# Create pipeline once at module load (reused across scoring calls)
-_pipeline = _create_pipeline()
+# Default pipeline (no COCM), reused across scoring calls
+_default_pipeline = _create_pipeline()
 
 
 @dataclass(frozen=True)
@@ -96,7 +166,7 @@ def warmup() -> None:
         vouches_df = pd.DataFrame(columns=["voucher", "vouchee", "vouch"])
         judgments = DataFrameJudgments(comparisons=dummy_df)
         privacy = PrivacySettings()
-        _pipeline(
+        _default_pipeline(
             users=users_df,
             vouches=vouches_df,
             entities=entities_df,
@@ -112,12 +182,17 @@ def score_comparisons(
     *,
     entity_ids: list[str],
     comparisons: list[ComparisonRow],
+    trust_scores: dict[int, float] | None = None,
+    group_sources: list[GroupSource] | None = None,
 ) -> list[ScoringResult]:
     """Run Solidago on BWS comparisons and return normalized scores.
 
     Args:
         entity_ids: All active item slugIds for this conversation.
         comparisons: Normalized comparison rows from maxdiff_comparison table.
+        trust_scores: Optional per-user trust (keyed by user_idx). Defaults to 1.0 for all.
+        group_sources: Optional group memberships for COCM voting rights.
+            When provided, uses COCM attenuation instead of AffineOvertrust.
 
     Returns:
         Scored entities sorted by score descending, normalized to [0, 1].
@@ -168,8 +243,12 @@ def score_comparisons(
 
     # Build Solidago input DataFrames
     user_ids = sorted(comparisons_df["user_id"].unique())
+    user_trust = [
+        trust_scores.get(int(uid), 1.0) if trust_scores is not None else 1.0
+        for uid in user_ids
+    ]
     users_df = pd.DataFrame(
-        {"is_pretrusted": [True] * len(user_ids), "trust_score": [1.0] * len(user_ids)},
+        {"is_pretrusted": [True] * len(user_ids), "trust_score": user_trust},
         index=pd.Index(user_ids, name="user_id"),
     )
     entities_df = pd.DataFrame(index=pd.Index(mapper.all_int_ids(), name="entity_id"))
@@ -182,10 +261,19 @@ def score_comparisons(
         len(mapper.all_int_ids()),
     )
 
+    # Select pipeline: COCM if group_sources provided, otherwise default (AffineOvertrust)
+    if group_sources is not None and len(group_sources) > 0:
+        pipeline = _create_pipeline(
+            voting_rights=_COCMVotingRightsAssignment(group_sources=group_sources),
+        )
+        log.info("[Scoring] Using COCM voting rights (%d group sources)", len(group_sources))
+    else:
+        pipeline = _default_pipeline
+
     # Run Solidago pipeline
     judgments = DataFrameJudgments(comparisons=comparisons_df)
     privacy = PrivacySettings()
-    _, _, _, global_model = _pipeline(
+    _, _, _, global_model = pipeline(
         users=users_df,
         vouches=vouches_df,
         entities=entities_df,
