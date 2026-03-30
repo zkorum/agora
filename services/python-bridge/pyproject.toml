@@ -23,7 +23,7 @@ dependencies = [
 	# Fork with consensus-jeffreys-prior fix (commit 3665b41)
 	"red-dwarf @ git+https://github.com/nicobao/red-dwarf.git@3665b419f1ddbd66ec276f72c90a3856666bf845",
 	"scikit-learn>=1.7,<2",
-	"pandas>=2.3,<3",
+	"pandas>=2.3,<4",
 
 	# Solidago scoring (from Tournesol project)
 	# Generalized Bradley-Terry, per-user models, aggregation pipeline
