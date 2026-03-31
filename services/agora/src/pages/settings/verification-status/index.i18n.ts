@@ -45,6 +45,11 @@ export const verificationStatusTranslations: Record<
     detectedSex: "検出された性別",
     citizenship: "国籍",
   },
+  fa: {
+    pageTitle: "وضعیت تأیید",
+    detectedSex: "جنسیت تشخیص‌داده‌شده",
+    citizenship: "تابعیت",
+  },
   ky: {
     pageTitle: "Текшерүү абалы",
     detectedSex: "Аныкталган жынысы",

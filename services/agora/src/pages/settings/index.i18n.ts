@@ -226,6 +226,12 @@ export const settingsTranslations: Record<
   },
   fa: {
     pageTitle: "تنظیمات",
+    verificationStatus: "وضعیت تأیید",
+    idVerified: "هویت تأیید شد",
+    notVerified: "تأیید نشده",
+    phoneNumber: "شماره تلفن",
+    emailAddress: "ایمیل",
+    clickToAdd: "برای افزودن کلیک کنید",
     deleteAccount: "حذف حساب",
     deleteGuestAccount: "حذف حساب مهمان",
     profile: "نمایه",
