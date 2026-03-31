@@ -68,6 +68,7 @@ import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { isNetworkOffline } from "src/composables/useNetworkStatus";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { getDateString } from "src/utils/common";
@@ -165,8 +166,12 @@ async function initialize() {
 }
 
 function pullDownTriggered(done: () => void) {
+  if (isNetworkOffline.value) {
+    done();
+    return;
+  }
   setTimeout(() => {
-    void initialize().then(() => {
+    void initialize().finally(() => {
       done();
     });
   }, 500);

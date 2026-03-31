@@ -146,11 +146,11 @@ export function useCommonApi() {
     axiosErrorCode,
     defaultMessage,
   }: HandleAxiosStatusCodesProps): void {
-    if (axiosErrorCode == "ECONNABORTED") {
-      showNotifyMessage(t("noInternetConnection"));
-    } else {
-      showNotifyMessage(defaultMessage);
-    }
+    // Network errors are covered by the "Connection lost" notification —
+    // showing per-request errors ("failed to load X") would just spam the user.
+    if (isNetworkError(axiosErrorCode)) return;
+
+    showNotifyMessage(defaultMessage);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

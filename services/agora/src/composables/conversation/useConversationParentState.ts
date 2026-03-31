@@ -20,6 +20,8 @@ import { computed, provide, type Ref, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { RouteNamedMap } from "vue-router/auto-routes";
 
+import { isNetworkOffline } from "../useNetworkStatus";
+
 type RouteName = keyof RouteNamedMap;
 
 const PULL_TO_REFRESH_MIN_DELAY_MS = 500;
@@ -239,26 +241,34 @@ export function useConversationParentState({
   }
 
   async function handleRefresh(done: () => void): Promise<void> {
-    if (!conversationData.value) {
-      await conversationQuery.refetch();
+    if (isNetworkOffline.value) {
       done();
       return;
     }
 
-    const slugId = conversationData.value.metadata.conversationSlugId;
+    try {
+      if (!conversationData.value) {
+        await conversationQuery.refetch();
+        return;
+      }
 
-    // Each layer refreshes what it owns:
-    // - Parent: conversation metadata + user votes
-    // - Child tab: its own queries (comments or analysis) via registered handler
-    // Minimum delay ensures the pull-to-refresh spinner stays visible (matches feed behavior)
-    await Promise.all([
-      conversationQuery.refetch(),
-      invalidateUserVotes(slugId),
-      childRefreshHandler.value?.() ?? Promise.resolve(),
-      new Promise((resolve) => setTimeout(resolve, PULL_TO_REFRESH_MIN_DELAY_MS)),
-    ]);
+      const slugId = conversationData.value.metadata.conversationSlugId;
 
-    done();
+      // Each layer refreshes what it owns:
+      // - Parent: conversation metadata + user votes
+      // - Child tab: its own queries (comments or analysis) via registered handler
+      // Minimum delay ensures the pull-to-refresh spinner stays visible (matches feed behavior)
+      await Promise.all([
+        conversationQuery.refetch(),
+        invalidateUserVotes(slugId),
+        childRefreshHandler.value?.() ?? Promise.resolve(),
+        new Promise((resolve) =>
+          setTimeout(resolve, PULL_TO_REFRESH_MIN_DELAY_MS)
+        ),
+      ]);
+    } finally {
+      done();
+    }
   }
 
   return {

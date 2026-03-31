@@ -22,6 +22,7 @@ sync-app-api:
 
 sync-backend:
 	cd services/shared-backend && pnpm run sync
+	$(MAKE) sync-python-models
 
 dev-sync:
 	watchman-make -p 'services/shared/src/**/*.ts' -t sync
@@ -31,6 +32,14 @@ dev-sync-app-api:
 
 dev-sync-backend:
 	watchman-make -p 'services/shared-backend/src/**/*.ts' -t sync-backend
+
+sync-python-models:
+	cd services/api && npx drizzle-kit export > /tmp/agora-schema.sql
+	cd services/shared-backend && npx tsx scripts/sync-schema-cli.ts \
+		--service scoring-worker \
+		--schema-ts src/schema.ts \
+		--sql /tmp/agora-schema.sql \
+		--output ../scoring-worker/src/scoring_worker/generated_models.py
 
 dev-generate:
 	watchman-make -p 'services/api/openapi-zkorum.json' -t generate
@@ -52,3 +61,6 @@ dev-x-analyzer:
 
 dev-polis:
 	cd services/python-bridge && source .venv/bin/activate && make dev
+
+dev-scoring-worker:
+	cd services/scoring-worker && uv run python -m scoring_worker.worker

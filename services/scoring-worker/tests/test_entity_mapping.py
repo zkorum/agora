@@ -8,14 +8,12 @@ round-trip fidelity, and integration with bws_to_pairwise output.
 Tests written FIRST (before implementation) per TDD methodology.
 """
 
-from entity_mapping import (
+from scoring_worker.bws_conversion import PairwiseWin
+from scoring_worker.entity_mapping import (
     EntityIdMapper,
     map_pairwise_wins_to_solidago,
     map_scores_from_solidago,
-    SolidagoEntityScore,
 )
-from bws_conversion import PairwiseWin
-
 
 # ===========================================================================
 # EntityIdMapper unit tests
@@ -61,7 +59,7 @@ class TestEntityIdMapper:
         mapper = EntityIdMapper(entity_ids=["abc", "def"])
         try:
             mapper.to_int("unknown")
-            assert False, "Should have raised KeyError"
+            raise AssertionError("Should have raised KeyError")
         except KeyError:
             pass
 
@@ -69,7 +67,7 @@ class TestEntityIdMapper:
         mapper = EntityIdMapper(entity_ids=["abc", "def"])
         try:
             mapper.to_str(99)
-            assert False, "Should have raised KeyError"
+            raise AssertionError("Should have raised KeyError")
         except KeyError:
             pass
 
@@ -96,7 +94,7 @@ class TestEntityIdMapper:
         mapper = EntityIdMapper(entity_ids=["abc", "def"])
         try:
             mapper.to_str(-1)
-            assert False, "Should have raised KeyError for negative int"
+            raise AssertionError("Should have raised KeyError for negative int")
         except KeyError:
             pass
 
@@ -178,7 +176,7 @@ class TestMapPairwiseWinsToSolidago:
         wins = [PairwiseWin(user_id=0, winner="A", loser="UNKNOWN")]
         try:
             map_pairwise_wins_to_solidago(wins=wins, mapper=mapper)
-            assert False, "Should have raised KeyError for unmapped entity"
+            raise AssertionError("Should have raised KeyError for unmapped entity")
         except KeyError:
             pass
 

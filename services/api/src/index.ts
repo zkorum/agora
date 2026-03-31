@@ -129,7 +129,6 @@ import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
 import { createExportBuffer } from "./service/exportBuffer.js";
 import { createImportBuffer } from "./service/importBuffer.js";
-import { createRankingComparisonBuffer } from "./service/rankingComparisonBuffer.js";
 import { createUcanReplayGuard } from "./service/ucanReplayGuard.js";
 import { RealtimeSSEManager } from "./service/realtimeSSE.js";
 import {
@@ -514,17 +513,6 @@ log.info(
     `[API] Vote buffer initialized (flush interval: ${String(config.VOTE_BUFFER_FLUSH_INTERVAL_MS)}ms, batch limit: ${String(config.VOTE_BUFFER_VALKEY_BATCH_LIMIT)}, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
-// Initialize RankingComparisonBuffer (buffers MaxDiff comparisons, flushes to DB + python-bridge Solidago scoring)
-const rankingComparisonBuffer = createRankingComparisonBuffer({
-    db,
-    valkey: queueValkey,
-    axiosPythonBridge: axiosPolis,
-    flushIntervalMs: config.VOTE_BUFFER_FLUSH_INTERVAL_MS,
-    valkeyBatchLimit: config.VOTE_BUFFER_VALKEY_BATCH_LIMIT,
-});
-log.info(
-    `[API] Ranking comparison buffer initialized (scoring: ${axiosPolis !== undefined ? "python-bridge" : "disabled"}, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
-);
 
 // Initialize ExportBuffer (batches export requests to reduce system load)
 const exportBuffer = createExportBuffer({
@@ -1757,26 +1745,33 @@ server.after(() => {
         url: `/api/${apiVersion}/maxdiff/save`,
         schema: {
             body: Dto.maxdiffSaveRequest,
+            response: {
+                200: Dto.maxdiffSaveResponse,
+            },
         },
-        handler: async (request, reply) => {
+        handler: async (request) => {
             checkMaxdiffEnabled();
             const { didWrite } = await verifyUcan(request);
             const now = nowZeroMs();
             const { participationMode } =
                 await useCommonPost().getPostMetadataFromSlugId({
                     db,
-                    conversationSlugId: request.body.conversationSlugId,
+                    conversationSlugId:
+                        request.body.conversationSlugId,
                 });
             const userId =
-                await authUtilService.getOrRegisterUserIdFromDeviceStatus({
-                    db,
-                    didWrite,
-                    participationMode,
-                    userAgent:
-                        request.headers["user-agent"] ?? "Unknown device",
-                    now,
-                });
-            await saveMaxdiffResult({
+                await authUtilService.getOrRegisterUserIdFromDeviceStatus(
+                    {
+                        db,
+                        didWrite,
+                        participationMode,
+                        userAgent:
+                            request.headers["user-agent"] ??
+                            "Unknown device",
+                        now,
+                    },
+                );
+            const { conversationId } = await saveMaxdiffResult({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 userId,
@@ -1784,9 +1779,20 @@ server.after(() => {
                 comparisons: request.body.comparisons,
                 isComplete: request.body.isComplete,
                 isMaxdiffOrgOnly: config.IS_MAXDIFF_ORG_ONLY,
-                rankingComparisonBuffer,
+                valkey: queueValkey,
             });
-            reply.send({});
+            const { items, uncertainty } =
+                await computeGlobalUncertainty({
+                    db,
+                    conversationId,
+                });
+            const candidateSets = generateCandidateSets({
+                userComparisons: request.body.comparisons,
+                items,
+                globalUncertainty: uncertainty,
+                bufferSize: 1,
+            });
+            return { candidateSets };
         },
     });
 
@@ -1805,18 +1811,35 @@ server.after(() => {
                 db,
                 request,
             );
-            if (!deviceStatus.isKnown) {
-                return {
-                    ranking: null,
-                    comparisons: null,
-                    isComplete: false,
-                };
-            }
-            return await loadMaxdiffResult({
-                db,
-                conversationSlugId: request.body.conversationSlugId,
-                userId: deviceStatus.userId,
+            const { id: conversationId } =
+                await useCommonPost().getPostMetadataFromSlugId({
+                    db,
+                    conversationSlugId:
+                        request.body.conversationSlugId,
+                });
+            const [loadData, { items, uncertainty }] =
+                await Promise.all([
+                    deviceStatus.isKnown
+                        ? loadMaxdiffResult({
+                              db,
+                              conversationId,
+                              userId: deviceStatus.userId,
+                          })
+                        : Promise.resolve({
+                              ranking: null,
+                              comparisons: null,
+                              isComplete: false,
+                              perUserScores: null,
+                          }),
+                    computeGlobalUncertainty({ db, conversationId }),
+                ]);
+            const candidateSets = generateCandidateSets({
+                userComparisons: loadData.comparisons ?? [],
+                items,
+                globalUncertainty: uncertainty,
+                bufferSize: 1,
             });
+            return { ...loadData, candidateSets };
         },
     });
 
@@ -1835,34 +1858,8 @@ server.after(() => {
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 lifecycleFilter: request.body.lifecycleFilter,
-                axiosPythonBridge: axiosPolis,
+                valkey: queueValkey,
             });
-        },
-    });
-
-    server.withTypeProvider<ZodTypeProvider>().route({
-        method: "POST",
-        url: `/api/${apiVersion}/maxdiff/route`,
-        schema: {
-            body: Dto.maxdiffRouteRequest,
-            response: {
-                200: Dto.maxdiffRouteResponse,
-            },
-        },
-        handler: async (request) => {
-            checkMaxdiffEnabled();
-            await verifyUcanOptionalAuth(db, request);
-            const { items, uncertainty } = await computeGlobalUncertainty({
-                db,
-                conversationSlugId: request.body.conversationSlugId,
-            });
-            const candidateSets = generateCandidateSets({
-                userComparisons: request.body.comparisons,
-                items,
-                globalUncertainty: uncertainty,
-                bufferSize: request.body.bufferSize,
-            });
-            return { candidateSets };
         },
     });
 
@@ -1903,6 +1900,7 @@ server.after(() => {
                 itemSlugId: request.body.itemSlugId,
                 newStatus: request.body.newStatus,
                 requestingUserId: deviceStatus.userId,
+                valkey: queueValkey,
             });
             reply.send({});
         },
@@ -1936,6 +1934,7 @@ server.after(() => {
                 conversationSlugId: request.body.conversationSlugId,
                 requestingUserId: deviceStatus.userId,
                 githubClient,
+                valkey: queueValkey,
             });
         },
     });
@@ -2018,7 +2017,7 @@ server.after(() => {
             const payload = parseWebhookPayload({
                 rawPayload: request.body,
             });
-            await handleIssueWebhook({ db, payload });
+            await handleIssueWebhook({ db, payload, valkey: queueValkey });
             reply.send({ ok: true });
         },
     });
@@ -3590,9 +3589,6 @@ const shutdown = async (signal: string) => {
     try {
         // Flush pending votes before shutdown
         await voteBuffer.shutdown();
-
-        // Flush pending ranking comparisons before shutdown
-        await rankingComparisonBuffer.shutdown();
 
         // Flush pending exports before shutdown
         await exportBuffer.shutdown();

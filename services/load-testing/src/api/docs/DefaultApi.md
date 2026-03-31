@@ -44,7 +44,6 @@ All URIs are relative to *http://localhost*
 |[**apiV1MaxdiffItemsLifecycleUpdatePost**](#apiv1maxdiffitemslifecycleupdatepost) | **POST** /api/v1/maxdiff/items/lifecycle/update | |
 |[**apiV1MaxdiffLoadPost**](#apiv1maxdiffloadpost) | **POST** /api/v1/maxdiff/load | |
 |[**apiV1MaxdiffResultsPost**](#apiv1maxdiffresultspost) | **POST** /api/v1/maxdiff/results | |
-|[**apiV1MaxdiffRoutePost**](#apiv1maxdiffroutepost) | **POST** /api/v1/maxdiff/route | |
 |[**apiV1MaxdiffSavePost**](#apiv1maxdiffsavepost) | **POST** /api/v1/maxdiff/save | |
 |[**apiV1MaxdiffSyncPost**](#apiv1maxdiffsyncpost) | **POST** /api/v1/maxdiff/sync | |
 |[**apiV1ModerationConversationCreatePost**](#apiv1moderationconversationcreatepost) | **POST** /api/v1/moderation/conversation/create | |
@@ -2061,59 +2060,8 @@ const { status, data } = await apiInstance.apiV1MaxdiffResultsPost(
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **apiV1MaxdiffRoutePost**
-> ApiV1MaxdiffRoutePost200Response apiV1MaxdiffRoutePost(apiV1MaxdiffRoutePostRequest)
-
-
-### Example
-
-```typescript
-import {
-    DefaultApi,
-    Configuration,
-    ApiV1MaxdiffRoutePostRequest
-} from './api';
-
-const configuration = new Configuration();
-const apiInstance = new DefaultApi(configuration);
-
-let apiV1MaxdiffRoutePostRequest: ApiV1MaxdiffRoutePostRequest; //
-
-const { status, data } = await apiInstance.apiV1MaxdiffRoutePost(
-    apiV1MaxdiffRoutePostRequest
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **apiV1MaxdiffRoutePostRequest** | **ApiV1MaxdiffRoutePostRequest**|  | |
-
-
-### Return type
-
-**ApiV1MaxdiffRoutePost200Response**
-
-### Authorization
-
-[BearerAuth](../README.md#BearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Default Response |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
 # **apiV1MaxdiffSavePost**
-> apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest)
+> ApiV1MaxdiffSavePost200Response apiV1MaxdiffSavePost(apiV1MaxdiffSavePostRequest)
 
 
 ### Example
@@ -2144,7 +2092,7 @@ const { status, data } = await apiInstance.apiV1MaxdiffSavePost(
 
 ### Return type
 
-void (empty response body)
+**ApiV1MaxdiffSavePost200Response**
 
 ### Authorization
 
@@ -2153,7 +2101,7 @@ void (empty response body)
 ### HTTP request headers
 
  - **Content-Type**: application/json
- - **Accept**: Not defined
+ - **Accept**: application/json
 
 
 ### HTTP response details

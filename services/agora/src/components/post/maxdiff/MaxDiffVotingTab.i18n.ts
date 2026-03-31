@@ -23,7 +23,11 @@ export interface MaxDiffVotingTabTranslations {
   learnMoreTitle: string;
   learnMoreHow: string;
   learnMoreWhy: string;
-  learnMoreReference: string;
+  learnMoreScoringLink: string;
+  scoringDetailTitle: string;
+  scoringDetailPipeline: string;
+  scoringDetailCocm: string;
+  scoringDetailReference: string;
 }
 
 export const maxDiffVotingTabTranslations: Record<
@@ -53,7 +57,11 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreTitle: "How this works",
     learnMoreHow: "You compare statements in groups of 4, choosing the most and least important. The system picks groups based on what needs more data and skips redundant comparisons automatically.",
     learnMoreWhy: "This method (Best-Worst Scaling) produces more reliable rankings than rating scales because it forces trade-offs between options. Your votes count immediately.",
-    learnMoreReference: "Learn more:",
+    learnMoreScoringLink: "How your votes become a ranking \u2192",
+    scoringDetailTitle: "From votes to ranking",
+    scoringDetailPipeline: "Your best-worst choices are converted into preference scores using a mathematical model. These scores are combined with other participants' votes by Solidago, an open-source aggregation algorithm that weighs contributions by user trust level.",
+    scoringDetailCocm: "To keep the ranking fair, the system uses Connection-Oriented Cluster Match (COCM). This prevents groups of socially connected voters from having outsized influence, so every participant's voice contributes meaningfully.",
+    scoringDetailReference: "Learn more:",
   },
   ar: {
     title: "رتّب العبارات حسب الأولوية",
@@ -78,7 +86,11 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreTitle: "كيف يعمل هذا",
     learnMoreHow: "تقارن العبارات في مجموعات من 4، وتختار الأكثر والأقل أهمية. يختار النظام المجموعات بناءً على ما يحتاج مزيداً من البيانات ويتخطى المقارنات المكررة تلقائياً.",
     learnMoreWhy: "هذه الطريقة (Best-Worst Scaling) تنتج ترتيبات أكثر موثوقية من مقاييس التقييم لأنها تفرض المفاضلة بين الخيارات. أصواتك تُحتسب فوراً.",
-    learnMoreReference: "اعرف المزيد:",
+    learnMoreScoringLink: "كيف تتحول أصواتك إلى ترتيب \u2190",
+    scoringDetailTitle: "من الأصوات إلى الترتيب",
+    scoringDetailPipeline: "تُحوَّل اختياراتك للأفضل والأسوأ إلى درجات تفضيل باستخدام نموذج رياضي. تُدمج هذه الدرجات مع أصوات المشاركين الآخرين بواسطة Solidago، خوارزمية تجميع مفتوحة المصدر تُرجّح المساهمات حسب مستوى ثقة المستخدم.",
+    scoringDetailCocm: "للحفاظ على عدالة الترتيب، يستخدم النظام COCM (مطابقة العناقيد الموجّهة بالروابط). يمنع هذا مجموعات المصوّتين المرتبطين اجتماعياً من التأثير المفرط، بحيث يساهم صوت كل مشارك بشكل فعّال.",
+    scoringDetailReference: "اعرف المزيد:",
   },
   es: {
     title: "Priorizar declaraciones",
@@ -103,7 +115,11 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreTitle: "Cómo funciona",
     learnMoreHow: "Comparas declaraciones en grupos de 4, eligiendo la más y menos importante. El sistema elige los grupos según lo que necesita más datos y omite comparaciones redundantes automáticamente.",
     learnMoreWhy: "Este método (Best-Worst Scaling) produce clasificaciones más fiables que las escalas de valoración porque fuerza elecciones entre opciones. Tus votos cuentan inmediatamente.",
-    learnMoreReference: "Más información:",
+    learnMoreScoringLink: "Cómo tus votos se convierten en una clasificación \u2192",
+    scoringDetailTitle: "De votos a clasificación",
+    scoringDetailPipeline: "Tus elecciones de mejor y peor se convierten en puntuaciones de preferencia mediante un modelo matemático. Estas puntuaciones se combinan con los votos de otros participantes mediante Solidago, un algoritmo de agregación de código abierto que pondera las contribuciones según el nivel de confianza del usuario.",
+    scoringDetailCocm: "Para mantener la equidad del ranking, el sistema utiliza COCM (Connection-Oriented Cluster Match). Esto evita que grupos de votantes socialmente conectados tengan una influencia desproporcionada, asegurando que la voz de cada participante contribuya significativamente.",
+    scoringDetailReference: "Más información:",
   },
   fa: {
     title: "اولویت‌بندی گزاره‌ها",
@@ -128,7 +144,11 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreTitle: "نحوه عملکرد",
     learnMoreHow: "شما گزاره‌ها را در گروه‌های ۴ تایی مقایسه می‌کنید و مهم‌ترین و کم‌اهمیت‌ترین را انتخاب می‌کنید. سیستم بر اساس نیاز به داده بیشتر گروه‌ها را انتخاب می‌کند و مقایسه‌های تکراری را خودکار حذف می‌کند.",
     learnMoreWhy: "این روش (Best-Worst Scaling) رتبه‌بندی‌های قابل اطمینان‌تری نسبت به مقیاس‌های امتیازدهی ایجاد می‌کند زیرا انتخاب بین گزینه‌ها را اجباری می‌کند. آرای شما فوراً محاسبه می‌شوند.",
-    learnMoreReference: "اطلاعات بیشتر:",
+    learnMoreScoringLink: "چگونه آرای شما به رتبه‌بندی تبدیل می‌شوند \u2190",
+    scoringDetailTitle: "از آرا تا رتبه‌بندی",
+    scoringDetailPipeline: "انتخاب‌های بهترین و بدترین شما با استفاده از یک مدل ریاضی به امتیازات ترجیحی تبدیل می‌شوند. این امتیازات با آرای سایر شرکت‌کنندگان توسط Solidago، یک الگوریتم تجمیع متن‌باز که مشارکت‌ها را بر اساس سطح اعتماد کاربر وزن‌دهی می‌کند، ترکیب می‌شوند.",
+    scoringDetailCocm: "برای حفظ عدالت رتبه‌بندی، سیستم از COCM (تطبیق خوشه‌ای مبتنی بر ارتباط) استفاده می‌کند. این کار از تأثیر نامتناسب گروه‌های رأی‌دهندگان مرتبط اجتماعی جلوگیری می‌کند تا صدای هر شرکت‌کننده به طور معناداری مشارکت داشته باشد.",
+    scoringDetailReference: "اطلاعات بیشتر:",
   },
   he: {
     title: "תעדוף הצהרות",
@@ -153,7 +173,11 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreTitle: "איך זה עובד",
     learnMoreHow: "אתם משווים הצהרות בקבוצות של 4, ובוחרים את החשובה ביותר ואת הפחות חשובה. המערכת בוחרת קבוצות לפי מה שצריך יותר נתונים ומדלגת על השוואות מיותרות באופן אוטומטי.",
     learnMoreWhy: "שיטה זו (Best-Worst Scaling) מייצרת דירוגים אמינים יותר מסולמות הערכה כי היא מכריחה בחירה בין אפשרויות. ההצבעות שלכם נספרות מיידית.",
-    learnMoreReference: "מידע נוסף:",
+    learnMoreScoringLink: "איך ההצבעות שלכם הופכות לדירוג \u2190",
+    scoringDetailTitle: "מהצבעות לדירוג",
+    scoringDetailPipeline: "הבחירות שלכם של הטוב והרע ביותר מומרות לציוני העדפה באמצעות מודל מתמטי. ציונים אלה משולבים עם הצבעות משתתפים אחרים על ידי Solidago, אלגוריתם צבירה בקוד פתוח שמשקלל תרומות לפי רמת האמון של המשתמש.",
+    scoringDetailCocm: "כדי לשמור על הוגנות הדירוג, המערכת משתמשת ב-COCM (התאמת אשכולות מוכוונת קשרים). זה מונע מקבוצות של מצביעים בעלי קשרים חברתיים להשפיע באופן מוגזם, כך שקולו של כל משתתף תורם באופן משמעותי.",
+    scoringDetailReference: "מידע נוסף:",
   },
   fr: {
     title: "Hiérarchiser les propositions",
@@ -178,7 +202,11 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreTitle: "Comment ça marche",
     learnMoreHow: "Vous comparez des propositions par groupes de 4, en choisissant la plus et la moins importante. Le système choisit les groupes selon les besoins en données et évite automatiquement les comparaisons redondantes.",
     learnMoreWhy: "Cette méthode (Best-Worst Scaling) produit des classements plus fiables que les échelles de notation car elle force le choix entre les options. Vos votes comptent immédiatement.",
-    learnMoreReference: "En savoir plus :",
+    learnMoreScoringLink: "Comment vos votes deviennent un classement \u2192",
+    scoringDetailTitle: "Des votes au classement",
+    scoringDetailPipeline: "Vos choix du meilleur et du pire sont convertis en scores de préférence via un modèle mathématique. Ces scores sont combinés avec les votes des autres participants par Solidago, un algorithme d'agrégation open source qui pondère les contributions selon le niveau de confiance de l'utilisateur.",
+    scoringDetailCocm: "Pour garantir l'équité du classement, le système utilise COCM (Connection-Oriented Cluster Match). Cela empêche les groupes de votants socialement connectés d'avoir une influence disproportionnée, afin que la voix de chaque participant contribue de manière significative.",
+    scoringDetailReference: "En savoir plus :",
   },
   "zh-Hans": {
     title: "优先排列陈述",
@@ -203,7 +231,11 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreTitle: "工作原理",
     learnMoreHow: "您在4个一组的陈述中比较，选出最重要和最不重要的。系统根据数据需求选择分组，并自动跳过重复比较。",
     learnMoreWhy: "这种方法（Best-Worst Scaling）比评分量表产生更可靠的排名，因为它迫使您在选项之间做出取舍。您的投票立即生效。",
-    learnMoreReference: "了解更多：",
+    learnMoreScoringLink: "您的投票如何变成排名 \u2192",
+    scoringDetailTitle: "从投票到排名",
+    scoringDetailPipeline: "您的最佳和最差选择通过数学模型转换为偏好分数。这些分数通过 Solidago（一种按用户信任级别加权贡献的开源聚合算法）与其他参与者的投票合并。",
+    scoringDetailCocm: "为确保排名公平，系统使用 COCM（面向连接的聚类匹配）。这防止了社交关联投票者群体产生过大影响力，确保每位参与者的声音都能有意义地贡献。",
+    scoringDetailReference: "了解更多：",
   },
   "zh-Hant": {
     title: "優先排列陳述",
@@ -228,7 +260,11 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreTitle: "運作方式",
     learnMoreHow: "您在4個一組的陳述中比較，選出最重要和最不重要的。系統根據資料需求選擇分組，並自動跳過重複比較。",
     learnMoreWhy: "這種方法（Best-Worst Scaling）比評分量表產生更可靠的排名，因為它迫使您在選項之間做出取捨。您的投票立即生效。",
-    learnMoreReference: "了解更多：",
+    learnMoreScoringLink: "您的投票如何變成排名 \u2192",
+    scoringDetailTitle: "從投票到排名",
+    scoringDetailPipeline: "您的最佳和最差選擇透過數學模型轉換為偏好分數。這些分數透過 Solidago（一種按使用者信任級別加權貢獻的開源聚合演算法）與其他參與者的投票合併。",
+    scoringDetailCocm: "為確保排名公平，系統使用 COCM（面向連接的聚類匹配）。這防止了社交關聯投票者群體產生過大影響力，確保每位參與者的聲音都能有意義地貢獻。",
+    scoringDetailReference: "了解更多：",
   },
   ja: {
     title: "ステートメントの優先順位付け",
@@ -253,7 +289,11 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreTitle: "仕組み",
     learnMoreHow: "4つのグループでステートメントを比較し、最も重要なものと最も重要でないものを選びます。システムはデータが必要なものに基づいてグループを選び、冗長な比較を自動的にスキップします。",
     learnMoreWhy: "この方法（Best-Worst Scaling）は選択肢間のトレードオフを強制するため、評価スケールより信頼性の高いランキングを生成します。あなたの投票は即座に反映されます。",
-    learnMoreReference: "詳しくはこちら：",
+    learnMoreScoringLink: "あなたの投票がランキングになるまで \u2192",
+    scoringDetailTitle: "投票からランキングへ",
+    scoringDetailPipeline: "あなたのベスト・ワーストの選択は数学モデルにより選好スコアに変換されます。これらのスコアはSolidago（ユーザーの信頼レベルに基づいて貢献を重み付けするオープンソースの集約アルゴリズム）によって他の参加者の投票と統合されます。",
+    scoringDetailCocm: "ランキングの公正性を保つため、システムはCOCM（接続指向クラスターマッチ）を使用します。これにより、社会的につながりのある投票者グループの過大な影響力を防ぎ、すべての参加者の声が有意義に貢献できるようにします。",
+    scoringDetailReference: "詳しくはこちら：",
   },
   ky: {
     title: "Билдирүүлөрдү артыкчылыктуу кылуу",
@@ -278,7 +318,11 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreTitle: "Бул кантип иштейт",
     learnMoreHow: "Сиз билдирүүлөрдү 4түк топтордо салыштырасыз, эң маанилүүсүн жана эң аз маанилүүсүн тандайсыз. Система көбүрөөк маалымат керек болгондорго жараша топторду тандайт жана кайталанган салыштырууларды автоматтык түрдө өткөрүп жиберет.",
     learnMoreWhy: "Бул ыкма (Best-Worst Scaling) баалоо шкалаларына караганда ишенимдүү рейтингдерди берет, анткени ал варианттардын ортосунда тандоого мажбурлайт. Сиздин добуштарыңыз дароо эсепке алынат.",
-    learnMoreReference: "Көбүрөөк билүү:",
+    learnMoreScoringLink: "Добуштарыңыз кантип рейтингге айланат \u2192",
+    scoringDetailTitle: "Добуштардан рейтингге",
+    scoringDetailPipeline: "Сиздин эң жакшы жана эң жаман тандоолоруңуз математикалык модель аркылуу артыкчылык упайларына айландырылат. Бул упайлар башка катышуучулардын добуштары менен Solidago (колдонуучунун ишеним деңгээлине жараша салымдарды салмактаган ачык булак топтоо алгоритми) аркылуу бириктирилет.",
+    scoringDetailCocm: "Рейтингдин адилеттүүлүгүн сактоо үчүн система COCM (байланышка багытталган кластер дал келтирүү) колдонот. Бул социалдык байланыштуу добуш берүүчүлөр тобунун ашыкча таасирин алдын алып, ар бир катышуучунун үнү маанилүү салым кошуусун камсыздайт.",
+    scoringDetailReference: "Көбүрөөк билүү:",
   },
   ru: {
     title: "Расставьте приоритеты",
@@ -303,6 +347,10 @@ export const maxDiffVotingTabTranslations: Record<
     learnMoreTitle: "Как это работает",
     learnMoreHow: "Вы сравниваете утверждения в группах по 4, выбирая самое и наименее важное. Система выбирает группы на основе потребности в данных и автоматически пропускает избыточные сравнения.",
     learnMoreWhy: "Этот метод (Best-Worst Scaling) даёт более надёжные рейтинги, чем шкалы оценки, потому что заставляет делать выбор между вариантами. Ваши голоса учитываются сразу.",
-    learnMoreReference: "Подробнее:",
+    learnMoreScoringLink: "Как ваши голоса становятся рейтингом \u2192",
+    scoringDetailTitle: "От голосов к рейтингу",
+    scoringDetailPipeline: "Ваши выборы лучшего и худшего преобразуются в баллы предпочтений с помощью математической модели. Эти баллы объединяются с голосами других участников алгоритмом Solidago — открытым алгоритмом агрегации, взвешивающим вклад по уровню доверия пользователя.",
+    scoringDetailCocm: "Для справедливости рейтинга система использует COCM (Connection-Oriented Cluster Match). Это предотвращает непропорциональное влияние групп социально связанных голосующих, чтобы голос каждого участника вносил значимый вклад.",
+    scoringDetailReference: "Подробнее:",
   },
 };

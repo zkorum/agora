@@ -19,7 +19,7 @@ Adaptation from QF to voting rights:
 - We compute per-user-per-entity voting rights based on how many
   co-scorers each user is connected to via the friend_matrix.
 - Formula: voting_right[i, X] = trust_i / sqrt(1 + connected_co_scorers_i)
-  where connected_co_scorers_i = |{j : j scored X, j≠i, friend_matrix[i][j] > 0}|
+  where connected_co_scorers_i = |{j : j scored X, j!=i, friend_matrix[i][j] > 0}|
 - This gives O(sqrt) growth for groups of connected voters, matching
   COCM's proven collusion resistance property (Theorem 1 in the paper).
 - We deliberately omit the |T_i| division from Cluster Match (Eq. 8)
@@ -30,9 +30,8 @@ Adaptation from QF to voting rights:
 import math
 from dataclasses import dataclass
 
-
 # ---------------------------------------------------------------------------
-# Types (shared with main.py endpoint models)
+# Types
 # ---------------------------------------------------------------------------
 
 
@@ -61,7 +60,7 @@ def build_friend_matrix(
     """Build a friend matrix from multiple group sources.
 
     friend_matrix[i][j] = number of groups that users i and j share
-    across ALL sources. This is |T_i ∩ T_j| from the paper (Section 1.3).
+    across ALL sources. This is |T_i n T_j| from the paper (Section 1.3).
 
     The friend_matrix is the core data structure that COCM uses to detect
     social connections between voters (Eq. 15: K function).
@@ -133,7 +132,7 @@ class COCMVotingRights:
 
         Returns
         -------
-        dict mapping scorer user_id → voting_right (float)
+        dict mapping scorer user_id -> voting_right (float)
         """
         if not scorers:
             return {}
@@ -158,8 +157,8 @@ class COCMVotingRights:
             )
 
             # COCM attenuation: trust / sqrt(1 + connections)
-            # - 0 connections → full trust (independent voter)
-            # - N connections → trust / sqrt(N+1) (attenuated)
+            # - 0 connections -> full trust (independent voter)
+            # - N connections -> trust / sqrt(N+1) (attenuated)
             # This gives O(sqrt) collective growth for a group of K
             # connected voters: K * trust/sqrt(K) = trust * sqrt(K)
             rights[user] = trust / math.sqrt(1 + connected_co_scorers)

@@ -8,8 +8,7 @@ contained in one place.
 
 from dataclasses import dataclass
 
-from bws_conversion import PairwiseWin
-
+from scoring_worker.bws_conversion import PairwiseWin
 
 # ---------------------------------------------------------------------------
 # Types

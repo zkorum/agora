@@ -1,9 +1,7 @@
 <template>
   <div>
     <q-dialog v-model="showDialog" position="bottom">
-      <ZKBottomDialogContainer>
-        <div class="title">{{ t("title") }}</div>
-
+      <ZKBottomDialogContainer :title="t('title')">
         <div>
           {{ t("description1") }}
         </div>
@@ -36,11 +34,3 @@ const { t } = useComponentI18n<ClusterInformationDialogTranslations>(
 
 const showDialog = defineModel<boolean>({ required: true });
 </script>
-
-<style lang="scss" scoped>
-.title {
-  font-size: 1.1rem;
-  font-weight: var(--font-weight-medium);
-  padding-bottom: 1rem;
-}
-</style>

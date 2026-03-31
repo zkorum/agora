@@ -171,6 +171,7 @@ export function createImportBuffer(
     // Flush timer
     let flushTimer: NodeJS.Timeout | undefined;
     let isShuttingDown = false;
+    let flushInProgress: Promise<void> | null = null;
 
     // In-memory queue for when Valkey is not configured
     const inMemoryQueue: ImportRequest[] = [];
@@ -590,6 +591,12 @@ export function createImportBuffer(
             flushTimer = undefined;
         }
 
+        // Wait for any in-flight flush to complete before the final flush,
+        // so no pending Valkey operations remain when the connection is closed.
+        if (flushInProgress !== null) {
+            await flushInProgress;
+        }
+
         // Final flush
         await flush();
 
@@ -598,7 +605,9 @@ export function createImportBuffer(
 
     // Start the flush timer
     flushTimer = setInterval(() => {
-        void flush();
+        flushInProgress ??= flush().finally(() => {
+            flushInProgress = null;
+        });
     }, flushIntervalMs);
 
     // Prevent interval from keeping process alive

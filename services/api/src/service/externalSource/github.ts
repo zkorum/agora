@@ -11,7 +11,6 @@ import {
 import { zodExternalSourceConfig } from "@/shared/types/zod.js";
 import { createMaxdiffItem } from "@/service/maxdiffItem.js";
 import { computeItemSnapshot } from "@/service/maxdiff.js";
-import { updateMaxdiffCounters } from "@/shared-backend/conversationCounters.js";
 import { log } from "@/app.js";
 import {
     processUserGeneratedHtml,
@@ -130,14 +129,19 @@ export function parseWebhookPayload({
 
 // --- Webhook handler ---
 
+import type { Valkey } from "@/shared-backend/valkey.js";
+import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
+
 interface HandleWebhookProps {
     db: PostgresDatabase;
     payload: GitHubWebhookPayload;
+    valkey?: Valkey;
 }
 
 export async function handleIssueWebhook({
     db,
     payload,
+    valkey,
 }: HandleWebhookProps): Promise<void> {
     const repo = payload.repository.full_name;
     const issue = payload.issue;
@@ -147,6 +151,7 @@ export async function handleIssueWebhook({
     const conversations = await db
         .select({
             id: conversationTable.id,
+            slugId: conversationTable.slugId,
             currentContentId: conversationTable.currentContentId,
             authorId: conversationTable.authorId,
             externalSourceConfig: conversationTable.externalSourceConfig,
@@ -185,11 +190,9 @@ export async function handleIssueWebhook({
             await deactivateItemByExternalId({
                 db,
                 conversationId: conversation.id,
+                conversationSlugId: conversation.slugId,
                 externalId,
-            });
-            await updateMaxdiffCounters({
-                db,
-                conversationId: conversation.id,
+                valkey,
             });
             continue;
         }
@@ -203,6 +206,7 @@ export async function handleIssueWebhook({
             await upsertItemFromGitHubIssue({
                 db,
                 conversationId: conversation.id,
+                conversationSlugId: conversation.slugId,
                 conversationContentId: conversation.currentContentId,
                 authorId: conversation.authorId,
                 externalId,
@@ -217,10 +221,7 @@ export async function handleIssueWebhook({
                     assignees: issue.assignees.map((a) => a.login),
                     milestone: issue.milestone?.title ?? null,
                 },
-            });
-            await updateMaxdiffCounters({
-                db,
-                conversationId: conversation.id,
+                valkey,
             });
         } catch (error) {
             log.error(
@@ -236,19 +237,23 @@ export async function handleIssueWebhook({
 interface UpsertItemProps {
     db: PostgresDatabase;
     conversationId: number;
+    conversationSlugId: string;
     conversationContentId: number;
     authorId: string;
     externalId: string;
     issue: GitHubIssue;
+    valkey?: Valkey;
 }
 
 async function upsertItemFromGitHubIssue({
     db,
     conversationId,
+    conversationSlugId,
     conversationContentId,
     authorId,
     externalId,
     issue,
+    valkey,
 }: UpsertItemProps): Promise<"created" | "updated"> {
     const newLifecycle = mapGitHubStateToLifecycle({
         state: issue.state,
@@ -301,11 +306,13 @@ async function upsertItemFromGitHubIssue({
                 db,
                 tx,
                 conversationId,
+                conversationSlugId,
                 conversationContentId,
                 authorId,
                 title: issue.title,
                 body: convertMarkdownToHtml({ markdown: issue.body }),
                 isSeed: false,
+                valkey,
             });
 
             await tx.insert(maxdiffItemExternalSourceTable).values({
@@ -457,11 +464,15 @@ async function upsertItemFromGitHubIssue({
 async function deactivateItemByExternalId({
     db,
     conversationId,
+    conversationSlugId,
     externalId,
+    valkey,
 }: {
     db: PostgresDatabase;
     conversationId: number;
+    conversationSlugId: string;
     externalId: string;
+    valkey?: Valkey;
 }): Promise<void> {
     const rows = await db
         .select({
@@ -524,6 +535,18 @@ async function deactivateItemByExternalId({
     log.info(
         `[GitHub] Deactivated item from ${externalId} (label removed)`,
     );
+
+    if (valkey !== undefined) {
+        const member = `${String(conversationId)}:${conversationSlugId}`;
+        valkey
+            .zadd(VALKEY_QUEUE_KEYS.SCORING_DIRTY_SOLIDAGO, { [member]: 0 })
+            .catch((error: unknown) => {
+                log.error(
+                    error,
+                    `[MaxDiff] Failed to ZADD scoring:dirty:solidago for ${member}`,
+                );
+            });
+    }
 }
 
 // --- Sync (initial import) ---
@@ -533,6 +556,7 @@ interface SyncProps {
     conversationSlugId: string;
     requestingUserId: string;
     githubClient: GitHubClient;
+    valkey?: Valkey;
 }
 
 export async function syncGitHubIssues({
@@ -540,6 +564,7 @@ export async function syncGitHubIssues({
     conversationSlugId,
     requestingUserId,
     githubClient,
+    valkey,
 }: SyncProps): Promise<SyncResult> {
     // Look up the conversation
     const conversationRows = await db
@@ -597,10 +622,12 @@ export async function syncGitHubIssues({
             const result = await upsertItemFromGitHubIssue({
                 db,
                 conversationId: conversation.id,
+                conversationSlugId,
                 conversationContentId: conversation.currentContentId,
                 authorId: conversation.authorId,
                 externalId,
                 issue,
+                valkey,
             });
 
             if (result === "created") {
@@ -615,8 +642,6 @@ export async function syncGitHubIssues({
             );
         }
     }
-
-    await updateMaxdiffCounters({ db, conversationId: conversation.id });
 
     log.info(
         `[GitHub] Sync for ${conversationSlugId}: created=${String(created)}, updated=${String(updated)}`,

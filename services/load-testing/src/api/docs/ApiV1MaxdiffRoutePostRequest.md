@@ -6,7 +6,6 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **conversationSlugId** | **string** |  | [default to undefined]
-**comparisons** | [**Array&lt;ApiV1MaxdiffSavePostRequestComparisonsInner&gt;**](ApiV1MaxdiffSavePostRequestComparisonsInner.md) |  | [default to undefined]
 **bufferSize** | **number** |  | [optional] [default to 3]
 
 ## Example
@@ -16,7 +15,6 @@ import { ApiV1MaxdiffRoutePostRequest } from './api';
 
 const instance: ApiV1MaxdiffRoutePostRequest = {
     conversationSlugId,
-    comparisons,
     bufferSize,
 };
 ```

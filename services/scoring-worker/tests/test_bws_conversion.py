@@ -8,16 +8,14 @@ Ported from:
 Tests are written FIRST (before implementation) per TDD methodology.
 """
 
-import pytest
 
-from bws_conversion import (
+from scoring_worker.bws_conversion import (
     BWSComparison,
     PairwiseWin,
-    bws_to_pairwise,
-    build_comparison_matrix,
     bron_kerbosch,
+    build_comparison_matrix,
+    bws_to_pairwise,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helper: create a BWSComparison concisely
@@ -39,7 +37,7 @@ def bws(
 
 
 def pair_set(pairs: list[PairwiseWin]) -> set[tuple[int, str, str]]:
-    """Convert list of PairwiseWin to a set of (user_id, winner, loser) for order-independent comparison."""
+    """Convert PairwiseWin list to set of (user_id, winner, loser) tuples."""
     return {(p.user_id, p.winner, p.loser) for p in pairs}
 
 
@@ -124,7 +122,7 @@ class TestBuildComparisonMatrix:
         # Transitive: a>c should be inferred
         assert matrix.get_unordered_pairs() == []
         ordered = matrix.get_ordered_pairs()
-        pair_tuples = {(w, l) for w, l in ordered}
+        pair_tuples = {(winner, loser) for winner, loser in ordered}
         assert ("a", "b") in pair_tuples
         assert ("b", "c") in pair_tuples
         assert ("a", "c") in pair_tuples  # transitive
@@ -136,7 +134,7 @@ class TestBuildComparisonMatrix:
             user_id=0, best="A", worst="D", candidate_set=["A", "B", "C", "D"],
         ))
         ordered = matrix.get_ordered_pairs()
-        pair_tuples = {(w, l) for w, l in ordered}
+        pair_tuples = {(winner, loser) for winner, loser in ordered}
         # A beats everyone
         assert ("A", "B") in pair_tuples
         assert ("A", "C") in pair_tuples
@@ -434,5 +432,5 @@ class TestBwsToPairwise:
         assert (0, "A", "B") in pairs
         assert (0, "A", "C") in pairs
         # No contradictions
-        for uid, w, l in pairs:
-            assert (uid, l, w) not in pairs
+        for uid, winner, loser in pairs:
+            assert (uid, loser, winner) not in pairs

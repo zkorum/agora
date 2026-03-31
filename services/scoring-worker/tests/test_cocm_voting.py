@@ -13,16 +13,14 @@ Paper: https://ssrn.com/abstract=4311507
 Tests written FIRST per TDD methodology.
 """
 
-import math
-import pytest
 
-from cocm_voting import (
-    build_friend_matrix,
+
+from scoring_worker.cocm_voting import (
     COCMVotingRights,
     GroupSource,
     UserGroupEntry,
+    build_friend_matrix,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -33,7 +31,7 @@ def group_source(
     source_id: str,
     memberships: dict[int, int],
 ) -> GroupSource:
-    """Shorthand: {user_id: group_id} → GroupSource."""
+    """Shorthand: {user_id: group_id} -> GroupSource."""
     return GroupSource(
         source_id=source_id,
         memberships=[
@@ -81,11 +79,11 @@ class TestBuildFriendMatrix:
             ],
             user_ids=[0, 1, 2],
         )
-        # Users 0,1: share polis group 1 AND company group 10 → 2
+        # Users 0,1: share polis group 1 AND company group 10 -> 2
         assert fm[0][1] == 2
-        # Users 0,2: share company group 10 only → 1
+        # Users 0,2: share company group 10 only -> 1
         assert fm[0][2] == 1
-        # Users 1,2: share company group 10 only → 1
+        # Users 1,2: share company group 10 only -> 1
         assert fm[1][2] == 1
 
     def test_self_not_counted(self) -> None:
@@ -198,12 +196,12 @@ class TestCOCMVotingRightsProperties:
         assert abs(rights[0] - rights[1]) < 1e-9
 
     def test_trust_scales_voting_rights(self) -> None:
-        """Higher trust → proportionally higher voting rights,
+        """Higher trust -> proportionally higher voting rights,
         regardless of group membership."""
         vr = COCMVotingRights(
             group_sources=[group_source("polis", {0: 1, 1: 1})],
         )
-        rights_equal = vr.compute_entity_voting_rights(
+        vr.compute_entity_voting_rights(
             scorers=[0, 1],
             trust_scores={0: 1.0, 1: 1.0},
             user_ids=[0, 1],
@@ -337,7 +335,7 @@ class TestCOCMCrossValidation:
         total_independent = sum(independent_rights.values())
 
         # Grouped should be significantly less than independent
-        # Paper proves O(sqrt) growth, so 8 grouped should have roughly sqrt(8) ≈ 2.83
+        # Paper proves O(sqrt) growth, so 8 grouped should have roughly sqrt(8) ~ 2.83
         # influence instead of 8
         assert total_grouped < total_independent * 0.6, (
             f"8 grouped users ({total_grouped:.2f}) should have much less "

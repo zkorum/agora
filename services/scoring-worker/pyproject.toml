@@ -1,0 +1,59 @@
+[project]
+name = "scoring-worker"
+version = "0.1.0"
+description = "Solidago scoring worker for MaxDiff community rankings (BWS-to-pairwise, COCM voting rights)"
+requires-python = ">=3.13"
+dependencies = [
+    "solidago[torch]==0.5.0",
+    "psycopg[binary]>=3.2",
+    "sqlalchemy[postgresql-psycopg]>=2.0",
+    "valkey>=6.0",
+    "pydantic>=2.12",
+    "pydantic-settings>=2.0",
+    "pandas>=2.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.9",
+    "basedpyright>=1.29",
+    "testcontainers[postgres,valkey]>=4.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scoring_worker"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint.per-file-ignores]
+# SQLAlchemy Mapped[] needs runtime access to datetime/uuid (not TYPE_CHECKING)
+"src/scoring_worker/generated_models.py" = ["TCH003"]
+
+[tool.ruff.lint]
+select = [
+    "F",     # pyflakes
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "I",     # isort
+    "N",     # pep8-naming
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "A",     # flake8-builtins
+    "SIM",   # flake8-simplify
+    "TCH",   # flake8-type-checking
+    "RUF",   # ruff-specific
+]
+
+[tool.basedpyright]
+typeCheckingMode = "strict"
+pythonVersion = "3.13"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -221,24 +221,37 @@ function onLoad(index: number, done: () => void) {
 }
 
 function pullDownTriggered(done: () => void) {
+  if (isOffline.value) {
+    done();
+    return;
+  }
   setTimeout(() => {
     void (async () => {
-      await refetch();
-      canLoadMore.value = true;
-      done();
+      try {
+        await refetch();
+        canLoadMore.value = true;
+      } finally {
+        done();
+      }
     })();
   }, 500);
 }
 
 async function refreshPage(done: () => void) {
+  if (isOffline.value) {
+    done();
+    return;
+  }
   windowY.value = 0;
 
-  await refetch();
-  canLoadMore.value = true;
-
-  setTimeout(() => {
-    done();
-  }, 500);
+  try {
+    await refetch();
+    canLoadMore.value = true;
+  } finally {
+    setTimeout(() => {
+      done();
+    }, 500);
+  }
 }
 </script>
 

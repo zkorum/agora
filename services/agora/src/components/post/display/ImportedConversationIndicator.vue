@@ -12,9 +12,7 @@
     />
 
     <q-dialog v-model="showDialog" position="bottom">
-      <ZKBottomDialogContainer>
-        <div class="dialog-title">{{ t("dialogTitle") }}</div>
-
+      <ZKBottomDialogContainer :title="t('dialogTitle')">
         <div class="details">
           <div class="detail-row">
             <span class="detail-label">{{ t("importMethodLabel") }}:</span>
@@ -132,12 +130,6 @@ const formattedDate = computed(() => {
   font-style: italic;
   color: $color-text-weak;
   font-size: 0.85rem;
-}
-
-.dialog-title {
-  font-size: 1.1rem;
-  font-weight: var(--font-weight-medium);
-  padding-bottom: 0.5rem;
 }
 
 .details {

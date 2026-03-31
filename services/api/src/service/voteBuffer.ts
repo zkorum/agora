@@ -224,6 +224,7 @@ export function createVoteBuffer({
     // Encapsulated mutable state (private to closure)
     const pendingVotes = new Map<string, BufferedVote>();
     let isShuttingDown = false;
+    let flushInProgress: Promise<void> | null = null;
 
     // Lua script objects (created once, reused for all calls)
     // IMPORTANT: Must call release() on shutdown to prevent memory leaks
@@ -1266,6 +1267,12 @@ export function createVoteBuffer({
 
         clearInterval(flushInterval);
 
+        // Wait for any in-flight flush to complete before the final flush,
+        // so no pending Valkey operations remain when the connection is closed.
+        if (flushInProgress !== null) {
+            await flushInProgress;
+        }
+
         await flush();
 
         // Release Lua script objects to prevent memory leaks
@@ -1290,9 +1297,13 @@ export function createVoteBuffer({
 
     // Start automatic flush interval
     const flushInterval: NodeJS.Timeout = setInterval(() => {
-        flush().catch((error: unknown) => {
-            log.error(error, "[VoteBuffer] Flush interval error");
-        });
+        flushInProgress ??= flush()
+            .catch((error: unknown) => {
+                log.error(error, "[VoteBuffer] Flush interval error");
+            })
+            .finally(() => {
+                flushInProgress = null;
+            });
     }, flushIntervalMs);
 
     // Prevent interval from keeping process alive (Node.js specific)

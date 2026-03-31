@@ -1,5 +1,5 @@
 <template>
-  <div class="innerStyle" :style="{ width: enable ? 'min(31.25rem, 100%)' : '' }">
+  <div class="innerStyle" :style="{ width: enable ? 'min(35.9375rem, 100%)' : '' }">
     <slot />
   </div>
 </template>

@@ -1,18 +1,7 @@
 <template>
   <div>
     <q-dialog v-model="showDialog" position="bottom">
-      <ZKBottomDialogContainer>
-        <div class="header">
-          <div class="title">{{ t("title") }}</div>
-          <ZKButton
-            button-type="icon"
-            aria-label="Close"
-            @click="showDialog = false"
-          >
-            <ZKIcon color="#6d6a74" name="mdi-close" size="1.2rem" />
-          </ZKButton>
-        </div>
-
+      <ZKBottomDialogContainer :title="t('title')">
         <div class="guidelines-content">
           <div class="guideline">
             <div class="guideline-title">{{ t("singleIdeaTitle") }}</div>
@@ -83,8 +72,6 @@
 
 <script setup lang="ts">
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
-import ZKButton from "src/components/ui-library/ZKButton.vue";
-import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 
 import {
@@ -100,19 +87,6 @@ const showDialog = defineModel<boolean>({ required: true });
 </script>
 
 <style lang="scss" scoped>
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 0.5rem;
-  flex-shrink: 0;
-}
-
-.title {
-  font-size: 1.1rem;
-  font-weight: var(--font-weight-medium);
-}
-
 .guidelines-content {
   max-height: 60vh;
   max-height: 60dvh;

@@ -47,6 +47,8 @@ For detailed information about each service, licenses, and documentation, see [C
 
 **[Python Bridge](./services/python-bridge)** - A Flask application enabling the Node.js backend to communicate with Python data science libraries, particularly [reddwarf](https://github.com/polis-community/red-dwarf) for clustering algorithms.
 
+**[Scoring Worker](./services/scoring-worker)** - Python worker that runs [Solidago](https://solidago.tournesol.app/) algorithm to produce community rankings from MaxDiff (Best-Worst Scaling) comparisons. Uses Valkey for job queuing and supports parallel scoring.
+
 ### Shared Libraries
 
 **[Shared](./services/shared)** - Common TypeScript code shared across all services.
@@ -66,7 +68,7 @@ For detailed information about each service, licenses, and documentation, see [C
 We generate an `openapi-zkorum.json` file from the backend, and then use [openapi-generator-cli](https://openapi-generator.tech/) to generate the corresponding frontend client.
 
 ### Getting started
-Please read READMEs in `/services/agora`, `/services/api`, `/services/math-updater`, and `/services/python-bridge`
+Please read READMEs in `/services/agora`, `/services/api`, `/services/math-updater`, `/services/python-bridge`, and `/services/scoring-worker`
 
 ### Run in dev mode
 

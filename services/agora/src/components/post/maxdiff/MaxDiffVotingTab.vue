@@ -178,13 +178,28 @@
     />
 
     <q-dialog v-model="showLearnMoreDialog" position="bottom">
-      <ZKBottomDialogContainer>
-        <div class="learn-more-title">{{ t("learnMoreTitle") }}</div>
+      <ZKBottomDialogContainer :title="t('learnMoreTitle')">
         <div class="learn-more-content">
           <p>{{ t("learnMoreHow") }}</p>
           <p>{{ t("learnMoreWhy") }}</p>
+          <p>
+            <a
+              href="#"
+              class="learn-more-link"
+              @click.prevent="openScoringDetail"
+            >{{ t("learnMoreScoringLink") }}</a>
+          </p>
+        </div>
+      </ZKBottomDialogContainer>
+    </q-dialog>
+
+    <q-dialog v-model="showScoringDetailDialog" position="bottom">
+      <ZKBottomDialogContainer :title="t('scoringDetailTitle')">
+        <div class="learn-more-content">
+          <p>{{ t("scoringDetailPipeline") }}</p>
+          <p>{{ t("scoringDetailCocm") }}</p>
           <p class="learn-more-reference">
-            {{ t("learnMoreReference") }}
+            {{ t("scoringDetailReference") }}
             <a
               href="https://github.com/tournesol-app/tournesol/tree/main/solidago"
               target="_blank"
@@ -198,6 +213,13 @@
               rel="noopener noreferrer"
               class="learn-more-link"
             >Best-Worst Scaling</a>
+            ·
+            <a
+              href="https://ssrn.com/abstract=4311507"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="learn-more-link"
+            >COCM</a>
           </p>
         </div>
       </ZKBottomDialogContainer>
@@ -218,7 +240,6 @@ import { useConversationLoginIntentions } from "src/composables/auth/useConversa
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ExtendedConversation, MaxDiffComparison } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
 import {
   type MaxDiffSaveContext,
   useMaxDiffItemsQuery,
@@ -253,7 +274,6 @@ const { t } = useComponentI18n<MaxDiffVotingTabTranslations>(
 
 const { isLoggedIn, hasStrongVerification, hasEmailVerification } =
   storeToRefs(useAuthenticationStore());
-const { fetchMaxDiffRoute } = useMaxDiffApi();
 const $q = useQuasar();
 const { showNotifyMessage } = useNotify();
 
@@ -477,6 +497,12 @@ const progressPercent = computed(() => {
 });
 
 const showLearnMoreDialog = ref(false);
+const showScoringDetailDialog = ref(false);
+
+function openScoringDetail(): void {
+  showLearnMoreDialog.value = false;
+  showScoringDetailDialog.value = true;
+}
 
 const canUndo = computed(() => {
   if (!instance.value) return false;
@@ -491,7 +517,7 @@ const initError = ref(false);
 
 watch(
   [() => itemsQuery.data.value, () => loadQuery.data.value, () => loadQuery.isError.value],
-  async ([items, loadData, loadError]) => {
+  ([items, loadData, loadError]) => {
     if (items === undefined || engineInitialized.value) return;
     // Wait for load query to settle (success or error)
     if (loadData === undefined && !loadError) return;
@@ -523,16 +549,16 @@ watch(
       finalRanking.value = [];
     }
 
-    // Fetch initial candidate set
-    const initialResult = await fetchNextCandidateSet();
-    if (!("candidates" in initialResult) && !instance.value.complete) {
+    // Use candidate sets from load response (computed server-side)
+    if (loadData !== undefined) {
+      candidates.value = loadData.candidateSets[0] ?? [];
+    } else if (!instance.value.complete) {
       initError.value = true;
       isInitializingEngine.value = false;
       engineInitialized.value = true;
       return;
     }
 
-    candidates.value = "candidates" in initialResult ? initialResult.candidates : [];
     isInitializingEngine.value = false;
     engineInitialized.value = true;
   },
@@ -550,38 +576,6 @@ function retryInitialize(): void {
   isInitializingEngine.value = true;
   void itemsQuery.refetch();
   void loadQuery.refetch();
-}
-
-async function fetchNextCandidateSet(): Promise<{ candidates: string[] } | { error: "network" } | { error: "empty" }> {
-  const comparisons = instance.value?.exportState().comparisons ?? [];
-  const response = await fetchMaxDiffRoute({
-    conversationSlugId: conversationSlugId.value,
-    comparisons,
-    bufferSize: 1,
-  });
-  if (response.status === "success" && response.data.candidateSets.length > 0) {
-    return { candidates: response.data.candidateSets[0] };
-  }
-  if (response.status === "success") {
-    return { error: "empty" };
-  }
-  return { error: "network" };
-}
-
-async function updateCandidates(): Promise<void> {
-  if (!instance.value || instance.value.complete) {
-    candidates.value = [];
-    return;
-  }
-  const result = await fetchNextCandidateSet();
-  if ("candidates" in result) {
-    candidates.value = result.candidates;
-  } else if (result.error === "network") {
-    showNotifyMessage({ message: t("loadingError"), force: true });
-  } else {
-    isComplete.value = true;
-    candidates.value = [];
-  }
 }
 
 function handleCandidateClick(slugId: string): void {
@@ -670,20 +664,27 @@ function recordVote(): void {
     showTransitionSpinner.value = true;
   }, 2000);
 
-  transitionTimeout = setTimeout(() => {
-    void (async () => {
-      await updateCandidates();
-      cancelTransition();
-    })();
-  }, 400);
-
-  // Save to backend via mutation (rollback handled by onRollback callback)
-  saveMutation.mutate({
+  // Save + get next candidates from server response.
+  // Runs in parallel with the 400ms transition animation.
+  const savePromise = saveMutation.mutateAsync({
     ranking: instance.value.result ?? null,
     comparisons: instance.value.exportState().comparisons,
     isComplete: instance.value.complete,
     context,
-  });
+  }).catch(() => undefined);
+  // onError already handles rollback — catch returns undefined on failure
+
+  transitionTimeout = setTimeout(() => {
+    void (async () => {
+      const saveResult = await savePromise;
+      if (saveResult !== undefined && !instance.value?.complete) {
+        candidates.value = saveResult.candidateSets[0] ?? [];
+      } else {
+        candidates.value = [];
+      }
+      cancelTransition();
+    })();
+  }, 400);
 }
 
 function undoLastVote(): void {
@@ -756,14 +757,19 @@ function handleRedoRanking(): void {
     instance.value = createMaxDiff(slugIds);
     isComplete.value = false;
     finalRanking.value = [];
-    void updateCandidates();
 
-    saveMutation.mutate({
-      ranking: null,
-      comparisons: [],
-      isComplete: false,
-      context,
-    });
+    // Save empty state, use candidateSets from response
+    void (async () => {
+      const result = await saveMutation.mutateAsync({
+        ranking: null,
+        comparisons: [],
+        isComplete: false,
+        context,
+      }).catch(() => undefined);
+      if (result !== undefined) {
+        candidates.value = result.candidateSets[0] ?? [];
+      }
+    })();
   });
 }
 </script>
@@ -1007,12 +1013,6 @@ function handleRedoRanking(): void {
 .view-ranking-btn {
   align-self: flex-start;
   border-radius: 8px;
-}
-
-.learn-more-title {
-  font-size: 1.1rem;
-  font-weight: var(--font-weight-semibold);
-  color: $color-text-strong;
 }
 
 .learn-more-content {
