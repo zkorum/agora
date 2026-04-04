@@ -126,6 +126,7 @@ import { useQuasar } from "quasar";
 import { copyToClipboard } from "quasar";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api/api";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { createRequestGate } from "src/composables/verification/createRequestGate";
 import { useVerificationComplete } from "src/composables/verification/useVerificationComplete";
 import { Dto } from "src/shared/types/dto";
 import type { LinkType, RarimoStatusAttributes } from "src/shared/types/zod";
@@ -156,6 +157,7 @@ const quasar = useQuasar();
 
 const { buildEncodedUcan } = useCommonApi();
 const { showNotifyMessage, showCopiedToClipboard } = useNotify();
+const requestGate = createRequestGate();
 
 let isDeviceLoggedInIntervalId: number | undefined = undefined;
 let isUnmounted = false;
@@ -190,7 +192,32 @@ if (quasar.platform.is.android) {
   rarimoStoreLink.value = "https://rarimo.com/";
 }
 
+function stopPolling() {
+  if (isDeviceLoggedInIntervalId !== undefined) {
+    window.clearInterval(isDeviceLoggedInIntervalId);
+    isDeviceLoggedInIntervalId = undefined;
+  }
+}
+
+function terminateFlow() {
+  requestGate.terminate();
+  stopPolling();
+}
+
 async function generateVerificationLink() {
+  if (
+    requestGate.isTerminated.value ||
+    verificationLink.value.length !== 0 ||
+    verificationLinkGenerationFailed.value
+  ) {
+    return;
+  }
+
+  const requestId = requestGate.start();
+  if (requestId === null) {
+    return;
+  }
+
   const linkType: LinkType = "http";
   try {
     const params = { linkType: linkType };
@@ -208,7 +235,7 @@ async function generateVerificationLink() {
         ...buildAuthorizationHeader(encodedUcan),
       },
     });
-    if (isUnmounted) return;
+    if (isUnmounted || !requestGate.isCurrent(requestId)) return;
     const data = Dto.generateVerificationLink200.parse(response.data);
     if (data.success) {
       verificationLink.value = data.verificationLink;
@@ -227,18 +254,22 @@ async function generateVerificationLink() {
     } else {
       switch (data.reason) {
         case "already_has_credential":
+          terminateFlow();
           qrcodeVerificationStatus.value = "verified";
           break;
         case "associated_with_another_user":
+          terminateFlow();
           showNotifyMessage(t("credentialAlreadyLinked"));
           break;
       }
     }
   } catch (e) {
-    if (isUnmounted) return;
+    if (isUnmounted || !requestGate.isCurrent(requestId)) return;
     console.error("Error while fetching Rarimo verification link", e);
     showNotifyMessage(t("unexpectedError"));
     verificationLinkGenerationFailed.value = true;
+  } finally {
+    requestGate.finish(requestId);
   }
 }
 
@@ -251,7 +282,7 @@ watch(isAuthInitialized, async () => {
 });
 
 async function initialize() {
-  if (isAuthInitialized.value) {
+  if (isAuthInitialized.value && requestGate.isTerminated.value === false) {
     await generateVerificationLink();
   }
 }
@@ -265,9 +296,11 @@ watch(qrcodeVerificationStatus, async () => {
       await onVerified();
       break;
     case "failed_verification":
+      terminateFlow();
       showNotifyMessage(t("verificationFailed"));
       break;
     case "uniqueness_check_failed":
+      terminateFlow();
       showNotifyMessage(t("passportAlreadyLinked"));
       break;
   }
@@ -275,9 +308,7 @@ watch(qrcodeVerificationStatus, async () => {
 
 onUnmounted(() => {
   isUnmounted = true;
-  if (isDeviceLoggedInIntervalId !== undefined) {
-    clearInterval(isDeviceLoggedInIntervalId);
-  }
+  terminateFlow();
 });
 
 async function copyVerificationLink() {
@@ -291,6 +322,11 @@ async function copyVerificationLink() {
 }
 
 async function isDeviceLoggedIn() {
+  const requestId = requestGate.start();
+  if (requestId === null) {
+    return;
+  }
+
   try {
     const { url, options } =
       await DefaultApiAxiosParamCreator().apiV1AuthZkpVerifyUserStatusAndAuthenticatePost();
@@ -305,7 +341,7 @@ async function isDeviceLoggedIn() {
       },
     });
 
-    if (isUnmounted) return;
+    if (isUnmounted || !requestGate.isCurrent(requestId)) return;
     const data = Dto.verifyUserStatusAndAuthenticate200.parse(response.data);
 
     if (data.success) {
@@ -314,12 +350,15 @@ async function isDeviceLoggedIn() {
           qrcodeVerificationStatus.value = "not_verified";
           break;
         case "failed_verification":
+          terminateFlow();
           qrcodeVerificationStatus.value = "failed_verification";
           break;
         case "uniqueness_check_failed":
+          terminateFlow();
           qrcodeVerificationStatus.value = "uniqueness_check_failed";
           break;
         case "verified":
+          terminateFlow();
           qrcodeVerificationStatus.value = "verified";
           accountMerged.value = data.accountMerged;
           verifiedUserId.value = data.userId;
@@ -328,18 +367,22 @@ async function isDeviceLoggedIn() {
     } else {
       switch (data.reason) {
         case "already_has_credential":
+          terminateFlow();
           qrcodeVerificationStatus.value = "verified";
           break;
         case "associated_with_another_user":
-          window.clearInterval(isDeviceLoggedInIntervalId);
+          terminateFlow();
           showNotifyMessage(t("credentialAlreadyLinked"));
           break;
       }
     }
   } catch (e) {
-    if (isUnmounted) return;
+    if (isUnmounted || !requestGate.isCurrent(requestId)) return;
     console.error("Error while verifying proof", e);
+    terminateFlow();
     qrcodeVerificationStatus.value = "failed_verification";
+  } finally {
+    requestGate.finish(requestId);
   }
 }
 
@@ -348,7 +391,7 @@ function clickedVerifyButton() {
 }
 
 async function onVerified() {
-  window.clearInterval(isDeviceLoggedInIntervalId);
+  terminateFlow();
   if (accountMerged.value) {
     showNotifyMessage(t("accountMerged"));
   } else {

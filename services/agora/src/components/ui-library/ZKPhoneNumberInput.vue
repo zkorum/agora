@@ -75,6 +75,8 @@ function onKeydownCapture(e: KeyboardEvent) {
     // not in the country search dropdown
     const target = e.target;
     if (target instanceof HTMLInputElement && target.name === "phone") {
+      e.preventDefault();
+      e.stopPropagation();
       props.onKeydownEnter?.();
     }
     return;

@@ -14,6 +14,10 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  localizedDateTimeFormatOptions,
+  useLocalizedDateTimeFormatter,
+} from "src/composables/ui/useLocalizedDateTime";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import { computed } from "vue";
 
@@ -26,9 +30,13 @@ const props = defineProps<{
   conversationSlugId: string;
 }>();
 
-const { t, locale } = useComponentI18n<ReportFooterTranslations>(
+const { t } = useComponentI18n<ReportFooterTranslations>(
   reportFooterTranslations,
 );
+
+const formatGeneratedAt = useLocalizedDateTimeFormatter({
+  options: localizedDateTimeFormatOptions.dateTime,
+});
 
 const { getConversationUrl } = useConversationUrl();
 
@@ -36,26 +44,8 @@ const conversationUrl = computed(() =>
   getConversationUrl(props.conversationSlugId),
 );
 
-const localeMap: Record<string, string> = {
-  en: "en-US",
-  fr: "fr-FR",
-  es: "es-ES",
-  ar: "ar-SA",
-  "zh-Hans": "zh-CN",
-  "zh-Hant": "zh-TW",
-  ja: "ja-JP",
-};
-
-const bcp47Locale = computed(() => localeMap[locale.value] ?? "en-US");
-
 const formattedNow = computed(() =>
-  new Date().toLocaleDateString(bcp47Locale.value, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }),
+  formatGeneratedAt(new Date()),
 );
 </script>
 

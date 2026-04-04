@@ -365,6 +365,13 @@
       "when": 1774817009201,
       "tag": "0051_luxuriant_korath",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1775317170961,
+      "tag": "0052_tidy_rumiko_fujikawa",
+      "breakpoints": true
     }
   ]
 }

@@ -83,6 +83,10 @@
 <script setup lang="ts">
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  localizedDateTimeFormatOptions,
+  useLocalizedDateTimeFormatter,
+} from "src/composables/ui/useLocalizedDateTime";
 import { computed, ref } from "vue";
 
 import {
@@ -107,15 +111,16 @@ const { t } = useComponentI18n<ImportedConversationIndicatorTranslations>(
 
 const showDialog = ref(false);
 
+const formatOriginalDate = useLocalizedDateTimeFormatter({
+  options: localizedDateTimeFormatOptions.longDate,
+});
+
 const formattedDate = computed(() => {
   if (props.importInfo.createdAt === undefined) {
     return "";
   }
-  const date =
-    props.importInfo.createdAt instanceof Date
-      ? props.importInfo.createdAt
-      : new Date(props.importInfo.createdAt);
-  return date.toLocaleDateString();
+
+  return formatOriginalDate(props.importInfo.createdAt);
 });
 </script>
 

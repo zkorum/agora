@@ -1,15 +1,3 @@
-import { useDateFormat } from "@vueuse/core";
-
-/**
- * Formats a date using a standard format across the application
- * Uses @vueuse/core's useDateFormat for consistent formatting
- * @param date - The date to format (Date object or ISO string)
- * @returns Formatted date string in "MMM D, YYYY hh:mm A z" format (12-hour with timezone)
- */
-export function formatDateTime(date: Date | string): string {
-  return useDateFormat(date, "MMM D, YYYY hh:mm A").value;
-}
-
 /**
  * Formats a file size in bytes to a human-readable format
  * @param bytes - The file size in bytes

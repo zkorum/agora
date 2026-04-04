@@ -16,9 +16,7 @@
 
     <div
       v-if="
-        emailData.hasBeenBlurred &&
-        emailData.hasError &&
-        emailData.errorMessage
+        emailData.hasBeenBlurred && emailData.hasError && emailData.errorMessage
       "
       class="error-text"
       role="alert"
@@ -32,7 +30,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { zodEmail } from "src/shared/types/zod-email";
+import { normalizeEmail, zodEmail } from "src/shared/types/zod-email";
 import { emailVerificationStore } from "src/stores/onboarding/email";
 import { reactive } from "vue";
 
@@ -74,7 +72,7 @@ function setError(message: string) {
 }
 
 function validateAndSetErrors() {
-  const email = String(emailData.email ?? "").trim();
+  const email = normalizeEmail(String(emailData.email ?? ""));
 
   if (!email) {
     emailData.isValid = false;
@@ -92,8 +90,9 @@ function validateAndSetErrors() {
   clearErrors();
 }
 
-function onEmailUpdate() {
-  const email = String(emailData.email ?? "");
+function onEmailUpdate(value: string | number | null) {
+  const email = normalizeEmail(String(value ?? ""));
+  emailData.email = email;
   emailData.isValid = email !== "" && isValidEmail(email);
 
   if (emailData.hasBeenBlurred) {
@@ -118,7 +117,8 @@ function submit(): boolean {
     return false;
   }
 
-  const email = String(emailData.email ?? "").trim();
+  const email = normalizeEmail(String(emailData.email ?? ""));
+  emailData.email = email;
   verificationEmail.value = email;
   emit("submit");
   return true;

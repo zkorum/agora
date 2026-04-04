@@ -34,7 +34,7 @@
             {{ profileData.activePostCount }} {{ t("conversations") }}
             <span class="dotPadding">•</span>
           </div>
-          <div>{{ getDateString(new Date(profileData.createdAt)) }}</div>
+          <div>{{ formatDateJoined(profileData.createdAt) }}</div>
         </div>
       </div>
 
@@ -68,10 +68,13 @@ import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  localizedDateTimeFormatOptions,
+  useLocalizedDateTimeFormatter,
+} from "src/composables/ui/useLocalizedDateTime";
 import { isNetworkOffline } from "src/composables/useNetworkStatus";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
-import { getDateString } from "src/utils/common";
 import { onActivated, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
@@ -97,6 +100,10 @@ interface CustomTab {
 const { t } = useComponentI18n<UserProfileTranslations>(
   userProfileTranslations
 );
+
+const formatDateJoined = useLocalizedDateTimeFormatter({
+  options: localizedDateTimeFormatOptions.longDate,
+});
 
 const tabList: CustomTab[] = [
   {

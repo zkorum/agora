@@ -37,25 +37,26 @@ export function useOtpTimers() {
   }
 
   function processRequestCodeResponse(data: RequestCodeSuccessData) {
-    const nowMinusOneSecond = new Date();
-    nowMinusOneSecond.setSeconds(nowMinusOneSecond.getSeconds() - 1);
+    setNextCodeSoonestTime(data.nextCodeSoonestTime);
 
     {
-      const nextCodeSoonestTime = data.nextCodeSoonestTime;
-      const diff =
-        nextCodeSoonestTime.getTime() - nowMinusOneSecond.getTime();
-      const nextCodeSecondsWait = Math.ceil(diff / 1000);
-      verificationNextCodeSeconds.value = nextCodeSecondsWait;
-      decrementNextCodeTimer();
-    }
-
-    {
+      const nowMinusOneSecond = new Date();
+      nowMinusOneSecond.setSeconds(nowMinusOneSecond.getSeconds() - 1);
       const codeExpiryTime = data.codeExpiry;
       const diff = codeExpiryTime.getTime() - nowMinusOneSecond.getTime();
       const codeExpirySeconds = Math.ceil(diff / 1000);
       verificationCodeExpirySeconds.value = codeExpirySeconds;
       decrementCodeExpiryTimer();
     }
+  }
+
+  function setNextCodeSoonestTime(nextCodeSoonestTime: Date) {
+    const nowMinusOneSecond = new Date();
+    nowMinusOneSecond.setSeconds(nowMinusOneSecond.getSeconds() - 1);
+    const diff = nextCodeSoonestTime.getTime() - nowMinusOneSecond.getTime();
+    const nextCodeSecondsWait = Math.ceil(diff / 1000);
+    verificationNextCodeSeconds.value = nextCodeSecondsWait;
+    decrementNextCodeTimer();
   }
 
   function decrementCodeExpiryTimer() {
@@ -86,6 +87,13 @@ export function useOtpTimers() {
     }
   }
 
+  function clearTimers() {
+    clearTimeout(nextCodeTimerId);
+    clearTimeout(codeExpiryTimerId);
+    nextCodeTimerId = undefined;
+    codeExpiryTimerId = undefined;
+  }
+
   return {
     verificationCode,
     verificationNextCodeSeconds,
@@ -94,5 +102,7 @@ export function useOtpTimers() {
     codeExpired,
     resetCode,
     processRequestCodeResponse,
+    setNextCodeSoonestTime,
+    clearTimers,
   };
 }

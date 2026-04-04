@@ -11,33 +11,88 @@ import {
 } from "@/shared-backend/schema.js";
 import { eq, and, lt } from "drizzle-orm";
 import { log } from "@/app.js";
+import { generateRandomSlugId } from "@/crypto.js";
 
 interface CreateImportRecordParams {
     db: PostgresDatabase;
-    importSlugId: string;
     userId: string;
 }
+
+export type CreateImportRecordResult =
+    | {
+          status: "created";
+          importId: number;
+          importSlugId: string;
+      }
+    | {
+          status: "active_import_exists";
+          importSlugId: string;
+      };
+
+const MAX_IMPORT_RECORD_ATTEMPTS = 5;
 
 /**
  * Create a new import record in the database
  */
 export async function createImportRecord(
     params: CreateImportRecordParams,
-): Promise<number> {
-    const { db, importSlugId, userId } = params;
+): Promise<CreateImportRecordResult> {
+    const { db, userId } = params;
 
-    const [result] = await db
-        .insert(conversationImportTable)
-        .values({
-            slugId: importSlugId,
-            userId: userId,
-            status: "processing",
-            createdAt: new Date(),
+    for (let attempt = 0; attempt < MAX_IMPORT_RECORD_ATTEMPTS; attempt += 1) {
+        const importSlugId = generateRandomSlugId();
+        const now = new Date();
+        const result = await db
+            .insert(conversationImportTable)
+            .values({
+                slugId: importSlugId,
+                userId: userId,
+                status: "processing",
+                createdAt: now,
+                updatedAt: now,
+            })
+            .onConflictDoNothing()
+            .returning({ id: conversationImportTable.id });
+
+        if (result.length === 1) {
+            return {
+                status: "created",
+                importId: result[0].id,
+                importSlugId,
+            };
+        }
+
+        const activeImport = await getActiveImportForUser({ db, userId });
+        if (activeImport !== null) {
+            return {
+                status: "active_import_exists",
+                importSlugId: activeImport.importSlugId,
+            };
+        }
+    }
+
+    throw new Error("Failed to allocate a unique import record");
+}
+
+interface MarkImportFailedParams {
+    db: PostgresDatabase;
+    importSlugId: string;
+    failureReason: (typeof importFailureReasonEnum.enumValues)[number];
+}
+
+export async function markImportFailed({
+    db,
+    importSlugId,
+    failureReason,
+}: MarkImportFailedParams): Promise<void> {
+    await db
+        .update(conversationImportTable)
+        .set({
+            status: "failed",
+            failureReason,
             updatedAt: new Date(),
         })
-        .returning({ id: conversationImportTable.id });
-
-    return result.id;
+        .where(eq(conversationImportTable.slugId, importSlugId));
 }
 
 interface GetImportStatusParams {

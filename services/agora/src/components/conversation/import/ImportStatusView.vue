@@ -99,10 +99,12 @@ import { storeToRefs } from "pinia";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import ButtonLink from "src/components/ui-library/ButtonLink.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  useLocalizedDateTimeFormatter,
+} from "src/composables/ui/useLocalizedDateTime";
 import type { ImportFailureReason } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useImportStatusQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
-import { formatDateTime } from "src/utils/format";
 import { computed } from "vue";
 
 import {
@@ -122,6 +124,8 @@ const { t } = useComponentI18n<ImportStatusViewTranslations>(
 
 const authStore = useAuthenticationStore();
 const { isGuestOrLoggedIn } = storeToRefs(authStore);
+
+const formatDateTime = useLocalizedDateTimeFormatter();
 
 const importStatusQuery = useImportStatusQuery({
   importSlugId: props.importSlugId,

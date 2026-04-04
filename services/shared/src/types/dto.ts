@@ -115,7 +115,7 @@ export class Dto {
             participationMode: zodParticipationMode,
             conversationType: zodConversationType,
             pollingOptionList: zodPollOptionTitle.array().optional(),
-            seedOpinionList: z.array(zodOpinionContentInput),
+            seedOpinionList: z.array(zodOpinionContentInput).max(50),
             requiresEventTicket: zodEventSlug.optional(),
             externalSourceConfig: zodExternalSourceConfig.nullable().optional(),
         })

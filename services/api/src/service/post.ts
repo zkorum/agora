@@ -21,12 +21,13 @@ import type {
 import { toUnionUndefined } from "@/shared/shared.js";
 import { postNewOpinion } from "./comment.js";
 import { createMaxdiffItem } from "./maxdiffItem.js";
-import { nowZeroMs } from "@/shared/util.js";
 import type { ConversationIds } from "@/utils/dataStructure.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import { deleteAllConversationExports } from "@/service/conversationExport/index.js";
 import * as authUtilService from "@/service/authUtil.js";
+
+const MAX_CONVERSATION_SEED_ITEMS = 50;
 
 interface CreateNewPostProps {
     db: PostgresDatabase;
@@ -79,6 +80,11 @@ export async function createNewPost({
     importAuthor,
     importMethod,
 }: CreateNewPostProps): Promise<ConversationIds> {
+    if (seedOpinionList.length > MAX_CONVERSATION_SEED_ITEMS) {
+        throw httpErrors.badRequest(
+            `A conversation can have at most ${String(MAX_CONVERSATION_SEED_ITEMS)} seed items`,
+        );
+    }
     let organizationId: number | undefined = undefined;
     if (postAsOrganization !== undefined && postAsOrganization !== "") {
         organizationId = await authUtilService.isUserPartOfOrganization({
@@ -224,52 +230,52 @@ export async function createNewPost({
                     totalConversationCount: sql`${userTable.totalConversationCount} + 1`,
                 })
                 .where(eq(userTable.id, authorId));
+
+            if (seedOpinionList.length > 0) {
+                if (conversationType === "maxdiff") {
+                    for (const seedTitle of seedOpinionList) {
+                        await createMaxdiffItem({
+                            db,
+                            tx,
+                            conversationId: insertedConversationId,
+                            conversationContentId: insertedConversationContentId,
+                            authorId,
+                            title: seedTitle,
+                            isSeed: true,
+                        });
+                    }
+                } else {
+                    for (const seedOpinionText of seedOpinionList) {
+                        await postNewOpinion({
+                            db,
+                            tx,
+                            voteBuffer,
+                            commentBody: seedOpinionText,
+                            conversationSlugId,
+                            didWrite,
+                            proof,
+                            userAgent: "Seed Opinion Creation",
+                            now,
+                            isSeed: true,
+                            conversationMetadata: {
+                                conversationId: insertedConversationId,
+                                conversationContentId: insertedConversationContentId,
+                                conversationAuthorId: authorId,
+                                conversationIsIndexed: isIndexed,
+                                conversationParticipationMode: participationMode,
+                                conversationIsClosed: false,
+                                requiresEventTicket: requiresEventTicket ?? null,
+                            },
+                        });
+                    }
+                }
+            }
             return {
                 conversationId: insertedConversationId,
                 conversationContentId: insertedConversationContentId,
             };
         },
     );
-
-    // Create seed opinions/items
-    if (seedOpinionList.length > 0) {
-        if (conversationType === "maxdiff") {
-            for (const seedTitle of seedOpinionList) {
-                await createMaxdiffItem({
-                    db,
-                    conversationId,
-                    conversationContentId,
-                    authorId,
-                    title: seedTitle,
-                    isSeed: true,
-                });
-            }
-        } else {
-            const now = nowZeroMs();
-            for (const seedOpinionText of seedOpinionList) {
-                await postNewOpinion({
-                    db,
-                    voteBuffer,
-                    commentBody: seedOpinionText,
-                    conversationSlugId,
-                    didWrite,
-                    proof,
-                    userAgent: "Seed Opinion Creation",
-                    now,
-                    isSeed: true,
-                    conversationMetadata: {
-                        conversationId,
-                        conversationContentId,
-                        conversationAuthorId: authorId,
-                        conversationIsIndexed: isIndexed,
-                        conversationParticipationMode: participationMode,
-                        conversationIsClosed: false,
-                        requiresEventTicket: requiresEventTicket ?? null,
-                    },
-                });
-            }
-        }
-    }
 
     return {
         conversationId: conversationId,

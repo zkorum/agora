@@ -12,6 +12,7 @@ import {
     type AuthenticateEmailResponse,
     type VerifyOtp200,
 } from "@/shared/types/dto-auth.js";
+import { normalizeEmail } from "@/shared/types/zod-email.js";
 import fastifyAuth from "@fastify/auth";
 import fastifyCors from "@fastify/cors";
 import fastifyMultipart from "@fastify/multipart";
@@ -101,7 +102,12 @@ import {
     generateUnusedRandomUsername,
     submitUsernameChange,
 } from "./service/account.js";
-import { isSiteModeratorAccount, isSiteOrgAdminAccount, canModerateConversation, canModerateConversationByOpinionSlugId } from "@/service/authUtil.js";
+import {
+    isSiteModeratorAccount,
+    isSiteOrgAdminAccount,
+    canModerateConversation,
+    canModerateConversationByOpinionSlugId,
+} from "@/service/authUtil.js";
 import {
     fetchModerationReportByCommentSlugId as getOpinionModerationStatus,
     fetchModerationReportByPostSlugId as getConversationModerationStatus,
@@ -199,10 +205,6 @@ server.register(fastifyMultipart, {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
 await server.register(fastifySSE as any);
 
-// Register rate limiting plugin (applied per-route, not globally)
-import fastifyRateLimit from "@fastify/rate-limit";
-await server.register(fastifyRateLimit, { global: false });
-
 // Add schema validator and serializer
 server.setValidatorCompiler(validatorCompiler);
 server.setSerializerCompiler(serializerCompiler);
@@ -220,7 +222,9 @@ const speciallyAuthorizedEmails: string[] =
         ? []
         : config.SPECIALLY_AUTHORIZED_EMAILS !== undefined &&
             config.SPECIALLY_AUTHORIZED_EMAILS.length !== 0
-          ? config.SPECIALLY_AUTHORIZED_EMAILS.replace(/\s/g, "").split(",")
+          ? config.SPECIALLY_AUTHORIZED_EMAILS.replace(/\s/g, "")
+                .split(",")
+                .map((email) => normalizeEmail(email))
           : [];
 
 const axiosVerificatorSvc: AxiosInstance = axios.create({
@@ -244,7 +248,6 @@ log.info(
         ? `[API] Reacher email verification enabled (URL: ${reacherBaseUrl})`
         : "[API] Reacher email verification disabled (REACHER_BASE_URL not set)",
 );
-
 
 const mustSendActualSms = config.NODE_ENV === "production";
 const isImportDisabled = config.IMPORT_BUFFER_MAX_BATCH_SIZE === 0;
@@ -278,9 +281,7 @@ if (hasGitHubWebhookSecret !== hasGitHubAccessToken) {
 // MaxDiff GitHub feature: precedence validation
 if (config.MAXDIFF_GITHUB_ENABLED) {
     if (!config.MAXDIFF_ENABLED) {
-        log.error(
-            "MAXDIFF_GITHUB_ENABLED requires MAXDIFF_ENABLED to be true",
-        );
+        log.error("MAXDIFF_GITHUB_ENABLED requires MAXDIFF_ENABLED to be true");
         process.exit(1);
     }
     if (!hasGitHubWebhookSecret || !hasGitHubAccessToken) {
@@ -513,7 +514,6 @@ log.info(
     `[API] Vote buffer initialized (flush interval: ${String(config.VOTE_BUFFER_FLUSH_INTERVAL_MS)}ms, batch limit: ${String(config.VOTE_BUFFER_VALKEY_BATCH_LIMIT)}, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
 );
 
-
 // Initialize ExportBuffer (batches export requests to reduce system load)
 const exportBuffer = createExportBuffer({
     db,
@@ -623,7 +623,6 @@ const performStartupCleanup = async (): Promise<void> => {
 
 // Run cleanup (non-blocking)
 void performStartupCleanup();
-
 
 // Backfill: clean import metadata from conversation bodies (non-blocking, idempotent)
 void backfillImportBodies({ db });
@@ -1022,12 +1021,6 @@ server.after(() => {
             body: authenticateRequestBody,
             response: { 200: authenticate200 },
         },
-        config: {
-            rateLimit: {
-                max: config.AUTH_RATE_LIMIT_MAX,
-                timeWindow: config.AUTH_RATE_LIMIT_WINDOW_MS,
-            },
-        },
         handler: async (request) => {
             // This endpoint is accessible without being logged in
             // this endpoint could be especially subject to attacks such as DDoS or man-in-the-middle (to associate their own DID instead of the legitimate user's ones for example)
@@ -1040,7 +1033,10 @@ server.after(() => {
             );
             // wrapper function for Typescript to be happy with the zod discriminated union type
             async function doAuthenticate(): Promise<AuthenticateResponse> {
-                if (deviceStatus.isLoggedIn && deviceStatus.credentials.phone !== null) {
+                if (
+                    deviceStatus.isLoggedIn &&
+                    deviceStatus.credentials.phone !== null
+                ) {
                     return {
                         success: false,
                         reason: "already_has_credential",
@@ -1048,10 +1044,12 @@ server.after(() => {
                 }
                 const userAgent =
                     request.headers["user-agent"] ?? "Unknown device";
+                const now = nowZeroMs();
 
                 // backend intentionally does NOT say whether it is a register or a login - in order to protect privacy and give no information to potential attackers
                 return await authService.authenticateAttempt({
                     db,
+                    now,
                     twilioClient,
                     twilioServiceSid: config.TWILIO_SERVICE_SID,
                     doUseTestCode:
@@ -1086,12 +1084,6 @@ server.after(() => {
                 200: verifyOtp200,
             },
         },
-        config: {
-            rateLimit: {
-                max: config.AUTH_RATE_LIMIT_MAX,
-                timeWindow: config.AUTH_RATE_LIMIT_WINDOW_MS,
-            },
-        },
         handler: async (request) => {
             const { didWrite, deviceStatus } = await verifyUcanAndDeviceStatus(
                 db,
@@ -1101,14 +1093,19 @@ server.after(() => {
                 },
             );
             async function doVerifyPhoneOtp(): Promise<VerifyOtp200> {
-                if (deviceStatus.isLoggedIn && deviceStatus.credentials.phone !== null) {
+                if (
+                    deviceStatus.isLoggedIn &&
+                    deviceStatus.credentials.phone !== null
+                ) {
                     return {
                         success: false,
                         reason: "already_has_credential",
                     };
                 }
+                const now = nowZeroMs();
                 return await authService.verifyPhoneOtp({
                     db,
+                    now,
                     maxAttempt: config.EMAIL_OTP_MAX_ATTEMPT_AMOUNT,
                     didWrite,
                     code: request.body.code,
@@ -1131,19 +1128,19 @@ server.after(() => {
             body: authenticateEmailRequestBody,
             response: { 200: authenticateEmail200 },
         },
-        config: {
-            rateLimit: {
-                max: config.AUTH_RATE_LIMIT_MAX,
-                timeWindow: config.AUTH_RATE_LIMIT_WINDOW_MS,
-            },
-        },
         handler: async (request) => {
-            const { didWrite, deviceStatus } =
-                await verifyUcanAndDeviceStatus(db, request, {
+            const { didWrite, deviceStatus } = await verifyUcanAndDeviceStatus(
+                db,
+                request,
+                {
                     expectedDeviceStatus: undefined,
-                });
+                },
+            );
             async function doAuthenticateEmail(): Promise<AuthenticateEmailResponse> {
-                if (deviceStatus.isLoggedIn && deviceStatus.credentials.email !== null) {
+                if (
+                    deviceStatus.isLoggedIn &&
+                    deviceStatus.credentials.email !== null
+                ) {
                     return {
                         success: false,
                         reason: "already_has_credential",
@@ -1157,9 +1154,11 @@ server.after(() => {
                 );
                 const headerLanguageCode: SupportedDisplayLanguageCodes =
                     parsedLang.success ? parsedLang.data : "en";
+                const now = nowZeroMs();
 
                 return await authService.authenticateEmailAttempt({
                     db,
+                    now,
                     axiosReacher,
                     email: request.body.email,
                     isRequestingNewCode: request.body.isRequestingNewCode,
@@ -1171,7 +1170,7 @@ server.after(() => {
                     doUseTestCode:
                         config.NODE_ENV !== "production" &&
                         speciallyAuthorizedEmails.includes(
-                            request.body.email,
+                            normalizeEmail(request.body.email),
                         ),
                     testCode: config.TEST_CODE,
                     userAgent: userAgent,
@@ -1191,26 +1190,28 @@ server.after(() => {
                 200: verifyOtp200,
             },
         },
-        config: {
-            rateLimit: {
-                max: config.AUTH_RATE_LIMIT_MAX,
-                timeWindow: config.AUTH_RATE_LIMIT_WINDOW_MS,
-            },
-        },
         handler: async (request) => {
-            const { didWrite, deviceStatus } =
-                await verifyUcanAndDeviceStatus(db, request, {
+            const { didWrite, deviceStatus } = await verifyUcanAndDeviceStatus(
+                db,
+                request,
+                {
                     expectedDeviceStatus: undefined,
-                });
+                },
+            );
             async function doVerifyEmailOtp(): Promise<VerifyOtp200> {
-                if (deviceStatus.isLoggedIn && deviceStatus.credentials.email !== null) {
+                if (
+                    deviceStatus.isLoggedIn &&
+                    deviceStatus.credentials.email !== null
+                ) {
                     return {
                         success: false,
                         reason: "already_has_credential",
                     };
                 }
+                const now = nowZeroMs();
                 return await authService.verifyEmailOtp({
                     db,
+                    now,
                     maxAttempt: config.EMAIL_OTP_MAX_ATTEMPT_AMOUNT,
                     didWrite,
                     code: request.body.code,
@@ -1250,10 +1251,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanOptionalAuth(
-                db,
-                request,
-            );
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
             return await feedService.fetchFeed({
                 db: db,
                 personalizationUserId: deviceStatus.isKnown
@@ -1288,7 +1286,9 @@ server.after(() => {
             });
 
             if (!isMod) {
-                throw server.httpErrors.unauthorized("User is not a site moderator");
+                throw server.httpErrors.unauthorized(
+                    "User is not a site moderator",
+                );
             }
 
             await moderateByPostSlugId({
@@ -1319,18 +1319,23 @@ server.after(() => {
                     },
                 },
             );
-            const { isAuthorized, isSiteModerator } = await canModerateConversationByOpinionSlugId({
-                db: db,
-                userId: deviceStatus.userId,
-                opinionSlugId: request.body.opinionSlugId,
-            });
+            const { isAuthorized, isSiteModerator } =
+                await canModerateConversationByOpinionSlugId({
+                    db: db,
+                    userId: deviceStatus.userId,
+                    opinionSlugId: request.body.opinionSlugId,
+                });
 
             if (!isAuthorized) {
-                throw server.httpErrors.unauthorized("User is not authorized to moderate this conversation");
+                throw server.httpErrors.unauthorized(
+                    "User is not authorized to moderate this conversation",
+                );
             }
 
             if (!isSiteModerator && request.body.moderationAction === "hide") {
-                throw server.httpErrors.forbidden("Only site moderators can hide opinions");
+                throw server.httpErrors.forbidden(
+                    "Only site moderators can hide opinions",
+                );
             }
 
             await moderateByCommentSlugId({
@@ -1367,7 +1372,9 @@ server.after(() => {
             });
 
             if (!isMod) {
-                throw server.httpErrors.unauthorized("User is not a site moderator");
+                throw server.httpErrors.unauthorized(
+                    "User is not a site moderator",
+                );
             }
 
             await withdrawModerationReportByPostSlugId({
@@ -1394,14 +1401,17 @@ server.after(() => {
                     },
                 },
             );
-            const { isAuthorized, isSiteModerator } = await canModerateConversationByOpinionSlugId({
-                db: db,
-                userId: deviceStatus.userId,
-                opinionSlugId: request.body.opinionSlugId,
-            });
+            const { isAuthorized, isSiteModerator } =
+                await canModerateConversationByOpinionSlugId({
+                    db: db,
+                    userId: deviceStatus.userId,
+                    opinionSlugId: request.body.opinionSlugId,
+                });
 
             if (!isAuthorized) {
-                throw server.httpErrors.unauthorized("User is not authorized to moderate this conversation");
+                throw server.httpErrors.unauthorized(
+                    "User is not authorized to moderate this conversation",
+                );
             }
 
             await withdrawModerationReportByCommentSlugId({
@@ -1439,7 +1449,9 @@ server.after(() => {
             });
 
             if (!isMod) {
-                throw server.httpErrors.unauthorized("User is not a site moderator");
+                throw server.httpErrors.unauthorized(
+                    "User is not a site moderator",
+                );
             }
 
             return await getConversationModerationStatus({
@@ -1469,14 +1481,17 @@ server.after(() => {
                     },
                 },
             );
-            const { isAuthorized } = await canModerateConversationByOpinionSlugId({
-                db: db,
-                userId: deviceStatus.userId,
-                opinionSlugId: request.body.opinionSlugId,
-            });
+            const { isAuthorized } =
+                await canModerateConversationByOpinionSlugId({
+                    db: db,
+                    userId: deviceStatus.userId,
+                    opinionSlugId: request.body.opinionSlugId,
+                });
 
             if (!isAuthorized) {
-                throw server.httpErrors.unauthorized("User is not authorized to moderate this conversation");
+                throw server.httpErrors.unauthorized(
+                    "User is not authorized to moderate this conversation",
+                );
             }
 
             return await getOpinionModerationStatus({
@@ -1756,21 +1771,17 @@ server.after(() => {
             const { participationMode } =
                 await useCommonPost().getPostMetadataFromSlugId({
                     db,
-                    conversationSlugId:
-                        request.body.conversationSlugId,
+                    conversationSlugId: request.body.conversationSlugId,
                 });
             const userId =
-                await authUtilService.getOrRegisterUserIdFromDeviceStatus(
-                    {
-                        db,
-                        didWrite,
-                        participationMode,
-                        userAgent:
-                            request.headers["user-agent"] ??
-                            "Unknown device",
-                        now,
-                    },
-                );
+                await authUtilService.getOrRegisterUserIdFromDeviceStatus({
+                    db,
+                    didWrite,
+                    participationMode,
+                    userAgent:
+                        request.headers["user-agent"] ?? "Unknown device",
+                    now,
+                });
             const { conversationId } = await saveMaxdiffResult({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
@@ -1781,11 +1792,10 @@ server.after(() => {
                 isMaxdiffOrgOnly: config.IS_MAXDIFF_ORG_ONLY,
                 valkey: queueValkey,
             });
-            const { items, uncertainty } =
-                await computeGlobalUncertainty({
-                    db,
-                    conversationId,
-                });
+            const { items, uncertainty } = await computeGlobalUncertainty({
+                db,
+                conversationId,
+            });
             const candidateSets = generateCandidateSets({
                 userComparisons: request.body.comparisons,
                 items,
@@ -1807,32 +1817,27 @@ server.after(() => {
         },
         handler: async (request) => {
             checkMaxdiffEnabled();
-            const { deviceStatus } = await verifyUcanOptionalAuth(
-                db,
-                request,
-            );
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
             const { id: conversationId } =
                 await useCommonPost().getPostMetadataFromSlugId({
                     db,
-                    conversationSlugId:
-                        request.body.conversationSlugId,
+                    conversationSlugId: request.body.conversationSlugId,
                 });
-            const [loadData, { items, uncertainty }] =
-                await Promise.all([
-                    deviceStatus.isKnown
-                        ? loadMaxdiffResult({
-                              db,
-                              conversationId,
-                              userId: deviceStatus.userId,
-                          })
-                        : Promise.resolve({
-                              ranking: null,
-                              comparisons: null,
-                              isComplete: false,
-                              perUserScores: null,
-                          }),
-                    computeGlobalUncertainty({ db, conversationId }),
-                ]);
+            const [loadData, { items, uncertainty }] = await Promise.all([
+                deviceStatus.isKnown
+                    ? loadMaxdiffResult({
+                          db,
+                          conversationId,
+                          userId: deviceStatus.userId,
+                      })
+                    : Promise.resolve({
+                          ranking: null,
+                          comparisons: null,
+                          isComplete: false,
+                          perUserScores: null,
+                      }),
+                computeGlobalUncertainty({ db, conversationId }),
+            ]);
             const candidateSets = generateCandidateSets({
                 userComparisons: loadData.comparisons ?? [],
                 items,
@@ -1890,10 +1895,13 @@ server.after(() => {
         },
         handler: async (request, reply) => {
             checkMaxdiffEnabled();
-            const { deviceStatus } =
-                await verifyUcanAndKnownDeviceStatus(db, request, {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                });
+                },
+            );
             await updateMaxdiffItemLifecycle({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
@@ -1922,10 +1930,13 @@ server.after(() => {
                     "GitHub access token not configured",
                 );
             }
-            const { deviceStatus } =
-                await verifyUcanAndKnownDeviceStatus(db, request, {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                });
+                },
+            );
             const githubClient = createGitHubClient({
                 accessToken: config.GITHUB_ACCESS_TOKEN,
             });
@@ -2082,10 +2093,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanOptionalAuth(
-                db,
-                request,
-            );
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
             const opinionItemsPerSlugId = await fetchOpinionsByPostSlugId({
                 db: db,
                 postSlugId: request.body.conversationSlugId,
@@ -2109,10 +2117,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanOptionalAuth(
-                db,
-                request,
-            );
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
 
             // Get display language from validated header or use default "en"
             const parsedHeaderDisplayLanguage =
@@ -2191,7 +2196,9 @@ server.after(() => {
             });
 
             if (!isMod) {
-                throw server.httpErrors.unauthorized("User is not a site moderator");
+                throw server.httpErrors.unauthorized(
+                    "User is not a site moderator",
+                );
             }
             const opinionItemsPerSlugId = await fetchOpinionsByPostSlugId({
                 db: db,
@@ -2235,10 +2242,13 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } =
-                await verifyUcanAndKnownDeviceStatus(db, request, {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
                     expectedKnownDeviceStatus: { isLoggedIn: true },
-                });
+                },
+            );
             return await postService.closeConversation({
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
@@ -2257,10 +2267,13 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } =
-                await verifyUcanAndKnownDeviceStatus(db, request, {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
                     expectedKnownDeviceStatus: { isLoggedIn: true },
-                });
+                },
+            );
             return await postService.openConversation({
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
@@ -2292,10 +2305,8 @@ server.after(() => {
                     maxdiffEnabled: config.MAXDIFF_ENABLED,
                     isMaxdiffOrgOnly: config.IS_MAXDIFF_ORG_ONLY,
                     maxdiffAllowedOrgs: config.MAXDIFF_ALLOWED_ORGS,
-                    postAsOrganization:
-                        !!request.body.postAsOrganization,
-                    organizationName:
-                        request.body.postAsOrganization ?? "",
+                    postAsOrganization: !!request.body.postAsOrganization,
+                    organizationName: request.body.postAsOrganization ?? "",
                 });
                 if (!maxdiffCheck.allowed) {
                     switch (maxdiffCheck.reason) {
@@ -2332,8 +2343,7 @@ server.after(() => {
                 isImporting: false,
                 seedOpinionList: request.body.seedOpinionList,
                 requiresEventTicket: request.body.requiresEventTicket,
-                externalSourceConfig:
-                    request.body.externalSourceConfig ?? null,
+                externalSourceConfig: request.body.externalSourceConfig ?? null,
             });
 
             // Broadcast to all connected clients (except the creator) that a new conversation exists
@@ -2633,10 +2643,7 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            const { deviceStatus } = await verifyUcanOptionalAuth(
-                db,
-                request,
-            );
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
             const postItem = await postService.fetchPostBySlugId({
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
@@ -2785,10 +2792,13 @@ server.after(() => {
         url: `/api/${apiVersion}/user/delete`,
         schema: {},
         handler: async (request, reply) => {
-            const { deviceStatus } =
-                await verifyUcanAndKnownDeviceStatus(db, request, {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                });
+                },
+            );
             await deleteUserAccount({
                 db: db,
                 userId: deviceStatus.userId,
@@ -2875,7 +2885,9 @@ server.after(() => {
             });
 
             if (!isOrgAdmin) {
-                throw server.httpErrors.unauthorized("User is not a site org admin");
+                throw server.httpErrors.unauthorized(
+                    "User is not a site org admin",
+                );
             }
 
             await addUserOrganizationMapping({
@@ -2910,7 +2922,9 @@ server.after(() => {
             });
 
             if (!isOrgAdmin) {
-                throw server.httpErrors.unauthorized("User is not a site org admin");
+                throw server.httpErrors.unauthorized(
+                    "User is not a site org admin",
+                );
             }
 
             await removeUserOrganizationMapping({
@@ -2948,7 +2962,9 @@ server.after(() => {
             });
 
             if (!isOrgAdmin) {
-                throw server.httpErrors.unauthorized("User is not a site org admin");
+                throw server.httpErrors.unauthorized(
+                    "User is not a site org admin",
+                );
             }
 
             return await getOrganizationsByUsername({
@@ -2984,7 +3000,9 @@ server.after(() => {
             });
 
             if (!isOrgAdmin) {
-                throw server.httpErrors.unauthorized("User is not a site org admin");
+                throw server.httpErrors.unauthorized(
+                    "User is not a site org admin",
+                );
             }
 
             return await getAllOrganizations({
@@ -3017,7 +3035,9 @@ server.after(() => {
             });
 
             if (!isOrgAdmin) {
-                throw server.httpErrors.unauthorized("User is not a site org admin");
+                throw server.httpErrors.unauthorized(
+                    "User is not a site org admin",
+                );
             }
 
             await createOrganization({
@@ -3054,7 +3074,9 @@ server.after(() => {
             });
 
             if (!isOrgAdmin) {
-                throw server.httpErrors.unauthorized("User is not a site org admin");
+                throw server.httpErrors.unauthorized(
+                    "User is not a site org admin",
+                );
             }
 
             await deleteOrganization({
@@ -3147,7 +3169,9 @@ server.after(() => {
             });
 
             if (!isAuthorized) {
-                throw server.httpErrors.unauthorized("User is not authorized to view reports for this conversation");
+                throw server.httpErrors.unauthorized(
+                    "User is not authorized to view reports for this conversation",
+                );
             }
 
             return await fetchUserReportsByPostSlugId({
@@ -3177,14 +3201,17 @@ server.after(() => {
                     },
                 },
             );
-            const { isAuthorized } = await canModerateConversationByOpinionSlugId({
-                db: db,
-                userId: deviceStatus.userId,
-                opinionSlugId: request.body.opinionSlugId,
-            });
+            const { isAuthorized } =
+                await canModerateConversationByOpinionSlugId({
+                    db: db,
+                    userId: deviceStatus.userId,
+                    opinionSlugId: request.body.opinionSlugId,
+                });
 
             if (!isAuthorized) {
-                throw server.httpErrors.unauthorized("User is not authorized to view reports for this conversation");
+                throw server.httpErrors.unauthorized(
+                    "User is not authorized to view reports for this conversation",
+                );
             }
 
             return await fetchUserReportsByCommentSlugId({
@@ -3321,10 +3348,7 @@ server.after(() => {
 
                 try {
                     reply.sse.keepAlive();
-                    realtimeSSEManager.connect(
-                        deviceStatus.userId,
-                        reply,
-                    );
+                    realtimeSSEManager.connect(deviceStatus.userId, reply);
 
                     await new Promise<void>((resolve) => {
                         request.raw.on("close", () => {
@@ -3545,7 +3569,9 @@ server.after(() => {
             });
 
             if (!isMod) {
-                throw server.httpErrors.unauthorized("User is not a site moderator");
+                throw server.httpErrors.unauthorized(
+                    "User is not a site moderator",
+                );
             }
 
             await conversationExportService.deleteConversationExport({

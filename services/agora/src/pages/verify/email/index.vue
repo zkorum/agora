@@ -8,7 +8,11 @@
           :submit-call-back="onSubmit"
           :current-step="1"
           :total-steps="2"
-          :enable-next-button="(emailInputFormRef?.getIsValid() ?? true) && !isLoading"
+          :enable-next-button="
+            (emailInputFormRef?.getIsValid() ?? true) &&
+            !isLoading &&
+            nextCodeWaitSeconds === 0
+          "
           :show-next-button="true"
           :show-loading-button="isLoading"
         >
@@ -66,7 +70,7 @@ const router = useRouter();
 const loginIntentionStore = useLoginIntentionStore();
 const { activeUserIntention } = storeToRefs(loginIntentionStore);
 
-const { isLoading, submitEmail } = useEmailSubmit({
+const { isLoading, submitEmail, nextCodeWaitSeconds } = useEmailSubmit({
   onNavigateToOtp: () => router.replace({ name: "/verify/email-code/" }),
   onAlreadyHasCredential: () => {
     showNotifyMessage(t("alreadyHasEmail"));

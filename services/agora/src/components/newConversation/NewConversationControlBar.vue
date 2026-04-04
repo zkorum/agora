@@ -83,6 +83,10 @@ import {
   type PrivateConversationSettings,
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  localizedDateTimeFormatOptions,
+  useLocalizedDateTimeFormatter,
+} from "src/composables/ui/useLocalizedDateTime";
 import type { ConversationType, EventSlug, ExternalSourceConfig, ParticipationMode } from "src/shared/types/zod";
 import {
   checkMaxDiffAllowed,
@@ -339,6 +343,10 @@ const isMaxDiffGitHubAllowed = computed(() => {
 
 const showMaxDiffSourceDialog = ref(false);
 
+const formatMakePublicDate = useLocalizedDateTimeFormatter({
+  options: localizedDateTimeFormatOptions.dateTime,
+});
+
 function handleSourceSelected(config: ExternalSourceConfig | null): void {
   externalSourceConfig.value = config;
 }
@@ -350,18 +358,7 @@ const getMakePublicLabel = (): string => {
 
   const targetDate = privateConversationSettings.value.conversionDate;
 
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-
-  const formattedDate = formatter.format(targetDate);
-
-  return t("makePublic").replace("{date}", formattedDate);
+  return t("makePublic").replace("{date}", formatMakePublicDate(targetDate));
 };
 
 const getEventTicketLabel = (): string => {

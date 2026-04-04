@@ -7,6 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **boolean** |  | [default to undefined]
 **reason** | **string** |  | [default to undefined]
+**nextCodeSoonestTime** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -16,6 +17,7 @@ import { ApiV1AuthEmailAuthenticatePost200ResponseOneOf } from './api';
 const instance: ApiV1AuthEmailAuthenticatePost200ResponseOneOf = {
     success,
     reason,
+    nextCodeSoonestTime,
 };
 ```
 

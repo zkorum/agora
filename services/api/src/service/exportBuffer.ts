@@ -325,6 +325,63 @@ export function createExportBuffer({
         }
     }
 
+    async function createProcessingExportRecord({
+        conversationId,
+        userId,
+        expiresAt,
+    }: {
+        conversationId: number;
+        userId: string;
+        expiresAt: Date;
+    }): Promise<
+        | { status: "created"; exportId: number; exportSlugId: string }
+        | { status: "active_export_exists" }
+    > {
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+            const exportSlugId = generateRandomSlugId();
+            const result = await db
+                .insert(conversationExportTable)
+                .values({
+                    slugId: exportSlugId,
+                    conversationId,
+                    userId,
+                    status: "processing",
+                    expiresAt,
+                })
+                .onConflictDoNothing()
+                .returning({ id: conversationExportTable.id });
+
+            if (result.length === 1) {
+                return {
+                    status: "created",
+                    exportId: result[0].id,
+                    exportSlugId,
+                };
+            }
+
+            const activeExport = await db
+                .select({ id: conversationExportTable.id })
+                .from(conversationExportTable)
+                .where(
+                    and(
+                        eq(conversationExportTable.conversationId, conversationId),
+                        eq(conversationExportTable.userId, userId),
+                        eq(conversationExportTable.status, "processing"),
+                        eq(conversationExportTable.isDeleted, false),
+                    ),
+                )
+                .limit(1);
+
+            if (activeExport.length > 0) {
+                return { status: "active_export_exists" };
+            }
+        }
+
+        throw new Error(
+            "Failed to allocate a unique export record after multiple attempts",
+        );
+    }
+
     /**
      * Add export request to buffer (or update existing buffered request)
      * Returns success/failure with proper discriminated union
@@ -445,28 +502,15 @@ export function createExportBuffer({
             createdAt.getTime() + exportExpiryDays * 24 * 60 * 60 * 1000,
         );
 
-        const exportSlugId = generateRandomSlugId();
-
-        const [exportRecord] = await db
-            .insert(conversationExportTable)
-            .values({
-                slugId: exportSlugId,
-                conversationId: exportRequest.conversationId,
-                userId: exportRequest.userId,
-                status: "processing",
-                expiresAt: expiresAt,
-            })
-            .returning({ id: conversationExportTable.id });
-
-        // Create notification for export start
-        await createExportNotification({
-            db,
-            userId: exportRequest.userId,
-            exportId: exportRecord.id,
+        const createRecordResult = await createProcessingExportRecord({
             conversationId: exportRequest.conversationId,
-            type: "export_started",
-            realtimeSSEManager,
+            userId: exportRequest.userId,
+            expiresAt,
         });
+
+        if (createRecordResult.status === "active_export_exists") {
+            return { success: false, reason: "active_export_in_progress" };
+        }
 
         const key = getExportKey(
             exportRequest.conversationId,
@@ -475,7 +519,10 @@ export function createExportBuffer({
 
         // In-memory: Deduplicate by conversationId:userId (last write wins)
         const wasExisting = pendingExports.has(key);
-        pendingExports.set(key, { ...exportRequest, exportSlugId });
+        pendingExports.set(key, {
+            ...exportRequest,
+            exportSlugId: createRecordResult.exportSlugId,
+        });
 
         // Valkey: Add to hash (if configured)
         if (valkey !== undefined) {
@@ -483,7 +530,7 @@ export function createExportBuffer({
                 await valkey.hset(VALKEY_QUEUE_KEYS.EXPORT_BUFFER, {
                     [key]: JSON.stringify({
                         ...exportRequest,
-                        exportSlugId,
+                        exportSlugId: createRecordResult.exportSlugId,
                         timestamp: exportRequest.timestamp.toISOString(),
                     }),
                 });
@@ -506,10 +553,26 @@ export function createExportBuffer({
             );
         }
 
+        try {
+            await createExportNotification({
+                db,
+                userId: exportRequest.userId,
+                exportId: createRecordResult.exportId,
+                conversationId: exportRequest.conversationId,
+                type: "export_started",
+                realtimeSSEManager,
+            });
+        } catch (error) {
+            log.error(
+                error,
+                `[ExportBuffer] Failed to send start notification for ${createRecordResult.exportSlugId}`,
+            );
+        }
+
         return {
             success: true,
             status: "queued",
-            exportSlugId,
+            exportSlugId: createRecordResult.exportSlugId,
         };
     };
 

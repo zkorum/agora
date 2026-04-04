@@ -1086,6 +1086,7 @@ async function getPostIdFromPostSlugId(
 
 interface PostNewOpinionProps {
     db: PostgresJsDatabase;
+    tx?: PostgresJsDatabase;
     voteBuffer: VoteBuffer;
     commentBody: string;
     conversationSlugId: string;
@@ -1108,6 +1109,7 @@ interface PostNewOpinionProps {
 
 export async function postNewOpinion({
     db,
+    tx,
     voteBuffer,
     commentBody,
     conversationSlugId,
@@ -1182,13 +1184,16 @@ export async function postNewOpinion({
         }
     }
 
-    const userId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
-        db,
-        didWrite,
-        participationMode,
-        userAgent,
-        now,
-    });
+    const userId =
+        conversationMetadata !== undefined
+            ? conversationMetadata.conversationAuthorId
+            : await authUtilService.getOrRegisterUserIdFromDeviceStatus({
+                  db,
+                  didWrite,
+                  participationMode,
+                  userAgent,
+                  now,
+              });
 
     // Check verification gating based on participation mode
     // Skip for seed opinions during conversation creation (conversationMetadata present)
@@ -1235,8 +1240,10 @@ export async function postNewOpinion({
 
     const opinionSlugId = generateRandomSlugId();
 
-    const { opinionId } = await db.transaction(async (tx) => {
-        const insertCommentResponse = await tx
+    const persistNewOpinion = async (
+        transactionDb: PostgresJsDatabase,
+    ): Promise<{ opinionId: number }> => {
+        const insertCommentResponse = await transactionDb
             .insert(opinionTable)
             .values({
                 slugId: opinionSlugId,
@@ -1249,7 +1256,7 @@ export async function postNewOpinion({
 
         const opinionId = insertCommentResponse[0].opinionId;
 
-        const insertProofResponse = await tx
+        const insertProofResponse = await transactionDb
             .insert(opinionProofTable)
             .values({
                 type: "creation",
@@ -1260,7 +1267,7 @@ export async function postNewOpinion({
             })
             .returning({ proofId: opinionProofTable.id });
         const proofId = insertProofResponse[0].proofId;
-        const commentContentTableResponse = await tx
+        const commentContentTableResponse = await transactionDb
             .insert(opinionContentTable)
             .values({
                 opinionProofId: proofId,
@@ -1273,7 +1280,7 @@ export async function postNewOpinion({
         const commentContentTableId =
             commentContentTableResponse[0].commentContentTableId;
 
-        await tx
+        await transactionDb
             .update(opinionTable)
             .set({
                 currentContentId: commentContentTableId,
@@ -1281,7 +1288,7 @@ export async function postNewOpinion({
             .where(eq(opinionTable.id, opinionId));
 
         // Update the user profile's comment count using atomic increment
-        await tx
+        await transactionDb
             .update(userTable)
             .set({
                 totalOpinionCount: sql`total_opinion_count + 1`,
@@ -1292,14 +1299,21 @@ export async function postNewOpinion({
         // Note: voteCount and participantCount will be updated by vote buffer
         // when the automatic vote is processed
         await updateOpinionCount({
-            db: tx,
+            db: transactionDb,
             conversationId,
             delta: 1,
             doUpdateLastReactedAt: true,
         });
 
         return { opinionId };
-    });
+    };
+
+    const { opinionId } =
+        tx !== undefined
+            ? await persistNewOpinion(tx)
+            : await db.transaction(async (transactionDb) => {
+                  return await persistNewOpinion(transactionDb);
+              });
 
     // Create notification for conversation owner + org members (outside transaction)
     // Skip for seed opinions

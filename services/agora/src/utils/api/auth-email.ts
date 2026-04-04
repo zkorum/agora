@@ -10,6 +10,7 @@ import {
   type VerifyOtp200,
   verifyOtp200,
 } from "src/shared/types/dto-auth";
+import { normalizeEmail } from "src/shared/types/zod-email";
 import { processEnv } from "src/utils/processEnv";
 
 import { api } from "./client";
@@ -41,7 +42,9 @@ export function useAuthEmailApi() {
   type SendEmailCodeSuccessResponse =
     AxiosSuccessResponse<AuthenticateEmailResponse>;
 
-  type SendEmailCodeResponse = SendEmailCodeSuccessResponse | AxiosErrorResponse;
+  type SendEmailCodeResponse =
+    | SendEmailCodeSuccessResponse
+    | AxiosErrorResponse;
 
   async function sendEmailCode({
     email,
@@ -49,8 +52,9 @@ export function useAuthEmailApi() {
     keyAction,
   }: SendEmailCodeProps): Promise<SendEmailCodeResponse> {
     try {
+      const canonicalEmail = normalizeEmail(email);
       const params: ApiV1AuthEmailAuthenticatePostRequest = {
-        email: email,
+        email: canonicalEmail,
         isRequestingNewCode: isRequestingNewCode,
       };
       const { url, options } =
@@ -87,16 +91,17 @@ export function useAuthEmailApi() {
   }: VerifyEmailOtpProps): Promise<VerifyEmailOtpResponse> {
     const authorizedEmails =
       processEnv.VITE_DEV_AUTHORIZED_EMAILS?.split(",").map((e) =>
-        e.trim()
+        normalizeEmail(e)
       ) ?? [];
-    if (authorizedEmails.includes(email)) {
+    const canonicalEmail = normalizeEmail(email);
+    if (authorizedEmails.includes(canonicalEmail)) {
       code = 0;
     }
 
     try {
       const params: ApiV1AuthEmailVerifyOtpPostRequest = {
         code: code,
-        email: email,
+        email: canonicalEmail,
       };
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1AuthEmailVerifyOtpPost(params);

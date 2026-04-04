@@ -13,9 +13,13 @@ import {
 import { and, eq, gt } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import type { IsLoggedInResponse } from "@/shared/types/dto-auth.js";
+import { normalizeEmail } from "@/shared/types/zod-email.js";
 import { nowZeroMs } from "@/shared/util.js";
 import { httpErrors } from "@fastify/sensible";
-import type { DeviceLoginStatusExtended, ParticipationMode } from "@/shared/types/zod.js";
+import type {
+    DeviceLoginStatusExtended,
+    ParticipationMode,
+} from "@/shared/types/zod.js";
 
 // Internal type extending the API type with sessionExpiry for the isKnown=true case.
 // sessionExpiry is internal-only — NOT exposed in the check-login-status API response.
@@ -336,7 +340,10 @@ export async function getDeviceStatus({
         rarimo:
             device.zkPassportCitizenship !== null &&
             device.zkPassportSex !== null
-                ? { citizenship: device.zkPassportCitizenship, sex: device.zkPassportSex }
+                ? {
+                      citizenship: device.zkPassportCitizenship,
+                      sex: device.zkPassportSex,
+                  }
                 : null,
     };
 
@@ -455,12 +462,7 @@ export async function getEmailsFromUserId(
         .select({ email: emailTable.email })
         .from(emailTable)
         .leftJoin(userTable, eq(emailTable.userId, userTable.id))
-        .where(
-            and(
-                eq(userTable.id, userId),
-                eq(emailTable.isDeleted, false),
-            ),
-        );
+        .where(and(eq(userTable.id, userId), eq(emailTable.isDeleted, false)));
     if (results.length === 0) {
         return [];
     } else {
@@ -496,6 +498,8 @@ export async function isEmailAssociatedWithDevice(
     didWrite: string,
     email: string,
 ): Promise<boolean> {
+    const canonicalEmail = normalizeEmail(email);
+
     const result = await db
         .select()
         .from(userTable)
@@ -503,7 +507,7 @@ export async function isEmailAssociatedWithDevice(
         .leftJoin(deviceTable, eq(deviceTable.userId, userTable.id))
         .where(
             and(
-                eq(emailTable.email, email),
+                eq(emailTable.email, canonicalEmail),
                 eq(deviceTable.didWrite, didWrite),
                 eq(emailTable.isDeleted, false),
             ),
