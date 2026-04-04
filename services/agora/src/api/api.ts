@@ -50,20 +50,36 @@ export interface ApiV1AuthAuthenticatePost200ResponseOneOf {
     'codeExpiry': string;
     'nextCodeSoonestTime': string;
 }
-export interface ApiV1AuthAuthenticatePost200ResponseOneOf1 {
+/**
+ * @type ApiV1AuthAuthenticatePost200ResponseOneOf1
+ */
+export type ApiV1AuthAuthenticatePost200ResponseOneOf1 = ApiV1AuthAuthenticatePost200ResponseOneOf1OneOf | ApiV1AuthAuthenticatePost200ResponseOneOf1OneOf1;
+
+export interface ApiV1AuthAuthenticatePost200ResponseOneOf1OneOf {
     'success': boolean;
-    'reason': ApiV1AuthAuthenticatePost200ResponseOneOf1ReasonEnum;
+    'reason': ApiV1AuthAuthenticatePost200ResponseOneOf1OneOfReasonEnum;
+    'nextCodeSoonestTime': string;
 }
 
-export const ApiV1AuthAuthenticatePost200ResponseOneOf1ReasonEnum = {
+export const ApiV1AuthAuthenticatePost200ResponseOneOf1OneOfReasonEnum = {
+    Throttled: 'throttled',
+} as const;
+
+export type ApiV1AuthAuthenticatePost200ResponseOneOf1OneOfReasonEnum = typeof ApiV1AuthAuthenticatePost200ResponseOneOf1OneOfReasonEnum[keyof typeof ApiV1AuthAuthenticatePost200ResponseOneOf1OneOfReasonEnum];
+
+export interface ApiV1AuthAuthenticatePost200ResponseOneOf1OneOf1 {
+    'success': boolean;
+    'reason': ApiV1AuthAuthenticatePost200ResponseOneOf1OneOf1ReasonEnum;
+}
+
+export const ApiV1AuthAuthenticatePost200ResponseOneOf1OneOf1ReasonEnum = {
     AlreadyHasCredential: 'already_has_credential',
     AssociatedWithAnotherUser: 'associated_with_another_user',
-    Throttled: 'throttled',
     InvalidPhoneNumber: 'invalid_phone_number',
     RestrictedPhoneType: 'restricted_phone_type',
 } as const;
 
-export type ApiV1AuthAuthenticatePost200ResponseOneOf1ReasonEnum = typeof ApiV1AuthAuthenticatePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1AuthAuthenticatePost200ResponseOneOf1ReasonEnum];
+export type ApiV1AuthAuthenticatePost200ResponseOneOf1OneOf1ReasonEnum = typeof ApiV1AuthAuthenticatePost200ResponseOneOf1OneOf1ReasonEnum[keyof typeof ApiV1AuthAuthenticatePost200ResponseOneOf1OneOf1ReasonEnum];
 
 export interface ApiV1AuthAuthenticatePostRequest {
     /**
@@ -289,20 +305,24 @@ export type ApiV1AuthCheckLoginStatusPost200ResponseLoggedInStatusOneOfCredentia
  */
 export type ApiV1AuthEmailAuthenticatePost200Response = ApiV1AuthAuthenticatePost200ResponseOneOf | ApiV1AuthEmailAuthenticatePost200ResponseOneOf;
 
-export interface ApiV1AuthEmailAuthenticatePost200ResponseOneOf {
+/**
+ * @type ApiV1AuthEmailAuthenticatePost200ResponseOneOf
+ */
+export type ApiV1AuthEmailAuthenticatePost200ResponseOneOf = ApiV1AuthAuthenticatePost200ResponseOneOf1OneOf | ApiV1AuthEmailAuthenticatePost200ResponseOneOfOneOf;
+
+export interface ApiV1AuthEmailAuthenticatePost200ResponseOneOfOneOf {
     'success': boolean;
-    'reason': ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum;
+    'reason': ApiV1AuthEmailAuthenticatePost200ResponseOneOfOneOfReasonEnum;
 }
 
-export const ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum = {
+export const ApiV1AuthEmailAuthenticatePost200ResponseOneOfOneOfReasonEnum = {
     AlreadyHasCredential: 'already_has_credential',
     AssociatedWithAnotherUser: 'associated_with_another_user',
-    Throttled: 'throttled',
     Unreachable: 'unreachable',
     Disposable: 'disposable',
 } as const;
 
-export type ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum = typeof ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum[keyof typeof ApiV1AuthEmailAuthenticatePost200ResponseOneOfReasonEnum];
+export type ApiV1AuthEmailAuthenticatePost200ResponseOneOfOneOfReasonEnum = typeof ApiV1AuthEmailAuthenticatePost200ResponseOneOfOneOfReasonEnum[keyof typeof ApiV1AuthEmailAuthenticatePost200ResponseOneOfOneOfReasonEnum];
 
 export interface ApiV1AuthEmailAuthenticatePostRequest {
     'email': string;
@@ -322,21 +342,37 @@ export interface ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf {
     'accountMerged': boolean;
     'userId': string;
 }
-export interface ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1 {
+/**
+ * @type ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1
+ */
+export type ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1 = ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOf | ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOf1;
+
+export interface ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOf {
     'success': boolean;
-    'reason': ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1ReasonEnum;
+    'reason': ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOfReasonEnum;
+    'nextCodeSoonestTime': string;
 }
 
-export const ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1ReasonEnum = {
+export const ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOfReasonEnum = {
+    TooManyWrongGuess: 'too_many_wrong_guess',
+} as const;
+
+export type ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOfReasonEnum = typeof ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOfReasonEnum[keyof typeof ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOfReasonEnum];
+
+export interface ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOf1 {
+    'success': boolean;
+    'reason': ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOf1ReasonEnum;
+}
+
+export const ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOf1ReasonEnum = {
     ExpiredCode: 'expired_code',
     WrongGuess: 'wrong_guess',
-    TooManyWrongGuess: 'too_many_wrong_guess',
     AlreadyHasCredential: 'already_has_credential',
     AssociatedWithAnotherUser: 'associated_with_another_user',
     AuthStateChanged: 'auth_state_changed',
 } as const;
 
-export type ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1ReasonEnum = typeof ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1ReasonEnum];
+export type ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOf1ReasonEnum = typeof ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOf1ReasonEnum[keyof typeof ApiV1AuthPhoneVerifyOtpPost200ResponseOneOf1OneOf1ReasonEnum];
 
 export interface ApiV1AuthPhoneVerifyOtpPostRequest {
     'code': number;

@@ -8,7 +8,11 @@
           :submit-call-back="onSubmit"
           :current-step="3"
           :total-steps="5"
-          :enable-next-button="(emailInputFormRef?.getIsValid() ?? true) && !isLoading"
+          :enable-next-button="
+            (emailInputFormRef?.getIsValid() ?? true) &&
+            !isLoading &&
+            nextCodeWaitSeconds === 0
+          "
           :show-next-button="true"
           :show-loading-button="isLoading"
         >
@@ -72,7 +76,7 @@ const router = useRouter();
 const { showNotifyMessage } = useNotify();
 const { completeVerification } = useVerificationComplete();
 
-const { isLoading, submitEmail } = useEmailSubmit({
+const { isLoading, submitEmail, nextCodeWaitSeconds } = useEmailSubmit({
   onNavigateToOtp: () => router.replace({ name: "/onboarding/step3-email-2/" }),
   onAlreadyHasCredential: () => {
     showNotifyMessage(t("alreadyHasEmail"));

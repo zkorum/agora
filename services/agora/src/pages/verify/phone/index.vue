@@ -8,7 +8,7 @@
           :submit-call-back="onSubmit"
           :current-step="1"
           :total-steps="2"
-          :enable-next-button="!isLoading"
+          :enable-next-button="!isLoading && nextCodeWaitSeconds === 0"
           :show-next-button="true"
           :show-loading-button="isLoading"
         >
@@ -66,7 +66,7 @@ const router = useRouter();
 const loginIntentionStore = useLoginIntentionStore();
 const { activeUserIntention } = storeToRefs(loginIntentionStore);
 
-const { isLoading, submitPhone } = usePhoneSubmit({
+const { isLoading, submitPhone, nextCodeWaitSeconds } = usePhoneSubmit({
   onNavigateToOtp: () => router.replace({ name: "/verify/phone-code/" }),
   onAlreadyHasCredential: () => {
     showNotifyMessage(t("alreadyHasPhone"));

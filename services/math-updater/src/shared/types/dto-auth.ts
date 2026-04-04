@@ -30,6 +30,27 @@ export const verifyOtpReqBody = z.object({
     defaultCallingCode: zodSupportedCountryCallingCode,
 });
 
+const authenticateFailure200 = z.discriminatedUnion("reason", [
+    z
+        .object({
+            success: z.literal(false),
+            reason: z.literal("throttled"),
+            nextCodeSoonestTime: zodDateTimeFlexible,
+        })
+        .strict(),
+    z
+        .object({
+            success: z.literal(false),
+            reason: z.enum([
+                "already_has_credential",
+                "associated_with_another_user",
+                "invalid_phone_number",
+                "restricted_phone_type",
+            ]),
+        })
+        .strict(),
+]);
+
 export const authenticate200 = z.discriminatedUnion("success", [
     z
         .object({
@@ -38,16 +59,29 @@ export const authenticate200 = z.discriminatedUnion("success", [
             nextCodeSoonestTime: zodDateTimeFlexible,
         })
         .strict(),
-    z.object({
-        success: z.literal(false),
-        reason: z.enum([
-            "already_has_credential",
-            "associated_with_another_user",
-            "throttled",
-            "invalid_phone_number",
-            "restricted_phone_type",
-        ]),
-    }),
+    authenticateFailure200,
+]);
+
+const verifyOtpFailure200 = z.discriminatedUnion("reason", [
+    z
+        .object({
+            success: z.literal(false),
+            reason: z.literal("too_many_wrong_guess"),
+            nextCodeSoonestTime: zodDateTimeFlexible,
+        })
+        .strict(),
+    z
+        .object({
+            success: z.literal(false),
+            reason: z.enum([
+                "expired_code",
+                "wrong_guess",
+                "already_has_credential",
+                "associated_with_another_user",
+                "auth_state_changed", // Added: auth type changed during OTP flow
+            ]),
+        })
+        .strict(),
 ]);
 
 export const verifyOtp200 = z.discriminatedUnion("success", [
@@ -58,19 +92,7 @@ export const verifyOtp200 = z.discriminatedUnion("success", [
             userId: z.string(), // User ID (for tracking account merges in frontend)
         })
         .strict(),
-    z
-        .object({
-            success: z.literal(false),
-            reason: z.enum([
-                "expired_code",
-                "wrong_guess",
-                "too_many_wrong_guess",
-                "already_has_credential",
-                "associated_with_another_user",
-                "auth_state_changed", // Added: auth type changed during OTP flow
-            ]),
-        })
-        .strict(),
+    verifyOtpFailure200,
 ]);
 
 export const authenticateEmailRequestBody = z
@@ -85,6 +107,27 @@ export const verifyEmailOtpReqBody = z.object({
     email: zodEmail,
 });
 
+const authenticateEmailFailure200 = z.discriminatedUnion("reason", [
+    z
+        .object({
+            success: z.literal(false),
+            reason: z.literal("throttled"),
+            nextCodeSoonestTime: zodDateTimeFlexible,
+        })
+        .strict(),
+    z
+        .object({
+            success: z.literal(false),
+            reason: z.enum([
+                "already_has_credential",
+                "associated_with_another_user",
+                "unreachable",
+                "disposable",
+            ]),
+        })
+        .strict(),
+]);
+
 export const authenticateEmail200 = z.discriminatedUnion("success", [
     z
         .object({
@@ -93,16 +136,7 @@ export const authenticateEmail200 = z.discriminatedUnion("success", [
             nextCodeSoonestTime: zodDateTimeFlexible,
         })
         .strict(),
-    z.object({
-        success: z.literal(false),
-        reason: z.enum([
-            "already_has_credential",
-            "associated_with_another_user",
-            "throttled",
-            "unreachable",
-            "disposable",
-        ]),
-    }),
+    authenticateEmailFailure200,
 ]);
 
 export const isLoggedInResponse = z.discriminatedUnion("isLoggedIn", [

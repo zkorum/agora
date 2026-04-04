@@ -1,8 +1,10 @@
 import { storeToRefs } from "pinia";
+import { createRequestGate } from "src/composables/verification/createRequestGate";
+import { useOtpTimers } from "src/composables/verification/useOtpTimers";
 import { authenticate200 } from "src/shared/types/dto-auth";
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import { useAuthPhoneApi } from "src/utils/api/auth-phone";
-import { ref } from "vue";
+import { onMounted, onUnmounted } from "vue";
 
 interface PhoneSubmitTranslations {
   throttled: string;
@@ -26,39 +28,72 @@ export function usePhoneSubmit({
   translations,
 }: UsePhoneSubmitParams) {
   const store = phoneVerificationStore();
-  const { verificationPhoneNumber, pendingOtpData } = storeToRefs(store);
+  const { verificationPhoneNumber, requestCodeThrottleUntil, pendingOtpData } =
+    storeToRefs(store);
   const { sendSmsCode } = useAuthPhoneApi();
+  const requestGate = createRequestGate();
+  const { verificationNextCodeSeconds, setNextCodeSoonestTime, clearTimers } =
+    useOtpTimers();
 
-  const isLoading = ref(false);
+  onMounted(() => {
+    if (requestCodeThrottleUntil.value === null) {
+      return;
+    }
+
+    if (requestCodeThrottleUntil.value.getTime() <= Date.now()) {
+      requestCodeThrottleUntil.value = null;
+      return;
+    }
+
+    setNextCodeSoonestTime(requestCodeThrottleUntil.value);
+  });
+
+  onUnmounted(() => {
+    requestGate.terminate();
+    clearTimers();
+  });
+
+  const { isBusy: isLoading } = requestGate;
 
   async function submitPhone() {
     const phoneNumber = verificationPhoneNumber.value.internationalPhoneNumber;
-    if (phoneNumber === "") return;
+    if (phoneNumber === "" || verificationNextCodeSeconds.value > 0) return;
 
-    isLoading.value = true;
+    const requestId = requestGate.start();
+    if (requestId === null) return;
+
     try {
       const response = await sendSmsCode({
         phoneNumber,
         defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
         isRequestingNewCode: false,
       });
+      if (!requestGate.isCurrent(requestId)) {
+        return;
+      }
       if (response.status === "success") {
         const data = authenticate200.parse(response.data);
         if (data.success) {
+          requestCodeThrottleUntil.value = null;
           pendingOtpData.value = {
             codeExpiry: new Date(data.codeExpiry),
             nextCodeSoonestTime: new Date(data.nextCodeSoonestTime),
           };
+          requestGate.terminate();
           await onNavigateToOtp();
         } else {
           switch (data.reason) {
             case "already_has_credential":
+              requestCodeThrottleUntil.value = null;
+              requestGate.terminate();
               onAlreadyHasCredential();
               break;
             case "associated_with_another_user":
               showNotifyMessage(translations.credentialAlreadyLinked);
               break;
             case "throttled":
+              requestCodeThrottleUntil.value = new Date(data.nextCodeSoonestTime);
+              setNextCodeSoonestTime(requestCodeThrottleUntil.value);
               showNotifyMessage(translations.throttled);
               break;
             case "invalid_phone_number":
@@ -74,9 +109,13 @@ export function usePhoneSubmit({
         showNotifyMessage(translations.somethingWrong);
       }
     } finally {
-      isLoading.value = false;
+      requestGate.finish(requestId);
     }
   }
 
-  return { isLoading, submitPhone };
+  return {
+    isLoading,
+    submitPhone,
+    nextCodeWaitSeconds: verificationNextCodeSeconds,
+  };
 }

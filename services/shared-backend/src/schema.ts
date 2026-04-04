@@ -592,10 +592,12 @@ export const conversationTypeEnum = pgEnum("conversation_type", [
     "maxdiff",
 ]);
 
-export const maxdiffLifecycleStatusEnum = pgEnum(
-    "maxdiff_lifecycle_status",
-    ["active", "completed", "in_progress", "canceled"],
-);
+export const maxdiffLifecycleStatusEnum = pgEnum("maxdiff_lifecycle_status", [
+    "active",
+    "completed",
+    "in_progress",
+    "canceled",
+]);
 
 export const externalSourceTypeEnum = pgEnum("external_source_type", [
     "github_issue",
@@ -1048,6 +1050,10 @@ export const emailTable = pgTable(
             .notNull(),
     },
     (table) => [
+        check(
+            "email_canonical_check",
+            sql`${table.email} = lower(btrim(${table.email}))`,
+        ),
         // Partial unique index: only enforce uniqueness for non-deleted emails
         uniqueIndex("email_active_unique")
             .on(table.email)
@@ -1159,32 +1165,103 @@ export const authAttemptPhoneTable = pgTable(
 );
 
 // Same pattern as authAttemptPhoneTable but simplified for email (no hash/pepper/country code)
-export const authAttemptEmailTable = pgTable("auth_attempt_email", {
-    didWrite: varchar("did_write", { length: 1000 }).primaryKey(),
-    type: authType("type").notNull(),
-    email: varchar("email", { length: 254 }).notNull(),
-    userId: uuid("user_id").notNull(),
-    userAgent: text("user_agent").notNull(),
-    code: integer("code").notNull(), // one-time password sent to the email ("otp")
-    emailReachability: emailReachabilityEnum("email_reachability"), // Reacher verification result (null = not checked)
-    codeExpiry: timestamp("code_expiry").notNull(),
-    guessAttemptAmount: integer("guess_attempt_amount")
-        .default(0)
-        .notNull(),
-    lastOtpSentAt: timestamp("last_otp_sent_at").notNull(),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const authAttemptEmailTable = pgTable(
+    "auth_attempt_email",
+    {
+        didWrite: varchar("did_write", { length: 1000 }).primaryKey(),
+        type: authType("type").notNull(),
+        email: varchar("email", { length: 254 }).notNull(),
+        userId: uuid("user_id").notNull(),
+        userAgent: text("user_agent").notNull(),
+        code: integer("code").notNull(), // one-time password sent to the email ("otp")
+        emailReachability: emailReachabilityEnum("email_reachability"), // Reacher verification result (null = not checked)
+        codeExpiry: timestamp("code_expiry").notNull(),
+        guessAttemptAmount: integer("guess_attempt_amount")
+            .default(0)
+            .notNull(),
+        lastOtpSentAt: timestamp("last_otp_sent_at").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        check(
+            "auth_attempt_email_canonical_check",
+            sql`${table.email} = lower(btrim(${table.email}))`,
+        ),
+    ],
+);
+
+// Tracks OTP send/backoff state per phone destination across devices/challenges.
+export const otpPhoneDestinationStateTable = pgTable(
+    "otp_phone_destination_state",
+    {
+        phoneHash: text("phone_hash").primaryKey(),
+        lastOtpSentAt: timestamp("last_otp_sent_at").notNull(),
+        consecutiveFailedVerifyAttempts: integer(
+            "consecutive_failed_verify_attempts",
+        )
+            .notNull()
+            .default(0),
+        backoffUntil: timestamp("backoff_until"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [index("otp_phone_destination_updated_idx").on(table.updatedAt)],
+);
+
+// Tracks OTP send/backoff state per canonical email destination across devices/challenges.
+export const otpEmailDestinationStateTable = pgTable(
+    "otp_email_destination_state",
+    {
+        email: varchar("email", { length: 254 }).primaryKey(),
+        lastOtpSentAt: timestamp("last_otp_sent_at").notNull(),
+        consecutiveFailedVerifyAttempts: integer(
+            "consecutive_failed_verify_attempts",
+        )
+            .notNull()
+            .default(0),
+        backoffUntil: timestamp("backoff_until"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        check(
+            "otp_email_destination_canonical_check",
+            sql`${table.email} = lower(btrim(${table.email}))`,
+        ),
+        index("otp_email_destination_updated_idx").on(table.updatedAt),
+    ],
+);
 
 // conceptually, it is a "pollContentTable"
 export const pollTable = pgTable("poll", {
@@ -1291,8 +1368,12 @@ export const conversationTable = pgTable(
             precision: 0,
         }),
         isIndexed: boolean("is_indexed").notNull().default(true), // if true, the conversation can be fetched in the feed and search engine, else it is hidden, unless users have the link
-        participationMode: participationModeEnum("participation_mode").notNull().default("account_required"), // Determines who can vote/post opinions: "account_required" requires any account, "strong_verification" requires phone or Rarimo passport, "email_verification" requires email credential specifically, "guest" allows anyone.
-        conversationType: conversationTypeEnum("conversation_type").notNull().default("polis"), // "polis" = standard agree/disagree/unsure voting with clustering, "maxdiff" = best-worst scaling for prioritization
+        participationMode: participationModeEnum("participation_mode")
+            .notNull()
+            .default("account_required"), // Determines who can vote/post opinions: "account_required" requires any account, "strong_verification" requires phone or Rarimo passport, "email_verification" requires email credential specifically, "guest" allows anyone.
+        conversationType: conversationTypeEnum("conversation_type")
+            .notNull()
+            .default("polis"), // "polis" = standard agree/disagree/unsure voting with clustering, "maxdiff" = best-worst scaling for prioritization
         isImporting: boolean("is_importing").notNull().default(false), // if true, the conversation is being imported from CSV and should not be visible in feed until import completes
         isClosed: boolean("is_closed").notNull().default(false), // if true, the conversation was closed by owner and users cannot post opinions or vote
         isEdited: boolean("is_edited").notNull().default(false), // if true, the conversation content was edited after creation. Used for "Edited" badge in UI. Use this field (not updatedAt) to determine if a conversation was edited — updatedAt can be accidentally bumped by migration scripts.
@@ -1626,10 +1707,7 @@ export const voteTable = pgTable(
         unique().on(t.authorId, t.opinionId),
         index("vote_authorId_idx").on(t.authorId),
         // Composite for counter reconciliation: filters opinionId + non-deleted (currentContentId IS NOT NULL)
-        index("vote_opinion_active_idx").on(
-            t.opinionId,
-            t.currentContentId,
-        ),
+        index("vote_opinion_active_idx").on(t.opinionId, t.currentContentId),
     ],
 );
 
@@ -2166,6 +2244,9 @@ export const conversationExportTable = pgTable(
         index("conversation_export_deleted_idx").on(t.isDeleted),
         index("conversation_export_created_idx").on(t.createdAt),
         index("conversation_export_user_idx").on(t.userId),
+        uniqueIndex("conversation_export_active_user_conversation_unique")
+            .on(t.conversationId, t.userId)
+            .where(sql`${t.status} = 'processing' AND ${t.isDeleted} = false`),
     ],
 );
 
@@ -2228,6 +2309,9 @@ export const conversationImportTable = pgTable(
         index("conversation_import_created_idx").on(t.createdAt),
         index("conversation_import_user_idx").on(t.userId),
         index("conversation_import_conversation_idx").on(t.conversationId),
+        uniqueIndex("conversation_import_active_user_unique")
+            .on(t.userId)
+            .where(sql`${t.status} = 'processing'`),
     ],
 );
 
@@ -2268,10 +2352,7 @@ export const maxdiffResultTable = pgTable(
     (t) => [
         unique().on(t.participantId, t.conversationId),
         // Composite for aggregated results query: filters conversationId + isComplete
-        index("maxdiff_result_complete_idx").on(
-            t.conversationId,
-            t.isComplete,
-        ),
+        index("maxdiff_result_complete_idx").on(t.conversationId, t.isComplete),
         // For JSONB aggregate query in computeGlobalUncertainty (routing)
         index("maxdiff_result_conversation_idx").on(t.conversationId),
     ],
@@ -2336,7 +2417,9 @@ export const maxdiffItemContentTable = pgTable("maxdiff_item_content", {
     conversationContentId: integer("conversation_content_id")
         .notNull()
         .references(() => conversationContentTable.id),
-    title: varchar("title", { length: MAX_LENGTH_MAXDIFF_ITEM_TITLE }).notNull(),
+    title: varchar("title", {
+        length: MAX_LENGTH_MAXDIFF_ITEM_TITLE,
+    }).notNull(),
     body: varchar("body", { length: MAX_LENGTH_MAXDIFF_ITEM_BODY }), // optional; populated from GitHub issue body, null for manual items
     createdAt: timestamp("created_at", {
         mode: "date",
@@ -2470,14 +2553,10 @@ export const maxdiffComparisonTable = pgTable(
         position: integer("position").notNull(), // 0-based order within the session
         bestSlugId: varchar("best_slug_id", { length: 8 }).notNull(),
         worstSlugId: varchar("worst_slug_id", { length: 8 }).notNull(),
-        candidateSet: text("candidate_set")
-            .array()
-            .notNull(), // slugIds of all items shown in this comparison
+        candidateSet: text("candidate_set").array().notNull(), // slugIds of all items shown in this comparison
         deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
     },
-    (t) => [
-        index("maxdiff_comparison_result_idx").on(t.maxdiffResultId),
-    ],
+    (t) => [index("maxdiff_comparison_result_idx").on(t.maxdiffResultId)],
 );
 
 // Per-user Solidago scores, written by the scoring worker alongside global scores.
@@ -2495,7 +2574,5 @@ export const maxdiffUserEntityScoreTable = pgTable(
         uncertaintyLeft: real("uncertainty_left").notNull(),
         uncertaintyRight: real("uncertainty_right").notNull(),
     },
-    (t) => [
-        unique().on(t.maxdiffResultId, t.entitySlugId),
-    ],
+    (t) => [unique().on(t.maxdiffResultId, t.entitySlugId)],
 );

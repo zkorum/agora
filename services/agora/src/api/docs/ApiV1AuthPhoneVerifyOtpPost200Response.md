@@ -9,6 +9,7 @@ Name | Type | Description | Notes
 **accountMerged** | **boolean** |  | [default to undefined]
 **userId** | **string** |  | [default to undefined]
 **reason** | **string** |  | [default to undefined]
+**nextCodeSoonestTime** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -20,6 +21,7 @@ const instance: ApiV1AuthPhoneVerifyOtpPost200Response = {
     accountMerged,
     userId,
     reason,
+    nextCodeSoonestTime,
 };
 ```
 

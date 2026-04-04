@@ -17,6 +17,8 @@ import {
     authAttemptEmailTable,
     deviceTable,
     emailTable,
+    otpEmailDestinationStateTable,
+    otpPhoneDestinationStateTable,
     zkPassportTable,
     phoneTable,
     userTable,
@@ -30,6 +32,7 @@ import type {
     VerifyOtp200,
 } from "@/shared/types/dto-auth.js";
 import type { DeviceLoginStatusExtended } from "@/shared/types/zod.js";
+import { normalizeEmail } from "@/shared/types/zod-email.js";
 import { eq, and, TransactionRollbackError, gt } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import parsePhoneNumberFromString, {
@@ -50,6 +53,269 @@ import {
     ZodSupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
 
+const OTP_DESTINATION_STREAK_RESET_MS = 24 * 60 * 60 * 1000;
+const OTP_MIN_BACKOFF_SECONDS = 30;
+const OTP_MAX_BACKOFF_SECONDS = 60 * 60;
+
+interface OtpDestinationStateRecord {
+    lastOtpSentAt: Date;
+    consecutiveFailedVerifyAttempts: number;
+    backoffUntil: Date | null;
+    updatedAt: Date;
+}
+
+function buildNextCodeSoonestTime({
+    now,
+    throttleSecondsInterval,
+}: {
+    now: Date;
+    throttleSecondsInterval: number;
+}): Date {
+    const nextCodeSoonestTime = new Date(now);
+    nextCodeSoonestTime.setSeconds(
+        nextCodeSoonestTime.getSeconds() + throttleSecondsInterval,
+    );
+    return nextCodeSoonestTime;
+}
+
+function getEffectiveOtpDestinationState({
+    state,
+    now,
+}: {
+    state: OtpDestinationStateRecord | null;
+    now: Date;
+}): OtpDestinationStateRecord | null {
+    if (state === null) {
+        return null;
+    }
+    if (
+        now.getTime() - state.updatedAt.getTime() <
+        OTP_DESTINATION_STREAK_RESET_MS
+    ) {
+        return state;
+    }
+    return {
+        ...state,
+        consecutiveFailedVerifyAttempts: 0,
+        backoffUntil: null,
+    };
+}
+
+function getOtpDestinationThrottleUntil({
+    state,
+    now,
+    throttleSecondsInterval,
+}: {
+    state: OtpDestinationStateRecord | null;
+    now: Date;
+    throttleSecondsInterval: number;
+}): Date | null {
+    if (state === null) {
+        return null;
+    }
+
+    const resendThrottleUntil = buildNextCodeSoonestTime({
+        now: state.lastOtpSentAt,
+        throttleSecondsInterval,
+    });
+
+    let throttleUntil = resendThrottleUntil;
+    if (
+        state.backoffUntil !== null &&
+        state.backoffUntil.getTime() > throttleUntil.getTime()
+    ) {
+        throttleUntil = state.backoffUntil;
+    }
+
+    if (throttleUntil.getTime() <= now.getTime()) {
+        return null;
+    }
+    return throttleUntil;
+}
+
+function getOtpDestinationBackoffUntil({
+    now,
+    consecutiveFailedVerifyAttempts,
+    throttleSecondsInterval,
+}: {
+    now: Date;
+    consecutiveFailedVerifyAttempts: number;
+    throttleSecondsInterval: number;
+}): Date {
+    const delaySeconds = Math.min(
+        OTP_MAX_BACKOFF_SECONDS,
+        Math.max(throttleSecondsInterval, OTP_MIN_BACKOFF_SECONDS) *
+            2 ** Math.max(consecutiveFailedVerifyAttempts - 1, 0),
+    );
+    return buildNextCodeSoonestTime({
+        now,
+        throttleSecondsInterval: delaySeconds,
+    });
+}
+
+function buildPhoneAuthenticateThrottledResponse(
+    nextCodeSoonestTime: Date,
+): AuthenticateResponse {
+    return {
+        success: false,
+        reason: "throttled",
+        nextCodeSoonestTime,
+    };
+}
+
+function buildEmailAuthenticateThrottledResponse(
+    nextCodeSoonestTime: Date,
+): AuthenticateEmailResponse {
+    return {
+        success: false,
+        reason: "throttled",
+        nextCodeSoonestTime,
+    };
+}
+
+type RegisterEmailDeliverabilityResult =
+    | {
+          deliverable: true;
+          emailReachability: ReacherIsReachable | null;
+      }
+    | {
+          deliverable: false;
+          response: AuthenticateEmailResponse;
+      };
+
+async function checkRegisterEmailDeliverability({
+    axiosReacher,
+    email,
+    type,
+}: {
+    axiosReacher: AxiosInstance | undefined;
+    email: string;
+    type: AuthResult["type"];
+}): Promise<RegisterEmailDeliverabilityResult> {
+    if (type !== "register" || axiosReacher === undefined) {
+        return {
+            deliverable: true,
+            emailReachability: null,
+        };
+    }
+
+    const deliverability = await checkEmailDeliverability({
+        axiosReacher,
+        email,
+    });
+
+    if (!deliverability.deliverable) {
+        return {
+            deliverable: false,
+            response: {
+                success: false,
+                reason: deliverability.reason,
+            },
+        };
+    }
+
+    return {
+        deliverable: true,
+        emailReachability: deliverability.isReachable,
+    };
+}
+
+function buildTooManyWrongGuessResponse(
+    nextCodeSoonestTime: Date,
+): VerifyOtp200 {
+    return {
+        success: false,
+        reason: "too_many_wrong_guess",
+        nextCodeSoonestTime,
+    };
+}
+
+async function finalizePhoneOtpSuccess({
+    db,
+    authResult,
+    didWrite,
+    resultOtp,
+    now,
+    sessionLifetimeDays,
+}: {
+    db: PostgresDatabase;
+    authResult: Exclude<AuthResult, { type: "associated_with_another_user" }>;
+    didWrite: string;
+    resultOtp: {
+        lastTwoDigits: number;
+        countryCallingCode: string;
+        phoneCountryCode: CountryCode | null;
+        phoneHash: string;
+        pepperVersion: number;
+        userAgent: string;
+    };
+    now: Date;
+    sessionLifetimeDays: number;
+}): Promise<VerifyOtp200> {
+    return await db.transaction(async (tx) => {
+        const verifyResult = await registerOrLoginWithPhoneNumber({
+            ...authResult,
+            db: tx,
+            didWrite,
+            lastTwoDigits: resultOtp.lastTwoDigits,
+            countryCallingCode: resultOtp.countryCallingCode,
+            phoneCountryCode: toUnionUndefined(resultOtp.phoneCountryCode),
+            phoneHash: resultOtp.phoneHash,
+            pepperVersion: resultOtp.pepperVersion,
+            userAgent: resultOtp.userAgent,
+            now,
+            sessionLifetimeDays,
+        });
+        await resetPhoneOtpDestinationState({
+            db: tx,
+            phoneHash: resultOtp.phoneHash,
+            now,
+        });
+        return verifyResult;
+    });
+}
+
+async function finalizeEmailOtpSuccess({
+    db,
+    authResult,
+    didWrite,
+    email,
+    canonicalEmail,
+    userAgent,
+    now,
+    sessionLifetimeDays,
+    emailReachability,
+}: {
+    db: PostgresDatabase;
+    authResult: Exclude<AuthResult, { type: "associated_with_another_user" }>;
+    didWrite: string;
+    email: string;
+    canonicalEmail: string;
+    userAgent: string;
+    now: Date;
+    sessionLifetimeDays: number;
+    emailReachability: ReacherIsReachable | null;
+}): Promise<VerifyOtp200> {
+    return await db.transaction(async (tx) => {
+        const verifyResult = await registerOrLoginWithEmail({
+            ...authResult,
+            db: tx,
+            didWrite,
+            email,
+            userAgent,
+            now,
+            sessionLifetimeDays,
+            emailReachability,
+        });
+        await resetEmailOtpDestinationState({
+            db: tx,
+            canonicalEmail,
+            now,
+        });
+        return verifyResult;
+    });
+}
+
 interface VerifyOtpProps {
     db: PostgresDatabase;
     maxAttempt: number;
@@ -61,6 +327,7 @@ interface VerifyOtpProps {
     twilioServiceSid?: string;
     peppers: string[];
     sessionLifetimeDays: number;
+    now: Date;
 }
 
 interface RegisterWithPhoneNumberProps {
@@ -118,7 +385,6 @@ interface LoginNewDeviceWithZKPProps {
     sessionExpiry: Date;
 }
 
-
 interface GetPhoneAuthenticationTypeByNumber {
     db: PostgresDatabase;
     phoneNumber: string;
@@ -152,6 +418,7 @@ interface AuthenticateAttemptProps {
     peppers: string[];
     twilioClient?: twilio.Twilio;
     twilioServiceSid?: string;
+    now: Date;
 }
 
 interface UpdateAuthAttemptCodeProps {
@@ -208,10 +475,7 @@ interface RegisterOrLoginWithPhoneNumberBaseProps {
 
 type RegisterOrLoginWithPhoneNumberProps =
     | (RegisterOrLoginWithPhoneNumberBaseProps & {
-          type:
-              | "register"
-              | "login_known_device"
-              | "login_new_device";
+          type: "register" | "login_known_device" | "login_new_device";
           userId: string;
       })
     | (RegisterOrLoginWithPhoneNumberBaseProps & {
@@ -376,6 +640,7 @@ export async function verifyPhoneOtp({
     twilioServiceSid,
     peppers,
     sessionLifetimeDays,
+    now: providedNow,
 }: VerifyOtpProps): Promise<VerifyOtp200> {
     if (
         (twilioClient !== undefined && twilioServiceSid === undefined) ||
@@ -384,7 +649,7 @@ export async function verifyPhoneOtp({
         log.error("Twilio configuration error");
         throw httpErrors.internalServerError("Internal Error");
     }
-    const now = nowZeroMs();
+    const now = providedNow;
     const resultOtp = await db
         .select({
             userId: authAttemptPhoneTable.userId,
@@ -406,6 +671,13 @@ export async function verifyPhoneOtp({
             "Device has never made an authentication attempt",
         );
     }
+    const destinationState = getEffectiveOtpDestinationState({
+        state: await getPhoneOtpDestinationState({
+            db,
+            phoneHash: resultOtp[0].phoneHash,
+        }),
+        now,
+    });
     const deviceStatus = await authUtilService.getDeviceStatus({
         db,
         didWrite,
@@ -418,19 +690,13 @@ export async function verifyPhoneOtp({
         deviceStatus,
     });
 
-    // Handle rejection case first (before narrowing type)
-    if (authResult.type === "associated_with_another_user") {
-        return {
-            success: false,
-            reason: authResult.type,
-        };
-    }
-
     // CRITICAL: Reject if auth type changed during OTP flow to prevent unexpected behavior
     // This prevents scenarios like: OTP sent for "register" but phone was taken by someone else
     if (resultOtp[0].authType !== authResult.type) {
         const currentUserId =
-            authResult.type === "merge" ? authResult.toUserId : authResult.userId;
+            authResult.type === "merge"
+                ? authResult.toUserId
+                : authResult.userId;
         log.error(
             {
                 didWrite,
@@ -454,7 +720,9 @@ export async function verifyPhoneOtp({
     } else {
         // For non-register types, check userId consistency (UUIDs are deterministic here)
         const currentUserId =
-            authResult.type === "merge" ? authResult.toUserId : authResult.userId;
+            authResult.type === "merge"
+                ? authResult.toUserId
+                : authResult.userId;
         if (resultOtp[0].userId !== currentUserId) {
             log.error(
                 {
@@ -509,10 +777,16 @@ export async function verifyPhoneOtp({
                     "This phone number verification was canceled",
                 );
             case "max_attempts_reached":
-                return {
-                    success: false,
-                    reason: "too_many_wrong_guess",
-                };
+                return buildTooManyWrongGuessResponse(
+                    await recordPhoneOtpChallengeExhausted({
+                        db,
+                        phoneHash: resultOtp[0].phoneHash,
+                        state: destinationState,
+                        now,
+                        throttleSecondsInterval:
+                            config.THROTTLE_SMS_SECONDS_INTERVAL,
+                    }),
+                );
             case "deleted":
                 throw httpErrors.badRequest(
                     "This phone number verification was deleted",
@@ -525,18 +799,11 @@ export async function verifyPhoneOtp({
             case "expired":
                 return { success: false, reason: "expired_code" };
             case "approved":
-                return registerOrLoginWithPhoneNumber({
-                    ...authResult,
+                return await finalizePhoneOtpSuccess({
                     db,
+                    authResult,
                     didWrite,
-                    lastTwoDigits: resultOtp[0].lastTwoDigits,
-                    countryCallingCode: resultOtp[0].countryCallingCode,
-                    phoneCountryCode: toUnionUndefined(
-                        resultOtp[0].phoneCountryCode,
-                    ),
-                    phoneHash: resultOtp[0].phoneHash,
-                    pepperVersion: resultOtp[0].pepperVersion,
-                    userAgent: resultOtp[0].userAgent,
+                    resultOtp: resultOtp[0],
                     now,
                     sessionLifetimeDays,
                 });
@@ -553,16 +820,11 @@ export async function verifyPhoneOtp({
     } else if (resultOtp[0].codeExpiry <= now) {
         return { success: false, reason: "expired_code" };
     } else if (otpCodesEqual({ a: resultOtp[0].code, b: code })) {
-        return registerOrLoginWithPhoneNumber({
-            ...authResult,
+        return await finalizePhoneOtpSuccess({
             db,
+            authResult,
             didWrite,
-            lastTwoDigits: resultOtp[0].lastTwoDigits,
-            countryCallingCode: resultOtp[0].countryCallingCode,
-            phoneCountryCode: toUnionUndefined(resultOtp[0].phoneCountryCode),
-            phoneHash: resultOtp[0].phoneHash,
-            pepperVersion: resultOtp[0].pepperVersion,
-            userAgent: resultOtp[0].userAgent,
+            resultOtp: resultOtp[0],
             now,
             sessionLifetimeDays,
         });
@@ -575,10 +837,16 @@ export async function verifyPhoneOtp({
         if (resultOtp[0].guessAttemptAmount + 1 >= maxAttempt) {
             // code is now considered expired
             await expireCode(db, didWrite);
-            return {
-                success: false,
-                reason: "too_many_wrong_guess",
-            };
+            return buildTooManyWrongGuessResponse(
+                await recordPhoneOtpChallengeExhausted({
+                    db,
+                    phoneHash: resultOtp[0].phoneHash,
+                    state: destinationState,
+                    now,
+                    throttleSecondsInterval:
+                        config.THROTTLE_SMS_SECONDS_INTERVAL,
+                }),
+            );
         }
         return {
             success: false,
@@ -1237,8 +1505,9 @@ export async function authenticateAttempt({
     peppers,
     twilioClient,
     twilioServiceSid,
+    now: providedNow,
 }: AuthenticateAttemptProps): Promise<AuthenticateResponse> {
-    const now = nowZeroMs();
+    const now = providedNow;
     const authResult = await getPhoneAuthenticationTypeByNumber({
         db,
         phoneNumber: authenticateRequestBody.phoneNumber,
@@ -1259,6 +1528,7 @@ export async function authenticateAttempt({
         .select({
             codeExpiry: authAttemptPhoneTable.codeExpiry,
             lastOtpSentAt: authAttemptPhoneTable.lastOtpSentAt,
+            phoneHash: authAttemptPhoneTable.phoneHash,
         })
         .from(authAttemptPhoneTable)
         .where(eq(authAttemptPhoneTable.didWrite, didWrite));
@@ -1280,7 +1550,16 @@ export async function authenticateAttempt({
             twilioClient,
             twilioServiceSid,
         });
-    } else if (authenticateRequestBody.isRequestingNewCode) {
+    }
+
+    const currentAttempt = resultHasAttempted[0];
+    const requestedPhoneHash = await generatePhoneHash({
+        phoneNumber: authenticateRequestBody.phoneNumber,
+        peppers,
+        pepperVersion: PEPPER_VERSION,
+    });
+
+    if (authenticateRequestBody.isRequestingNewCode) {
         // if user wants to regenerate new code, do it (if possible according to throttling rules)
         return await updateAuthAttemptCode({
             db,
@@ -1298,19 +1577,24 @@ export async function authenticateAttempt({
             twilioClient,
             twilioServiceSid,
         });
-    } else if (resultHasAttempted[0].codeExpiry > now) {
+    } else if (
+        currentAttempt.codeExpiry > now &&
+        currentAttempt.phoneHash === requestedPhoneHash
+    ) {
         // code hasn't expired
-        const nextCodeSoonestTime = resultHasAttempted[0].lastOtpSentAt;
+        const nextCodeSoonestTime = currentAttempt.lastOtpSentAt;
         nextCodeSoonestTime.setSeconds(
             nextCodeSoonestTime.getSeconds() + throttleSmsSecondsInterval,
         );
         return {
             success: true,
-            codeExpiry: resultHasAttempted[0].codeExpiry,
+            codeExpiry: currentAttempt.codeExpiry,
             nextCodeSoonestTime: nextCodeSoonestTime,
         };
     } else {
-        // code has expired, generate a new one if not throttled
+        // Existing live attempts are only reusable for the same destination.
+        // If the user changes the identifier mid-flow, rotate the attempt instead
+        // of returning success for a stale OTP tied to a different destination.
         return await updateAuthAttemptCode({
             db,
             type,
@@ -1372,6 +1656,264 @@ async function generatePhoneHash({
     return phoneHash;
 }
 
+async function getPhoneOtpDestinationState({
+    db,
+    phoneHash,
+}: {
+    db: PostgresDatabase;
+    phoneHash: string;
+}): Promise<OtpDestinationStateRecord | null> {
+    const result = await db
+        .select({
+            lastOtpSentAt: otpPhoneDestinationStateTable.lastOtpSentAt,
+            consecutiveFailedVerifyAttempts:
+                otpPhoneDestinationStateTable.consecutiveFailedVerifyAttempts,
+            backoffUntil: otpPhoneDestinationStateTable.backoffUntil,
+            updatedAt: otpPhoneDestinationStateTable.updatedAt,
+        })
+        .from(otpPhoneDestinationStateTable)
+        .where(eq(otpPhoneDestinationStateTable.phoneHash, phoneHash))
+        .limit(1);
+    return result[0] ?? null;
+}
+
+async function getEmailOtpDestinationState({
+    db,
+    canonicalEmail,
+}: {
+    db: PostgresDatabase;
+    canonicalEmail: string;
+}): Promise<OtpDestinationStateRecord | null> {
+    const result = await db
+        .select({
+            lastOtpSentAt: otpEmailDestinationStateTable.lastOtpSentAt,
+            consecutiveFailedVerifyAttempts:
+                otpEmailDestinationStateTable.consecutiveFailedVerifyAttempts,
+            backoffUntil: otpEmailDestinationStateTable.backoffUntil,
+            updatedAt: otpEmailDestinationStateTable.updatedAt,
+        })
+        .from(otpEmailDestinationStateTable)
+        .where(eq(otpEmailDestinationStateTable.email, canonicalEmail))
+        .limit(1);
+    return result[0] ?? null;
+}
+
+async function persistPhoneOtpDestinationState({
+    db,
+    phoneHash,
+    lastOtpSentAt,
+    consecutiveFailedVerifyAttempts,
+    backoffUntil,
+    now,
+}: {
+    db: PostgresDatabase;
+    phoneHash: string;
+    lastOtpSentAt: Date;
+    consecutiveFailedVerifyAttempts: number;
+    backoffUntil: Date | null;
+    now: Date;
+}) {
+    await db
+        .insert(otpPhoneDestinationStateTable)
+        .values({
+            phoneHash,
+            lastOtpSentAt,
+            consecutiveFailedVerifyAttempts,
+            backoffUntil,
+            createdAt: now,
+            updatedAt: now,
+        })
+        .onConflictDoUpdate({
+            target: otpPhoneDestinationStateTable.phoneHash,
+            set: {
+                lastOtpSentAt,
+                consecutiveFailedVerifyAttempts,
+                backoffUntil,
+                updatedAt: now,
+            },
+        });
+}
+
+async function persistEmailOtpDestinationState({
+    db,
+    canonicalEmail,
+    lastOtpSentAt,
+    consecutiveFailedVerifyAttempts,
+    backoffUntil,
+    now,
+}: {
+    db: PostgresDatabase;
+    canonicalEmail: string;
+    lastOtpSentAt: Date;
+    consecutiveFailedVerifyAttempts: number;
+    backoffUntil: Date | null;
+    now: Date;
+}) {
+    await db
+        .insert(otpEmailDestinationStateTable)
+        .values({
+            email: canonicalEmail,
+            lastOtpSentAt,
+            consecutiveFailedVerifyAttempts,
+            backoffUntil,
+            createdAt: now,
+            updatedAt: now,
+        })
+        .onConflictDoUpdate({
+            target: otpEmailDestinationStateTable.email,
+            set: {
+                lastOtpSentAt,
+                consecutiveFailedVerifyAttempts,
+                backoffUntil,
+                updatedAt: now,
+            },
+        });
+}
+
+async function recordPhoneOtpSend({
+    db,
+    phoneHash,
+    state,
+    now,
+}: {
+    db: PostgresDatabase;
+    phoneHash: string;
+    state: OtpDestinationStateRecord | null;
+    now: Date;
+}) {
+    await persistPhoneOtpDestinationState({
+        db,
+        phoneHash,
+        lastOtpSentAt: now,
+        consecutiveFailedVerifyAttempts:
+            state?.consecutiveFailedVerifyAttempts ?? 0,
+        backoffUntil: state?.backoffUntil ?? null,
+        now,
+    });
+}
+
+async function recordEmailOtpSend({
+    db,
+    canonicalEmail,
+    state,
+    now,
+}: {
+    db: PostgresDatabase;
+    canonicalEmail: string;
+    state: OtpDestinationStateRecord | null;
+    now: Date;
+}) {
+    await persistEmailOtpDestinationState({
+        db,
+        canonicalEmail,
+        lastOtpSentAt: now,
+        consecutiveFailedVerifyAttempts:
+            state?.consecutiveFailedVerifyAttempts ?? 0,
+        backoffUntil: state?.backoffUntil ?? null,
+        now,
+    });
+}
+
+async function recordPhoneOtpChallengeExhausted({
+    db,
+    phoneHash,
+    state,
+    now,
+    throttleSecondsInterval,
+}: {
+    db: PostgresDatabase;
+    phoneHash: string;
+    state: OtpDestinationStateRecord | null;
+    now: Date;
+    throttleSecondsInterval: number;
+}): Promise<Date> {
+    const consecutiveFailedVerifyAttempts =
+        (state?.consecutiveFailedVerifyAttempts ?? 0) + 1;
+    const backoffUntil = getOtpDestinationBackoffUntil({
+        now,
+        consecutiveFailedVerifyAttempts,
+        throttleSecondsInterval,
+    });
+    await persistPhoneOtpDestinationState({
+        db,
+        phoneHash,
+        lastOtpSentAt: state?.lastOtpSentAt ?? now,
+        consecutiveFailedVerifyAttempts,
+        backoffUntil,
+        now,
+    });
+    return backoffUntil;
+}
+
+async function recordEmailOtpChallengeExhausted({
+    db,
+    canonicalEmail,
+    state,
+    now,
+    throttleSecondsInterval,
+}: {
+    db: PostgresDatabase;
+    canonicalEmail: string;
+    state: OtpDestinationStateRecord | null;
+    now: Date;
+    throttleSecondsInterval: number;
+}): Promise<Date> {
+    const consecutiveFailedVerifyAttempts =
+        (state?.consecutiveFailedVerifyAttempts ?? 0) + 1;
+    const backoffUntil = getOtpDestinationBackoffUntil({
+        now,
+        consecutiveFailedVerifyAttempts,
+        throttleSecondsInterval,
+    });
+    await persistEmailOtpDestinationState({
+        db,
+        canonicalEmail,
+        lastOtpSentAt: state?.lastOtpSentAt ?? now,
+        consecutiveFailedVerifyAttempts,
+        backoffUntil,
+        now,
+    });
+    return backoffUntil;
+}
+
+async function resetPhoneOtpDestinationState({
+    db,
+    phoneHash,
+    now,
+}: {
+    db: PostgresDatabase;
+    phoneHash: string;
+    now: Date;
+}) {
+    await db
+        .update(otpPhoneDestinationStateTable)
+        .set({
+            consecutiveFailedVerifyAttempts: 0,
+            backoffUntil: null,
+            updatedAt: now,
+        })
+        .where(eq(otpPhoneDestinationStateTable.phoneHash, phoneHash));
+}
+
+async function resetEmailOtpDestinationState({
+    db,
+    canonicalEmail,
+    now,
+}: {
+    db: PostgresDatabase;
+    canonicalEmail: string;
+    now: Date;
+}) {
+    await db
+        .update(otpEmailDestinationStateTable)
+        .set({
+            consecutiveFailedVerifyAttempts: 0,
+            backoffUntil: null,
+            updatedAt: now,
+        })
+        .where(eq(otpEmailDestinationStateTable.email, canonicalEmail));
+}
+
 export async function insertAuthAttemptCode({
     db,
     type,
@@ -1398,17 +1940,17 @@ export async function insertAuthAttemptCode({
         peppers: peppers,
         pepperVersion: PEPPER_VERSION,
     });
-    const isThrottled = await isThrottledByPhoneHash(
-        db,
-        phoneHash,
-        throttleSmsSecondsInterval,
-        minutesBeforeSmsCodeExpiry,
-    );
-    if (isThrottled) {
-        return {
-            success: false,
-            reason: "throttled",
-        };
+    const destinationState = getEffectiveOtpDestinationState({
+        state: await getPhoneOtpDestinationState({ db, phoneHash }),
+        now,
+    });
+    const throttleUntil = getOtpDestinationThrottleUntil({
+        state: destinationState,
+        now,
+        throttleSecondsInterval: throttleSmsSecondsInterval,
+    });
+    if (throttleUntil !== null) {
+        return buildPhoneAuthenticateThrottledResponse(throttleUntil);
     }
     const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
     const codeExpiry = new Date(now);
@@ -1481,10 +2023,16 @@ export async function insertAuthAttemptCode({
         codeExpiry: codeExpiry,
         lastOtpSentAt: now,
     });
-    const nextCodeSoonestTime = new Date(now);
-    nextCodeSoonestTime.setSeconds(
-        nextCodeSoonestTime.getSeconds() + throttleSmsSecondsInterval,
-    );
+    await recordPhoneOtpSend({
+        db,
+        phoneHash,
+        state: destinationState,
+        now,
+    });
+    const nextCodeSoonestTime = buildNextCodeSoonestTime({
+        now,
+        throttleSecondsInterval: throttleSmsSecondsInterval,
+    });
     return {
         success: true,
         codeExpiry: codeExpiry,
@@ -1512,45 +2060,55 @@ export async function updateAuthAttemptCode({
     if (doUseTestCode && doSendViaSms) {
         throw httpErrors.badRequest("Test code shall not be sent via sms");
     }
-    const pepperVersion = 0;
-    const pepper = base64Decode(peppers[pepperVersion]); // we don't rotate peppers yet
-    const hash = await hashWithSalt({
-        value: authenticateRequestBody.phoneNumber,
-        salt: pepper,
+    const phoneHash = await generatePhoneHash({
+        phoneNumber: authenticateRequestBody.phoneNumber,
+        peppers,
+        pepperVersion: PEPPER_VERSION,
     });
-    const phoneHash = base64Encode(hash);
-    const isThrottled = await isThrottledByPhoneHash(
-        db,
-        phoneHash,
-        throttleSmsSecondsInterval,
-        minutesBeforeSmsCodeExpiry,
-    );
-    if (isThrottled) {
-        return {
-            success: false,
-            reason: "throttled",
-        };
+    const destinationState = getEffectiveOtpDestinationState({
+        state: await getPhoneOtpDestinationState({ db, phoneHash }),
+        now,
+    });
+    const throttleUntil = getOtpDestinationThrottleUntil({
+        state: destinationState,
+        now,
+        throttleSecondsInterval: throttleSmsSecondsInterval,
+    });
+    if (throttleUntil !== null) {
+        return buildPhoneAuthenticateThrottledResponse(throttleUntil);
     }
-    const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
-    const codeExpiry = new Date(now);
-    codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
+    const currentAttempt = await db
+        .select({
+            phoneHash: authAttemptPhoneTable.phoneHash,
+            code: authAttemptPhoneTable.code,
+            codeExpiry: authAttemptPhoneTable.codeExpiry,
+        })
+        .from(authAttemptPhoneTable)
+        .where(eq(authAttemptPhoneTable.didWrite, didWrite))
+        .limit(1);
     const phoneNumber = parsePhoneNumberFromString(
         authenticateRequestBody.phoneNumber,
         {
             defaultCallingCode: authenticateRequestBody.defaultCallingCode,
         },
     );
-    if (phoneNumber === undefined) {
-        throw httpErrors.badRequest("Phone number cannot be parsed correctly");
+    if (!phoneNumber?.isValid()) {
+        log.warn("Refused authentication request due to invalid phone number");
+        return {
+            success: false,
+            reason: "invalid_phone_number",
+        };
     }
-    if (doSendViaSms) {
-        await sendOtpPhoneNumber({
-            phoneNumber: phoneNumber.number,
-            twilioClient,
-            twilioServiceSid,
-        });
-    } else {
-        console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
+    if (!isPhoneNumberTypeSupported(phoneNumber.getType())) {
+        log.warn(
+            `Phone number refused because its type is ${String(
+                phoneNumber.getType(),
+            )}`,
+        );
+        return {
+            success: false,
+            reason: "restricted_phone_type",
+        };
     }
     if (
         phoneNumber.country === undefined &&
@@ -1564,6 +2122,68 @@ export async function updateAuthAttemptCode({
             : undefined;
     const countryCallingCode = phoneNumber.countryCallingCode;
     const lastTwoDigits = phoneNumber.number.slice(-2);
+    const canReuseExistingCode =
+        currentAttempt.length > 0 &&
+        currentAttempt[0].phoneHash === phoneHash &&
+        currentAttempt[0].codeExpiry.getTime() > now.getTime();
+
+    if (canReuseExistingCode) {
+        if (doSendViaSms) {
+            await sendOtpPhoneNumber({
+                phoneNumber: phoneNumber.number,
+                twilioClient,
+                twilioServiceSid,
+            });
+        } else {
+            console.log(
+                "\n\nCode:",
+                codeToString(currentAttempt[0].code),
+                currentAttempt[0].codeExpiry,
+                "\n\n",
+            );
+        }
+        await db
+            .update(authAttemptPhoneTable)
+            .set({
+                userId: userId,
+                type: type,
+                lastTwoDigits: parseInt(lastTwoDigits),
+                countryCallingCode: countryCallingCode,
+                phoneCountryCode: phoneCountryCode,
+                phoneHash: phoneHash,
+                pepperVersion: PEPPER_VERSION,
+                lastOtpSentAt: now,
+                updatedAt: now,
+            })
+            .where(eq(authAttemptPhoneTable.didWrite, didWrite));
+        await recordPhoneOtpSend({
+            db,
+            phoneHash,
+            state: destinationState,
+            now,
+        });
+        return {
+            success: true,
+            codeExpiry: currentAttempt[0].codeExpiry,
+            nextCodeSoonestTime: buildNextCodeSoonestTime({
+                now,
+                throttleSecondsInterval: throttleSmsSecondsInterval,
+            }),
+        };
+    }
+
+    const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
+    const codeExpiry = new Date(now);
+    codeExpiry.setMinutes(codeExpiry.getMinutes() + minutesBeforeSmsCodeExpiry);
+    if (doSendViaSms) {
+        await sendOtpPhoneNumber({
+            phoneNumber: phoneNumber.number,
+            twilioClient,
+            twilioServiceSid,
+        });
+    } else {
+        console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
+    }
     await db
         .update(authAttemptPhoneTable)
         .set({
@@ -1573,7 +2193,7 @@ export async function updateAuthAttemptCode({
             countryCallingCode: countryCallingCode,
             phoneCountryCode: phoneCountryCode,
             phoneHash: phoneHash,
-            pepperVersion: pepperVersion,
+            pepperVersion: PEPPER_VERSION,
             code: oneTimeCode,
             codeExpiry: codeExpiry,
             guessAttemptAmount: 0,
@@ -1581,51 +2201,21 @@ export async function updateAuthAttemptCode({
             updatedAt: now,
         })
         .where(eq(authAttemptPhoneTable.didWrite, didWrite));
-    const nextCodeSoonestTime = new Date(now);
-    nextCodeSoonestTime.setSeconds(
-        nextCodeSoonestTime.getSeconds() + throttleSmsSecondsInterval,
-    );
+    await recordPhoneOtpSend({
+        db,
+        phoneHash,
+        state: destinationState,
+        now,
+    });
+    const nextCodeSoonestTime = buildNextCodeSoonestTime({
+        now,
+        throttleSecondsInterval: throttleSmsSecondsInterval,
+    });
     return {
         success: true,
         codeExpiry: codeExpiry,
         nextCodeSoonestTime: nextCodeSoonestTime,
     };
-}
-
-// throttleSmsSecondsInterval: "10" in "we allow one sms every 10 seconds"
-export async function isThrottledByPhoneHash(
-    db: PostgresDatabase,
-    phoneHash: string,
-    throttleSmsSecondsInterval: number,
-    minutesBeforeSmsCodeExpiry: number,
-): Promise<boolean> {
-    const now = nowZeroMs();
-    // now - 10 seconds if throttleSmsSecondsInterval == 10
-    const secondsIntervalAgo = new Date(now);
-    secondsIntervalAgo.setSeconds(
-        secondsIntervalAgo.getSeconds() - throttleSmsSecondsInterval,
-    );
-
-    const results = await db
-        .select({
-            lastOtpSentAt: authAttemptPhoneTable.lastOtpSentAt,
-            codeExpiry: authAttemptPhoneTable.codeExpiry,
-        })
-        .from(authAttemptPhoneTable)
-        .where(eq(authAttemptPhoneTable.phoneHash, phoneHash));
-    for (const result of results) {
-        const expectedExpiryTime = new Date(result.lastOtpSentAt);
-        expectedExpiryTime.setMinutes(
-            expectedExpiryTime.getMinutes() + minutesBeforeSmsCodeExpiry,
-        );
-        if (
-            result.lastOtpSentAt.getTime() > secondsIntervalAgo.getTime() &&
-            expectedExpiryTime.getTime() === result.codeExpiry.getTime() // code hasn't been guessed, because otherwise it would have been manually expired before the normal expiry time
-        ) {
-            return true;
-        }
-    }
-    return false;
 }
 
 // ============================================================================
@@ -1651,6 +2241,8 @@ async function getEmailAuthState({
     email,
     didWrite,
 }: GetEmailAuthStateParams): Promise<EmailAuthState> {
+    const canonicalEmail = normalizeEmail(email);
+
     // Query 1: Check device association with email (only active/non-deleted email credentials)
     const didAssociationResult = await db
         .select({
@@ -1661,15 +2253,14 @@ async function getEmailAuthState({
             emailTable,
             and(
                 eq(emailTable.userId, deviceTable.userId),
-                eq(emailTable.email, email),
+                eq(emailTable.email, canonicalEmail),
                 eq(emailTable.isDeleted, false),
             ),
         )
         .where(eq(deviceTable.didWrite, didWrite));
 
     const deviceExists = didAssociationResult.length > 0;
-    const isAssociated =
-        deviceExists && didAssociationResult[0].email !== null;
+    const isAssociated = deviceExists && didAssociationResult[0].email !== null;
 
     // Query 2: Check email user status (only active users, deleted users are ignored)
     const emailResults = await db
@@ -1679,7 +2270,7 @@ async function getEmailAuthState({
         })
         .from(emailTable)
         .innerJoin(userTable, eq(userTable.id, emailTable.userId))
-        .where(eq(emailTable.email, email));
+        .where(eq(emailTable.email, canonicalEmail));
 
     const activeUser = emailResults.find((r) => !r.isDeleted);
 
@@ -1689,7 +2280,7 @@ async function getEmailAuthState({
             return {
                 deviceCredentialAssociation: "device_owns_credential",
                 userId: activeUser.userId,
-                metadata: { email },
+                metadata: { email: canonicalEmail },
             };
         }
         // Fall through if no user found (shouldn't happen with FK)
@@ -1706,14 +2297,14 @@ async function getEmailAuthState({
                 deviceCredentialAssociation: "device_unknown_credential_owned",
                 userId,
                 isRegistered,
-                metadata: { email },
+                metadata: { email: canonicalEmail },
             };
         } else {
             return {
                 deviceCredentialAssociation: "device_missing_credential_owned",
                 userId,
                 isRegistered,
-                metadata: { email },
+                metadata: { email: canonicalEmail },
             };
         }
     }
@@ -1722,12 +2313,12 @@ async function getEmailAuthState({
     if (!deviceExists) {
         return {
             deviceCredentialAssociation: "device_unknown_credential_available",
-            metadata: { email },
+            metadata: { email: canonicalEmail },
         };
     } else {
         return {
             deviceCredentialAssociation: "device_missing_credential_available",
-            metadata: { email },
+            metadata: { email: canonicalEmail },
         };
     }
 }
@@ -1805,6 +2396,7 @@ interface AuthenticateEmailAttemptProps {
     testCode: number;
     doUseTestCode: boolean;
     headerLanguageCode?: SupportedDisplayLanguageCodes;
+    now: Date;
 }
 
 export async function authenticateEmailAttempt({
@@ -1819,11 +2411,13 @@ export async function authenticateEmailAttempt({
     testCode,
     doUseTestCode,
     headerLanguageCode = "en",
+    now: providedNow,
 }: AuthenticateEmailAttemptProps): Promise<AuthenticateEmailResponse> {
-    const now = nowZeroMs();
+    const now = providedNow;
+    const canonicalEmail = normalizeEmail(email);
     const authResult = await getEmailAuthType({
         db,
-        email,
+        email: canonicalEmail,
         didWrite,
     });
     if (authResult.type === "associated_with_another_user") {
@@ -1831,22 +2425,6 @@ export async function authenticateEmailAttempt({
             success: false,
             reason: authResult.type,
         };
-    }
-    // Only check email deliverability for registration (new email).
-    // For login/merge, the email was already validated during registration.
-    let emailReachability: ReacherIsReachable | null = null;
-    if (authResult.type === "register" && axiosReacher !== undefined) {
-        const deliverability = await checkEmailDeliverability({
-            axiosReacher,
-            email,
-        });
-        emailReachability = deliverability.isReachable;
-        if (!deliverability.deliverable) {
-            return {
-                success: false,
-                reason: deliverability.reason,
-            };
-        }
     }
     // Get userId - for merge type use toUserId (the device user)
     const userId =
@@ -1881,6 +2459,7 @@ export async function authenticateEmailAttempt({
         .select({
             codeExpiry: authAttemptEmailTable.codeExpiry,
             lastOtpSentAt: authAttemptEmailTable.lastOtpSentAt,
+            email: authAttemptEmailTable.email,
         })
         .from(authAttemptEmailTable)
         .where(eq(authAttemptEmailTable.didWrite, didWrite));
@@ -1894,14 +2473,19 @@ export async function authenticateEmailAttempt({
             didWrite,
             now,
             userAgent,
-            email,
+            email: canonicalEmail,
+            axiosReacher,
             throttleEmailSecondsInterval,
             doUseTestCode,
             testCode,
-            emailReachability,
             languageCode: emailLanguageCode,
         });
-    } else if (isRequestingNewCode) {
+    }
+
+    const currentAttempt = resultHasAttempted[0];
+    const isSameEmailAttempt = currentAttempt.email === canonicalEmail;
+
+    if (isRequestingNewCode) {
         // user wants to regenerate new code (if possible according to throttling)
         return await updateEmailAuthAttemptCode({
             db,
@@ -1910,26 +2494,28 @@ export async function authenticateEmailAttempt({
             minutesBeforeEmailCodeExpiry,
             didWrite,
             now,
-            email,
+            email: canonicalEmail,
+            axiosReacher,
             throttleEmailSecondsInterval,
             doUseTestCode,
             testCode,
-            emailReachability,
             languageCode: emailLanguageCode,
         });
-    } else if (resultHasAttempted[0].codeExpiry > now) {
+    } else if (currentAttempt.codeExpiry > now && isSameEmailAttempt) {
         // code hasn't expired
-        const nextCodeSoonestTime = resultHasAttempted[0].lastOtpSentAt;
+        const nextCodeSoonestTime = currentAttempt.lastOtpSentAt;
         nextCodeSoonestTime.setSeconds(
             nextCodeSoonestTime.getSeconds() + throttleEmailSecondsInterval,
         );
         return {
             success: true,
-            codeExpiry: resultHasAttempted[0].codeExpiry,
+            codeExpiry: currentAttempt.codeExpiry,
             nextCodeSoonestTime: nextCodeSoonestTime,
         };
     } else {
-        // code has expired, generate a new one if not throttled
+        // Existing live attempts are only reusable for the same destination.
+        // If the identifier changes mid-flow, update the attempt instead of
+        // returning success for an OTP tied to the previous address.
         return await updateEmailAuthAttemptCode({
             db,
             type,
@@ -1937,11 +2523,11 @@ export async function authenticateEmailAttempt({
             minutesBeforeEmailCodeExpiry,
             didWrite,
             now,
-            email,
+            email: canonicalEmail,
+            axiosReacher,
             throttleEmailSecondsInterval,
             doUseTestCode,
             testCode,
-            emailReachability,
             languageCode: emailLanguageCode,
         });
     }
@@ -1956,10 +2542,10 @@ interface InsertEmailAuthAttemptCodeProps {
     now: Date;
     userAgent: string;
     email: string;
+    axiosReacher: AxiosInstance | undefined;
     throttleEmailSecondsInterval: number;
     testCode: number;
     doUseTestCode: boolean;
-    emailReachability: ReacherIsReachable | null;
     languageCode: SupportedDisplayLanguageCodes;
 }
 
@@ -1972,24 +2558,37 @@ async function insertEmailAuthAttemptCode({
     now,
     userAgent,
     email,
+    axiosReacher,
     throttleEmailSecondsInterval,
     doUseTestCode,
     testCode,
-    emailReachability,
     languageCode,
 }: InsertEmailAuthAttemptCodeProps): Promise<AuthenticateEmailResponse> {
-    const isThrottled = await isThrottledByEmail({
-        db,
-        email,
-        throttleEmailSecondsInterval,
-        minutesBeforeEmailCodeExpiry,
+    const canonicalEmail = normalizeEmail(email);
+    const destinationState = getEffectiveOtpDestinationState({
+        state: await getEmailOtpDestinationState({ db, canonicalEmail }),
+        now,
     });
-    if (isThrottled) {
-        return {
-            success: false,
-            reason: "throttled",
-        };
+    const throttleUntil = getOtpDestinationThrottleUntil({
+        state: destinationState,
+        now,
+        throttleSecondsInterval: throttleEmailSecondsInterval,
+    });
+    if (throttleUntil !== null) {
+        return buildEmailAuthenticateThrottledResponse(throttleUntil);
     }
+
+    const deliverability = await checkRegisterEmailDeliverability({
+        axiosReacher,
+        email: canonicalEmail,
+        type,
+    });
+
+    if (!deliverability.deliverable) {
+        return deliverability.response;
+    }
+
+    const emailReachability = deliverability.emailReachability;
     const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
     const codeExpiry = new Date(now);
     codeExpiry.setMinutes(
@@ -1997,14 +2596,18 @@ async function insertEmailAuthAttemptCode({
     );
     const mustSendActualEmail = config.NODE_ENV === "production";
     if (mustSendActualEmail) {
-        await sendOtpEmail({ email, otp: oneTimeCode, languageCode });
+        await sendOtpEmail({
+            email: canonicalEmail,
+            otp: oneTimeCode,
+            languageCode,
+        });
     } else {
         console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
     }
     await db.insert(authAttemptEmailTable).values({
         didWrite: didWrite,
         type: type,
-        email: email,
+        email: canonicalEmail,
         userId: userId,
         userAgent: userAgent,
         code: oneTimeCode,
@@ -2012,10 +2615,16 @@ async function insertEmailAuthAttemptCode({
         codeExpiry: codeExpiry,
         lastOtpSentAt: now,
     });
-    const nextCodeSoonestTime = new Date(now);
-    nextCodeSoonestTime.setSeconds(
-        nextCodeSoonestTime.getSeconds() + throttleEmailSecondsInterval,
-    );
+    await recordEmailOtpSend({
+        db,
+        canonicalEmail,
+        state: destinationState,
+        now,
+    });
+    const nextCodeSoonestTime = buildNextCodeSoonestTime({
+        now,
+        throttleSecondsInterval: throttleEmailSecondsInterval,
+    });
     return {
         success: true,
         codeExpiry: codeExpiry,
@@ -2031,10 +2640,10 @@ interface UpdateEmailAuthAttemptCodeProps {
     didWrite: string;
     now: Date;
     email: string;
+    axiosReacher: AxiosInstance | undefined;
     throttleEmailSecondsInterval: number;
     testCode: number;
     doUseTestCode: boolean;
-    emailReachability: ReacherIsReachable | null;
     languageCode: SupportedDisplayLanguageCodes;
 }
 
@@ -2046,32 +2655,107 @@ async function updateEmailAuthAttemptCode({
     didWrite,
     now,
     email,
+    axiosReacher,
     throttleEmailSecondsInterval,
     doUseTestCode,
     testCode,
-    emailReachability,
     languageCode,
 }: UpdateEmailAuthAttemptCodeProps): Promise<AuthenticateEmailResponse> {
-    const isThrottled = await isThrottledByEmail({
-        db,
-        email,
-        throttleEmailSecondsInterval,
-        minutesBeforeEmailCodeExpiry,
+    const canonicalEmail = normalizeEmail(email);
+    const destinationState = getEffectiveOtpDestinationState({
+        state: await getEmailOtpDestinationState({ db, canonicalEmail }),
+        now,
     });
-    if (isThrottled) {
+    const throttleUntil = getOtpDestinationThrottleUntil({
+        state: destinationState,
+        now,
+        throttleSecondsInterval: throttleEmailSecondsInterval,
+    });
+    if (throttleUntil !== null) {
+        return buildEmailAuthenticateThrottledResponse(throttleUntil);
+    }
+
+    const currentAttempt = await db
+        .select({
+            email: authAttemptEmailTable.email,
+            code: authAttemptEmailTable.code,
+            codeExpiry: authAttemptEmailTable.codeExpiry,
+        })
+        .from(authAttemptEmailTable)
+        .where(eq(authAttemptEmailTable.didWrite, didWrite))
+        .limit(1);
+
+    const mustSendActualEmail = config.NODE_ENV === "production";
+
+    const canReuseExistingCode =
+        currentAttempt.length > 0 &&
+        currentAttempt[0].email === canonicalEmail &&
+        currentAttempt[0].codeExpiry.getTime() > now.getTime();
+
+    if (canReuseExistingCode) {
+        if (mustSendActualEmail) {
+            await sendOtpEmail({
+                email: canonicalEmail,
+                otp: currentAttempt[0].code,
+                languageCode,
+            });
+        } else {
+            console.log(
+                "\n\nCode:",
+                codeToString(currentAttempt[0].code),
+                currentAttempt[0].codeExpiry,
+                "\n\n",
+            );
+        }
+        await db
+            .update(authAttemptEmailTable)
+            .set({
+                userId: userId,
+                type: type,
+                email: canonicalEmail,
+                lastOtpSentAt: now,
+                updatedAt: now,
+            })
+            .where(eq(authAttemptEmailTable.didWrite, didWrite));
+        await recordEmailOtpSend({
+            db,
+            canonicalEmail,
+            state: destinationState,
+            now,
+        });
         return {
-            success: false,
-            reason: "throttled",
+            success: true,
+            codeExpiry: currentAttempt[0].codeExpiry,
+            nextCodeSoonestTime: buildNextCodeSoonestTime({
+                now,
+                throttleSecondsInterval: throttleEmailSecondsInterval,
+            }),
         };
     }
+
+    const deliverability = await checkRegisterEmailDeliverability({
+        axiosReacher,
+        email: canonicalEmail,
+        type,
+    });
+
+    if (!deliverability.deliverable) {
+        return deliverability.response;
+    }
+
+    const emailReachability = deliverability.emailReachability;
+
     const oneTimeCode = doUseTestCode ? testCode : generateOneTimeCode();
     const codeExpiry = new Date(now);
     codeExpiry.setMinutes(
         codeExpiry.getMinutes() + minutesBeforeEmailCodeExpiry,
     );
-    const mustSendActualEmail = config.NODE_ENV === "production";
     if (mustSendActualEmail) {
-        await sendOtpEmail({ email, otp: oneTimeCode, languageCode });
+        await sendOtpEmail({
+            email: canonicalEmail,
+            otp: oneTimeCode,
+            languageCode,
+        });
     } else {
         console.log("\n\nCode:", codeToString(oneTimeCode), codeExpiry, "\n\n");
     }
@@ -2080,7 +2764,7 @@ async function updateEmailAuthAttemptCode({
         .set({
             userId: userId,
             type: type,
-            email: email,
+            email: canonicalEmail,
             code: oneTimeCode,
             emailReachability: emailReachability,
             codeExpiry: codeExpiry,
@@ -2089,57 +2773,21 @@ async function updateEmailAuthAttemptCode({
             updatedAt: now,
         })
         .where(eq(authAttemptEmailTable.didWrite, didWrite));
-    const nextCodeSoonestTime = new Date(now);
-    nextCodeSoonestTime.setSeconds(
-        nextCodeSoonestTime.getSeconds() + throttleEmailSecondsInterval,
-    );
+    await recordEmailOtpSend({
+        db,
+        canonicalEmail,
+        state: destinationState,
+        now,
+    });
+    const nextCodeSoonestTime = buildNextCodeSoonestTime({
+        now,
+        throttleSecondsInterval: throttleEmailSecondsInterval,
+    });
     return {
         success: true,
         codeExpiry: codeExpiry,
         nextCodeSoonestTime: nextCodeSoonestTime,
     };
-}
-
-interface IsThrottledByEmailParams {
-    db: PostgresDatabase;
-    email: string;
-    throttleEmailSecondsInterval: number;
-    minutesBeforeEmailCodeExpiry: number;
-}
-
-// Mirrors isThrottledByPhoneHash() but uses email directly instead of phone hash
-async function isThrottledByEmail({
-    db,
-    email,
-    throttleEmailSecondsInterval,
-    minutesBeforeEmailCodeExpiry,
-}: IsThrottledByEmailParams): Promise<boolean> {
-    const now = nowZeroMs();
-    const secondsIntervalAgo = new Date(now);
-    secondsIntervalAgo.setSeconds(
-        secondsIntervalAgo.getSeconds() - throttleEmailSecondsInterval,
-    );
-
-    const results = await db
-        .select({
-            lastOtpSentAt: authAttemptEmailTable.lastOtpSentAt,
-            codeExpiry: authAttemptEmailTable.codeExpiry,
-        })
-        .from(authAttemptEmailTable)
-        .where(eq(authAttemptEmailTable.email, email));
-    for (const result of results) {
-        const expectedExpiryTime = new Date(result.lastOtpSentAt);
-        expectedExpiryTime.setMinutes(
-            expectedExpiryTime.getMinutes() + minutesBeforeEmailCodeExpiry,
-        );
-        if (
-            result.lastOtpSentAt.getTime() > secondsIntervalAgo.getTime() &&
-            expectedExpiryTime.getTime() === result.codeExpiry.getTime() // code hasn't been guessed, because otherwise it would have been manually expired before the normal expiry time
-        ) {
-            return true;
-        }
-    }
-    return false;
 }
 
 async function expireEmailCode({
@@ -2198,6 +2846,8 @@ async function registerWithEmail({
     sessionExpiry,
     emailReachability,
 }: RegisterWithEmailProps): Promise<void> {
+    const canonicalEmail = normalizeEmail(email);
+
     log.info("Register with email");
     await db.transaction(async (tx) => {
         // Note: OTP expiration happens at registerOrLoginWithEmail entry point
@@ -2238,7 +2888,7 @@ async function registerWithEmail({
 
         await tx.insert(emailTable).values({
             userId: userId,
-            email: email,
+            email: canonicalEmail,
             type: "primary",
             emailReachability: emailReachability,
         });
@@ -2269,7 +2919,8 @@ type RegisterOrLoginWithEmailProps =
 async function registerOrLoginWithEmail(
     props: RegisterOrLoginWithEmailProps,
 ): Promise<VerifyOtp200> {
-    const { db, type, didWrite, email, userAgent, now, emailReachability } = props;
+    const { db, type, didWrite, email, userAgent, now, emailReachability } =
+        props;
     const loginSessionExpiry = new Date(now);
     loginSessionExpiry.setDate(
         loginSessionExpiry.getDate() + props.sessionLifetimeDays,
@@ -2404,6 +3055,7 @@ interface VerifyEmailOtpProps {
     code: number;
     email: string;
     sessionLifetimeDays: number;
+    now: Date;
 }
 
 export async function verifyEmailOtp({
@@ -2413,8 +3065,10 @@ export async function verifyEmailOtp({
     code,
     email,
     sessionLifetimeDays,
+    now: providedNow,
 }: VerifyEmailOtpProps): Promise<VerifyOtp200> {
-    const now = nowZeroMs();
+    const now = providedNow;
+    const canonicalEmail = normalizeEmail(email);
     const resultOtp = await db
         .select({
             userId: authAttemptEmailTable.userId,
@@ -2433,9 +3087,16 @@ export async function verifyEmailOtp({
             "Device has never made an email authentication attempt",
         );
     }
+    const destinationState = getEffectiveOtpDestinationState({
+        state: await getEmailOtpDestinationState({
+            db,
+            canonicalEmail: resultOtp[0].email,
+        }),
+        now,
+    });
 
     // Verify the submitted email matches the stored one
-    if (resultOtp[0].email !== email) {
+    if (resultOtp[0].email !== canonicalEmail) {
         throw httpErrors.badRequest(
             "The provided email is not associated with the device's ongoing auth flow",
         );
@@ -2452,14 +3113,6 @@ export async function verifyEmailOtp({
         didWrite,
         deviceStatus,
     });
-
-    // Handle rejection case first (before narrowing type)
-    if (authResult.type === "associated_with_another_user") {
-        return {
-            success: false,
-            reason: authResult.type,
-        };
-    }
 
     // CRITICAL: Reject if auth type changed during OTP flow to prevent unexpected behavior
     // This prevents scenarios like: OTP sent for "register" but email was taken by someone else
@@ -2514,11 +3167,12 @@ export async function verifyEmailOtp({
     if (resultOtp[0].codeExpiry <= now) {
         return { success: false, reason: "expired_code" };
     } else if (otpCodesEqual({ a: resultOtp[0].code, b: code })) {
-        return registerOrLoginWithEmail({
-            ...authResult,
+        return await finalizeEmailOtpSuccess({
             db,
+            authResult,
             didWrite,
             email: resultOtp[0].email,
+            canonicalEmail,
             userAgent: resultOtp[0].userAgent,
             now,
             sessionLifetimeDays,
@@ -2533,10 +3187,16 @@ export async function verifyEmailOtp({
         if (resultOtp[0].guessAttemptAmount + 1 >= maxAttempt) {
             // code is now considered expired
             await expireEmailCode({ db, didWrite });
-            return {
-                success: false,
-                reason: "too_many_wrong_guess",
-            };
+            return buildTooManyWrongGuessResponse(
+                await recordEmailOtpChallengeExhausted({
+                    db,
+                    canonicalEmail,
+                    state: destinationState,
+                    now,
+                    throttleSecondsInterval:
+                        config.THROTTLE_EMAIL_SECONDS_INTERVAL,
+                }),
+            );
         }
         return {
             success: false,

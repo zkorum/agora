@@ -394,30 +394,60 @@
                                             "additionalProperties": false
                                         },
                                         {
-                                            "type": "object",
-                                            "properties": {
-                                                "success": {
-                                                    "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                            "oneOf": [
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "success": {
+                                                            "type": "boolean",
+                                                            "enum": [
+                                                                false
+                                                            ]
+                                                        },
+                                                        "reason": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "throttled"
+                                                            ]
+                                                        },
+                                                        "nextCodeSoonestTime": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "success",
+                                                        "reason",
+                                                        "nextCodeSoonestTime"
+                                                    ],
+                                                    "additionalProperties": false
                                                 },
-                                                "reason": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "already_has_credential",
-                                                        "associated_with_another_user",
-                                                        "throttled",
-                                                        "invalid_phone_number",
-                                                        "restricted_phone_type"
-                                                    ]
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "success": {
+                                                            "type": "boolean",
+                                                            "enum": [
+                                                                false
+                                                            ]
+                                                        },
+                                                        "reason": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "already_has_credential",
+                                                                "associated_with_another_user",
+                                                                "invalid_phone_number",
+                                                                "restricted_phone_type"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "success",
+                                                        "reason"
+                                                    ],
+                                                    "additionalProperties": false
                                                 }
-                                            },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
-                                            "additionalProperties": false
+                                            ]
                                         }
                                     ]
                                 }
@@ -643,31 +673,61 @@
                                             "additionalProperties": false
                                         },
                                         {
-                                            "type": "object",
-                                            "properties": {
-                                                "success": {
-                                                    "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                            "oneOf": [
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "success": {
+                                                            "type": "boolean",
+                                                            "enum": [
+                                                                false
+                                                            ]
+                                                        },
+                                                        "reason": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "too_many_wrong_guess"
+                                                            ]
+                                                        },
+                                                        "nextCodeSoonestTime": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "success",
+                                                        "reason",
+                                                        "nextCodeSoonestTime"
+                                                    ],
+                                                    "additionalProperties": false
                                                 },
-                                                "reason": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "expired_code",
-                                                        "wrong_guess",
-                                                        "too_many_wrong_guess",
-                                                        "already_has_credential",
-                                                        "associated_with_another_user",
-                                                        "auth_state_changed"
-                                                    ]
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "success": {
+                                                            "type": "boolean",
+                                                            "enum": [
+                                                                false
+                                                            ]
+                                                        },
+                                                        "reason": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "expired_code",
+                                                                "wrong_guess",
+                                                                "already_has_credential",
+                                                                "associated_with_another_user",
+                                                                "auth_state_changed"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "success",
+                                                        "reason"
+                                                    ],
+                                                    "additionalProperties": false
                                                 }
-                                            },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
-                                            "additionalProperties": false
+                                            ]
                                         }
                                     ]
                                 }
@@ -738,30 +798,60 @@
                                             "additionalProperties": false
                                         },
                                         {
-                                            "type": "object",
-                                            "properties": {
-                                                "success": {
-                                                    "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                            "oneOf": [
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "success": {
+                                                            "type": "boolean",
+                                                            "enum": [
+                                                                false
+                                                            ]
+                                                        },
+                                                        "reason": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "throttled"
+                                                            ]
+                                                        },
+                                                        "nextCodeSoonestTime": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "success",
+                                                        "reason",
+                                                        "nextCodeSoonestTime"
+                                                    ],
+                                                    "additionalProperties": false
                                                 },
-                                                "reason": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "already_has_credential",
-                                                        "associated_with_another_user",
-                                                        "throttled",
-                                                        "unreachable",
-                                                        "disposable"
-                                                    ]
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "success": {
+                                                            "type": "boolean",
+                                                            "enum": [
+                                                                false
+                                                            ]
+                                                        },
+                                                        "reason": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "already_has_credential",
+                                                                "associated_with_another_user",
+                                                                "unreachable",
+                                                                "disposable"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "success",
+                                                        "reason"
+                                                    ],
+                                                    "additionalProperties": false
                                                 }
-                                            },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
-                                            "additionalProperties": false
+                                            ]
                                         }
                                     ]
                                 }
@@ -831,31 +921,61 @@
                                             "additionalProperties": false
                                         },
                                         {
-                                            "type": "object",
-                                            "properties": {
-                                                "success": {
-                                                    "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                            "oneOf": [
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "success": {
+                                                            "type": "boolean",
+                                                            "enum": [
+                                                                false
+                                                            ]
+                                                        },
+                                                        "reason": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "too_many_wrong_guess"
+                                                            ]
+                                                        },
+                                                        "nextCodeSoonestTime": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "success",
+                                                        "reason",
+                                                        "nextCodeSoonestTime"
+                                                    ],
+                                                    "additionalProperties": false
                                                 },
-                                                "reason": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "expired_code",
-                                                        "wrong_guess",
-                                                        "too_many_wrong_guess",
-                                                        "already_has_credential",
-                                                        "associated_with_another_user",
-                                                        "auth_state_changed"
-                                                    ]
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "success": {
+                                                            "type": "boolean",
+                                                            "enum": [
+                                                                false
+                                                            ]
+                                                        },
+                                                        "reason": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "expired_code",
+                                                                "wrong_guess",
+                                                                "already_has_credential",
+                                                                "associated_with_another_user",
+                                                                "auth_state_changed"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "success",
+                                                        "reason"
+                                                    ],
+                                                    "additionalProperties": false
                                                 }
-                                            },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
-                                            "additionalProperties": false
+                                            ]
                                         }
                                     ]
                                 }
@@ -5374,6 +5494,7 @@
                                         }
                                     },
                                     "seedOpinionList": {
+                                        "maxItems": 50,
                                         "type": "array",
                                         "items": {
                                             "type": "string",

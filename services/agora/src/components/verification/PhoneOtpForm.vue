@@ -7,7 +7,7 @@
     </div>
 
     <div class="otpDiv">
-      <div class="codeInput" @keydown.enter="handleEnterKey">
+      <div class="codeInput" @keydown.enter.prevent.stop="handleEnterKey">
         <ZKInputOtp
           v-model="verificationCode"
           :length="6"
@@ -34,6 +34,7 @@
       <ZKButton
         button-type="largeButton"
         :label="t('changeNumber')"
+        :disable="isInteractionLocked"
         text-color="primary"
         @click="emit('changeIdentifier')"
       />
@@ -48,7 +49,7 @@
               's'
             : t('resendCode')
         "
-        :disable="verificationNextCodeSeconds > 0"
+        :disable="verificationNextCodeSeconds > 0 || isInteractionLocked"
         text-color="primary"
         @click="clickedResendButton()"
       />
@@ -59,6 +60,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { createRequestGate } from "src/composables/verification/createRequestGate";
 import { useOtpTimers } from "src/composables/verification/useOtpTimers";
 import { useVerificationComplete } from "src/composables/verification/useVerificationComplete";
 import {
@@ -68,7 +70,7 @@ import {
 import { phoneVerificationStore } from "src/stores/onboarding/phone";
 import { useAuthPhoneApi } from "src/utils/api/auth-phone";
 import { useNotify } from "src/utils/ui/notify";
-import { onMounted, ref, watchEffect } from "vue";
+import { computed, onMounted, onUnmounted, ref, watchEffect } from "vue";
 
 import ZKButton from "../ui-library/ZKButton.vue";
 import ZKInputOtp from "../ui-library/ZKInputOtp.vue";
@@ -97,6 +99,8 @@ const {
   codeExpired,
   resetCode,
   processRequestCodeResponse,
+  setNextCodeSoonestTime,
+  clearTimers,
 } = useOtpTimers();
 
 const { completeVerification } = useVerificationComplete();
@@ -105,7 +109,15 @@ const { sendSmsCode, verifyPhoneOtp } = useAuthPhoneApi();
 
 const { showNotifyMessage } = useNotify();
 
-const isSubmitButtonLoading = ref(false);
+const requestGate = createRequestGate();
+
+onUnmounted(() => {
+  requestGate.terminate();
+  clearTimers();
+});
+
+const isSubmitButtonLoading = requestGate.isBusy;
+const isInteractionLocked = computed(() => requestGate.isBusy.value);
 
 const formattedPhoneNumber = ref("");
 
@@ -142,6 +154,9 @@ onMounted(async () => {
 });
 
 async function clickedResendButton() {
+  if (requestGate.isBusy.value || requestGate.isTerminated.value) {
+    return;
+  }
   resetCode();
   await requestCodeClicked(true);
 }
@@ -153,105 +168,133 @@ function handleEnterKey() {
 }
 
 async function nextButtonClicked() {
-  isSubmitButtonLoading.value = true;
+  const requestId = requestGate.start();
+  if (requestId === null) {
+    return;
+  }
 
   const validatedCode = validateAndParseOtpCode(verificationCode.value);
 
   if (validatedCode === null) {
-    isSubmitButtonLoading.value = false;
-    showNotifyMessage(t("pleaseEnterValidCode"));
+    if (requestGate.isCurrent(requestId)) {
+      showNotifyMessage(t("pleaseEnterValidCode"));
+    }
+    requestGate.finish(requestId);
     return;
   }
 
-  const response = await verifyPhoneOtp({
-    code: validatedCode,
-    phoneNumber: verificationPhoneNumber.value.internationalPhoneNumber,
-    defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
-  });
+  try {
+    const response = await verifyPhoneOtp({
+      code: validatedCode,
+      phoneNumber: verificationPhoneNumber.value.internationalPhoneNumber,
+      defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
+    });
 
-  isSubmitButtonLoading.value = false;
-
-  if (response.status == "success") {
-    const data = verifyOtp200.parse(response.data);
-    if (data.success) {
-      if (data.accountMerged) {
-        showNotifyMessage(t("accountMerged"));
-      } else {
-        showNotifyMessage(t("verificationSuccessful"));
-      }
-      emit("verified", data.accountMerged);
-      await completeVerification();
-    } else {
-      switch (data.reason) {
-        case "expired_code":
-          codeExpired();
-          showNotifyMessage(t("codeExpiredResend"));
-          break;
-        case "wrong_guess":
-          showNotifyMessage(t("wrongCodeTryAgain"));
-          break;
-        case "too_many_wrong_guess":
-          codeExpired();
-          showNotifyMessage(t("codeExpiredResend"));
-          break;
-        case "already_has_credential": {
-          showNotifyMessage(t("alreadyHasCredential"));
-          emit("verified", false);
-          await completeVerification();
-          break;
-        }
-        case "associated_with_another_user": {
-          showNotifyMessage(t("credentialAlreadyLinked"));
-          break;
-        }
-        case "auth_state_changed": {
-          showNotifyMessage(t("authStateChanged"));
-          codeExpired();
-          break;
-        }
-      }
+    if (!requestGate.isCurrent(requestId)) {
+      return;
     }
-  } else {
-    console.error("Error while verifying code", response.message);
-    showNotifyMessage(t("somethingWrong"));
+
+    if (response.status == "success") {
+      const data = verifyOtp200.parse(response.data);
+      if (data.success) {
+        requestGate.terminate();
+        if (data.accountMerged) {
+          showNotifyMessage(t("accountMerged"));
+        } else {
+          showNotifyMessage(t("verificationSuccessful"));
+        }
+        emit("verified", data.accountMerged);
+        await completeVerification();
+      } else {
+        switch (data.reason) {
+          case "expired_code":
+            codeExpired();
+            showNotifyMessage(t("codeExpiredResend"));
+            break;
+          case "wrong_guess":
+            showNotifyMessage(t("wrongCodeTryAgain"));
+            break;
+          case "too_many_wrong_guess":
+            codeExpired();
+            setNextCodeSoonestTime(new Date(data.nextCodeSoonestTime));
+            showNotifyMessage(t("codeExpiredResend"));
+            break;
+          case "already_has_credential": {
+            requestGate.terminate();
+            showNotifyMessage(t("alreadyHasCredential"));
+            emit("verified", false);
+            await completeVerification();
+            break;
+          }
+          case "associated_with_another_user": {
+            showNotifyMessage(t("credentialAlreadyLinked"));
+            break;
+          }
+          case "auth_state_changed": {
+            showNotifyMessage(t("authStateChanged"));
+            codeExpired();
+            break;
+          }
+        }
+      }
+    } else {
+      console.error("Error while verifying code", response.message);
+      showNotifyMessage(t("somethingWrong"));
+    }
+  } finally {
+    requestGate.finish(requestId);
   }
 }
 
 async function requestCodeClicked(isRequestingNewCode: boolean) {
-  const response = await sendSmsCode({
-    isRequestingNewCode: isRequestingNewCode,
-    phoneNumber: verificationPhoneNumber.value.internationalPhoneNumber,
-    defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
-  });
-  if (response.status == "success") {
-    const data = authenticate200.parse(response.data);
-    if (data.success) {
-      processRequestCodeResponse(data);
-    } else {
-      switch (data.reason) {
-        case "already_has_credential": {
-          showNotifyMessage(t("alreadyHasCredential"));
-          emit("verified", false);
-          await completeVerification();
-          break;
-        }
-        case "associated_with_another_user":
-          showNotifyMessage(t("credentialAlreadyLinked"));
-          break;
-        case "throttled":
-          showNotifyMessage(t("tooManyAttempts"));
-          break;
-        case "invalid_phone_number":
-          showNotifyMessage(t("invalidPhoneNumber"));
-          break;
-        case "restricted_phone_type":
-          showNotifyMessage(t("restrictedPhoneType"));
-          break;
-      }
+  const requestId = requestGate.start();
+  if (requestId === null) {
+    return;
+  }
+
+  try {
+    const response = await sendSmsCode({
+      isRequestingNewCode: isRequestingNewCode,
+      phoneNumber: verificationPhoneNumber.value.internationalPhoneNumber,
+      defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
+    });
+    if (!requestGate.isCurrent(requestId)) {
+      return;
     }
-  } else {
-    console.error("Error while requesting a code", response.message);
-    showNotifyMessage(t("somethingWrong"));
+    if (response.status == "success") {
+      const data = authenticate200.parse(response.data);
+      if (data.success) {
+        processRequestCodeResponse(data);
+      } else {
+        switch (data.reason) {
+          case "already_has_credential": {
+            requestGate.terminate();
+            showNotifyMessage(t("alreadyHasCredential"));
+            emit("verified", false);
+            await completeVerification();
+            break;
+          }
+          case "associated_with_another_user":
+            showNotifyMessage(t("credentialAlreadyLinked"));
+            break;
+          case "throttled":
+            setNextCodeSoonestTime(new Date(data.nextCodeSoonestTime));
+            showNotifyMessage(t("tooManyAttempts"));
+            break;
+          case "invalid_phone_number":
+            showNotifyMessage(t("invalidPhoneNumber"));
+            break;
+          case "restricted_phone_type":
+            showNotifyMessage(t("restrictedPhoneType"));
+            break;
+        }
+      }
+    } else {
+      console.error("Error while requesting a code", response.message);
+      showNotifyMessage(t("somethingWrong"));
+    }
+  } finally {
+    requestGate.finish(requestId);
   }
 }
 

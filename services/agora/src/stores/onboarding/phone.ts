@@ -14,10 +14,11 @@ export const phoneVerificationStore = defineStore("phoneVerification", () => {
   };
 
   const verificationPhoneNumber = ref(EMPTY_NUMBER);
+  const requestCodeThrottleUntil = ref<Date | null>(null);
   const pendingOtpData = ref<{
     codeExpiry: Date;
     nextCodeSoonestTime: Date;
   } | null>(null);
 
-  return { verificationPhoneNumber, pendingOtpData };
+  return { verificationPhoneNumber, requestCodeThrottleUntil, pendingOtpData };
 });
