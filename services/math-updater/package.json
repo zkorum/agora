@@ -35,7 +35,7 @@
         "extract-first-json": "^2.0.2",
         "libphonenumber-js": "^1.12.41",
         "p-limit": "^7.3.0",
-        "parse-json-object": "^3.0.1",
+        "parse-json-object": "^4.0.0",
         "pg-boss": "^12.15.0",
         "pino": "^10.3.1",
         "pino-pretty": "^13.1.3",
