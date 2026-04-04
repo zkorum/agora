@@ -1,11 +1,3 @@
-export function getDateString(dateObject: Date) {
-  return dateObject.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
 export function zeroIfUndefined(value: number | undefined): number {
   if (value === undefined) {
     return 0;

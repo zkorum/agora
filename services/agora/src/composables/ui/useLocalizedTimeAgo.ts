@@ -1,21 +1,7 @@
 import { formatTimeAgoIntl, useTimeAgoIntl } from "@vueuse/core";
+import { toBcp47Locale } from "src/utils/language";
 import type { ComputedRef, MaybeRefOrGetter } from "vue";
 import { useI18n } from "vue-i18n";
-
-/**
- * Map internal display language codes to BCP 47 locale identifiers
- * for Intl.RelativeTimeFormat.
- */
-function toBcp47Locale(code: string): string {
-  switch (code) {
-    case "zh-Hans":
-      return "zh-CN";
-    case "zh-Hant":
-      return "zh-TW";
-    default:
-      return code;
-  }
-}
 
 /**
  * Reactive composable for localized relative time strings.

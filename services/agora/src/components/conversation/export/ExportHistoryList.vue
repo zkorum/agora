@@ -28,9 +28,9 @@ import type { UseQueryReturnType } from "@tanstack/vue-query";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import ListSection from "src/components/ui-library/ListSection.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useLocalizedDateTimeFormatter } from "src/composables/ui/useLocalizedDateTime";
 import type { GetConversationExportHistoryResponse } from "src/shared/types/dto";
 import type { SettingsInterface } from "src/utils/component/settings/settings";
-import { formatDateTime } from "src/utils/format";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
@@ -53,6 +53,7 @@ const { t } = useComponentI18n<ExportHistoryListTranslations>(
   exportHistoryListTranslations
 );
 const router = useRouter();
+const formatDateTime = useLocalizedDateTimeFormatter();
 
 // Get export data directly (now a simple array)
 const exports = computed(() => {

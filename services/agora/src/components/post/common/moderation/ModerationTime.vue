@@ -2,10 +2,10 @@
   <div>
     <div class="container">
       <div>
-        {{ displayDateString("h:mm A") }}
+        {{ displayedTime }}
       </div>
       <div>
-        {{ displayDateString("YYYY-MM-DD") }}
+        {{ displayedDate }}
       </div>
 
       <div v-if="isModerationEdited" class="editedMessage">
@@ -16,8 +16,12 @@
 </template>
 
 <script setup lang="ts">
-import { useDateFormat } from "@vueuse/core";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  localizedDateTimeFormatOptions,
+  useLocalizedDateTimeFormatter,
+} from "src/composables/ui/useLocalizedDateTime";
+import { computed } from "vue";
 
 import {
   type ModerationTimeTranslations,
@@ -29,17 +33,28 @@ const props = defineProps<{
   updatedAt: Date;
 }>();
 
-const isModerationEdited =
-  props.createdAt.getTime() === props.updatedAt.getTime() ? false : true;
-const displayDate = isModerationEdited ? props.updatedAt : props.createdAt;
+const isModerationEdited = computed(
+  () => props.createdAt.getTime() !== props.updatedAt.getTime()
+);
+
+const displayDate = computed(() =>
+  isModerationEdited.value ? props.updatedAt : props.createdAt
+);
 
 const { t } = useComponentI18n<ModerationTimeTranslations>(
   moderationTimeTranslations
 );
 
-function displayDateString(format: string) {
-  return useDateFormat(displayDate, format);
-}
+const formatModerationTime = useLocalizedDateTimeFormatter({
+  options: localizedDateTimeFormatOptions.time,
+});
+
+const formatModerationDate = useLocalizedDateTimeFormatter({
+  options: localizedDateTimeFormatOptions.numericDate,
+});
+
+const displayedTime = computed(() => formatModerationTime(displayDate.value));
+const displayedDate = computed(() => formatModerationDate(displayDate.value));
 </script>
 
 <style lang="scss" scoped>

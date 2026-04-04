@@ -40,6 +40,10 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import {
+  localizedDateTimeFormatOptions,
+  useLocalizedDateTimeFormatter,
+} from "src/composables/ui/useLocalizedDateTime";
 import { formatAmount } from "src/utils/common";
 import { computed } from "vue";
 
@@ -60,9 +64,13 @@ const props = defineProps<{
   totalVoteCount: number;
 }>();
 
-const { t, locale } = useComponentI18n<ReportHeaderTranslations>(
+const { t } = useComponentI18n<ReportHeaderTranslations>(
   reportHeaderTranslations,
 );
+
+const formatReportDate = useLocalizedDateTimeFormatter({
+  options: localizedDateTimeFormatOptions.longDate,
+});
 
 const hasModeration = computed(
   () =>
@@ -71,25 +79,8 @@ const hasModeration = computed(
     props.totalVoteCount > props.voteCount,
 );
 
-const localeMap: Record<string, string> = {
-  en: "en-US",
-  fr: "fr-FR",
-  es: "es-ES",
-  ar: "ar-SA",
-  "zh-Hans": "zh-CN",
-  "zh-Hant": "zh-TW",
-  ja: "ja-JP",
-};
-
-const bcp47Locale = computed(() => localeMap[locale.value] ?? "en-US");
-
 const formattedDate = computed(() => {
-  const date = new Date(props.createdAt);
-  return date.toLocaleDateString(bcp47Locale.value, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  return formatReportDate(props.createdAt);
 });
 </script>
 

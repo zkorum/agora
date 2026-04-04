@@ -225,6 +225,7 @@ import { useQuasar } from "quasar";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useLocalizedDateTimeFormatter } from "src/composables/ui/useLocalizedDateTime";
 
 import {
   type ExportStatusViewTranslations,
@@ -246,7 +247,7 @@ import {
   useDeleteExportMutation,
   useExportStatusQuery,
 } from "src/utils/api/conversationExport/useConversationExportQueries";
-import { formatDateTime, formatFileSize, isUrlExpired } from "src/utils/format";
+import { formatFileSize, isUrlExpired } from "src/utils/format";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
@@ -268,6 +269,7 @@ const { profileData } = storeToRefs(userStore);
 const $q = useQuasar();
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
+const formatDateTime = useLocalizedDateTimeFormatter();
 
 const exportStatusQuery = useExportStatusQuery({
   exportSlugId: props.exportSlugId,

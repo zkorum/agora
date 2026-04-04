@@ -61,6 +61,10 @@
 <script setup lang="ts">
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
+import {
+  localizedDateTimeFormatOptions,
+  useLocalizedDateTimeFormatter,
+} from "src/composables/ui/useLocalizedDateTime";
 import type { OpinionItem } from "src/shared/types/zod";
 import { computed, nextTick } from "vue";
 
@@ -88,6 +92,10 @@ const emit = defineEmits<{
 }>();
 
 import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
+
+const formatDateForScreenReader = useLocalizedDateTimeFormatter({
+  options: localizedDateTimeFormatOptions.dateTime,
+});
 
 const finalCommentList = computed((): OpinionItem[] => {
   const result: OpinionItem[] = [];
@@ -131,20 +139,6 @@ function getCommentAriaLabel(commentItem: OpinionItem, index: number): string {
   const seed = commentItem.isSeed ? ", seed comment" : "";
 
   return `${position} ${author}${highlighted}${seed}`;
-}
-
-/**
- * Formats date for screen reader accessibility
- */
-function formatDateForScreenReader(dateInput: string | Date): string {
-  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
 }
 
 /**
