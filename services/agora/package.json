@@ -124,7 +124,7 @@
     "overrides": {
       "@eslint/eslintrc>ajv": "^6.12.4",
       "ajv": ">=6.12.3",
-      "lodash": ">=4.17.23",
+      "lodash": ">=4.18.1",
       "valibot": ">=1.2.0",
       "jsonpath": ">=1.2.0"
     }
