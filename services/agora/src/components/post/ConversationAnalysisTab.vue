@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
-import { computed, inject, onMounted, ref, watch } from "vue";
+import { computed, inject, onActivated, onMounted, ref, watch } from "vue";
 
 import AnalysisPage from "./analysis/AnalysisPage.vue";
 
@@ -70,9 +70,14 @@ watch(isLoading, (loading) => {
   setCurrentTabLoading(loading);
 });
 
-// Register pull-to-refresh handler: refetch analysis data
-registerChildRefreshHandler(async () => {
+async function handleChildRefresh(): Promise<void> {
   await analysisQuery.refetch();
+}
+
+registerChildRefreshHandler(handleChildRefresh);
+
+onActivated(() => {
+  registerChildRefreshHandler(handleChildRefresh);
 });
 
 onMounted(() => {

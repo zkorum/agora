@@ -49,7 +49,7 @@ import {
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
-import { computed, inject, onMounted, type Ref, ref, watch } from "vue";
+import { computed, inject, onActivated, onMounted, type Ref, ref, watch } from "vue";
 
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
 import CommentComposer from "./comments/CommentComposer.vue";
@@ -239,16 +239,19 @@ watch(
   }
 );
 
-// Register pull-to-refresh handler: mark all comment queries stale + refetch only the active one.
-// Does NOT call refreshData() (which also invalidates analysis + refetches votes) to avoid
-// duplicating work the parent already handles.
-registerChildRefreshHandler(async () => {
+async function handleChildRefresh(): Promise<void> {
   const section = opinionSectionRef.value;
   if (!section) return;
   await Promise.all([
     markCommentsAsStale(conversationSlugId.value),
     section.refetchActiveQuery(),
   ]);
+}
+
+registerChildRefreshHandler(handleChildRefresh);
+
+onActivated(() => {
+  registerChildRefreshHandler(handleChildRefresh);
 });
 
 onMounted(() => {
