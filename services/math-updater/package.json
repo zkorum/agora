@@ -50,7 +50,7 @@
         "@types/eslint__js": "^8.42.3",
         "@types/node": "^25.5.2",
         "@types/sanitize-html": "^2.16.1",
-        "eslint": "^9.27.0",
+        "eslint": "^10.2.0",
         "eslint-config-prettier": "^10.1.8",
         "fastify": "^5.8.4",
         "globals": "^17.4.0",
