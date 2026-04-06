@@ -83,6 +83,10 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+    ignore:
+      # solidago==0.5.0 still requires pandas<3, so pandas 3.x widener PRs are noise
+      - dependency-name: "pandas"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
