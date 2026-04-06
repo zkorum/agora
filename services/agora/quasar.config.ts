@@ -125,6 +125,22 @@ export default defineConfig((ctx) => {
               authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
               org: "zkorum",
               project: "agora-app",
+              sourcemaps: {
+                ignore: [
+                  "./dist/spa/assets/_plugin-vue_export-helper-*.js",
+                  "./dist/spa/assets/preload-helper-*.js",
+                  "./dist/spa/assets/defineProperty-*.js",
+                  "./dist/spa/assets/chunk-*.js",
+                  "./dist/spa/assets/dist-*.js",
+                  "./dist/spa/assets/i18n-*.js",
+                  "./dist/spa/assets/AnalysisReportTest-*.js",
+                  "./dist/spa/assets/AsyncStateHandlerTest-*.js",
+                  "./dist/spa/assets/EmbeddedBrowserWarningTest-*.js",
+                  "./dist/spa/assets/OpinionGroupVisualizationTest-*.js",
+                  "./dist/spa/assets/PreferencesDialogTest-*.js",
+                  "./dist/spa/assets/Editor-*.js",
+                ],
+              },
             })
           );
         }
