@@ -15,7 +15,7 @@
     "author": "ZKorum SAS <hello@zkorum.com>",
     "license": "MPL-2.0",
     "dependencies": {
-        "cborg": "^4.5.8",
+        "cborg": "^5.0.1",
         "countries-list": "^3.3.0",
         "i": "^0.3.7",
         "keystore-idb": "^0.15.5",
