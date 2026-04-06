@@ -70,20 +70,22 @@ const displayLanguageSettings = computed((): SettingsInterface[] => {
 
 const additionalLanguageSettings = computed((): SettingsInterface[] => {
   const spokenLanguages = languageStore.spokenLanguages;
-  let spokenValue = "";
+  const spokenValue = (() => {
+    if (spokenLanguages.length === 0) {
+      return t("noneSelected");
+    }
 
-  if (spokenLanguages.length === 0) {
-    spokenValue = t("noneSelected");
-  } else if (spokenLanguages.length === 1) {
-    const firstLang = getLanguageByCode(spokenLanguages[0]);
-    spokenValue = firstLang ? firstLang.name : spokenLanguages[0];
-  } else {
+    if (spokenLanguages.length === 1) {
+      const firstLang = getLanguageByCode(spokenLanguages[0]);
+      return firstLang ? firstLang.name : spokenLanguages[0];
+    }
+
     const firstLang = getLanguageByCode(spokenLanguages[0]);
     const firstName = firstLang ? firstLang.name : spokenLanguages[0];
     const otherCount = spokenLanguages.length - 1;
     const otherText = otherCount > 1 ? t("others") : t("other");
-    spokenValue = `${firstName} ${t("and")} ${otherCount} ${otherText}`;
-  }
+    return `${firstName} ${t("and")} ${otherCount} ${otherText}`;
+  })();
 
   return [
     {
