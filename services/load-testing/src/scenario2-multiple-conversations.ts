@@ -151,11 +151,6 @@ const createdUsers: {
     prefixedKey: string;
 }[] = [];
 
-const createdUsers: {
-    did: string;
-    prefixedKey: string;
-}[] = [];
-
 // Backend DID from environment variable
 // Default to localhost for local development
 const BACKEND_DID = __ENV.BACKEND_DID || "did:web:localhost%3A8084";
