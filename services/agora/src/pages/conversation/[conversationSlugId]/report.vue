@@ -96,6 +96,7 @@ import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { getReportOpinions, REPORT_ITEMS_PER_CAPTURE_PAGE, REPORT_ITEMS_PER_PDF_PAGE } from "src/utils/component/report/reportData";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
+import { getSingleRouteParam } from "src/utils/router/params";
 import { computed, nextTick, ref } from "vue";
 import { useRoute } from "vue-router";
 
@@ -111,15 +112,11 @@ const { t } = useComponentI18n<ReportPageTranslations>(reportPageTranslations);
 const authStore = useAuthenticationStore();
 const { isAuthInitialized } = storeToRefs(authStore);
 
-const route = useRoute("/conversation/[conversationSlugId]/report");
+const route = useRoute();
 const goBackButtonHandler = useGoBackButtonHandler();
 
 const conversationSlugId = computed(() => {
-  const value = route.params.conversationSlugId;
-  if (Array.isArray(value)) {
-    return value[0] || "";
-  }
-  return value || "";
+  return getSingleRouteParam(route.params.conversationSlugId);
 });
 
 async function handleNarrowBack(): Promise<void> {

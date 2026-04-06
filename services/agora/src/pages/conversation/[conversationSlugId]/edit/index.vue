@@ -130,6 +130,7 @@ import { MAX_LENGTH_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
 import type { ParticipationMode } from "src/shared/types/zod";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import { useUpdateConversationMutation } from "src/utils/api/post/useConversationMutations";
+import { getSingleRouteParam } from "src/utils/router/params";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -149,13 +150,13 @@ const { t } = useComponentI18n<EditConversationTranslations>(
   editConversationTranslations
 );
 
-const route = useRoute("/conversation/[conversationSlugId]/edit/");
+const route = useRoute();
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
 const { getConversationForEdit } = useBackendPostEditApi();
 const updateMutation = useUpdateConversationMutation();
 
-const conversationSlugId = route.params.conversationSlugId;
+const conversationSlugId = getSingleRouteParam(route.params.conversationSlugId);
 
 const isSaveButtonLoading = ref(false);
 const isTitleOverLimit = ref(false);

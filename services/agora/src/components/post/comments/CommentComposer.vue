@@ -97,7 +97,10 @@ import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useUserStore } from "src/stores/user";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
 import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
-import { useRouteGuard } from "src/utils/component/routing/routeGuard";
+import {
+  type RouteGuardDestination,
+  useRouteGuard,
+} from "src/utils/component/routing/routeGuard";
 import { useNotify } from "src/utils/ui/notify";
 import {
   computed,
@@ -108,7 +111,6 @@ import {
   useTemplateRef,
   watch,
 } from "vue";
-import type { RouteLocationNormalized } from "vue-router";
 
 import {
   type CommentComposerTranslations,
@@ -348,7 +350,7 @@ async function onLoginCallback() {
   }
 }
 
-function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
+function onBeforeRouteLeaveCallback(to: RouteGuardDestination): boolean {
   if (characterCount.value > 0 && isRouteLockedCheck()) {
     // Auto-save draft when navigating to login/verify pages
     // (triggered by voting on gated conversations via PollWrapper/CommentActionBar)

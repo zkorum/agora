@@ -23,6 +23,7 @@ import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { processEnv } from "src/utils/processEnv";
+import { getSingleRouteParam } from "src/utils/router/params";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -40,22 +41,14 @@ const { t } = useComponentI18n<ExportStatusPageTranslations>(
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
 
-const route = useRoute("/conversation/[conversationSlugId]/export.[exportId]");
+const route = useRoute();
 
 const conversationSlugId = computed(() => {
-  const value = route.params.conversationSlugId;
-  if (Array.isArray(value)) {
-    return value[0] || "";
-  }
-  return value || "";
+  return getSingleRouteParam(route.params.conversationSlugId);
 });
 
 const exportSlugId = computed(() => {
-  const value = route.params.exportId;
-  if (Array.isArray(value)) {
-    return value[0] || "";
-  }
-  return value || "";
+  return getSingleRouteParam(route.params.exportId);
 });
 
 // Redirect if export feature is disabled

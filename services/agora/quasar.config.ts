@@ -7,7 +7,6 @@ import { fileURLToPath } from "node:url";
 
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { visualizer } from "rollup-plugin-visualizer";
-import type { Plugin } from "vite";
 import viteCompression from "vite-plugin-compression";
 
 import { defineConfig } from "#q-app/wrappers";
@@ -73,7 +72,7 @@ export default defineConfig((ctx) => {
       sourcemap: "hidden", // generates .map files for Sentry but strips sourceMappingURL from bundles so browsers don't download them
       minify: "terser",
       target: {
-        browser: ["es2020", "firefox115", "chrome115", "safari14", "chrome86"],
+        browser: ["es2020", "firefox115", "chrome86", "safari14"],
         node: "node20",
       },
 
@@ -171,7 +170,7 @@ export default defineConfig((ctx) => {
             // Note: config.env only contains VITE_* vars, so we use process.env
             validateEnv(process.env);
           },
-        } satisfies Plugin,
+        },
         viteCompression({
           algorithm: "gzip",
           ext: ".gz",
@@ -191,10 +190,10 @@ export default defineConfig((ctx) => {
         // TODO: add env variable to add TLS/SSL
         // basicSsl(),
         [
-          "unplugin-vue-router/vite",
+          "vue-router/vite",
           {
             // routesFolder: 'src/pages',
-            dts: "./typed-router.d.ts",
+            dts: "./src/route-map.d.ts",
           },
         ],
       ],

@@ -102,6 +102,7 @@ import {
 } from "src/utils/api/conversationExport/useConversationExportQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { processEnv } from "src/utils/processEnv";
+import { getSingleRouteParam } from "src/utils/router/params";
 import { useNotify } from "src/utils/ui/notify";
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -120,13 +121,9 @@ const { showNotifyMessage } = useNotify();
 const authStore = useAuthenticationStore();
 const { isAuthInitialized, isGuestOrLoggedIn } = storeToRefs(authStore);
 
-const route = useRoute("/conversation/[conversationSlugId]/export");
+const route = useRoute();
 const conversationSlugId = computed(() => {
-  const value = route.params.conversationSlugId;
-  if (Array.isArray(value)) {
-    return value[0] || "";
-  }
-  return value || "";
+  return getSingleRouteParam(route.params.conversationSlugId);
 });
 
 // Redirect if export feature is disabled

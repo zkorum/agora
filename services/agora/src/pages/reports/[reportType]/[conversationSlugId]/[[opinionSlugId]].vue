@@ -61,6 +61,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useLocalizedTimeAgoFormatter } from "src/composables/ui/useLocalizedTimeAgo";
 import type { UserReportItem } from "src/shared/types/zod";
 import { useBackendReportApi } from "src/utils/api/report";
+import { getSingleRouteParam } from "src/utils/router/params";
 import { useNotify } from "src/utils/ui/notify";
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -72,9 +73,7 @@ import {
 
 const { isActive } = usePageLayout({ reducedWidth: true, addBottomPadding: true });
 
-const route = useRoute(
-  "/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]"
-);
+const route = useRoute();
 const router = useRouter();
 
 const { showNotifyMessage } = useNotify();
@@ -100,9 +99,9 @@ async function openPage() {
     route.name ===
     "/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]"
   ) {
-    const conversationSlugId = Array.isArray(route.params.conversationSlugId)
-      ? route.params.conversationSlugId[0]
-      : route.params.conversationSlugId;
+    const conversationSlugId = getSingleRouteParam(
+      route.params.conversationSlugId,
+    );
 
     if (route.params.reportType == "conversation") {
       await router.push({
@@ -110,9 +109,7 @@ async function openPage() {
         params: { postSlugId: conversationSlugId },
       });
     } else if (route.params.reportType == "opinion") {
-      const opinionSlugId = Array.isArray(route.params.opinionSlugId)
-        ? route.params.opinionSlugId[0]
-        : route.params.opinionSlugId;
+      const opinionSlugId = getSingleRouteParam(route.params.opinionSlugId);
 
       await router.push({
         name: "/conversation/[postSlugId]/",
@@ -130,9 +127,9 @@ async function loadReports() {
     route.name ===
     "/reports/[reportType]/[conversationSlugId]/[[opinionSlugId]]"
   ) {
-    const conversationSlugId = Array.isArray(route.params.conversationSlugId)
-      ? route.params.conversationSlugId[0]
-      : route.params.conversationSlugId;
+    const conversationSlugId = getSingleRouteParam(
+      route.params.conversationSlugId,
+    );
 
     if (route.params.reportType == "conversation") {
       reportType.value = "conversation";
@@ -143,9 +140,7 @@ async function loadReports() {
       route.params.opinionSlugId
     ) {
       reportType.value = "opinion";
-      const opinionSlugId = Array.isArray(route.params.opinionSlugId)
-        ? route.params.opinionSlugId[0]
-        : route.params.opinionSlugId;
+      const opinionSlugId = getSingleRouteParam(route.params.opinionSlugId);
 
       reportItemList.value =
         await fetchUserReportsByCommentSlugId(opinionSlugId);

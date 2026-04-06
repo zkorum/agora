@@ -1,12 +1,17 @@
 import type { Ref } from "vue";
 import { onUnmounted, ref } from "vue";
-import type { RouteLocationNormalized } from "vue-router";
+import type { RouteRecordNameGeneric } from "vue-router";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 
 /**
  * Callback function to execute before actually leaving the route
  */
 type BeforeLeaveCallback = () => void | Promise<void>;
+
+export interface RouteGuardDestination {
+  fullPath: string;
+  name: RouteRecordNameGeneric | null | undefined;
+}
 
 export interface RouteGuardState {
   /** Whether to show an exit confirmation dialog */
@@ -37,19 +42,19 @@ function getHistoryPosition(): number | null {
 
 export function useRouteGuard(
   beforeUnloadShouldBlockCallback: () => boolean,
-  beforeRouteLeaveCallback: (to: RouteLocationNormalized) => boolean
+  beforeRouteLeaveCallback: (to: RouteGuardDestination) => boolean,
 ): RouteGuardComposable {
   const router = useRouter();
 
   // State
   const isRouteLocked = ref(false);
   const showExitDialog = ref(false);
-  const pendingRoute = ref<RouteLocationNormalized | null>(null);
+  const pendingRoute = ref<string | null>(null);
   let lockedHistoryPosition: number | null = null;
 
   // Shared helper: block navigation and show the exit dialog
-  function blockAndShowDialog(destination: RouteLocationNormalized): void {
-    pendingRoute.value = destination;
+  function blockAndShowDialog(destination: RouteGuardDestination): void {
+    pendingRoute.value = destination.fullPath;
     showExitDialog.value = true;
   }
 
@@ -69,17 +74,19 @@ export function useRouteGuard(
 
   // Set up Vue Router guard (handles router.push / router.replace navigations)
   onBeforeRouteLeave((to, from, next) => {
+    const destination = { fullPath: to.fullPath, name: to.name };
+
     if (!isRouteLocked.value) {
       next();
       return;
     }
 
-    if (beforeRouteLeaveCallback(to)) {
+    if (beforeRouteLeaveCallback(destination)) {
       next();
       return;
     }
 
-    blockAndShowDialog(to);
+    blockAndShowDialog(destination);
     next(false);
   });
 
@@ -100,9 +107,13 @@ export function useRouteGuard(
     const destinationPath =
       window.location.pathname + window.location.search + window.location.hash;
     const destinationRoute = router.resolve(destinationPath);
+    const destination = {
+      fullPath: destinationRoute.fullPath,
+      name: destinationRoute.name,
+    };
 
     // Check if the guard would allow this navigation
-    if (beforeRouteLeaveCallback(destinationRoute)) return;
+    if (beforeRouteLeaveCallback(destination)) return;
 
     // Calculate delta to restore history position
     const newPosition = getHistoryPosition();
@@ -115,7 +126,7 @@ export function useRouteGuard(
     ignoreNextPopState = true;
     window.history.go(delta);
 
-    blockAndShowDialog(destinationRoute);
+    blockAndShowDialog(destination);
   }
 
   window.addEventListener("popstate", handlePopState, true);

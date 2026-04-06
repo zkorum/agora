@@ -11,9 +11,11 @@
 <script setup lang="ts">
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useRouteGuard } from "src/utils/component/routing/routeGuard";
+import {
+  type RouteGuardDestination,
+  useRouteGuard,
+} from "src/utils/component/routing/routeGuard";
 import { onMounted } from "vue";
-import { type RouteLocationNormalized } from "vue-router";
 
 import {
   type NewConversationRouteGuardTranslations,
@@ -50,7 +52,7 @@ onMounted(() => {
   lockRoute();
 });
 
-function onBeforeRouteLeaveCallback(to: RouteLocationNormalized): boolean {
+function onBeforeRouteLeaveCallback(to: RouteGuardDestination): boolean {
   if (props.allowedRoutes.some((route) => to.name === route)) {
     return true;
   }

@@ -1,10 +1,16 @@
 {
   "extends": "./.quasar/tsconfig.json",
   "compilerOptions": {
+    "moduleResolution": "Bundler",
+    "rootDir": ".",
     "strict": true,
-    "types": ["unplugin-vue-router/client", "vite/client"]
+    "types": ["vite/client"]
   },
   "vueCompilerOptions": {
+    "plugins": [
+      "vue-router/volar/sfc-route-blocks",
+      "vue-router/volar/sfc-typed-router"
+    ],
     "strictTemplates": true,
     "fallthroughAttributes": true
   }
