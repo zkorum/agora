@@ -17,8 +17,8 @@ importers:
   .:
     dependencies:
       cborg:
-        specifier: ^4.5.8
-        version: 4.5.8
+        specifier: ^5.0.1
+        version: 5.0.1
       countries-list:
         specifier: ^3.3.0
         version: 3.3.0
@@ -837,8 +837,8 @@ packages:
   caniuse-lite@1.0.30001782:
     resolution: {integrity: sha512-dZcaJLJeDMh4rELYFw1tvSn1bhZWYFOt468FcbHHxx/Z/dFidd1I6ciyFdi3iwfQCyOjqo9upF6lGQYtMiJWxw==}
 
-  cborg@4.5.8:
-    resolution: {integrity: sha512-6/viltD51JklRhq4L7jC3zgy6gryuG5xfZ3kzpE+PravtyeQLeQmCYLREhQH7pWENg5pY4Yu/XCd6a7dKScVlw==}
+  cborg@5.0.1:
+    resolution: {integrity: sha512-3UinwdU6Qtr60sLhCpfjh+/jXleI2+8TMaWaZSO3Zx6YxWlPgGsyA01tRitT2KXbHTZrKcx3vaMIbkdXP8AfPw==}
     hasBin: true
 
   ccount@2.0.1:
@@ -2965,7 +2965,7 @@ snapshots:
 
   caniuse-lite@1.0.30001782: {}
 
-  cborg@4.5.8: {}
+  cborg@5.0.1: {}
 
   ccount@2.0.1: {}
 
