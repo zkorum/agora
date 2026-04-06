@@ -59,7 +59,7 @@ export type PolisVoteCsv = z.infer<typeof PolisVoteCsvSchema>;
 /**
  * Helper function to extract column names from a Zod object schema
  */
-function getSchemaColumns(schema: z.ZodObject<z.ZodRawShape>): string[] {
+function getSchemaColumns(schema: z.ZodObject): string[] {
     return Object.keys(schema.shape);
 }
 

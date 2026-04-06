@@ -6,9 +6,9 @@
         "lib": ["ES2023"],
         "module": "node16",
         "moduleResolution": "Node16",
-        "baseUrl": "src",
+        "rootDir": "src",
         "paths": {
-            "@/*": ["*"]
+            "@/*": ["./src/*"]
         },
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
