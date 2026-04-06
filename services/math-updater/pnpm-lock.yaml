@@ -46,8 +46,8 @@ importers:
         specifier: ^7.3.0
         version: 7.3.0
       parse-json-object:
-        specifier: ^3.0.1
-        version: 3.0.1
+        specifier: ^4.0.0
+        version: 4.0.0
       pg-boss:
         specifier: ^12.15.0
         version: 12.15.0
@@ -1480,6 +1480,10 @@ packages:
     resolution: {integrity: sha512-4oD+C0gj1bQN7fhc4NNELdnIUSzpHQfQiwWjl3V42/J7JZMhRyzKzvbjl+EyWm5Khj+KfsNw9hhQDPLoZBWJIg==}
     engines: {node: ^14.13.1 || >=16.0.0}
 
+  is-zod@2.0.1:
+    resolution: {integrity: sha512-+f5BLc3/yyshxWwc3RLUKlFBoSHcieG3SEoBhI+cqAmgPhuNvWLCAba3utaB5eOlnO/U2gIsC7nnjS+lQnOzNg==}
+    engines: {bun: ^1.3.0, node: ^24.0.0 || ^26.0.0}
+
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
 
@@ -1631,6 +1635,10 @@ packages:
   parse-json-object@3.0.1:
     resolution: {integrity: sha512-AmlodydoVEwH8XYRh42HTbNhz5L2JsswSC0hIsRK5TTpaBQuKw81hy+Qg7EvADaVOBNs29AySV2RWEl/6HDGqw==}
     engines: {node: ^14.13.1 || >=16.0.0}
+
+  parse-json-object@4.0.0:
+    resolution: {integrity: sha512-VI3XxH6YSeSGQIsluuWDVj93WLKsjqzwUScH/U+vqyb4nh++wkdJLLeGvJ0Lkdu4S6BFPunuDOu5B1dlJIZ/Ng==}
+    engines: {bun: ^1.3.0, node: ^24.0.0 || ^26.0.0}
 
   parse-srcset@1.0.2:
     resolution: {integrity: sha512-/2qh0lav6CmI15FzA3i/2Bzk2zCgQhGMkvhOhKNcBVQ1ldgpbfiNTVslmooUmWJcADi1f1kIeynbDRVzNlfR6Q==}
@@ -1946,6 +1954,10 @@ packages:
   types-json@4.0.1:
     resolution: {integrity: sha512-9+AppL1qvC55sW478UnNxTzoaB4m7atMQ5jTNih35BWrNcdNtBZELfferS0ON8jypALgTVeVehaFsVJCPM4dgw==}
     engines: {node: ^14.13.1 || >=16.0.0}
+
+  types-json@5.0.0:
+    resolution: {integrity: sha512-GvDIrtqPMgV4UxpS0VS4jQpPNw26stQofCtAjTEYODykwn86L/PBk8sxujUSeCc4sjFwgDhWiVaaufu2re7HZg==}
+    engines: {bun: ^1.3.0, node: ^24.0.0 || ^26.0.0}
 
   typescript-eslint@8.58.0:
     resolution: {integrity: sha512-e2TQzKfaI85fO+F3QywtX+tCTsu/D3WW5LVU6nz8hTFKFZ8yBJ6mSYRpXqdR3mFjPWmO0eWsTa5f+UpAOe/FMA==}
@@ -3729,6 +3741,10 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
+  is-zod@2.0.1:
+    dependencies:
+      zod: 3.25.76
+
   isexe@2.0.0: {}
 
   jackspeak@3.4.3:
@@ -3868,6 +3884,11 @@ snapshots:
     dependencies:
       is-zod: 1.0.0
       types-json: 4.0.1
+
+  parse-json-object@4.0.0:
+    dependencies:
+      is-zod: 2.0.1
+      types-json: 5.0.0
 
   parse-srcset@1.0.2: {}
 
@@ -4180,6 +4201,11 @@ snapshots:
   types-json@4.0.1:
     dependencies:
       is-zod: 1.0.0
+      zod: 3.25.76
+
+  types-json@5.0.0:
+    dependencies:
+      is-zod: 2.0.1
       zod: 3.25.76
 
   typescript-eslint@8.58.0(eslint@10.2.0)(typescript@5.9.3):
