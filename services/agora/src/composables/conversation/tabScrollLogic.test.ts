@@ -270,7 +270,6 @@ describe("createTabScrollState", () => {
       // Round 2: comment scrolled to 600, analysis scrolled to 800
       a = switchTab(state, { from: COMMENT_ROUTE, fromScroll: 600, to: ANALYSIS_ROUTE });
       expect(a).toBe(FLOOR); // analysis was at floor
-      a = 800; // user scrolls analysis to 800
       c = switchTab(state, { from: ANALYSIS_ROUTE, fromScroll: 800, to: COMMENT_ROUTE });
       expect(c).toBe(600);
 
