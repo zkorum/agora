@@ -5,6 +5,12 @@
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Select from "$ui/shared/select.svelte";
 
+  type Locale = (typeof locales)[number];
+
+  function isLocale(value: string): value is Locale {
+    return locales.some((locale) => locale === value);
+  }
+
   const localeData = [
     { code: "en", label: "EN", name: "English" },
     { code: "fr", label: "FR", name: "Français" },
@@ -20,8 +26,8 @@
   ];
 
   const availableLocales = $derived(
-    localeData.filter((l) =>
-      locales.includes(l.code as (typeof locales)[number]),
+    localeData.filter((l): l is typeof l & { code: Locale } =>
+      isLocale(l.code),
     ),
   );
 
@@ -34,7 +40,7 @@
     (() => {
       const pathname = page.url.pathname;
       const segment = pathname.split("/").find(Boolean);
-      if (segment && locales.includes(segment as (typeof locales)[number])) {
+      if (segment && isLocale(segment)) {
         return segment;
       }
       return "en";
@@ -42,7 +48,7 @@
   );
 
   function handleLocaleChange(newLocale: string | undefined) {
-    if (browser && newLocale) {
+    if (browser && newLocale && isLocale(newLocale)) {
       localStorage.setItem("displayLanguage", newLocale);
       const localizedPath = localizeHref(page.url.pathname, {
         locale: newLocale,
