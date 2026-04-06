@@ -109,7 +109,8 @@
 
           // Set RTL direction for RTL languages
           var effectiveLocale = preferredLocale;
-          document.documentElement.dir = RTL_LOCALES.indexOf(effectiveLocale) !== -1 ? 'rtl' : 'ltr';
+          document.documentElement.dir =
+            RTL_LOCALES.indexOf(effectiveLocale) !== -1 ? "rtl" : "ltr";
 
           // Redirect if current locale doesn't match preference
           if (currentLocale !== preferredLocale) {
