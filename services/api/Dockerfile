@@ -1,5 +1,5 @@
 # ---- Dependencies (production only) ----
-FROM node:22.22.0-alpine AS deps
+FROM node:24.14.1-alpine AS deps
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@10 --activate
 COPY package.json pnpm-lock.yaml ./
@@ -8,7 +8,7 @@ COPY patches ./patches
 RUN pnpm install --frozen-lockfile --prod
 
 # ---- Build ----
-FROM node:22.22.0-alpine AS build
+FROM node:24.14.1-alpine AS build
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@10 --activate
 COPY package.json pnpm-lock.yaml ./
@@ -20,7 +20,7 @@ COPY src ./src
 RUN pnpm build
 
 # ---- Production ----
-FROM node:22.22.0-alpine
+FROM node:24.14.1-alpine
 RUN apk add --no-cache tini
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
