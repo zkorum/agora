@@ -86,8 +86,8 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
       cborg:
-        specifier: ^4.5.8
-        version: 4.5.8
+        specifier: ^5.0.1
+        version: 5.0.1
       html2canvas:
         specifier: ^1.4.1
         version: 1.4.1
@@ -2648,8 +2648,8 @@ packages:
     resolution: {integrity: sha512-5ON+q7jCTgMp9cjpu4Jo6XbvfYwSB2Ow3kzHKfIyJfaCAOHLbdKPQqGKgfED/R5B+3TFFfe8pegYA+b423SRyA==}
     engines: {node: '>=10.0.0'}
 
-  cborg@4.5.8:
-    resolution: {integrity: sha512-6/viltD51JklRhq4L7jC3zgy6gryuG5xfZ3kzpE+PravtyeQLeQmCYLREhQH7pWENg5pY4Yu/XCd6a7dKScVlw==}
+  cborg@5.0.1:
+    resolution: {integrity: sha512-3UinwdU6Qtr60sLhCpfjh+/jXleI2+8TMaWaZSO3Zx6YxWlPgGsyA01tRitT2KXbHTZrKcx3vaMIbkdXP8AfPw==}
     hasBin: true
 
   chai@4.5.0:
@@ -8193,7 +8193,7 @@ snapshots:
       svg-pathdata: 6.0.3
     optional: true
 
-  cborg@4.5.8: {}
+  cborg@5.0.1: {}
 
   chai@4.5.0:
     dependencies:
