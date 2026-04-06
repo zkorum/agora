@@ -33,7 +33,8 @@
     },
     "pnpm": {
         "overrides": {
-            "ajv": ">=6.12.3",
+            "eslint>ajv": "^6.14.0",
+            "@eslint/eslintrc>ajv": "^6.14.0",
             "js-yaml": ">=4.1.1"
         }
     }
