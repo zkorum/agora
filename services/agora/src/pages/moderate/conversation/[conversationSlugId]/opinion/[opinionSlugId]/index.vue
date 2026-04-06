@@ -68,6 +68,7 @@ import {
   moderationReasonMapping,
   opinionModerationActionMapping,
 } from "src/utils/component/moderations";
+import { getSingleRouteParam } from "src/utils/router/params";
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -86,9 +87,7 @@ const {
 
 const { fetchOpinionsBySlugIdList } = useBackendCommentApi();
 
-const route = useRoute(
-  "/moderate/conversation/[conversationSlugId]/opinion/[opinionSlugId]/"
-);
+const route = useRoute();
 const router = useRouter();
 
 const { t } = useComponentI18n<OpinionModerationTranslations>(
@@ -143,12 +142,8 @@ function loadRouteParams() {
     route.name ==
     "/moderate/conversation/[conversationSlugId]/opinion/[opinionSlugId]/"
   ) {
-    postSlugId = Array.isArray(route.params.conversationSlugId)
-      ? route.params.conversationSlugId[0]
-      : route.params.conversationSlugId;
-    commentSlugId = Array.isArray(route.params.opinionSlugId)
-      ? route.params.opinionSlugId[0]
-      : route.params.opinionSlugId;
+    postSlugId = getSingleRouteParam(route.params.conversationSlugId) || null;
+    commentSlugId = getSingleRouteParam(route.params.opinionSlugId) || null;
   }
 }
 

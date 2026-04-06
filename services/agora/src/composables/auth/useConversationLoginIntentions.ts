@@ -1,5 +1,6 @@
 import type { EventSlug } from "src/shared/types/zod";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
+import { getSingleRouteParam } from "src/utils/router/params";
 import { useEmbedMode } from "src/utils/ui/embedMode";
 import { useRoute } from "vue-router";
 
@@ -23,7 +24,10 @@ export function useConversationLoginIntentions() {
       route.name === "/conversation/[postSlugId].embed/analysis"
     ) {
       const isEmbedView = isEmbeddedMode();
-      const postSlugId = route.params.postSlugId;
+      const postSlugId = getSingleRouteParam(route.params.postSlugId);
+      if (!postSlugId) {
+        return;
+      }
       createVotingIntention(postSlugId, isEmbedView, eventSlug);
       setActiveUserIntention("voting");
     }
@@ -41,7 +45,10 @@ export function useConversationLoginIntentions() {
       route.name === "/conversation/[postSlugId].embed/analysis"
     ) {
       const isEmbedView = isEmbeddedMode();
-      const postSlugId = route.params.postSlugId;
+      const postSlugId = getSingleRouteParam(route.params.postSlugId);
+      if (!postSlugId) {
+        return;
+      }
       createOpinionAgreementIntention(
         postSlugId,
         opinionSlugId,
@@ -61,7 +68,10 @@ export function useConversationLoginIntentions() {
       route.name === "/conversation/[postSlugId].embed/analysis"
     ) {
       const isEmbedView = isEmbeddedMode();
-      const postSlugId = route.params.postSlugId;
+      const postSlugId = getSingleRouteParam(route.params.postSlugId);
+      if (!postSlugId) {
+        return;
+      }
       createReportUserContentIntention(
         postSlugId,
         opinionSlugId,

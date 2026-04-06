@@ -30,14 +30,14 @@
             <ZKHoverEffect enable-hover border-radius="15px">
               <div
                 class="settingItemStyle"
-                :class="{
-                  activeRoute: menuItem.matchRouteList.includes(route.name),
-                }"
+                  :class="{
+                    activeRoute: matchesCurrentRoute(menuItem.matchRouteList),
+                  }"
               >
                 <div class="iconItem">
                   <ZKStyledIcon
                     :svg-string="
-                      menuItem.matchRouteList.includes(route.name)
+                      matchesCurrentRoute(menuItem.matchRouteList)
                         ? menuItem.svgStringFilled
                         : menuItem.svgStringStandard
                     "
@@ -114,6 +114,13 @@ interface NavigationMenuItem {
 
 const navigationMenuItems = ref<NavigationMenuItem[]>([]);
 initializeMenu();
+
+function matchesCurrentRoute(routeList: readonly (keyof RouteNamedMap)[]): boolean {
+  return (
+    typeof route.name === "string" &&
+    routeList.some((routeName) => routeName === route.name)
+  );
+}
 
 watch(drawerBehavior, () => {
   initializeMenu();

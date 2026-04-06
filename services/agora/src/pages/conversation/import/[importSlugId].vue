@@ -18,6 +18,7 @@ import { StandardMenuBar } from "src/components/navigation/header/variants";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { getSingleRouteParam } from "src/utils/router/params";
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 
@@ -32,13 +33,9 @@ const { t } = useComponentI18n<ImportStatusPageTranslations>(
   importStatusPageTranslations
 );
 
-const route = useRoute("/conversation/import/[importSlugId]");
+const route = useRoute();
 const importSlugId = computed(() => {
-  const value = route.params.importSlugId;
-  if (Array.isArray(value)) {
-    return value[0] || "";
-  }
-  return value || "";
+  return getSingleRouteParam(route.params.importSlugId);
 });
 </script>
 

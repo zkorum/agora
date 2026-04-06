@@ -77,6 +77,7 @@ import {
   moderationActionPostsMapping,
   moderationReasonMapping,
 } from "src/utils/component/moderations";
+import { getSingleRouteParam } from "src/utils/router/params";
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -93,7 +94,7 @@ const {
   cancelModerationPostReport,
 } = useBackendModerateApi();
 
-const route = useRoute("/moderate/conversation/[conversationSlugId]/");
+const route = useRoute();
 const router = useRouter();
 
 const { emptyPost } = useHomeFeedStore();
@@ -129,9 +130,7 @@ onMounted(async () => {
 
 function loadRouteParams() {
   if (route.name == "/moderate/conversation/[conversationSlugId]/") {
-    postSlugId = Array.isArray(route.params.conversationSlugId)
-      ? route.params.conversationSlugId[0]
-      : route.params.conversationSlugId;
+    postSlugId = getSingleRouteParam(route.params.conversationSlugId) || null;
   }
 }
 

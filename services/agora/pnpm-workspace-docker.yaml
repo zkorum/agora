@@ -4,5 +4,6 @@ packages:
 ignoredBuiltDependencies:
   - '@parcel/watcher'
   - '@sentry/cli'
+  - core-js
   - esbuild
   - vue-demi
