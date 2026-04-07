@@ -38,10 +38,9 @@
     "pnpm": {
         "overrides": {
             "fast-xml-parser": ">=5.3.6",
-            "brace-expansion": ">=2.0.3",
-            "minimatch": ">=9.0.7",
-            "@tootallnate/once": ">=3.0.1",
-            "vite": ">=8.0.5"
+            "brace-expansion": "2.0.3",
+            "minimatch": "9.0.7",
+            "@tootallnate/once": "3.0.1"
         }
     }
 }
