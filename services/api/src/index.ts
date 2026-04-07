@@ -50,6 +50,7 @@ import { createExportNotification } from "@/service/conversationExport/notificat
 import { validateS3Access } from "./service/s3.js";
 
 import { backfillImportBodies } from "@/service/importBodyBackfill.js";
+import { backfillLegacyMaxdiffComparisons } from "@/service/maxdiffComparisonBackfill.js";
 // import * as polisService from "@/service/polis.js";
 // import * as migrationService from "@/service/migration.js";
 import {
@@ -642,6 +643,9 @@ void performStartupCleanup();
 
 // Backfill: clean import metadata from conversation bodies (non-blocking, idempotent)
 void backfillImportBodies({ db });
+
+// Backfill: restore legacy MaxDiff comparison rows for the scoring worker
+void backfillLegacyMaxdiffComparisons({ db, valkey: queueValkey });
 
 interface ExpectedDeviceStatus {
     userId?: string;
