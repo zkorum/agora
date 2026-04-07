@@ -24,7 +24,7 @@ WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY main.py bws_conversion.py entity_mapping.py gunicorn.conf.py ./
+COPY main.py gunicorn.conf.py ./
 
 RUN groupadd --system --gid 1000 appuser && \
     useradd --system --uid 1000 --gid appuser appuser && \
