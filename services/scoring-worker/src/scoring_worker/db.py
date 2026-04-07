@@ -25,17 +25,10 @@ from scoring_worker.generated_models import (
     RankingScoreEntity,
     User,
 )
+from scoring_worker.pipeline_config import PIPELINE_CONFIG
 
 if TYPE_CHECKING:
     from sqlalchemy import Engine
-
-
-# Pipeline config (single source of truth for JSONB blob + typed columns)
-PIPELINE_CONFIG = {
-    "preference_learning": "LBFGSUniformGBT",
-    "voting_rights": "AffineOvertrust",
-    "aggregation": "EntitywiseQrQuantile(quantile=0.5)",
-}
 
 
 @dataclass(frozen=True)
@@ -67,18 +60,17 @@ def fetch_active_items_batch(
     if not conversation_ids:
         return {}
 
-    stmt = (
-        select(MaxdiffItem.conversation_id, MaxdiffItem.slug_id)
-        .where(
-            and_(
-                MaxdiffItem.conversation_id.in_(conversation_ids),
-                MaxdiffItem.current_content_id.is_not(None),
-                MaxdiffItem.lifecycle_status.in_([
+    stmt = select(MaxdiffItem.conversation_id, MaxdiffItem.slug_id).where(
+        and_(
+            MaxdiffItem.conversation_id.in_(conversation_ids),
+            MaxdiffItem.current_content_id.is_not(None),
+            MaxdiffItem.lifecycle_status.in_(
+                [
                     MaxdiffLifecycleStatus.active,
                     MaxdiffLifecycleStatus.in_progress,
-                ]),
+                ]
             ),
-        )
+        ),
     )
 
     result: dict[int, list[str]] = {cid: [] for cid in conversation_ids}
@@ -140,9 +132,7 @@ def fetch_comparisons_batch(
         )
     )
 
-    comparisons: dict[int, list[ComparisonRow]] = {
-        cid: [] for cid in conversation_ids
-    }
+    comparisons: dict[int, list[ComparisonRow]] = {cid: [] for cid in conversation_ids}
     # Forward: conv_id → {result_id → user_idx}
     user_idx_maps: dict[int, dict[int, int]] = {}
     # Reverse: conv_id → {user_idx → result_id}
@@ -161,12 +151,14 @@ def fetch_comparisons_batch(
                 idx_map[rid] = idx
                 reverse_maps[cid][idx] = rid
 
-            comparisons[cid].append(ComparisonRow(
-                best_slug_id=row.best_slug_id,
-                worst_slug_id=row.worst_slug_id,
-                candidate_set=row.candidate_set,
-                user_idx=idx_map[rid],
-            ))
+            comparisons[cid].append(
+                ComparisonRow(
+                    best_slug_id=row.best_slug_id,
+                    worst_slug_id=row.worst_slug_id,
+                    candidate_set=row.candidate_set,
+                    user_idx=idx_map[rid],
+                )
+            )
 
     return ComparisonsBatchResult(
         comparisons=comparisons,
@@ -211,22 +203,27 @@ def write_scores_batch(
             # Insert ranking_score (JSONB backup + typed columns)
             ranking_score = RankingScore(
                 conversation_id=conv_id,
-                scores=json.dumps([{
-                    "entityId": s.entity_slug_id,
-                    "score": s.score,
-                    "uncertaintyLeft": s.uncertainty_left,
-                    "uncertaintyRight": s.uncertainty_right,
-                } for s in scores]),
+                scores=json.dumps(
+                    [
+                        {
+                            "entityId": s.entity_slug_id,
+                            "score": s.score,
+                            "uncertaintyLeft": s.uncertainty_left,
+                            "uncertaintyRight": s.uncertainty_right,
+                        }
+                        for s in scores
+                    ]
+                ),
                 participant_counts=json.dumps(participant_counts),
                 group_sources_snapshot=None,
                 user_weights_snapshot=None,
-                pipeline_config=json.dumps({
-                    "preferenceLearning": PIPELINE_CONFIG[
-                        "preference_learning"
-                    ],
-                    "votingRights": PIPELINE_CONFIG["voting_rights"],
-                    "aggregation": PIPELINE_CONFIG["aggregation"],
-                }),
+                pipeline_config=json.dumps(
+                    {
+                        "preferenceLearning": PIPELINE_CONFIG["preference_learning"],
+                        "votingRights": PIPELINE_CONFIG["voting_rights"],
+                        "aggregation": PIPELINE_CONFIG["aggregation"],
+                    }
+                ),
                 preference_learning=PIPELINE_CONFIG["preference_learning"],
                 voting_rights=PIPELINE_CONFIG["voting_rights"],
                 aggregation_config=PIPELINE_CONFIG["aggregation"],
@@ -238,16 +235,16 @@ def write_scores_batch(
 
             # Insert normalized entity scores
             for s in scores:
-                session.add(RankingScoreEntity(
-                    ranking_score_id=ranking_score.id,
-                    entity_slug_id=s.entity_slug_id,
-                    score=s.score,
-                    uncertainty_left=s.uncertainty_left,
-                    uncertainty_right=s.uncertainty_right,
-                    participant_count=participant_counts.get(
-                        s.entity_slug_id, 0
-                    ),
-                ))
+                session.add(
+                    RankingScoreEntity(
+                        ranking_score_id=ranking_score.id,
+                        entity_slug_id=s.entity_slug_id,
+                        score=s.score,
+                        uncertainty_left=s.uncertainty_left,
+                        uncertainty_right=s.uncertainty_right,
+                        participant_count=participant_counts.get(s.entity_slug_id, 0),
+                    )
+                )
 
             # Conditional update: only if our ID is newer
             session.execute(
@@ -257,10 +254,7 @@ def write_scores_batch(
                         Conversation.id == conv_id,
                         (
                             Conversation.current_ranking_score_id.is_(None)
-                            | (
-                                Conversation.current_ranking_score_id
-                                < ranking_score.id
-                            )
+                            | (Conversation.current_ranking_score_id < ranking_score.id)
                         ),
                     ),
                 )
@@ -343,16 +337,15 @@ def update_maxdiff_counters_batch(
             # Total counts (all comparisons, excluding deleted users + soft-deleted rows)
             total_row = session.execute(
                 select(
-                    func.count(
-                        func.distinct(MaxdiffResult.participant_id)
-                    ).label("total_participants"),
+                    func.count(func.distinct(MaxdiffResult.participant_id)).label(
+                        "total_participants"
+                    ),
                     func.count().label("total_votes"),
                 )
                 .select_from(MaxdiffComparison)
                 .join(
                     MaxdiffResult,
-                    MaxdiffResult.id
-                    == MaxdiffComparison.maxdiff_result_id,
+                    MaxdiffResult.id == MaxdiffComparison.maxdiff_result_id,
                 )
                 .join(
                     User,
@@ -383,16 +376,13 @@ def update_maxdiff_counters_batch(
             # Filtered counts (only active items, excluding deleted users + soft-deleted rows)
             filtered_row = session.execute(
                 select(
-                    func.count(
-                        func.distinct(MaxdiffResult.participant_id)
-                    ).label("participants"),
+                    func.count(func.distinct(MaxdiffResult.participant_id)).label("participants"),
                     func.count().label("votes"),
                 )
                 .select_from(MaxdiffComparison)
                 .join(
                     MaxdiffResult,
-                    MaxdiffResult.id
-                    == MaxdiffComparison.maxdiff_result_id,
+                    MaxdiffResult.id == MaxdiffComparison.maxdiff_result_id,
                 )
                 .join(
                     User,
