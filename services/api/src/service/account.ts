@@ -16,7 +16,6 @@ import { logoutAllDevicesForUser } from "./auth.js";
 import { httpErrors } from "@fastify/sensible";
 import { MAX_LENGTH_USERNAME } from "@/shared/shared.js";
 import { reconcileConversationCounters } from "@/shared-backend/conversationCounters.js";
-import { randomInt } from "node:crypto";
 
 interface CheckUserNameExistProps {
     db: PostgresJsDatabase;
@@ -454,20 +453,25 @@ function generateRandomUsername(numPaddingDigits: number) {
     ];
 
     const getRandomWord = (wordList: string[]) => {
-        return wordList[randomInt(wordList.length)].toLowerCase();
+        return wordList[
+            Math.floor(Math.random() * wordList.length)
+        ].toLowerCase();
     };
 
     const generateNumberString = (length: number) => {
         let result = "";
         const characters = "0123456789";
+        const charactersLength = characters.length;
         for (let i = 0; i < length; i++) {
-            result += characters.charAt(randomInt(characters.length));
+            result += characters.charAt(
+                Math.floor(Math.random() * charactersLength),
+            );
         }
         return result;
     };
 
     let generatedUsername;
-    const randomChoice = randomInt(4);
+    const randomChoice = Math.floor(Math.random() * 4);
     if (randomChoice === 0) {
         generatedUsername =
             getRandomWord(adjectives) + "_" + getRandomWord(animals);
