@@ -14,7 +14,7 @@ WITH duplicate_active_comparisons AS (
     FROM duplicate_active_comparisons
     WHERE maxdiff_comparison.id = duplicate_active_comparisons.id
       AND duplicate_active_comparisons.row_number > 1
-    RETURNING maxdiff_result_id
+    RETURNING maxdiff_comparison.maxdiff_result_id AS maxdiff_result_id
 ), touched_results AS (
     UPDATE maxdiff_result
     SET updated_at = NOW()::timestamp(0)
