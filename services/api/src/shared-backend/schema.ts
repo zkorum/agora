@@ -2557,7 +2557,14 @@ export const maxdiffComparisonTable = pgTable(
         candidateSet: text("candidate_set").array().notNull(), // slugIds of all items shown in this comparison
         deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
     },
-    (t) => [index("maxdiff_comparison_result_idx").on(t.maxdiffResultId)],
+    (t) => [
+        index("maxdiff_comparison_result_idx").on(t.maxdiffResultId),
+        // Only one active comparison can exist per session position.
+        // Soft-deleted historical rows remain allowed for audit/history.
+        uniqueIndex("maxdiff_comparison_active_result_position_unique")
+            .on(t.maxdiffResultId, t.position)
+            .where(sql`${t.deletedAt} IS NULL`),
+    ],
 );
 
 // Per-user Solidago scores, written by the scoring worker alongside global scores.

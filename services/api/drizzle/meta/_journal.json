@@ -372,6 +372,13 @@
       "when": 1775317170961,
       "tag": "0052_tidy_rumiko_fujikawa",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1775591094230,
+      "tag": "0053_nifty_mercury",
+      "breakpoints": true
     }
   ]
 }
