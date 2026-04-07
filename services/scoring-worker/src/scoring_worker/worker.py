@@ -3,7 +3,7 @@
 Batch architecture:
     1. ZPOPMIN batch (filter out backed-off conversations)
     2. Batch SELECT all data for all conversations
-    3. Parallel Solidago via ThreadPoolExecutor (CPU-bound, no DB)
+    3. Parallel Solidago via ThreadPoolExecutor (no DB during scoring)
     4. Batch WRITE all results in one transaction
 
 Scaling (future ECS/EKS):
@@ -85,9 +85,7 @@ def _score_one(
     comparisons: list[ComparisonRow],
 ) -> ConversationScoringOutput | None:
     """Score a single conversation (called in thread pool)."""
-    return score_comparisons(
-        entity_ids=entity_ids, comparisons=comparisons
-    )
+    return score_comparisons(entity_ids=entity_ids, comparisons=comparisons)
 
 
 def main() -> None:
@@ -148,9 +146,7 @@ def main() -> None:
             last_reconcile = now
 
         # Clean up old backoff entries (> 60s)
-        expired = [
-            k for k, v in backoff_until.items() if now - v > 60
-        ]
+        expired = [k for k, v in backoff_until.items() if now - v > 60]
         for k in expired:
             del backoff_until[k]
 
@@ -182,12 +178,8 @@ def main() -> None:
 
         try:
             # Step 2: Batch SELECT
-            active_items = fetch_active_items_batch(
-                read_engine, conversation_ids=conv_ids
-            )
-            comparisons_result = fetch_comparisons_batch(
-                read_engine, conversation_ids=conv_ids
-            )
+            active_items = fetch_active_items_batch(read_engine, conversation_ids=conv_ids)
+            comparisons_result = fetch_comparisons_batch(read_engine, conversation_ids=conv_ids)
             comparisons = comparisons_result.comparisons
             user_idx_to_result_id = comparisons_result.user_idx_to_result_id
 
@@ -217,28 +209,20 @@ def main() -> None:
                     to_score.append(item)
 
             if to_clear:
-                clear_scores_batch(
-                    primary_engine, conversation_ids=to_clear
-                )
+                clear_scores_batch(primary_engine, conversation_ids=to_clear)
 
             # Step 3: Parallel Solidago (ThreadPoolExecutor)
-            scoring_results: dict[
-                int, tuple[list[ScoredEntity], dict[str, int]]
-            ] = {}
+            scoring_results: dict[int, tuple[list[ScoredEntity], dict[str, int]]] = {}
             all_user_score_entries: list[UserScoreEntry] = []
             failed_items: list[DirtyConversation] = []
 
             if to_score:
-                with ThreadPoolExecutor(
-                    max_workers=settings.max_workers
-                ) as pool:
+                with ThreadPoolExecutor(max_workers=settings.max_workers) as pool:
                     future_to_item = {
                         pool.submit(
                             _score_one,
                             entity_ids=active_items[item.conversation_id],
-                            comparisons=comparisons[
-                                item.conversation_id
-                            ],
+                            comparisons=comparisons[item.conversation_id],
                         ): item
                         for item in to_score
                     }
@@ -248,24 +232,18 @@ def main() -> None:
                         try:
                             output = future.result()
                             if output is not None:
-                                pc = _build_participant_counts(
-                                    comparisons[item.conversation_id]
-                                )
+                                pc = _build_participant_counts(comparisons[item.conversation_id])
                                 scored = [
                                     ScoredEntity(
                                         entity_slug_id=r.entity_id,
                                         score=r.score,
                                         uncertainty_left=r.uncertainty_left,
                                         uncertainty_right=r.uncertainty_right,
-                                        participant_count=pc.get(
-                                            r.entity_id, 0
-                                        ),
+                                        participant_count=pc.get(r.entity_id, 0),
                                     )
                                     for r in output.global_scores
                                 ]
-                                scoring_results[
-                                    item.conversation_id
-                                ] = (scored, pc)
+                                scoring_results[item.conversation_id] = (scored, pc)
                                 log.info(
                                     "[Worker] %s: scored %d entities, %d users",
                                     item.slug_id,
@@ -274,9 +252,7 @@ def main() -> None:
                                 )
 
                                 # Map per-user scores to DB entries
-                                idx_map = user_idx_to_result_id.get(
-                                    item.conversation_id, {}
-                                )
+                                idx_map = user_idx_to_result_id.get(item.conversation_id, {})
                                 for user_idx, user_results in output.user_scores.items():
                                     result_id = idx_map.get(user_idx)
                                     if result_id is None:
@@ -309,15 +285,11 @@ def main() -> None:
                 )
 
             if to_clear:
-                clear_scores_batch(
-                    primary_engine, conversation_ids=to_clear
-                )
+                clear_scores_batch(primary_engine, conversation_ids=to_clear)
 
             # Handle failures: re-add with backoff
             for item in failed_items:
-                backoff_until[item.conversation_id] = (
-                    time.monotonic() + settings.backoff_seconds
-                )
+                backoff_until[item.conversation_id] = time.monotonic() + settings.backoff_seconds
                 mark_dirty(vk, member=item.member, weight=item.weight)
 
         except Exception:

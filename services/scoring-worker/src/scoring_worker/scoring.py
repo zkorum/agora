@@ -15,7 +15,6 @@ from solidago.aggregation import EntitywiseQrQuantile
 from solidago.judgments import DataFrameJudgments
 from solidago.pipeline import Pipeline
 from solidago.post_process import NoPostProcess
-from solidago.preference_learning import LBFGSUniformGBT
 from solidago.privacy_settings import PrivacySettings
 from solidago.scaling import NoScaling
 from solidago.trust_propagation import TrustPropagation
@@ -30,6 +29,7 @@ from scoring_worker.entity_mapping import (
     map_pairwise_wins_to_solidago,
     map_scores_from_solidago,
 )
+from scoring_worker.pipeline_config import PIPELINE_CONFIG, create_preference_learning
 
 if TYPE_CHECKING:
     from solidago.scoring_model import ScoringModel
@@ -73,9 +73,7 @@ class _COCMVotingRightsAssignment(VotingRightsAssignment):
             return voting_rights, entities
 
         # Determine which users scored each entity
-        entity_to_users: dict[int, set[int]] = {
-            entity_id: set() for entity_id in entities.index
-        }
+        entity_to_users: dict[int, set[int]] = {entity_id: set() for entity_id in entities.index}
         if user_models is None:
             for entity_id in privacy.entities():
                 entity_to_users[entity_id] = privacy.users(entity_id)
@@ -121,10 +119,7 @@ def _create_pipeline(
 ) -> Pipeline:
     return Pipeline(
         trust_propagation=_IdentityTrustPropagation(),
-        preference_learning=LBFGSUniformGBT(
-            prior_std_dev=7.0,
-            convergence_error=1e-5,
-        ),
+        preference_learning=create_preference_learning(),
         voting_rights=voting_rights or _DEFAULT_VOTING_RIGHTS,
         scaling=NoScaling(),
         aggregation=EntitywiseQrQuantile(quantile=0.5, lipschitz=0.1, error=1e-3),
@@ -151,20 +146,30 @@ class ConversationScoringOutput:
 
 
 def warmup() -> None:
-    """Run a tiny dummy scoring to initialize PyTorch/LBFGS.
+    """Run a tiny dummy scoring to initialize the configured Solidago pipeline.
 
     Prevents first real call from timing out due to lazy init.
     """
-    log.info("[Scoring] Warming up Solidago/LBFGS...")
+    log.info(
+        "[Scoring] Warming up Solidago pipeline (%s)...",
+        PIPELINE_CONFIG["preference_learning"],
+    )
     # Suppress Solidago's verbose pipeline logs during warmup
     solidago_logger = logging.getLogger("solidago")
     prev_level = solidago_logger.level
     solidago_logger.setLevel(logging.WARNING)
     try:
-        dummy_df = pd.DataFrame([{
-            "user_id": 0, "entity_a": 0, "entity_b": 1,
-            "comparison": -1.0, "comparison_max": 1.0,
-        }])
+        dummy_df = pd.DataFrame(
+            [
+                {
+                    "user_id": 0,
+                    "entity_a": 0,
+                    "entity_b": 1,
+                    "comparison": -1.0,
+                    "comparison_max": 1.0,
+                }
+            ]
+        )
         users_df = pd.DataFrame(
             {"is_pretrusted": [True], "trust_score": [1.0]},
             index=pd.Index([0], name="user_id"),
@@ -251,8 +256,7 @@ def score_comparisons(
     # Build Solidago input DataFrames
     user_ids = sorted(comparisons_df["user_id"].unique())
     user_trust = [
-        trust_scores.get(int(uid), 1.0) if trust_scores is not None else 1.0
-        for uid in user_ids
+        trust_scores.get(int(uid), 1.0) if trust_scores is not None else 1.0 for uid in user_ids
     ]
     users_df = pd.DataFrame(
         {"is_pretrusted": [True] * len(user_ids), "trust_score": user_trust},
@@ -302,7 +306,8 @@ def score_comparisons(
     for solidago_user_id, user_model in user_models.items():
         user_solidago_scores = list(user_model.iter_entities())
         user_entity_scores = map_scores_from_solidago(
-            solidago_scores=user_solidago_scores, mapper=mapper,
+            solidago_scores=user_solidago_scores,
+            mapper=mapper,
         )
         if user_entity_scores:
             per_user_results[int(solidago_user_id)] = _normalize_scores(user_entity_scores)

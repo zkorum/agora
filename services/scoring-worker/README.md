@@ -12,7 +12,7 @@ The worker polls that set and processes conversations in batches:
 1. **ZPOPMIN** a batch of dirty conversation IDs (atomic, safe for multi-worker)
 2. **Batch SELECT** all active items and comparisons from the read replica
 3. **Update counters** (participant/vote counts on the conversation)
-4. **Parallel Solidago** via `ThreadPoolExecutor` (CPU-bound, no DB during scoring)
+4. **Parallel Solidago** via `ThreadPoolExecutor` (no DB during scoring)
 5. **Batch WRITE** scores back to PostgreSQL primary in one transaction
 
 Failed conversations are re-added to the dirty set with per-conversation exponential backoff. A periodic reconciliation pass (default 300s) catches any conversations missed after a crash.
@@ -53,7 +53,7 @@ The pipeline (`scoring.py`) uses these parameters:
 | Stage | Implementation | Key Parameters |
 |---|---|---|
 | Trust propagation | Identity (pass-through) | Preserves pre-set trust scores (default 1.0) |
-| Preference learning | LBFGSUniformGBT | `prior_std_dev=7.0`, `convergence_error=1e-5` |
+| Preference learning | `UniformGBT` by default, `LBFGSUniformGBT` in GPU builds | `prior_std_dev=7.0`, `convergence_error=1e-5` |
 | Voting rights | AffineOvertrust | `privacy_penalty=0.5`, `min_overtrust=2.0`, `overtrust_ratio=0.1` |
 | Scaling | None | |
 | Aggregation | EntitywiseQrQuantile | `quantile=0.5` (median), `lipschitz=0.1` |
@@ -105,7 +105,10 @@ Where `connected_co_scorers` = number of other voters on the same entity who sha
 
 ```bash
 # Install dependencies
-uv sync --all-extras
+uv sync --extra dev
+
+# Optional: install the GPU preference-learning stack locally
+uv sync --extra dev --extra gpu
 
 # Run the worker
 make dev
@@ -140,8 +143,11 @@ You can also place a `.env` file in the service directory.
 ## Docker
 
 ```bash
-# Build
+# Build the default CPU image
 make image-buildx
+
+# Build the optional GPU image
+make image-buildx-gpu
 
 # Run
 docker run --rm \
@@ -149,6 +155,9 @@ docker run --rm \
   -e SCORING_WORKER_VALKEY_URL=valkey://... \
   quay.io/zkorum/agora-scoring-worker:latest
 ```
+
+`image-buildx` installs the base project and uses `UniformGBT`.
+`image-buildx-gpu` installs `.[gpu]` and enables `LBFGSUniformGBT` when `torch` is available.
 
 ## Scaling
 

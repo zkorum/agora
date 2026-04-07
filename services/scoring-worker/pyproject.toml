@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Solidago scoring worker for MaxDiff community rankings (BWS-to-pairwise, COCM voting rights)"
 requires-python = ">=3.13"
 dependencies = [
-    "solidago[torch]==0.5.0",
+    "solidago==0.5.0",
     "psycopg[binary]>=3.2",
     "sqlalchemy[postgresql-psycopg]>=2.0",
     "valkey>=6.0",
@@ -14,6 +14,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+gpu = [
+    "torch>=2.2,<3",
+]
+
 dev = [
     "pytest>=8.0",
     "ruff>=0.9",
