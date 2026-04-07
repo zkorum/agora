@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { visualizer } from "rollup-plugin-visualizer";
+import tidewave from "tidewave/vite-plugin";
 import viteCompression from "vite-plugin-compression";
 
 import { defineConfig } from "#q-app/wrappers";
@@ -27,7 +28,15 @@ export default defineConfig((ctx) => {
     boot.push("sentry");
   }
   boot.push(
-    ...["i18n", "axios", "primevue", "vue-query", "embeddedBrowserGuard", "maz-ui", "spaLinkInterceptor"]
+    ...[
+      "i18n",
+      "axios",
+      "primevue",
+      "vue-query",
+      "embeddedBrowserGuard",
+      "maz-ui",
+      "spaLinkInterceptor",
+    ]
   );
 
   if (process.env.NODE_ENV) {
@@ -106,6 +115,10 @@ export default defineConfig((ctx) => {
           viteConf.resolve.alias = {};
         }
 
+        if (ctx.dev) {
+          viteConf.plugins.push(tidewave());
+        }
+
         // Point Node.js modules to stub files
         viteConf.resolve.alias = {
           ...viteConf.resolve.alias,
@@ -179,11 +192,6 @@ export default defineConfig((ctx) => {
           "vite-plugin-checker",
           {
             vueTsc: true,
-            eslint: {
-              lintCommand:
-                'eslint -c ./eslint.config.js "./src*/**/*.{ts,js,mjs,cjs,vue}"',
-              useFlatConfig: true,
-            },
           },
           { server: false },
         ],
