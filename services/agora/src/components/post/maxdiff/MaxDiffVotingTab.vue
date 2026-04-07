@@ -364,7 +364,8 @@ const itemBySlugId = computed(() => {
 });
 
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, "").trim();
+  const parsedDocument = new DOMParser().parseFromString(html, "text/html");
+  return parsedDocument.body.textContent?.trim() ?? "";
 }
 
 function needsDialog(slugId: string): boolean {
