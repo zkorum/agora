@@ -16,6 +16,7 @@ import { normalizeEmail } from "@/shared/types/zod-email.js";
 import fastifyAuth from "@fastify/auth";
 import fastifyCors from "@fastify/cors";
 import fastifyMultipart from "@fastify/multipart";
+import fastifyRateLimit from "@fastify/rate-limit";
 import fastifySensible from "@fastify/sensible";
 import fastifySSE from "@fastify/sse";
 import fastifySwagger from "@fastify/swagger";
@@ -172,6 +173,10 @@ import { nowZeroMs } from "./shared/util.js";
 
 server.register(fastifySensible);
 server.register(fastifyAuth);
+server.register(fastifyRateLimit, {
+    global: false,
+    hook: "preHandler",
+});
 server.register(fastifyCors, {
     origin: (origin, cb) => {
         if (config.NODE_ENV === "development") {
@@ -251,6 +256,14 @@ log.info(
 
 const mustSendActualSms = config.NODE_ENV === "production";
 const isImportDisabled = config.IMPORT_BUFFER_MAX_BATCH_SIZE === 0;
+const authRateLimitConfig = {
+    max: 5,
+    timeWindow: 5 * 60 * 1000,
+};
+const maxdiffGitHubRateLimitConfig = {
+    max: 10,
+    timeWindow: 60 * 1000,
+};
 let twilioClient: twilio.Twilio | undefined;
 if (mustSendActualSms) {
     if (
@@ -1017,6 +1030,9 @@ server.after(() => {
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/auth/authenticate`,
+        config: {
+            rateLimit: authRateLimitConfig,
+        },
         schema: {
             body: authenticateRequestBody,
             response: { 200: authenticate200 },
@@ -1078,6 +1094,9 @@ server.after(() => {
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/auth/phone/verify-otp`,
+        config: {
+            rateLimit: authRateLimitConfig,
+        },
         schema: {
             body: verifyOtpReqBody,
             response: {
@@ -1124,6 +1143,9 @@ server.after(() => {
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/auth/email/authenticate`,
+        config: {
+            rateLimit: authRateLimitConfig,
+        },
         schema: {
             body: authenticateEmailRequestBody,
             response: { 200: authenticateEmail200 },
@@ -1184,6 +1206,9 @@ server.after(() => {
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/auth/email/verify-otp`,
+        config: {
+            rateLimit: authRateLimitConfig,
+        },
         schema: {
             body: verifyEmailOtpReqBody,
             response: {
@@ -1917,6 +1942,9 @@ server.after(() => {
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/maxdiff/sync`,
+        config: {
+            rateLimit: maxdiffGitHubRateLimitConfig,
+        },
         schema: {
             body: Dto.maxdiffSyncRequest,
             response: {
@@ -1953,6 +1981,9 @@ server.after(() => {
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
         url: `/api/${apiVersion}/maxdiff/github/preview`,
+        config: {
+            rateLimit: maxdiffGitHubRateLimitConfig,
+        },
         schema: {
             body: Dto.maxdiffGitHubPreviewRequest,
             response: {
@@ -1992,6 +2023,9 @@ server.after(() => {
     server.route({
         method: "POST",
         url: `/api/${apiVersion}/webhook/github`,
+        config: {
+            rateLimit: maxdiffGitHubRateLimitConfig,
+        },
         handler: async (request, reply) => {
             checkMaxdiffGitHubEnabled();
             if (config.GITHUB_WEBHOOK_SECRET === undefined) {

@@ -8,6 +8,32 @@ export function isValidPolisUrl(url: string): boolean {
     }
 }
 
+function hasHostnameSuffix({
+    hostname,
+    suffix,
+}: {
+    hostname: string;
+    suffix: readonly [string, string];
+}): boolean {
+    const hostnameLabels = hostname.toLowerCase().split(".").filter(Boolean);
+
+    return (
+        hostnameLabels.length >= suffix.length &&
+        suffix.every(
+            (label, index) =>
+                hostnameLabels[hostnameLabels.length - suffix.length + index] ===
+                label,
+        )
+    );
+}
+
+function isAllowedPolisHostname(hostname: string): boolean {
+    return (
+        hasHostnameSuffix({ hostname, suffix: ["pol", "is"] }) ||
+        hasHostnameSuffix({ hostname, suffix: ["deepgov", "org"] })
+    );
+}
+
 interface PolisId {
     conversationId?: string;
     reportId?: string;
@@ -18,13 +44,8 @@ export function extractPolisIdFromUrl(url: string): PolisId {
         throw new Error("Polis URL is empty");
     }
     const urlObject = new URL(url); // can throw
-    const hostname = urlObject.hostname;
-    if (
-        hostname !== "pol.is" &&
-        !hostname.endsWith(".pol.is") &&
-        hostname !== "deepgov.org" &&
-        !hostname.endsWith(".deepgov.org")
-    ) {
+    const hostname = urlObject.hostname.toLowerCase();
+    if (!isAllowedPolisHostname(hostname)) {
         throw new Error(`Polis URL ${url} has an incorrect hostname`);
     }
 
