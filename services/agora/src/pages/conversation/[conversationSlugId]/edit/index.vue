@@ -47,8 +47,18 @@
         :is-edit-mode="true"
       />
 
-      <div class="contentFlexStyle">
-        <div ref="titleInputRef">
+        <div class="contentFlexStyle">
+          <div class="surveyActionRow">
+            <q-btn
+              flat
+              no-caps
+              color="primary"
+              :label="responseSurveyButtonLabel"
+              @click="openSurveyEditor"
+            />
+          </div>
+
+          <div ref="titleInputRef">
           <div v-if="validationState.title.showError" class="titleErrorMessage">
             <q-icon name="mdi-alert-circle" class="titleErrorIcon" />
             {{ validationState.title.error }}
@@ -127,7 +137,7 @@ import {
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
-import type { ParticipationMode } from "src/shared/types/zod";
+import type { ParticipationMode, SurveyConfig } from "src/shared/types/zod";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import { useUpdateConversationMutation } from "src/utils/api/post/useConversationMutations";
 import { getSingleRouteParam } from "src/utils/router/params";
@@ -188,6 +198,7 @@ const originalState = ref<{
     enabled: boolean;
     options: string[];
   };
+  surveyConfig: SurveyConfig | null;
 }>({
   title: "",
   content: "",
@@ -202,6 +213,13 @@ const originalState = ref<{
     enabled: false,
     options: [],
   },
+  surveyConfig: null,
+});
+
+const responseSurveyButtonLabel = computed(() => {
+  return originalState.value.surveyConfig === null
+    ? t("createSurveyButton")
+    : t("editSurveyButton");
 });
 
 // Track whether current poll is the original (for poll warnings)
@@ -515,6 +533,13 @@ async function onSave(): Promise<void> {
   await performSave();
 }
 
+async function openSurveyEditor(): Promise<void> {
+  await router.push({
+    name: "/conversation/[conversationSlugId]/edit/survey/",
+    params: { conversationSlugId },
+  });
+}
+
 async function handlePollWarningConfirm(): Promise<void> {
   showPollWarning.value = false;
 
@@ -603,6 +628,7 @@ onMounted(async () => {
           ? new Date(response.indexConversationAt)
           : tomorrow,
       },
+      surveyConfig: response.surveyConfig ?? null,
     });
 
     // Store original state for change detection
@@ -618,6 +644,7 @@ onMounted(async () => {
           ? new Date(response.indexConversationAt)
           : tomorrow,
       },
+      surveyConfig: response.surveyConfig ?? null,
       poll: {
         enabled: response.hasPoll ?? false,
         options: response.pollingOptionList

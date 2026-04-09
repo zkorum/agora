@@ -4,12 +4,12 @@
       v-for="(imgItem, imageIndex) in activeClusterConfig.imgList"
       :key="imageIndex"
       class="imageStyle"
-      :style="{
-        width: imgItem.clusterWidthPercent + '%',
-        top: imgItem.top + '%',
-        left: imgItem.left + '%',
-        zIndex: props.reportMode ? 20 + imageIndex : imgItem.isSelected ? 100 + imageIndex : 20 + imageIndex,
-      }"
+        :style="{
+          width: imgItem.clusterWidthPercent + '%',
+          top: imgItem.top + '%',
+          left: imgItem.left + '%',
+          zIndex: props.reportMode ? 20 + imageIndex : imgItem.isSelected ? 100 + imageIndex : 20 + imageIndex,
+        }"
       :role="props.reportMode ? undefined : 'button'"
       :tabindex="props.reportMode ? -1 : 0"
       :aria-label="props.reportMode ? undefined : getClusterAriaLabel(String(imageIndex) as PolisKey)"
@@ -19,19 +19,19 @@
     >
       <div :style="{ position: 'relative' }">
         <img
-          :src="
-            composeImagePath(
-              props.reportMode || imgItem.isSelected,
-              imageIndex,
-              activeClusterConfig.numNodes
-            )
+            :src="
+              composeImagePath(
+                props.reportMode || imgItem.isSelected,
+                imageIndex,
+                activeClusterConfig.numNodes
+              )
           "
           :style="{ width: '100%' }"
           draggable="false"
         />
         <div
           class="clusterNameOverlay borderStyle dynamicFont"
-          :class="{ selected: !props.reportMode && imgItem.isSelected }"
+          :class="{ selected: imgItem.isSelected && (!props.reportMode || props.currentClusterTab !== undefined) }"
           :style="{ '--label-offset-y': imgItem.labelOffsetY + 'px' }"
         >
           <div class="clusterLabelFlex">
@@ -54,7 +54,11 @@
             </div>
             <div class="clusterGroupSize">
               <q-icon name="mdi-account-supervisor-outline" />
-              {{ clusters[String(imageIndex) as PolisKey]?.numUsers }}
+              {{
+                formatAmount(
+                  clusters[String(imageIndex) as PolisKey]?.numUsers ?? 0,
+                )
+              }}
               ({{
                 formatPercentage(
                   calculatePercentage(
@@ -82,7 +86,7 @@
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import { calculatePercentage } from "src/shared/util";
-import { formatPercentage } from "src/utils/common";
+import { formatAmount, formatPercentage } from "src/utils/common";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { computed, ref, watch } from "vue";
 import { z } from "zod";
@@ -95,12 +99,14 @@ import {
 const props = defineProps<{
   clusters: Partial<PolisClusters>;
   totalParticipantCount: number;
-  currentClusterTab: PolisKey;
+  currentClusterTab?: PolisKey;
   reportMode?: boolean;
+  repeatSelectionBehavior?: "noop" | "all";
 }>();
 
 const emit = defineEmits<{
   "update:currentClusterTab": [value: PolisKey];
+  "selectAll": [];
 }>();
 
 const useLetterCodes = computed(() => Object.keys(props.clusters).length >= 4);
@@ -321,6 +327,14 @@ function getClusterConfigForCount(): ClusterConfig {
 // Update cluster selection visualization
 function updateClusterVisualization(): void {
   clearAllSelection();
+
+  if (props.currentClusterTab === undefined) {
+    activeClusterConfig.value.imgList.forEach((imgItem) => {
+      imgItem.isSelected = true;
+    });
+    return;
+  }
+
   const currentTabKey = Number(props.currentClusterTab);
   if (currentTabKey < activeClusterConfig.value.imgList.length) {
     activeClusterConfig.value.imgList[currentTabKey].isSelected = true;
@@ -334,6 +348,14 @@ function clearAllSelection(): void {
 }
 
 function handleClusterSelection(clusterKey: PolisKey): void {
+  if (
+    props.repeatSelectionBehavior === "all" &&
+    props.currentClusterTab === clusterKey
+  ) {
+    emit("selectAll");
+    return;
+  }
+
   emit("update:currentClusterTab", clusterKey);
 }
 
@@ -348,7 +370,7 @@ function getClusterAriaLabel(clusterKey: PolisKey): string {
   const percentage = formatPercentage(
     calculatePercentage(userCount, props.totalParticipantCount)
   );
-  const isSelected = props.currentClusterTab === clusterKey;
+  const isSelected = props.currentClusterTab === undefined || props.currentClusterTab === clusterKey;
   const isUserInCluster = cluster.isUserInCluster;
 
   let ariaLabel = `${clusterLabel}, ${userCount} participants (${percentage})`;

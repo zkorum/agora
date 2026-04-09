@@ -1,5 +1,6 @@
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { and, desc, eq, lt, or } from "drizzle-orm";
+import JSZip from "jszip";
 import { config, log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
 import {
@@ -14,9 +15,15 @@ import type {
     GetConversationExportStatusResponse,
     GetConversationExportHistoryResponse,
 } from "@/shared/types/dto.js";
-import type { ExportFileInfo } from "@/shared/types/zod.js";
-import { ExportGeneratorFactory } from "./generators/factory.js";
+import type { ExportBundleInfo, ExportFileInfo } from "@/shared/types/zod.js";
 import {
+    canAccessExportFileType,
+    getExportGenerators,
+} from "./generators/factory.js";
+import { createExportParticipantMap } from "./generators/participantMap.js";
+import {
+    generateBundleS3Key,
+    generateDownloadBundleFileName,
     generateS3Key,
     generateFileName,
     generateDownloadFileName,
@@ -24,9 +31,51 @@ import {
 import type { ProcessConversationExportParams } from "./types.js";
 import { createExportNotification } from "./notifications.js";
 import type { ExportBuffer } from "../exportBuffer.js";
+import { getActiveSurveyConfigRecord } from "../survey.js";
+import type { ExportAccessLevel } from "./generators/base.js";
+import { getConversationViewAccessLevel } from "@/service/conversationAccess.js";
 
 // Maximum number of exports to keep per conversation
 const MAX_EXPORTS_PER_CONVERSATION = 7;
+
+async function generateExportBundleZip({
+    files,
+}: {
+    files: {
+        fileName: string;
+        csvBuffer: Buffer;
+    }[];
+}): Promise<Buffer> {
+    const zip = new JSZip();
+    for (const file of files) {
+        zip.file(file.fileName, file.csvBuffer);
+    }
+
+    return await zip.generateAsync({ type: "nodebuffer" });
+}
+
+interface ExportFileRecord {
+    fileType: ExportFileInfo["fileType"];
+    fileName: string;
+    fileSize: number;
+    recordCount: number;
+    s3Key: string;
+}
+
+export function getVisibleExportFiles({
+    fileRecords,
+    exportAccessLevel,
+}: {
+    fileRecords: ExportFileRecord[];
+    exportAccessLevel: ExportAccessLevel;
+}): ExportFileRecord[] {
+    return fileRecords.filter((file) => {
+        return canAccessExportFileType({
+            fileType: file.fileType,
+            exportAccessLevel,
+        });
+    });
+}
 
 interface RequestConversationExportParams {
     db: PostgresDatabase;
@@ -143,10 +192,16 @@ export async function processConversationExport({
         }
 
         const conversationTitle = conversationRecordList[0].title;
+        const hasSurvey =
+            (await getActiveSurveyConfigRecord({ db, conversationId })) !==
+            undefined;
+        const participantMap = createExportParticipantMap();
 
         // Initialize generator factory
-        const factory = new ExportGeneratorFactory();
-        const generators = factory.getAllGenerators();
+        const generators = getExportGenerators({
+            exportAccessLevel: "owner",
+            hasSurvey,
+        });
 
         // Validate S3 configuration
         if (
@@ -157,7 +212,22 @@ export async function processConversationExport({
         }
 
         let totalSize = 0;
-        const fileRecords = [];
+        const fileRecords: {
+            exportId: number;
+            fileType: ExportFileInfo["fileType"];
+            fileName: string;
+            fileSize: number;
+            recordCount: number;
+            s3Key: string;
+        }[] = [];
+        const generatedFiles: {
+            fileName: string;
+            csvBuffer: Buffer;
+        }[] = [];
+        const publicGeneratedFiles: {
+            fileName: string;
+            csvBuffer: Buffer;
+        }[] = [];
         const uploadedS3Keys: string[] = []; // Track uploaded S3 keys for rollback
 
         try {
@@ -170,6 +240,8 @@ export async function processConversationExport({
                     db,
                     conversationId,
                     conversationSlugId,
+                    participantMap,
+                    exportAccessLevel: "owner",
                 });
 
                 // Generate filename for database/S3 storage (without timestamp)
@@ -210,12 +282,78 @@ export async function processConversationExport({
                     recordCount: recordCount,
                     s3Key: s3Key,
                 });
+                generatedFiles.push({
+                    fileName,
+                    csvBuffer,
+                });
+                if (generator.minimumAccessLevel === "public") {
+                    publicGeneratedFiles.push({
+                        fileName,
+                        csvBuffer,
+                    });
+                }
 
                 totalSize += csvBuffer.length;
 
                 log.info(
                     `Generated ${fileType}.csv for export ${exportSlugId}: ${recordCount.toString()} records, ${csvBuffer.length.toString()} bytes`,
                 );
+            }
+
+            const publicBundleZipBuffer = await generateExportBundleZip({
+                files: publicGeneratedFiles,
+            });
+            const bundleFileName = generateDownloadBundleFileName({
+                conversationTitle,
+                conversationSlugId,
+                createdAt: exportCreatedAt,
+                variant: "public",
+            });
+            const bundleS3Key = generateBundleS3Key({
+                conversationSlugId,
+                exportSlugId,
+                variant: "public",
+            });
+
+            await uploadToS3({
+                s3Key: bundleS3Key,
+                buffer: publicBundleZipBuffer,
+                bucketName: config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME,
+                fileName: bundleFileName,
+                contentType: "application/zip",
+            });
+            uploadedS3Keys.push(bundleS3Key);
+
+            const hasOwnerOnlyFiles =
+                publicGeneratedFiles.length !== generatedFiles.length;
+            let ownerBundleFileName: string | null = null;
+            let ownerBundleFileSize: number | null = null;
+            let ownerBundleS3Key: string | null = null;
+            if (hasOwnerOnlyFiles) {
+                const ownerBundleZipBuffer = await generateExportBundleZip({
+                    files: generatedFiles,
+                });
+                ownerBundleFileName = generateDownloadBundleFileName({
+                    conversationTitle,
+                    conversationSlugId,
+                    createdAt: exportCreatedAt,
+                    variant: "owner",
+                });
+                ownerBundleS3Key = generateBundleS3Key({
+                    conversationSlugId,
+                    exportSlugId,
+                    variant: "owner",
+                });
+
+                await uploadToS3({
+                    s3Key: ownerBundleS3Key,
+                    buffer: ownerBundleZipBuffer,
+                    bucketName: config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME,
+                    fileName: ownerBundleFileName,
+                    contentType: "application/zip",
+                });
+                uploadedS3Keys.push(ownerBundleS3Key);
+                ownerBundleFileSize = ownerBundleZipBuffer.length;
             }
 
             // All S3 uploads succeeded - now insert database records
@@ -225,6 +363,22 @@ export async function processConversationExport({
                     .values(fileRecord)
                     .returning();
             }
+
+            await db
+                .update(conversationExportTable)
+                .set({
+                    status: "completed",
+                    totalFileSize: totalSize,
+                    totalFileCount: fileRecords.length,
+                    bundleFileName,
+                    bundleFileSize: publicBundleZipBuffer.length,
+                    bundleS3Key,
+                    ownerBundleFileName,
+                    ownerBundleFileSize,
+                    ownerBundleS3Key,
+                    updatedAt: new Date(),
+                })
+                .where(eq(conversationExportTable.slugId, exportSlugId));
         } catch (uploadError: unknown) {
             // Rollback: delete all successfully uploaded S3 files
             log.error(
@@ -251,17 +405,6 @@ export async function processConversationExport({
             // Re-throw the original error to trigger the outer catch block
             throw uploadError;
         }
-
-        // Update export record with totals
-        await db
-            .update(conversationExportTable)
-            .set({
-                status: "completed",
-                totalFileSize: totalSize,
-                totalFileCount: fileRecords.length,
-                updatedAt: new Date(),
-            })
-            .where(eq(conversationExportTable.slugId, exportSlugId));
 
         log.info(`Conversation export ${exportSlugId} completed successfully`);
 
@@ -347,22 +490,31 @@ export async function processConversationExport({
 interface GetConversationExportStatusParams {
     db: PostgresDatabase;
     exportSlugId: string;
+    userId: string | undefined;
 }
 
 /**
- * Get export status and download URLs for all files.
+ * Get export status and download URLs for the files visible to the current viewer.
  */
 export async function getConversationExportStatus({
     db,
     exportSlugId,
+    userId,
 }: GetConversationExportStatusParams): Promise<GetConversationExportStatusResponse> {
     const exportRecordList = await db
         .select({
             exportSlugId: conversationExportTable.slugId,
             status: conversationExportTable.status,
+            conversationId: conversationTable.id,
             conversationSlugId: conversationTable.slugId,
             failureReason: conversationExportTable.failureReason,
             cancellationReason: conversationExportTable.cancellationReason,
+            bundleFileName: conversationExportTable.bundleFileName,
+            bundleFileSize: conversationExportTable.bundleFileSize,
+            bundleS3Key: conversationExportTable.bundleS3Key,
+            ownerBundleFileName: conversationExportTable.ownerBundleFileName,
+            ownerBundleFileSize: conversationExportTable.ownerBundleFileSize,
+            ownerBundleS3Key: conversationExportTable.ownerBundleS3Key,
             createdAt: conversationExportTable.createdAt,
             isDeleted: conversationExportTable.isDeleted,
             deletedAt: conversationExportTable.deletedAt,
@@ -381,6 +533,12 @@ export async function getConversationExportStatus({
     }
 
     const exportRecord = exportRecordList[0];
+    const exportAccessLevel: ExportAccessLevel =
+        await getConversationViewAccessLevel({
+            db,
+            conversationId: exportRecord.conversationId,
+            userId,
+        });
 
     // If export is deleted, return expired status with no files
     if (exportRecord.isDeleted) {
@@ -402,7 +560,7 @@ export async function getConversationExportStatus({
     }
 
     // Fetch all file records for this export
-    const fileRecords = await db
+    const fileRecords: ExportFileRecord[] = await db
         .select({
             fileType: conversationExportFileTable.fileType,
             fileName: conversationExportFileTable.fileName,
@@ -422,6 +580,7 @@ export async function getConversationExportStatus({
 
     // Generate presigned URLs on-demand for all files
     let filesWithUrls: ExportFileInfo[] | undefined = undefined;
+    let bundleWithUrl: ExportBundleInfo | undefined = undefined;
 
     if (fileRecords.length > 0) {
         if (!config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME) {
@@ -429,9 +588,13 @@ export async function getConversationExportStatus({
         }
 
         const bucketName = config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME;
+        const visibleFileRecords = getVisibleExportFiles({
+            fileRecords,
+            exportAccessLevel,
+        });
 
         filesWithUrls = await Promise.all(
-            fileRecords.map(async (file) => {
+            visibleFileRecords.map(async (file) => {
                 // Generate fresh presigned URL with configurable expiration
                 const { url, expiresAt } = await generatePresignedUrl({
                     s3Key: file.s3Key,
@@ -450,6 +613,42 @@ export async function getConversationExportStatus({
                 };
             }),
         );
+
+        const preferredBundle =
+            exportAccessLevel === "owner" &&
+            exportRecord.ownerBundleFileName !== null &&
+            exportRecord.ownerBundleFileSize !== null &&
+            exportRecord.ownerBundleS3Key !== null
+                ? {
+                      fileName: exportRecord.ownerBundleFileName,
+                      fileSize: exportRecord.ownerBundleFileSize,
+                      s3Key: exportRecord.ownerBundleS3Key,
+                  }
+                : exportRecord.bundleFileName !== null &&
+                    exportRecord.bundleFileSize !== null &&
+                    exportRecord.bundleS3Key !== null
+                  ? {
+                        fileName: exportRecord.bundleFileName,
+                        fileSize: exportRecord.bundleFileSize,
+                        s3Key: exportRecord.bundleS3Key,
+                    }
+                  : undefined;
+
+        if (preferredBundle !== undefined) {
+            const { url, expiresAt } = await generatePresignedUrl({
+                s3Key: preferredBundle.s3Key,
+                bucketName,
+                expiresIn:
+                    config.EXPORT_CONVOS_S3_PRESIGNED_URL_EXPIRY_SECONDS,
+            });
+
+            bundleWithUrl = {
+                fileName: preferredBundle.fileName,
+                fileSize: preferredBundle.fileSize,
+                downloadUrl: url,
+                urlExpiresAt: expiresAt,
+            };
+        }
     }
 
     // Return response based on status
@@ -471,6 +670,7 @@ export async function getConversationExportStatus({
                 ...baseResponse,
                 status: "completed" as const,
                 files: filesWithUrls ?? [],
+                bundle: bundleWithUrl,
             };
         case "failed":
             return {
@@ -563,6 +763,7 @@ export async function getActiveExportForConversation({
 interface GetConversationExportHistoryParams {
     db: PostgresDatabase;
     conversationSlugId: string;
+    userId: string;
 }
 
 /**
@@ -572,6 +773,7 @@ interface GetConversationExportHistoryParams {
 export async function getConversationExportHistory({
     db,
     conversationSlugId,
+    userId,
 }: GetConversationExportHistoryParams): Promise<GetConversationExportHistoryResponse> {
     // Fetch active exports (processing + completed)
     const exports = await db
@@ -588,6 +790,7 @@ export async function getConversationExportHistory({
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationExportTable.userId, userId),
                 eq(conversationExportTable.isDeleted, false),
                 or(
                     eq(conversationExportTable.status, "processing"),
@@ -625,6 +828,8 @@ export async function deleteConversationExport({
             id: conversationExportTable.id,
             isDeleted: conversationExportTable.isDeleted,
             status: conversationExportTable.status,
+            bundleS3Key: conversationExportTable.bundleS3Key,
+            ownerBundleS3Key: conversationExportTable.ownerBundleS3Key,
         })
         .from(conversationExportTable)
         .where(eq(conversationExportTable.slugId, exportSlugId))
@@ -667,6 +872,26 @@ export async function deleteConversationExport({
                     bucketName: config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME,
                 });
             }
+        }
+
+        if (
+            exportRecord.bundleS3Key !== null &&
+            config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME
+        ) {
+            await deleteFromS3({
+                s3Key: exportRecord.bundleS3Key,
+                bucketName: config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME,
+            });
+        }
+
+        if (
+            exportRecord.ownerBundleS3Key !== null &&
+            config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME
+        ) {
+            await deleteFromS3({
+                s3Key: exportRecord.ownerBundleS3Key,
+                bucketName: config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME,
+            });
         }
 
         log.info(

@@ -1,0 +1,13 @@
+participant-id,response-status,is-currently-counted,created-at,updated-at,completed-at,question-id,answer-semantic-version,option-id,answer-text-html,answer-text-plain
+0,complete_valid,1,2026-04-20T09:00:00.000Z,2026-04-20T09:04:12.000Z,2026-04-20T09:04:12.000Z,0,2,0,,
+0,complete_valid,1,2026-04-20T09:00:00.000Z,2026-04-20T09:04:12.000Z,2026-04-20T09:04:12.000Z,1,1,3,,
+0,complete_valid,1,2026-04-20T09:00:00.000Z,2026-04-20T09:04:12.000Z,2026-04-20T09:04:12.000Z,2,1,,<p>I rely on the bus because parking is too expensive.</p>,I rely on the bus because parking is too expensive.
+1,complete_valid,1,2026-04-20T09:05:00.000Z,2026-04-20T09:07:45.000Z,2026-04-20T09:07:45.000Z,0,2,2,,
+1,complete_valid,1,2026-04-20T09:05:00.000Z,2026-04-20T09:07:45.000Z,2026-04-20T09:07:45.000Z,1,1,5,,
+1,complete_valid,1,2026-04-20T09:05:00.000Z,2026-04-20T09:07:45.000Z,2026-04-20T09:07:45.000Z,2,1,,,
+2,needs_update,0,2026-04-20T09:10:00.000Z,2026-04-20T09:11:30.000Z,2026-04-20T09:11:30.000Z,0,1,1,,
+2,needs_update,0,2026-04-20T09:10:00.000Z,2026-04-20T09:11:30.000Z,2026-04-20T09:11:30.000Z,1,1,4,,
+2,needs_update,0,2026-04-20T09:10:00.000Z,2026-04-20T09:11:30.000Z,2026-04-20T09:11:30.000Z,2,1,,<p>I answered before the transit question was revised.</p>,I answered before the transit question was revised.
+3,in_progress,0,2026-04-20T09:14:00.000Z,2026-04-20T09:15:10.000Z,,0,2,0,,
+3,in_progress,0,2026-04-20T09:14:00.000Z,2026-04-20T09:15:10.000Z,,1,,,,
+3,in_progress,0,2026-04-20T09:14:00.000Z,2026-04-20T09:15:10.000Z,,2,,,,

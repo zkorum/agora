@@ -48,6 +48,9 @@ export function createEmptyDraft(): ConversationDraft {
     // External Source (GitHub integration for MaxDiff)
     externalSourceConfig: null,
 
+    // Survey configuration
+    surveyConfig: null,
+
     // Creation Settings
     importSettings: {
       importType: null,

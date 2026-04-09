@@ -7,6 +7,7 @@ export const shortcutItemSchema = z.enum([
   "Divisive",
   "Groups",
   "Me",
+  "Survey",
 ]);
 
 export type ShortcutItem = z.infer<typeof shortcutItemSchema>;

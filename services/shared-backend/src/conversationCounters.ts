@@ -15,7 +15,7 @@
  * in the same query (3 queries total, same as before).
  */
 
-import { eq, isNotNull, and, count, sql } from "drizzle-orm";
+import { eq, inArray, isNotNull, isNull, and, count, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     conversationTable,
@@ -25,6 +25,7 @@ import {
     opinionModerationTable,
     conversationUpdateQueueTable,
 } from "./schema.js";
+import { getEligibleParticipantIdsForAnalysis } from "./surveyAnalysis.js";
 import { nowZeroMs } from "./util.js";
 
 interface AllConversationCounters {
@@ -49,13 +50,38 @@ async function calculateConversationCounters({
     db: PostgresJsDatabase;
     conversationId: number;
 }): Promise<AllConversationCounters> {
-    // Vote counts: unmoderated (FILTER) + total (COUNT) in one query
+    const activeVoteParticipantRows = await db
+        .select({ authorId: voteTable.authorId })
+        .from(voteTable)
+        .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
+        .innerJoin(userTable, eq(voteTable.authorId, userTable.id))
+        .where(
+            and(
+                eq(opinionTable.conversationId, conversationId),
+                isNotNull(opinionTable.currentContentId),
+                isNotNull(voteTable.currentContentId),
+                eq(userTable.isDeleted, false),
+            ),
+        )
+        .groupBy(voteTable.authorId);
+
+    const eligibleParticipantIdsForAnalysis =
+        await getEligibleParticipantIdsForAnalysis({
+            db,
+            conversationId,
+            candidateParticipantIds: activeVoteParticipantRows.map(
+                (row) => row.authorId,
+            ),
+        });
+    const shouldFilterAnalysisVotes =
+        eligibleParticipantIdsForAnalysis !== undefined;
+    const analysisEligibleParticipantIds = shouldFilterAnalysisVotes
+        ? Array.from(eligibleParticipantIdsForAnalysis)
+        : [];
+
+    // Vote counts: total (COUNT) across all active votes
     const voteCountResult = await db
         .select({
-            voteCount:
-                sql<number>`count(*) FILTER (WHERE ${opinionModerationTable.id} IS NULL)`.as(
-                    "vote_count",
-                ),
             totalVoteCount: count(),
         })
         .from(voteTable)
@@ -73,6 +99,39 @@ async function calculateConversationCounters({
                 eq(userTable.isDeleted, false),
             ),
         );
+
+    const voteCount =
+        shouldFilterAnalysisVotes && analysisEligibleParticipantIds.length === 0
+            ? 0
+            : (
+                  await db
+                      .select({ voteCount: count() })
+                      .from(voteTable)
+                      .innerJoin(
+                          opinionTable,
+                          eq(voteTable.opinionId, opinionTable.id),
+                      )
+                      .innerJoin(userTable, eq(voteTable.authorId, userTable.id))
+                      .leftJoin(
+                          opinionModerationTable,
+                          eq(opinionModerationTable.opinionId, opinionTable.id),
+                      )
+                      .where(
+                          and(
+                              eq(opinionTable.conversationId, conversationId),
+                              isNotNull(opinionTable.currentContentId),
+                              isNotNull(voteTable.currentContentId),
+                              eq(userTable.isDeleted, false),
+                              isNull(opinionModerationTable.id),
+                              shouldFilterAnalysisVotes
+                                  ? inArray(
+                                        voteTable.authorId,
+                                        analysisEligibleParticipantIds,
+                                    )
+                                  : sql`true`,
+                          ),
+                      )
+              )[0]?.voteCount ?? 0;
 
     // Opinion counts: unmoderated + total + moderated + hidden in one query
     const opinionCountResult = await db
@@ -127,11 +186,16 @@ async function calculateConversationCounters({
                 isNotNull(opinionTable.currentContentId),
                 isNotNull(voteTable.currentContentId),
                 eq(userTable.isDeleted, false),
+                shouldFilterAnalysisVotes
+                    ? analysisEligibleParticipantIds.length === 0
+                        ? sql`false`
+                        : inArray(voteTable.authorId, analysisEligibleParticipantIds)
+                    : sql`true`,
             ),
         )
         .groupBy(voteTable.authorId);
 
-    const totalParticipantCount = participantResults.length;
+    const totalParticipantCount = activeVoteParticipantRows.length;
     const participantCount = participantResults.filter(
         (row) => row.hasUnmoderatedVote,
     ).length;
@@ -142,7 +206,7 @@ async function calculateConversationCounters({
         opinionCountResult.length === 0 ? undefined : opinionCountResult[0];
 
     return {
-        voteCount: voteRow?.voteCount ?? 0,
+        voteCount,
         totalVoteCount: voteRow?.totalVoteCount ?? 0,
         opinionCount: opinionRow?.opinionCount ?? 0,
         totalOpinionCount: opinionRow?.totalOpinionCount ?? 0,

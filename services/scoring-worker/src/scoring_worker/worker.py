@@ -88,8 +88,36 @@ def _score_one(
     return score_comparisons(entity_ids=entity_ids, comparisons=comparisons)
 
 
+def _connect_to_valkey_with_retry(settings: Settings) -> valkey_lib.Valkey | None:
+    valkey_url = str(settings.valkey_url)
+
+    while _running:
+        try:
+            vk = valkey_lib.from_url(valkey_url, decode_responses=True)
+            vk.ping()
+            log.info("[Worker] Valkey connected")
+            return vk
+        except Exception as error:
+            log.warning(
+                "[Worker] Valkey unavailable at %s (%s); retrying in %.1fs",
+                valkey_url,
+                error,
+                settings.valkey_retry_interval_seconds,
+            )
+            time.sleep(settings.valkey_retry_interval_seconds)
+
+    return None
+
+
 def main() -> None:
     settings = Settings()
+    if settings.connection_string == "":
+        msg = "SCORING_WORKER_CONNECTION_STRING must be set"
+        raise ValueError(msg)
+
+    signal.signal(signal.SIGTERM, _handle_signal)
+    signal.signal(signal.SIGINT, _handle_signal)
+
     log.info(
         "[Worker] Starting (poll: %.1fs, batch: %d, workers: %d)",
         settings.poll_interval_seconds,
@@ -98,9 +126,10 @@ def main() -> None:
     )
 
     # Valkey
-    vk = valkey_lib.from_url(settings.valkey_url, decode_responses=True)
-    vk.ping()
-    log.info("[Worker] Valkey connected")
+    vk = _connect_to_valkey_with_retry(settings)
+    if vk is None:
+        log.info("[Worker] Shutdown complete")
+        return
 
     # SQLAlchemy engines (primary + read replica)
     primary_engine = create_engine(
@@ -114,9 +143,6 @@ def main() -> None:
     log.info("[Worker] PostgreSQL connected (pool_pre_ping=True)")
 
     warmup()
-
-    signal.signal(signal.SIGTERM, _handle_signal)
-    signal.signal(signal.SIGINT, _handle_signal)
 
     # Per-conversation backoff: conv_id -> monotonic time when retry is allowed
     backoff_until: dict[int, float] = {}

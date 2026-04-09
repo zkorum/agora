@@ -1,5 +1,3 @@
-import * as authUtilService from "@/service/authUtil.js";
-import * as zupassService from "@/service/zupass.js";
 import { getClusterIdByUserAndConv } from "@/service/polis.js";
 import {
     conversationTable,
@@ -23,6 +21,7 @@ import { httpErrors } from "@fastify/sensible";
 import { and, eq, inArray, sql, SQL } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonComment, useCommonPost } from "./common.js";
+import { checkConversationParticipation } from "./participationGate.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 
 interface GetCommentMetadataFromCommentSlugIdProps {
@@ -516,82 +515,15 @@ export async function castVoteForOpinionSlugId({
             opinionSlugId: opinionSlugId,
             db: db,
         });
-    const {
-        participationMode,
-        contentId: conversationContentId,
-        isClosed: conversationIsClosed,
-        requiresEventTicket,
-    } = await useCommonPost().getPostMetadataFromSlugId({
+    const participationCheck = await checkConversationParticipation({
         db: db,
-        conversationSlugId: conversationSlugId,
-    });
-
-    // Check if conversation is locked
-    const isLocked = await useCommonPost().isPostSlugIdLocked({
-        db: db,
-        postSlugId: conversationSlugId,
-    });
-    if (isLocked) {
-        return {
-            success: false,
-            reason: "conversation_locked",
-        };
-    }
-
-    // Check if conversation is closed
-    if (conversationIsClosed) {
-        return {
-            success: false,
-            reason: "conversation_closed",
-        };
-    }
-
-    const userId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
-        db,
+        conversationSlugId,
         didWrite,
-        participationMode,
         userAgent,
         now,
     });
-
-    // Check verification gating based on participation mode
-    if (participationMode === "strong_verification") {
-        const hasStrong = await authUtilService.hasStrongVerification({
-            db,
-            userId,
-        });
-        if (!hasStrong) {
-            return {
-                success: false,
-                reason: "strong_verification_required",
-            };
-        }
-    } else if (participationMode === "email_verification") {
-        const hasEmail = await authUtilService.hasEmailVerification({
-            db,
-            userId,
-        });
-        if (!hasEmail) {
-            return {
-                success: false,
-                reason: "email_verification_required",
-            };
-        }
-    }
-
-    // Check event ticket gating
-    if (requiresEventTicket !== null) {
-        const hasTicket = await zupassService.hasEventTicket({
-            db,
-            userId,
-            eventSlug: requiresEventTicket,
-        });
-        if (!hasTicket) {
-            return {
-                success: false,
-                reason: "event_ticket_required",
-            };
-        }
+    if (!participationCheck.success) {
+        return participationCheck;
     }
 
     await castVoteForOpinionSlugIdFromUserId({
@@ -602,10 +534,10 @@ export async function castVoteForOpinionSlugId({
         didWrite,
         proof,
         votingAction,
-        userId,
+        userId: participationCheck.participantId,
         optionalConversationId: conversationId,
         optionalConversationSlugId: conversationSlugId,
-        optionalConversationContentId: conversationContentId,
+        optionalConversationContentId: participationCheck.conversationContentId,
     });
 
     // Only run clustering check if frontend requests it
@@ -613,7 +545,7 @@ export async function castVoteForOpinionSlugId({
     if (returnIsUserClustered) {
         userIsClustered = await checkUserIsClustered({
             db,
-            userId,
+            userId: participationCheck.participantId,
             conversationId,
         });
     }

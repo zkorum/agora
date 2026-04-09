@@ -31,6 +31,7 @@
           :author-username="loadedConversationData.metadata.authorUsername"
           :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
           :conversation-type="loadedConversationData.metadata.conversationType"
+          :has-survey="loadedConversationData.interaction.surveyGate?.hasSurvey === true"
         />
         </div>
 

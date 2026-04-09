@@ -30,6 +30,18 @@ export function generateS3Key({
     return `${S3_EXPORTS_PATH}${conversationSlugId}/${exportSlugId}/${fileType}.csv`;
 }
 
+export function generateBundleS3Key({
+    conversationSlugId,
+    exportSlugId,
+    variant,
+}: {
+    conversationSlugId: string;
+    exportSlugId: string;
+    variant: "public" | "owner";
+}): string {
+    return `${S3_EXPORTS_PATH}${conversationSlugId}/${exportSlugId}/${variant === "owner" ? "bundle-owner" : "bundle"}.zip`;
+}
+
 /**
  * Generate file name for an export file (stored in database and S3 key)
  */
@@ -66,4 +78,26 @@ export function generateDownloadFileName({
     }
 
     return `${titleSlug}-${conversationSlugId}-${fileType}-${isoTimestamp}.csv`;
+}
+
+export function generateDownloadBundleFileName({
+    conversationTitle,
+    conversationSlugId,
+    createdAt,
+    variant,
+}: {
+    conversationTitle: string;
+    conversationSlugId: string;
+    createdAt: Date;
+    variant: "public" | "owner";
+}): string {
+    const utcDate = new TZDate(createdAt, "UTC");
+    const isoTimestamp = formatDate(utcDate, "yyyy-MM-dd'T'HH-mm-ss'Z'");
+
+    let titleSlug = slugify(conversationTitle).slice(0, 50);
+    if (!titleSlug) {
+        titleSlug = "untitled";
+    }
+
+    return `${titleSlug}-${conversationSlugId}-${variant === "owner" ? "export-full" : "export"}-${isoTimestamp}.zip`;
 }

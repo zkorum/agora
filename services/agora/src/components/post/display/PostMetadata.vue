@@ -50,7 +50,7 @@
     />
   </q-dialog>
 
-  <PreLoginIntentionDialog
+  <PreParticipationIntentionDialog
     v-model="showLoginDialog"
     :ok-callback="() => onLoginConfirmationOk()"
     active-intention="reportUserContent"
@@ -107,7 +107,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { copyToClipboard, useQuasar } from "quasar";
-import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
 import UserIdentityCard from "src/components/features/user/UserIdentityCard.vue";
 import ReportContentDialog from "src/components/report/ReportContentDialog.vue";
 import ZKActionDialog from "src/components/ui-library/ZKActionDialog.vue";

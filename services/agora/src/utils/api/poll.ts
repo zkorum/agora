@@ -3,6 +3,7 @@ import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
+import { Dto } from "src/shared/types/dto";
 
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useNotify } from "../ui/notify";
@@ -11,6 +12,8 @@ import { useCommonApi } from "./common";
 
 export function useBackendPollApi() {
   const { buildEncodedUcan } = useCommonApi();
+
+  type PollRespondResponse = ReturnType<typeof Dto.pollRespondResponse.parse>;
 
   const { showNotifyMessage } = useNotify();
 
@@ -47,7 +50,10 @@ export function useBackendPollApi() {
     }
   }
 
-  async function submitPollResponse(voteIndex: number, postSlugId: string) {
+  async function submitPollResponse(
+    voteIndex: number,
+    postSlugId: string
+  ): Promise<PollRespondResponse | undefined> {
     try {
       const params: ApiV1PollRespondPostRequest = {
         conversationSlugId: postSlugId,
@@ -66,11 +72,11 @@ export function useBackendPollApi() {
         }
       );
 
-      return response.data.success;
+      return Dto.pollRespondResponse.parse(response.data);
     } catch (e) {
       console.error(e);
       showNotifyMessage("Failed to submit poll response.");
-      return false;
+      return undefined;
     }
   }
 

@@ -1359,6 +1359,33 @@
                                                                 "type": "integer",
                                                                 "minimum": 0,
                                                                 "maximum": 9007199254740991
+                                                            },
+                                                            "surveyGate": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "hasSurvey": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "canParticipate": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "no_survey",
+                                                                            "not_started",
+                                                                            "in_progress",
+                                                                            "needs_update",
+                                                                            "complete_valid"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "hasSurvey",
+                                                                    "canParticipate",
+                                                                    "status"
+                                                                ],
+                                                                "additionalProperties": false
                                                             }
                                                         },
                                                         "required": [
@@ -2286,6 +2313,33 @@
                                                         "type": "integer",
                                                         "minimum": 0,
                                                         "maximum": 9007199254740991
+                                                    },
+                                                    "surveyGate": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "hasSurvey": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "canParticipate": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "no_survey",
+                                                                    "not_started",
+                                                                    "in_progress",
+                                                                    "needs_update",
+                                                                    "complete_valid"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "hasSurvey",
+                                                            "canParticipate",
+                                                            "status"
+                                                        ],
+                                                        "additionalProperties": false
                                                     }
                                                 },
                                                 "required": [
@@ -2668,6 +2722,33 @@
                                                                 "type": "integer",
                                                                 "minimum": 0,
                                                                 "maximum": 9007199254740991
+                                                            },
+                                                            "surveyGate": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "hasSurvey": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "canParticipate": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "no_survey",
+                                                                            "not_started",
+                                                                            "in_progress",
+                                                                            "needs_update",
+                                                                            "complete_valid"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "hasSurvey",
+                                                                    "canParticipate",
+                                                                    "status"
+                                                                ],
+                                                                "additionalProperties": false
                                                             }
                                                         },
                                                         "required": [
@@ -2964,7 +3045,9 @@
                                                         "event_ticket_required",
                                                         "account_required",
                                                         "strong_verification_required",
-                                                        "email_verification_required"
+                                                        "email_verification_required",
+                                                        "survey_required",
+                                                        "survey_outdated"
                                                     ]
                                                 }
                                             },
@@ -3041,9 +3124,14 @@
                                                 "reason": {
                                                     "type": "string",
                                                     "enum": [
+                                                        "conversation_locked",
+                                                        "conversation_closed",
+                                                        "event_ticket_required",
                                                         "account_required",
                                                         "strong_verification_required",
-                                                        "email_verification_required"
+                                                        "email_verification_required",
+                                                        "survey_required",
+                                                        "survey_outdated"
                                                     ]
                                                 }
                                             },
@@ -3172,22 +3260,62 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "candidateSets": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "string"
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "candidateSets": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string"
+                                                        }
+                                                    }
                                                 }
-                                            }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "candidateSets"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "conversation_locked",
+                                                        "conversation_closed",
+                                                        "event_ticket_required",
+                                                        "account_required",
+                                                        "strong_verification_required",
+                                                        "email_verification_required",
+                                                        "survey_required",
+                                                        "survey_outdated"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
                                         }
-                                    },
-                                    "required": [
-                                        "candidateSets"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                 }
                             }
                         }
@@ -3818,7 +3946,9 @@
                                                         "event_ticket_required",
                                                         "account_required",
                                                         "strong_verification_required",
-                                                        "email_verification_required"
+                                                        "email_verification_required",
+                                                        "survey_required",
+                                                        "survey_outdated"
                                                     ]
                                                 }
                                             },
@@ -5534,6 +5664,223 @@
                                                 ]
                                             }
                                         ]
+                                    },
+                                    "surveyConfig": {
+                                        "nullable": true,
+                                        "type": "object",
+                                        "properties": {
+                                            "questions": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "questionSlugId": {
+                                                            "type": "string",
+                                                            "maxLength": 10
+                                                        },
+                                                        "questionType": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "mono_choice",
+                                                                "multi_choice",
+                                                                "select",
+                                                                "free_text"
+                                                            ]
+                                                        },
+                                                        "questionText": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 500
+                                                        },
+                                                        "isRequired": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "displayOrder": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "constraints": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "type": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "mono_choice",
+                                                                                "select"
+                                                                            ]
+                                                                        },
+                                                                        "minSelections": {
+                                                                            "type": "number",
+                                                                            "enum": [
+                                                                                1
+                                                                            ]
+                                                                        },
+                                                                        "maxSelections": {
+                                                                            "type": "number",
+                                                                            "enum": [
+                                                                                1
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "type",
+                                                                        "minSelections",
+                                                                        "maxSelections"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "type": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "multi_choice"
+                                                                            ]
+                                                                        },
+                                                                        "minSelections": {
+                                                                            "type": "integer",
+                                                                            "minimum": 1,
+                                                                            "maximum": 9007199254740991
+                                                                        },
+                                                                        "maxSelections": {
+                                                                            "type": "integer",
+                                                                            "minimum": 1,
+                                                                            "maximum": 9007199254740991
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "type",
+                                                                        "minSelections"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "type": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "free_text"
+                                                                            ]
+                                                                        },
+                                                                        "inputMode": {
+                                                                            "default": "rich_text",
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "rich_text"
+                                                                            ]
+                                                                        },
+                                                                        "minPlainTextLength": {
+                                                                            "type": "integer",
+                                                                            "minimum": 0,
+                                                                            "maximum": 9007199254740991
+                                                                        },
+                                                                        "maxPlainTextLength": {
+                                                                            "type": "integer",
+                                                                            "exclusiveMinimum": true,
+                                                                            "maximum": 9007199254740991
+                                                                        },
+                                                                        "maxHtmlLength": {
+                                                                            "type": "integer",
+                                                                            "exclusiveMinimum": true,
+                                                                            "maximum": 9007199254740991
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "type",
+                                                                        "maxPlainTextLength",
+                                                                        "maxHtmlLength"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "type": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "free_text"
+                                                                            ]
+                                                                        },
+                                                                        "inputMode": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "integer"
+                                                                            ]
+                                                                        },
+                                                                        "minValue": {
+                                                                            "type": "integer",
+                                                                            "minimum": 1,
+                                                                            "maximum": 9007199254740991
+                                                                        },
+                                                                        "maxValue": {
+                                                                            "type": "integer",
+                                                                            "minimum": 1,
+                                                                            "maximum": 9007199254740991
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "type",
+                                                                        "inputMode",
+                                                                        "minValue"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            ]
+                                                        },
+                                                        "options": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "optionSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    },
+                                                                    "optionText": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 200
+                                                                    },
+                                                                    "displayOrder": {
+                                                                        "type": "integer",
+                                                                        "minimum": 0,
+                                                                        "maximum": 9007199254740991
+                                                                    },
+                                                                    "textChangeIsSemantic": {
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "optionText",
+                                                                    "displayOrder"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        },
+                                                        "textChangeIsSemantic": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "questionType",
+                                                        "questionText",
+                                                        "isRequired",
+                                                        "displayOrder",
+                                                        "constraints"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            }
+                                        },
+                                        "required": [
+                                            "questions"
+                                        ],
+                                        "additionalProperties": false
                                     }
                                 },
                                 "required": [
@@ -6291,6 +6638,33 @@
                                                             "type": "integer",
                                                             "minimum": 0,
                                                             "maximum": 9007199254740991
+                                                        },
+                                                        "surveyGate": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "hasSurvey": {
+                                                                    "type": "boolean"
+                                                                },
+                                                                "canParticipate": {
+                                                                    "type": "boolean"
+                                                                },
+                                                                "status": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "no_survey",
+                                                                        "not_started",
+                                                                        "in_progress",
+                                                                        "needs_update",
+                                                                        "complete_valid"
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "hasSurvey",
+                                                                "canParticipate",
+                                                                "status"
+                                                            ],
+                                                            "additionalProperties": false
                                                         }
                                                     },
                                                     "required": [
@@ -6395,6 +6769,224 @@
                                                     "enum": [
                                                         "devconnect-2025"
                                                     ]
+                                                },
+                                                "surveyConfig": {
+                                                    "nullable": true,
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "questions": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "questionSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    },
+                                                                    "questionType": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "mono_choice",
+                                                                            "multi_choice",
+                                                                            "select",
+                                                                            "free_text"
+                                                                        ]
+                                                                    },
+                                                                    "questionText": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 500
+                                                                    },
+                                                                    "isRequired": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "displayOrder": {
+                                                                        "type": "integer",
+                                                                        "minimum": 0,
+                                                                        "maximum": 9007199254740991
+                                                                    },
+                                                                    "constraints": {
+                                                                        "anyOf": [
+                                                                            {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "type": {
+                                                                                        "type": "string",
+                                                                                        "enum": [
+                                                                                            "mono_choice",
+                                                                                            "select"
+                                                                                        ]
+                                                                                    },
+                                                                                    "minSelections": {
+                                                                                        "type": "number",
+                                                                                        "enum": [
+                                                                                            1
+                                                                                        ]
+                                                                                    },
+                                                                                    "maxSelections": {
+                                                                                        "type": "number",
+                                                                                        "enum": [
+                                                                                            1
+                                                                                        ]
+                                                                                    }
+                                                                                },
+                                                                                "required": [
+                                                                                    "type",
+                                                                                    "minSelections",
+                                                                                    "maxSelections"
+                                                                                ],
+                                                                                "additionalProperties": false
+                                                                            },
+                                                                            {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "type": {
+                                                                                        "type": "string",
+                                                                                        "enum": [
+                                                                                            "multi_choice"
+                                                                                        ]
+                                                                                    },
+                                                                                    "minSelections": {
+                                                                                        "type": "integer",
+                                                                                        "minimum": 1,
+                                                                                        "maximum": 9007199254740991
+                                                                                    },
+                                                                                    "maxSelections": {
+                                                                                        "type": "integer",
+                                                                                        "minimum": 1,
+                                                                                        "maximum": 9007199254740991
+                                                                                    }
+                                                                                },
+                                                                                "required": [
+                                                                                    "type",
+                                                                                    "minSelections"
+                                                                                ],
+                                                                                "additionalProperties": false
+                                                                            },
+                                                                            {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "type": {
+                                                                                        "type": "string",
+                                                                                        "enum": [
+                                                                                            "free_text"
+                                                                                        ]
+                                                                                    },
+                                                                                    "inputMode": {
+                                                                                        "default": "rich_text",
+                                                                                        "type": "string",
+                                                                                        "enum": [
+                                                                                            "rich_text"
+                                                                                        ]
+                                                                                    },
+                                                                                    "minPlainTextLength": {
+                                                                                        "type": "integer",
+                                                                                        "minimum": 0,
+                                                                                        "maximum": 9007199254740991
+                                                                                    },
+                                                                                    "maxPlainTextLength": {
+                                                                                        "type": "integer",
+                                                                                        "exclusiveMinimum": true,
+                                                                                        "maximum": 9007199254740991
+                                                                                    },
+                                                                                    "maxHtmlLength": {
+                                                                                        "type": "integer",
+                                                                                        "exclusiveMinimum": true,
+                                                                                        "maximum": 9007199254740991
+                                                                                    }
+                                                                                },
+                                                                                "required": [
+                                                                                    "type",
+                                                                                    "inputMode",
+                                                                                    "maxPlainTextLength",
+                                                                                    "maxHtmlLength"
+                                                                                ],
+                                                                                "additionalProperties": false
+                                                                            },
+                                                                            {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "type": {
+                                                                                        "type": "string",
+                                                                                        "enum": [
+                                                                                            "free_text"
+                                                                                        ]
+                                                                                    },
+                                                                                    "inputMode": {
+                                                                                        "type": "string",
+                                                                                        "enum": [
+                                                                                            "integer"
+                                                                                        ]
+                                                                                    },
+                                                                                    "minValue": {
+                                                                                        "type": "integer",
+                                                                                        "minimum": 1,
+                                                                                        "maximum": 9007199254740991
+                                                                                    },
+                                                                                    "maxValue": {
+                                                                                        "type": "integer",
+                                                                                        "minimum": 1,
+                                                                                        "maximum": 9007199254740991
+                                                                                    }
+                                                                                },
+                                                                                "required": [
+                                                                                    "type",
+                                                                                    "inputMode",
+                                                                                    "minValue"
+                                                                                ],
+                                                                                "additionalProperties": false
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    "options": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "optionSlugId": {
+                                                                                    "type": "string",
+                                                                                    "maxLength": 10
+                                                                                },
+                                                                                "optionText": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 200
+                                                                                },
+                                                                                "displayOrder": {
+                                                                                    "type": "integer",
+                                                                                    "minimum": 0,
+                                                                                    "maximum": 9007199254740991
+                                                                                },
+                                                                                "textChangeIsSemantic": {
+                                                                                    "type": "boolean"
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "optionText",
+                                                                                "displayOrder"
+                                                                            ],
+                                                                            "additionalProperties": false
+                                                                        }
+                                                                    },
+                                                                    "textChangeIsSemantic": {
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "questionType",
+                                                                    "questionText",
+                                                                    "isRequired",
+                                                                    "displayOrder",
+                                                                    "constraints"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "questions"
+                                                    ],
+                                                    "additionalProperties": false
                                                 },
                                                 "indexConversationAt": {
                                                     "type": "string",
@@ -6600,6 +7192,223 @@
                                             "devconnect-2025"
                                         ]
                                     },
+                                    "surveyConfig": {
+                                        "nullable": true,
+                                        "type": "object",
+                                        "properties": {
+                                            "questions": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "questionSlugId": {
+                                                            "type": "string",
+                                                            "maxLength": 10
+                                                        },
+                                                        "questionType": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "mono_choice",
+                                                                "multi_choice",
+                                                                "select",
+                                                                "free_text"
+                                                            ]
+                                                        },
+                                                        "questionText": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 500
+                                                        },
+                                                        "isRequired": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "displayOrder": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "constraints": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "type": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "mono_choice",
+                                                                                "select"
+                                                                            ]
+                                                                        },
+                                                                        "minSelections": {
+                                                                            "type": "number",
+                                                                            "enum": [
+                                                                                1
+                                                                            ]
+                                                                        },
+                                                                        "maxSelections": {
+                                                                            "type": "number",
+                                                                            "enum": [
+                                                                                1
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "type",
+                                                                        "minSelections",
+                                                                        "maxSelections"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "type": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "multi_choice"
+                                                                            ]
+                                                                        },
+                                                                        "minSelections": {
+                                                                            "type": "integer",
+                                                                            "minimum": 1,
+                                                                            "maximum": 9007199254740991
+                                                                        },
+                                                                        "maxSelections": {
+                                                                            "type": "integer",
+                                                                            "minimum": 1,
+                                                                            "maximum": 9007199254740991
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "type",
+                                                                        "minSelections"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "type": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "free_text"
+                                                                            ]
+                                                                        },
+                                                                        "inputMode": {
+                                                                            "default": "rich_text",
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "rich_text"
+                                                                            ]
+                                                                        },
+                                                                        "minPlainTextLength": {
+                                                                            "type": "integer",
+                                                                            "minimum": 0,
+                                                                            "maximum": 9007199254740991
+                                                                        },
+                                                                        "maxPlainTextLength": {
+                                                                            "type": "integer",
+                                                                            "exclusiveMinimum": true,
+                                                                            "maximum": 9007199254740991
+                                                                        },
+                                                                        "maxHtmlLength": {
+                                                                            "type": "integer",
+                                                                            "exclusiveMinimum": true,
+                                                                            "maximum": 9007199254740991
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "type",
+                                                                        "maxPlainTextLength",
+                                                                        "maxHtmlLength"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "type": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "free_text"
+                                                                            ]
+                                                                        },
+                                                                        "inputMode": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "integer"
+                                                                            ]
+                                                                        },
+                                                                        "minValue": {
+                                                                            "type": "integer",
+                                                                            "minimum": 1,
+                                                                            "maximum": 9007199254740991
+                                                                        },
+                                                                        "maxValue": {
+                                                                            "type": "integer",
+                                                                            "minimum": 1,
+                                                                            "maximum": 9007199254740991
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "type",
+                                                                        "inputMode",
+                                                                        "minValue"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            ]
+                                                        },
+                                                        "options": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "optionSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    },
+                                                                    "optionText": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 200
+                                                                    },
+                                                                    "displayOrder": {
+                                                                        "type": "integer",
+                                                                        "minimum": 0,
+                                                                        "maximum": 9007199254740991
+                                                                    },
+                                                                    "textChangeIsSemantic": {
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "optionText",
+                                                                    "displayOrder"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        },
+                                                        "textChangeIsSemantic": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "questionType",
+                                                        "questionText",
+                                                        "isRequired",
+                                                        "displayOrder",
+                                                        "constraints"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            }
+                                        },
+                                        "required": [
+                                            "questions"
+                                        ],
+                                        "additionalProperties": false
+                                    },
                                     "indexConversationAt": {
                                         "type": "string",
                                         "format": "date-time",
@@ -6671,6 +7480,1491 @@
                                             "additionalProperties": false
                                         }
                                     ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/survey/form/fetch": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "currentRevision": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": true,
+                                            "maximum": 9007199254740991
+                                        },
+                                        "questions": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "questionSlugId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    },
+                                                    "questionType": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "mono_choice",
+                                                            "multi_choice",
+                                                            "select",
+                                                            "free_text"
+                                                        ]
+                                                    },
+                                                    "questionText": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 500
+                                                    },
+                                                    "isRequired": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "displayOrder": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 9007199254740991
+                                                    },
+                                                    "constraints": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "mono_choice",
+                                                                            "select"
+                                                                        ]
+                                                                    },
+                                                                    "minSelections": {
+                                                                        "type": "number",
+                                                                        "enum": [
+                                                                            1
+                                                                        ]
+                                                                    },
+                                                                    "maxSelections": {
+                                                                        "type": "number",
+                                                                        "enum": [
+                                                                            1
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "minSelections",
+                                                                    "maxSelections"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "multi_choice"
+                                                                        ]
+                                                                    },
+                                                                    "minSelections": {
+                                                                        "type": "integer",
+                                                                        "minimum": 1,
+                                                                        "maximum": 9007199254740991
+                                                                    },
+                                                                    "maxSelections": {
+                                                                        "type": "integer",
+                                                                        "minimum": 1,
+                                                                        "maximum": 9007199254740991
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "minSelections"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "free_text"
+                                                                        ]
+                                                                    },
+                                                                    "inputMode": {
+                                                                        "default": "rich_text",
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "rich_text"
+                                                                        ]
+                                                                    },
+                                                                    "minPlainTextLength": {
+                                                                        "type": "integer",
+                                                                        "minimum": 0,
+                                                                        "maximum": 9007199254740991
+                                                                    },
+                                                                    "maxPlainTextLength": {
+                                                                        "type": "integer",
+                                                                        "exclusiveMinimum": true,
+                                                                        "maximum": 9007199254740991
+                                                                    },
+                                                                    "maxHtmlLength": {
+                                                                        "type": "integer",
+                                                                        "exclusiveMinimum": true,
+                                                                        "maximum": 9007199254740991
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "inputMode",
+                                                                    "maxPlainTextLength",
+                                                                    "maxHtmlLength"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "free_text"
+                                                                        ]
+                                                                    },
+                                                                    "inputMode": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "integer"
+                                                                        ]
+                                                                    },
+                                                                    "minValue": {
+                                                                        "type": "integer",
+                                                                        "minimum": 1,
+                                                                        "maximum": 9007199254740991
+                                                                    },
+                                                                    "maxValue": {
+                                                                        "type": "integer",
+                                                                        "minimum": 1,
+                                                                        "maximum": 9007199254740991
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "inputMode",
+                                                                    "minValue"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        ]
+                                                    },
+                                                    "options": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "optionSlugId": {
+                                                                    "type": "string",
+                                                                    "maxLength": 10
+                                                                },
+                                                                "optionText": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 200
+                                                                },
+                                                                "displayOrder": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0,
+                                                                    "maximum": 9007199254740991
+                                                                },
+                                                                "textChangeIsSemantic": {
+                                                                    "type": "boolean"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "optionText",
+                                                                "displayOrder"
+                                                            ],
+                                                            "additionalProperties": false
+                                                        }
+                                                    },
+                                                    "textChangeIsSemantic": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "currentAnswer": {
+                                                        "oneOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "optionSlugIds": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string",
+                                                                            "maxLength": 10
+                                                                        }
+                                                                    },
+                                                                    "questionType": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "mono_choice"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "optionSlugIds",
+                                                                    "questionType"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "optionSlugIds": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string",
+                                                                            "maxLength": 10
+                                                                        }
+                                                                    },
+                                                                    "questionType": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "select"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "optionSlugIds",
+                                                                    "questionType"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "optionSlugIds": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string",
+                                                                            "maxLength": 10
+                                                                        }
+                                                                    },
+                                                                    "questionType": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "multi_choice"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "optionSlugIds",
+                                                                    "questionType"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "questionType": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "free_text"
+                                                                        ]
+                                                                    },
+                                                                    "textValueHtml": {
+                                                                        "type": "string",
+                                                                        "maxLength": 3000
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "questionType",
+                                                                    "textValueHtml"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        ]
+                                                    },
+                                                    "isPassed": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "isMissingRequired": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "isStale": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "isCurrentAnswerValid": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "currentSemanticVersion": {
+                                                        "type": "integer",
+                                                        "exclusiveMinimum": true,
+                                                        "maximum": 9007199254740991
+                                                    },
+                                                    "answeredQuestionSemanticVersion": {
+                                                        "type": "integer",
+                                                        "exclusiveMinimum": true,
+                                                        "maximum": 9007199254740991
+                                                    }
+                                                },
+                                                "required": [
+                                                    "questionType",
+                                                    "questionText",
+                                                    "isRequired",
+                                                    "displayOrder",
+                                                    "constraints",
+                                                    "isPassed",
+                                                    "isMissingRequired",
+                                                    "isStale",
+                                                    "isCurrentAnswerValid",
+                                                    "currentSemanticVersion"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "surveyGate": {
+                                            "type": "object",
+                                            "properties": {
+                                                "hasSurvey": {
+                                                    "type": "boolean"
+                                                },
+                                                "canParticipate": {
+                                                    "type": "boolean"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "no_survey",
+                                                        "not_started",
+                                                        "in_progress",
+                                                        "needs_update",
+                                                        "complete_valid"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "hasSurvey",
+                                                "canParticipate",
+                                                "status"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    },
+                                    "required": [
+                                        "currentRevision",
+                                        "questions",
+                                        "surveyGate"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/survey/status/check": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "surveyGate": {
+                                            "type": "object",
+                                            "properties": {
+                                                "hasSurvey": {
+                                                    "type": "boolean"
+                                                },
+                                                "canParticipate": {
+                                                    "type": "boolean"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "no_survey",
+                                                        "not_started",
+                                                        "in_progress",
+                                                        "needs_update",
+                                                        "complete_valid"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "hasSurvey",
+                                                "canParticipate",
+                                                "status"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        "routeResolution": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "none"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "kind"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "question"
+                                                            ]
+                                                        },
+                                                        "questionSlugId": {
+                                                            "type": "string",
+                                                            "maxLength": 10
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "kind",
+                                                        "questionSlugId"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "summary"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "kind"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "surveyGate",
+                                        "routeResolution"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/survey/answer/save": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    },
+                                    "questionSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    },
+                                    "answer": {
+                                        "nullable": true,
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "optionSlugIds": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "maxLength": 10
+                                                        }
+                                                    },
+                                                    "questionType": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "mono_choice"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "optionSlugIds",
+                                                    "questionType"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "optionSlugIds": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "maxLength": 10
+                                                        }
+                                                    },
+                                                    "questionType": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "select"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "optionSlugIds",
+                                                    "questionType"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "optionSlugIds": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "maxLength": 10
+                                                        }
+                                                    },
+                                                    "questionType": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "multi_choice"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "optionSlugIds",
+                                                    "questionType"
+                                                ],
+                                                "additionalProperties": false
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "questionType": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "free_text"
+                                                        ]
+                                                    },
+                                                    "textValueHtml": {
+                                                        "type": "string",
+                                                        "maxLength": 3000
+                                                    }
+                                                },
+                                                "required": [
+                                                    "questionType",
+                                                    "textValueHtml"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId",
+                                    "questionSlugId",
+                                    "answer"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "surveyGate": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "hasSurvey": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "canParticipate": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "status": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "no_survey",
+                                                                "not_started",
+                                                                "in_progress",
+                                                                "needs_update",
+                                                                "complete_valid"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "hasSurvey",
+                                                        "canParticipate",
+                                                        "status"
+                                                    ],
+                                                    "additionalProperties": false
+                                                },
+                                                "justCompleted": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "surveyGate",
+                                                "justCompleted"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "conversation_locked",
+                                                        "conversation_closed",
+                                                        "event_ticket_required",
+                                                        "account_required",
+                                                        "strong_verification_required",
+                                                        "email_verification_required",
+                                                        "survey_required",
+                                                        "survey_outdated"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/survey/response/withdraw": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        true
+                                                    ]
+                                                },
+                                                "surveyGate": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "hasSurvey": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "canParticipate": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "status": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "no_survey",
+                                                                "not_started",
+                                                                "in_progress",
+                                                                "needs_update",
+                                                                "complete_valid"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "hasSurvey",
+                                                        "canParticipate",
+                                                        "status"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "surveyGate"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "enum": [
+                                                        false
+                                                    ]
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "conversation_locked",
+                                                        "conversation_closed",
+                                                        "event_ticket_required",
+                                                        "account_required",
+                                                        "strong_verification_required",
+                                                        "email_verification_required",
+                                                        "survey_required",
+                                                        "survey_outdated"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "reason"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/survey/config/update": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    },
+                                    "surveyConfig": {
+                                        "type": "object",
+                                        "properties": {
+                                            "questions": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "questionSlugId": {
+                                                            "type": "string",
+                                                            "maxLength": 10
+                                                        },
+                                                        "questionType": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "mono_choice",
+                                                                "multi_choice",
+                                                                "select",
+                                                                "free_text"
+                                                            ]
+                                                        },
+                                                        "questionText": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 500
+                                                        },
+                                                        "isRequired": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "displayOrder": {
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "constraints": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "type": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "mono_choice",
+                                                                                "select"
+                                                                            ]
+                                                                        },
+                                                                        "minSelections": {
+                                                                            "type": "number",
+                                                                            "enum": [
+                                                                                1
+                                                                            ]
+                                                                        },
+                                                                        "maxSelections": {
+                                                                            "type": "number",
+                                                                            "enum": [
+                                                                                1
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "type",
+                                                                        "minSelections",
+                                                                        "maxSelections"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "type": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "multi_choice"
+                                                                            ]
+                                                                        },
+                                                                        "minSelections": {
+                                                                            "type": "integer",
+                                                                            "minimum": 1,
+                                                                            "maximum": 9007199254740991
+                                                                        },
+                                                                        "maxSelections": {
+                                                                            "type": "integer",
+                                                                            "minimum": 1,
+                                                                            "maximum": 9007199254740991
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "type",
+                                                                        "minSelections"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "type": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "free_text"
+                                                                            ]
+                                                                        },
+                                                                        "inputMode": {
+                                                                            "default": "rich_text",
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "rich_text"
+                                                                            ]
+                                                                        },
+                                                                        "minPlainTextLength": {
+                                                                            "type": "integer",
+                                                                            "minimum": 0,
+                                                                            "maximum": 9007199254740991
+                                                                        },
+                                                                        "maxPlainTextLength": {
+                                                                            "type": "integer",
+                                                                            "exclusiveMinimum": true,
+                                                                            "maximum": 9007199254740991
+                                                                        },
+                                                                        "maxHtmlLength": {
+                                                                            "type": "integer",
+                                                                            "exclusiveMinimum": true,
+                                                                            "maximum": 9007199254740991
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "type",
+                                                                        "maxPlainTextLength",
+                                                                        "maxHtmlLength"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "type": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "free_text"
+                                                                            ]
+                                                                        },
+                                                                        "inputMode": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "integer"
+                                                                            ]
+                                                                        },
+                                                                        "minValue": {
+                                                                            "type": "integer",
+                                                                            "minimum": 1,
+                                                                            "maximum": 9007199254740991
+                                                                        },
+                                                                        "maxValue": {
+                                                                            "type": "integer",
+                                                                            "minimum": 1,
+                                                                            "maximum": 9007199254740991
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "type",
+                                                                        "inputMode",
+                                                                        "minValue"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                }
+                                                            ]
+                                                        },
+                                                        "options": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "optionSlugId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 10
+                                                                    },
+                                                                    "optionText": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 200
+                                                                    },
+                                                                    "displayOrder": {
+                                                                        "type": "integer",
+                                                                        "minimum": 0,
+                                                                        "maximum": 9007199254740991
+                                                                    },
+                                                                    "textChangeIsSemantic": {
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "optionText",
+                                                                    "displayOrder"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            }
+                                                        },
+                                                        "textChangeIsSemantic": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "questionType",
+                                                        "questionText",
+                                                        "isRequired",
+                                                        "displayOrder",
+                                                        "constraints"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            }
+                                        },
+                                        "required": [
+                                            "questions"
+                                        ],
+                                        "additionalProperties": false
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId",
+                                    "surveyConfig"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "currentRevision": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": true,
+                                            "maximum": 9007199254740991
+                                        },
+                                        "surveyGate": {
+                                            "type": "object",
+                                            "properties": {
+                                                "hasSurvey": {
+                                                    "type": "boolean"
+                                                },
+                                                "canParticipate": {
+                                                    "type": "boolean"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "no_survey",
+                                                        "not_started",
+                                                        "in_progress",
+                                                        "needs_update",
+                                                        "complete_valid"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "hasSurvey",
+                                                "canParticipate",
+                                                "status"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    },
+                                    "required": [
+                                        "currentRevision"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/survey/config/delete": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/survey/results/aggregated": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "hasSurvey": {
+                                            "type": "boolean"
+                                        },
+                                        "accessLevel": {
+                                            "type": "string",
+                                            "enum": [
+                                                "public",
+                                                "owner"
+                                            ]
+                                        },
+                                        "suppressionThreshold": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": true,
+                                            "maximum": 9007199254740991
+                                        },
+                                        "suppressedRows": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "scope": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "overall",
+                                                            "cluster"
+                                                        ]
+                                                    },
+                                                    "clusterId": {
+                                                        "type": "string"
+                                                    },
+                                                    "clusterLabel": {
+                                                        "type": "string"
+                                                    },
+                                                    "questionId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    },
+                                                    "questionType": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "mono_choice",
+                                                            "multi_choice",
+                                                            "select",
+                                                            "free_text"
+                                                        ]
+                                                    },
+                                                    "question": {
+                                                        "type": "string"
+                                                    },
+                                                    "optionId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    },
+                                                    "option": {
+                                                        "type": "string"
+                                                    },
+                                                    "count": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 9007199254740991
+                                                    },
+                                                    "percentage": {
+                                                        "type": "number",
+                                                        "minimum": 0,
+                                                        "maximum": 100
+                                                    },
+                                                    "isSuppressed": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "suppressionReason": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "count_below_threshold",
+                                                            "cluster_deductive_disclosure"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "scope",
+                                                    "clusterId",
+                                                    "clusterLabel",
+                                                    "questionId",
+                                                    "questionType",
+                                                    "question",
+                                                    "optionId",
+                                                    "option",
+                                                    "isSuppressed"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "fullRows": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "scope": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "overall",
+                                                            "cluster"
+                                                        ]
+                                                    },
+                                                    "clusterId": {
+                                                        "type": "string"
+                                                    },
+                                                    "clusterLabel": {
+                                                        "type": "string"
+                                                    },
+                                                    "questionId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    },
+                                                    "questionType": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "mono_choice",
+                                                            "multi_choice",
+                                                            "select",
+                                                            "free_text"
+                                                        ]
+                                                    },
+                                                    "question": {
+                                                        "type": "string"
+                                                    },
+                                                    "optionId": {
+                                                        "type": "string",
+                                                        "maxLength": 10
+                                                    },
+                                                    "option": {
+                                                        "type": "string"
+                                                    },
+                                                    "count": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 9007199254740991
+                                                    },
+                                                    "percentage": {
+                                                        "type": "number",
+                                                        "minimum": 0,
+                                                        "maximum": 100
+                                                    },
+                                                    "isSuppressed": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "suppressionReason": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "count_below_threshold",
+                                                            "cluster_deductive_disclosure"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "scope",
+                                                    "clusterId",
+                                                    "clusterLabel",
+                                                    "questionId",
+                                                    "questionType",
+                                                    "question",
+                                                    "optionId",
+                                                    "option",
+                                                    "isSuppressed"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "hasSurvey",
+                                        "accessLevel",
+                                        "suppressionThreshold",
+                                        "suppressedRows"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/survey/completion/counts": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "hasSurvey": {
+                                            "type": "boolean"
+                                        },
+                                        "counts": {
+                                            "type": "object",
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "completeValid": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "needsUpdate": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "notStarted": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "inProgress": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                }
+                                            },
+                                            "required": [
+                                                "total",
+                                                "completeValid",
+                                                "needsUpdate",
+                                                "notStarted",
+                                                "inProgress"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    },
+                                    "required": [
+                                        "hasSurvey",
+                                        "counts"
+                                    ],
+                                    "additionalProperties": false
                                 }
                             }
                         }
@@ -8692,7 +10986,12 @@
                                                                     "votes",
                                                                     "participants",
                                                                     "summary",
-                                                                    "stats"
+                                                                    "stats",
+                                                                    "survey_questions",
+                                                                    "survey_question_options",
+                                                                    "survey_participant_responses",
+                                                                    "survey_public_aggregates",
+                                                                    "survey_full_aggregates"
                                                                 ]
                                                             },
                                                             "fileName": {
@@ -8727,6 +11026,34 @@
                                                         ],
                                                         "additionalProperties": false
                                                     }
+                                                },
+                                                "bundle": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "fileName": {
+                                                            "type": "string"
+                                                        },
+                                                        "fileSize": {
+                                                            "type": "integer",
+                                                            "exclusiveMinimum": true,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "downloadUrl": {
+                                                            "type": "string",
+                                                            "format": "uri"
+                                                        },
+                                                        "urlExpiresAt": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "fileName",
+                                                        "fileSize",
+                                                        "downloadUrl",
+                                                        "urlExpiresAt"
+                                                    ],
+                                                    "additionalProperties": false
                                                 },
                                                 "createdAt": {
                                                     "type": "string",

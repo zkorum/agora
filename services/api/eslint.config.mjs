@@ -52,6 +52,7 @@ export default tseslint.config(
             "**/dist/",
             "eslint.config.mjs",
             "jest.config.js",
+            "scripts/**/*.mjs",
             "tests/**/*",
             "drizzle.config.ts",
             "esm-loader-lodash-fix.mjs",

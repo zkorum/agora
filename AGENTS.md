@@ -153,6 +153,8 @@ cd services/math-updater && pnpm lint && pnpm test
 cd services/scoring-worker && make test && make lint && make typecheck
 ```
 
+When the user explicitly asks for `lint:fix`, run only that service's `lint:fix` command unless they also ask for `lint`, typechecking, tests, or broader verification.
+
 ### Git Commits
 
 This project follows the [Conventional Commits](https://www.conventionalcommits.org/) standard.

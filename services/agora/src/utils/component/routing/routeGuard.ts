@@ -1,3 +1,4 @@
+import { wasNavigationTriggeredByHistory } from "src/utils/nav/historyBack";
 import type { Ref } from "vue";
 import { onUnmounted, ref } from "vue";
 import type { RouteRecordNameGeneric } from "vue-router";
@@ -27,18 +28,14 @@ export interface RouteGuardActions {
   ) => Promise<void>;
 }
 
+interface PendingNavigation {
+  targetRoute: string;
+  navigationMethod: "push" | "replace";
+}
+
 export interface RouteGuardComposable
   extends RouteGuardState,
     RouteGuardActions {}
-
-/**
- * Vue Router stores the history position in window.history.state.position.
- * Returns null if the position is not available.
- */
-function getHistoryPosition(): number | null {
-  const position: unknown = window.history.state?.position;
-  return typeof position === "number" ? position : null;
-}
 
 export function useRouteGuard(
   beforeUnloadShouldBlockCallback: () => boolean,
@@ -49,12 +46,15 @@ export function useRouteGuard(
   // State
   const isRouteLocked = ref(false);
   const showExitDialog = ref(false);
-  const pendingRoute = ref<string | null>(null);
-  let lockedHistoryPosition: number | null = null;
+  const pendingNavigation = ref<PendingNavigation | null>(null);
 
   // Shared helper: block navigation and show the exit dialog
-  function blockAndShowDialog(destination: RouteGuardDestination): void {
-    pendingRoute.value = destination.fullPath;
+  function blockAndShowDialog({
+    pending,
+  }: {
+    pending: PendingNavigation;
+  }): void {
+    pendingNavigation.value = pending;
     showExitDialog.value = true;
   }
 
@@ -73,81 +73,48 @@ export function useRouteGuard(
   window.addEventListener("beforeunload", handleBeforeUnload);
 
   // Set up Vue Router guard (handles router.push / router.replace navigations)
-  onBeforeRouteLeave((to, from, next) => {
+  onBeforeRouteLeave((to, from) => {
     const destination = { fullPath: to.fullPath, name: to.name };
 
     if (!isRouteLocked.value) {
-      next();
-      return;
+      return true;
     }
 
     if (beforeRouteLeaveCallback(destination)) {
-      next();
-      return;
+      return true;
     }
 
-    blockAndShowDialog(destination);
-    next(false);
+    const navigationMethod = wasNavigationTriggeredByHistory({
+      currentPath: from.fullPath,
+      historyBack: window.history.state?.back,
+      historyForward: window.history.state?.forward,
+    })
+      ? "replace"
+      : "push";
+
+    blockAndShowDialog({
+      pending: {
+        targetRoute: destination.fullPath,
+        navigationMethod,
+      },
+    });
+    return false;
   });
-
-  // Set up popstate interceptor (handles browser back/forward and router.go)
-  // Registered in capture phase to fire BEFORE Vue Router's bubble-phase listener
-  let ignoreNextPopState = false;
-
-  function handlePopState(event: PopStateEvent): void {
-    if (ignoreNextPopState) {
-      ignoreNextPopState = false;
-      return;
-    }
-
-    if (!isRouteLocked.value) return;
-    if (!beforeUnloadShouldBlockCallback()) return;
-
-    // Capture destination before restoring position
-    const destinationPath =
-      window.location.pathname + window.location.search + window.location.hash;
-    const destinationRoute = router.resolve(destinationPath);
-    const destination = {
-      fullPath: destinationRoute.fullPath,
-      name: destinationRoute.name,
-    };
-
-    // Check if the guard would allow this navigation
-    if (beforeRouteLeaveCallback(destination)) return;
-
-    // Calculate delta to restore history position
-    const newPosition = getHistoryPosition();
-    if (lockedHistoryPosition === null || newPosition === null) return;
-    const delta = lockedHistoryPosition - newPosition;
-    if (delta === 0) return;
-
-    // Block: prevent Vue Router from seeing this popstate, restore position
-    event.stopImmediatePropagation();
-    ignoreNextPopState = true;
-    window.history.go(delta);
-
-    blockAndShowDialog(destination);
-  }
-
-  window.addEventListener("popstate", handlePopState, true);
 
   // Clean up on component unmount
   onUnmounted(() => {
-    window.removeEventListener("popstate", handlePopState, true);
     window.removeEventListener("beforeunload", handleBeforeUnload);
     window.onbeforeunload = originalBeforeUnload;
   });
 
   const lockRoute = (): void => {
     isRouteLocked.value = true;
-    lockedHistoryPosition = getHistoryPosition();
   };
 
   const unlockRoute = (): void => {
     isRouteLocked.value = false;
-    pendingRoute.value = null;
+    pendingNavigation.value = null;
     showExitDialog.value = false;
-    lockedHistoryPosition = null;
   };
 
   const isRouteLockedCheck = (): boolean => {
@@ -157,7 +124,7 @@ export function useRouteGuard(
   const proceedWithNavigation = async (
     beforeLeaveCallback?: BeforeLeaveCallback
   ): Promise<void> => {
-    if (!pendingRoute.value) {
+    if (pendingNavigation.value === null) {
       console.warn("No pending route to navigate to");
       return;
     }
@@ -169,10 +136,10 @@ export function useRouteGuard(
       }
 
       // Unlock the route and navigate
-      const targetRoute = pendingRoute.value;
+      const pending = pendingNavigation.value;
       unlockRoute();
 
-      await router.push(targetRoute);
+      await router[pending.navigationMethod](pending.targetRoute);
     } catch (error) {
       console.error("Failed to navigate to pending route:", error);
       // Re-lock the route if navigation failed

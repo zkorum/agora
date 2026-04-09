@@ -20,7 +20,6 @@
       }"
       @deleted="decrementOpinionCount()"
       @participant-count-delta="handleParticipantCountDelta"
-      @ticket-verified="(payload) => handleTicketVerified(payload)"
     />
 
     <FloatingBottomContainer>
@@ -30,9 +29,9 @@
           conversationData.metadata.participationMode
         "
         :requires-event-ticket="conversationData.metadata.requiresEventTicket"
+        :survey-gate="conversationData.interaction.surveyGate"
         :is-composer-disabled="isVotingDisabled"
         @submitted-comment="submittedComment"
-        @ticket-verified="(payload) => handleTicketVerified(payload)"
       />
     </FloatingBottomContainer>
   </div>
@@ -210,23 +209,6 @@ async function submittedComment(data: {
         profileData.value.userName = targetOpinion.username;
       }
     }
-  }
-}
-
-async function handleTicketVerified(payload: {
-  userIdChanged: boolean;
-  needsCacheRefresh: boolean;
-}): Promise<void> {
-  console.log(
-    "[ConversationCommentTab] Ticket verified event received",
-    payload
-  );
-
-  if (payload.needsCacheRefresh) {
-    console.log(
-      "[ConversationCommentTab] New guest via Zupass - performing deferred cache refresh"
-    );
-    await loadAuthenticatedModules();
   }
 }
 

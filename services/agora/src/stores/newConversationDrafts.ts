@@ -11,6 +11,7 @@ import type {
 import { createEmptyDraft } from "src/composables/conversation/draft/conversationDraft.utils";
 import type { OrganizationProperties } from "src/shared/types/zod";
 import { processEnv } from "src/utils/processEnv";
+import { areSurveyConfigsEqual } from "src/utils/survey/config";
 import { watch } from "vue";
 
 export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
@@ -169,6 +170,12 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       JSON.stringify(current.importSettings.csvFileMetadata) !==
         JSON.stringify(emptyDraft.importSettings.csvFileMetadata);
 
+    const hasSurveyConfigChanges =
+      !areSurveyConfigsEqual({
+        left: current.surveyConfig,
+        right: emptyDraft.surveyConfig,
+      });
+
     return (
       hasContentChanges ||
       hasSeedOpinionsChanges ||
@@ -177,7 +184,8 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       hasPostAsChanges ||
       hasPrivacyChanges ||
       hasPrivateSettingsChanges ||
-      hasCreationSettingsChanges
+      hasCreationSettingsChanges ||
+      hasSurveyConfigChanges
     );
   }
 

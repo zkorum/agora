@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { normalizeScores } from "@/service/maxdiff.js";
 import { parseResultRows } from "@/utils/maxdiffParsing.js";
 
 describe("parseResultRows", () => {
@@ -48,14 +49,40 @@ describe("parseResultRows", () => {
             rows: [
                 {
                     ranking: null,
-                    comparisons: [
-                        { best: "X", worst: "Y", set: ["X", "Y"] },
-                    ],
+                    comparisons: [{ best: "X", worst: "Y", set: ["X", "Y"] }],
                 },
             ],
             items: ["A", "B"],
         });
 
         expect(perUserComparisons).toHaveLength(0);
+    });
+});
+
+describe("normalizeScores", () => {
+    it("normalizes raw scores to 0-1 display values", () => {
+        const results = normalizeScores([
+            { entitySlugId: "a", score: 10 },
+            { entitySlugId: "b", score: 5 },
+            { entitySlugId: "c", score: 0 },
+        ]);
+
+        expect(results).toEqual([
+            { entitySlugId: "a", score: 1 },
+            { entitySlugId: "b", score: 0.5 },
+            { entitySlugId: "c", score: 0 },
+        ]);
+    });
+
+    it("returns 0.5 for flat score ranges", () => {
+        const results = normalizeScores([
+            { entitySlugId: "a", score: 3 },
+            { entitySlugId: "b", score: 3 },
+        ]);
+
+        expect(results).toEqual([
+            { entitySlugId: "a", score: 0.5 },
+            { entitySlugId: "b", score: 0.5 },
+        ]);
     });
 });

@@ -37,6 +37,8 @@ import * as csvImportService from "@/service/csvImport.js";
 import * as feedService from "@/service/feed.js";
 import * as postService from "@/service/post.js";
 import * as postEditService from "@/service/postEdit.js";
+import { checkConversationParticipation } from "@/service/participationGate.js";
+import * as surveyService from "@/service/survey.js";
 import { useCommonPost } from "@/service/common.js";
 import { MAX_CSV_FILE_SIZE } from "@/shared-app-api/csvUpload.js";
 import { checkMaxDiffAllowed } from "@/shared-app-api/maxdiffLogic.js";
@@ -47,6 +49,7 @@ import { cleanupStuckImportsOnStartup } from "@/service/conversationImport/datab
 import { cleanupStuckExportsOnStartup } from "@/service/conversationExport/core.js";
 import { createImportNotification } from "@/service/conversationImport/notifications.js";
 import { createExportNotification } from "@/service/conversationExport/notifications.js";
+import type { ValkeyRef } from "@/service/valkeyRef.js";
 import { validateS3Access } from "./service/s3.js";
 
 import { backfillImportBodies } from "@/service/importBodyBackfill.js";
@@ -462,27 +465,101 @@ if (
 }
 
 // Initialize Valkey (optional - for vote buffer persistence and UCAN replay protection)
-const queueValkey = await initializeValkey({
-    valkeyUrl: config.QUEUE_VALKEY_URL,
-    log,
-    type: "Queue",
-});
+const queueValkeyRef: ValkeyRef = {
+    current: await initializeValkey({
+        valkeyUrl: config.QUEUE_VALKEY_URL,
+        log,
+        type: "Queue",
+    }),
+};
 
-if (queueValkey === undefined) {
-    log.warn(
-        "[API] Valkey not configured — UCAN replay protection uses in-memory store. " +
-            "This provides single-instance protection only. " +
-            "Set QUEUE_VALKEY_URL for cross-instance replay prevention.",
-    );
-}
+let queueValkeyReconnectInterval: NodeJS.Timeout | undefined;
+let queueValkeyReconnectInProgress = false;
+
+const getQueuePersistenceMode = (): string => {
+    if (queueValkeyRef.current !== undefined) {
+        return "Valkey";
+    }
+
+    if (config.QUEUE_VALKEY_URL !== undefined) {
+        return "in-memory until Valkey reconnects";
+    }
+
+    return "in-memory only";
+};
 
 // Initialize UCAN replay guard (prevents token replay attacks)
-const ucanReplayGuard = createUcanReplayGuard({ valkey: queueValkey });
+const ucanReplayGuard = createUcanReplayGuard({ valkeyRef: queueValkeyRef });
+
+if (queueValkeyRef.current === undefined) {
+    if (config.QUEUE_VALKEY_URL === undefined) {
+        log.warn(
+            "[API] Valkey not configured — UCAN replay protection uses in-memory store. " +
+                "This provides single-instance protection only. " +
+                "Set QUEUE_VALKEY_URL for cross-instance replay prevention.",
+        );
+    } else {
+        log.warn(
+            "[API] Queue Valkey unavailable on startup — using in-memory fallback temporarily and retrying in background",
+        );
+
+        queueValkeyReconnectInterval = setInterval(() => {
+            if (
+                queueValkeyRef.current !== undefined ||
+                queueValkeyReconnectInProgress
+            ) {
+                return;
+            }
+
+            queueValkeyReconnectInProgress = true;
+            void (async () => {
+                const nextValkey = await initializeValkey({
+                    valkeyUrl: config.QUEUE_VALKEY_URL,
+                    log,
+                    type: "Queue",
+                });
+
+                if (nextValkey === undefined) {
+                    return;
+                }
+
+                try {
+                    const syncedReplayTokenCount =
+                        await ucanReplayGuard.syncToValkey({
+                            valkey: nextValkey,
+                        });
+                    queueValkeyRef.current = nextValkey;
+                    log.info(
+                        `[API] Queue Valkey connected in background — replay guard and buffers now use Valkey (migrated ${String(syncedReplayTokenCount)} replay tokens)`,
+                    );
+
+                    if (queueValkeyReconnectInterval !== undefined) {
+                        clearInterval(queueValkeyReconnectInterval);
+                        queueValkeyReconnectInterval = undefined;
+                    }
+                } catch (error) {
+                    nextValkey.close();
+                    throw error;
+                }
+            })()
+                .catch((error: unknown) => {
+                    log.error(
+                        error,
+                        "[API] Queue Valkey reconnected but replay token migration failed",
+                    );
+                })
+                .finally(() => {
+                    queueValkeyReconnectInProgress = false;
+                });
+        }, 5000);
+        queueValkeyReconnectInterval.unref();
+    }
+}
 log.info(
     `[API] UCAN replay guard initialized — mode: ${
-        queueValkey !== undefined
-            ? "Valkey"
-            : "in-memory (single-instance only)"
+        config.QUEUE_VALKEY_URL === undefined
+            ? "in-memory (single-instance only)"
+            : getQueuePersistenceMode()
     }`,
 );
 
@@ -522,19 +599,19 @@ popularConversationCheckInterval.unref();
 // Initialize VoteBuffer (batches votes to reduce DB contention)
 const voteBuffer = createVoteBuffer({
     db,
-    valkey: queueValkey,
+    valkeyRef: queueValkeyRef,
     flushIntervalMs: config.VOTE_BUFFER_FLUSH_INTERVAL_MS,
     valkeyBatchLimit: config.VOTE_BUFFER_VALKEY_BATCH_LIMIT,
     realtimeSSEManager,
 });
 log.info(
-    `[API] Vote buffer initialized (flush interval: ${String(config.VOTE_BUFFER_FLUSH_INTERVAL_MS)}ms, batch limit: ${String(config.VOTE_BUFFER_VALKEY_BATCH_LIMIT)}, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
+    `[API] Vote buffer initialized (flush interval: ${String(config.VOTE_BUFFER_FLUSH_INTERVAL_MS)}ms, batch limit: ${String(config.VOTE_BUFFER_VALKEY_BATCH_LIMIT)}, persistence: ${getQueuePersistenceMode()})`,
 );
 
 // Initialize ExportBuffer (batches export requests to reduce system load)
 const exportBuffer = createExportBuffer({
     db,
-    valkey: queueValkey,
+    valkeyRef: queueValkeyRef,
     realtimeSSEManager,
     flushIntervalMs: 1000,
     maxBatchSize: config.EXPORT_CONVOS_BUFFER_MAX_BATCH_SIZE,
@@ -546,13 +623,13 @@ const exportBuffer = createExportBuffer({
         config.EXPORT_CONVOS_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES,
 });
 log.info(
-    `[API] Export buffer initialized (flush interval: 1s, max batch: ${String(config.EXPORT_CONVOS_BUFFER_MAX_BATCH_SIZE)}, cooldown: ${String(config.EXPORT_CONVOS_COOLDOWN_SECONDS)}s, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
+    `[API] Export buffer initialized (flush interval: 1s, max batch: ${String(config.EXPORT_CONVOS_BUFFER_MAX_BATCH_SIZE)}, cooldown: ${String(config.EXPORT_CONVOS_COOLDOWN_SECONDS)}s, persistence: ${getQueuePersistenceMode()})`,
 );
 
 // Initialize ImportBuffer (batches import requests to reduce system load)
 const importBuffer = createImportBuffer({
     db,
-    valkey: queueValkey,
+    valkeyRef: queueValkeyRef,
     realtimeSSEManager,
     voteBuffer,
     axiosPolis,
@@ -564,7 +641,7 @@ const importBuffer = createImportBuffer({
         config.IMPORT_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES,
 });
 log.info(
-    `[API] Import buffer initialized (flush interval: ${String(config.IMPORT_BUFFER_FLUSH_INTERVAL_MS)}ms, max batch: ${String(config.IMPORT_BUFFER_MAX_BATCH_SIZE)}, max concurrency: ${String(config.IMPORT_BUFFER_MAX_CONCURRENCY)}, persistence: ${queueValkey !== undefined ? "Valkey" : "in-memory only"})`,
+    `[API] Import buffer initialized (flush interval: ${String(config.IMPORT_BUFFER_FLUSH_INTERVAL_MS)}ms, max batch: ${String(config.IMPORT_BUFFER_MAX_BATCH_SIZE)}, max concurrency: ${String(config.IMPORT_BUFFER_MAX_CONCURRENCY)}, persistence: ${getQueuePersistenceMode()})`,
 );
 
 // Cleanup stuck imports/exports from previous server session
@@ -645,7 +722,7 @@ void performStartupCleanup();
 void backfillImportBodies({ db });
 
 // Backfill: restore legacy MaxDiff comparison rows for the scoring worker
-void backfillLegacyMaxdiffComparisons({ db, valkey: queueValkey });
+void backfillLegacyMaxdiffComparisons({ db, valkey: queueValkeyRef.current });
 
 interface ExpectedDeviceStatus {
     userId?: string;
@@ -1788,29 +1865,25 @@ server.after(() => {
             checkMaxdiffEnabled();
             const { didWrite } = await verifyUcan(request);
             const now = nowZeroMs();
-            const { participationMode } =
-                await useCommonPost().getPostMetadataFromSlugId({
-                    db,
-                    conversationSlugId: request.body.conversationSlugId,
-                });
-            const userId =
-                await authUtilService.getOrRegisterUserIdFromDeviceStatus({
-                    db,
-                    didWrite,
-                    participationMode,
-                    userAgent:
-                        request.headers["user-agent"] ?? "Unknown device",
-                    now,
-                });
+            const participationCheck = await checkConversationParticipation({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                didWrite,
+                userAgent: request.headers["user-agent"] ?? "Unknown device",
+                now,
+            });
+            if (!participationCheck.success) {
+                return participationCheck;
+            }
             const { conversationId } = await saveMaxdiffResult({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
-                userId,
+                userId: participationCheck.participantId,
                 ranking: request.body.ranking,
                 comparisons: request.body.comparisons,
                 isComplete: request.body.isComplete,
                 isMaxdiffOrgOnly: config.IS_MAXDIFF_ORG_ONLY,
-                valkey: queueValkey,
+                valkey: queueValkeyRef.current,
             });
             const { items, uncertainty } = await computeGlobalUncertainty({
                 db,
@@ -1822,7 +1895,7 @@ server.after(() => {
                 globalUncertainty: uncertainty,
                 bufferSize: 1,
             });
-            return { candidateSets };
+            return { success: true as const, candidateSets };
         },
     });
 
@@ -1883,7 +1956,7 @@ server.after(() => {
                 db,
                 conversationSlugId: request.body.conversationSlugId,
                 lifecycleFilter: request.body.lifecycleFilter,
-                valkey: queueValkey,
+                valkey: queueValkeyRef.current,
             });
         },
     });
@@ -1928,7 +2001,7 @@ server.after(() => {
                 itemSlugId: request.body.itemSlugId,
                 newStatus: request.body.newStatus,
                 requestingUserId: deviceStatus.userId,
-                valkey: queueValkey,
+                valkey: queueValkeyRef.current,
             });
             reply.send({});
         },
@@ -1968,7 +2041,7 @@ server.after(() => {
                 conversationSlugId: request.body.conversationSlugId,
                 requestingUserId: deviceStatus.userId,
                 githubClient,
-                valkey: queueValkey,
+                valkey: queueValkeyRef.current,
             });
         },
     });
@@ -2057,7 +2130,11 @@ server.after(() => {
             const payload = parseWebhookPayload({
                 rawPayload: request.body,
             });
-            await handleIssueWebhook({ db, payload, valkey: queueValkey });
+            await handleIssueWebhook({
+                db,
+                payload,
+                valkey: queueValkeyRef.current,
+            });
             reply.send({ ok: true });
         },
     });
@@ -2373,6 +2450,8 @@ server.after(() => {
                 seedOpinionList: request.body.seedOpinionList,
                 requiresEventTicket: request.body.requiresEventTicket,
                 externalSourceConfig: request.body.externalSourceConfig ?? null,
+                surveyConfig: request.body.surveyConfig ?? null,
+                googleCloudCredentials,
             });
 
             // Broadcast to all connected clients (except the creator) that a new conversation exists
@@ -2742,10 +2821,239 @@ server.after(() => {
                 userId: deviceStatus.userId,
                 didWrite: didWrite,
                 proof: encodedUcan,
+                googleCloudCredentials,
                 data: request.body,
             });
 
             reply.send(updateResult);
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/survey/form/fetch`,
+        schema: {
+            body: Dto.surveyFormFetchRequest,
+            response: {
+                200: Dto.surveyFormFetchResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            const parsedHeaderDisplayLanguage =
+                ZodSupportedDisplayLanguageCodes.safeParse(
+                    request.headers["accept-language"],
+                );
+            const headerDisplayLanguage: SupportedDisplayLanguageCodes =
+                parsedHeaderDisplayLanguage.success
+                    ? parsedHeaderDisplayLanguage.data
+                    : "en";
+            const displayLanguage = deviceStatus.isKnown
+                ? await getLanguagePreferences({
+                      db,
+                      userId: deviceStatus.userId,
+                      request: {
+                          currentDisplayLanguage: headerDisplayLanguage,
+                      },
+                  }).then((prefs) => prefs.displayLanguage)
+                : headerDisplayLanguage;
+            return await surveyService.fetchSurveyForm({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                participantId: deviceStatus.isKnown
+                    ? deviceStatus.userId
+                    : undefined,
+                displayLanguage,
+                googleCloudCredentials,
+            });
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/survey/status/check`,
+        schema: {
+            body: Dto.surveyStatusCheckRequest,
+            response: {
+                200: Dto.surveyStatusCheckResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            return await surveyService.checkSurveyStatus({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                participantId: deviceStatus.isKnown
+                    ? deviceStatus.userId
+                    : undefined,
+            });
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/survey/answer/save`,
+        schema: {
+            body: Dto.surveyAnswerSaveRequest,
+            response: {
+                200: Dto.surveyAnswerSaveResponse,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUcan(request);
+            return await surveyService.saveSurveyAnswer({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                questionSlugId: request.body.questionSlugId,
+                answer: request.body.answer,
+                didWrite,
+                userAgent: request.headers["user-agent"] ?? "Unknown device",
+                now: nowZeroMs(),
+                valkey: queueValkeyRef.current,
+            });
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/survey/response/withdraw`,
+        schema: {
+            body: Dto.surveyResponseWithdrawRequest,
+            response: {
+                200: Dto.surveyResponseWithdrawResponse,
+            },
+        },
+        handler: async (request) => {
+            const { didWrite } = await verifyUcan(request);
+            return await surveyService.withdrawSurveyResponse({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                didWrite,
+                userAgent: request.headers["user-agent"] ?? "Unknown device",
+                now: nowZeroMs(),
+                valkey: queueValkeyRef.current,
+            });
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/survey/config/update`,
+        schema: {
+            body: Dto.surveyConfigUpdateRequest,
+            response: {
+                200: Dto.surveyConfigUpdateResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+            return await surveyService.updateSurveyConfigByAuthor({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
+                surveyConfig: request.body.surveyConfig,
+                now: nowZeroMs(),
+                valkey: queueValkeyRef.current,
+                googleCloudCredentials,
+            });
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/survey/config/delete`,
+        schema: {
+            body: Dto.surveyConfigDeleteRequest,
+            response: {
+                200: Dto.surveyConfigDeleteResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+            await surveyService.deleteSurveyConfigByAuthor({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
+                now: nowZeroMs(),
+                valkey: queueValkeyRef.current,
+            });
+            return { success: true as const };
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/survey/results/aggregated`,
+        schema: {
+            body: Dto.surveyResultsAggregatedRequest,
+            response: {
+                200: Dto.surveyResultsAggregatedResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanOptionalAuth(db, request);
+            const parsedHeaderDisplayLanguage =
+                ZodSupportedDisplayLanguageCodes.safeParse(
+                    request.headers["accept-language"],
+                );
+            const headerDisplayLanguage: SupportedDisplayLanguageCodes =
+                parsedHeaderDisplayLanguage.success
+                    ? parsedHeaderDisplayLanguage.data
+                    : "en";
+            const displayLanguage = deviceStatus.isKnown
+                ? await getLanguagePreferences({
+                      db,
+                      userId: deviceStatus.userId,
+                      request: {
+                          currentDisplayLanguage: headerDisplayLanguage,
+                      },
+                  }).then((prefs) => prefs.displayLanguage)
+                : headerDisplayLanguage;
+            return await surveyService.fetchSurveyAggregatedResults({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.isKnown ? deviceStatus.userId : undefined,
+                displayLanguage,
+                googleCloudCredentials,
+            });
+        },
+    });
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/survey/completion/counts`,
+        schema: {
+            body: Dto.surveyCompletionCountsRequest,
+            response: {
+                200: Dto.surveyCompletionCountsResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+            return await surveyService.fetchSurveyCompletionCounts({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+                userId: deviceStatus.userId,
+            });
         },
     });
     server.withTypeProvider<ZodTypeProvider>().route({
@@ -3512,12 +3820,13 @@ server.after(() => {
         },
         handler: async (request) => {
             checkConversationExportEnabled();
-            await verifyUcanAndKnownDeviceStatus(db, request, {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(db, request, {
                 expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
             });
             return await conversationExportService.getConversationExportStatus({
                 db: db,
                 exportSlugId: request.body.exportSlugId,
+                userId: deviceStatus.userId,
             });
         },
     });
@@ -3533,13 +3842,14 @@ server.after(() => {
         },
         handler: async (request) => {
             checkConversationExportEnabled();
-            await verifyUcanAndKnownDeviceStatus(db, request, {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(db, request, {
                 expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
             });
             return await conversationExportService.getConversationExportHistory(
                 {
                     db: db,
                     conversationSlugId: request.body.conversationSlugId,
+                    userId: deviceStatus.userId,
                 },
             );
         },
@@ -3642,6 +3952,11 @@ const shutdown = async (signal: string) => {
     log.info(`[API] ${signal} received, shutting down gracefully...`);
 
     try {
+        if (queueValkeyReconnectInterval !== undefined) {
+            clearInterval(queueValkeyReconnectInterval);
+            queueValkeyReconnectInterval = undefined;
+        }
+
         // Flush pending votes before shutdown
         await voteBuffer.shutdown();
 
@@ -3661,8 +3976,8 @@ const shutdown = async (signal: string) => {
         await realtimeSSEManager.shutdown();
 
         // Close Valkey connection
-        if (queueValkey !== undefined) {
-            queueValkey.close();
+        if (queueValkeyRef.current !== undefined) {
+            queueValkeyRef.current.close();
             log.info("[QueueValkey] Connection closed");
         }
 

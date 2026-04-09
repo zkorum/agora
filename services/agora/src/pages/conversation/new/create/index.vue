@@ -1,9 +1,9 @@
 <template>
   <NewConversationLayout v-slot="{ isActive }">
-    <Teleport v-if="isActive" to="#page-header">
+    <Teleport v-if="isActive && !isNavigatingAway" to="#page-header">
       <DefaultMenuBar :click-to-scroll-top="false">
         <template #left>
-          <BackButton />
+          <BackButton :fallback-route="{ name: '/' }" />
         </template>
         <template #right>
           <PrimeButton
@@ -152,12 +152,12 @@
 
     <NewConversationRouteGuard
       ref="routeGuardRef"
-      :allowed-routes="['/conversation/new/review/']"
+      :allowed-routes="['/conversation/new/seed/']"
       :has-unsaved-changes="isDraftModified"
       :reset-draft="resetDraft"
     />
 
-    <PreLoginIntentionDialog
+    <PreParticipationIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
       active-intention="newConversation"
@@ -168,7 +168,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import Button from "primevue/button";
-import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
 import ActiveImportBanner from "src/components/conversation/import/ActiveImportBanner.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
@@ -192,7 +192,15 @@ import { useUserStore } from "src/stores/user";
 import { type AxiosErrorCode, useCommonApi } from "src/utils/api/common";
 import { useActiveImportQuery } from "src/utils/api/conversationImport/useConversationImportQueries";
 import { useBackendPostApi } from "src/utils/api/post/post";
-import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue";
+import { isHistoryPathEqual } from "src/utils/nav/historyBack";
+import {
+  computed,
+  defineAsyncComponent,
+  nextTick,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -213,6 +221,7 @@ const Editor = defineAsyncComponent(
 const { t } = useComponentI18n<CreateConversationTranslations>(
   createConversationTranslations
 );
+const isNavigatingAway = ref(false);
 
 // Use the conversation draft composable with store sync enabled
 const {
@@ -308,6 +317,24 @@ const activeImportQuery = useActiveImportQuery({
 const hasActiveImport = computed(() => {
   return activeImportQuery.data.value?.hasActiveImport ?? false;
 });
+
+function hasForwardSeedEntry(): boolean {
+  return isHistoryPathEqual({
+    historyPath: window.history.state?.forward,
+    expectedPath: "/conversation/new/seed/",
+  });
+}
+
+function normalizeCreateHistoryState(): void {
+  if (!hasForwardSeedEntry()) {
+    return;
+  }
+
+  router.options.history.replace(router.options.history.location, {
+    ...router.options.history.state,
+    forward: null,
+  });
+}
 
 function onLoginCallback() {
   // Unlock route to prevent ExitRoutePrompt from showing
@@ -443,6 +470,7 @@ async function handleImportSubmission(): Promise<void> {
 
       resetDraft();
       // CSV import is async - redirect to import status page to poll for completion
+      isNavigatingAway.value = true;
       await router.replace({
         name: "/conversation/import/[importSlugId]",
         params: { importSlugId: response.importSlugId },
@@ -473,6 +501,7 @@ async function handleImportSubmission(): Promise<void> {
     if (response.status === "success") {
       resetDraft();
       // URL import is now async - redirect to import status page to poll for completion
+      isNavigatingAway.value = true;
       await router.replace({
         name: "/conversation/import/[importSlugId]",
         params: { importSlugId: response.data.importSlugId },
@@ -488,7 +517,11 @@ async function handleImportSubmission(): Promise<void> {
 
 async function handleRegularSubmission(): Promise<void> {
   routeGuardRef.value?.unlockRoute();
-  await router.replace({ name: "/conversation/new/review/" });
+  isNavigatingAway.value = true;
+  await nextTick();
+  await router.push({
+    name: "/conversation/new/seed/",
+  });
 }
 
 async function onSubmit(): Promise<void> {
@@ -524,6 +557,8 @@ async function onSubmit(): Promise<void> {
 
 // Validate organization on mount
 onMounted(() => {
+  normalizeCreateHistoryState();
+
   const { profileData } = storeToRefs(useUserStore());
   validateSelectedOrganization(profileData.value.organizationList);
 });

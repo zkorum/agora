@@ -35,6 +35,7 @@
         "overrides": {
             "eslint>ajv": "^6.14.0",
             "@eslint/eslintrc>ajv": "^6.14.0",
+            "@stablelib/ed25519": "2.1.0",
             "js-yaml": ">=4.1.1"
         }
     }

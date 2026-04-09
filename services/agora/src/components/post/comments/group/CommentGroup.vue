@@ -52,7 +52,6 @@
         :is-voting-disabled="props.isVotingDisabled"
         @deleted="deletedComment(commentItem.opinionSlugId)"
         @muted-comment="mutedComment()"
-        @ticket-verified="(payload) => emit('ticketVerified', payload)"
       />
     </ZKCard>
   </div>

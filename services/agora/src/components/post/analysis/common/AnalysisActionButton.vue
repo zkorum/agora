@@ -1,6 +1,7 @@
 <template>
   <button
     v-if="props.type === 'learnMore' || props.type === 'viewMore'"
+    type="button"
     class="choice-button"
     @click="handleClick"
   >
@@ -44,9 +45,9 @@ const buttonText = computed(() => {
   return props.type === "learnMore" ? t("learnMore") : t("viewMore");
 });
 
-const handleClick = () => {
+function handleClick(): void {
   emit("actionClick");
-};
+}
 </script>
 
 <style lang="scss" scoped>

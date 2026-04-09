@@ -7,7 +7,13 @@
  * - Conversation form components
  */
 
-import type { ConversationType, EventSlug, ExternalSourceConfig, ParticipationMode } from "src/shared/types/zod";
+import type {
+  ConversationType,
+  EventSlug,
+  ExternalSourceConfig,
+  ParticipationMode,
+  SurveyConfig,
+} from "src/shared/types/zod";
 
 // ============================================================================
 // Draft Data Structures
@@ -96,6 +102,9 @@ export interface ConversationDraft {
 
   // External Source (GitHub integration for MaxDiff)
   externalSourceConfig: ExternalSourceConfig | null;
+
+  // Survey configuration
+  surveyConfig: SurveyConfig | null;
 
   // Import Settings
   importSettings: ConversationImportSettings;
@@ -191,4 +200,7 @@ export interface ConversationFormState {
 
   // Private conversation settings
   privateConversationSettings: PrivateConversationSettings;
+
+  // Survey configuration
+  surveyConfig: SurveyConfig | null;
 }

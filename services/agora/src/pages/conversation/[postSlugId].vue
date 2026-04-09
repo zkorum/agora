@@ -53,6 +53,7 @@
                 :author-username="loadedConversationData.metadata.authorUsername"
                 :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
                 :conversation-type="loadedConversationData.metadata.conversationType"
+                :has-survey="loadedConversationData.interaction.surveyGate?.hasSurvey === true"
               />
               </div>
 
@@ -119,7 +120,10 @@ import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
-import { isBackToConversationCommentTab } from "src/utils/nav/historyBack";
+import {
+  isBackToConversationCommentTab,
+  navigateBackOrReplace,
+} from "src/utils/nav/historyBack";
 import { onBeforeUnmount, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -188,20 +192,16 @@ function handleBack(event: MouseEvent): void {
     const slugId = conversationData.value?.metadata.conversationSlugId;
     if (slugId === undefined) return;
 
+    const fallbackRoute = `/conversation/${slugId}/`;
     const conversationPathPrefix = conversationConfig.routePrefix.replace("{id}", slugId);
-    if (
-      isBackToConversationCommentTab({
+    void navigateBackOrReplace({
+      router,
+      fallbackRoute,
+      shouldNavigateBack: isBackToConversationCommentTab({
         historyBack: window.history.state?.back,
         conversationPathPrefix,
-      })
-    ) {
-      router.back();
-    } else {
-      void router.replace({
-        name: "/conversation/[postSlugId]/",
-        params: { postSlugId: slugId },
-      });
-    }
+      }),
+    });
   } else {
     void safeNavigateBack({ name: "/" });
   }

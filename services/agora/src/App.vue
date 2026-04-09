@@ -7,7 +7,7 @@
     </router-view>
   </PersistentLayout>
 
-  <!-- Non-drawer pages (onboarding, embed, welcome, 404) render their own layout -->
+  <!-- Non-drawer pages (onboarding, embed, welcome, survey onboarding, 404) render their own layout -->
   <router-view v-else />
 
   <PostSignupPreferencesDialog />
@@ -57,6 +57,7 @@ const nonDrawerRoutePatterns = [
   "/onboarding/",
   "/verify/",
   "/welcome",
+  "/conversation/[postSlugId].onboarding",
   "/[...all]",
 ];
 

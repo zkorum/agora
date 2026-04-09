@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from sqlalchemy import and_, func, select, update
 from sqlalchemy.orm import Session
@@ -23,11 +23,20 @@ from scoring_worker.generated_models import (
     MaxdiffUserEntityScore,
     RankingScore,
     RankingScoreEntity,
+    SurveyAnswer,
+    SurveyAnswerOption,
+    SurveyConfig,
+    SurveyQuestion,
+    SurveyQuestionContent,
+    SurveyQuestionOption,
+    SurveyResponse,
     User,
 )
 from scoring_worker.pipeline_config import PIPELINE_CONFIG
 
 if TYPE_CHECKING:
+    from uuid import UUID
+
     from sqlalchemy import Engine
 
 
@@ -46,6 +55,288 @@ class ScoredEntity:
     uncertainty_left: float
     uncertainty_right: float
     participant_count: int
+
+
+@dataclass(frozen=True)
+class SurveyQuestionAnalysisRecord:
+    question_id: int
+    question_type: str
+    current_semantic_version: int
+    is_required: bool
+    constraints: dict[str, Any]
+    option_slug_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class SurveyStoredAnswerAnalysisRecord:
+    answered_question_semantic_version: int
+    text_value_html: str | None
+    option_slug_ids: tuple[str, ...]
+
+
+def _html_to_counted_text(html_string: str) -> str:
+    plain_text = (
+        html_string.replace("&nbsp;", " ")
+        .replace("<br>", "\n")
+        .replace("<br/>", "\n")
+        .replace("<br />", "\n")
+        .replace("</p>", "\n")
+        .replace("</div>", "\n")
+    )
+    import re
+
+    plain_text = re.sub(r"</h[1-6]>", "\n", plain_text, flags=re.IGNORECASE)
+    plain_text = re.sub(r"</li>", "\n", plain_text, flags=re.IGNORECASE)
+    plain_text = re.sub(r"<li>", "- ", plain_text, flags=re.IGNORECASE)
+    plain_text = re.sub(r"<[^>]*>", "", plain_text)
+    plain_text = re.sub(r"\n{2,}", "\n", plain_text).strip()
+    plain_text = re.sub(r"<[^>]*$", "", plain_text)
+    return plain_text.removesuffix("\n")
+
+
+def _validate_survey_answer_for_analysis(
+    *,
+    question: SurveyQuestionAnalysisRecord,
+    answer: SurveyStoredAnswerAnalysisRecord,
+) -> bool:
+    if answer.answered_question_semantic_version != question.current_semantic_version:
+        return False
+
+    if question.question_type == "free_text":
+        if question.constraints["type"] != "free_text":
+            return False
+        text_value_html = answer.text_value_html or ""
+        if len(text_value_html) > int(question.constraints["maxHtmlLength"]):
+            return False
+        plain_text_length = len(_html_to_counted_text(text_value_html))
+        min_plain_text_length = max(int(question.constraints.get("minPlainTextLength", 0)), 1)
+        return (
+            min_plain_text_length
+            <= plain_text_length
+            <= int(question.constraints["maxPlainTextLength"])
+        )
+
+    unique_option_slug_ids = set(answer.option_slug_ids)
+    if len(unique_option_slug_ids) != len(answer.option_slug_ids):
+        return False
+    if not unique_option_slug_ids.issubset(set(question.option_slug_ids)):
+        return False
+
+    if question.question_type in {"mono_choice", "select"}:
+        return len(answer.option_slug_ids) == 1
+
+    if question.constraints["type"] != "multi_choice":
+        return False
+    min_selections = int(question.constraints["minSelections"])
+    max_selections_raw = question.constraints.get("maxSelections")
+    max_selections = int(max_selections_raw) if max_selections_raw is not None else None
+    if len(answer.option_slug_ids) < min_selections:
+        return False
+    return max_selections is None or len(answer.option_slug_ids) <= max_selections
+
+
+def derive_survey_gate_status_for_analysis(
+    *,
+    has_survey: bool,
+    questions: list[SurveyQuestionAnalysisRecord],
+    answers_by_question_id: dict[int, SurveyStoredAnswerAnalysisRecord],
+    withdrawn_at: datetime | None,
+) -> str:
+    if not has_survey:
+        return "no_survey"
+
+    required_questions = [question for question in questions if question.is_required]
+    if not required_questions:
+        return "complete_valid"
+    if withdrawn_at is not None:
+        return "withdrawn"
+
+    valid_required_answer_count = 0
+    stale_required_question_count = 0
+    for question in required_questions:
+        stored_answer = answers_by_question_id.get(question.question_id)
+        if stored_answer is None:
+            continue
+        if _validate_survey_answer_for_analysis(question=question, answer=stored_answer):
+            valid_required_answer_count += 1
+        else:
+            stale_required_question_count += 1
+
+    if stale_required_question_count > 0:
+        return "needs_update"
+    if valid_required_answer_count == len(required_questions):
+        return "complete_valid"
+    if answers_by_question_id:
+        return "in_progress"
+    return "not_started"
+
+
+def is_survey_gate_status_eligible_for_analysis(*, survey_gate_status: str) -> bool:
+    return survey_gate_status in {"no_survey", "complete_valid"}
+
+
+def _fetch_survey_eligible_participants_batch(
+    session: Session,
+    *,
+    conversation_ids: list[int],
+    candidate_participant_ids_by_conv: dict[int, set[UUID]],
+) -> dict[int, set[UUID]]:
+    if not conversation_ids:
+        return {}
+
+    survey_configs = session.execute(
+        select(SurveyConfig.id, SurveyConfig.conversation_id).where(
+            and_(
+                SurveyConfig.conversation_id.in_(conversation_ids),
+                SurveyConfig.deleted_at.is_(None),
+            )
+        )
+    ).all()
+    if not survey_configs:
+        return {}
+
+    survey_config_ids = [row.id for row in survey_configs]
+    conversation_id_by_survey_config_id = {row.id: row.conversation_id for row in survey_configs}
+
+    question_rows = session.execute(
+        select(
+            SurveyQuestion.id,
+            SurveyQuestion.survey_config_id,
+            SurveyQuestion.question_type,
+            SurveyQuestion.current_semantic_version,
+            SurveyQuestion.is_required,
+            SurveyQuestionContent.constraints,
+        )
+        .join(
+            SurveyQuestionContent,
+            SurveyQuestion.current_content_id == SurveyQuestionContent.id,
+        )
+        .where(SurveyQuestion.survey_config_id.in_(survey_config_ids))
+        .order_by(SurveyQuestion.display_order)
+    ).all()
+
+    question_ids = [row.id for row in question_rows]
+    option_rows = cast(
+        "list[tuple[int, str]]",
+        session.execute(
+            select(
+                SurveyQuestionOption.survey_question_id,
+                SurveyQuestionOption.slug_id,
+            ).where(
+                and_(
+                    SurveyQuestionOption.survey_question_id.in_(question_ids),
+                    SurveyQuestionOption.current_content_id.is_not(None),
+                )
+            )
+        )
+        .tuples()
+        .all()
+        if question_ids
+        else [],
+    )
+    option_slug_ids_by_question_id: dict[int, list[str]] = {}
+    for option_row in option_rows:
+        option_slug_ids_by_question_id.setdefault(option_row[0], []).append(option_row[1])
+
+    questions_by_conversation_id: dict[int, list[SurveyQuestionAnalysisRecord]] = {}
+    for question_row in question_rows:
+        conversation_id = conversation_id_by_survey_config_id[question_row.survey_config_id]
+        questions_by_conversation_id.setdefault(conversation_id, []).append(
+            SurveyQuestionAnalysisRecord(
+                question_id=question_row.id,
+                question_type=str(question_row.question_type),
+                current_semantic_version=question_row.current_semantic_version,
+                is_required=question_row.is_required,
+                constraints=dict(question_row.constraints),
+                option_slug_ids=tuple(option_slug_ids_by_question_id.get(question_row.id, [])),
+            )
+        )
+
+    candidate_pairs = [
+        (conversation_id, participant_id)
+        for conversation_id, participant_ids in candidate_participant_ids_by_conv.items()
+        for participant_id in participant_ids
+        if conversation_id in questions_by_conversation_id
+    ]
+    if not candidate_pairs:
+        return {conversation_id: set() for conversation_id in questions_by_conversation_id}
+
+    response_rows = session.execute(
+        select(
+            SurveyResponse.id,
+            SurveyResponse.conversation_id,
+            SurveyResponse.participant_id,
+            SurveyResponse.withdrawn_at,
+        ).where(
+            and_(
+                SurveyResponse.conversation_id.in_(list(questions_by_conversation_id.keys())),
+                SurveyResponse.participant_id.in_([pair[1] for pair in candidate_pairs]),
+            )
+        )
+    ).all()
+    if not response_rows:
+        return {conversation_id: set() for conversation_id in questions_by_conversation_id}
+
+    response_ids = [row.id for row in response_rows]
+    answer_rows = session.execute(
+        select(
+            SurveyAnswer.survey_response_id,
+            SurveyAnswer.id,
+            SurveyAnswer.survey_question_id,
+            SurveyAnswer.answered_question_semantic_version,
+            SurveyAnswer.text_value_html,
+        ).where(SurveyAnswer.survey_response_id.in_(response_ids))
+    ).all()
+    answer_ids = [row.id for row in answer_rows]
+    answer_option_rows = cast(
+        "list[tuple[int, str]]",
+        session.execute(
+            select(
+                SurveyAnswerOption.survey_answer_id,
+                SurveyQuestionOption.slug_id,
+            )
+            .join(
+                SurveyQuestionOption,
+                SurveyAnswerOption.survey_question_option_id == SurveyQuestionOption.id,
+            )
+            .where(SurveyAnswerOption.survey_answer_id.in_(answer_ids))
+        )
+        .tuples()
+        .all()
+        if answer_ids
+        else [],
+    )
+
+    option_slug_ids_by_answer_id: dict[int, list[str]] = {}
+    for row in answer_option_rows:
+        option_slug_ids_by_answer_id.setdefault(row[0], []).append(row[1])
+
+    answers_by_response_id: dict[int, dict[int, SurveyStoredAnswerAnalysisRecord]] = {}
+    for row in answer_rows:
+        answers_by_response_id.setdefault(row.survey_response_id, {})[row.survey_question_id] = (
+            SurveyStoredAnswerAnalysisRecord(
+                answered_question_semantic_version=row.answered_question_semantic_version,
+                text_value_html=row.text_value_html,
+                option_slug_ids=tuple(option_slug_ids_by_answer_id.get(row.id, [])),
+            )
+        )
+
+    eligible_participant_ids_by_conv: dict[int, set[UUID]] = {
+        conversation_id: set() for conversation_id in questions_by_conversation_id
+    }
+    for response_row in response_rows:
+        survey_gate_status = derive_survey_gate_status_for_analysis(
+            has_survey=True,
+            questions=questions_by_conversation_id[response_row.conversation_id],
+            answers_by_question_id=answers_by_response_id.get(response_row.id, {}),
+            withdrawn_at=response_row.withdrawn_at,
+        )
+        if is_survey_gate_status_eligible_for_analysis(survey_gate_status=survey_gate_status):
+            eligible_participant_ids_by_conv[response_row.conversation_id].add(
+                response_row.participant_id
+            )
+
+    return eligible_participant_ids_by_conv
 
 
 # --- Batch READ queries (one query per data type for all conversations) ---
@@ -110,6 +401,7 @@ def fetch_comparisons_batch(
         select(
             MaxdiffResult.conversation_id,
             MaxdiffComparison.maxdiff_result_id,
+            MaxdiffResult.participant_id,
             MaxdiffComparison.best_slug_id,
             MaxdiffComparison.worst_slug_id,
             MaxdiffComparison.candidate_set,
@@ -119,10 +411,15 @@ def fetch_comparisons_batch(
             MaxdiffComparison,
             MaxdiffComparison.maxdiff_result_id == MaxdiffResult.id,
         )
+        .join(
+            User,
+            User.id == MaxdiffResult.participant_id,
+        )
         .where(
             and_(
                 MaxdiffResult.conversation_id.in_(conversation_ids),
                 MaxdiffComparison.deleted_at.is_(None),
+                User.is_deleted.is_(False),
             ),
         )
         .order_by(
@@ -139,8 +436,27 @@ def fetch_comparisons_batch(
     reverse_maps: dict[int, dict[int, int]] = {}
 
     with Session(engine) as session:
-        for row in session.execute(stmt):
+        raw_rows = list(session.execute(stmt))
+        candidate_participant_ids_by_conv: dict[int, set[UUID]] = {
+            cid: set() for cid in conversation_ids
+        }
+        for row in raw_rows:
+            candidate_participant_ids_by_conv[row.conversation_id].add(row.participant_id)
+
+        eligible_participant_ids_by_conv = _fetch_survey_eligible_participants_batch(
+            session,
+            conversation_ids=conversation_ids,
+            candidate_participant_ids_by_conv=candidate_participant_ids_by_conv,
+        )
+
+        for row in raw_rows:
             cid = row.conversation_id
+            eligible_participant_ids = eligible_participant_ids_by_conv.get(cid)
+            if (
+                eligible_participant_ids is not None
+                and row.participant_id not in eligible_participant_ids
+            ):
+                continue
             rid = row.maxdiff_result_id
             if cid not in user_idx_maps:
                 user_idx_maps[cid] = {}
@@ -331,8 +647,31 @@ def update_maxdiff_counters_batch(
         return
 
     with Session(engine) as session:
+        candidate_participant_rows = session.execute(
+            select(MaxdiffResult.conversation_id, MaxdiffResult.participant_id)
+            .join(User, User.id == MaxdiffResult.participant_id)
+            .where(
+                and_(
+                    MaxdiffResult.conversation_id.in_(conversation_ids),
+                    User.is_deleted.is_(False),
+                )
+            )
+        ).all()
+        candidate_participant_ids_by_conv: dict[int, set[UUID]] = {
+            cid: set() for cid in conversation_ids
+        }
+        for row in candidate_participant_rows:
+            candidate_participant_ids_by_conv[row.conversation_id].add(row.participant_id)
+
+        eligible_participant_ids_by_conv = _fetch_survey_eligible_participants_batch(
+            session,
+            conversation_ids=conversation_ids,
+            candidate_participant_ids_by_conv=candidate_participant_ids_by_conv,
+        )
+
         for conv_id in conversation_ids:
             active_slugs = set(active_items_by_conv.get(conv_id, []))
+            eligible_participant_ids = eligible_participant_ids_by_conv.get(conv_id)
 
             # Total counts (all comparisons, excluding deleted users + soft-deleted rows)
             total_row = session.execute(
@@ -373,7 +712,32 @@ def update_maxdiff_counters_batch(
                 )
                 continue
 
+            if eligible_participant_ids is not None and not eligible_participant_ids:
+                session.execute(
+                    update(Conversation)
+                    .where(Conversation.id == conv_id)
+                    .values(
+                        participant_count=0,
+                        total_participant_count=total_row.total_participants,
+                        vote_count=0,
+                        total_vote_count=total_row.total_votes,
+                    ),
+                )
+                continue
+
             # Filtered counts (only active items, excluding deleted users + soft-deleted rows)
+            filtered_conditions = [
+                MaxdiffResult.conversation_id == conv_id,
+                User.is_deleted.is_(False),
+                MaxdiffComparison.deleted_at.is_(None),
+                MaxdiffComparison.best_slug_id.in_(active_slugs),
+                MaxdiffComparison.worst_slug_id.in_(active_slugs),
+            ]
+            if eligible_participant_ids is not None:
+                filtered_conditions.append(
+                    MaxdiffResult.participant_id.in_(eligible_participant_ids)
+                )
+
             filtered_row = session.execute(
                 select(
                     func.count(func.distinct(MaxdiffResult.participant_id)).label("participants"),
@@ -388,15 +752,7 @@ def update_maxdiff_counters_batch(
                     User,
                     User.id == MaxdiffResult.participant_id,
                 )
-                .where(
-                    and_(
-                        MaxdiffResult.conversation_id == conv_id,
-                        User.is_deleted.is_(False),
-                        MaxdiffComparison.deleted_at.is_(None),
-                        MaxdiffComparison.best_slug_id.in_(active_slugs),
-                        MaxdiffComparison.worst_slug_id.in_(active_slugs),
-                    ),
-                ),
+                .where(and_(*filtered_conditions)),
             ).one()
 
             session.execute(

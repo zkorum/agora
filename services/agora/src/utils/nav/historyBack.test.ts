@@ -1,6 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { isBackToConversationCommentTab } from "./historyBack";
+import {
+  isBackToConversationCommentTab,
+  isHistoryBackToPath,
+  isHistoryPathEqual,
+  navigateBackOrReplace,
+  wasNavigationTriggeredByHistory,
+} from "./historyBack";
 
 describe("isBackToConversationCommentTab", () => {
   const prefix = "/conversation/abc123";
@@ -104,5 +110,148 @@ describe("isBackToConversationCommentTab", () => {
         conversationPathPrefix: embedPrefix,
       })
     ).toBe(false);
+  });
+
+  it("supports hash-history comment routes", () => {
+    expect(
+      isBackToConversationCommentTab({
+        historyBack: "/#/conversation/abc123/?opinion=xyz",
+        conversationPathPrefix: prefix,
+      })
+    ).toBe(true);
+  });
+});
+
+describe("isHistoryBackToPath", () => {
+  it("returns true when history back matches the expected path", () => {
+    expect(
+      isHistoryBackToPath({
+        historyBack: "/conversation/new/create/",
+        expectedPath: "/conversation/new/create/",
+      })
+    ).toBe(true);
+  });
+
+  it("returns false when history back does not match the expected path", () => {
+    expect(
+      isHistoryBackToPath({
+        historyBack: "/conversation/new/seed/",
+        expectedPath: "/conversation/new/create/",
+      })
+    ).toBe(false);
+  });
+
+  it("treats a missing trailing slash as the same path", () => {
+    expect(
+      isHistoryBackToPath({
+        historyBack: "/conversation/new/create",
+        expectedPath: "/conversation/new/create/",
+      })
+    ).toBe(true);
+  });
+
+  it("ignores query strings when comparing history back paths", () => {
+    expect(
+      isHistoryBackToPath({
+        historyBack: "/conversation/new/create/?draft=true",
+        expectedPath: "/conversation/new/create/",
+      })
+    ).toBe(true);
+  });
+
+  it("supports hash-history paths when comparing back targets", () => {
+    expect(
+      isHistoryBackToPath({
+        historyBack: "/#/conversation/new/create/?draft=true",
+        expectedPath: "/conversation/new/create/",
+      })
+    ).toBe(true);
+  });
+});
+
+describe("isHistoryPathEqual", () => {
+  it("returns true when the normalized paths match", () => {
+    expect(
+      isHistoryPathEqual({
+        historyPath: "/conversation/new/create/?draft=true",
+        expectedPath: "/conversation/new/create/",
+      })
+    ).toBe(true);
+  });
+
+  it("returns false for non-string history paths", () => {
+    expect(
+      isHistoryPathEqual({
+        historyPath: null,
+        expectedPath: "/conversation/new/create/",
+      })
+    ).toBe(false);
+  });
+});
+
+describe("wasNavigationTriggeredByHistory", () => {
+  it("returns true when history forward points to the current route", () => {
+    expect(
+      wasNavigationTriggeredByHistory({
+        currentPath: "/conversation/new/create/",
+        historyBack: "/",
+        historyForward: "/conversation/new/create/",
+      })
+    ).toBe(true);
+  });
+
+  it("returns true when history back points to the current route", () => {
+    expect(
+      wasNavigationTriggeredByHistory({
+        currentPath: "/conversation/new/create/",
+        historyBack: "/conversation/new/create/",
+        historyForward: "/conversation/new/seed/",
+      })
+    ).toBe(true);
+  });
+
+  it("returns false when neither history direction points to the current route", () => {
+    expect(
+      wasNavigationTriggeredByHistory({
+        currentPath: "/conversation/new/create/",
+        historyBack: "/",
+        historyForward: "/conversation/new/seed/",
+      })
+    ).toBe(false);
+  });
+});
+
+describe("navigateBackOrReplace", () => {
+  it("uses router.back when the previous history entry is valid", async () => {
+    const router = {
+      back: vi.fn(),
+      replace: vi.fn(),
+    };
+
+    await navigateBackOrReplace({
+      router,
+      fallbackRoute: "/conversation/new/create/",
+      shouldNavigateBack: true,
+    });
+
+    expect(router.back).toHaveBeenCalledOnce();
+    expect(router.replace).not.toHaveBeenCalled();
+  });
+
+  it("uses router.replace when the previous history entry is not valid", async () => {
+    const router = {
+      back: vi.fn(),
+      replace: vi.fn().mockResolvedValue(undefined),
+    };
+    const fallbackRoute = "/conversation/new/create/";
+
+    await navigateBackOrReplace({
+      router,
+      fallbackRoute,
+      shouldNavigateBack: false,
+    });
+
+    expect(router.back).not.toHaveBeenCalled();
+    expect(router.replace).toHaveBeenCalledWith(fallbackRoute);
   });
 });

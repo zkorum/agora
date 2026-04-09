@@ -40,9 +40,15 @@ interface ReportUserContentIntention {
   eventSlug?: EventSlug;
 }
 
+interface SurveyIntention {
+  enabled: boolean;
+  conversationSlugId: string;
+}
+
 export type PossibleIntentions =
   | "none"
   | "voting"
+  | "survey"
   | "agreement"
   | "newConversation"
   | "newOpinion"
@@ -89,6 +95,11 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     opinionSlugId: "",
     isEmbedView: false,
     eventSlug: undefined,
+  };
+
+  let surveyIntention: SurveyIntention = {
+    enabled: false,
+    conversationSlugId: "",
   };
 
   function createVotingIntention(
@@ -153,6 +164,13 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     };
   }
 
+  function createSurveyIntention(conversationSlugId: string) {
+    surveyIntention = {
+      enabled: true,
+      conversationSlugId,
+    };
+  }
+
   function setActiveUserIntention(intention: PossibleIntentions) {
     activeUserIntention.value = intention;
   }
@@ -199,6 +217,12 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
             : "/conversation/[postSlugId]/",
           params: { postSlugId: votingIntention.conversationSlugId },
         });
+        break;
+      case "survey":
+        await router.replace({
+          path: `/conversation/${surveyIntention.conversationSlugId}/onboarding/`,
+        });
+        surveyIntention.enabled = false;
         break;
       case "reportUserContent":
         await router.replace({
@@ -338,6 +362,7 @@ export const useLoginIntentionStore = defineStore("loginIntention", () => {
     createNewConversationIntention,
     createNewOpinionIntention,
     createReportUserContentIntention,
+    createSurveyIntention,
     routeUserAfterLogin,
     clearNewOpinionIntention,
     clearNewConversationIntention,

@@ -68,6 +68,14 @@ All URIs are relative to *http://localhost*
 |[**apiV1ReportConversationFetchPost**](#apiv1reportconversationfetchpost) | **POST** /api/v1/report/conversation/fetch | |
 |[**apiV1ReportOpinionCreatePost**](#apiv1reportopinioncreatepost) | **POST** /api/v1/report/opinion/create | |
 |[**apiV1ReportOpinionFetchPost**](#apiv1reportopinionfetchpost) | **POST** /api/v1/report/opinion/fetch | |
+|[**apiV1SurveyAnswerSavePost**](#apiv1surveyanswersavepost) | **POST** /api/v1/survey/answer/save | |
+|[**apiV1SurveyCompletionCountsPost**](#apiv1surveycompletioncountspost) | **POST** /api/v1/survey/completion/counts | |
+|[**apiV1SurveyConfigDeletePost**](#apiv1surveyconfigdeletepost) | **POST** /api/v1/survey/config/delete | |
+|[**apiV1SurveyConfigUpdatePost**](#apiv1surveyconfigupdatepost) | **POST** /api/v1/survey/config/update | |
+|[**apiV1SurveyFormFetchPost**](#apiv1surveyformfetchpost) | **POST** /api/v1/survey/form/fetch | |
+|[**apiV1SurveyResponseWithdrawPost**](#apiv1surveyresponsewithdrawpost) | **POST** /api/v1/survey/response/withdraw | |
+|[**apiV1SurveyResultsAggregatedPost**](#apiv1surveyresultsaggregatedpost) | **POST** /api/v1/survey/results/aggregated | |
+|[**apiV1SurveyStatusCheckPost**](#apiv1surveystatuscheckpost) | **POST** /api/v1/survey/status/check | |
 |[**apiV1TopicFollowPost**](#apiv1topicfollowpost) | **POST** /api/v1/topic/follow | |
 |[**apiV1TopicGetAllTopicsPost**](#apiv1topicgetalltopicspost) | **POST** /api/v1/topic/get-all-topics | |
 |[**apiV1TopicGetFollowedPost**](#apiv1topicgetfollowedpost) | **POST** /api/v1/topic/get-followed | |
@@ -3242,6 +3250,414 @@ const { status, data } = await apiInstance.apiV1ReportOpinionFetchPost(
 ### Return type
 
 **Array<ApiV1ReportConversationFetchPost200ResponseInner>**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1SurveyAnswerSavePost**
+> ApiV1SurveyAnswerSavePost200Response apiV1SurveyAnswerSavePost(apiV1SurveyAnswerSavePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1SurveyAnswerSavePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1SurveyAnswerSavePostRequest: ApiV1SurveyAnswerSavePostRequest; //
+
+const { status, data } = await apiInstance.apiV1SurveyAnswerSavePost(
+    apiV1SurveyAnswerSavePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1SurveyAnswerSavePostRequest** | **ApiV1SurveyAnswerSavePostRequest**|  | |
+
+
+### Return type
+
+**ApiV1SurveyAnswerSavePost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1SurveyCompletionCountsPost**
+> ApiV1SurveyCompletionCountsPost200Response apiV1SurveyCompletionCountsPost(apiV1ModerationConversationWithdrawPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ModerationConversationWithdrawPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest; //
+
+const { status, data } = await apiInstance.apiV1SurveyCompletionCountsPost(
+    apiV1ModerationConversationWithdrawPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ModerationConversationWithdrawPostRequest** | **ApiV1ModerationConversationWithdrawPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1SurveyCompletionCountsPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1SurveyConfigDeletePost**
+> ApiV1PollRespondPost200ResponseOneOf apiV1SurveyConfigDeletePost(apiV1ModerationConversationWithdrawPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ModerationConversationWithdrawPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest; //
+
+const { status, data } = await apiInstance.apiV1SurveyConfigDeletePost(
+    apiV1ModerationConversationWithdrawPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ModerationConversationWithdrawPostRequest** | **ApiV1ModerationConversationWithdrawPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1PollRespondPost200ResponseOneOf**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1SurveyConfigUpdatePost**
+> ApiV1SurveyConfigUpdatePost200Response apiV1SurveyConfigUpdatePost(apiV1SurveyConfigUpdatePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1SurveyConfigUpdatePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1SurveyConfigUpdatePostRequest: ApiV1SurveyConfigUpdatePostRequest; //
+
+const { status, data } = await apiInstance.apiV1SurveyConfigUpdatePost(
+    apiV1SurveyConfigUpdatePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1SurveyConfigUpdatePostRequest** | **ApiV1SurveyConfigUpdatePostRequest**|  | |
+
+
+### Return type
+
+**ApiV1SurveyConfigUpdatePost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1SurveyFormFetchPost**
+> ApiV1SurveyFormFetchPost200Response apiV1SurveyFormFetchPost(apiV1ModerationConversationWithdrawPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ModerationConversationWithdrawPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest; //
+
+const { status, data } = await apiInstance.apiV1SurveyFormFetchPost(
+    apiV1ModerationConversationWithdrawPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ModerationConversationWithdrawPostRequest** | **ApiV1ModerationConversationWithdrawPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1SurveyFormFetchPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1SurveyResponseWithdrawPost**
+> ApiV1SurveyResponseWithdrawPost200Response apiV1SurveyResponseWithdrawPost(apiV1ModerationConversationWithdrawPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ModerationConversationWithdrawPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest; //
+
+const { status, data } = await apiInstance.apiV1SurveyResponseWithdrawPost(
+    apiV1ModerationConversationWithdrawPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ModerationConversationWithdrawPostRequest** | **ApiV1ModerationConversationWithdrawPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1SurveyResponseWithdrawPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1SurveyResultsAggregatedPost**
+> ApiV1SurveyResultsAggregatedPost200Response apiV1SurveyResultsAggregatedPost(apiV1ModerationConversationWithdrawPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ModerationConversationWithdrawPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest; //
+
+const { status, data } = await apiInstance.apiV1SurveyResultsAggregatedPost(
+    apiV1ModerationConversationWithdrawPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ModerationConversationWithdrawPostRequest** | **ApiV1ModerationConversationWithdrawPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1SurveyResultsAggregatedPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1SurveyStatusCheckPost**
+> ApiV1SurveyStatusCheckPost200Response apiV1SurveyStatusCheckPost(apiV1ModerationConversationWithdrawPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1ModerationConversationWithdrawPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest; //
+
+const { status, data } = await apiInstance.apiV1SurveyStatusCheckPost(
+    apiV1ModerationConversationWithdrawPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1ModerationConversationWithdrawPostRequest** | **ApiV1ModerationConversationWithdrawPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1SurveyStatusCheckPost200Response**
 
 ### Authorization
 

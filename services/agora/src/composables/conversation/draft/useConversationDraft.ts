@@ -13,9 +13,16 @@ import {
   MAX_LENGTH_OPTION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import type { ConversationType, EventSlug, ExternalSourceConfig, ParticipationMode } from "src/shared/types/zod";
+import type {
+  ConversationType,
+  EventSlug,
+  ExternalSourceConfig,
+  ParticipationMode,
+  SurveyConfig,
+} from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
+import { areSurveyConfigsEqual } from "src/utils/survey/config";
 import { computed, type ComputedRef, type Ref, ref, watch } from "vue";
 
 import {
@@ -56,6 +63,7 @@ export interface UseConversationDraftReturn {
   privateConversationSettings: Ref<PrivateConversationSettings>;
   postAs: Ref<PostAsSettings>;
   externalSourceConfig: Ref<ExternalSourceConfig | null>;
+  surveyConfig: Ref<SurveyConfig | null>;
   importSettings: Ref<ConversationImportSettings>;
   validationState: Ref<ValidationState>;
 
@@ -139,6 +147,7 @@ export function useConversationDraft(
   const externalSourceConfig = ref<ExternalSourceConfig | null>(
     initialDraft.externalSourceConfig,
   );
+  const surveyConfig = ref<SurveyConfig | null>(initialDraft.surveyConfig);
   const importSettings = ref<ConversationImportSettings>({
     ...initialDraft.importSettings,
   });
@@ -169,6 +178,7 @@ export function useConversationDraft(
       privateConversationSettings: { ...privateConversationSettings.value },
       postAs: { ...postAs.value },
       externalSourceConfig: externalSourceConfig.value,
+      surveyConfig: surveyConfig.value,
       importSettings: { ...importSettings.value },
     }));
 
@@ -191,9 +201,10 @@ export function useConversationDraft(
         store.conversationDraft.postAs = newSnapshot.postAs;
         store.conversationDraft.externalSourceConfig =
           newSnapshot.externalSourceConfig;
+        store.conversationDraft.surveyConfig = newSnapshot.surveyConfig;
         store.conversationDraft.importSettings = newSnapshot.importSettings;
       },
-      { deep: true }
+      { deep: true, flush: "sync" }
     );
   }
 
@@ -565,6 +576,12 @@ export function useConversationDraft(
       JSON.stringify(importSettings.value.csvFileMetadata) !==
         JSON.stringify(emptyDraft.importSettings.csvFileMetadata);
 
+    const hasSurveyConfigChanges =
+      !areSurveyConfigsEqual({
+        left: surveyConfig.value,
+        right: emptyDraft.surveyConfig,
+      });
+
     return (
       hasContentChanges ||
       hasSeedOpinionsChanges ||
@@ -573,7 +590,8 @@ export function useConversationDraft(
       hasPostAsChanges ||
       hasPrivacyChanges ||
       hasPrivateSettingsChanges ||
-      hasCreationSettingsChanges
+      hasCreationSettingsChanges ||
+      hasSurveyConfigChanges
     );
   }
 
@@ -609,6 +627,7 @@ export function useConversationDraft(
     };
     postAs.value = { ...emptyDraft.postAs };
     externalSourceConfig.value = null;
+    surveyConfig.value = emptyDraft.surveyConfig;
     importSettings.value = { ...emptyDraft.importSettings };
 
     clearAllValidationErrors();
@@ -651,6 +670,7 @@ export function useConversationDraft(
       privateConversationSettings: {
         ...privateConversationSettings.value,
       },
+      surveyConfig: surveyConfig.value,
     };
   }
 
@@ -688,6 +708,7 @@ export function useConversationDraft(
     privateConversationSettings,
     postAs,
     externalSourceConfig,
+    surveyConfig,
     importSettings,
     validationState,
 

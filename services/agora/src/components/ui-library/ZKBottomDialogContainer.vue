@@ -44,6 +44,7 @@ const vClosePopup = ClosePopup;
   @media (min-width: $breakpoint-sm-min) {
     gap: 1rem;
     padding: 2rem;
+    max-height: 85dvh;
   }
 }
 

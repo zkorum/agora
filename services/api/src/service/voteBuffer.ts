@@ -87,6 +87,7 @@ import { nowZeroMs } from "@/shared/util.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 import { Script } from "@valkey/valkey-glide";
+import type { ValkeyRef } from "./valkeyRef.js";
 import type { RealtimeSSEManager } from "./realtimeSSE.js";
 import {
     createVoteNotifications,
@@ -186,7 +187,7 @@ export interface VoteBuffer {
 
 interface CreateVoteBufferParams {
     db: PostgresJsDatabase;
-    valkey?: Valkey;
+    valkeyRef: ValkeyRef;
     flushIntervalMs: number;
     valkeyBatchLimit: number;
     realtimeSSEManager?: RealtimeSSEManager;
@@ -216,7 +217,7 @@ interface CreateVoteBufferParams {
  */
 export function createVoteBuffer({
     db,
-    valkey,
+    valkeyRef,
     flushIntervalMs,
     valkeyBatchLimit,
     realtimeSSEManager,
@@ -228,13 +229,12 @@ export function createVoteBuffer({
 
     // Lua script objects (created once, reused for all calls)
     // IMPORTANT: Must call release() on shutdown to prevent memory leaks
-    let addVoteScript: Script | undefined;
-    let cleanupVotesScript: Script | undefined;
+    let addVoteScript: Script | undefined = new Script(ADD_VOTE_SCRIPT);
+    let cleanupVotesScript: Script | undefined = new Script(
+        CLEANUP_VOTES_SCRIPT,
+    );
 
-    if (valkey !== undefined) {
-        addVoteScript = new Script(ADD_VOTE_SCRIPT);
-        cleanupVotesScript = new Script(CLEANUP_VOTES_SCRIPT);
-    }
+    const getValkey = (): Valkey | undefined => valkeyRef.current;
 
     // Helper functions
     const getVoteKey = (userId: string, opinionId: number): string =>
@@ -288,6 +288,7 @@ export function createVoteBuffer({
         pendingVotes.set(key, vote);
 
         // Valkey: Atomic add using Lua script
+        const valkey = getValkey();
         if (valkey !== undefined && addVoteScript !== undefined) {
             const score = vote.timestamp.getTime();
             const data = JSON.stringify(vote);
@@ -351,6 +352,7 @@ export function createVoteBuffer({
         const processedValkeyEntries: { member: string; score: number }[] = [];
 
         // Get votes from Valkey sorted set + hash (if configured)
+        const valkey = getValkey();
         if (valkey !== undefined) {
             try {
                 // Fetch oldest N members from sorted set (ordered by timestamp)
@@ -1216,8 +1218,9 @@ export function createVoteBuffer({
 
             // At-least-once: Delete from Valkey only after successful processing
             // Use Lua script for conditional delete (only if score matches)
+            const cleanupValkey = getValkey();
             if (
-                valkey !== undefined &&
+                cleanupValkey !== undefined &&
                 cleanupVotesScript !== undefined &&
                 processedValkeyEntries.length > 0
             ) {
@@ -1228,7 +1231,7 @@ export function createVoteBuffer({
                         cleanupArgs.push(entry.member, String(entry.score));
                     }
 
-                    const deletedCount = (await valkey.invokeScript(
+                    const deletedCount = (await cleanupValkey.invokeScript(
                         cleanupVotesScript,
                         {
                             keys: [

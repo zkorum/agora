@@ -7,6 +7,7 @@ export interface ShortcutBarTranslations {
   disagreements: string;
   divisive: string;
   groups: string;
+  survey: string;
 }
 
 export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, ShortcutBarTranslations> =
@@ -18,6 +19,7 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       disagreements: "Rejected",
       divisive: "Divisive",
       groups: "Groups",
+      survey: "Survey",
     },
     ar: {
       summary: "ملخص",
@@ -26,6 +28,7 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       disagreements: "مرفوضة",
       divisive: "مثير للجدل",
       groups: "مجموعات",
+      survey: "استبيان",
     },
     es: {
       summary: "Resumen",
@@ -34,6 +37,7 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       disagreements: "Rechazados",
       divisive: "Divisivo",
       groups: "Grupos",
+      survey: "Encuesta",
     },
     fa: {
       summary: "خلاصه",
@@ -42,6 +46,7 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       disagreements: "رد شده",
       divisive: "اختلاف‌برانگیز",
       groups: "گروه‌ها",
+      survey: "نظرسنجی",
     },
     fr: {
       summary: "Résumé",
@@ -50,6 +55,7 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       disagreements: "Rejetés",
       divisive: "Controversé",
       groups: "Groupes",
+      survey: "Questionnaire",
     },
     "zh-Hans": {
       summary: "总结",
@@ -58,6 +64,7 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       disagreements: "否决",
       divisive: "争议",
       groups: "群组",
+      survey: "问卷",
     },
     "zh-Hant": {
       summary: "總結",
@@ -66,6 +73,7 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       disagreements: "否決",
       divisive: "爭議",
       groups: "群組",
+      survey: "問卷",
     },
     he: {
       summary: "סיכום",
@@ -74,6 +82,7 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       disagreements: "נדחו",
       divisive: "מפלג",
       groups: "קבוצות",
+      survey: "סקר",
     },
     ja: {
       summary: "サマリー",
@@ -82,6 +91,7 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       disagreements: "否決",
       divisive: "分断",
       groups: "グループ",
+      survey: "アンケート",
     },
     ky: {
       summary: "Корутунду",
@@ -90,6 +100,7 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       disagreements: "Четке кагылган",
       divisive: "Талаштуу",
       groups: "Топтор",
+      survey: "Сурамжылоо",
     },
     ru: {
       summary: "Сводка",
@@ -98,5 +109,6 @@ export const shortcutBarTranslations: Record<SupportedDisplayLanguageCodes, Shor
       disagreements: "Отклонено",
       divisive: "Спорные",
       groups: "Группы",
+      survey: "Опрос",
     },
   };

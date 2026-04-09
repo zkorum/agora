@@ -9,6 +9,7 @@ Name | Type | Description | Notes
 **exportSlugId** | **string** |  | [default to undefined]
 **conversationSlugId** | **string** |  | [default to undefined]
 **files** | [**Array&lt;ApiV1ConversationExportStatusPost200ResponseOneOf1FilesInner&gt;**](ApiV1ConversationExportStatusPost200ResponseOneOf1FilesInner.md) |  | [default to undefined]
+**bundle** | [**ApiV1ConversationExportStatusPost200ResponseOneOf1Bundle**](ApiV1ConversationExportStatusPost200ResponseOneOf1Bundle.md) |  | [optional] [default to undefined]
 **createdAt** | **string** |  | [default to undefined]
 **expiresAt** | **string** |  | [default to undefined]
 
@@ -22,6 +23,7 @@ const instance: ApiV1ConversationExportStatusPost200ResponseOneOf1 = {
     exportSlugId,
     conversationSlugId,
     files,
+    bundle,
     createdAt,
     expiresAt,
 };

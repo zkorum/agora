@@ -12,6 +12,12 @@ import { log } from "@/app.js";
 import { httpErrors } from "@fastify/sensible";
 import { toUnionUndefined } from "@/shared/shared.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
+import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
+import {
+    getSurveyConfigForConversation,
+    setSurveyConfigForConversation,
+    warmSurveyTranslationsForConversation,
+} from "@/service/survey.js";
 import type {
     GetConversationForEditResponse,
     UpdateConversationRequest,
@@ -67,6 +73,7 @@ export async function getConversationForEdit({
 }: GetConversationForEditProps): Promise<GetConversationForEditResponse> {
     const results = await db
         .select({
+            conversationId: conversationTable.id,
             conversationSlugId: conversationTable.slugId,
             authorId: conversationTable.authorId,
             conversationTitle: conversationContentTable.title,
@@ -145,6 +152,10 @@ export async function getConversationForEdit({
         isIndexed: conversation.isIndexed,
         participationMode: conversation.participationMode,
         requiresEventTicket: toUnionUndefined(conversation.requiresEventTicket),
+        surveyConfig: await getSurveyConfigForConversation({
+            db,
+            conversationId: conversation.conversationId,
+        }),
         indexConversationAt: conversation.indexConversationAt ?? undefined,
         createdAt: conversation.createdAt,
         updatedAt: conversation.updatedAt,
@@ -158,6 +169,7 @@ interface UpdateConversationProps {
     userId: string;
     didWrite: string;
     proof: string;
+    googleCloudCredentials?: GoogleCloudCredentials;
     data: Omit<UpdateConversationRequest, "conversationSlugId"> & {
         conversationSlugId: string;
     };
@@ -168,6 +180,7 @@ export async function updateConversation({
     userId,
     didWrite,
     proof,
+    googleCloudCredentials,
     data,
 }: UpdateConversationProps): Promise<UpdateConversationResponse> {
     const {
@@ -178,6 +191,7 @@ export async function updateConversation({
         isIndexed,
         participationMode,
         requiresEventTicket,
+        surveyConfig,
         indexConversationAt,
     } = data;
 
@@ -201,8 +215,11 @@ export async function updateConversation({
         }
     }
 
+    let updatedConversationId: number | undefined;
+
     const result = await db
         .transaction(async (tx) => {
+            const now = new Date();
             // Get conversation and check authorization
             const conversationResults = await tx
                 .select({
@@ -247,6 +264,7 @@ export async function updateConversation({
             }
 
             const conversationId = conversation.conversationId;
+            updatedConversationId = conversationId;
 
             // Get current poll status
             const currentContentResults = await tx
@@ -378,6 +396,15 @@ export async function updateConversation({
                 })
                 .where(eq(conversationTable.id, conversationId));
 
+            if (surveyConfig !== undefined) {
+                await setSurveyConfigForConversation({
+                    db: tx,
+                    conversationId,
+                    surveyConfig: surveyConfig ?? null,
+                    now,
+                });
+            }
+
             return { success: true } as const;
         })
         .catch((error: unknown) => {
@@ -386,6 +413,24 @@ export async function updateConversation({
                 "Failed to update conversation",
             );
         });
+
+    if (
+        result.success &&
+        surveyConfig !== undefined &&
+        surveyConfig !== null &&
+        updatedConversationId !== undefined
+    ) {
+        void warmSurveyTranslationsForConversation({
+            db,
+            conversationId: updatedConversationId,
+            googleCloudCredentials,
+        }).catch((error: unknown) => {
+            log.warn(
+                error,
+                `[Survey Translation] Async warm-up failed after updating conversation ${conversationSlugId}`,
+            );
+        });
+    }
 
     return result;
 }

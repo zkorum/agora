@@ -10,7 +10,7 @@ import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
 import { eq, sql, and } from "drizzle-orm";
 import type { GetUserPollResponseByConversations200 } from "@/shared/types/dto.js";
-import * as authUtilService from "@/service/authUtil.js";
+import { checkConversationParticipation } from "./participationGate.js";
 
 interface GetUserPollResponseProps {
     db: PostgresDatabase;
@@ -99,52 +99,15 @@ export async function submitPollResponse({
     userAgent,
     now,
 }: SubmitPollResponseProps) {
-    const {
-        id: postId,
-        contentId: postContentId,
-        participationMode,
-    } = await useCommonPost().getPostMetadataFromSlugId({
-        db: db,
-        conversationSlugId: postSlugId,
-    });
-
-    if (postContentId == null) {
-        throw httpErrors.notFound(
-            "Failed to locate post resource: " + postSlugId,
-        );
-    }
-
-    const authorId = await authUtilService.getOrRegisterUserIdFromDeviceStatus({
+    const participationCheck = await checkConversationParticipation({
         db,
+        conversationSlugId: postSlugId,
         didWrite,
-        participationMode,
         userAgent,
         now,
     });
-
-    // Check verification gating based on participation mode
-    if (participationMode === "strong_verification") {
-        const hasStrong = await authUtilService.hasStrongVerification({
-            db,
-            userId: authorId,
-        });
-        if (!hasStrong) {
-            return {
-                success: false as const,
-                reason: "strong_verification_required" as const,
-            };
-        }
-    } else if (participationMode === "email_verification") {
-        const hasEmail = await authUtilService.hasEmailVerification({
-            db,
-            userId: authorId,
-        });
-        if (!hasEmail) {
-            return {
-                success: false as const,
-                reason: "email_verification_required" as const,
-            };
-        }
+    if (!participationCheck.success) {
+        return participationCheck;
     }
 
     await db.transaction(async (tx) => {
@@ -152,7 +115,12 @@ export async function submitPollResponse({
         const pollIdResult = await tx
             .select({ pollId: conversationContentTable.pollId })
             .from(conversationContentTable)
-            .where(eq(conversationContentTable.id, postContentId));
+            .where(
+                eq(
+                    conversationContentTable.id,
+                    participationCheck.conversationContentId,
+                ),
+            );
 
         if (!pollIdResult[0]?.pollId) {
             throw httpErrors.notFound("Poll not found for this conversation");
@@ -163,7 +131,7 @@ export async function submitPollResponse({
         const insertPollResponseTableResponse = await tx
             .insert(pollResponseTable)
             .values({
-                authorId: authorId,
+                authorId: participationCheck.participantId,
                 pollId: pollId,
             })
             .returning({ id: pollResponseTable.id });
@@ -174,7 +142,7 @@ export async function submitPollResponse({
             .insert(pollResponseProofTable)
             .values({
                 type: "creation",
-                conversationId: postId,
+                conversationId: participationCheck.conversationId,
                 authorDid: didWrite,
                 proof: proof,
                 proofVersion: 1,
@@ -189,7 +157,7 @@ export async function submitPollResponse({
             .values({
                 pollResponseId: pollResponseTableId,
                 pollResponseProofId: pollResponseProofTableId,
-                conversationContentId: postContentId,
+                conversationContentId: participationCheck.conversationContentId,
                 optionChosen: voteOptionChoice,
             })
             .returning({ id: pollResponseContentTable.id });

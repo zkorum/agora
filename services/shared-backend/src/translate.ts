@@ -1,6 +1,7 @@
 /**
- * Translation abstraction layer for AI-generated cluster labels and summaries
- * Uses Google Cloud Translation API v3 with LLM support
+ * Shared Google Cloud Translation helpers.
+ * The model routing here is intentionally content-aware so short labels/options
+ * can stay on NMT while longer user-facing copy uses Translation LLM.
  */
 
 import { v3 } from "@google-cloud/translate";
@@ -8,202 +9,360 @@ import pLimit from "p-limit";
 
 type TranslationServiceClient = v3.TranslationServiceClient;
 
-/**
- * Convert BCP 47 language codes to Google Cloud Translation language codes
- * Most codes are the same, but Chinese variants use different formats
- */
-function convertToGoogleLanguageCode(bcp47Code: string): string {
-    const codeMap: Record<string, string> = {
-        "zh-Hans": "zh-CN", // Simplified Chinese
-        "zh-Hant": "zh-TW", // Traditional Chinese
-        en: "en",
-        es: "es",
-        fr: "fr",
-        ja: "ja",
-        ar: "ar",
-        fa: "fa",
-        he: "he",
-        ky: "ky",
-        ru: "ru",
-    };
+export const SHORT_TEXT_NMT_THRESHOLD = 24;
 
-    const googleCode = codeMap[bcp47Code];
-    if (!googleCode) {
-        throw new Error(
-            `Unsupported language code for Google Cloud Translation: ${bcp47Code}`,
-        );
-    }
+export type TranslationContentKind =
+    | "ai_label"
+    | "ai_summary"
+    | "survey_prompt"
+    | "survey_option";
 
-    return googleCode;
+export interface DetectedLanguageResult {
+    languageCode: string;
+    confidence: number;
 }
 
-/**
- * Translate text from source language to target language using Google Cloud Translation with LLM
- * @param client - Google TranslationServiceClient instance
- * @param text - Text to translate
- * @param sourceLanguageCode - BCP 47 source language code (e.g., "en")
- * @param targetLanguageCode - BCP 47 target language code (e.g., "es", "fr", "zh-Hans")
- * @param projectId - Google Cloud project ID
- * @param location - Google Cloud location (e.g., "global", "us-central1")
- * @returns Translated text
- */
-export async function translateText(
-    client: TranslationServiceClient,
-    text: string,
-    sourceLanguageCode: string,
-    targetLanguageCode: string,
-    projectId: string,
-    location: string,
-): Promise<string> {
-    // Handle empty string early - no translation needed
-    if (!text) {
+const DISPLAY_LANGUAGE_TO_GOOGLE_CODE: Partial<Record<string, string>> = {
+    ar: "ar",
+    en: "en",
+    es: "es",
+    fa: "fa",
+    fr: "fr",
+    he: "he",
+    ja: "ja",
+    ky: "ky",
+    ru: "ru",
+    "zh-Hans": "zh-CN",
+    "zh-Hant": "zh-TW",
+};
+
+function canonicalizeLanguageCode({
+    languageCode,
+}: {
+    languageCode: string;
+}): string | undefined {
+    const trimmedLanguageCode = languageCode.trim();
+    if (trimmedLanguageCode.length === 0) {
+        return undefined;
+    }
+
+    try {
+        return Intl.getCanonicalLocales(trimmedLanguageCode)[0];
+    } catch {
+        if (/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(trimmedLanguageCode)) {
+            return trimmedLanguageCode;
+        }
+        return undefined;
+    }
+}
+
+function normalizeSourceLanguageCodeForGoogle({
+    sourceLanguageCode,
+}: {
+    sourceLanguageCode: string;
+}): string {
+    const canonicalLanguageCode = canonicalizeLanguageCode({
+        languageCode: sourceLanguageCode,
+    });
+    const normalizedLanguageCode = canonicalLanguageCode ?? sourceLanguageCode;
+
+    if (
+        normalizedLanguageCode === "zh-Hans" ||
+        normalizedLanguageCode === "zh-CN"
+    ) {
+        return "zh-CN";
+    }
+
+    if (
+        normalizedLanguageCode === "zh-Hant" ||
+        normalizedLanguageCode === "zh-TW"
+    ) {
+        return "zh-TW";
+    }
+
+    if (normalizedLanguageCode.startsWith("zh-")) {
+        const locale = new Intl.Locale(normalizedLanguageCode);
+        if (locale.script === "Hant") {
+            return "zh-TW";
+        }
+        if (locale.region === "TW" || locale.region === "HK") {
+            return "zh-TW";
+        }
+        return "zh-CN";
+    }
+
+    return normalizedLanguageCode;
+}
+
+function normalizeTargetLanguageCodeForGoogle({
+    targetLanguageCode,
+}: {
+    targetLanguageCode: string;
+}): string {
+    const mappedLanguageCode = DISPLAY_LANGUAGE_TO_GOOGLE_CODE[targetLanguageCode];
+    if (mappedLanguageCode !== undefined) {
+        return mappedLanguageCode;
+    }
+
+    return normalizeSourceLanguageCodeForGoogle({
+        sourceLanguageCode: targetLanguageCode,
+    });
+}
+
+function getLanguageComparisonKey({ languageCode }: { languageCode: string }): string {
+    const normalizedLanguageCode = normalizeSourceLanguageCodeForGoogle({
+        sourceLanguageCode: languageCode,
+    });
+    if (
+        normalizedLanguageCode === "zh-CN" ||
+        normalizedLanguageCode === "zh-TW"
+    ) {
+        return normalizedLanguageCode;
+    }
+
+    return normalizedLanguageCode.split("-")[0] ?? normalizedLanguageCode;
+}
+
+export function shouldSkipTranslation({
+    sourceLanguageCode,
+    targetLanguageCode,
+}: {
+    sourceLanguageCode: string | undefined;
+    targetLanguageCode: string;
+}): boolean {
+    if (sourceLanguageCode === undefined) {
+        return false;
+    }
+
+    return (
+        getLanguageComparisonKey({ languageCode: sourceLanguageCode }) ===
+        getLanguageComparisonKey({ languageCode: targetLanguageCode })
+    );
+}
+
+function getTranslationModelName({
+    contentKind,
+    text,
+}: {
+    contentKind: TranslationContentKind;
+    text: string;
+}): "general/nmt" | "general/translation-llm" {
+    switch (contentKind) {
+        case "ai_label":
+            return "general/nmt";
+        case "ai_summary":
+        case "survey_prompt":
+            return "general/translation-llm";
+        case "survey_option":
+            return text.trim().length <= SHORT_TEXT_NMT_THRESHOLD
+                ? "general/nmt"
+                : "general/translation-llm";
+    }
+}
+
+function buildModelPath({
+    modelName,
+    projectId,
+    location,
+}: {
+    modelName: "general/nmt" | "general/translation-llm";
+    projectId: string;
+    location: string;
+}): string {
+    return `projects/${projectId}/locations/${location}/models/${modelName}`;
+}
+
+export async function detectLanguage({
+    client,
+    text,
+    projectId,
+    location,
+}: {
+    client: TranslationServiceClient;
+    text: string;
+    projectId: string;
+    location: string;
+}): Promise<DetectedLanguageResult | undefined> {
+    if (text.trim().length === 0) {
+        return undefined;
+    }
+
+    const [response] = await client.detectLanguage({
+        parent: `projects/${projectId}/locations/${location}`,
+        content: text,
+        mimeType: "text/plain",
+    });
+
+    const detectedLanguage = response.languages?.[0];
+    if (detectedLanguage?.languageCode == null) {
+        return undefined;
+    }
+
+    const canonicalLanguageCode = canonicalizeLanguageCode({
+        languageCode: detectedLanguage.languageCode,
+    });
+    if (canonicalLanguageCode === undefined) {
+        return undefined;
+    }
+
+    return {
+        languageCode: canonicalLanguageCode,
+        confidence: detectedLanguage.confidence ?? 0,
+    };
+}
+
+export async function translateText({
+    client,
+    text,
+    sourceLanguageCode,
+    targetLanguageCode,
+    projectId,
+    location,
+    contentKind,
+}: {
+    client: TranslationServiceClient;
+    text: string;
+    sourceLanguageCode: string | undefined;
+    targetLanguageCode: string;
+    projectId: string;
+    location: string;
+    contentKind: TranslationContentKind;
+}): Promise<string> {
+    if (text.length === 0) {
         return "";
     }
 
-    // Convert BCP 47 codes to Google Cloud Translation language codes
-    const googleSourceCode = convertToGoogleLanguageCode(sourceLanguageCode);
-    const googleTargetCode = convertToGoogleLanguageCode(targetLanguageCode);
+    if (
+        shouldSkipTranslation({
+            sourceLanguageCode,
+            targetLanguageCode,
+        })
+    ) {
+        return text;
+    }
 
-    // For Traditional Chinese (zh-TW): use two-step translation for LLM quality
+    const googleSourceCode =
+        sourceLanguageCode === undefined
+            ? undefined
+            : normalizeSourceLanguageCodeForGoogle({
+                  sourceLanguageCode,
+              });
+    const googleTargetCode = normalizeTargetLanguageCodeForGoogle({
+        targetLanguageCode,
+    });
+    const modelName = getTranslationModelName({ contentKind, text });
+
     if (googleTargetCode === "zh-TW") {
-        // Case 1: Source is already Simplified Chinese → just convert to Traditional
         if (googleSourceCode === "zh-CN") {
-            const request = {
+            const [response] = await client.translateText({
                 parent: `projects/${projectId}/locations/${location}`,
                 contents: [text],
-                mimeType: "text/plain" as const,
+                mimeType: "text/plain",
                 sourceLanguageCode: "zh-CN",
                 targetLanguageCode: "zh-TW",
-                // Omit model parameter to use default NMT for zh-CN → zh-TW conversion
-            };
+            });
 
-            const [response] = await client.translateText(request);
-
-            if (
-                !response.translations ||
-                response.translations.length === 0 ||
-                !response.translations[0].translatedText
-            ) {
+            const translatedText = response.translations?.[0]?.translatedText;
+            if (translatedText == null) {
                 throw new Error(
-                    `Translation failed for zh-CN → zh-TW conversion: "${text}"`,
+                    `Translation failed for zh-CN -> zh-TW conversion: "${text}"`,
                 );
             }
 
-            return response.translations[0].translatedText;
+            return translatedText;
         }
 
-        // Case 2: Source is not Simplified Chinese → translate to Simplified first, then convert
-        // Step 1: Translate source → Simplified Chinese using LLM
-        const simplifiedRequest = {
+        const [simplifiedResponse] = await client.translateText({
             parent: `projects/${projectId}/locations/${location}`,
             contents: [text],
-            mimeType: "text/plain" as const,
-            sourceLanguageCode: googleSourceCode,
+            mimeType: "text/plain",
             targetLanguageCode: "zh-CN",
-            model: `projects/${projectId}/locations/${location}/models/general/translation-llm`,
-        };
+            model: buildModelPath({ modelName, projectId, location }),
+            ...(googleSourceCode !== undefined && {
+                sourceLanguageCode: googleSourceCode,
+            }),
+        });
 
-        const [simplifiedResponse] =
-            await client.translateText(simplifiedRequest);
-
-        if (
-            !simplifiedResponse.translations ||
-            simplifiedResponse.translations.length === 0 ||
-            !simplifiedResponse.translations[0].translatedText
-        ) {
+        const simplifiedText = simplifiedResponse.translations?.[0]?.translatedText;
+        if (simplifiedText == null) {
             throw new Error(
                 `Translation failed at Simplified Chinese step for "${text}"`,
             );
         }
 
-        const simplifiedText =
-            simplifiedResponse.translations[0].translatedText;
-
-        // Step 2: Convert Simplified Chinese → Traditional Chinese using NMT
-        const traditionalRequest = {
+        const [traditionalResponse] = await client.translateText({
             parent: `projects/${projectId}/locations/${location}`,
             contents: [simplifiedText],
-            mimeType: "text/plain" as const,
+            mimeType: "text/plain",
             sourceLanguageCode: "zh-CN",
             targetLanguageCode: "zh-TW",
-            // Omit model parameter to use default NMT for zh-CN → zh-TW conversion
-        };
+        });
 
-        const [traditionalResponse] =
-            await client.translateText(traditionalRequest);
-
-        if (
-            !traditionalResponse.translations ||
-            traditionalResponse.translations.length === 0 ||
-            !traditionalResponse.translations[0].translatedText
-        ) {
+        const traditionalText =
+            traditionalResponse.translations?.[0]?.translatedText;
+        if (traditionalText == null) {
             throw new Error(
                 `Translation failed at Traditional Chinese conversion step for "${simplifiedText}"`,
             );
         }
 
-        return traditionalResponse.translations[0].translatedText;
+        return traditionalText;
     }
 
-    // For all other languages: use Translation LLM directly
-    const request = {
+    const [response] = await client.translateText({
         parent: `projects/${projectId}/locations/${location}`,
         contents: [text],
-        mimeType: "text/plain" as const,
-        sourceLanguageCode: googleSourceCode,
+        mimeType: "text/plain",
         targetLanguageCode: googleTargetCode,
-        // Use Translation LLM for better quality on conversational/social media text
-        model: `projects/${projectId}/locations/${location}/models/general/translation-llm`,
-    };
+        model: buildModelPath({ modelName, projectId, location }),
+        ...(googleSourceCode !== undefined && {
+            sourceLanguageCode: googleSourceCode,
+        }),
+    });
 
-    const [response] = await client.translateText(request);
-
-    if (
-        !response.translations ||
-        response.translations.length === 0 ||
-        !response.translations[0].translatedText
-    ) {
+    const translatedText = response.translations?.[0]?.translatedText;
+    if (translatedText == null) {
         throw new Error(
             `Translation failed: no translated text returned for "${text}"`,
         );
     }
 
-    return response.translations[0].translatedText;
+    return translatedText;
 }
 
-/**
- * Batch translate multiple texts from source to target language with concurrency control
- * @param client - Google TranslationServiceClient instance
- * @param texts - Array of texts to translate
- * @param sourceLanguageCode - BCP 47 source language code (e.g., "en")
- * @param targetLanguageCode - BCP 47 target language code (e.g., "es", "fr", "zh-Hans")
- * @param projectId - Google Cloud project ID
- * @param location - Google Cloud location (e.g., "global", "us-central1")
- * @param concurrencyLimit - Maximum number of concurrent translation requests (default: 10)
- * @returns Array of translated texts in the same order
- */
-export async function batchTranslateTexts(
-    client: TranslationServiceClient,
-    texts: string[],
-    sourceLanguageCode: string,
-    targetLanguageCode: string,
-    projectId: string,
-    location: string,
+export async function batchTranslateTexts({
+    client,
+    texts,
+    sourceLanguageCode,
+    targetLanguageCode,
+    projectId,
+    location,
+    contentKind,
     concurrencyLimit = 10,
-): Promise<string[]> {
+}: {
+    client: TranslationServiceClient;
+    texts: string[];
+    sourceLanguageCode: string | undefined;
+    targetLanguageCode: string;
+    projectId: string;
+    location: string;
+    contentKind: TranslationContentKind;
+    concurrencyLimit?: number;
+}): Promise<string[]> {
     const limit = pLimit(concurrencyLimit);
 
     return Promise.all(
         texts.map((text) =>
             limit(() =>
-                translateText(
+                translateText({
                     client,
                     text,
                     sourceLanguageCode,
                     targetLanguageCode,
                     projectId,
                     location,
-                ),
+                    contentKind,
+                }),
             ),
         ),
     );

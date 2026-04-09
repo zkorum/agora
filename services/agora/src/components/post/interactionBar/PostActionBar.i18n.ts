@@ -8,6 +8,8 @@ export interface PostActionBarTranslations {
   usedForAnalysis: string;
   moderatedVotesExplanation: string;
   moderatedParticipantsExplanation: string;
+  surveyVotesExplanation: string;
+  surveyParticipantsExplanation: string;
   maxdiffVotesExplanation: string;
   maxdiffParticipantsExplanation: string;
 }
@@ -26,6 +28,10 @@ export const postActionBarTranslations: Record<
       "Votes on moderated statements are excluded from analysis.",
     moderatedParticipantsExplanation:
       "Participants who only voted on moderated statements are excluded from analysis.",
+    surveyVotesExplanation:
+      "Votes from participants who have not completed the survey are excluded from analysis.",
+    surveyParticipantsExplanation:
+      "Participants who have not completed the survey are excluded from analysis.",
     maxdiffVotesExplanation:
       "Votes on completed and canceled items are excluded from ranking.",
     maxdiffParticipantsExplanation:
@@ -41,6 +47,10 @@ export const postActionBarTranslations: Record<
       "يتم استبعاد الأصوات على العبارات المعتدلة من التحليل.",
     moderatedParticipantsExplanation:
       "يتم استبعاد المشاركين الذين صوتوا فقط على عبارات معتدلة من التحليل.",
+    surveyVotesExplanation:
+      "يتم استبعاد أصوات المشاركين الذين لم يكملوا الاستبيان من التحليل.",
+    surveyParticipantsExplanation:
+      "يتم استبعاد المشاركين الذين لم يكملوا الاستبيان من التحليل.",
     maxdiffVotesExplanation:
       "يتم استبعاد الأصوات على العناصر المكتملة والملغاة من الترتيب.",
     maxdiffParticipantsExplanation:
@@ -56,6 +66,10 @@ export const postActionBarTranslations: Record<
       "Los votos sobre proposiciones moderadas se excluyen del análisis.",
     moderatedParticipantsExplanation:
       "Los participantes que solo votaron sobre proposiciones moderadas se excluyen del análisis.",
+    surveyVotesExplanation:
+      "Los votos de participantes que no completaron la encuesta se excluyen del análisis.",
+    surveyParticipantsExplanation:
+      "Los participantes que no completaron la encuesta se excluyen del análisis.",
     maxdiffVotesExplanation:
       "Los votos sobre elementos completados y cancelados se excluyen del ranking.",
     maxdiffParticipantsExplanation:
@@ -69,6 +83,8 @@ export const postActionBarTranslations: Record<
     usedForAnalysis: "استفاده شده برای تحلیل",
     moderatedVotesExplanation: "رأی‌های مربوط به گزاره‌های مدیریت‌شده از تحلیل حذف شده‌اند.",
     moderatedParticipantsExplanation: "شرکت‌کنندگانی که فقط به گزاره‌های مدیریت‌شده رأی داده‌اند از تحلیل حذف شده‌اند.",
+    surveyVotesExplanation: "رأی‌های شرکت‌کنندگانی که نظرسنجی را کامل نکرده‌اند از تحلیل حذف شده‌اند.",
+    surveyParticipantsExplanation: "شرکت‌کنندگانی که نظرسنجی را کامل نکرده‌اند از تحلیل حذف شده‌اند.",
     maxdiffVotesExplanation: "رأی‌های مربوط به موارد تکمیل‌شده و لغوشده از رتبه‌بندی حذف شده‌اند.",
     maxdiffParticipantsExplanation: "شرکت‌کنندگانی که فقط به موارد تکمیل‌شده و لغوشده رأی داده‌اند از رتبه‌بندی حذف شده‌اند.",
   },
@@ -82,6 +98,10 @@ export const postActionBarTranslations: Record<
       "Les votes sur les propositions modérées sont exclus de l'analyse.",
     moderatedParticipantsExplanation:
       "Les participants n'ayant voté que sur des propositions modérées sont exclus de l'analyse.",
+    surveyVotesExplanation:
+      "Les votes des participants n'ayant pas terminé le questionnaire sont exclus de l'analyse.",
+    surveyParticipantsExplanation:
+      "Les participants n'ayant pas terminé le questionnaire sont exclus de l'analyse.",
     maxdiffVotesExplanation:
       "Les votes sur les éléments terminés et annulés sont exclus du classement.",
     maxdiffParticipantsExplanation:
@@ -96,6 +116,8 @@ export const postActionBarTranslations: Record<
     moderatedVotesExplanation: "对已审核声明的投票不计入分析。",
     moderatedParticipantsExplanation:
       "仅对已审核声明投票的参与者不计入分析。",
+    surveyVotesExplanation: "未完成问卷的参与者所投的票不计入分析。",
+    surveyParticipantsExplanation: "未完成问卷的参与者不计入分析。",
     maxdiffVotesExplanation: "对已完成和已取消项目的投票不计入排名。",
     maxdiffParticipantsExplanation:
       "仅对已完成和已取消项目投票的参与者不计入排名。",
@@ -109,6 +131,8 @@ export const postActionBarTranslations: Record<
     moderatedVotesExplanation: "對已審核聲明的投票不計入分析。",
     moderatedParticipantsExplanation:
       "僅對已審核聲明投票的參與者不計入分析。",
+    surveyVotesExplanation: "未完成問卷的參與者所投的票不計入分析。",
+    surveyParticipantsExplanation: "未完成問卷的參與者不計入分析。",
     maxdiffVotesExplanation: "對已完成和已取消項目的投票不計入排名。",
     maxdiffParticipantsExplanation:
       "僅對已完成和已取消項目投票的參與者不計入排名。",
@@ -121,6 +145,8 @@ export const postActionBarTranslations: Record<
     usedForAnalysis: "בשימוש לניתוח",
     moderatedVotesExplanation: "הצבעות על הצהרות שעברו מודרציה מוחרגות מהניתוח.",
     moderatedParticipantsExplanation: "משתתפים שהצביעו רק על הצהרות שעברו מודרציה מוחרגים מהניתוח.",
+    surveyVotesExplanation: "הצבעות של משתתפים שלא השלימו את הסקר מוחרגות מהניתוח.",
+    surveyParticipantsExplanation: "משתתפים שלא השלימו את הסקר מוחרגים מהניתוח.",
     maxdiffVotesExplanation: "הצבעות על פריטים שהושלמו או בוטלו מוחרגות מהדירוג.",
     maxdiffParticipantsExplanation: "משתתפים שהצביעו רק על פריטים שהושלמו או בוטלו מוחרגים מהדירוג.",
   },
@@ -134,6 +160,10 @@ export const postActionBarTranslations: Record<
       "モデレートされた声明への投票は分析から除外されます。",
     moderatedParticipantsExplanation:
       "モデレートされた声明にのみ投票した参加者は分析から除外されます。",
+    surveyVotesExplanation:
+      "アンケートを完了していない参加者の投票は分析から除外されます。",
+    surveyParticipantsExplanation:
+      "アンケートを完了していない参加者は分析から除外されます。",
     maxdiffVotesExplanation:
       "完了およびキャンセルされた項目への投票はランキングから除外されます。",
     maxdiffParticipantsExplanation:
@@ -149,6 +179,10 @@ export const postActionBarTranslations: Record<
       "Модерацияланган пикирлерге берилген добуштар анализден чыгарылат.",
     moderatedParticipantsExplanation:
       "Модерацияланган пикирлерге гана добуш берген катышуучулар анализден чыгарылат.",
+    surveyVotesExplanation:
+      "Сурамжылоону бүтүрө элек катышуучулардын добуштары анализден чыгарылат.",
+    surveyParticipantsExplanation:
+      "Сурамжылоону бүтүрө элек катышуучулар анализден чыгарылат.",
     maxdiffVotesExplanation:
       "Аяктаган жана жокко чыгарылган элементтерге берилген добуштар рейтингден чыгарылат.",
     maxdiffParticipantsExplanation:
@@ -164,6 +198,10 @@ export const postActionBarTranslations: Record<
       "Голоса за модерированные высказывания исключены из анализа.",
     moderatedParticipantsExplanation:
       "Участники, голосовавшие только за модерированные высказывания, исключены из анализа.",
+    surveyVotesExplanation:
+      "Голоса участников, не завершивших опрос, исключены из анализа.",
+    surveyParticipantsExplanation:
+      "Участники, не завершившие опрос, исключены из анализа.",
     maxdiffVotesExplanation:
       "Голоса за завершённые и отменённые элементы исключены из рейтинга.",
     maxdiffParticipantsExplanation:

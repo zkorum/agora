@@ -169,10 +169,12 @@
       :on-vote="dialogVoteCallback"
     />
 
-    <PreLoginIntentionDialog
+    <PreParticipationIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
       active-intention="voting"
+      :conversation-slug-id="conversationData.metadata.conversationSlugId"
+      :requires-zupass-event-slug="conversationData.metadata.requiresEventTicket"
       :needs-auth="needsLogin"
       :participation-mode="conversationData.metadata.participationMode"
     />
@@ -228,18 +230,21 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
-import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
 import AnalysisActionButton from "src/components/post/analysis/common/AnalysisActionButton.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
+import { useParticipationGate } from "src/composables/conversation/useParticipationGate";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { ExtendedConversation, MaxDiffComparison } from "src/shared/types/zod";
-import { useAuthenticationStore } from "src/stores/authentication";
+import type {
+  ExtendedConversation,
+  MaxDiffComparison,
+  ParticipationBlockedReason,
+} from "src/shared/types/zod";
 import {
   type MaxDiffSaveContext,
   useMaxDiffItemsQuery,
@@ -272,10 +277,20 @@ const { t } = useComponentI18n<MaxDiffVotingTabTranslations>(
   maxDiffVotingTabTranslations
 );
 
-const { isLoggedIn, hasStrongVerification, hasEmailVerification } =
-  storeToRefs(useAuthenticationStore());
 const $q = useQuasar();
 const { showNotifyMessage } = useNotify();
+const conversationSlugId = computed(
+  () => props.conversationData.metadata.conversationSlugId
+);
+const {
+  needsAuth: isAuthBlocked,
+  shouldOpenParticipationModal,
+} = useParticipationGate({
+  conversationSlugId,
+  participationMode: computed(() => props.conversationData.metadata.participationMode),
+  requiresEventTicket: computed(() => props.conversationData.metadata.requiresEventTicket),
+  surveyGate: computed(() => props.conversationData.interaction.surveyGate),
+});
 
 // Inject parent refresh handler (same pattern as ConversationCommentTab)
 const registerChildRefreshHandler = inject<
@@ -288,23 +303,34 @@ const registerChildRefreshHandler = inject<
 );
 
 const needsLogin = computed(() => {
-  const mode = props.conversationData.metadata.participationMode;
-  if (mode === "account_required") return !isLoggedIn.value;
-  if (mode === "strong_verification") return !hasStrongVerification.value;
-  if (mode === "email_verification") return !hasEmailVerification.value;
-  return false; // guest
+  return isAuthBlocked.value;
 });
 
 const { setVotingIntention } = useConversationLoginIntentions();
 const showLoginDialog = ref(false);
 
 function onLoginCallback() {
-  setVotingIntention();
+  setVotingIntention(props.conversationData.metadata.requiresEventTicket);
 }
 
-const conversationSlugId = computed(
-  () => props.conversationData.metadata.conversationSlugId
-);
+function handleBlockedSave(reason: ParticipationBlockedReason): void {
+  if (
+    reason === "event_ticket_required" ||
+    reason === "account_required" ||
+    reason === "strong_verification_required" ||
+    reason === "email_verification_required"
+  ) {
+    showLoginDialog.value = true;
+    return;
+  }
+
+  if (reason === "survey_required" || reason === "survey_outdated") {
+    showLoginDialog.value = true;
+    return;
+  }
+
+  showNotifyMessage(t("savingError"));
+}
 
 // TanStack queries for items and saved state
 const itemsQuery = useMaxDiffItemsQuery({
@@ -387,7 +413,10 @@ const saveMutation = useMaxDiffSaveMutation({
     finalRanking.value = context.previousFinalRanking;
     candidates.value = context.previousCandidates;
     cancelTransition();
-    showNotifyMessage({ message: t("savingError"), force: true });
+  },
+  onBlocked: handleBlockedSave,
+  onNetworkError: () => {
+    showNotifyMessage(t("savingError"));
   },
 });
 
@@ -579,8 +608,8 @@ function retryInitialize(): void {
   void loadQuery.refetch();
 }
 
-function handleCandidateClick(slugId: string): void {
-  if (needsLogin.value) {
+async function handleCandidateClick(slugId: string): Promise<void> {
+  if (await shouldOpenParticipationModal()) {
     showLoginDialog.value = true;
     return;
   }
@@ -678,7 +707,7 @@ function recordVote(): void {
   transitionTimeout = setTimeout(() => {
     void (async () => {
       const saveResult = await savePromise;
-      if (saveResult !== undefined && !instance.value?.complete) {
+      if (saveResult?.success && !instance.value?.complete) {
         candidates.value = saveResult.candidateSets[0] ?? [];
       } else {
         candidates.value = [];
@@ -767,7 +796,7 @@ function handleRedoRanking(): void {
         isComplete: false,
         context,
       }).catch(() => undefined);
-      if (result !== undefined) {
+      if (result?.success) {
         candidates.value = result.candidateSets[0] ?? [];
       }
     })();

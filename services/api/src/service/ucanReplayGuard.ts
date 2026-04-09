@@ -13,6 +13,7 @@ import { createHash } from "node:crypto";
 import { TimeUnit } from "@valkey/valkey-glide";
 import type { Valkey } from "@/shared-backend/valkey.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
+import type { ValkeyRef } from "./valkeyRef.js";
 
 export interface UcanReplayGuard {
     /**
@@ -24,33 +25,68 @@ export interface UcanReplayGuard {
         expiryUnix: number;
         issuerDid: string;
     }) => Promise<boolean>;
+    syncToValkey: (params: { valkey: Valkey }) => Promise<number>;
     shutdown: () => void;
 }
 
 interface CreateUcanReplayGuardParams {
-    valkey?: Valkey;
+    valkeyRef: ValkeyRef;
 }
 
 export function createUcanReplayGuard({
-    valkey,
+    valkeyRef,
 }: CreateUcanReplayGuardParams): UcanReplayGuard {
-    // In-memory store — used as fallback when Valkey is not configured.
-    // Map<sha256hex, expiryUnixSeconds>
-    const usedHashes = new Map<string, number>();
-    let cleanupInterval: ReturnType<typeof setInterval> | undefined;
+    interface UsedUcanEntry {
+        expiryUnix: number;
+        issuerDid: string;
+    }
 
-    if (valkey === undefined) {
-        // Cleanup expired entries every 10s. UCANs have 30s lifetime (120s for uploads),
-        // so 10s interval keeps memory bounded without excessive iteration.
-        cleanupInterval = setInterval(() => {
-            const nowUnix = Math.floor(Date.now() / 1000);
-            for (const [hash, expiry] of usedHashes) {
-                if (expiry <= nowUnix) {
+    // In-memory store — used as fallback when Valkey is not configured.
+    // Map<sha256hex, { expiryUnix, issuerDid }>
+    const usedHashes = new Map<string, UsedUcanEntry>();
+    const getNowUnix = (): number => Math.floor(Date.now() / 1000);
+    const getTrackedExpiryUnix = (expiryUnix: number): number => expiryUnix + 5;
+    const getTtlSeconds = ({
+        expiryUnix,
+        nowUnix,
+    }: {
+        expiryUnix: number;
+        nowUnix: number;
+    }): number => Math.max(expiryUnix - nowUnix, 1);
+    const getTrackedEntry = ({
+        ucanHash,
+        nowUnix,
+    }: {
+        ucanHash: string;
+        nowUnix: number;
+    }): UsedUcanEntry | undefined => {
+        const trackedEntry = usedHashes.get(ucanHash);
+        if (trackedEntry === undefined) {
+            return undefined;
+        }
+
+        if (trackedEntry.expiryUnix <= nowUnix) {
+            usedHashes.delete(ucanHash);
+            return undefined;
+        }
+
+        return trackedEntry;
+    };
+
+    // Always keep the cleanup loop running so the in-memory fallback stays bounded,
+    // even if Valkey becomes available after startup or temporarily unavailable later.
+    let cleanupInterval: ReturnType<typeof setInterval> | undefined = setInterval(
+        () => {
+            const nowUnix = getNowUnix();
+            for (const [hash, entry] of usedHashes) {
+                if (entry.expiryUnix <= nowUnix) {
                     usedHashes.delete(hash);
                 }
             }
-        }, 10_000);
-    }
+        },
+        10_000,
+    );
+    cleanupInterval.unref();
 
     const checkAndMark = async ({
         encodedUcan,
@@ -61,18 +97,27 @@ export function createUcanReplayGuard({
         expiryUnix: number;
         issuerDid: string;
     }): Promise<boolean> => {
+        const valkey = valkeyRef.current;
+
         // SHA-256 of the raw JWT string. UCANs use deterministic base64url encoding
         // so the same token always produces the same hash. The 64-char hex digest
         // makes the Valkey key well-formed with no injection risk.
         const ucanHash = createHash("sha256")
             .update(encodedUcan)
             .digest("hex");
+        const nowUnix = getNowUnix();
+
+        if (getTrackedEntry({ ucanHash, nowUnix }) !== undefined) {
+            return true;
+        }
 
         if (valkey !== undefined) {
             // Valkey path: atomic SET NX with TTL (cross-instance protection)
             const ucanKey = `${VALKEY_QUEUE_KEYS.UCAN_USED_PREFIX}${ucanHash}`;
-            const nowUnix = Math.floor(Date.now() / 1000);
-            const ttlSeconds = Math.max(expiryUnix - nowUnix + 5, 1);
+            const ttlSeconds = getTtlSeconds({
+                expiryUnix: getTrackedExpiryUnix(expiryUnix),
+                nowUnix,
+            });
 
             // Atomic check-and-set: returns null if key already exists (replay).
             // Value is the issuer DID — useful for debugging replay attacks in logs.
@@ -85,11 +130,39 @@ export function createUcanReplayGuard({
         }
 
         // In-memory fallback: single-instance replay protection only
-        if (usedHashes.has(ucanHash)) {
-            return true; // replay
-        }
-        usedHashes.set(ucanHash, expiryUnix + 5);
+        usedHashes.set(ucanHash, {
+            expiryUnix: getTrackedExpiryUnix(expiryUnix),
+            issuerDid,
+        });
         return false; // not a replay
+    };
+
+    const syncToValkey = async ({ valkey }: { valkey: Valkey }): Promise<number> => {
+        const nowUnix = getNowUnix();
+        let syncedCount = 0;
+
+        for (const [ucanHash, entry] of usedHashes) {
+            if (entry.expiryUnix <= nowUnix) {
+                usedHashes.delete(ucanHash);
+                continue;
+            }
+
+            const ucanKey = `${VALKEY_QUEUE_KEYS.UCAN_USED_PREFIX}${ucanHash}`;
+            await valkey.set(ucanKey, entry.issuerDid, {
+                conditionalSet: "onlyIfDoesNotExist",
+                expiry: {
+                    type: TimeUnit.Seconds,
+                    count: getTtlSeconds({
+                        expiryUnix: entry.expiryUnix,
+                        nowUnix,
+                    }),
+                },
+            });
+            usedHashes.delete(ucanHash);
+            syncedCount += 1;
+        }
+
+        return syncedCount;
     };
 
     const shutdown = (): void => {
@@ -100,5 +173,5 @@ export function createUcanReplayGuard({
         usedHashes.clear();
     };
 
-    return { checkAndMark, shutdown };
+    return { checkAndMark, syncToValkey, shutdown };
 }

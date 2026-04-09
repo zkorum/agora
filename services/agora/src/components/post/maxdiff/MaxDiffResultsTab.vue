@@ -31,7 +31,7 @@
           :all-items="resultItems"
           :compact-mode="currentTab === 'Summary'"
           :on-click-item="openStatementDialog"
-          :on-switch-tab="() => switchToTab('Me')"
+          :on-switch-tab="() => onTabChange('Me')"
           :on-learn-more="() => (learnMoreContext = 'me')"
           :navigate-to-voting-tab="props.navigateToVotingTab"
         />
@@ -51,7 +51,7 @@
           :score-label="t('score')"
           :compact-mode="currentTab === 'Summary'"
           :on-click-item="openStatementDialog"
-          :on-switch-tab="() => switchToTab('Results')"
+          :on-switch-tab="() => onTabChange('Results')"
           :on-learn-more="() => (learnMoreContext = 'community')"
         />
       </div>
@@ -70,7 +70,7 @@
           :score-label="t('score')"
           :compact-mode="currentTab === 'Summary'"
           :on-click-item="openStatementDialog"
-          :on-switch-tab="() => switchToTab('Completed')"
+          :on-switch-tab="() => onTabChange('Completed')"
           :on-learn-more="() => openLifecycleLearnMore('completed')"
         />
       </div>
@@ -89,7 +89,7 @@
           :score-label="t('score')"
           :compact-mode="currentTab === 'Summary'"
           :on-click-item="openStatementDialog"
-          :on-switch-tab="() => switchToTab('Canceled')"
+          :on-switch-tab="() => onTabChange('Canceled')"
           :on-learn-more="() => openLifecycleLearnMore('canceled')"
         />
       </div>
@@ -192,7 +192,7 @@ const { getMaxDiffResults, fetchMaxDiffItems } = useMaxDiffApi();
 
 const route = useRoute();
 
-const { currentTab, handleSameTabClick, switchToTab } = useTabNavigation({
+const { currentTab, handleSameTabClick } = useTabNavigation({
   schema: maxdiffShortcutItemSchema,
   defaultTab: "Summary",
 });

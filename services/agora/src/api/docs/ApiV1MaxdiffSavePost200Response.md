@@ -5,7 +5,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**success** | **boolean** |  | [default to undefined]
 **candidateSets** | **Array&lt;Array&lt;string&gt;&gt;** |  | [default to undefined]
+**reason** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -13,7 +15,9 @@ Name | Type | Description | Notes
 import { ApiV1MaxdiffSavePost200Response } from './api';
 
 const instance: ApiV1MaxdiffSavePost200Response = {
+    success,
     candidateSets,
+    reason,
 };
 ```
 

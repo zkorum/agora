@@ -28,6 +28,7 @@
           :conversation-title="conversationData.payload.title"
           :author-username="conversationData.metadata.authorUsername"
           :conversation-type="conversationData.metadata.conversationType"
+          :has-survey="conversationData.interaction.surveyGate?.hasSurvey === true"
         />
 
         <AnalysisPage
@@ -40,6 +41,8 @@
             props.conversationData.metadata.participantCount
           "
           :analysis-query="analysisQuery"
+          :survey-query="surveyResultsQuery"
+          :has-survey="hasSurvey"
           :navigate-to-discover-tab="navigateToDiscoverTab"
         />
 
@@ -68,7 +71,6 @@
           @participant-count-delta="
             (delta: number) => (participantCountLocal += delta)
           "
-          @ticket-verified="(payload) => handleTicketVerified(payload)"
         />
       </div>
     </ZKHoverEffect>
@@ -80,9 +82,9 @@
           conversationData.metadata.participationMode
         "
         :requires-event-ticket="conversationData.metadata.requiresEventTicket"
+        :survey-gate="conversationData.interaction.surveyGate"
         :is-composer-disabled="isVotingDisabled"
         @submitted-comment="submittedComment"
-        @ticket-verified="(payload) => handleTicketVerified(payload)"
       />
     </FloatingBottomContainer>
   </div>
@@ -99,6 +101,7 @@ import {
   useHiddenCommentsQuery,
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
+import { useSurveyResultsAggregatedQuery } from "src/utils/api/survey/useSurveyQueries";
 import { computed, onMounted, ref, watch } from "vue";
 
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
@@ -139,6 +142,9 @@ const userStore = useUserStore();
 const participantCountLocal = ref(
   props.conversationData.metadata.participantCount
 );
+const hasSurvey = computed(
+  () => props.conversationData.interaction.surveyGate?.hasSurvey === true
+);
 
 const { profileData } = storeToRefs(userStore);
 
@@ -155,6 +161,11 @@ const analysisQuery = useAnalysisQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   voteCount: props.conversationData.metadata.voteCount,
   enabled: isAnalysisEnabled,
+});
+
+const surveyResultsQuery = useSurveyResultsAggregatedQuery({
+  conversationSlugId: props.conversationData.metadata.conversationSlugId,
+  enabled: computed(() => isAnalysisEnabled.value && hasSurvey.value),
 });
 
 // Preload comment queries for all filter types (only if not in compact mode)
@@ -217,8 +228,12 @@ const isCurrentTabLoading = computed((): boolean => {
   if (currentTab.value === "comment") {
     return opinionSectionRef.value?.isLoading ?? false;
   } else if (currentTab.value === "analysis") {
-    // Use the preloaded analysis query loading state
-    return analysisQuery.isPending.value || analysisQuery.isRefetching.value;
+    return (
+      analysisQuery.isPending.value ||
+      analysisQuery.isRefetching.value ||
+      surveyResultsQuery.isPending.value ||
+      surveyResultsQuery.isRefetching.value
+    );
   }
 
   return false;
@@ -318,6 +333,10 @@ watch(currentTab, async (newTab) => {
       // Check and refetch analysis query if it is stale
       if (analysisQuery.isStale.value) {
         await analysisQuery.refetch();
+      }
+
+      if (hasSurvey.value && surveyResultsQuery.isStale.value) {
+        await surveyResultsQuery.refetch();
       }
     }
   }

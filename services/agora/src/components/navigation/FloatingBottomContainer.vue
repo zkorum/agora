@@ -1,5 +1,5 @@
 <template>
-  <Teleport to="body">
+  <Teleport v-if="!hideBottomBarForRoute" to="body">
     <div class="bottomBar" :style="barStyle">
       <slot />
     </div>
@@ -11,9 +11,19 @@ import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import { useNavigationStore } from "src/stores/navigation";
 import { computed } from "vue";
+import { useRoute } from "vue-router";
 
 const $q = useQuasar();
+const route = useRoute();
 const { drawerBehavior, drawerWidth } = storeToRefs(useNavigationStore());
+
+const hideBottomBarForRoute = computed(() => {
+  const routePath = route.path;
+  const isConversationRoute = routePath.startsWith("/conversation/");
+  const isConversationOnboardingRoute = routePath.includes("/onboarding");
+
+  return !isConversationRoute || isConversationOnboardingRoute;
+});
 
 const barStyle = computed(() => {
   const isRtl = $q.lang.rtl;

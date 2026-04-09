@@ -17,6 +17,14 @@
               >
                 <q-icon name="mdi-arrow-left" size="1.2rem" />
               </button>
+              <button
+                v-if="showCloseButton"
+                class="closeButton"
+                aria-label="Close"
+                @click="handleClose"
+              >
+                <q-icon name="mdi-close" size="1.2rem" />
+              </button>
               <div class="containerPaddings">
                 <slot name="body" />
               </div>
@@ -40,10 +48,14 @@ const props = withDefaults(
   defineProps<{
     showBackButton?: boolean;
     backCallback?: () => void;
+    showCloseButton?: boolean;
+    closeCallback?: () => void;
   }>(),
   {
     showBackButton: true,
     backCallback: undefined,
+    showCloseButton: false,
+    closeCallback: undefined,
   }
 );
 
@@ -52,6 +64,14 @@ const router = useRouter();
 function handleBack() {
   if (props.backCallback) {
     props.backCallback();
+  } else {
+    router.back();
+  }
+}
+
+function handleClose() {
+  if (props.closeCallback) {
+    props.closeCallback();
   } else {
     router.back();
   }
@@ -72,6 +92,33 @@ function handleBack() {
   position: absolute;
   top: 0.75rem;
   left: 0.75rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.7);
+  color: rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+
+  &:active {
+    background-color: rgba(255, 255, 255, 1);
+  }
+}
+
+.closeButton {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
   z-index: 10;
   display: flex;
   align-items: center;

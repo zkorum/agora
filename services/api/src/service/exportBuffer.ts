@@ -38,6 +38,7 @@ import { count, or, isNull, ne } from "drizzle-orm";
 import { processConversationExport } from "./conversationExport/core.js";
 import { createExportNotification } from "./conversationExport/notifications.js";
 import type { RealtimeSSEManager } from "./realtimeSSE.js";
+import type { ValkeyRef } from "./valkeyRef.js";
 import type { RequestConversationExportResponse } from "@/shared/types/dto.js";
 import { z } from "zod";
 import { Script } from "@valkey/valkey-glide";
@@ -80,7 +81,7 @@ export interface ExportBuffer {
 
 interface CreateExportBufferParams {
     db: PostgresJsDatabase;
-    valkey: Valkey | undefined;
+    valkeyRef: ValkeyRef;
     realtimeSSEManager: RealtimeSSEManager | undefined;
     flushIntervalMs: number;
     maxBatchSize: number;
@@ -171,7 +172,7 @@ return result
  */
 export function createExportBuffer({
     db,
-    valkey,
+    valkeyRef,
     realtimeSSEManager,
     flushIntervalMs,
     maxBatchSize,
@@ -197,6 +198,8 @@ export function createExportBuffer({
     // Helper function to generate hash key
     const getExportKey = (conversationId: number, userId: string): string =>
         `${String(conversationId)}:${userId}`;
+
+    const getValkey = (): Valkey | undefined => valkeyRef.current;
 
     /**
      * Try to mark an invalid Valkey item as failed in the database.
@@ -525,6 +528,7 @@ export function createExportBuffer({
         });
 
         // Valkey: Add to hash (if configured)
+        const valkey = getValkey();
         if (valkey !== undefined) {
             try {
                 await valkey.hset(VALKEY_QUEUE_KEYS.EXPORT_BUFFER, {
@@ -598,6 +602,7 @@ export function createExportBuffer({
         pendingExports.clear();
 
         // Get exports from Valkey (if configured)
+        const valkey = getValkey();
         if (valkey !== undefined) {
             try {
                 // Use Lua script to atomically HSCAN + HDEL

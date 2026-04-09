@@ -126,6 +126,15 @@ export default defineRouter(function (/* { store, ssrContext } */) {
       };
     }
 
+    if (to.name === "/conversation/[postSlugId].onboarding") {
+      return {
+        name: "/conversation/[postSlugId].onboarding/",
+        params: to.params,
+        query: to.query,
+        hash: to.hash,
+      };
+    }
+
     const loggedInTarget = loggedInGuard(to.name);
     if (loggedInTarget === "home") {
       return { name: "/" };

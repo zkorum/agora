@@ -379,6 +379,27 @@
       "when": 1775591094230,
       "tag": "0053_nifty_mercury",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1775687666992,
+      "tag": "0054_chunky_war_machine",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1775689900175,
+      "tag": "0055_happy_rhino",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1776867446981,
+      "tag": "0056_silent_fenris",
+      "breakpoints": true
     }
   ]
 }

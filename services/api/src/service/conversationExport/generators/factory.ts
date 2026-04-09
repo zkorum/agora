@@ -1,42 +1,75 @@
-import type { CsvGenerator } from "./base.js";
-import { CommentsGenerator } from "./comments.js";
+import type { CsvGenerator, ExportAccessLevel } from "./base.js";
+import type { ExportFileType } from "@/shared/types/zod.js";
+import { commentsGenerator } from "./comments.js";
+import { surveyFullAggregatesGenerator } from "./surveyFullAggregates.js";
+import { surveyParticipantResponsesGenerator } from "./surveyParticipantResponses.js";
+import { surveyQuestionOptionsGenerator } from "./surveyQuestionOptions.js";
+import { surveyQuestionsGenerator } from "./surveyQuestions.js";
+import { surveyPublicAggregatesGenerator } from "./surveyPublicAggregates.js";
 
-/**
- * Factory for managing CSV generators.
- * Provides centralized access to all available generators.
- */
-export class ExportGeneratorFactory {
-    private generators: Map<string, CsvGenerator>;
+const exportGenerators: CsvGenerator[] = [
+    commentsGenerator,
+    surveyQuestionsGenerator,
+    surveyQuestionOptionsGenerator,
+    surveyParticipantResponsesGenerator,
+    surveyPublicAggregatesGenerator,
+    surveyFullAggregatesGenerator,
+];
 
-    constructor() {
-        this.generators = new Map([
-            ["comments", new CommentsGenerator()],
-            // Future generators will be added here:
-            // ["votes", new VotesGenerator()],
-            // ["participants", new ParticipantsGenerator()],
-            // ["summary", new SummaryGenerator()],
-            // ["stats", new StatsGenerator()],
-        ]);
+const exportGeneratorByFileType = new Map(
+    exportGenerators.map((generator) => [generator.fileType, generator]),
+);
+
+function isSurveyExportFileType({
+    fileType,
+}: {
+    fileType: ExportFileType;
+}): boolean {
+    return fileType.startsWith("survey_");
+}
+
+export function getExportGenerators({
+    exportAccessLevel,
+    hasSurvey,
+}: {
+    exportAccessLevel: ExportAccessLevel;
+    hasSurvey: boolean;
+}): CsvGenerator[] {
+    return exportGenerators.filter((generator) => {
+        if (
+            isSurveyExportFileType({ fileType: generator.fileType }) &&
+            !hasSurvey
+        ) {
+            return false;
+        }
+
+        if (generator.minimumAccessLevel === "public") {
+            return true;
+        }
+
+        return exportAccessLevel === "owner";
+    });
+}
+
+export function getAvailableExportFileTypes(): string[] {
+    return exportGenerators.map((generator) => generator.fileType);
+}
+
+export function canAccessExportFileType({
+    fileType,
+    exportAccessLevel,
+}: {
+    fileType: ExportFileType;
+    exportAccessLevel: ExportAccessLevel;
+}): boolean {
+    const generator = exportGeneratorByFileType.get(fileType);
+    if (generator === undefined) {
+        return false;
     }
 
-    /**
-     * Get a specific generator by file type
-     */
-    getGenerator(fileType: string): CsvGenerator | undefined {
-        return this.generators.get(fileType);
+    if (generator.minimumAccessLevel === "public") {
+        return true;
     }
 
-    /**
-     * Get all available generators
-     */
-    getAllGenerators(): CsvGenerator[] {
-        return Array.from(this.generators.values());
-    }
-
-    /**
-     * Get all available file types
-     */
-    getAvailableFileTypes(): string[] {
-        return Array.from(this.generators.keys());
-    }
+    return exportAccessLevel === "owner";
 }

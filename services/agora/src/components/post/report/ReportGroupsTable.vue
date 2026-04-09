@@ -30,7 +30,7 @@
             </template>
           </td>
           <td class="col-participants cell-participants">
-            {{ entry.cluster.numUsers }}
+            {{ formatAmount(entry.cluster.numUsers) }}
             ({{ formatPercentage(calculatePercentage(entry.cluster.numUsers, totalParticipantCount)) }})
           </td>
           <td class="col-summary cell-summary">
@@ -42,7 +42,7 @@
             {{ t("noGroup") }}
           </td>
           <td class="col-participants cell-participants">
-            {{ noGroupUsers }}
+            {{ formatAmount(noGroupUsers) }}
             ({{ formatPercentage(calculatePercentage(noGroupUsers, totalParticipantCount)) }})
           </td>
           <td class="col-summary cell-summary cell-no-group-summary">
@@ -58,7 +58,7 @@
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import { calculatePercentage } from "src/shared/util";
-import { formatPercentage } from "src/utils/common";
+import { formatAmount, formatPercentage } from "src/utils/common";
 import {
   formatClusterLabel,
   isClustersImbalanced,

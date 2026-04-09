@@ -43,16 +43,14 @@ export function useBackendPostEditApi() {
   async function updateConversation(
     data: UpdateConversationRequest
   ): Promise<UpdateConversationResponse> {
-    const { url, options } =
-      await DefaultApiAxiosParamCreator().apiV1ConversationUpdatePost(data);
+    const payload = Dto.updateConversationRequest.parse(data);
+    const url = "/api/v1/conversation/update";
+    const options = { method: "POST" };
     const encodedUcan = await buildEncodedUcan(url, options);
 
-    const response = await DefaultApiFactory(
-      undefined,
-      undefined,
-      api
-    ).apiV1ConversationUpdatePost(
-      data,
+    const response = await api.post(
+      url,
+      payload,
       createRawAxiosRequestConfig({ encodedUcan })
     );
 

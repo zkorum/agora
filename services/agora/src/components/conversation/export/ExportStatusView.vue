@@ -161,6 +161,49 @@
         <div
           v-if="
             exportStatusQuery.data.value.status === 'completed' &&
+            exportStatusQuery.data.value.bundle
+          "
+          class="bundle-section"
+        >
+          <div class="file-card file-card--primary">
+            <div class="file-header">
+              <ZKIcon
+                name="lucide:file-archive"
+                size="2rem"
+                color="var(--primary-color)"
+                aria-hidden="true"
+              />
+              <span class="file-name">{{ exportStatusQuery.data.value.bundle.fileName }}</span>
+            </div>
+
+            <dl class="file-details">
+              <div class="file-detail-item">
+                <dt class="detail-label">{{ t("fileSize") }}:</dt>
+                <dd class="detail-value">
+                  {{ formatFileSize(exportStatusQuery.data.value.bundle.fileSize) }}
+                </dd>
+              </div>
+            </dl>
+
+            <div class="file-actions">
+              <PrimeButton
+                :label="
+                  isUrlExpired(exportStatusQuery.data.value.bundle.urlExpiresAt)
+                    ? t('downloadExpired')
+                    : t('download')
+                "
+                icon="pi pi-download"
+                :disabled="isUrlExpired(exportStatusQuery.data.value.bundle.urlExpiresAt)"
+                :aria-label="`${t('download')} ${exportStatusQuery.data.value.bundle.fileName}`"
+                @click="handleDownload(exportStatusQuery.data.value.bundle.downloadUrl)"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-if="
+            exportStatusQuery.data.value.status === 'completed' &&
             exportStatusQuery.data.value.files &&
             exportStatusQuery.data.value.files.length > 0
           "
@@ -467,6 +510,11 @@ function getFailureReasonText(reason: ExportFailureReason): string {
   gap: 1.5rem;
 }
 
+.bundle-section {
+  display: flex;
+  flex-direction: column;
+}
+
 .section-title {
   margin: 0;
   font-size: 1.25rem;
@@ -498,6 +546,11 @@ function getFailureReasonText(reason: ExportFailureReason): string {
   &:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
+}
+
+.file-card--primary {
+  border-color: rgba($primary, 0.28);
+  background-color: rgba($primary, 0.04);
 }
 
 .file-header {

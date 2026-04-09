@@ -1,10 +1,11 @@
 <template>
   <div class="report-section">
     <template v-if="!hideTitle">
-      <h2 class="section-title">
-        <span :style="{ color: titleColor }">{{ title }}</span>
-      </h2>
-      <p v-if="subtitle" class="section-subtitle">{{ subtitle }}</p>
+      <ReportSectionHeader
+        :title="title"
+        :subtitle="subtitle"
+        :title-color="titleColor"
+      />
     </template>
 
     <slot name="after-subtitle" />
@@ -18,27 +19,24 @@
         <tr>
           <th class="col-rank">#</th>
           <th class="col-statement">{{ t("statement") }}</th>
-          <th class="col-vote">{{ t("overall") }} ({{ totalParticipants }})</th>
-          <th
-            v-for="entry in clusterEntries"
-            :key="entry.key"
-            class="col-vote"
-          >
+          <th class="col-vote">{{ t("overall") }} ({{ formatAmount(totalParticipants) }})</th>
+          <th v-for="entry in clusterEntries" :key="entry.key" class="col-vote">
             <template v-if="useLetterCodes">
-              {{ formatClusterLabel(entry.key, false) }} ({{ entry.cluster.numUsers }})
+              {{ formatClusterLabel(entry.key, false) }} ({{
+                formatAmount(entry.cluster.numUsers)
+              }})
             </template>
             <template v-else>
-              {{ entry.cluster.aiLabel || formatClusterLabel(entry.key, false) }}
-              ({{ entry.cluster.numUsers }})
+              {{
+                entry.cluster.aiLabel || formatClusterLabel(entry.key, false)
+              }}
+              ({{ formatAmount(entry.cluster.numUsers) }})
             </template>
           </th>
         </tr>
       </thead>
       <tbody>
-        <tr
-          v-for="(item, index) in items"
-          :key="item.opinionSlugId"
-        >
+        <tr v-for="(item, index) in items" :key="item.opinionSlugId">
           <td class="col-rank cell-rank">{{ startRank + index + 1 }}</td>
           <td class="col-statement cell-statement">
             <div class="statement-text">
@@ -57,17 +55,21 @@
               :num-users="item.numParticipants"
             />
           </td>
-          <td
-            v-for="entry in clusterEntries"
-            :key="entry.key"
-            class="col-vote"
-          >
+          <td v-for="entry in clusterEntries" :key="entry.key" class="col-vote">
             <ReportVoteCell
               v-if="getClusterStats({ item, clusterKey: entry.key })"
-              :num-agrees="getClusterStats({ item, clusterKey: entry.key })!.numAgrees"
-              :num-disagrees="getClusterStats({ item, clusterKey: entry.key })!.numDisagrees"
-              :num-passes="getClusterStats({ item, clusterKey: entry.key })!.numPasses"
-              :num-users="getClusterStats({ item, clusterKey: entry.key })!.numUsers"
+              :num-agrees="
+                getClusterStats({ item, clusterKey: entry.key })!.numAgrees
+              "
+              :num-disagrees="
+                getClusterStats({ item, clusterKey: entry.key })!.numDisagrees
+              "
+              :num-passes="
+                getClusterStats({ item, clusterKey: entry.key })!.numPasses
+              "
+              :num-users="
+                getClusterStats({ item, clusterKey: entry.key })!.numUsers
+              "
             />
             <ReportVoteCell
               v-else
@@ -92,6 +94,7 @@ import type {
   PolisClusters,
   PolisKey,
 } from "src/shared/types/zod";
+import { formatAmount } from "src/utils/common";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { computed } from "vue";
 
@@ -99,6 +102,7 @@ import {
   type ReportOpinionListTranslations,
   reportOpinionListTranslations,
 } from "./ReportOpinionList.i18n";
+import ReportSectionHeader from "./ReportSectionHeader.vue";
 import ReportVoteCell from "./ReportVoteCell.vue";
 
 const props = withDefaults(
@@ -118,11 +122,11 @@ const props = withDefaults(
     startRank: 0,
     hideTitle: false,
     emptyMessage: undefined,
-  },
+  }
 );
 
 const { t } = useComponentI18n<ReportOpinionListTranslations>(
-  reportOpinionListTranslations,
+  reportOpinionListTranslations
 );
 
 type ClusterValue = NonNullable<PolisClusters[PolisKey]>;
@@ -157,20 +161,6 @@ function getClusterStats({
   break-inside: avoid;
 }
 
-.section-title {
-  font-size: 1rem;
-  font-weight: var(--font-weight-medium);
-  color: #333238;
-  margin: 0 0 0.25rem 0;
-}
-
-.section-subtitle {
-  font-size: 0.85rem;
-  color: #6d6a74;
-  margin: 0 0 1rem 0;
-  font-weight: normal;
-}
-
 .empty-state {
   font-size: 0.8rem;
   color: #9e9ba5;
@@ -200,7 +190,6 @@ function getClusterStats({
     border-bottom: 1px solid #e9e9f1;
     word-break: break-word;
   }
-
 }
 
 .col-rank {

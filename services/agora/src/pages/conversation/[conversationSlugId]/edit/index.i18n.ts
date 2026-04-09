@@ -26,6 +26,8 @@ export interface EditConversationTranslations {
   removePollWarningMessage: string;
   pollChangeWarningConfirm: string;
   pollChangeWarningCancel: string;
+  createSurveyButton: string;
+  editSurveyButton: string;
 }
 
 export const editConversationTranslations: Record<
@@ -68,6 +70,8 @@ export const editConversationTranslations: Record<
       "Removing the poll will delete all existing votes. Are you sure you want to continue?",
     pollChangeWarningConfirm: "Yes, Continue",
     pollChangeWarningCancel: "Cancel",
+    createSurveyButton: "Create survey",
+    editSurveyButton: "Edit survey",
   },
   fr: {
     saveButton: "Enregistrer",
@@ -107,6 +111,8 @@ export const editConversationTranslations: Record<
       "Supprimer le sondage supprimera tous les votes existants. Êtes-vous sûr de vouloir continuer ?",
     pollChangeWarningConfirm: "Oui, Continuer",
     pollChangeWarningCancel: "Annuler",
+    createSurveyButton: "Créer un questionnaire",
+    editSurveyButton: "Modifier le questionnaire",
   },
   es: {
     saveButton: "Guardar",
@@ -145,6 +151,8 @@ export const editConversationTranslations: Record<
       "Eliminar la encuesta borrará todos los votos existentes. ¿Estás seguro de que quieres continuar?",
     pollChangeWarningConfirm: "Sí, Continuar",
     pollChangeWarningCancel: "Cancelar",
+    createSurveyButton: "Crear encuesta",
+    editSurveyButton: "Editar encuesta",
   },
   fa: {
     saveButton: "ذخیره",
@@ -180,6 +188,8 @@ export const editConversationTranslations: Record<
       "حذف نظرسنجی تمام آراء موجود را حذف می‌کند. آیا مطمئن هستید که می‌خواهید ادامه دهید؟",
     pollChangeWarningConfirm: "بله، ادامه بده",
     pollChangeWarningCancel: "لغو",
+    createSurveyButton: "ایجاد نظرسنجی",
+    editSurveyButton: "ویرایش نظرسنجی",
   },
   he: {
     saveButton: "שמור",
@@ -215,6 +225,8 @@ export const editConversationTranslations: Record<
       "הסרת הסקר תמחק את כל ההצבעות הקיימות. האם ברצונך להמשיך?",
     pollChangeWarningConfirm: "כן, המשך",
     pollChangeWarningCancel: "ביטול",
+    createSurveyButton: "יצירת סקר",
+    editSurveyButton: "עריכת סקר",
   },
   "zh-Hans": {
     saveButton: "保存",
@@ -243,6 +255,8 @@ export const editConversationTranslations: Record<
     removePollWarningMessage: "删除投票将删除所有现有投票。您确定要继续吗？",
     pollChangeWarningConfirm: "是的，继续",
     pollChangeWarningCancel: "取消",
+    createSurveyButton: "创建问卷",
+    editSurveyButton: "编辑问卷",
   },
   "zh-Hant": {
     saveButton: "儲存",
@@ -271,6 +285,8 @@ export const editConversationTranslations: Record<
     removePollWarningMessage: "刪除投票將刪除所有現有投票。您確定要繼續嗎？",
     pollChangeWarningConfirm: "是的，繼續",
     pollChangeWarningCancel: "取消",
+    createSurveyButton: "建立問卷",
+    editSurveyButton: "編輯問卷",
   },
   ja: {
     saveButton: "保存",
@@ -304,6 +320,8 @@ export const editConversationTranslations: Record<
       "投票を削除すると、既存の投票がすべて削除されます。続行してもよろしいですか？",
     pollChangeWarningConfirm: "はい、続行します",
     pollChangeWarningCancel: "キャンセル",
+    createSurveyButton: "アンケートを作成",
+    editSurveyButton: "アンケートを編集",
   },
   ar: {
     saveButton: "حفظ",
@@ -339,6 +357,8 @@ export const editConversationTranslations: Record<
       "ستؤدي إزالة الاستطلاع إلى حذف جميع الأصوات الموجودة. هل أنت متأكد أنك تريد المتابعة؟",
     pollChangeWarningConfirm: "نعم، تابع",
     pollChangeWarningCancel: "إلغاء",
+    createSurveyButton: "إنشاء استبيان",
+    editSurveyButton: "تعديل الاستبيان",
   },
   ky: {
     saveButton: "Сактоо",
@@ -374,6 +394,8 @@ export const editConversationTranslations: Record<
       "Сурамжылоону жок кылуу бардык учурдагы добуштарды жок кылат. Улантасызбы?",
     pollChangeWarningConfirm: "Ооба, улантуу",
     pollChangeWarningCancel: "Жокко чыгаруу",
+    createSurveyButton: "Сурамжылоо түзүү",
+    editSurveyButton: "Сурамжылоону түзөтүү",
   },
   ru: {
     saveButton: "Сохранить",
@@ -412,5 +434,7 @@ export const editConversationTranslations: Record<
       "Удаление опроса приведёт к удалению всех существующих голосов. Вы уверены, что хотите продолжить?",
     pollChangeWarningConfirm: "Да, продолжить",
     pollChangeWarningCancel: "Отмена",
+    createSurveyButton: "Создать опрос",
+    editSurveyButton: "Редактировать опрос",
   },
 };

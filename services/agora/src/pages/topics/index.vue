@@ -33,7 +33,7 @@
       </div>
     </div>
 
-    <PreLoginIntentionDialog
+    <PreParticipationIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="() => {}"
       active-intention="none"
@@ -44,7 +44,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import Chip from "primevue/chip";
-import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
 import FollowButton from "src/components/features/topics/FollowButton.vue";
 import { HomeMenuBar } from "src/components/navigation/header/variants";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";

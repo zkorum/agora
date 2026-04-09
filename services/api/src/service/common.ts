@@ -18,6 +18,7 @@ import type {
     PollOptionWithResult,
     ExtendedConversationPerSlugId,
     ExtendedConversation,
+    ConversationType,
     FeedSortAlgorithm,
     PolisClustersMetadata,
     ClusterMetadata,
@@ -66,6 +67,31 @@ export function useCommonUser() {
 }
 
 export function useCommonPost() {
+    interface IsConversationIdLockedProps {
+        db: PostgresJsDatabase;
+        conversationId: number;
+    }
+
+    async function isConversationIdLocked({
+        db,
+        conversationId,
+    }: IsConversationIdLockedProps): Promise<boolean> {
+        const moderationPostsTableResponse = await db
+            .select({
+                moderationAction: conversationModerationTable.moderationAction,
+            })
+            .from(conversationModerationTable)
+            .where(
+                and(
+                    eq(conversationModerationTable.conversationId, conversationId),
+                    eq(conversationModerationTable.moderationAction, "lock"),
+                ),
+            )
+            .limit(1);
+
+        return moderationPostsTableResponse.length > 0;
+    }
+
     interface IsPostSlugIdLockedProps {
         db: PostgresJsDatabase;
         postSlugId: string;
@@ -74,32 +100,15 @@ export function useCommonPost() {
         db,
         postSlugId,
     }: IsPostSlugIdLockedProps) {
-        const { getPostMetadataFromSlugId } = useCommonPost();
         const postDetails = await getPostMetadataFromSlugId({
-            db: db,
+            db,
             conversationSlugId: postSlugId,
         });
 
-        const moderationPostsTableResponse = await db
-            .select({
-                moderationAction: conversationModerationTable.moderationAction,
-            })
-            .from(conversationModerationTable)
-            .where(
-                and(
-                    eq(
-                        conversationModerationTable.conversationId,
-                        postDetails.id,
-                    ),
-                    eq(conversationModerationTable.moderationAction, "lock"),
-                ),
-            );
-
-        if (moderationPostsTableResponse.length == 1) {
-            return true;
-        } else {
-            return false;
-        }
+        return await isConversationIdLocked({
+            db,
+            conversationId: postDetails.id,
+        });
     }
 
     interface FetchPostItemsProps {
@@ -981,6 +990,7 @@ export function useCommonPost() {
         id: number;
         contentId: number | null;
         authorId: string;
+        conversationType: ConversationType;
         participantCount: number;
         opinionCount: number;
         voteCount: number;
@@ -1020,6 +1030,7 @@ export function useCommonPost() {
                 hiddenOpinionCount: conversationTable.hiddenOpinionCount,
                 isIndexed: conversationTable.isIndexed,
                 participationMode: conversationTable.participationMode,
+                conversationType: conversationTable.conversationType,
                 isClosed: conversationTable.isClosed,
                 isEdited: conversationTable.isEdited,
                 requiresEventTicket: conversationTable.requiresEventTicket,
@@ -1043,6 +1054,7 @@ export function useCommonPost() {
             hiddenOpinionCount: postTableResponse[0].hiddenOpinionCount,
             isIndexed: postTableResponse[0].isIndexed,
             participationMode: postTableResponse[0].participationMode,
+            conversationType: postTableResponse[0].conversationType,
             isClosed: postTableResponse[0].isClosed,
             requiresEventTicket: postTableResponse[0].requiresEventTicket,
         };
@@ -1051,6 +1063,7 @@ export function useCommonPost() {
     return {
         fetchPostItems,
         getPostMetadataFromSlugId,
+        isConversationIdLocked,
         isPostSlugIdLocked,
         createCompactHtmlBody,
         getPolisMetadata,

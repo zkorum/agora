@@ -5,6 +5,7 @@ export interface ReportPageTranslations {
   downloadImages: string;
   downloadPdf: string;
   generating: string;
+  surveyData: string;
   loadingError: string;
   narrowScreenTitle: string;
   narrowScreenMessage: string;
@@ -20,6 +21,7 @@ export const reportPageTranslations: Record<
     downloadImages: "Download images (ZIP)",
     downloadPdf: "Download PDF",
     generating: "Generating...",
+    surveyData: "Survey data",
     loadingError: "Failed to load conversation data",
     narrowScreenTitle: "Larger screen required",
     narrowScreenMessage:
@@ -31,6 +33,7 @@ export const reportPageTranslations: Record<
     downloadImages: "تحميل الصور (ZIP)",
     downloadPdf: "تحميل PDF",
     generating: "جاري الإنشاء...",
+    surveyData: "بيانات الاستبيان",
     loadingError: "فشل في تحميل بيانات المحادثة",
     narrowScreenTitle: "يلزم شاشة أكبر",
     narrowScreenMessage:
@@ -42,6 +45,7 @@ export const reportPageTranslations: Record<
     downloadImages: "Descargar imágenes (ZIP)",
     downloadPdf: "Descargar PDF",
     generating: "Generando...",
+    surveyData: "Datos de encuesta",
     loadingError: "Error al cargar los datos de la conversación",
     narrowScreenTitle: "Se requiere una pantalla más grande",
     narrowScreenMessage:
@@ -53,6 +57,7 @@ export const reportPageTranslations: Record<
     downloadImages: "دانلود تصاویر (ZIP)",
     downloadPdf: "دانلود PDF",
     generating: "در حال تولید...",
+    surveyData: "داده‌های نظرسنجی",
     loadingError: "بارگذاری داده‌های گفتگو ناموفق بود",
     narrowScreenTitle: "صفحه بزرگ‌تر لازم است",
     narrowScreenMessage:
@@ -64,6 +69,7 @@ export const reportPageTranslations: Record<
     downloadImages: "הורדת תמונות (ZIP)",
     downloadPdf: "הורדת PDF",
     generating: "...מייצר",
+    surveyData: "נתוני סקר",
     loadingError: "טעינת נתוני השיחה נכשלה",
     narrowScreenTitle: "נדרש מסך גדול יותר",
     narrowScreenMessage:
@@ -75,6 +81,7 @@ export const reportPageTranslations: Record<
     downloadImages: "Télécharger les images (ZIP)",
     downloadPdf: "Télécharger le PDF",
     generating: "Génération en cours...",
+    surveyData: "Données du questionnaire",
     loadingError: "Échec du chargement des données de la conversation",
     narrowScreenTitle: "Écran plus grand requis",
     narrowScreenMessage:
@@ -86,6 +93,7 @@ export const reportPageTranslations: Record<
     downloadImages: "下载图片 (ZIP)",
     downloadPdf: "下载 PDF",
     generating: "正在生成...",
+    surveyData: "问卷数据",
     loadingError: "加载对话数据失败",
     narrowScreenTitle: "需要更大的屏幕",
     narrowScreenMessage: "此报告适用于大屏幕。请在桌面设备或平板电脑上打开。",
@@ -96,6 +104,7 @@ export const reportPageTranslations: Record<
     downloadImages: "下載圖片 (ZIP)",
     downloadPdf: "下載 PDF",
     generating: "正在生成...",
+    surveyData: "問卷資料",
     loadingError: "載入對話資料失敗",
     narrowScreenTitle: "需要更大的螢幕",
     narrowScreenMessage: "此報告適用於大螢幕。請在桌面裝置或平板電腦上開啟。",
@@ -106,6 +115,7 @@ export const reportPageTranslations: Record<
     downloadImages: "画像をダウンロード (ZIP)",
     downloadPdf: "PDFをダウンロード",
     generating: "生成中...",
+    surveyData: "アンケートデータ",
     loadingError: "会話データの読み込みに失敗しました",
     narrowScreenTitle: "大きな画面が必要です",
     narrowScreenMessage:
@@ -117,6 +127,7 @@ export const reportPageTranslations: Record<
     downloadImages: "Сүрөттөрдү жүктөп алуу (ZIP)",
     downloadPdf: "PDF жүктөп алуу",
     generating: "Түзүлүүдө...",
+    surveyData: "Сурамжылоо маалыматтары",
     loadingError: "Талкуу маалыматтарын жүктөө ишке ашкан жок",
     narrowScreenTitle: "Чоңураак экран талап кылынат",
     narrowScreenMessage:
@@ -128,6 +139,7 @@ export const reportPageTranslations: Record<
     downloadImages: "Скачать изображения (ZIP)",
     downloadPdf: "Скачать PDF",
     generating: "Генерация...",
+    surveyData: "Данные опроса",
     loadingError: "Не удалось загрузить данные обсуждения",
     narrowScreenTitle: "Требуется экран большего размера",
     narrowScreenMessage:

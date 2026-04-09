@@ -4,61 +4,62 @@
   </Teleport>
 
   <div class="container">
-      <div class="title">
-        <div>{{ t("moderateConversation") }}</div>
-      </div>
+    <div class="title">
+      <div>{{ t("moderateConversation") }}</div>
+    </div>
 
-      <div class="postPreview">
-        <b>
-          {{ conversationItem.payload.title }}
-        </b>
+    <div class="postPreview">
+      <b>
+        {{ conversationItem.payload.title }}
+      </b>
 
-        <ZKHtmlContent
-          v-if="conversationItem.payload.body"
-          :html-body="conversationItem.payload.body"
-          :compact-mode="false"
-          :enable-links="false"
-        />
-      </div>
-
-      <q-select
-        v-model="moderationAction"
-        :options="actionMapping"
-        :label="t('action')"
-        emit-value
-        map-options
-      />
-
-      <q-select
-        v-model="moderationReason"
-        :options="reasonMapping"
-        :label="t('reason')"
-        emit-value
-        map-options
-      />
-
-      <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
-      <q-input
-        v-model="moderationExplanation"
-        :label="t('explanationOptional')"
-      />
-
-      <ZKGradientButton
-        :label="hasExistingDecision ? t('modify') : t('moderate')"
-        @click="clickedSubmit()"
-      />
-
-      <ZKGradientButton
-        v-if="hasExistingDecision"
-        :label="t('withdraw')"
-        gradient-background="#E7E7FF"
-        label-color="#6b4eff"
-        @click="clickedWithdraw()"
+      <ZKHtmlContent
+        v-if="conversationItem.payload.body"
+        :html-body="conversationItem.payload.body"
+        :compact-mode="false"
+        :enable-links="false"
       />
     </div>
+
+    <q-select
+      v-model="moderationAction"
+      :options="actionMapping"
+      :label="t('action')"
+      emit-value
+      map-options
+    />
+
+    <q-select
+      v-model="moderationReason"
+      :options="reasonMapping"
+      :label="t('reason')"
+      emit-value
+      map-options
+    />
+
+    <!-- @vue-expect-error Quasar q-input types modelValue as string | number | null -->
+    <q-input
+      v-model="moderationExplanation"
+      :label="t('explanationOptional')"
+    />
+
+    <ZKGradientButton
+      :label="hasExistingDecision ? t('modify') : t('moderate')"
+      @click="clickedSubmit()"
+    />
+
+    <ZKGradientButton
+      v-if="hasExistingDecision"
+      :label="t('withdraw')"
+      gradient-background="#E7E7FF"
+      label-color="#6b4eff"
+      @click="clickedWithdraw()"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
+import { useQueryClient } from "@tanstack/vue-query";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
@@ -66,12 +67,14 @@ import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   ConversationModerationAction,
+  ConversationModerationProperties,
   ExtendedConversation,
   ModerationReason,
 } from "src/shared/types/zod";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useBackendModerateApi } from "src/utils/api/moderation";
 import { useBackendPostApi } from "src/utils/api/post/post";
+import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
 import {
   moderationActionPostsMapping,
@@ -96,6 +99,7 @@ const {
 
 const route = useRoute();
 const router = useRouter();
+const queryClient = useQueryClient();
 
 const { emptyPost } = useHomeFeedStore();
 const { invalidateFeed } = useInvalidateFeedQuery();
@@ -166,11 +170,72 @@ async function initializeData() {
   await loadRemoteConversationData();
 }
 
+function updateConversationModerationCache({
+  moderation,
+}: {
+  moderation: ConversationModerationProperties;
+}): void {
+  if (!postSlugId) {
+    return;
+  }
+
+  const fallbackConversation =
+    conversationItem.value.metadata.conversationSlugId === postSlugId
+      ? conversationItem.value
+      : undefined;
+
+  updateConversationQueryCache({
+    queryClient,
+    conversationSlugId: postSlugId,
+    updateConversation: (conversation) => ({
+      ...conversation,
+      metadata: {
+        ...conversation.metadata,
+        moderation,
+      },
+    }),
+    fallbackConversation,
+  });
+
+  if (fallbackConversation) {
+    conversationItem.value = {
+      ...fallbackConversation,
+      metadata: {
+        ...fallbackConversation.metadata,
+        moderation,
+      },
+    };
+  }
+}
+
+function getModeratedConversationState(): ConversationModerationProperties {
+  const now = new Date();
+  const existingModeration = conversationItem.value.metadata.moderation;
+
+  return {
+    status: "moderated",
+    action: moderationAction.value,
+    reason: moderationReason.value,
+    explanation: moderationExplanation.value,
+    createdAt:
+      existingModeration.status === "moderated"
+        ? existingModeration.createdAt
+        : now,
+    updatedAt: now,
+  };
+}
+
 async function clickedWithdraw() {
   if (postSlugId) {
     const isSuccessful = await cancelModerationPostReport(postSlugId);
     if (isSuccessful) {
-      await initializeData();
+      hasExistingDecision.value = false;
+      moderationAction.value = DEFAULT_MODERATION_ACTION;
+      moderationExplanation.value = "";
+      moderationReason.value = DEFAULT_MODERATION_REASON;
+      updateConversationModerationCache({
+        moderation: { status: "unmoderated" },
+      });
       invalidateFeed();
       await redirectToPost();
     }
@@ -189,6 +254,10 @@ async function clickedSubmit() {
     );
 
     if (isSuccessful) {
+      hasExistingDecision.value = true;
+      updateConversationModerationCache({
+        moderation: getModeratedConversationState(),
+      });
       invalidateFeed();
       await redirectToPost();
     }

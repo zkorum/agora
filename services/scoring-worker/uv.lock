@@ -650,6 +650,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pandas-stubs"
+version = "3.0.0.260204"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/27/1d/297ff2c7ea50a768a2247621d6451abb2a07c0e9be7ca6d36ebe371658e5/pandas_stubs-3.0.0.260204.tar.gz", hash = "sha256:bf9294b76352effcffa9cb85edf0bed1339a7ec0c30b8e1ac3d66b4228f1fbc3", size = 109383 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7c/2f/f91e4eee21585ff548e83358332d5632ee49f6b2dcd96cb5dca4e0468951/pandas_stubs-3.0.0.260204-py3-none-any.whl", hash = "sha256:5ab9e4d55a6e2752e9720828564af40d48c4f709e6a2c69b743014a6fcb6c241", size = 168540 },
+]
+
+[[package]]
 name = "pluggy"
 version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -919,6 +931,7 @@ dependencies = [
 [package.optional-dependencies]
 dev = [
     { name = "basedpyright" },
+    { name = "pandas-stubs" },
     { name = "pytest" },
     { name = "ruff" },
     { name = "testcontainers" },
@@ -931,6 +944,7 @@ gpu = [
 requires-dist = [
     { name = "basedpyright", marker = "extra == 'dev'", specifier = ">=1.29" },
     { name = "pandas", specifier = ">=2.3" },
+    { name = "pandas-stubs", marker = "extra == 'dev'", specifier = ">=2.3" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
     { name = "pydantic", specifier = ">=2.12" },
     { name = "pydantic-settings", specifier = ">=2.0" },
@@ -938,7 +952,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9" },
     { name = "solidago", specifier = "==0.5.0" },
     { name = "sqlalchemy", extras = ["postgresql-psycopg"], specifier = ">=2.0" },
-    { name = "testcontainers", extras = ["postgres", "valkey"], marker = "extra == 'dev'", specifier = ">=4.0" },
+    { name = "testcontainers", extras = ["postgres"], marker = "extra == 'dev'", specifier = ">=4.0" },
     { name = "torch", marker = "extra == 'gpu'", specifier = ">=2.2,<3" },
     { name = "valkey", specifier = ">=6.0" },
 ]

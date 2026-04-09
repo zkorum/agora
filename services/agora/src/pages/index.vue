@@ -42,15 +42,17 @@
       </WidthWrapper>
     </Teleport>
 
-    <div class="bannerWrapper">
-      <WidthWrapper :enable="true">
-        <FeaturedConversationBanner />
-      </WidthWrapper>
-    </div>
+    <q-pull-to-refresh @refresh="pullDownTriggered">
+      <div class="bannerWrapper">
+        <WidthWrapper :enable="true">
+          <FeaturedConversationBanner />
+        </WidthWrapper>
+      </div>
 
-    <div class="container">
-      <CompactPostList />
-    </div>
+      <div class="container">
+        <CompactPostList ref="compactPostListRef" />
+      </div>
+    </q-pull-to-refresh>
 
     <NewPostButtonWrapper />
   </div>
@@ -72,10 +74,15 @@ import type { HomeFeedSortOption } from "src/stores/homeFeed";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useNavigationStore } from "src/stores/navigation";
 import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
+import { ref } from "vue";
 
 import { type HomeTranslations, homeTranslations } from "./index.i18n";
 
 defineOptions({ name: "HomePage" });
+
+interface CompactPostListExposed {
+  refreshFeed: (done: () => void) => void;
+}
 
 const { isActive } = usePageLayout({});
 
@@ -88,10 +95,34 @@ const { currentHomeFeedTab, hasPendingNewTab, hasPendingFollowingTab } =
 const { clearFeedDisplay } = useHomeFeedStore();
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const { invalidateFeedTab } = useInvalidateFeedQuery();
+const compactPostListRef = ref<CompactPostListExposed | null>(null);
+
+function pullDownTriggered(done: () => void): void {
+  if (compactPostListRef.value) {
+    compactPostListRef.value.refreshFeed(done);
+    return;
+  }
+
+  done();
+}
 
 function selectedTab(tab: HomeFeedSortOption) {
-  const hadPending = tab === "new" ? hasPendingNewTab.value : hasPendingFollowingTab.value;
   window.scrollTo({ top: 0, behavior: "smooth" });
+
+  const hadPending = tab === "new" ? hasPendingNewTab.value : hasPendingFollowingTab.value;
+
+  if (currentHomeFeedTab.value === tab) {
+    if (hadPending) {
+      if (tab === "new") {
+        hasPendingNewTab.value = false;
+      } else {
+        hasPendingFollowingTab.value = false;
+      }
+      invalidateFeedTab(tab);
+    }
+    return;
+  }
+
   clearFeedDisplay();
   currentHomeFeedTab.value = tab;
   if (tab === "new") {

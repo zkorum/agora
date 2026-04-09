@@ -7,6 +7,8 @@ export const MAX_LENGTH_BODY_HTML = 3000; // Reserve extra space for HTML tags
 export const MAX_LENGTH_OPINION = 280;
 export const MAX_LENGTH_OPINION_HTML = 840; // Reserve extra space for HTML tags
 export const MAX_LENGTH_OPINION_HTML_OUTPUT = 3000; // Old value for database retro-compatibility of existing data
+export const MAX_LENGTH_SURVEY_QUESTION = 500;
+export const MAX_LENGTH_SURVEY_OPTION = 200;
 export const MAX_LENGTH_NAME_CREATOR = 65;
 export const MAX_LENGTH_USERNAME = 20;
 export const MIN_LENGTH_USERNAME = 2;
@@ -23,6 +25,10 @@ export function toUnionUndefined<T>(value: T | null): T | undefined {
 
 interface ValidateHtmlStringCharacterCountReturn {
     isValid: boolean;
+    characterCount: number;
+}
+
+interface CountHtmlPlainTextCharactersReturn {
     characterCount: number;
 }
 
@@ -44,16 +50,36 @@ export function htmlToCountedText(htmlString: string): string {
     return plainText.replace(/\n$/, "");
 }
 
+export function countHtmlPlainTextCharacters(
+    htmlString: string,
+): CountHtmlPlainTextCharactersReturn {
+    return {
+        characterCount: htmlToCountedText(htmlString).length,
+    };
+}
+
+export function validateHtmlStringCharacterCountWithLimit({
+    htmlString,
+    maxCharacterCount,
+}: {
+    htmlString: string;
+    maxCharacterCount: number;
+}): ValidateHtmlStringCharacterCountReturn {
+    const { characterCount } = countHtmlPlainTextCharacters(htmlString);
+    return {
+        isValid: characterCount <= maxCharacterCount,
+        characterCount,
+    };
+}
+
 export function validateHtmlStringCharacterCount(
     htmlString: string,
     mode: "conversation" | "opinion",
 ): ValidateHtmlStringCharacterCountReturn {
-    const rawTextWithoutTags = htmlToCountedText(htmlString);
     const characterLimit =
         mode == "conversation" ? MAX_LENGTH_BODY : MAX_LENGTH_OPINION;
-    if (rawTextWithoutTags.length <= characterLimit) {
-        return { isValid: true, characterCount: rawTextWithoutTags.length };
-    } else {
-        return { isValid: false, characterCount: rawTextWithoutTags.length };
-    }
+    return validateHtmlStringCharacterCountWithLimit({
+        htmlString,
+        maxCharacterCount: characterLimit,
+    });
 }

@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { UpdateConversationRequest } from "src/shared/types/dto";
-import type { ExtendedConversation } from "src/shared/types/zod";
 import { useBackendPostApi } from "src/utils/api/post/post";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import {
   type ConversationMutationsTranslations,
   conversationMutationsTranslations,
 } from "src/utils/api/post/useConversationMutations.i18n";
+import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { useNotify } from "src/utils/ui/notify";
 
 export function useCloseConversationMutation() {
@@ -35,20 +35,17 @@ export function useCloseConversationMutation() {
         queryKey: ["conversation", conversationSlugId],
       });
 
-      // Optimistically update all conversation cache entries
-      queryClient.setQueriesData<ExtendedConversation>(
-        { queryKey: ["conversation", conversationSlugId] },
-        (oldData) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            metadata: {
-              ...oldData.metadata,
-              isClosed: true,
-            },
-          };
-        }
-      );
+      updateConversationQueryCache({
+        queryClient,
+        conversationSlugId,
+        updateConversation: (oldData) => ({
+          ...oldData,
+          metadata: {
+            ...oldData.metadata,
+            isClosed: true,
+          },
+        }),
+      });
 
       return { previousConversations };
     },
@@ -115,20 +112,17 @@ export function useOpenConversationMutation() {
         queryKey: ["conversation", conversationSlugId],
       });
 
-      // Optimistically update all conversation cache entries
-      queryClient.setQueriesData<ExtendedConversation>(
-        { queryKey: ["conversation", conversationSlugId] },
-        (oldData) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            metadata: {
-              ...oldData.metadata,
-              isClosed: false,
-            },
-          };
-        }
-      );
+      updateConversationQueryCache({
+        queryClient,
+        conversationSlugId,
+        updateConversation: (oldData) => ({
+          ...oldData,
+          metadata: {
+            ...oldData.metadata,
+            isClosed: false,
+          },
+        }),
+      });
 
       return { previousConversations };
     },
@@ -186,26 +180,24 @@ export function useUpdateConversationMutation() {
         queryKey: ["conversation", variables.conversationSlugId],
       });
 
-      queryClient.setQueriesData<ExtendedConversation>(
-        { queryKey: ["conversation", variables.conversationSlugId] },
-        (oldData) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            metadata: {
-              ...oldData.metadata,
-              isIndexed: variables.isIndexed,
-              participationMode: variables.participationMode,
-              requiresEventTicket: variables.requiresEventTicket,
-            },
-            payload: {
-              ...oldData.payload,
-              title: variables.conversationTitle,
-              body: variables.conversationBody,
-            },
-          };
-        }
-      );
+      updateConversationQueryCache({
+        queryClient,
+        conversationSlugId: variables.conversationSlugId,
+        updateConversation: (oldData) => ({
+          ...oldData,
+          metadata: {
+            ...oldData.metadata,
+            isIndexed: variables.isIndexed,
+            participationMode: variables.participationMode,
+            requiresEventTicket: variables.requiresEventTicket,
+          },
+          payload: {
+            ...oldData.payload,
+            title: variables.conversationTitle,
+            body: variables.conversationBody,
+          },
+        }),
+      });
 
       return { previousConversations };
     },

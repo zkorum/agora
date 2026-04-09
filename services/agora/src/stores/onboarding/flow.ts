@@ -7,8 +7,8 @@ export const onboardingFlowStore = defineStore("onboardingFlow", () => {
   // When non-null, the user is being routed through a streamlined credential
   // upgrade flow from a gated conversation (skips username + preferences).
   // "email" = needs email verification, "strong" = needs phone or Rarimo,
-  // "any" = needs any credential (phone, Rarimo, or email).
-  const credentialUpgradeTarget = ref<"email" | "strong" | "any" | null>(null);
+  // "hard" = needs a full account credential, not a light ticket-only flow.
+  const credentialUpgradeTarget = ref<"email" | "strong" | "hard" | null>(null);
 
   return { onboardingMode, credentialUpgradeTarget };
 });

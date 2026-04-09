@@ -46,6 +46,13 @@ class MaxdiffLifecycleStatus(StrEnum):
     canceled = "canceled"
 
 
+class SurveyQuestionType(StrEnum):
+    mono_choice = "mono_choice"
+    multi_choice = "multi_choice"
+    select = "select"
+    free_text = "free_text"
+
+
 class Conversation(Base):
     __tablename__ = "conversation"
 
@@ -176,6 +183,103 @@ class RankingScore(Base):
     aggregation_config: Mapped[str | None] = mapped_column(String(200), nullable=True)
     computed_at: Mapped[datetime] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class SurveyAnswerOption(Base):
+    __tablename__ = "survey_answer_option"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    survey_answer_id: Mapped[int] = mapped_column(Integer)
+    survey_question_option_id: Mapped[int] = mapped_column(Integer)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class SurveyAnswer(Base):
+    __tablename__ = "survey_answer"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    survey_response_id: Mapped[int] = mapped_column(Integer)
+    survey_question_id: Mapped[int] = mapped_column(Integer)
+    answered_question_semantic_version: Mapped[int] = mapped_column(Integer)
+    text_value_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class SurveyConfig(Base):
+    __tablename__ = "survey_config"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    current_revision: Mapped[int] = mapped_column(Integer, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class SurveyQuestionContent(Base):
+    __tablename__ = "survey_question_content"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    survey_question_id: Mapped[int] = mapped_column(Integer)
+    question_text: Mapped[str] = mapped_column(String(500))
+    constraints: Mapped[Any] = mapped_column(JSON)
+    source_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class SurveyQuestionOptionContent(Base):
+    __tablename__ = "survey_question_option_content"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    survey_question_option_id: Mapped[int] = mapped_column(Integer)
+    option_text: Mapped[str] = mapped_column(String(200))
+    source_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
+    source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class SurveyQuestionOption(Base):
+    __tablename__ = "survey_question_option"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug_id: Mapped[str] = mapped_column(String(8))
+    survey_question_id: Mapped[int] = mapped_column(Integer)
+    current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    display_order: Mapped[Any] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class SurveyQuestion(Base):
+    __tablename__ = "survey_question"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug_id: Mapped[str] = mapped_column(String(8))
+    survey_config_id: Mapped[int] = mapped_column(Integer)
+    question_type: Mapped[SurveyQuestionType] = mapped_column(
+        SaEnum(SurveyQuestionType, native_enum=False),
+    )
+    current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    current_semantic_version: Mapped[int] = mapped_column(Integer, server_default="1")
+    display_order: Mapped[Any] = mapped_column(JSON)
+    is_required: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class SurveyResponse(Base):
+    __tablename__ = "survey_response"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    participant_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    withdrawn_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class User(Base):

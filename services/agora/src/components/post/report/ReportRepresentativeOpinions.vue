@@ -17,7 +17,7 @@
           </template>
         </span>
         <span class="group-meta">
-          — {{ entry.cluster.numUsers }} {{ t("participants") }}
+          — {{ formatAmount(entry.cluster.numUsers) }} {{ t("participants") }}
           ({{ formatPercentage(calculatePercentage(entry.cluster.numUsers, totalParticipantCount)) }})
         </span>
       </h2>
@@ -30,7 +30,7 @@
           <tr>
             <th class="col-rank">#</th>
             <th class="col-statement">{{ t("statement") }}</th>
-            <th class="col-vote">{{ t("overall") }} ({{ totalParticipantCount }})</th>
+            <th class="col-vote">{{ t("overall") }} ({{ formatAmount(totalParticipantCount) }})</th>
             <th
               v-for="clusterEntry in allClusterEntries"
               :key="clusterEntry.key"
@@ -38,11 +38,11 @@
               :class="{ 'col-vote--highlighted': clusterEntry.key === entry.key }"
             >
               <template v-if="useLetterCodes">
-                {{ formatClusterLabel(clusterEntry.key, false) }} ({{ clusterEntry.cluster.numUsers }})
+                {{ formatClusterLabel(clusterEntry.key, false) }} ({{ formatAmount(clusterEntry.cluster.numUsers) }})
               </template>
               <template v-else>
                 {{ clusterEntry.cluster.aiLabel || formatClusterLabel(clusterEntry.key, true) }}
-                ({{ clusterEntry.cluster.numUsers }})
+                ({{ formatAmount(clusterEntry.cluster.numUsers) }})
               </template>
             </th>
           </tr>
@@ -112,7 +112,7 @@ import type {
   PolisKey,
 } from "src/shared/types/zod";
 import { calculatePercentage } from "src/shared/util";
-import { formatPercentage } from "src/utils/common";
+import { formatAmount, formatPercentage } from "src/utils/common";
 import { formatClusterLabel } from "src/utils/component/opinion";
 import { REPORT_MAX_REPRESENTATIVE_ITEMS } from "src/utils/component/report/reportData";
 import { computed } from "vue";

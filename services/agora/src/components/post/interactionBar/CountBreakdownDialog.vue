@@ -51,5 +51,6 @@ const showDialog = defineModel<boolean>({ required: true });
 .breakdownExplanation {
   font-size: 0.85rem;
   color: #6d6a74;
+  white-space: pre-line;
 }
 </style>

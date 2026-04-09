@@ -7,6 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **hasVoted** | **boolean** |  | [default to undefined]
 **votedIndex** | **number** |  | [default to undefined]
+**surveyGate** | [**ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteractionSurveyGate**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteractionSurveyGate.md) |  | [optional] [default to undefined]
 
 ## Example
 
@@ -16,6 +17,7 @@ import { ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInt
 const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteraction = {
     hasVoted,
     votedIndex,
+    surveyGate,
 };
 ```
 

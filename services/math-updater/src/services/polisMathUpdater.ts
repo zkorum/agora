@@ -47,6 +47,7 @@ import {
     generateAiLabelsAndSummaries,
     updateClustersLabelsAndSummaries,
 } from "./llmService.js";
+import { getEligibleParticipantIdsForAnalysis } from "@/shared-backend/surveyAnalysis.js";
 import {
     generateAllClusterTranslations,
     insertClusterTranslations,
@@ -909,6 +910,7 @@ export async function getPolisVotes({
 }): Promise<PolisVoteRecord[]> {
     const results = await db
         .select({
+            authorId: voteTable.authorId,
             participantId: userTable.polisParticipantId,
             statementId: opinionTable.id,
             vote: voteContentTable.vote,
@@ -933,8 +935,21 @@ export async function getPolisVotes({
                 isNotNull(opinionTable.currentContentId), // filtering out delted opinions
             ),
         );
+    const eligibleParticipantIdsForAnalysis =
+        await getEligibleParticipantIdsForAnalysis({
+            db,
+            conversationId,
+            candidateParticipantIds: results.map((result) => result.authorId),
+        });
     const now = nowZeroMs();
-    const votes: PolisVoteRecord[] = results.map((result) => {
+    const votes: PolisVoteRecord[] = results
+        .filter((result) => {
+            if (eligibleParticipantIdsForAnalysis === undefined) {
+                return true;
+            }
+            return eligibleParticipantIdsForAnalysis.has(result.authorId);
+        })
+        .map((result) => {
         return {
             participant_id: result.participantId, // TODO: support string too
             statement_id: result.statementId, // TODO: support string too
@@ -949,6 +964,6 @@ export async function getPolisVotes({
             modified: now.getTime(),
             weight_x_32767: null,
         };
-    });
+        });
     return votes;
 }

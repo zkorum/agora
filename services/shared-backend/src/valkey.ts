@@ -4,18 +4,26 @@ import type { BaseLogger } from "pino";
 // Using valkey-glide, the official Valkey client
 export type Valkey = GlideClient;
 
-interface InitializeValkeyParams {
-    valkeyUrl: string | undefined;
-    log: Pick<BaseLogger, "info" | "error">;
-    type: "Queue" | "Cache";
-}
+const supportedValkeyProtocols = new Set([
+    "valkey:",
+    "valkeys:",
+    "redis:",
+    "rediss:",
+]);
 
-interface ParsedValkeyUrl {
+export interface ParsedValkeyUrl {
+    urlString: string;
     host: string;
     port: number;
     username?: string;
     password?: string;
     useTLS: boolean;
+}
+
+interface InitializeValkeyParams {
+    valkeyUrl: ParsedValkeyUrl | undefined;
+    log: Pick<BaseLogger, "info" | "error">;
+    type: "Queue" | "Cache";
 }
 
 /**
@@ -29,13 +37,27 @@ interface ParsedValkeyUrl {
  * - valkey://user:password@localhost:6379
  * - valkeys://user:password@localhost:6379
  */
-function parseValkeyUrl(urlString: string): ParsedValkeyUrl {
+export function parseValkeyUrl(urlString: string): ParsedValkeyUrl {
     const url = new URL(urlString);
+
+    if (!supportedValkeyProtocols.has(url.protocol)) {
+        throw new Error(
+            `Unsupported Valkey URL protocol: ${url.protocol}`,
+        );
+    }
+
+    if (url.hostname === "") {
+        throw new Error("Valkey URL must include a hostname");
+    }
 
     const useTLS = url.protocol === "valkeys:" || url.protocol === "rediss:";
 
     const host = url.hostname;
-    const port = url.port ? parseInt(url.port, 10) : 6379;
+    const port = url.port === "" ? 6379 : parseInt(url.port, 10);
+
+    if (!Number.isInteger(port) || port < 1 || port > 65535) {
+        throw new Error(`Invalid Valkey URL port: ${url.port}`);
+    }
 
     // Decode username and password (they may be URL-encoded)
     const username = url.username
@@ -45,7 +67,7 @@ function parseValkeyUrl(urlString: string): ParsedValkeyUrl {
         ? decodeURIComponent(url.password)
         : undefined;
 
-    return { host, port, username, password, useTLS };
+    return { urlString, host, port, username, password, useTLS };
 }
 
 /**
@@ -77,11 +99,11 @@ export async function initializeValkey({
 
     try {
         log.info(
-            `[${type}Valkey] Initializing connection to ${valkeyUrl.replace(/:[^:@]+@/, ":***@")}`,
+            `[${type}Valkey] Initializing connection to ${valkeyUrl.urlString.replace(/:[^:@]+@/, ":***@")}`,
         );
 
         const { host, port, username, password, useTLS } =
-            parseValkeyUrl(valkeyUrl);
+            valkeyUrl;
 
         // Build credentials only if password is provided (required by valkey-glide)
         const credentials =

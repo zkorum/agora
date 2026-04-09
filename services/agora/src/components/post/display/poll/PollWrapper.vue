@@ -62,10 +62,11 @@
       </div>
     </div>
 
-    <PreLoginIntentionDialog
+    <PreParticipationIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
       active-intention="voting"
+      :conversation-slug-id="props.postSlugId"
       :requires-zupass-event-slug="props.requiresEventTicket"
       :needs-auth="needsLogin"
       :participation-mode="props.participationMode"
@@ -74,25 +75,22 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import { useConversationLoginIntentions } from "src/composables/auth/useConversationLoginIntentions";
+import { useParticipationGate } from "src/composables/conversation/useParticipationGate";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
-import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
 import type {
   PollList,
   PollOptionWithResult,
   UserInteraction,
 } from "src/shared/types/zod";
 import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useBackendPollApi } from "src/utils/api/poll";
 import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
+import { useNotify } from "src/utils/ui/notify";
 import { computed,onBeforeMount, ref, watch } from "vue";
 
-import PreLoginIntentionDialog from "../../../authentication/intention/PreLoginIntentionDialog.vue";
+import PreParticipationIntentionDialog from "../../../authentication/intention/PreParticipationIntentionDialog.vue";
 import ZKButton from "../../../ui-library/ZKButton.vue";
 import ZKIcon from "../../../ui-library/ZKIcon.vue";
 import PollOption from "./PollOption.vue";
@@ -109,45 +107,28 @@ const props = defineProps<{
   requiresEventTicket?: EventSlug;
 }>();
 
-const emit = defineEmits<{
-  ticketVerified: [
-    payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
-  ];
-}>();
-
 const localPollOptionList = ref<PollOptionWithResult[]>([]);
 initializeLocalPoll();
 
 const dataLoaded = ref(false);
 
 const backendPollApi = useBackendPollApi();
-const authStore = useAuthenticationStore();
-const { isLoggedIn, hasStrongVerification, hasEmailVerification } = storeToRefs(authStore);
-const userStore = useUserStore();
-const { verifiedEventTickets } = storeToRefs(userStore);
 const { invalidateFeed } = useInvalidateFeedQuery();
 const { updateAuthState } = useBackendAuthApi();
-
-// Zupass verification
-const { verifyTicket } = useTicketVerificationFlow();
-const { isVerifying: isVerifyingZupass } = useZupassVerification();
+const { showNotifyMessage } = useNotify();
+const {
+  needsAuth: isAuthBlocked,
+  shouldOpenParticipationModal,
+} = useParticipationGate({
+  conversationSlugId: computed(() => props.postSlugId),
+  participationMode: computed(() => props.participationMode),
+  requiresEventTicket: computed(() => props.requiresEventTicket),
+  surveyGate: computed(() => props.userResponse.surveyGate),
+});
 
 // Check if user needs login/verification based on participation mode
 const needsLogin = computed(() => {
-  if (props.participationMode === "account_required") return !isLoggedIn.value;
-  if (props.participationMode === "strong_verification") return !hasStrongVerification.value;
-  if (props.participationMode === "email_verification") return !hasEmailVerification.value;
-  return false; // guest
-});
-
-// Check if poll is locked due to missing event ticket
-const isPollLocked = computed(() => {
-  if (props.requiresEventTicket === undefined) {
-    return false;
-  }
-  // Convert Set to Array for better reactivity tracking
-  const verifiedTicketsArray = Array.from(verifiedEventTickets.value);
-  return !verifiedTicketsArray.includes(props.requiresEventTicket);
+  return isAuthBlocked.value;
 });
 
 const { setVotingIntention } = useConversationLoginIntentions();
@@ -245,15 +226,7 @@ async function clickedVotingOption(selectedIndex: number) {
     return;
   }
 
-  // Prevent multiple clicks while Zupass is verifying
-  if (isVerifyingZupass.value) {
-    return;
-  }
-
-  // Check if user needs login/verification or Zupass verification
-  const needsZupass = isPollLocked.value;
-
-  if (needsLogin.value || needsZupass) {
+  if (await shouldOpenParticipationModal()) {
     showLoginDialog.value = true;
     return;
   }
@@ -263,55 +236,37 @@ async function clickedVotingOption(selectedIndex: number) {
     selectedIndex,
     props.postSlugId
   );
-  if (response === true) {
+  if (response?.success) {
     await updateAuthState({ partialLoginStatus: { isKnown: true } });
     invalidateFeed();
     await fetchUserPollResponseData(true);
     incrementLocalPollIndex(selectedIndex);
     totalVoteCount.value += 1;
-  } else {
+  } else if (
+    response?.reason === "survey_required" ||
+    response?.reason === "survey_outdated"
+  ) {
     showLoginDialog.value = true;
+  } else if (
+    response?.reason === "event_ticket_required" ||
+    response?.reason === "account_required" ||
+    response?.reason === "strong_verification_required" ||
+    response?.reason === "email_verification_required"
+  ) {
+    showLoginDialog.value = true;
+  } else if (
+    response?.reason === "conversation_closed" ||
+    response?.reason === "conversation_locked"
+  ) {
+    showNotifyMessage(t("conversationClosed"));
+  } else {
+    showNotifyMessage(t("voteFailed"));
   }
 }
 
-async function onLoginCallback() {
+function onLoginCallback() {
   // Store the intention with eventSlug
   setVotingIntention(props.requiresEventTicket);
-
-  const hasZupassRequirement = props.requiresEventTicket !== undefined;
-
-  // If user just needs Zupass verification (no login required), trigger it inline
-  if (!needsLogin.value && hasZupassRequirement) {
-    await handleZupassVerification();
-  }
-  // Otherwise, dialog will route user to login via PreLoginIntentionDialog
-}
-
-async function handleZupassVerification() {
-  if (props.requiresEventTicket === undefined) {
-    return;
-  }
-
-  // Dialog will close when Zupass iframe is ready (via callback)
-  const result = await verifyTicket({
-    eventSlug: props.requiresEventTicket,
-    onIframeReady: () => {
-      // Close dialog as soon as Zupass iframe becomes visible
-      showLoginDialog.value = false;
-    },
-    onSuccess: async () => {
-      // Reload poll data after successful verification
-      invalidateFeed();
-      await fetchUserPollResponseData(true);
-    },
-  });
-
-  if (result.success) {
-    emit("ticketVerified", {
-      userIdChanged: result.userIdChanged,
-      needsCacheRefresh: result.needsCacheRefresh,
-    });
-  }
 }
 </script>
 

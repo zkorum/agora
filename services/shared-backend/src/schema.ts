@@ -27,6 +27,8 @@ const MAX_LENGTH_BODY = 1000;
 const MAX_LENGTH_BODY_HTML = 3000; // Reserve extra space for HTML tags
 // const MAX_LENGTH_OPINION = 280;
 const MAX_LENGTH_OPINION_HTML = 3000; // is lower now, kept this value For retro-compatibility
+const MAX_LENGTH_SURVEY_QUESTION = 500;
+const MAX_LENGTH_SURVEY_OPTION = 200;
 const MAX_LENGTH_MAXDIFF_ITEM_TITLE = 200;
 const MAX_LENGTH_MAXDIFF_ITEM_BODY = 3000;
 const MAX_LENGTH_NAME_CREATOR = 65;
@@ -592,6 +594,13 @@ export const conversationTypeEnum = pgEnum("conversation_type", [
     "maxdiff",
 ]);
 
+export const surveyQuestionTypeEnum = pgEnum("survey_question_type", [
+    "mono_choice",
+    "multi_choice",
+    "select",
+    "free_text",
+]);
+
 export const maxdiffLifecycleStatusEnum = pgEnum("maxdiff_lifecycle_status", [
     "active",
     "completed",
@@ -641,6 +650,11 @@ export const exportFileTypeEnum = pgEnum("export_file_type_enum", [
     "participants",
     "summary",
     "stats",
+    "survey_questions",
+    "survey_question_options",
+    "survey_participant_responses",
+    "survey_public_aggregates",
+    "survey_full_aggregates",
 ]);
 
 // Import status for CSV imports (simplified - no files, no cooldown)
@@ -1446,6 +1460,347 @@ export const conversationTable = pgTable(
     ],
 );
 
+/** @service scoring-worker, api, math-updater */
+export const surveyConfigTable = pgTable(
+    "survey_config",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
+        currentRevision: integer("current_revision").notNull().default(1),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", {
+            mode: "date",
+            precision: 0,
+        }),
+    },
+    (table) => [
+        uniqueIndex("survey_config_active_conversation_uidx")
+            .on(table.conversationId)
+            .where(sql`${table.deletedAt} IS NULL`),
+        index("survey_config_conversation_deleted_idx").on(
+            table.conversationId,
+            table.deletedAt,
+        ),
+    ],
+);
+
+/** @service scoring-worker, api, math-updater */
+export const surveyQuestionTable = pgTable(
+    "survey_question",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
+        surveyConfigId: integer("survey_config_id")
+            .notNull()
+            .references(() => surveyConfigTable.id),
+        questionType: surveyQuestionTypeEnum("question_type").notNull(),
+        currentContentId: integer("current_content_id").unique(),
+        currentSemanticVersion: integer("current_semantic_version")
+            .notNull()
+            .default(1),
+        displayOrder: smallint("display_order").notNull(),
+        isRequired: boolean("is_required").notNull().default(true),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        index("survey_question_config_content_idx").on(
+            table.surveyConfigId,
+            table.currentContentId,
+        ),
+        index("survey_question_config_display_order_idx").on(
+            table.surveyConfigId,
+            table.displayOrder,
+        ),
+        index("survey_question_config_semantic_version_idx").on(
+            table.surveyConfigId,
+            table.currentSemanticVersion,
+        ),
+    ],
+);
+
+/** @service scoring-worker, api, math-updater */
+export const surveyQuestionContentTable = pgTable("survey_question_content", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    surveyQuestionId: integer("survey_question_id")
+        .notNull()
+        .references(() => surveyQuestionTable.id),
+    questionText: varchar("question_text", {
+        length: MAX_LENGTH_SURVEY_QUESTION,
+    }).notNull(),
+    constraints: jsonb("constraints").notNull(),
+    sourceLanguageCode: varchar("source_language_code", {
+        length: 35,
+    }),
+    sourceLanguageConfidence: real("source_language_confidence"),
+    createdAt: timestamp("created_at", {
+        mode: "date",
+        precision: 0,
+    })
+        .defaultNow()
+        .notNull(),
+});
+
+/** @service api */
+export const surveyQuestionContentTranslationTable = pgTable(
+    "survey_question_content_translation",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        surveyQuestionContentId: integer("survey_question_content_id")
+            .notNull()
+            .references(() => surveyQuestionContentTable.id),
+        displayLanguageCode: varchar("display_language_code", {
+            length: 10,
+        }).notNull(),
+        translatedQuestionText: text("translated_question_text").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("survey_question_content_translation_unique").on(
+            table.surveyQuestionContentId,
+            table.displayLanguageCode,
+        ),
+    ],
+);
+
+/** @service scoring-worker, api, math-updater */
+export const surveyQuestionOptionTable = pgTable(
+    "survey_question_option",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
+        surveyQuestionId: integer("survey_question_id")
+            .notNull()
+            .references(() => surveyQuestionTable.id),
+        currentContentId: integer("current_content_id").unique(),
+        displayOrder: smallint("display_order").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        index("survey_question_option_question_content_idx").on(
+            table.surveyQuestionId,
+            table.currentContentId,
+        ),
+        index("survey_question_option_question_display_order_idx").on(
+            table.surveyQuestionId,
+            table.displayOrder,
+        ),
+    ],
+);
+
+/** @service scoring-worker, api, math-updater */
+export const surveyQuestionOptionContentTable = pgTable(
+    "survey_question_option_content",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        surveyQuestionOptionId: integer("survey_question_option_id")
+            .notNull()
+            .references(() => surveyQuestionOptionTable.id),
+        optionText: varchar("option_text", {
+            length: MAX_LENGTH_SURVEY_OPTION,
+        }).notNull(),
+        sourceLanguageCode: varchar("source_language_code", {
+            length: 35,
+        }),
+        sourceLanguageConfidence: real("source_language_confidence"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+);
+
+/** @service api */
+export const surveyQuestionOptionContentTranslationTable = pgTable(
+    "survey_question_option_content_translation",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        surveyQuestionOptionContentId: integer("survey_question_option_content_id")
+            .notNull()
+            .references(() => surveyQuestionOptionContentTable.id),
+        displayLanguageCode: varchar("display_language_code", {
+            length: 10,
+        }).notNull(),
+        translatedOptionText: text("translated_option_text").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("survey_question_option_content_translation_unique").on(
+            table.surveyQuestionOptionContentId,
+            table.displayLanguageCode,
+        ),
+    ],
+);
+
+/** @service scoring-worker, api, math-updater */
+export const surveyResponseTable = pgTable(
+    "survey_response",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        participantId: uuid("participant_id")
+            .notNull()
+            .references(() => userTable.id),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
+        completedAt: timestamp("completed_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        withdrawnAt: timestamp("withdrawn_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique().on(table.participantId, table.conversationId),
+        index("survey_response_conversation_withdrawn_idx").on(
+            table.conversationId,
+            table.withdrawnAt,
+        ),
+        index("survey_response_conversation_completed_idx").on(
+            table.conversationId,
+            table.completedAt,
+        ),
+    ],
+);
+
+/** @service scoring-worker, api, math-updater */
+export const surveyAnswerTable = pgTable(
+    "survey_answer",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        surveyResponseId: integer("survey_response_id")
+            .notNull()
+            .references(() => surveyResponseTable.id),
+        surveyQuestionId: integer("survey_question_id")
+            .notNull()
+            .references(() => surveyQuestionTable.id),
+        answeredQuestionSemanticVersion: integer(
+            "answered_question_semantic_version",
+        ).notNull(),
+        textValueHtml: text("text_value_html"),
+        deletedAt: timestamp("deleted_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        uniqueIndex("survey_answer_response_question_active_uidx")
+            .on(table.surveyResponseId, table.surveyQuestionId)
+            .where(sql`${table.deletedAt} IS NULL`),
+        index("survey_answer_question_semantic_version_idx").on(
+            table.surveyQuestionId,
+            table.answeredQuestionSemanticVersion,
+        ),
+    ],
+);
+
+/** @service scoring-worker, api, math-updater */
+export const surveyAnswerOptionTable = pgTable(
+    "survey_answer_option",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        surveyAnswerId: integer("survey_answer_id")
+            .notNull()
+            .references(() => surveyAnswerTable.id),
+        surveyQuestionOptionId: integer("survey_question_option_id")
+            .notNull()
+            .references(() => surveyQuestionOptionTable.id),
+        deletedAt: timestamp("deleted_at", {
+            mode: "date",
+            precision: 0,
+        }),
+    },
+    (table) => [
+        uniqueIndex("survey_answer_option_answer_option_active_uidx")
+            .on(table.surveyAnswerId, table.surveyQuestionOptionId)
+            .where(sql`${table.deletedAt} IS NULL`),
+    ],
+);
+
 export const pollResponseTable = pgTable(
     "poll_response",
     {
@@ -2217,6 +2572,12 @@ export const conversationExportTable = pgTable(
         status: exportStatusEnum("status").notNull().default("processing"),
         totalFileSize: integer("total_file_size"), // null until completed
         totalFileCount: integer("total_file_count"), // null until completed
+        bundleFileName: varchar("bundle_file_name", { length: 160 }),
+        bundleFileSize: integer("bundle_file_size"),
+        bundleS3Key: text("bundle_s3_key"),
+        ownerBundleFileName: varchar("owner_bundle_file_name", { length: 160 }),
+        ownerBundleFileSize: integer("owner_bundle_file_size"),
+        ownerBundleS3Key: text("owner_bundle_s3_key"),
         failureReason: exportFailureReasonEnum("failure_reason"), // populated if status="failed"
         cancellationReason: exportCancellationReasonEnum("cancellation_reason"), // populated if status="cancelled"
         expiresAt: timestamp("expires_at", {
@@ -2479,9 +2840,9 @@ export const rankingScoreTable = pgTable("ranking_score", {
     conversationId: integer("conversation_id")
         .notNull()
         .references(() => conversationTable.id),
-    // --- Output: Solidago scores (JSONB backup blob) ---
-    // Array of { entityId, score, uncertaintyLeft, uncertaintyRight }
-    // Scores normalized to [0, 1]. Parsed with zodCachedScore.
+    // --- Output: ranking scores (JSONB backup blob) ---
+    // Array of { entityId, score, uncertaintyLeft, uncertaintyRight }.
+    // Scores are stored in raw model units; API/UI may derive normalized display scores.
     // Kept as backup; canonical data is in ranking_score_entity table.
     scores: jsonb("scores").notNull(),
     // Record<entityId, participantCount> for display (JSONB backup blob)
@@ -2513,9 +2874,9 @@ export const rankingScoreTable = pgTable("ranking_score", {
         .notNull(),
 });
 
-// Normalized entity-level scores from ranking_score.scores JSONB.
-// Each row represents one entity's score within a ranking_score computation.
+// Canonical raw entity-level scores for one ranking_score computation.
 // The JSONB `scores` column on ranking_score is kept as a backup blob.
+// API/UI may derive normalized display scores from these raw values.
 /** @service scoring-worker, api */
 export const rankingScoreEntityTable = pgTable(
     "ranking_score_entity",

@@ -13,7 +13,14 @@ import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
 import { httpErrors } from "@fastify/sensible";
-import type { ExtendedConversation, EventSlug, ParticipationMode, ConversationType, ExternalSourceConfig } from "@/shared/types/zod.js";
+import type {
+    ConversationType,
+    EventSlug,
+    ExtendedConversation,
+    ExternalSourceConfig,
+    ParticipationMode,
+    SurveyConfig,
+} from "@/shared/types/zod.js";
 import type {
     CloseConversationResponse,
     OpenConversationResponse,
@@ -26,6 +33,12 @@ import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import { deleteAllConversationExports } from "@/service/conversationExport/index.js";
 import * as authUtilService from "@/service/authUtil.js";
+import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
+import {
+    getSurveyGateSummary,
+    setSurveyConfigForConversation,
+    warmSurveyTranslationsForConversation,
+} from "@/service/survey.js";
 
 const MAX_CONVERSATION_SEED_ITEMS = 50;
 
@@ -47,6 +60,8 @@ interface CreateNewPostProps {
     seedOpinionList: string[];
     requiresEventTicket?: EventSlug;
     externalSourceConfig?: ExternalSourceConfig | null;
+    surveyConfig?: SurveyConfig | null;
+    googleCloudCredentials?: GoogleCloudCredentials;
     importUrl?: string;
     importConversationUrl?: string;
     importExportUrl?: string;
@@ -73,6 +88,8 @@ export async function createNewPost({
     seedOpinionList,
     requiresEventTicket,
     externalSourceConfig,
+    surveyConfig,
+    googleCloudCredentials,
     importUrl,
     importConversationUrl,
     importExportUrl,
@@ -270,12 +287,35 @@ export async function createNewPost({
                     }
                 }
             }
+
+            if (surveyConfig !== undefined) {
+                await setSurveyConfigForConversation({
+                    db: tx,
+                    conversationId: insertedConversationId,
+                    surveyConfig: surveyConfig ?? null,
+                    now,
+                });
+            }
+
             return {
                 conversationId: insertedConversationId,
                 conversationContentId: insertedConversationContentId,
             };
         },
     );
+
+    if (surveyConfig !== undefined && surveyConfig !== null) {
+        void warmSurveyTranslationsForConversation({
+            db,
+            conversationId,
+            googleCloudCredentials,
+        }).catch((error: unknown) => {
+            log.warn(
+                error,
+                `[Survey Translation] Async warm-up failed after creating conversation ${conversationSlugId}`,
+            );
+        });
+    }
 
     return {
         conversationId: conversationId,
@@ -311,12 +351,38 @@ export async function fetchPostBySlugId({
 
     if (postData.size == 1) {
         const [firstPost] = postData.values();
+        const { id: conversationId } =
+            await useCommonPost().getPostMetadataFromSlugId({
+                db,
+                conversationSlugId,
+            });
+        firstPost.interaction = {
+            ...firstPost.interaction,
+            surveyGate: await getSurveyGateSummary({
+                db,
+                conversationId,
+                participantId: personalizedUserId,
+            }),
+        };
         return firstPost;
     } else if (postData.size > 1) {
         const [firstPost] = postData.values();
         log.warn(
             `Multiple conversations hold the same slugId: ${firstPost.metadata.conversationSlugId}`,
         );
+        const { id: conversationId } =
+            await useCommonPost().getPostMetadataFromSlugId({
+                db,
+                conversationSlugId,
+            });
+        firstPost.interaction = {
+            ...firstPost.interaction,
+            surveyGate: await getSurveyGateSummary({
+                db,
+                conversationId,
+                participantId: personalizedUserId,
+            }),
+        };
         return firstPost;
     } else {
         throw httpErrors.notFound(

@@ -1,0 +1,4 @@
+question-id,question-slug-id,question-order,question-type,question-text,is-required,question-semantic-version
+0,qTransit001,1,mono_choice,How do you usually get to city meetings?,1,2
+1,qHousing001,2,mono_choice,Which housing proposal should be prioritized?,1,1
+2,qContext001,3,free_text,Anything else we should know?,0,1

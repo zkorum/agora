@@ -28,11 +28,22 @@
           :external-source-config="extendedPostData.metadata.externalSourceConfig"
         />
 
-        <EventTicketRequirementBanner
-          v-if="extendedPostData.metadata.requiresEventTicket"
+        <ConversationRequirementBanner
+          v-if="
+            !compactMode &&
+            (extendedPostData.metadata.requiresEventTicket ||
+              extendedPostData.interaction.surveyGate?.hasSurvey)
+          "
+          :conversation-slug-id="extendedPostData.metadata.conversationSlugId"
+          :participation-mode="extendedPostData.metadata.participationMode"
           :requires-event-ticket="extendedPostData.metadata.requiresEventTicket"
-          :read-only="compactMode"
-          @verified="(payload) => $emit('verified', payload)"
+          :survey-gate="
+            extendedPostData.interaction.surveyGate ?? {
+              hasSurvey: false,
+              canParticipate: true,
+              status: 'no_survey',
+            }
+          "
         />
       </div>
 
@@ -64,7 +75,6 @@
           :post-slug-id="extendedPostData.metadata.conversationSlugId"
           :user-response="extendedPostData.interaction"
           :requires-event-ticket="extendedPostData.metadata.requiresEventTicket"
-          @ticket-verified="(payload) => $emit('verified', payload)"
         />
       </div>
 
@@ -107,8 +117,8 @@ defineEmits<{
   verified: [payload: { userIdChanged: boolean; needsCacheRefresh: boolean }];
 }>();
 
-const EventTicketRequirementBanner = defineAsyncComponent(
-  () => import("../EventTicketRequirementBanner.vue")
+const ConversationRequirementBanner = defineAsyncComponent(
+  () => import("../ConversationRequirementBanner.vue")
 );
 
 const ImportedConversationIndicator = defineAsyncComponent(
