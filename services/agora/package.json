@@ -52,7 +52,7 @@
     "@vueuse/integrations": "^14.2.1",
     "@vueuse/router": "^14.2.1",
     "@zkorum/keystore-idb": "^0.18.1",
-    "axios": "^1.14.0",
+    "axios": "^1.15.0",
     "buffer": "^6.0.3",
     "cborg": "^5.0.1",
     "html2canvas": "^1.4.1",
