@@ -24,7 +24,7 @@
     "@playwright/test": "^1.59.1",
     "@sveltejs/adapter-netlify": "^6.0.4",
     "@sveltejs/enhanced-img": "^0.10.4",
-    "@sveltejs/kit": "^2.56.1",
+    "@sveltejs/kit": "^2.57.1",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.2.2",
