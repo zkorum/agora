@@ -97,7 +97,7 @@
         "marked": "^17.0.6",
         "multiformats": "^13.4.2",
         "node-cron": "^4.2.1",
-        "nodemailer": "^8.0.4",
+        "nodemailer": "^8.0.5",
         "p-limit": "^7.3.0",
         "parse-json-object": "^4.0.0",
         "pg": "^8.20.0",
