@@ -25,12 +25,12 @@
         "@": "./dist"
     },
     "dependencies": {
-        "@aws-sdk/client-bedrock-runtime": "^3.1025.0",
-        "@aws-sdk/client-secrets-manager": "^3.1025.0",
+        "@aws-sdk/client-bedrock-runtime": "^3.1029.0",
+        "@aws-sdk/client-secrets-manager": "^3.1029.0",
         "@google-cloud/translate": "^9.3.0",
         "@valkey/valkey-glide": "^2.3.1",
         "axios": "^1.15.0",
-        "dotenv": "^17.4.1",
+        "dotenv": "^17.4.2",
         "drizzle-orm": "^0.45.2",
         "extract-first-json": "^2.0.2",
         "libphonenumber-js": "^1.12.41",
@@ -48,16 +48,16 @@
     "devDependencies": {
         "@eslint/js": "^10.0.1",
         "@types/eslint__js": "^9.14.0",
-        "@types/node": "^25.5.2",
+        "@types/node": "^25.6.0",
         "@types/sanitize-html": "^2.16.1",
         "eslint": "^10.2.0",
         "eslint-config-prettier": "^10.1.8",
         "fastify": "^5.8.4",
-        "globals": "^17.4.0",
-        "prettier": "^3.8.1",
+        "globals": "^17.5.0",
+        "prettier": "^3.8.2",
         "tsx": "^4.21.0",
         "typescript": "^6.0.2",
-        "typescript-eslint": "^8.58.0"
+        "typescript-eslint": "^8.58.1"
     },
     "pnpm": {
         "overrides": {
