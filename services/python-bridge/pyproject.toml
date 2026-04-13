@@ -17,7 +17,7 @@ dependencies = [
 	# Web framework + WSGI server
 	"Flask>=3.1,<4",
 	"gunicorn>=23,<26",
-	"pydantic>=2.12,<3",
+	"pydantic>=2.12.5,<3",
 
 	# Polis clustering (red-dwarf)
 	# Fork with consensus-jeffreys-prior fix (commit 3665b41)
