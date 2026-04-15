@@ -22,7 +22,7 @@
         "@google-cloud/translate": "^9.3.0",
         "@valkey/valkey-glide": "^2.3.1",
         "drizzle-orm": "^0.45.2",
-        "fastify": "^5.8.4",
+        "fastify": "^5.8.5",
         "p-limit": "^7.3.0",
         "postgres": "^3.4.9",
         "zod": "^4.3.6"
