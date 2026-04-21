@@ -5,14 +5,14 @@ import {
     polisContentTable,
 } from "@/shared-backend/schema.js";
 import {
-    zodGenLabelSummaryOutputLoose,
-    zodGenLabelSummaryOutputStrict,
     type GenLabelSummaryOutputClusterLoose,
     type GenLabelSummaryOutputClusterStrict,
     type GenLabelSummaryOutputLoose,
     type GenLabelSummaryOutputStrict,
 } from "@/shared-backend/llmSchemas.js";
 import { parseLlmOutputJson } from "@/utils/llmParse.js";
+import { extractTextContentFromMessage } from "@/utils/bedrockMessage.js";
+import { parseGenLabelSummaryOutput } from "@/utils/llmSchemaParse.js";
 import {
     BedrockRuntimeClient,
     ConverseCommand,
@@ -243,12 +243,7 @@ async function invokeRemoteModel({
     );
     const response = await client.send(command);
     const message = response.output?.message;
-    const modelResponseStr =
-        message !== undefined
-            ? message.content !== undefined
-                ? message.content[0].text
-                : undefined
-            : undefined;
+    const modelResponseStr = extractTextContentFromMessage(message);
     if (modelResponseStr === undefined) {
         throw new Error(
             `[LLM]: Unable to parse AWS Bedrock response for conversationId='${String(
@@ -259,14 +254,10 @@ async function invokeRemoteModel({
         );
     }
     const modelResponse: JSONObject = parseLlmOutputJson(modelResponseStr);
-    // try strict first
-    const resultStrict =
-        zodGenLabelSummaryOutputStrict.safeParse(modelResponse);
-    if (resultStrict.success) {
-        return resultStrict.data;
-    } else {
+    const parsedLabelSummaryOutput = parseGenLabelSummaryOutput(modelResponse);
+    if (parsedLabelSummaryOutput.mode === "loose") {
         log.warn(
-            resultStrict.error,
+            parsedLabelSummaryOutput.strictError,
             `[LLM]: Unable to parse AI Label and Summary output object using strict mode for conversationId='${String(
                 conversationId,
             )}' and polisContentId='${String(polisContentId)}:\n'${JSON.stringify(
@@ -274,17 +265,5 @@ async function invokeRemoteModel({
             )}'`,
         );
     }
-    // will throw and be caught by the generic fastify handler eventually
-    const resultLoose = zodGenLabelSummaryOutputLoose.safeParse(modelResponse);
-    if (!resultLoose.success) {
-        throw new Error(
-            `[LLM]: Unable to parse AI Label and Summary output object using loose mode for conversationId='${String(
-                conversationId,
-            )}' and polisContentId='${String(polisContentId)}:\n'${JSON.stringify(
-                modelResponse,
-            )}'`,
-            { cause: resultLoose.error },
-        );
-    }
-    return resultLoose.data;
+    return parsedLabelSummaryOutput.data;
 }
