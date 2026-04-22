@@ -77,13 +77,12 @@ export interface UpdateConversationMathData {
  *
  * WORKAROUND IMPLEMENTED:
  * Instead of relying solely on pg-boss singleton mechanism, we now lock the queue entry
- * immediately at job start by setting processedAt. This prevents the scanner from
+ * immediately at job start by setting lastMathUpdateAt. This prevents the scanner from
  * re-enqueueing the conversation while it's being processed, even if:
  * 1. The pg-boss singleton mechanism fails
  * 2. New votes arrive during processing (which reset processedAt in the queue)
  *
- * The scanner checks `WHERE processedAt IS NULL`, so by setting processedAt immediately,
- * we prevent duplicate job creation at the application level.
+ * If the job fails, we restore the previous lastMathUpdateAt so the scanner can retry it.
  */
 export async function updateConversationMathHandler(
     job: Job<UpdateConversationMathData>,
@@ -101,15 +100,23 @@ export async function updateConversationMathHandler(
     // (pg-boss serializes Date objects to strings)
     const requestedAtDate =
         typeof requestedAt === "string" ? new Date(requestedAt) : requestedAt;
+    const queueEntryBeforeLock = await db
+        .select({
+            lastMathUpdateAt: conversationUpdateQueueTable.lastMathUpdateAt,
+        })
+        .from(conversationUpdateQueueTable)
+        .where(eq(conversationUpdateQueueTable.conversationId, conversationId))
+        .limit(1);
+    const previousLastMathUpdateAt =
+        queueEntryBeforeLock[0]?.lastMathUpdateAt ?? null;
 
     log.info(
         `[Update Math] Starting math update for conversation ${conversationSlugId}`,
     );
 
     try {
-        // Lock by setting lastMathUpdateAt immediately
-        // This makes requestedAt <= lastMathUpdateAt, preventing scanner from re-enqueueing
-        // Since lastMathUpdateAt is only touched by math-updater (not API), this prevents race conditions
+        // Lock by setting lastMathUpdateAt immediately.
+        // If the job later fails, we restore the previous value so the scanner can retry it.
         const now = nowZeroMs();
         await db
             .update(conversationUpdateQueueTable)
@@ -241,6 +248,37 @@ export async function updateConversationMathHandler(
             log.warn(
                 checkError,
                 `[Math Updater] Failed to check for newer update request for conversation ${conversationSlugId}`,
+            );
+        }
+
+        const restoreResult = await db
+            .update(conversationUpdateQueueTable)
+            .set({
+                lastMathUpdateAt: previousLastMathUpdateAt,
+            })
+            .where(
+                and(
+                    eq(
+                        conversationUpdateQueueTable.conversationId,
+                        conversationId,
+                    ),
+                    eq(
+                        conversationUpdateQueueTable.requestedAt,
+                        requestedAtDate,
+                    ),
+                ),
+            )
+            .returning({
+                conversationId: conversationUpdateQueueTable.conversationId,
+            });
+
+        if (restoreResult.length > 0) {
+            log.info(
+                `[Math Updater] Restored lastMathUpdateAt after failure for conversation ${conversationSlugId}`,
+            );
+        } else {
+            log.info(
+                `[Math Updater] Skipped lastMathUpdateAt restore for conversation ${conversationSlugId} because the queue entry changed during recovery`,
             );
         }
 

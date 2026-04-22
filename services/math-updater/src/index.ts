@@ -51,24 +51,37 @@ function createMathWorkerHandler({
             );
             const limit = pLimit(config.MATH_UPDATER_JOB_CONCURRENCY);
 
-            try {
-                await Promise.all(
-                    realJobs.map((job) =>
-                        limit(() =>
-                            updateConversationMathHandler(
-                                job,
-                                db,
-                                axiosPolis,
-                                googleCloudCredentials,
-                            ),
+            const results = await Promise.allSettled(
+                realJobs.map((job) =>
+                    limit(() =>
+                        updateConversationMathHandler(
+                            job,
+                            db,
+                            axiosPolis,
+                            googleCloudCredentials,
                         ),
                     ),
+                ),
+            );
+            const failedResults = results.filter(
+                (result): result is PromiseRejectedResult =>
+                    result.status === "rejected",
+            );
+
+            if (failedResults.length > 0) {
+                for (const failedResult of failedResults) {
+                    log.error(
+                        failedResult.reason,
+                        "[Math Updater] Error processing job in batch",
+                    );
+                }
+                log.warn(
+                    `[Math Updater] ${String(failedResults.length)}/${String(realJobs.length)} job(s) failed in this batch and were left for the scanner to retry`,
                 );
+            } else {
                 log.info(
                     `[Math Updater] Completed ${realJobs.length} job(s)`,
                 );
-            } catch (error) {
-                log.error({ error }, "[Math Updater] Error processing jobs");
             }
         }
     };
