@@ -176,6 +176,10 @@ async function main() {
     const pgBossCommonConfig = {
         application_name: "agora-math-updater",
         max: config.MATH_UPDATER_BATCH_SIZE + 5, // Batch size + overhead for pg-boss operations
+        // The worker fetch path depends on queue stats cached by pg-boss.
+        // Refresh these aggressively so stale singleton metadata cannot leave jobs queued indefinitely.
+        monitorIntervalSeconds: 1,
+        queueCacheIntervalSeconds: 1,
     };
 
     let pgBossConfig;
@@ -258,6 +262,9 @@ async function main() {
         "[Math Updater] Created update-conversation-math queue (singleton policy)",
     );
 
+    await boss.supervise("update-conversation-math");
+    log.info("[Math Updater] Refreshed update-conversation-math queue stats");
+
     // Track last time worker was called for watchdog
     let lastWorkerCallTime = Date.now();
     // Track scan loop health for watchdog
@@ -274,11 +281,17 @@ async function main() {
             lastWorkerCallTime = Date.now();
         },
     });
+    const notifyWorker = () => {
+        boss.notifyWorker(workerId);
+    };
 
     // Register worker
     workerId = await boss.work(
         "update-conversation-math",
-        { batchSize: config.MATH_UPDATER_BATCH_SIZE },
+        {
+            batchSize: config.MATH_UPDATER_BATCH_SIZE,
+            pollingIntervalSeconds: 1,
+        },
         workerHandler,
     );
 
@@ -302,6 +315,7 @@ async function main() {
                 await scanConversations({
                     db,
                     boss,
+                    notifyWorker,
                     minTimeBetweenUpdatesMs:
                         config.MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS,
                 });
@@ -321,6 +335,7 @@ async function main() {
     scanConversations({
         db,
         boss,
+        notifyWorker,
         minTimeBetweenUpdatesMs:
             config.MATH_UPDATER_MIN_TIME_BETWEEN_UPDATES_MS,
     })
@@ -354,6 +369,7 @@ async function main() {
     );
 
     if (testJobId) {
+        notifyWorker();
         log.info(
             `[Math Updater] Sent startup test job (${testJobId}) - worker should process within 5s`,
         );
@@ -441,11 +457,12 @@ async function main() {
                 }
 
                 const timeSinceLastCall = Date.now() - lastWorkerCallTime;
-                // createdCount exists at runtime but not in pg-boss types
-                const pendingCount = Number(
-                    "createdCount" in ourQueue ? ourQueue.createdCount : 0,
-                );
+                const pendingCount = ourQueue.queuedCount;
                 const hasPendingJobs = pendingCount > 0;
+
+                if (stuckJobs.length > 0) {
+                    await boss.supervise("update-conversation-math");
+                }
 
                 // Detect polling stall: worker not called in timeout period + pending jobs exist
                 if (timeSinceLastCall > WATCHDOG_TIMEOUT_MS && hasPendingJobs) {
@@ -454,13 +471,18 @@ async function main() {
                     );
 
                     try {
-                        await boss.offWork(workerId);
+                        await boss.offWork("update-conversation-math", {
+                            id: workerId,
+                        });
                         await new Promise((resolve) => setTimeout(resolve, 2000));
 
                         // Re-register worker using the same handler
                         workerId = await boss.work(
                             "update-conversation-math",
-                            { batchSize: config.MATH_UPDATER_BATCH_SIZE },
+                            {
+                                batchSize: config.MATH_UPDATER_BATCH_SIZE,
+                                pollingIntervalSeconds: 1,
+                            },
                             workerHandler,
                         );
 

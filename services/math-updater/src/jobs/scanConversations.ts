@@ -22,10 +22,12 @@ const STALE_QUEUED_JOB_THRESHOLD_MS = 10000; // 10 seconds
 export async function scanConversations({
     db,
     boss,
+    notifyWorker,
     minTimeBetweenUpdatesMs,
 }: {
     db: PostgresJsDatabase;
     boss: PgBoss;
+    notifyWorker?: () => void;
     minTimeBetweenUpdatesMs: number;
 }): Promise<void> {
     const scanStartTime = Date.now();
@@ -139,6 +141,7 @@ export async function scanConversations({
 
         if (jobId) {
             enqueuedConversations.push(conversationSlugId);
+            notifyWorker?.();
             log.info(
                 `[Scan] Enqueued conversation ${conversationSlugId} (id: ${entry.conversationId}, votes: ${voteCount}, singleton: ${singletonSeconds}s, job: ${jobId})`,
             );
@@ -243,6 +246,7 @@ export async function scanConversations({
                                     enqueuedConversations.push(
                                         conversationSlugId,
                                     );
+                                    notifyWorker?.();
                                     log.info(
                                         `[Scan] Re-enqueued ${conversationSlugId} after cleanup (new job: ${retryJobId})`,
                                     );
