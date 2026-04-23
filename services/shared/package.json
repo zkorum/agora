@@ -17,14 +17,14 @@
     "license": "MPL-2.0",
     "dependencies": {
         "libphonenumber-js": "^1.12.41",
-        "sanitize-html": "^2.17.2",
-        "uint8arrays": "^5.1.0",
+        "sanitize-html": "^2.17.3",
+        "uint8arrays": "^5.1.1",
         "zod": "^4.3.6"
     },
     "devDependencies": {
-        "@types/node": "^25.5.2",
+        "@types/node": "^25.6.0",
         "@types/sanitize-html": "^2.16.1",
-        "prettier": "^3.8.1",
-        "typescript": "^6.0.2"
+        "prettier": "^3.8.3",
+        "typescript": "^6.0.3"
     }
 }
