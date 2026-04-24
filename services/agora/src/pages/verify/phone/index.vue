@@ -1,5 +1,5 @@
 <template>
-  <OnboardingLayout :back-callback="backCallback">
+  <OnboardingLayout body-behind-footer :back-callback="backCallback">
     <template #body><DefaultImageExample /> </template>
 
     <template #footer>

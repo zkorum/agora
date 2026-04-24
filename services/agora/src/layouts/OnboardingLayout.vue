@@ -9,7 +9,10 @@
           }"
         >
           <q-page>
-            <div class="baseLayer">
+            <div
+              class="baseLayer"
+              :class="{ 'baseLayer--bodyBehindFooter': bodyBehindFooter }"
+            >
               <button
                 v-if="showBackButton"
                 class="backButton"
@@ -28,7 +31,10 @@
               <div class="containerPaddings">
                 <slot name="body" />
               </div>
-              <div class="topLayer">
+              <div
+                class="topLayer"
+                :class="{ 'topLayer--overBody': bodyBehindFooter }"
+              >
                 <div class="widthLimiter">
                   <slot name="footer" />
                 </div>
@@ -50,12 +56,14 @@ const props = withDefaults(
     backCallback?: () => void;
     showCloseButton?: boolean;
     closeCallback?: () => void;
+    bodyBehindFooter?: boolean;
   }>(),
   {
     showBackButton: true,
     backCallback: undefined,
     showCloseButton: false,
     closeCallback: undefined,
+    bodyBehindFooter: false,
   }
 );
 
@@ -85,7 +93,15 @@ function handleClose() {
 
 .baseLayer {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.baseLayer--bodyBehindFooter {
   height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .backButton {
@@ -143,16 +159,21 @@ function handleClose() {
 }
 
 .topLayer {
-  position: absolute;
   width: 100%;
-  max-height: 70dvh;
-  bottom: 0rem;
   display: flex;
   justify-content: center;
   background-color: white;
   border-top: 1px solid $secondary;
+  margin-top: auto;
+}
+
+.topLayer--overBody {
+  position: absolute;
+  bottom: 0;
+  max-height: 70dvh;
   overflow: auto;
   scrollbar-width: none;
+  margin-top: 0;
 }
 
 .containerPaddings {

@@ -1,5 +1,5 @@
 <template>
-  <OnboardingLayout :show-back-button="false">
+  <OnboardingLayout body-behind-footer :show-back-button="false">
     <template #body><DefaultImageExample /> </template>
 
     <template #footer>
