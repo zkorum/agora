@@ -119,6 +119,7 @@ describe("validateSurveyAnswer", () => {
             id: 1,
             slugId: "question1",
             questionType: "free_text" as const,
+            choiceDisplay: "auto" as const,
             currentContentId: 10,
             currentSemanticVersion: 1,
             displayOrder: 0,

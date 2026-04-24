@@ -316,6 +316,7 @@ export class Dto {
                 isIndexed: z.boolean(),
                 participationMode: zodParticipationMode,
                 requiresEventTicket: zodEventSlug.optional(),
+                postAsOrganizationName: z.string().optional(),
                 surveyConfig: zodSurveyConfig.nullable().optional(),
                 indexConversationAt: zodDateTimeFlexible.optional(),
                 createdAt: zodDateTimeFlexible,

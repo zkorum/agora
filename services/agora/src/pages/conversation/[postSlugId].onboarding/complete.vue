@@ -5,16 +5,7 @@
     :show-close-button="true"
   >
     <template #body>
-      <ConversationSurveyHero
-        v-if="conversationData !== undefined"
-        :conversation-title="conversationData.payload.title"
-        :author-username="conversationData.metadata.authorUsername"
-        :organization-name="conversationData.metadata.organization?.name ?? ''"
-        :organization-image-url="
-          conversationData.metadata.organization?.imageUrl ?? ''
-        "
-      />
-      <DefaultImageExample v-else />
+      <ConversationSurveyOnboardingHero :conversation-data="conversationData" />
     </template>
 
     <template #footer>
@@ -52,8 +43,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import ConversationSurveyHero from "src/components/onboarding/backgrounds/ConversationSurveyHero.vue";
-import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
+import ConversationSurveyOnboardingHero from "src/components/onboarding/backgrounds/ConversationSurveyOnboardingHero.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";

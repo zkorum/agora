@@ -718,31 +718,55 @@ export type ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum
 export interface ApiV1ConversationCreatePostRequestSurveyConfig {
     'questions': Array<ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner>;
 }
-export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner {
+/**
+ * @type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner
+ */
+export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner = ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf | ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1;
+
+export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf {
     'questionSlugId'?: string;
-    'questionType': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerQuestionTypeEnum;
     'questionText': string;
     'isRequired': boolean;
     'displayOrder': number;
-    'constraints': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraints;
-    'options'?: Array<ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOptionsInner>;
     'textChangeIsSemantic'?: boolean;
+    'choiceDisplay': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum;
+    'options': Array<ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner>;
+    'questionType': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfQuestionTypeEnum;
+    'constraints': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraints;
 }
 
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerQuestionTypeEnum = {
-    MonoChoice: 'mono_choice',
-    MultiChoice: 'multi_choice',
-    Select: 'select',
+export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum = {
+    Auto: 'auto',
+    List: 'list',
+    Dropdown: 'dropdown',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum];
+export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfQuestionTypeEnum = {
+    Choice: 'choice',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfQuestionTypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfQuestionTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfQuestionTypeEnum];
+
+export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1 {
+    'questionSlugId'?: string;
+    'questionText': string;
+    'isRequired': boolean;
+    'displayOrder': number;
+    'textChangeIsSemantic'?: boolean;
+    'questionType': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum;
+    'constraints': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1Constraints;
+}
+
+export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerQuestionTypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerQuestionTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerQuestionTypeEnum];
+export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum];
 
-export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraints {
-    'type': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsTypeEnum;
-    'minSelections': number;
-    'maxSelections': number;
-    'inputMode': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsInputModeEnum;
+export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1Constraints {
+    'type': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum;
+    'inputMode': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum;
     'minPlainTextLength'?: number;
     'maxPlainTextLength': number;
     'maxHtmlLength': number;
@@ -750,93 +774,67 @@ export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerCon
     'maxValue'?: number;
 }
 
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsTypeEnum = {
-    MonoChoice: 'mono_choice',
-    Select: 'select',
-    MultiChoice: 'multi_choice',
+export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsTypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsTypeEnum];
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsInputModeEnum = {
+export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum];
+export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum = {
     Integer: 'integer',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsInputModeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsInputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsInputModeEnum];
+export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum];
 
-export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf {
-    'type': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOfTypeEnum;
-    'minSelections': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOfMinSelectionsEnum;
-    'maxSelections': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOfMaxSelectionsEnum;
+export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf {
+    'type': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum;
+    'inputMode'?: ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum;
+    'minPlainTextLength'?: number;
+    'maxPlainTextLength': number;
+    'maxHtmlLength': number;
 }
 
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOfTypeEnum = {
-    MonoChoice: 'mono_choice',
-    Select: 'select',
+export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum = {
+    FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOfTypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOfTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOfTypeEnum];
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOfMinSelectionsEnum = {
-    NUMBER_1: 1,
+export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum];
+export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = {
+    RichText: 'rich_text',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOfMinSelectionsEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOfMinSelectionsEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOfMinSelectionsEnum];
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOfMaxSelectionsEnum = {
-    NUMBER_1: 1,
+export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum];
+
+export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1 {
+    'type': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum;
+    'inputMode': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum;
+    'minValue': number;
+    'maxValue'?: number;
+}
+
+export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum = {
+    FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOfMaxSelectionsEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOfMaxSelectionsEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOfMaxSelectionsEnum];
+export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum];
+export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum = {
+    Integer: 'integer',
+} as const;
 
-export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf1 {
-    'type': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf1TypeEnum;
+export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum];
+
+export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraints {
+    'type': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum;
     'minSelections': number;
     'maxSelections'?: number;
 }
 
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf1TypeEnum = {
-    MultiChoice: 'multi_choice',
+export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum = {
+    Choice: 'choice',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf1TypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf1TypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf1TypeEnum];
+export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum];
 
-export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf2 {
-    'type': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf2TypeEnum;
-    'inputMode'?: ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf2InputModeEnum;
-    'minPlainTextLength'?: number;
-    'maxPlainTextLength': number;
-    'maxHtmlLength': number;
-}
-
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf2TypeEnum = {
-    FreeText: 'free_text',
-} as const;
-
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf2TypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf2TypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf2TypeEnum];
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf2InputModeEnum = {
-    RichText: 'rich_text',
-} as const;
-
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf2InputModeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf2InputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf2InputModeEnum];
-
-export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf3 {
-    'type': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf3TypeEnum;
-    'inputMode': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf3InputModeEnum;
-    'minValue': number;
-    'maxValue'?: number;
-}
-
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf3TypeEnum = {
-    FreeText: 'free_text',
-} as const;
-
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf3TypeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf3TypeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf3TypeEnum];
-export const ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf3InputModeEnum = {
-    Integer: 'integer',
-} as const;
-
-export type ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf3InputModeEnum = typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf3InputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraintsAnyOf3InputModeEnum];
-
-export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOptionsInner {
+export interface ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner {
     'optionSlugId'?: string;
     'optionText': string;
     'displayOrder': number;
@@ -1006,6 +1004,7 @@ export interface ApiV1ConversationExportStatusPost200ResponseOneOf1FilesInner {
 }
 
 export const ApiV1ConversationExportStatusPost200ResponseOneOf1FilesInnerFileTypeEnum = {
+    Bundle: 'bundle',
     Comments: 'comments',
     Votes: 'votes',
     Participants: 'participants',
@@ -1274,6 +1273,7 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum;
     'requiresEventTicket'?: ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum;
+    'postAsOrganizationName'?: string;
     'surveyConfig'?: ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfig | null;
     'indexConversationAt'?: string;
     'createdAt': string;
@@ -1311,31 +1311,30 @@ export type ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum = typeof 
 export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfig {
     'questions': Array<ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInner>;
 }
-export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInner {
+/**
+ * @type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInner
+ */
+export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInner = ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf | ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf;
+
+export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf {
     'questionSlugId'?: string;
-    'questionType': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerQuestionTypeEnum;
     'questionText': string;
     'isRequired': boolean;
     'displayOrder': number;
-    'constraints': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraints;
-    'options'?: Array<ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOptionsInner>;
     'textChangeIsSemantic'?: boolean;
+    'questionType': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum;
+    'constraints': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraints;
 }
 
-export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerQuestionTypeEnum = {
-    MonoChoice: 'mono_choice',
-    MultiChoice: 'multi_choice',
-    Select: 'select',
+export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerQuestionTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerQuestionTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerQuestionTypeEnum];
+export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum];
 
-export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraints {
-    'type': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsTypeEnum;
-    'minSelections': number;
-    'maxSelections': number;
-    'inputMode': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsInputModeEnum;
+export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraints {
+    'type': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum;
+    'inputMode': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsInputModeEnum;
     'minPlainTextLength'?: number;
     'maxPlainTextLength': number;
     'maxHtmlLength': number;
@@ -1343,38 +1342,35 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQues
     'maxValue'?: number;
 }
 
-export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsTypeEnum = {
-    MonoChoice: 'mono_choice',
-    Select: 'select',
-    MultiChoice: 'multi_choice',
+export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsTypeEnum];
-export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsInputModeEnum = {
+export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum];
+export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsInputModeEnum = {
     Integer: 'integer',
 } as const;
 
-export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsInputModeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsInputModeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsInputModeEnum];
+export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsInputModeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsInputModeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsInputModeEnum];
 
-export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsAnyOf {
-    'type': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsAnyOfTypeEnum;
-    'inputMode': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsAnyOfInputModeEnum;
+export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOf {
+    'type': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfTypeEnum;
+    'inputMode': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfInputModeEnum;
     'minPlainTextLength'?: number;
     'maxPlainTextLength': number;
     'maxHtmlLength': number;
 }
 
-export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsAnyOfTypeEnum = {
+export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfTypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsAnyOfTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsAnyOfTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsAnyOfTypeEnum];
-export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsAnyOfInputModeEnum = {
+export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfTypeEnum];
+export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfInputModeEnum = {
     RichText: 'rich_text',
 } as const;
 
-export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsAnyOfInputModeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsAnyOfInputModeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraintsAnyOfInputModeEnum];
+export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfInputModeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfInputModeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfInputModeEnum];
 
 export interface ApiV1ConversationGetPost200Response {
     'conversationData': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInner;
@@ -2253,7 +2249,7 @@ export interface ApiV1SurveyAnswerSavePostRequest {
 /**
  * @type ApiV1SurveyAnswerSavePostRequestAnswer
  */
-export type ApiV1SurveyAnswerSavePostRequestAnswer = ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf | ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf1 | ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf2 | ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf3;
+export type ApiV1SurveyAnswerSavePostRequestAnswer = ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOf | ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOf1;
 
 export interface ApiV1SurveyCompletionCountsPost200Response {
     'hasSurvey': boolean;
@@ -2282,16 +2278,22 @@ export interface ApiV1SurveyFormFetchPost200Response {
     'questions': Array<ApiV1SurveyFormFetchPost200ResponseQuestionsInner>;
     'surveyGate': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteractionSurveyGate;
 }
-export interface ApiV1SurveyFormFetchPost200ResponseQuestionsInner {
+/**
+ * @type ApiV1SurveyFormFetchPost200ResponseQuestionsInner
+ */
+export type ApiV1SurveyFormFetchPost200ResponseQuestionsInner = ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOf | ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOf1;
+
+export interface ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOf {
     'questionSlugId'?: string;
-    'questionType': ApiV1SurveyFormFetchPost200ResponseQuestionsInnerQuestionTypeEnum;
     'questionText': string;
     'isRequired': boolean;
     'displayOrder': number;
-    'constraints': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraints;
-    'options'?: Array<ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOptionsInner>;
     'textChangeIsSemantic'?: boolean;
-    'currentAnswer'?: ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswer;
+    'choiceDisplay': ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfChoiceDisplayEnum;
+    'options': Array<ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner>;
+    'questionType': ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfQuestionTypeEnum;
+    'constraints': ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfConstraints;
+    'currentAnswer'?: ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswer;
     'isPassed': boolean;
     'isMissingRequired': boolean;
     'isStale': boolean;
@@ -2300,63 +2302,68 @@ export interface ApiV1SurveyFormFetchPost200ResponseQuestionsInner {
     'answeredQuestionSemanticVersion'?: number;
 }
 
-export const ApiV1SurveyFormFetchPost200ResponseQuestionsInnerQuestionTypeEnum = {
-    MonoChoice: 'mono_choice',
-    MultiChoice: 'multi_choice',
-    Select: 'select',
+export const ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfChoiceDisplayEnum = {
+    Auto: 'auto',
+    List: 'list',
+    Dropdown: 'dropdown',
+} as const;
+
+export type ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfChoiceDisplayEnum = typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfChoiceDisplayEnum[keyof typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfChoiceDisplayEnum];
+export const ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfQuestionTypeEnum = {
+    Choice: 'choice',
+} as const;
+
+export type ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfQuestionTypeEnum = typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfQuestionTypeEnum[keyof typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfQuestionTypeEnum];
+
+export interface ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOf1 {
+    'questionSlugId'?: string;
+    'questionText': string;
+    'isRequired': boolean;
+    'displayOrder': number;
+    'textChangeIsSemantic'?: boolean;
+    'questionType': ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOf1QuestionTypeEnum;
+    'constraints': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraints;
+    'currentAnswer'?: ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswer;
+    'isPassed': boolean;
+    'isMissingRequired': boolean;
+    'isStale': boolean;
+    'isCurrentAnswerValid': boolean;
+    'currentSemanticVersion': number;
+    'answeredQuestionSemanticVersion'?: number;
+}
+
+export const ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOf1QuestionTypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1SurveyFormFetchPost200ResponseQuestionsInnerQuestionTypeEnum = typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerQuestionTypeEnum[keyof typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerQuestionTypeEnum];
+export type ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOf1QuestionTypeEnum = typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOf1QuestionTypeEnum[keyof typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOf1QuestionTypeEnum];
 
 /**
- * @type ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswer
+ * @type ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswer
  */
-export type ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswer = ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf | ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf1 | ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf2 | ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf3;
+export type ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswer = ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOf | ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOf1;
 
-export interface ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf {
+export interface ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOf {
     'optionSlugIds': Array<string>;
-    'questionType': ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOfQuestionTypeEnum;
+    'questionType': ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOfQuestionTypeEnum;
 }
 
-export const ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOfQuestionTypeEnum = {
-    MonoChoice: 'mono_choice',
+export const ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOfQuestionTypeEnum = {
+    Choice: 'choice',
 } as const;
 
-export type ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOfQuestionTypeEnum = typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOfQuestionTypeEnum[keyof typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOfQuestionTypeEnum];
+export type ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOfQuestionTypeEnum = typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOfQuestionTypeEnum[keyof typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOfQuestionTypeEnum];
 
-export interface ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf1 {
-    'optionSlugIds': Array<string>;
-    'questionType': ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf1QuestionTypeEnum;
-}
-
-export const ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf1QuestionTypeEnum = {
-    Select: 'select',
-} as const;
-
-export type ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf1QuestionTypeEnum = typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf1QuestionTypeEnum[keyof typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf1QuestionTypeEnum];
-
-export interface ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf2 {
-    'optionSlugIds': Array<string>;
-    'questionType': ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf2QuestionTypeEnum;
-}
-
-export const ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf2QuestionTypeEnum = {
-    MultiChoice: 'multi_choice',
-} as const;
-
-export type ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf2QuestionTypeEnum = typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf2QuestionTypeEnum[keyof typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf2QuestionTypeEnum];
-
-export interface ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf3 {
-    'questionType': ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf3QuestionTypeEnum;
+export interface ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOf1 {
+    'questionType': ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOf1QuestionTypeEnum;
     'textValueHtml': string;
 }
 
-export const ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf3QuestionTypeEnum = {
+export const ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOf1QuestionTypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf3QuestionTypeEnum = typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf3QuestionTypeEnum[keyof typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswerOneOf3QuestionTypeEnum];
+export type ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOf1QuestionTypeEnum = typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOf1QuestionTypeEnum[keyof typeof ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswerOneOf1QuestionTypeEnum];
 
 /**
  * @type ApiV1SurveyResponseWithdrawPost200Response
@@ -2404,9 +2411,7 @@ export const ApiV1SurveyResultsAggregatedPost200ResponseSuppressedRowsInnerScope
 
 export type ApiV1SurveyResultsAggregatedPost200ResponseSuppressedRowsInnerScopeEnum = typeof ApiV1SurveyResultsAggregatedPost200ResponseSuppressedRowsInnerScopeEnum[keyof typeof ApiV1SurveyResultsAggregatedPost200ResponseSuppressedRowsInnerScopeEnum];
 export const ApiV1SurveyResultsAggregatedPost200ResponseSuppressedRowsInnerQuestionTypeEnum = {
-    MonoChoice: 'mono_choice',
-    MultiChoice: 'multi_choice',
-    Select: 'select',
+    Choice: 'choice',
     FreeText: 'free_text',
 } as const;
 

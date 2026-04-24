@@ -6,13 +6,14 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **questionSlugId** | **string** |  | [optional] [default to undefined]
-**questionType** | **string** |  | [default to undefined]
 **questionText** | **string** |  | [default to undefined]
 **isRequired** | **boolean** |  | [default to undefined]
 **displayOrder** | **number** |  | [default to undefined]
-**constraints** | [**ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraints**](ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerConstraints.md) |  | [default to undefined]
-**_options** | [**Array&lt;ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOptionsInner&gt;**](ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOptionsInner.md) |  | [optional] [default to undefined]
 **textChangeIsSemantic** | **boolean** |  | [optional] [default to undefined]
+**choiceDisplay** | **string** |  | [default to undefined]
+**_options** | [**Array&lt;ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner&gt;**](ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner.md) |  | [default to undefined]
+**questionType** | **string** |  | [default to undefined]
+**constraints** | [**ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1Constraints**](ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1Constraints.md) |  | [default to undefined]
 
 ## Example
 
@@ -21,13 +22,14 @@ import { ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner } from './
 
 const instance: ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner = {
     questionSlugId,
-    questionType,
     questionText,
     isRequired,
     displayOrder,
-    constraints,
-    _options,
     textChangeIsSemantic,
+    choiceDisplay,
+    _options,
+    questionType,
+    constraints,
 };
 ```
 

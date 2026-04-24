@@ -6,6 +6,7 @@ import {
     conversationProofTable,
     conversationTable,
     conversationModerationTable,
+    organizationTable,
 } from "@/shared-backend/schema.js";
 import { eq } from "drizzle-orm";
 import { log } from "@/app.js";
@@ -81,6 +82,7 @@ export async function getConversationForEdit({
             isIndexed: conversationTable.isIndexed,
             participationMode: conversationTable.participationMode,
             requiresEventTicket: conversationTable.requiresEventTicket,
+            postAsOrganizationName: organizationTable.name,
             indexConversationAt: conversationTable.indexConversationAt,
             createdAt: conversationTable.createdAt,
             updatedAt: conversationTable.updatedAt,
@@ -99,6 +101,10 @@ export async function getConversationForEdit({
             eq(conversationContentTable.id, conversationTable.currentContentId),
         )
         .leftJoin(pollTable, eq(conversationContentTable.pollId, pollTable.id))
+        .leftJoin(
+            organizationTable,
+            eq(conversationTable.organizationId, organizationTable.id),
+        )
         .leftJoin(
             conversationModerationTable,
             eq(
@@ -152,6 +158,9 @@ export async function getConversationForEdit({
         isIndexed: conversation.isIndexed,
         participationMode: conversation.participationMode,
         requiresEventTicket: toUnionUndefined(conversation.requiresEventTicket),
+        postAsOrganizationName: toUnionUndefined(
+            conversation.postAsOrganizationName,
+        ),
         surveyConfig: await getSurveyConfigForConversation({
             db,
             conversationId: conversation.conversationId,

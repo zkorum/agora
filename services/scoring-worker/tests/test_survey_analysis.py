@@ -11,10 +11,10 @@ from scoring_worker.db import (
 def test_derive_survey_gate_status_marks_invalidated_answers_as_needs_update() -> None:
     question = SurveyQuestionAnalysisRecord(
         question_id=1,
-        question_type="mono_choice",
+        question_type="choice",
         current_semantic_version=2,
         is_required=True,
-        constraints={"type": "mono_choice", "minSelections": 1, "maxSelections": 1},
+        constraints={"type": "choice", "minSelections": 1, "maxSelections": 1},
         option_slug_ids=("yes", "no"),
     )
 
@@ -42,10 +42,10 @@ def test_withdrawn_survey_is_not_eligible_for_analysis() -> None:
 def test_optional_only_survey_is_analysis_eligible_without_response() -> None:
     question = SurveyQuestionAnalysisRecord(
         question_id=2,
-        question_type="mono_choice",
+        question_type="choice",
         current_semantic_version=1,
         is_required=False,
-        constraints={"type": "mono_choice", "minSelections": 1, "maxSelections": 1},
+        constraints={"type": "choice", "minSelections": 1, "maxSelections": 1},
         option_slug_ids=("a", "b"),
     )
 

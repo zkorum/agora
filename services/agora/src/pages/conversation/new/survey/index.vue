@@ -42,7 +42,7 @@
             no-caps
             color="negative"
             :label="t('removeQuestionLabel')"
-            @click="removeQuestion({ questionIndex })"
+            @click="requestRemoveQuestion({ questionIndex })"
           />
         </div>
 
@@ -56,11 +56,23 @@
           @update:model-value="(value) => updateQuestionType({ questionIndex, questionType: value })"
         />
 
+        <q-select
+          v-if="question.questionType !== 'free_text'"
+          :model-value="question.choiceDisplay"
+          outlined
+          emit-value
+          map-options
+          :label="t('choiceDisplayLabel')"
+          :options="choiceDisplayOptions"
+          @update:model-value="(value) => updateQuestionChoiceDisplay({ questionIndex, choiceDisplay: value })"
+        />
+
         <q-input
           :model-value="question.questionText"
           outlined
           autogrow
           :maxlength="500"
+          :error="shouldShowQuestionTextError({ question })"
           :label="t('questionPromptLabel')"
           @update:model-value="(value) => updateQuestionText({ questionIndex, questionText: value })"
         />
@@ -71,21 +83,25 @@
           @update:model-value="(value) => updateQuestionRequired({ questionIndex, isRequired: value })"
         />
 
-        <div v-if="question.questionType === 'multi_choice'" class="constraints-grid">
+        <div v-if="question.questionType === 'choice'" class="constraints-grid">
           <q-input
-            :model-value="question.constraints.type === 'multi_choice' ? question.constraints.minSelections : 1"
+            :model-value="question.constraints.minSelections"
             outlined
             type="number"
+            :min="1"
+            :max="question.options.length"
             :label="t('minSelectionsLabel')"
-            @update:model-value="(value) => updateMultiChoiceConstraints({ questionIndex, minSelections: value, maxSelections: question.constraints.type === 'multi_choice' ? question.constraints.maxSelections : undefined })"
+            @update:model-value="(value) => updateChoiceConstraints({ questionIndex, minSelections: value, maxSelections: question.constraints.maxSelections })"
           />
 
           <q-input
-            :model-value="question.constraints.type === 'multi_choice' ? question.constraints.maxSelections ?? '' : ''"
+            :model-value="question.constraints.maxSelections ?? ''"
             outlined
             type="number"
+            :min="1"
+            :max="question.options.length"
             :label="t('maxSelectionsLabel')"
-            @update:model-value="(value) => updateMultiChoiceConstraints({ questionIndex, minSelections: question.constraints.type === 'multi_choice' ? question.constraints.minSelections : 1, maxSelections: value })"
+            @update:model-value="(value) => updateChoiceConstraints({ questionIndex, minSelections: question.constraints.minSelections, maxSelections: value })"
           />
         </div>
 
@@ -146,10 +162,13 @@
             v-for="(option, optionIndex) in question.options ?? []"
             :key="optionIndex"
             :model-value="option.optionText"
+            :data-survey-option-input="getOptionInputKey({ questionIndex, optionIndex })"
             outlined
             :maxlength="200"
+            :error="shouldShowOptionTextError({ question, option })"
             :label="t('optionLabel', { number: optionIndex + 1 })"
             @update:model-value="(value) => updateOptionText({ questionIndex, optionIndex, optionText: value })"
+            @keydown.enter.prevent="addOption({ questionIndex })"
           >
             <template #append>
               <q-btn
@@ -158,7 +177,7 @@
                 round
                 dense
                 icon="mdi-close"
-                @click="removeOption({ questionIndex, optionIndex })"
+                @click="requestRemoveOption({ questionIndex, optionIndex })"
               />
             </template>
           </q-input>
@@ -170,10 +189,25 @@
             :label="t('addOptionLabel')"
             @click="addOption({ questionIndex })"
           />
+
+          <ZKInfoBanner
+            v-if="
+              shouldShowLargeOptionWarning({
+                choiceDisplay: question.choiceDisplay,
+                optionCount: question.options?.length ?? 0,
+              })
+            "
+            :message="
+              t('largeOptionCountWarning', {
+                count: question.options?.length ?? 0,
+                threshold: largeOptionWarningThreshold,
+              })
+            "
+          />
         </div>
       </div>
 
-      <div class="template-actions">
+      <div v-if="isSurveyAllowed" class="template-actions">
         <q-btn
           flat
           no-caps
@@ -201,6 +235,15 @@
       :ok-callback="onLoginCallback"
       active-intention="newConversation"
     />
+
+    <ZKConfirmDialog
+      v-model="showRemoveDialog"
+      :message="removeDialogMessage"
+      :confirm-text="removeDialogConfirmText"
+      :cancel-text="t('cancelLabel')"
+      variant="destructive"
+      @confirm="handleConfirmRemoval"
+    />
   </NewConversationLayout>
 </template>
 
@@ -212,36 +255,48 @@ import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
+import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
+import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
 import { useConversationDraft } from "src/composables/conversation/draft";
+import { usePublishConversationDraft } from "src/composables/conversation/usePublishConversationDraft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
-import type { SurveyQuestionConstraints, SurveyQuestionType } from "src/shared/types/zod";
+import type {
+  SurveyChoiceDisplay,
+  SurveyQuestionConfig,
+  SurveyQuestionConstraints,
+  SurveyQuestionOption,
+  SurveyQuestionType,
+} from "src/shared/types/zod";
+import {
+  checkFeatureAccess,
+  DEFAULT_FEATURE_ALLOWED_ORGS,
+  DEFAULT_FEATURE_ALLOWED_USERS,
+} from "src/shared-app-api/featureAccess";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
-import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
-import { useCommonApi } from "src/utils/api/common";
-import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
-import { useBackendPostApi } from "src/utils/api/post/post";
-import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
 import {
   isHistoryBackToPath,
   navigateBackOrReplace,
 } from "src/utils/nav/historyBack";
+import { processEnv } from "src/utils/processEnv";
 import {
-  buildSurveyConfigForSave,
+  createChoiceSurveyQuestionConstraints,
   createEmptySurveyOption,
   createEmptySurveyQuestion,
   createIntegerSurveyQuestionConstraints,
   createRichTextSurveyQuestionConstraints,
+  normalizeChoiceSurveyQuestionConstraints,
+  shouldWarnAboutLargeSurveyOptionSet,
+  SURVEY_LARGE_OPTION_WARNING_THRESHOLD,
 } from "src/utils/survey/config";
 import {
   createSurveyTemplateQuestion,
   type SurveyTemplateId,
 } from "src/utils/survey/templates";
 import { surveyTemplateTextTranslations } from "src/utils/survey/templates.i18n";
-import { useNotify } from "src/utils/ui/notify";
-import { computed, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -256,8 +311,7 @@ defineOptions({
 });
 
 const router = useRouter();
-const { isLoggedIn } = storeToRefs(useAuthenticationStore());
-const { showNotifyMessage } = useNotify();
+const { isLoggedIn, userId } = storeToRefs(useAuthenticationStore());
 const { t, locale } = useComponentI18n<ConversationSurveyStepTranslations>(
   conversationSurveyStepTranslations
 );
@@ -265,29 +319,118 @@ const { t, locale } = useComponentI18n<ConversationSurveyStepTranslations>(
 const { validateForReview, isDraftModified, resetDraft, surveyConfig } =
   useConversationDraft({ syncToStore: true });
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
-const { createNewPost } = useBackendPostApi();
-const { syncMaxDiff } = useMaxDiffApi();
-const { invalidateFeedTab } = useInvalidateFeedQuery();
-const { handleAxiosErrorStatusCodes } = useCommonApi();
+const { publishConversationDraft } = usePublishConversationDraft();
 const { createNewConversationIntention } = useLoginIntentionStore();
-const navigationStore = useNavigationStore();
+
+type PendingRemoval =
+  | { type: "question"; questionIndex: number }
+  | { type: "option"; questionIndex: number; optionIndex: number };
 
 const routeGuard = ref<{ unlockRoute: () => void } | undefined>(undefined);
 const showLoginDialog = ref(false);
 const isSubmitButtonLoading = ref(false);
 const isNavigatingAway = ref(false);
+const surveyValidationErrorMessage = ref<string | null>(null);
+const pendingRemoval = ref<PendingRemoval | null>(null);
 
 const surveyConfigValue = computed(() => surveyConfig.value);
 
 const surveyQuestions = computed(() => {
   return surveyConfig.value?.questions ?? [];
 });
+const largeOptionWarningThreshold = SURVEY_LARGE_OPTION_WARNING_THRESHOLD;
+
+function clearSurveyValidationError(): void {
+  surveyValidationErrorMessage.value = null;
+}
+
+function showSurveyValidationError(): void {
+  surveyValidationErrorMessage.value = t("surveyValidationError");
+}
+
+function shouldShowQuestionTextError({
+  question,
+}: {
+  question: SurveyQuestionConfig;
+}): boolean {
+  return (
+    surveyValidationErrorMessage.value !== null && question.questionText.trim() === ""
+  );
+}
+
+function shouldShowOptionTextError({
+  question,
+  option,
+}: {
+  question: SurveyQuestionConfig;
+  option: SurveyQuestionOption;
+}): boolean {
+  return (
+    surveyValidationErrorMessage.value !== null &&
+    question.questionType === "choice" &&
+    option.optionText.trim() === ""
+  );
+}
+
+const showRemoveDialog = computed({
+  get: () => pendingRemoval.value !== null,
+  set: (value: boolean) => {
+    if (!value) {
+      pendingRemoval.value = null;
+    }
+  },
+});
+
+const removeDialogMessage = computed(() => {
+  switch (pendingRemoval.value?.type) {
+    case undefined:
+      return "";
+    case "question":
+      return t("confirmRemoveQuestionMessage");
+    case "option":
+      return t("confirmRemoveOptionMessage");
+  }
+
+  return "";
+});
+
+const removeDialogConfirmText = computed(() => {
+  switch (pendingRemoval.value?.type) {
+    case undefined:
+      return t("removeQuestionLabel");
+    case "question":
+      return t("confirmRemoveQuestionButtonLabel");
+    case "option":
+      return t("confirmRemoveOptionButtonLabel");
+  }
+
+  return t("removeQuestionLabel");
+});
+
+const isSurveyAllowed = computed(() => {
+  const result = checkFeatureAccess({
+    featureEnabled: processEnv.VITE_SURVEY_ENABLED === "true",
+    isOrgOnly: processEnv.VITE_IS_SURVEY_ORG_ONLY === "true",
+    allowedOrgs:
+      processEnv.VITE_SURVEY_ALLOWED_ORGS ?? DEFAULT_FEATURE_ALLOWED_ORGS,
+    allowedUsers:
+      processEnv.VITE_SURVEY_ALLOWED_USERS ?? DEFAULT_FEATURE_ALLOWED_USERS,
+    postAsOrganization: conversationDraft.value.postAs.postAsOrganization,
+    organizationName: conversationDraft.value.postAs.organizationName,
+    userId: userId.value ?? "",
+  });
+
+  return result.allowed;
+});
 
 const questionTypeOptions: Array<{ label: string; value: SurveyQuestionType }> = [
-  { label: t("typeMonoChoice"), value: "mono_choice" },
-  { label: t("typeMultiChoice"), value: "multi_choice" },
-  { label: t("typeSelect"), value: "select" },
+  { label: t("typeChoice"), value: "choice" },
   { label: t("typeFreeText"), value: "free_text" },
+];
+const choiceDisplayOptions: Array<{ label: string; value: SurveyChoiceDisplay }> = [
+  { label: t("choiceDisplayAuto"), value: "auto" },
+  { label: t("choiceDisplayList"), value: "list" },
+  { label: t("choiceDisplayDropdown"), value: "dropdown" },
 ];
 const freeTextInputModeOptions = computed<
   Array<{ label: string; value: "rich_text" | "integer" }>
@@ -301,6 +444,14 @@ const templateTexts = computed(() => {
     surveyTemplateTextTranslations[currentLocale] ??
     surveyTemplateTextTranslations.en
   );
+});
+
+onMounted(async () => {
+  if (!isSurveyAllowed.value) {
+    routeGuard.value?.unlockRoute();
+    isNavigatingAway.value = true;
+    await router.replace({ name: "/conversation/new/seed/" });
+  }
 });
 
 function onLoginCallback() {
@@ -323,12 +474,17 @@ async function handleBack(event: MouseEvent): Promise<void> {
 }
 
 function ensureSurveyConfig(): void {
+  if (!isSurveyAllowed.value) {
+    return;
+  }
+
   if (surveyConfig.value === null) {
     surveyConfig.value = { questions: [] };
   }
 }
 
 function addQuestion(): void {
+  clearSurveyValidationError();
   ensureSurveyConfig();
   surveyConfig.value?.questions.push(
     createEmptySurveyQuestion({
@@ -337,7 +493,18 @@ function addQuestion(): void {
   );
 }
 
+function shouldShowLargeOptionWarning({
+  choiceDisplay,
+  optionCount,
+}: {
+  choiceDisplay: SurveyChoiceDisplay;
+  optionCount: number;
+}): boolean {
+  return shouldWarnAboutLargeSurveyOptionSet({ choiceDisplay, optionCount });
+}
+
 function addTemplateQuestion({ templateId }: { templateId: SurveyTemplateId }): void {
+  clearSurveyValidationError();
   ensureSurveyConfig();
   surveyConfig.value?.questions.push(
     createSurveyTemplateQuestion({
@@ -346,6 +513,30 @@ function addTemplateQuestion({ templateId }: { templateId: SurveyTemplateId }): 
       displayLanguage: locale.value as SupportedDisplayLanguageCodes,
     })
   );
+}
+
+function getOptionInputKey({
+  questionIndex,
+  optionIndex,
+}: {
+  questionIndex: number;
+  optionIndex: number;
+}): string {
+  return `${questionIndex}-${optionIndex}`;
+}
+
+async function focusOptionInput({
+  questionIndex,
+  optionIndex,
+}: {
+  questionIndex: number;
+  optionIndex: number;
+}): Promise<void> {
+  await nextTick();
+  const input = document.querySelector<HTMLInputElement>(
+    `[data-survey-option-input="${getOptionInputKey({ questionIndex, optionIndex })}"] input`
+  );
+  input?.focus();
 }
 
 function getIntegerConstraints({
@@ -368,7 +559,36 @@ function getRichTextConstraints({
     : undefined;
 }
 
+function reindexSurveyQuestion({
+  question,
+  displayOrder,
+}: {
+  question: SurveyQuestionConfig;
+  displayOrder: number;
+}): SurveyQuestionConfig {
+  if (question.questionType === "free_text") {
+    return {
+      ...question,
+      displayOrder,
+    };
+  }
+
+  return {
+    ...question,
+    displayOrder,
+    options: question.options.map((option, optionIndex) => ({
+      ...option,
+      displayOrder: optionIndex,
+    })),
+  };
+}
+
+function requestRemoveQuestion({ questionIndex }: { questionIndex: number }): void {
+  pendingRemoval.value = { type: "question", questionIndex };
+}
+
 function removeQuestion({ questionIndex }: { questionIndex: number }): void {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) {
     return;
   }
@@ -379,14 +599,9 @@ function removeQuestion({ questionIndex }: { questionIndex: number }): void {
     return;
   }
 
-  surveyConfig.value.questions = surveyConfig.value.questions.map((question, index) => ({
-    ...question,
-    displayOrder: index,
-    options: question.options?.map((option, optionIndex) => ({
-      ...option,
-      displayOrder: optionIndex,
-    })),
-  }));
+  surveyConfig.value.questions = surveyConfig.value.questions.map((question, index) =>
+    reindexSurveyQuestion({ question, displayOrder: index })
+  );
 }
 
 function updateQuestionText({
@@ -396,6 +611,7 @@ function updateQuestionText({
   questionIndex: number;
   questionText: string | number | null;
 }): void {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) {
     return;
   }
@@ -410,6 +626,7 @@ function updateQuestionRequired({
   questionIndex: number;
   isRequired: boolean | null;
 }): void {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) {
     return;
   }
@@ -424,6 +641,7 @@ function updateQuestionType({
   questionIndex: number;
   questionType: SurveyQuestionType | null;
 }): void {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) {
     return;
   }
@@ -434,56 +652,67 @@ function updateQuestionType({
 
   const nextType = questionType;
   const currentQuestion = surveyConfig.value.questions[questionIndex];
+  const questionBase = {
+    questionSlugId: currentQuestion.questionSlugId,
+    questionText: currentQuestion.questionText,
+    isRequired: currentQuestion.isRequired,
+    displayOrder: currentQuestion.displayOrder,
+    textChangeIsSemantic: currentQuestion.textChangeIsSemantic,
+  };
+  const currentChoiceDisplay =
+    currentQuestion.questionType === "free_text"
+      ? "auto"
+      : currentQuestion.choiceDisplay;
+  const currentOptions =
+    currentQuestion.questionType === "free_text" ? [] : currentQuestion.options;
+  const nextOptions =
+    currentOptions.length >= 2
+      ? currentOptions
+      : [
+          createEmptySurveyOption({ displayOrder: 0 }),
+          createEmptySurveyOption({ displayOrder: 1 }),
+        ];
 
   if (nextType === "free_text") {
     surveyConfig.value.questions[questionIndex] = {
-      ...currentQuestion,
+      ...questionBase,
       questionType: "free_text",
       constraints: createRichTextSurveyQuestionConstraints(),
-      options: undefined,
-    };
-    return;
-  }
-
-  if (nextType === "multi_choice") {
-    surveyConfig.value.questions[questionIndex] = {
-      ...currentQuestion,
-      questionType: "multi_choice",
-      constraints: {
-        type: "multi_choice",
-        minSelections: 1,
-        maxSelections: undefined,
-      },
-      options:
-        currentQuestion.options && currentQuestion.options.length >= 2
-          ? currentQuestion.options
-          : [
-              createEmptySurveyOption({ displayOrder: 0 }),
-              createEmptySurveyOption({ displayOrder: 1 }),
-            ],
     };
     return;
   }
 
   surveyConfig.value.questions[questionIndex] = {
-    ...currentQuestion,
-    questionType: nextType === "select" ? "select" : "mono_choice",
-    constraints: {
-      type: nextType === "select" ? "select" : "mono_choice",
-      minSelections: 1,
-      maxSelections: 1,
-    },
-    options:
-      currentQuestion.options && currentQuestion.options.length >= 2
-        ? currentQuestion.options
-        : [
-            createEmptySurveyOption({ displayOrder: 0 }),
-            createEmptySurveyOption({ displayOrder: 1 }),
-          ],
+    ...questionBase,
+    questionType: "choice",
+    choiceDisplay: currentChoiceDisplay,
+    constraints: createChoiceSurveyQuestionConstraints(),
+    options: nextOptions,
   };
 }
 
-function addOption({ questionIndex }: { questionIndex: number }): void {
+function updateQuestionChoiceDisplay({
+  questionIndex,
+  choiceDisplay,
+}: {
+  questionIndex: number;
+  choiceDisplay: SurveyChoiceDisplay | null;
+}): void {
+  clearSurveyValidationError();
+  if (surveyConfig.value === null || choiceDisplay === null) {
+    return;
+  }
+
+  const question = surveyConfig.value.questions[questionIndex];
+  if (question.questionType === "free_text") {
+    return;
+  }
+
+  question.choiceDisplay = choiceDisplay;
+}
+
+async function addOption({ questionIndex }: { questionIndex: number }): Promise<void> {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) {
     return;
   }
@@ -493,16 +722,23 @@ function addOption({ questionIndex }: { questionIndex: number }): void {
     return;
   }
 
-  if (question.options === undefined) {
-    question.options = [
-      createEmptySurveyOption({ displayOrder: 0 }),
-      createEmptySurveyOption({ displayOrder: 1 }),
-    ];
-  }
-
   question.options.push(
     createEmptySurveyOption({ displayOrder: question.options.length })
   );
+  await focusOptionInput({
+    questionIndex,
+    optionIndex: question.options.length - 1,
+  });
+}
+
+function requestRemoveOption({
+  questionIndex,
+  optionIndex,
+}: {
+  questionIndex: number;
+  optionIndex: number;
+}): void {
+  pendingRemoval.value = { type: "option", questionIndex, optionIndex };
 }
 
 function removeOption({
@@ -512,12 +748,13 @@ function removeOption({
   questionIndex: number;
   optionIndex: number;
 }): void {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) {
     return;
   }
 
   const question = surveyConfig.value.questions[questionIndex];
-  if (question.options === undefined || question.options.length <= 2) {
+  if (question.questionType === "free_text" || question.options.length <= 2) {
     return;
   }
 
@@ -526,6 +763,11 @@ function removeOption({
     ...option,
     displayOrder: index,
   }));
+  question.constraints = normalizeChoiceSurveyQuestionConstraints({
+    minSelections: question.constraints.minSelections,
+    maxSelections: question.constraints.maxSelections,
+    optionCount: question.options.length,
+  });
 }
 
 function updateOptionText({
@@ -537,11 +779,17 @@ function updateOptionText({
   optionIndex: number;
   optionText: string | number | null;
 }): void {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) {
     return;
   }
 
-  const option = surveyConfig.value.questions[questionIndex].options?.[optionIndex];
+  const question = surveyConfig.value.questions[questionIndex];
+  if (question.questionType === "free_text") {
+    return;
+  }
+
+  const option = question.options[optionIndex];
   if (option === undefined) {
     return;
   }
@@ -562,7 +810,7 @@ function parseOptionalInteger(value: string | number | null): number | undefined
   return parsedValue;
 }
 
-function updateMultiChoiceConstraints({
+function updateChoiceConstraints({
   questionIndex,
   minSelections,
   maxSelections,
@@ -571,20 +819,24 @@ function updateMultiChoiceConstraints({
   minSelections: string | number | null;
   maxSelections: string | number | null | undefined;
 }): void {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) {
     return;
   }
 
   const question = surveyConfig.value.questions[questionIndex];
-  if (question.questionType !== "multi_choice") {
+  if (question.questionType !== "choice") {
     return;
   }
 
-  question.constraints = {
-    type: "multi_choice",
-    minSelections: Math.max(parseOptionalInteger(minSelections) ?? 1, 1),
-    maxSelections: parseOptionalInteger(maxSelections ?? null),
-  };
+  const parsedMinSelections = Math.max(parseOptionalInteger(minSelections) ?? 1, 1);
+  const parsedMaxSelections = parseOptionalInteger(maxSelections ?? null);
+
+  question.constraints = normalizeChoiceSurveyQuestionConstraints({
+    minSelections: parsedMinSelections,
+    maxSelections: parsedMaxSelections,
+    optionCount: question.options.length,
+  });
 }
 
 function updateFreeTextInputMode({
@@ -594,6 +846,7 @@ function updateFreeTextInputMode({
   questionIndex: number;
   inputMode: "rich_text" | "integer" | null;
 }): void {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) {
     return;
   }
@@ -618,6 +871,7 @@ function updateRichTextConstraints({
   minPlainTextLength: string | number | null | undefined;
   maxPlainTextLength: string | number | null;
 }): void {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) {
     return;
   }
@@ -654,6 +908,7 @@ function updateIntegerConstraints({
   minValue: string | number | null | undefined;
   maxValue: string | number | null | undefined;
 }): void {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) {
     return;
   }
@@ -675,6 +930,24 @@ function updateIntegerConstraints({
   };
 }
 
+function handleConfirmRemoval(): void {
+  const target = pendingRemoval.value;
+  pendingRemoval.value = null;
+  switch (target?.type) {
+    case undefined:
+      return;
+    case "question":
+      removeQuestion({ questionIndex: target.questionIndex });
+      return;
+    case "option":
+      removeOption({
+        questionIndex: target.questionIndex,
+        optionIndex: target.optionIndex,
+      });
+      return;
+  }
+}
+
 async function publishConversation(): Promise<void> {
   if (!isLoggedIn.value) {
     showLoginDialog.value = true;
@@ -689,66 +962,23 @@ async function publishConversation(): Promise<void> {
     return;
   }
 
-  const normalizedSurveyConfigResult = buildSurveyConfigForSave({
-    surveyConfig: surveyConfig.value,
-  });
-  if (!normalizedSurveyConfigResult.success) {
-    showNotifyMessage(t("surveyValidationError"));
-    return;
-  }
-
   isSubmitButtonLoading.value = true;
 
-  const response = await createNewPost({
-    postTitle: conversationDraft.value.title,
-    postBody:
-      conversationDraft.value.content === ""
-        ? undefined
-        : conversationDraft.value.content,
-    pollingOptionList: conversationDraft.value.poll.enabled
-      ? conversationDraft.value.poll.options
-      : undefined,
-    postAsOrganizationName: conversationDraft.value.postAs.postAsOrganization
-      ? conversationDraft.value.postAs.organizationName
-      : "",
-    targetIsoConvertDateString: conversationDraft.value
-      .privateConversationSettings.hasScheduledConversion
-      ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
-      : undefined,
-    isIndexed: !conversationDraft.value.isPrivate,
-    participationMode: conversationDraft.value.participationMode,
-    conversationType: conversationDraft.value.conversationType,
-    seedOpinionList: conversationDraft.value.seedOpinions,
-    requiresEventTicket: conversationDraft.value.requiresEventTicket,
-    externalSourceConfig: conversationDraft.value.externalSourceConfig,
-    surveyConfig: normalizedSurveyConfigResult.surveyConfig,
+  const wasPublished = await publishConversationDraft({
+    conversationDraft: conversationDraft.value,
+    surveyConfig: surveyConfig.value,
+    invalidSurveyMessage: t("surveyValidationError"),
+    defaultErrorMessage: t("publishError"),
+    onInvalidSurvey: showSurveyValidationError,
+    beforeSuccessNavigation: () => {
+      routeGuard.value?.unlockRoute();
+      isNavigatingAway.value = true;
+    },
   });
 
-  if (response.status === "success") {
-    if (conversationDraft.value.externalSourceConfig !== null) {
-      await syncMaxDiff({
-        conversationSlugId: response.data.conversationSlugId,
-      });
-    }
-
-    invalidateFeedTab("new");
-    navigationStore.setConversationCreationContext(true);
-    resetDraft();
-    routeGuard.value?.unlockRoute();
-    isNavigatingAway.value = true;
-
-    await router.replace({
-      name: "/conversation/[postSlugId]/",
-      params: { postSlugId: response.data.conversationSlugId },
-    });
-    return;
+  if (!wasPublished) {
+    isSubmitButtonLoading.value = false;
   }
-
-  isSubmitButtonLoading.value = false;
-  handleAxiosErrorStatusCodes({
-    axiosErrorCode: response.code,
-    defaultMessage: t("publishError"),
-  });
 }
 </script>
 

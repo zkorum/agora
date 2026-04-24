@@ -84,6 +84,7 @@ export const zodImportFailureReason = z.enum([
     "invalid_data_format", // Invalid data format in queue
 ]);
 export const zodExportFileType = z.enum([
+    "bundle",
     "comments",
     "votes",
     "participants",
@@ -95,6 +96,7 @@ export const zodExportFileType = z.enum([
     "survey_public_aggregates",
     "survey_full_aggregates",
 ]);
+export const zodExportFileAudience = z.enum(["redacted", "owner", "requester"]);
 export const zodExportFileInfo = z
     .object({
         fileType: zodExportFileType,
@@ -509,24 +511,13 @@ export const zodImportInfo = z.object({
 });
 export type ImportInfo = z.infer<typeof zodImportInfo>;
 
-export const zodSurveyQuestionType = z.enum([
-    "mono_choice",
-    "multi_choice",
-    "select",
-    "free_text",
-]);
+export const zodSurveyQuestionType = z.enum(["choice", "free_text"]);
 
-const zodSurveyQuestionMonoChoiceConstraints = z
-    .object({
-        type: z.enum(["mono_choice", "select"]),
-        minSelections: z.literal(1),
-        maxSelections: z.literal(1),
-    })
-    .strict();
+export const zodSurveyChoiceDisplay = z.enum(["auto", "list", "dropdown"]);
 
-const zodSurveyQuestionMultiChoiceConstraints = z
+const zodSurveyQuestionChoiceConstraints = z
     .object({
-        type: z.literal("multi_choice"),
+        type: z.literal("choice"),
         minSelections: z.number().int().nonnegative().min(1),
         maxSelections: z.number().int().nonnegative().min(1).optional(),
     })
@@ -552,8 +543,7 @@ const zodSurveyQuestionFreeTextIntegerConstraints = z
     .strict();
 
 export const zodSurveyQuestionConstraints = z.union([
-    zodSurveyQuestionMonoChoiceConstraints,
-    zodSurveyQuestionMultiChoiceConstraints,
+    zodSurveyQuestionChoiceConstraints,
     zodSurveyQuestionFreeTextRichTextConstraints,
     zodSurveyQuestionFreeTextIntegerConstraints,
 ]);
@@ -567,18 +557,45 @@ export const zodSurveyQuestionOption = z
     })
     .strict();
 
-export const zodSurveyQuestionConfig = z
+const zodSurveyQuestionBase = z
     .object({
         questionSlugId: zodSlugId.optional(),
-        questionType: zodSurveyQuestionType,
         questionText: z.string().min(1).max(MAX_LENGTH_SURVEY_QUESTION),
         isRequired: z.boolean(),
         displayOrder: z.number().int().nonnegative(),
-        constraints: zodSurveyQuestionConstraints,
-        options: z.array(zodSurveyQuestionOption).optional(),
         textChangeIsSemantic: z.boolean().optional(),
     })
-    .strict()
+    .strict();
+
+const zodSurveyChoiceQuestionBase = zodSurveyQuestionBase
+    .extend({
+        choiceDisplay: zodSurveyChoiceDisplay,
+        options: z.array(zodSurveyQuestionOption).min(2),
+    })
+    .strict();
+
+const zodSurveyChoiceQuestionConfig = zodSurveyChoiceQuestionBase
+    .extend({
+        questionType: z.literal("choice"),
+        constraints: zodSurveyQuestionChoiceConstraints,
+    })
+    .strict();
+
+const zodSurveyFreeTextQuestionConfig = zodSurveyQuestionBase
+    .extend({
+        questionType: z.literal("free_text"),
+        constraints: z.union([
+            zodSurveyQuestionFreeTextRichTextConstraints,
+            zodSurveyQuestionFreeTextIntegerConstraints,
+        ]),
+    })
+    .strict();
+
+export const zodSurveyQuestionConfig = z
+    .discriminatedUnion("questionType", [
+        zodSurveyChoiceQuestionConfig,
+        zodSurveyFreeTextQuestionConfig,
+    ])
     .superRefine((value, ctx) => {
         if (value.questionType !== value.constraints.type) {
             ctx.addIssue({
@@ -587,29 +604,7 @@ export const zodSurveyQuestionConfig = z
             });
         }
 
-        const requiresOptions = value.questionType !== "free_text";
-        if (
-            requiresOptions &&
-            (value.options === undefined || value.options.length === 0)
-        ) {
-            ctx.addIssue({
-                code: "custom",
-                path: ["options"],
-            });
-        }
-
-        if (
-            !requiresOptions &&
-            value.options !== undefined &&
-            value.options.length > 0
-        ) {
-            ctx.addIssue({
-                code: "custom",
-                path: ["options"],
-            });
-        }
-
-        if (value.options !== undefined) {
+        if (value.questionType !== "free_text") {
             const optionSlugIds = value.options
                 .map((option) => option.optionSlugId)
                 .filter(
@@ -622,10 +617,22 @@ export const zodSurveyQuestionConfig = z
                     path: ["options"],
                 });
             }
+
+            const optionDisplayOrders = value.options.map(
+                (option) => option.displayOrder,
+            );
+            if (
+                new Set(optionDisplayOrders).size !== optionDisplayOrders.length
+            ) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["options"],
+                });
+            }
         }
 
         if (
-            value.constraints.type === "multi_choice" &&
+            value.constraints.type === "choice" &&
             value.constraints.maxSelections !== undefined &&
             value.constraints.maxSelections < value.constraints.minSelections
         ) {
@@ -633,6 +640,25 @@ export const zodSurveyQuestionConfig = z
                 code: "custom",
                 path: ["constraints", "maxSelections"],
             });
+        }
+
+        if (value.questionType === "choice") {
+            if (value.constraints.minSelections > value.options.length) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["constraints", "minSelections"],
+                });
+            }
+
+            if (
+                value.constraints.maxSelections !== undefined &&
+                value.constraints.maxSelections > value.options.length
+            ) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["constraints", "maxSelections"],
+                });
+            }
         }
 
         if (value.constraints.type === "free_text") {
@@ -672,6 +698,18 @@ export const zodSurveyConfig = z
                     questionSlugId !== undefined,
             );
         if (new Set(questionSlugIds).size !== questionSlugIds.length) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["questions"],
+            });
+        }
+
+        const questionDisplayOrders = value.questions.map(
+            (question) => question.displayOrder,
+        );
+        if (
+            new Set(questionDisplayOrders).size !== questionDisplayOrders.length
+        ) {
             ctx.addIssue({
                 code: "custom",
                 path: ["questions"],
@@ -747,17 +785,7 @@ const zodSurveyFreeTextAnswerDraft = z
 export const zodSurveyAnswerDraft = z.discriminatedUnion("questionType", [
     zodSurveyChoiceAnswerDraftBase
         .extend({
-            questionType: z.literal("mono_choice"),
-        })
-        .strict(),
-    zodSurveyChoiceAnswerDraftBase
-        .extend({
-            questionType: z.literal("select"),
-        })
-        .strict(),
-    zodSurveyChoiceAnswerDraftBase
-        .extend({
-            questionType: z.literal("multi_choice"),
+            questionType: z.literal("choice"),
         })
         .strict(),
     zodSurveyFreeTextAnswerDraft,
@@ -765,8 +793,7 @@ export const zodSurveyAnswerDraft = z.discriminatedUnion("questionType", [
 
 export const zodSurveyAnswerSubmission = zodSurveyAnswerDraft;
 
-export const zodSurveyQuestionFormItem = zodSurveyQuestionConfig
-    .extend({
+const zodSurveyQuestionFormItemFields = {
         currentAnswer: zodSurveyAnswerDraft.optional(),
         isPassed: z.boolean(),
         isMissingRequired: z.boolean(),
@@ -774,8 +801,16 @@ export const zodSurveyQuestionFormItem = zodSurveyQuestionConfig
         isCurrentAnswerValid: z.boolean(),
         currentSemanticVersion: z.number().int().positive(),
         answeredQuestionSemanticVersion: z.number().int().positive().optional(),
-    })
-    .strict();
+} satisfies z.ZodRawShape;
+
+export const zodSurveyQuestionFormItem = z.discriminatedUnion("questionType", [
+    zodSurveyChoiceQuestionConfig
+        .extend(zodSurveyQuestionFormItemFields)
+        .strict(),
+    zodSurveyFreeTextQuestionConfig
+        .extend(zodSurveyQuestionFormItemFields)
+        .strict(),
+]);
 
 export const zodSurveyRouteResolution = z.discriminatedUnion("kind", [
     z
@@ -1512,6 +1547,7 @@ export type ParticipationBlockedReason = z.infer<
     typeof zodParticipationBlockedReason
 >;
 export type SurveyQuestionType = z.infer<typeof zodSurveyQuestionType>;
+export type SurveyChoiceDisplay = z.infer<typeof zodSurveyChoiceDisplay>;
 export type SurveyQuestionConstraints = z.infer<
     typeof zodSurveyQuestionConstraints
 >;
@@ -1589,6 +1625,7 @@ export type ExportStatus = z.infer<typeof zodExportStatus>;
 export type ExportFailureReason = z.infer<typeof zodExportFailureReason>;
 export type ImportFailureReason = z.infer<typeof zodImportFailureReason>;
 export type ExportFileType = z.infer<typeof zodExportFileType>;
+export type ExportFileAudience = z.infer<typeof zodExportFileAudience>;
 export type ExportFileInfo = z.infer<typeof zodExportFileInfo>;
 export type ExportBundleInfo = z.infer<typeof zodExportBundleInfo>;
 

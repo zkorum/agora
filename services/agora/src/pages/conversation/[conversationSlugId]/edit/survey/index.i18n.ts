@@ -33,10 +33,12 @@ export interface EditSurveyTranslations {
   optionLabel: string;
   addOptionLabel: string;
   addQuestionLabel: string;
-  typeSingleChoice: string;
-  typeMultipleChoice: string;
-  typeDropdown: string;
+  typeChoice: string;
   typeFreeText: string;
+  choiceDisplayLabel: string;
+  choiceDisplayAuto: string;
+  choiceDisplayList: string;
+  choiceDisplayDropdown: string;
   questionSemanticChangeLabel: string;
   questionSemanticChangeHint: string;
   optionSemanticChangeLabel: string;
@@ -46,6 +48,7 @@ export interface EditSurveyTranslations {
   confirmRemoveQuestionButtonLabel: string;
   confirmRemoveOptionButtonLabel: string;
   cancelLabel: string;
+  largeOptionCountWarning: string;
 }
 
 const en: EditSurveyTranslations = {
@@ -81,10 +84,12 @@ const en: EditSurveyTranslations = {
   optionLabel: "Option {number}",
   addOptionLabel: "Add option",
   addQuestionLabel: "Add question",
-  typeSingleChoice: "Single choice",
-  typeMultipleChoice: "Multiple choice",
-  typeDropdown: "Dropdown",
+  typeChoice: "Choice",
   typeFreeText: "Free text",
+  choiceDisplayLabel: "Display",
+  choiceDisplayAuto: "Auto",
+  choiceDisplayList: "List",
+  choiceDisplayDropdown: "Searchable dropdown",
   questionSemanticChangeLabel: "Invalidate answers to this question",
   questionSemanticChangeHint:
     "Turn this on when the new wording changes the meaning of the question.",
@@ -96,6 +101,8 @@ const en: EditSurveyTranslations = {
   confirmRemoveQuestionButtonLabel: "Remove question",
   confirmRemoveOptionButtonLabel: "Remove option",
   cancelLabel: "Cancel",
+  largeOptionCountWarning:
+    "This question is set to List and has {count} options. Consider Auto or Searchable dropdown so participants can scan answers faster.",
 };
 
 export const editSurveyTranslations: Record<
@@ -136,10 +143,12 @@ export const editSurveyTranslations: Record<
     optionLabel: "الخيار {number}",
     addOptionLabel: "إضافة خيار",
     addQuestionLabel: "إضافة سؤال",
-    typeSingleChoice: "اختيار واحد",
-    typeMultipleChoice: "اختيارات متعددة",
-    typeDropdown: "قائمة منسدلة",
+    typeChoice: "اختيار",
     typeFreeText: "نص حر",
+    choiceDisplayLabel: "Display",
+    choiceDisplayAuto: "Auto",
+    choiceDisplayList: "List",
+    choiceDisplayDropdown: "Searchable dropdown",
     questionSemanticChangeLabel: "إبطال الإجابات على هذا السؤال",
     questionSemanticChangeHint: "فعّل هذا إذا كانت الصياغة الجديدة تغيّر معنى السؤال.",
     optionSemanticChangeLabel: "إبطال الإجابات التي تستخدم هذا الخيار",
@@ -149,6 +158,8 @@ export const editSurveyTranslations: Record<
     confirmRemoveQuestionButtonLabel: "إزالة السؤال",
     confirmRemoveOptionButtonLabel: "إزالة الخيار",
     cancelLabel: "إلغاء",
+    largeOptionCountWarning:
+      "تم ضبط هذا السؤال على القائمة ويحتوي على {count} خيارات. فكّر في استخدام تلقائي أو قائمة منسدلة قابلة للبحث ليتمكن المشاركون من تصفح الإجابات بسرعة أكبر.",
   },
   es: {
     saveButton: "Guardar encuesta",
@@ -183,10 +194,12 @@ export const editSurveyTranslations: Record<
     optionLabel: "Opción {number}",
     addOptionLabel: "Agregar opción",
     addQuestionLabel: "Agregar pregunta",
-    typeSingleChoice: "Elección única",
-    typeMultipleChoice: "Elección múltiple",
-    typeDropdown: "Desplegable",
+    typeChoice: "Elección",
     typeFreeText: "Texto libre",
+    choiceDisplayLabel: "Display",
+    choiceDisplayAuto: "Auto",
+    choiceDisplayList: "List",
+    choiceDisplayDropdown: "Searchable dropdown",
     questionSemanticChangeLabel: "Invalidar respuestas a esta pregunta",
     questionSemanticChangeHint:
       "Activa esto cuando la nueva redacción cambie el significado de la pregunta.",
@@ -198,6 +211,8 @@ export const editSurveyTranslations: Record<
     confirmRemoveQuestionButtonLabel: "Eliminar pregunta",
     confirmRemoveOptionButtonLabel: "Eliminar opción",
     cancelLabel: "Cancelar",
+    largeOptionCountWarning:
+      "Esta pregunta está configurada como Lista y tiene {count} opciones. Considera usar Automático o Desplegable con búsqueda para que los participantes puedan revisar las respuestas más rápido.",
   },
   fa: {
     saveButton: "ذخیره نظرسنجی",
@@ -232,10 +247,12 @@ export const editSurveyTranslations: Record<
     optionLabel: "گزینه {number}",
     addOptionLabel: "افزودن گزینه",
     addQuestionLabel: "افزودن پرسش",
-    typeSingleChoice: "تک‌انتخابی",
-    typeMultipleChoice: "چندانتخابی",
-    typeDropdown: "فهرست کشویی",
+    typeChoice: "انتخابی",
     typeFreeText: "متن آزاد",
+    choiceDisplayLabel: "Display",
+    choiceDisplayAuto: "Auto",
+    choiceDisplayList: "List",
+    choiceDisplayDropdown: "Searchable dropdown",
     questionSemanticChangeLabel: "بی‌اعتبار کردن پاسخ‌های این پرسش",
     questionSemanticChangeHint:
       "وقتی متن جدید معنی پرسش را عوض می‌کند این را فعال کنید.",
@@ -247,6 +264,8 @@ export const editSurveyTranslations: Record<
     confirmRemoveQuestionButtonLabel: "حذف پرسش",
     confirmRemoveOptionButtonLabel: "حذف گزینه",
     cancelLabel: "لغو",
+    largeOptionCountWarning:
+      "این پرسش روی فهرست تنظیم شده و {count} گزینه دارد. برای اینکه شرکت‌کنندگان سریع‌تر گزینه‌ها را مرور کنند، حالت خودکار یا فهرست کشویی قابل جست‌وجو را در نظر بگیرید.",
   },
   fr: {
     saveButton: "Enregistrer le questionnaire",
@@ -281,10 +300,12 @@ export const editSurveyTranslations: Record<
     optionLabel: "Option {number}",
     addOptionLabel: "Ajouter une option",
     addQuestionLabel: "Ajouter une question",
-    typeSingleChoice: "Choix unique",
-    typeMultipleChoice: "Choix multiple",
-    typeDropdown: "Liste déroulante",
+    typeChoice: "Choix",
     typeFreeText: "Texte libre",
+    choiceDisplayLabel: "Display",
+    choiceDisplayAuto: "Auto",
+    choiceDisplayList: "List",
+    choiceDisplayDropdown: "Searchable dropdown",
     questionSemanticChangeLabel: "Invalider les réponses à cette question",
     questionSemanticChangeHint:
       "Activez ceci lorsque la nouvelle formulation change le sens de la question.",
@@ -296,6 +317,8 @@ export const editSurveyTranslations: Record<
     confirmRemoveQuestionButtonLabel: "Supprimer la question",
     confirmRemoveOptionButtonLabel: "Supprimer l'option",
     cancelLabel: "Annuler",
+    largeOptionCountWarning:
+      "Cette question est réglée sur Liste et comporte {count} options. Pensez à utiliser Auto ou Liste déroulante avec recherche pour aider les participants à parcourir les réponses plus vite.",
   },
   he: {
     saveButton: "שמירת סקר",
@@ -330,10 +353,12 @@ export const editSurveyTranslations: Record<
     optionLabel: "אפשרות {number}",
     addOptionLabel: "הוספת אפשרות",
     addQuestionLabel: "הוספת שאלה",
-    typeSingleChoice: "בחירה אחת",
-    typeMultipleChoice: "בחירה מרובה",
-    typeDropdown: "רשימה נפתחת",
+    typeChoice: "בחירה",
     typeFreeText: "טקסט חופשי",
+    choiceDisplayLabel: "Display",
+    choiceDisplayAuto: "Auto",
+    choiceDisplayList: "List",
+    choiceDisplayDropdown: "Searchable dropdown",
     questionSemanticChangeLabel: "לבטל תשובות לשאלה הזו",
     questionSemanticChangeHint: "הפעילו זאת כשהניסוח החדש משנה את משמעות השאלה.",
     optionSemanticChangeLabel: "לבטל תשובות שמשתמשות באפשרות הזו",
@@ -343,6 +368,8 @@ export const editSurveyTranslations: Record<
     confirmRemoveQuestionButtonLabel: "הסרת שאלה",
     confirmRemoveOptionButtonLabel: "הסרת אפשרות",
     cancelLabel: "ביטול",
+    largeOptionCountWarning:
+      "השאלה הזו מוגדרת כרשימה ויש בה {count} אפשרויות. שקלו להשתמש באוטומטי או בתפריט נפתח עם חיפוש כדי שהמשתתפים יוכלו לסרוק תשובות מהר יותר.",
   },
   ja: {
     saveButton: "アンケートを保存",
@@ -377,10 +404,12 @@ export const editSurveyTranslations: Record<
     optionLabel: "選択肢 {number}",
     addOptionLabel: "選択肢を追加",
     addQuestionLabel: "質問を追加",
-    typeSingleChoice: "単一選択",
-    typeMultipleChoice: "複数選択",
-    typeDropdown: "ドロップダウン",
+    typeChoice: "選択",
     typeFreeText: "自由記述",
+    choiceDisplayLabel: "Display",
+    choiceDisplayAuto: "Auto",
+    choiceDisplayList: "List",
+    choiceDisplayDropdown: "Searchable dropdown",
     questionSemanticChangeLabel: "この質問への回答を無効にする",
     questionSemanticChangeHint: "新しい文言が質問の意味を変える場合に有効にしてください。",
     optionSemanticChangeLabel: "この選択肢を使う回答を無効にする",
@@ -390,6 +419,8 @@ export const editSurveyTranslations: Record<
     confirmRemoveQuestionButtonLabel: "質問を削除",
     confirmRemoveOptionButtonLabel: "選択肢を削除",
     cancelLabel: "キャンセル",
+    largeOptionCountWarning:
+      "この質問はリスト表示に設定されており、{count} 個の選択肢があります。参加者が回答をすばやく確認できるように、自動または検索可能なドロップダウンの使用を検討してください。",
   },
   ky: {
     saveButton: "Сурамжылоону сактоо",
@@ -424,10 +455,12 @@ export const editSurveyTranslations: Record<
     optionLabel: "Вариант {number}",
     addOptionLabel: "Вариант кошуу",
     addQuestionLabel: "Суроо кошуу",
-    typeSingleChoice: "Бир тандоо",
-    typeMultipleChoice: "Көп тандоо",
-    typeDropdown: "Түшүүчү тизме",
+    typeChoice: "Тандоо",
     typeFreeText: "Эркин текст",
+    choiceDisplayLabel: "Display",
+    choiceDisplayAuto: "Auto",
+    choiceDisplayList: "List",
+    choiceDisplayDropdown: "Searchable dropdown",
     questionSemanticChangeLabel: "Бул суроого берилген жоопторду жараксыз кылуу",
     questionSemanticChangeHint: "Жаңы текст суроонун маанисин өзгөрткөндө муну күйгүзүңүз.",
     optionSemanticChangeLabel: "Бул вариантты колдонгон жоопторду жараксыз кылуу",
@@ -437,6 +470,8 @@ export const editSurveyTranslations: Record<
     confirmRemoveQuestionButtonLabel: "Суроону өчүрүү",
     confirmRemoveOptionButtonLabel: "Вариантты өчүрүү",
     cancelLabel: "Жокко чыгаруу",
+    largeOptionCountWarning:
+      "Бул суроо Тизме режимине коюлган жана {count} варианты бар. Катышуучулар жоопторду тезирээк карап чыгышы үчүн Авто же издөөчү ачылма тизмени колдонуп көрүңүз.",
   },
   ru: {
     saveButton: "Сохранить опрос",
@@ -471,10 +506,12 @@ export const editSurveyTranslations: Record<
     optionLabel: "Вариант {number}",
     addOptionLabel: "Добавить вариант",
     addQuestionLabel: "Добавить вопрос",
-    typeSingleChoice: "Один выбор",
-    typeMultipleChoice: "Несколько вариантов",
-    typeDropdown: "Выпадающий список",
+    typeChoice: "Выбор",
     typeFreeText: "Свободный текст",
+    choiceDisplayLabel: "Display",
+    choiceDisplayAuto: "Auto",
+    choiceDisplayList: "List",
+    choiceDisplayDropdown: "Searchable dropdown",
     questionSemanticChangeLabel: "Сделать ответы на этот вопрос недействительными",
     questionSemanticChangeHint: "Включите это, если новая формулировка меняет смысл вопроса.",
     optionSemanticChangeLabel: "Сделать недействительными ответы с этим вариантом",
@@ -484,6 +521,8 @@ export const editSurveyTranslations: Record<
     confirmRemoveQuestionButtonLabel: "Удалить вопрос",
     confirmRemoveOptionButtonLabel: "Удалить вариант",
     cancelLabel: "Отмена",
+    largeOptionCountWarning:
+      "Этот вопрос настроен как список и содержит {count} вариантов. Рассмотрите режим «Авто» или «Выпадающий список с поиском», чтобы участникам было проще быстро просматривать ответы.",
   },
   "zh-Hans": {
     saveButton: "保存问卷",
@@ -518,10 +557,12 @@ export const editSurveyTranslations: Record<
     optionLabel: "选项 {number}",
     addOptionLabel: "添加选项",
     addQuestionLabel: "添加问题",
-    typeSingleChoice: "单选",
-    typeMultipleChoice: "多选",
-    typeDropdown: "下拉列表",
+    typeChoice: "选择",
     typeFreeText: "自由文本",
+    choiceDisplayLabel: "Display",
+    choiceDisplayAuto: "Auto",
+    choiceDisplayList: "List",
+    choiceDisplayDropdown: "Searchable dropdown",
     questionSemanticChangeLabel: "使此问题的现有回答失效",
     questionSemanticChangeHint: "当新措辞改变了问题含义时开启此项。",
     optionSemanticChangeLabel: "使使用此选项的回答失效",
@@ -531,6 +572,8 @@ export const editSurveyTranslations: Record<
     confirmRemoveQuestionButtonLabel: "移除问题",
     confirmRemoveOptionButtonLabel: "移除选项",
     cancelLabel: "取消",
+    largeOptionCountWarning:
+      "此问题设置为列表，并有 {count} 个选项。建议使用“自动”或“可搜索下拉菜单”，让参与者更快浏览答案。",
   },
   "zh-Hant": {
     saveButton: "儲存問卷",
@@ -565,10 +608,12 @@ export const editSurveyTranslations: Record<
     optionLabel: "選項 {number}",
     addOptionLabel: "新增選項",
     addQuestionLabel: "新增問題",
-    typeSingleChoice: "單選",
-    typeMultipleChoice: "多選",
-    typeDropdown: "下拉選單",
+    typeChoice: "選擇",
     typeFreeText: "自由文字",
+    choiceDisplayLabel: "Display",
+    choiceDisplayAuto: "Auto",
+    choiceDisplayList: "List",
+    choiceDisplayDropdown: "Searchable dropdown",
     questionSemanticChangeLabel: "使這個問題的既有回答失效",
     questionSemanticChangeHint: "當新措辭改變了問題含義時開啟此項。",
     optionSemanticChangeLabel: "使使用這個選項的回答失效",
@@ -578,5 +623,7 @@ export const editSurveyTranslations: Record<
     confirmRemoveQuestionButtonLabel: "移除問題",
     confirmRemoveOptionButtonLabel: "移除選項",
     cancelLabel: "取消",
+    largeOptionCountWarning:
+      "此問題設定為列表，且有 {count} 個選項。建議使用「自動」或「可搜尋下拉選單」，讓參與者更快瀏覽答案。",
   },
 };

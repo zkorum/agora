@@ -24,7 +24,7 @@ export const envSchema = z.object({
   // Note: We use z.enum instead of transform because import.meta.env contains raw strings at runtime.
   // The processEnv object is just a type cast of import.meta.env, so transforms don't run at runtime.
   // Compare with string "true"/"false" when using this value.
-  VITE_IS_ORG_IMPORT_ONLY: z.enum(["true", "false"]), // If "true", only organizations can import conversations
+  VITE_IS_ORG_IMPORT_ONLY: z.enum(["true", "false"]), // If "true", personal users cannot import conversations
 
   // Optional environment variables
   VUE_ROUTER_MODE: z.enum(["hash", "history", "abstract"]).optional(), // Vue router mode
@@ -49,11 +49,19 @@ export const envSchema = z.object({
   // direct type cast of import.meta.env without runtime parsing. Code using this variable
   // must use === "true" checks to treat undefined as disabled by default.
   VITE_MAXDIFF_ENABLED: z.enum(["true", "false"]).optional(), // Enable/disable MaxDiff conversation type (must match backend)
-  VITE_IS_MAXDIFF_ORG_ONLY: z.enum(["true", "false"]).optional(), // If "true", MaxDiff is restricted to organization conversations (must match backend)
-  VITE_MAXDIFF_ALLOWED_ORGS: z.string().optional(), // Comma-separated org names allowed to create MaxDiff conversations (empty = all orgs allowed)
+  VITE_IS_MAXDIFF_ORG_ONLY: z.enum(["true", "false"]).optional(), // If "true", personal users cannot create MaxDiff conversations (must match backend)
+  VITE_MAXDIFF_ALLOWED_ORGS: z.string().optional(), // Comma-separated org names allowed to create MaxDiff conversations when posting as org (empty = all orgs allowed)
+  VITE_MAXDIFF_ALLOWED_USERS: z.string().optional(), // Comma-separated user IDs allowed to create MaxDiff conversations when posting as user (empty = all users allowed)
   VITE_MAXDIFF_GITHUB_ENABLED: z.enum(["true", "false"]).optional(), // Enable/disable GitHub connector for MaxDiff (must match backend)
-  VITE_IS_MAXDIFF_GITHUB_ORG_ONLY: z.enum(["true", "false"]).optional(), // If "true", GitHub connector restricted to specific orgs (must match backend)
-  VITE_MAXDIFF_GITHUB_ALLOWED_ORGS: z.string().optional(), // Comma-separated org names allowed to use GitHub connector (subset of MAXDIFF_ALLOWED_ORGS)
+  VITE_IS_MAXDIFF_GITHUB_ORG_ONLY: z.enum(["true", "false"]).optional(), // If "true", personal users cannot use the GitHub connector (must match backend)
+  VITE_MAXDIFF_GITHUB_ALLOWED_ORGS: z.string().optional(), // Comma-separated org names allowed to use GitHub connector when posting as org
+  VITE_MAXDIFF_GITHUB_ALLOWED_USERS: z.string().optional(), // Comma-separated user IDs allowed to use GitHub connector when posting as user
+  VITE_IMPORT_ALLOWED_ORGS: z.string().optional(), // Comma-separated org names allowed to import conversations when posting as org (empty = all orgs allowed)
+  VITE_IMPORT_ALLOWED_USERS: z.string().optional(), // Comma-separated user IDs allowed to import conversations when posting as user (empty = all users allowed)
+  VITE_SURVEY_ENABLED: z.enum(["true", "false"]).optional(), // Enable/disable survey configuration feature (must match backend)
+  VITE_IS_SURVEY_ORG_ONLY: z.enum(["true", "false"]).optional(), // If "true", personal users cannot configure surveys (must match backend)
+  VITE_SURVEY_ALLOWED_ORGS: z.string().optional(), // Comma-separated org names allowed to configure surveys when posting as org (empty = all orgs allowed)
+  VITE_SURVEY_ALLOWED_USERS: z.string().optional(), // Comma-separated user IDs allowed to configure surveys when posting as user (empty = all users allowed)
 });
 
 export type ProcessEnv = z.infer<typeof envSchema>;

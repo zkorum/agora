@@ -51,8 +51,6 @@ export class RealtimeSSEManager {
         // Prevent intervals from keeping process alive during shutdown
         this.heartbeatInterval.unref();
         this.cleanupInterval.unref();
-
-        log.info("[SSE] Realtime SSE Manager initialized");
     }
 
     /**
@@ -70,15 +68,11 @@ export class RealtimeSSEManager {
         }
         const userConnections = this.connections.get(userId);
         if (!userConnections) {
-            log.error(`[SSE] Failed to get connections for user ${userId}`);
+            log.error(`Failed to get realtime connections for user ${userId}`);
             return;
         }
         userConnections.add(reply);
         this.connectionTimestamps.set(reply, Date.now());
-
-        log.info(
-            `[SSE] User ${userId} connected (total connections: ${String(userConnections.size)})`,
-        );
 
         // Setup cleanup on connection close using @fastify/sse plugin's onClose method
         reply.sse.onClose(() => {
@@ -98,7 +92,7 @@ export class RealtimeSSEManager {
             .catch((error: unknown) => {
                 log.error(
                     error,
-                    `[SSE] Failed to send connection event to user ${userId}`,
+                    `Failed to send realtime connection event to user ${userId}`,
                 );
             });
     }
@@ -115,10 +109,6 @@ export class RealtimeSSEManager {
         this.anonymousConnections.add(reply);
         this.connectionTimestamps.set(reply, Date.now());
 
-        log.info(
-            `[SSE] Anonymous client connected (total anonymous: ${String(this.anonymousConnections.size)})`,
-        );
-
         reply.sse.onClose(() => {
             this.disconnectAnonymous(reply);
         });
@@ -131,7 +121,7 @@ export class RealtimeSSEManager {
             .catch((error: unknown) => {
                 log.error(
                     error,
-                    "[SSE] Failed to send connection event to anonymous client",
+                    "Failed to send realtime connection event to anonymous client",
                 );
             });
     }
@@ -144,9 +134,6 @@ export class RealtimeSSEManager {
         if (userConnections) {
             userConnections.delete(reply);
             this.connectionTimestamps.delete(reply);
-            log.info(
-                `[SSE] User ${userId} disconnected (remaining connections: ${String(userConnections.size)})`,
-            );
 
             // Clean up empty connection sets
             if (userConnections.size === 0) {
@@ -161,9 +148,6 @@ export class RealtimeSSEManager {
     public disconnectAnonymous(reply: FastifyReply): void {
         this.anonymousConnections.delete(reply);
         this.connectionTimestamps.delete(reply);
-        log.info(
-            `[SSE] Anonymous client disconnected (remaining anonymous: ${String(this.anonymousConnections.size)})`,
-        );
     }
 
     /**
@@ -178,10 +162,6 @@ export class RealtimeSSEManager {
             // User not connected, notification will be fetched via polling fallback
             return;
         }
-
-        log.info(
-            `[SSE] Broadcasting notification to user ${userId} (${String(userConnections.size)} connections)`,
-        );
 
         const deadConnections: FastifyReply[] = [];
 
@@ -198,7 +178,7 @@ export class RealtimeSSEManager {
                 .catch((error: unknown) => {
                     log.error(
                         error,
-                        `[SSE] Failed to send notification to user ${userId}`,
+                        `Failed to send realtime notification to user ${userId}`,
                     );
                     deadConnections.push(reply);
                 });
@@ -324,36 +304,27 @@ export class RealtimeSSEManager {
         }
 
         for (const { userId, reply } of staleAuthenticated) {
-            log.warn(`[SSE] Closing stale connection for user ${userId}`);
             this.disconnect(userId, reply);
             try {
                 reply.sse.close();
             } catch (error: unknown) {
                 log.error(
                     error,
-                    `[SSE] Error closing stale connection for user ${userId}`,
+                    `Error closing stale realtime connection for user ${userId}`,
                 );
             }
         }
 
         for (const reply of staleAnonymous) {
-            log.warn("[SSE] Closing stale anonymous connection");
             this.disconnectAnonymous(reply);
             try {
                 reply.sse.close();
             } catch (error: unknown) {
                 log.error(
                     error,
-                    "[SSE] Error closing stale anonymous connection",
+                    "Error closing stale anonymous realtime connection",
                 );
             }
-        }
-
-        const totalCleaned = staleAuthenticated.length + staleAnonymous.length;
-        if (totalCleaned > 0) {
-            log.info(
-                `[SSE] Cleaned up ${String(totalCleaned)} stale connections`,
-            );
         }
     }
 
@@ -371,10 +342,6 @@ export class RealtimeSSEManager {
             return;
         }
 
-        log.info(
-            `[SSE] Sending heartbeat to ${String(totalConnections)} connections (${String(authenticatedCount)} authenticated, ${String(this.anonymousConnections.size)} anonymous)`,
-        );
-
         const heartbeatData: SSEHeartbeatData = {
             timestamp: Date.now(),
         };
@@ -390,9 +357,6 @@ export class RealtimeSSEManager {
                         data: heartbeatData,
                     })
                     .catch(() => {
-                        log.warn(
-                            `[SSE] Heartbeat failed for user ${userId}, marking connection as dead`,
-                        );
                         deadConnections.push(reply);
                     });
             }
@@ -405,17 +369,14 @@ export class RealtimeSSEManager {
         // Heartbeat to anonymous connections
         const deadAnonymous: FastifyReply[] = [];
         for (const reply of this.anonymousConnections) {
-            reply.sse
-                .send({
-                    event: "heartbeat",
-                    data: heartbeatData,
-                })
-                .catch(() => {
-                    log.warn(
-                        "[SSE] Heartbeat failed for anonymous client, marking connection as dead",
-                    );
-                    deadAnonymous.push(reply);
-                });
+                reply.sse
+                    .send({
+                        event: "heartbeat",
+                        data: heartbeatData,
+                    })
+                    .catch(() => {
+                        deadAnonymous.push(reply);
+                    });
         }
 
         for (const deadReply of deadAnonymous) {
@@ -456,8 +417,6 @@ export class RealtimeSSEManager {
     public async shutdown(): Promise<void> {
         this.isShuttingDown = true;
 
-        log.info("[SSE] Shutting down Realtime SSE Manager...");
-
         // Stop heartbeat
         if (this.heartbeatInterval) {
             clearInterval(this.heartbeatInterval);
@@ -477,10 +436,6 @@ export class RealtimeSSEManager {
         }
         allConnections.push(...this.anonymousConnections);
 
-        log.info(
-            `[SSE] Closing ${String(allConnections.length)} active connections`,
-        );
-
         for (const reply of allConnections) {
             try {
                 const shutdownData: SSEShutdownData = {
@@ -499,6 +454,5 @@ export class RealtimeSSEManager {
 
         this.connections.clear();
         this.anonymousConnections.clear();
-        log.info("[SSE] Realtime SSE Manager shutdown complete");
     }
 }

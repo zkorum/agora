@@ -27,6 +27,7 @@
     v-model:import-settings="importSettings"
     v-model:conversation-type="conversationType"
     :is-max-diff-allowed="isMaxDiffAllowed"
+    :is-import-allowed="isImportAllowed"
     @mode-change-requested="handleModeChangeRequest"
   />
 
@@ -89,10 +90,17 @@ import {
 } from "src/composables/ui/useLocalizedDateTime";
 import type { ConversationType, EventSlug, ExternalSourceConfig, ParticipationMode } from "src/shared/types/zod";
 import {
+  checkFeatureAccess,
+  DEFAULT_FEATURE_ALLOWED_ORGS,
+  DEFAULT_FEATURE_ALLOWED_USERS,
+} from "src/shared-app-api/featureAccess";
+import {
   checkMaxDiffAllowed,
   checkMaxDiffGitHubAllowed,
   DEFAULT_MAXDIFF_ALLOWED_ORGS,
+  DEFAULT_MAXDIFF_ALLOWED_USERS,
   DEFAULT_MAXDIFF_GITHUB_ALLOWED_ORGS,
+  DEFAULT_MAXDIFF_GITHUB_ALLOWED_USERS,
 } from "src/shared-app-api/maxdiffLogic";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
@@ -125,7 +133,7 @@ const { t } = useComponentI18n<NewConversationControlBarTranslations>(
   newConversationControlBarTranslations
 );
 
-const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+const { isLoggedIn, userId } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
 
 // Define models for two-way binding
@@ -316,8 +324,26 @@ const isMaxDiffAllowed = computed(() => {
     isMaxdiffOrgOnly: processEnv.VITE_IS_MAXDIFF_ORG_ONLY === "true",
     maxdiffAllowedOrgs:
       processEnv.VITE_MAXDIFF_ALLOWED_ORGS ?? DEFAULT_MAXDIFF_ALLOWED_ORGS,
+    maxdiffAllowedUsers:
+      processEnv.VITE_MAXDIFF_ALLOWED_USERS ?? DEFAULT_MAXDIFF_ALLOWED_USERS,
     postAsOrganization: postAs.value.postAsOrganization,
     organizationName: postAs.value.organizationName,
+    userId: userId.value ?? "",
+  });
+  return result.allowed;
+});
+
+const isImportAllowed = computed(() => {
+  const result = checkFeatureAccess({
+    featureEnabled: true,
+    isOrgOnly: processEnv.VITE_IS_ORG_IMPORT_ONLY === "true",
+    allowedOrgs:
+      processEnv.VITE_IMPORT_ALLOWED_ORGS ?? DEFAULT_FEATURE_ALLOWED_ORGS,
+    allowedUsers:
+      processEnv.VITE_IMPORT_ALLOWED_USERS ?? DEFAULT_FEATURE_ALLOWED_USERS,
+    postAsOrganization: postAs.value.postAsOrganization,
+    organizationName: postAs.value.organizationName,
+    userId: userId.value ?? "",
   });
   return result.allowed;
 });
@@ -328,6 +354,8 @@ const isMaxDiffGitHubAllowed = computed(() => {
     isMaxdiffOrgOnly: processEnv.VITE_IS_MAXDIFF_ORG_ONLY === "true",
     maxdiffAllowedOrgs:
       processEnv.VITE_MAXDIFF_ALLOWED_ORGS ?? DEFAULT_MAXDIFF_ALLOWED_ORGS,
+    maxdiffAllowedUsers:
+      processEnv.VITE_MAXDIFF_ALLOWED_USERS ?? DEFAULT_MAXDIFF_ALLOWED_USERS,
     maxdiffGitHubEnabled:
       processEnv.VITE_MAXDIFF_GITHUB_ENABLED === "true",
     isMaxdiffGitHubOrgOnly:
@@ -335,8 +363,12 @@ const isMaxDiffGitHubAllowed = computed(() => {
     maxdiffGitHubAllowedOrgs:
       processEnv.VITE_MAXDIFF_GITHUB_ALLOWED_ORGS ??
       DEFAULT_MAXDIFF_GITHUB_ALLOWED_ORGS,
+    maxdiffGitHubAllowedUsers:
+      processEnv.VITE_MAXDIFF_GITHUB_ALLOWED_USERS ??
+      DEFAULT_MAXDIFF_GITHUB_ALLOWED_USERS,
     postAsOrganization: postAs.value.postAsOrganization,
     organizationName: postAs.value.organizationName,
+    userId: userId.value ?? "",
   });
   return result.allowed;
 });
@@ -396,11 +428,7 @@ const controlButtons = computed((): ControlButton[] => [
             ? t("importFromCsv")
             : t("newConversation"),
     icon: showPostTypeDialog.value ? "pi pi-chevron-up" : "pi pi-chevron-down",
-    isVisible:
-      !props.isEditMode &&
-      (processEnv.VITE_IS_ORG_IMPORT_ONLY === "true"
-        ? postAs.value.postAsOrganization
-        : true),
+    isVisible: !props.isEditMode,
     clickHandler: togglePostTypeDialog,
     clickable: true,
   },

@@ -13,6 +13,7 @@ Name | Type | Description | Notes
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
+**postAsOrganizationName** | **string** |  | [optional] [default to undefined]
 **surveyConfig** | [**ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfig**](ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfig.md) |  | [optional] [default to undefined]
 **indexConversationAt** | **string** |  | [optional] [default to undefined]
 **createdAt** | **string** |  | [default to undefined]
@@ -34,6 +35,7 @@ const instance: ApiV1ConversationGetForEditPost200ResponseOneOf = {
     isIndexed,
     participationMode,
     requiresEventTicket,
+    postAsOrganizationName,
     surveyConfig,
     indexConversationAt,
     createdAt,

@@ -122,10 +122,7 @@ def _validate_survey_answer_for_analysis(
     if not unique_option_slug_ids.issubset(set(question.option_slug_ids)):
         return False
 
-    if question.question_type in {"mono_choice", "select"}:
-        return len(answer.option_slug_ids) == 1
-
-    if question.constraints["type"] != "multi_choice":
+    if question.question_type != "choice" or question.constraints["type"] != "choice":
         return False
     min_selections = int(question.constraints["minSelections"])
     max_selections_raw = question.constraints.get("maxSelections")
@@ -211,7 +208,12 @@ def _fetch_survey_eligible_participants_batch(
             SurveyQuestionContent,
             SurveyQuestion.current_content_id == SurveyQuestionContent.id,
         )
-        .where(SurveyQuestion.survey_config_id.in_(survey_config_ids))
+        .where(
+            and_(
+                SurveyQuestion.survey_config_id.in_(survey_config_ids),
+                SurveyQuestion.current_content_id.is_not(None),
+            )
+        )
         .order_by(SurveyQuestion.display_order)
     ).all()
 

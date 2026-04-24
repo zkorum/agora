@@ -41,12 +41,16 @@ import { checkConversationParticipation } from "@/service/participationGate.js";
 import * as surveyService from "@/service/survey.js";
 import { useCommonPost } from "@/service/common.js";
 import { MAX_CSV_FILE_SIZE } from "@/shared-app-api/csvUpload.js";
+import { checkFeatureAccess } from "@/shared-app-api/featureAccess.js";
 import { checkMaxDiffAllowed } from "@/shared-app-api/maxdiffLogic.js";
 import { zodCsvFiles } from "@/service/csvImport.js";
 import * as conversationExportService from "@/service/conversationExport/index.js";
 import * as conversationImportService from "@/service/conversationImport/index.js";
 import { cleanupStuckImportsOnStartup } from "@/service/conversationImport/database.js";
-import { cleanupStuckExportsOnStartup } from "@/service/conversationExport/core.js";
+import {
+    cleanupStuckExportsOnStartup,
+    createExportWorker,
+} from "@/service/conversationExport/core.js";
 import { createImportNotification } from "@/service/conversationImport/notifications.js";
 import { createExportNotification } from "@/service/conversationExport/notifications.js";
 import type { ValkeyRef } from "@/service/valkeyRef.js";
@@ -138,7 +142,6 @@ import {
 import twilio from "twilio";
 import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
-import { createExportBuffer } from "./service/exportBuffer.js";
 import { createImportBuffer } from "./service/importBuffer.js";
 import { createUcanReplayGuard } from "./service/ucanReplayGuard.js";
 import { RealtimeSSEManager } from "./service/realtimeSSE.js";
@@ -608,23 +611,12 @@ log.info(
     `[API] Vote buffer initialized (flush interval: ${String(config.VOTE_BUFFER_FLUSH_INTERVAL_MS)}ms, batch limit: ${String(config.VOTE_BUFFER_VALKEY_BATCH_LIMIT)}, persistence: ${getQueuePersistenceMode()})`,
 );
 
-// Initialize ExportBuffer (batches export requests to reduce system load)
-const exportBuffer = createExportBuffer({
+// Initialize SQL-backed export worker.
+const exportWorker = createExportWorker({
     db,
-    valkeyRef: queueValkeyRef,
     realtimeSSEManager,
-    flushIntervalMs: 1000,
-    maxBatchSize: config.EXPORT_CONVOS_BUFFER_MAX_BATCH_SIZE,
-    maxConcurrency: config.EXPORT_CONVOS_BUFFER_MAX_CONCURRENCY,
-    cooldownSeconds: config.EXPORT_CONVOS_COOLDOWN_SECONDS,
-    exportExpiryDays: config.EXPORT_CONVOS_EXPIRY_DAYS,
-    staleThresholdMs: config.EXPORT_CONVOS_BUFFER_STALE_THRESHOLD_MS,
-    staleCleanupEveryNFlushes:
-        config.EXPORT_CONVOS_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES,
 });
-log.info(
-    `[API] Export buffer initialized (flush interval: 1s, max batch: ${String(config.EXPORT_CONVOS_BUFFER_MAX_BATCH_SIZE)}, cooldown: ${String(config.EXPORT_CONVOS_COOLDOWN_SECONDS)}s, persistence: ${getQueuePersistenceMode()})`,
-);
+log.info("[API] Export worker initialized (SQL queue)");
 
 // Initialize ImportBuffer (batches import requests to reduce system load)
 const importBuffer = createImportBuffer({
@@ -694,9 +686,11 @@ const performStartupCleanup = async (): Promise<void> => {
                     await createExportNotification({
                         db,
                         userId: stuckExport.userId,
-                        exportId: stuckExport.id,
+                        exportRequestId: stuckExport.id,
+                        exportSlugId: stuckExport.slugId,
                         conversationId: stuckExport.conversationId,
                         type: "export_failed",
+                        failureReason: stuckExport.failureReason ?? undefined,
                         realtimeSSEManager,
                     });
                 } catch (notificationError: unknown) {
@@ -1971,7 +1965,6 @@ server.after(() => {
             },
         },
         handler: async (request) => {
-            checkMaxdiffEnabled();
             return await fetchMaxdiffItems({
                 db,
                 conversationSlugId: request.body.conversationSlugId,
@@ -1987,7 +1980,6 @@ server.after(() => {
             body: Dto.maxdiffItemLifecycleUpdateRequest,
         },
         handler: async (request, reply) => {
-            checkMaxdiffEnabled();
             const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
                 db,
                 request,
@@ -2411,8 +2403,10 @@ server.after(() => {
                     maxdiffEnabled: config.MAXDIFF_ENABLED,
                     isMaxdiffOrgOnly: config.IS_MAXDIFF_ORG_ONLY,
                     maxdiffAllowedOrgs: config.MAXDIFF_ALLOWED_ORGS,
+                    maxdiffAllowedUsers: config.MAXDIFF_ALLOWED_USERS,
                     postAsOrganization: !!request.body.postAsOrganization,
                     organizationName: request.body.postAsOrganization ?? "",
+                    userId: deviceStatus.userId,
                 });
                 if (!maxdiffCheck.allowed) {
                     switch (maxdiffCheck.reason) {
@@ -2427,6 +2421,42 @@ server.after(() => {
                         case "org_not_in_whitelist":
                             throw server.httpErrors.forbidden(
                                 "This organization is not allowed to create MaxDiff conversations",
+                            );
+                        case "user_not_in_whitelist":
+                            throw server.httpErrors.forbidden(
+                                "This user is not allowed to create MaxDiff conversations",
+                            );
+                    }
+                }
+            }
+
+            if ((request.body.surveyConfig?.questions.length ?? 0) > 0) {
+                const surveyCheck = checkFeatureAccess({
+                    featureEnabled: config.SURVEY_ENABLED,
+                    isOrgOnly: config.IS_SURVEY_ORG_ONLY,
+                    allowedOrgs: config.SURVEY_ALLOWED_ORGS,
+                    allowedUsers: config.SURVEY_ALLOWED_USERS,
+                    postAsOrganization: !!request.body.postAsOrganization,
+                    organizationName: request.body.postAsOrganization ?? "",
+                    userId: deviceStatus.userId,
+                });
+                if (!surveyCheck.allowed) {
+                    switch (surveyCheck.reason) {
+                        case "disabled":
+                            throw server.httpErrors.serviceUnavailable(
+                                "Survey feature is currently disabled",
+                            );
+                        case "org_required":
+                            throw server.httpErrors.forbidden(
+                                "Survey configuration is restricted to organization conversations",
+                            );
+                        case "org_not_in_whitelist":
+                            throw server.httpErrors.forbidden(
+                                "This organization is not allowed to configure surveys",
+                            );
+                        case "user_not_in_whitelist":
+                            throw server.httpErrors.forbidden(
+                                "This user is not allowed to configure surveys",
                             );
                     }
                 }
@@ -2498,11 +2528,33 @@ server.after(() => {
                 );
             }
 
-            // Validate organization restriction for imports
-            authUtilService.validateOrgImportRestriction(
-                request.body.postAsOrganization,
-                config.IS_ORG_IMPORT_ONLY,
-            );
+            const importCheck = checkFeatureAccess({
+                featureEnabled: true,
+                isOrgOnly: config.IS_ORG_IMPORT_ONLY,
+                allowedOrgs: config.IMPORT_ALLOWED_ORGS,
+                allowedUsers: config.IMPORT_ALLOWED_USERS,
+                postAsOrganization: !!request.body.postAsOrganization,
+                organizationName: request.body.postAsOrganization ?? "",
+                userId: deviceStatus.userId,
+            });
+            if (!importCheck.allowed) {
+                switch (importCheck.reason) {
+                    case "disabled":
+                        break;
+                    case "org_required":
+                        throw server.httpErrors.forbidden(
+                            "Import feature restricted to organizations",
+                        );
+                    case "org_not_in_whitelist":
+                        throw server.httpErrors.forbidden(
+                            "This organization is not allowed to import conversations",
+                        );
+                    case "user_not_in_whitelist":
+                        throw server.httpErrors.forbidden(
+                            "This user is not allowed to import conversations",
+                        );
+                }
+            }
 
             // Verify organization membership if specified
             if (
@@ -2643,11 +2695,33 @@ server.after(() => {
             const parsedFields =
                 Dto.importCsvConversationFormRequest.parse(formFields);
 
-            // Check organization restriction (same as URL import)
-            authUtilService.validateOrgImportRestriction(
-                parsedFields.postAsOrganization,
-                config.IS_ORG_IMPORT_ONLY,
-            );
+            const importCheck = checkFeatureAccess({
+                featureEnabled: true,
+                isOrgOnly: config.IS_ORG_IMPORT_ONLY,
+                allowedOrgs: config.IMPORT_ALLOWED_ORGS,
+                allowedUsers: config.IMPORT_ALLOWED_USERS,
+                postAsOrganization: !!parsedFields.postAsOrganization,
+                organizationName: parsedFields.postAsOrganization ?? "",
+                userId: deviceStatus.userId,
+            });
+            if (!importCheck.allowed) {
+                switch (importCheck.reason) {
+                    case "disabled":
+                        break;
+                    case "org_required":
+                        throw server.httpErrors.forbidden(
+                            "Import feature restricted to organizations",
+                        );
+                    case "org_not_in_whitelist":
+                        throw server.httpErrors.forbidden(
+                            "This organization is not allowed to import conversations",
+                        );
+                    case "user_not_in_whitelist":
+                        throw server.httpErrors.forbidden(
+                            "This user is not allowed to import conversations",
+                        );
+                }
+            }
 
             // Verify organization membership if specified
             if (parsedFields.postAsOrganization !== undefined) {
@@ -3679,7 +3753,7 @@ server.after(() => {
                     );
                     deviceStatus = result.deviceStatus;
                 } catch (error) {
-                    log.error(error, "[SSE] Authentication failed");
+                    log.error(error, "Realtime stream authentication failed");
                     return reply.code(401).send("Authentication failed");
                 }
 
@@ -3695,7 +3769,7 @@ server.after(() => {
                 } catch (error) {
                     log.error(
                         error,
-                        "[SSE] Error during authenticated SSE connection",
+                        "Error during authenticated realtime stream connection",
                     );
                 }
             } else {
@@ -3712,7 +3786,7 @@ server.after(() => {
                 } catch (error) {
                     log.error(
                         error,
-                        "[SSE] Error during anonymous SSE connection",
+                        "Error during anonymous realtime stream connection",
                     );
                 }
             }
@@ -3804,7 +3878,7 @@ server.after(() => {
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
                 userId: deviceStatus.userId,
-                exportBuffer: exportBuffer,
+                realtimeSSEManager,
             });
         },
     });
@@ -3960,8 +4034,8 @@ const shutdown = async (signal: string) => {
         // Flush pending votes before shutdown
         await voteBuffer.shutdown();
 
-        // Flush pending exports before shutdown
-        await exportBuffer.shutdown();
+        // Stop export worker before shutdown
+        await exportWorker.shutdown();
 
         // Flush pending imports before shutdown
         await importBuffer.shutdown();

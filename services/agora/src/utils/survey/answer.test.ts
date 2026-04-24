@@ -6,11 +6,11 @@ import { areSurveyAnswersEqual, isSurveyAnswerSubmittable, normalizeSurveyAnswer
 describe("areSurveyAnswersEqual", () => {
   it("treats multi-choice answers with the same selections as equal regardless of order", () => {
     const left: SurveyAnswerDraft = {
-      questionType: "multi_choice",
+      questionType: "choice",
       optionSlugIds: ["option-b", "option-a"],
     };
     const right: SurveyAnswerDraft = {
-      questionType: "multi_choice",
+      questionType: "choice",
       optionSlugIds: ["option-a", "option-b"],
     };
 
@@ -19,11 +19,11 @@ describe("areSurveyAnswersEqual", () => {
 
   it("keeps single-choice answers order-sensitive through their single selected option", () => {
     const left: SurveyAnswerDraft = {
-      questionType: "mono_choice",
+      questionType: "choice",
       optionSlugIds: ["option-a"],
     };
     const right: SurveyAnswerDraft = {
-      questionType: "mono_choice",
+      questionType: "choice",
       optionSlugIds: ["option-b"],
     };
 
@@ -43,7 +43,6 @@ describe("areSurveyAnswersEqual", () => {
         minValue: 1,
         maxValue: 120,
       },
-      options: undefined,
       currentAnswer: undefined,
       isPassed: false,
       isMissingRequired: false,

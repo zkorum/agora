@@ -3,14 +3,49 @@ import {
   MAX_LENGTH_SURVEY_QUESTION,
 } from "src/shared/shared";
 import type {
+  SurveyChoiceDisplay,
   SurveyConfig,
   SurveyQuestionConfig,
   SurveyQuestionConstraints,
   SurveyQuestionFormItem,
   SurveyQuestionOption,
-  SurveyQuestionType,
 } from "src/shared/types/zod";
 import { zodSurveyConfig } from "src/shared/types/zod";
+
+export const SURVEY_CHOICE_DROPDOWN_OPTION_THRESHOLD = 8;
+export const SURVEY_LARGE_OPTION_WARNING_THRESHOLD = 7;
+
+export function shouldUseSurveyChoiceDropdown({
+  choiceDisplay,
+  optionCount,
+  dropdownThreshold = SURVEY_CHOICE_DROPDOWN_OPTION_THRESHOLD,
+}: {
+  choiceDisplay: SurveyChoiceDisplay;
+  optionCount: number;
+  dropdownThreshold?: number;
+}): boolean {
+  if (choiceDisplay === "dropdown") {
+    return true;
+  }
+
+  if (choiceDisplay === "list") {
+    return false;
+  }
+
+  return optionCount > dropdownThreshold;
+}
+
+export function shouldWarnAboutLargeSurveyOptionSet({
+  choiceDisplay,
+  optionCount,
+  warningThreshold = SURVEY_LARGE_OPTION_WARNING_THRESHOLD,
+}: {
+  choiceDisplay: SurveyChoiceDisplay;
+  optionCount: number;
+  warningThreshold?: number;
+}): boolean {
+  return choiceDisplay === "list" && optionCount > warningThreshold;
+}
 
 export function createRichTextSurveyQuestionConstraints(): Extract<
   SurveyQuestionConstraints,
@@ -23,6 +58,57 @@ export function createRichTextSurveyQuestionConstraints(): Extract<
     maxPlainTextLength: 300,
     maxHtmlLength: 3000,
   };
+}
+
+export function createChoiceSurveyQuestionConstraints(): Extract<
+  SurveyQuestionConstraints,
+  { type: "choice" }
+> {
+  return {
+    type: "choice",
+    minSelections: 1,
+    maxSelections: 1,
+  };
+}
+
+export function normalizeChoiceSurveyQuestionConstraints({
+  minSelections,
+  maxSelections,
+  optionCount,
+}: {
+  minSelections: number;
+  maxSelections: number | undefined;
+  optionCount: number;
+}): Extract<SurveyQuestionConstraints, { type: "choice" }> {
+  const maxSelectableOptions = Math.max(optionCount, 1);
+  const normalizedMinSelections = Math.min(
+    Math.max(minSelections, 1),
+    maxSelectableOptions
+  );
+
+  return {
+    type: "choice",
+    minSelections: normalizedMinSelections,
+    maxSelections:
+      maxSelections === undefined
+        ? undefined
+        : Math.min(
+            Math.max(maxSelections, normalizedMinSelections),
+            maxSelectableOptions
+          ),
+  };
+}
+
+export function isSingleSelectionChoiceQuestion({
+  question,
+}: {
+  question: Pick<SurveyQuestionConfig | SurveyQuestionFormItem, "questionType" | "constraints">;
+}): boolean {
+  return (
+    question.questionType === "choice" &&
+    question.constraints.type === "choice" &&
+    question.constraints.maxSelections === 1
+  );
 }
 
 export function createIntegerSurveyQuestionConstraints(): Extract<
@@ -66,15 +152,12 @@ export function createEmptySurveyQuestion({
   displayOrder: number;
 }): SurveyQuestionConfig {
   return {
-    questionType: "mono_choice",
+    questionType: "choice",
+    choiceDisplay: "auto",
     questionText: "",
     isRequired: true,
     displayOrder,
-    constraints: {
-      type: "mono_choice",
-      minSelections: 1,
-      maxSelections: 1,
-    },
+    constraints: createChoiceSurveyQuestionConstraints(),
     options: [
       createEmptySurveyOption({ displayOrder: 0 }),
       createEmptySurveyOption({ displayOrder: 1 }),
@@ -91,12 +174,13 @@ export function normalizeSurveyConfig({
     return null;
   }
 
-  const normalizedQuestions = surveyConfig.questions
-    .map((question, questionIndex) => {
-      const normalizedQuestion: SurveyQuestionConfig = {
-        ...question,
+  const normalizedQuestions = surveyConfig.questions.map((question, questionIndex) => {
+      const questionBase = {
+        questionSlugId: question.questionSlugId,
         questionText: question.questionText.slice(0, MAX_LENGTH_SURVEY_QUESTION),
+        isRequired: question.isRequired,
         displayOrder: questionIndex,
+        textChangeIsSemantic: question.textChangeIsSemantic,
       };
 
       if (question.questionType === "free_text") {
@@ -105,8 +189,9 @@ export function normalizeSurveyConfig({
           question.constraints.inputMode !== "integer"
             ? question.constraints
             : undefined;
-        const freeTextQuestion: SurveyQuestionConfig = {
-          ...normalizedQuestion,
+        const freeTextQuestion = {
+          ...questionBase,
+          questionType: "free_text",
           constraints:
             question.constraints.type === "free_text" &&
             question.constraints.inputMode === "integer"
@@ -123,13 +208,12 @@ export function normalizeSurveyConfig({
                   maxPlainTextLength: richTextConstraints?.maxPlainTextLength ?? 300,
                   maxHtmlLength: richTextConstraints?.maxHtmlLength ?? 3000,
                 },
-          options: undefined,
-        };
+        } satisfies Extract<SurveyQuestionConfig, { questionType: "free_text" }>;
 
         return freeTextQuestion;
       }
 
-      const baseOptions = (question.options ?? []).map((option, optionIndex) => ({
+      const baseOptions = question.options.map((option, optionIndex) => ({
         ...option,
         optionText: option.optionText.slice(0, MAX_LENGTH_SURVEY_OPTION),
         displayOrder: optionIndex,
@@ -146,44 +230,19 @@ export function normalizeSurveyConfig({
               }),
             ];
 
-      if (question.questionType === "multi_choice") {
-        const multiChoiceQuestion: SurveyQuestionConfig = {
-          ...normalizedQuestion,
-          constraints: {
-            type: "multi_choice",
-            minSelections:
-              question.constraints.type === "multi_choice"
-                ? question.constraints.minSelections
-                : 1,
-            maxSelections:
-              question.constraints.type === "multi_choice"
-                ? question.constraints.maxSelections
-                : undefined,
-          },
-          options,
-        };
-
-        return multiChoiceQuestion;
-      }
-
-      const type: Extract<SurveyQuestionType, "mono_choice" | "select"> =
-        question.questionType === "select" ? "select" : "mono_choice";
-
-      const singleChoiceQuestion: SurveyQuestionConfig = {
-        ...normalizedQuestion,
-        questionType: type,
-        constraints: {
-          type,
-          minSelections: 1,
-          maxSelections: 1,
-        },
+      const choiceQuestion = {
+        ...questionBase,
+        questionType: "choice",
+        choiceDisplay: question.choiceDisplay,
+        constraints: normalizeChoiceSurveyQuestionConstraints({
+          minSelections: question.constraints.minSelections,
+          maxSelections: question.constraints.maxSelections,
+          optionCount: options.length,
+        }),
         options,
-      };
+      } satisfies Extract<SurveyQuestionConfig, { questionType: "choice" }>;
 
-      return singleChoiceQuestion;
-    })
-    .filter((question) => {
-      return question.questionText.trim() !== "";
+      return choiceQuestion;
     });
 
   if (normalizedQuestions.length === 0) {
@@ -194,7 +253,7 @@ export function normalizeSurveyConfig({
     questions: normalizedQuestions,
   } satisfies SurveyConfig;
 
-  return zodSurveyConfig.parse(candidateConfig);
+  return candidateConfig;
 }
 
 export function cloneSurveyConfig({
@@ -229,11 +288,7 @@ export function buildSurveyConfigForSave({
     };
   }
 
-  const hasAnyQuestionContent = surveyConfig.questions.some((question) => {
-    return question.questionText.trim() !== "";
-  });
-
-  if (!hasAnyQuestionContent) {
+  if (surveyConfig.questions.length === 0) {
     return {
       success: true,
       surveyConfig: null,
@@ -248,6 +303,21 @@ export function buildSurveyConfigForSave({
     return {
       success: false,
       error: "Every survey question needs a prompt.",
+    };
+  }
+
+  const hasInvalidChoiceOptions = surveyConfig.questions.some((question) => {
+    return (
+      question.questionType === "choice" &&
+      (question.options.length < 2 ||
+        question.options.some((option) => option.optionText.trim() === ""))
+    );
+  });
+
+  if (hasInvalidChoiceOptions) {
+    return {
+      success: false,
+      error: "Every choice option needs text.",
     };
   }
 
@@ -295,6 +365,28 @@ function areSurveyQuestionOptionsEqual({
   });
 }
 
+function getSurveyQuestionOptions({
+  question,
+}: {
+  question: SurveyQuestionConfig;
+}): readonly SurveyQuestionOption[] {
+  return question.questionType === "free_text" ? [] : question.options;
+}
+
+function areSurveyQuestionChoiceDisplaysEqual({
+  left,
+  right,
+}: {
+  left: SurveyQuestionConfig;
+  right: SurveyQuestionConfig;
+}): boolean {
+  if (left.questionType === "free_text" || right.questionType === "free_text") {
+    return true;
+  }
+
+  return left.choiceDisplay === right.choiceDisplay;
+}
+
 function areSurveyQuestionConstraintsEqual({
   left,
   right,
@@ -307,12 +399,9 @@ function areSurveyQuestionConstraintsEqual({
   }
 
   switch (left.type) {
-    case "mono_choice":
-    case "select":
-      return true;
-    case "multi_choice":
+    case "choice":
       return (
-        right.type === "multi_choice" &&
+        right.type === "choice" &&
         left.minSelections === right.minSelections &&
         left.maxSelections === right.maxSelections
       );
@@ -353,13 +442,17 @@ function areSurveyQuestionsEqual({
       question.isRequired === otherQuestion.isRequired &&
       question.displayOrder === otherQuestion.displayOrder &&
       question.textChangeIsSemantic === otherQuestion.textChangeIsSemantic &&
+      areSurveyQuestionChoiceDisplaysEqual({
+        left: question,
+        right: otherQuestion,
+      }) &&
       areSurveyQuestionConstraintsEqual({
         left: question.constraints,
         right: otherQuestion.constraints,
       }) &&
       areSurveyQuestionOptionsEqual({
-        left: question.options,
-        right: otherQuestion.options,
+        left: getSurveyQuestionOptions({ question }),
+        right: getSurveyQuestionOptions({ question: otherQuestion }),
       })
     );
   });
@@ -451,6 +544,10 @@ export function summarizeSurveyConfigChanges({
 
     const didQuestionChange =
       previousQuestion.questionType !== nextQuestion.questionType ||
+      !areSurveyQuestionChoiceDisplaysEqual({
+        left: previousQuestion,
+        right: nextQuestion,
+      }) ||
       previousQuestion.questionText !== nextQuestion.questionText ||
       previousQuestion.isRequired !== nextQuestion.isRequired ||
       !areSurveyQuestionConstraintsEqual({
@@ -462,8 +559,8 @@ export function summarizeSurveyConfigChanges({
       updatedQuestionCount += 1;
     }
 
-    const previousOptions = previousQuestion.options ?? [];
-    const nextOptions = nextQuestion.options ?? [];
+    const previousOptions = getSurveyQuestionOptions({ question: previousQuestion });
+    const nextOptions = getSurveyQuestionOptions({ question: nextQuestion });
 
     const previousOptionsByKey = new Map(
       previousOptions.map((option, index) => {

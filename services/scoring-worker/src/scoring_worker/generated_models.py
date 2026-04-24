@@ -47,10 +47,14 @@ class MaxdiffLifecycleStatus(StrEnum):
 
 
 class SurveyQuestionType(StrEnum):
-    mono_choice = "mono_choice"
-    multi_choice = "multi_choice"
-    select = "select"
+    choice = "choice"
     free_text = "free_text"
+
+
+class SurveyChoiceDisplay(StrEnum):
+    auto = "auto"
+    list = "list"
+    dropdown = "dropdown"
 
 
 class Conversation(Base):
@@ -190,6 +194,7 @@ class SurveyAnswerOption(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     survey_answer_id: Mapped[int] = mapped_column(Integer)
+    survey_question_id: Mapped[int] = mapped_column(Integer)
     survey_question_option_id: Mapped[int] = mapped_column(Integer)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
@@ -199,6 +204,7 @@ class SurveyAnswer(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     survey_response_id: Mapped[int] = mapped_column(Integer)
+    conversation_id: Mapped[int] = mapped_column(Integer)
     survey_question_id: Mapped[int] = mapped_column(Integer)
     answered_question_semantic_version: Mapped[int] = mapped_column(Integer)
     text_value_html: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -248,7 +254,7 @@ class SurveyQuestionOption(Base):
     slug_id: Mapped[str] = mapped_column(String(8))
     survey_question_id: Mapped[int] = mapped_column(Integer)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    display_order: Mapped[Any] = mapped_column(JSON)
+    display_order: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
@@ -259,12 +265,16 @@ class SurveyQuestion(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     slug_id: Mapped[str] = mapped_column(String(8))
     survey_config_id: Mapped[int] = mapped_column(Integer)
+    conversation_id: Mapped[int] = mapped_column(Integer)
     question_type: Mapped[SurveyQuestionType] = mapped_column(
         SaEnum(SurveyQuestionType, native_enum=False),
     )
+    choice_display: Mapped[SurveyChoiceDisplay] = mapped_column(
+        SaEnum(SurveyChoiceDisplay, native_enum=False),
+    )
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     current_semantic_version: Mapped[int] = mapped_column(Integer, server_default="1")
-    display_order: Mapped[Any] = mapped_column(JSON)
+    display_order: Mapped[int] = mapped_column(Integer)
     is_required: Mapped[bool] = mapped_column(Boolean, server_default="true")
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)

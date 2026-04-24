@@ -23,11 +23,13 @@
               :single-line="false"
               :disabled="false"
               :max-length="maxLengthOpinion"
+              :submit-on-enter="submitOnEnter"
               min-height="3rem"
               @update:model-value="(val: string) => emit('update:modelValue', val)"
               @update:character-count="onCharacterCountUpdate"
               @manually-focused="emit('focus')"
               @blur="emit('blur')"
+              @enter="emit('enter')"
             />
           </div>
         </div>
@@ -79,6 +81,7 @@ const props = defineProps<{
   modelValue: string;
   errorMessage?: string;
   isActive: boolean;
+  submitOnEnter?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -86,6 +89,7 @@ const emit = defineEmits<{
   (e: "remove"): void;
   (e: "focus"): void;
   (e: "blur"): void;
+  (e: "enter"): void;
   (e: "update:characterCount", count: number): void;
 }>();
 

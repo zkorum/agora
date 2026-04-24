@@ -48,7 +48,7 @@
       />
 
         <div class="contentFlexStyle">
-          <div class="surveyActionRow">
+          <div v-if="isSurveyFeatureAllowed" class="surveyActionRow">
             <q-btn
               flat
               no-caps
@@ -121,6 +121,7 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import Button from "primevue/button";
 import Editor from "src/components/editor/Editor.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
@@ -138,8 +139,15 @@ import {
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
 import type { ParticipationMode, SurveyConfig } from "src/shared/types/zod";
+import {
+  checkFeatureManagementAccess,
+  DEFAULT_FEATURE_ALLOWED_ORGS,
+  DEFAULT_FEATURE_ALLOWED_USERS,
+} from "src/shared-app-api/featureAccess";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import { useUpdateConversationMutation } from "src/utils/api/post/useConversationMutations";
+import { processEnv } from "src/utils/processEnv";
 import { getSingleRouteParam } from "src/utils/router/params";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
@@ -162,6 +170,7 @@ const { t } = useComponentI18n<EditConversationTranslations>(
 
 const route = useRoute();
 const router = useRouter();
+const { userId } = storeToRefs(useAuthenticationStore());
 const { showNotifyMessage } = useNotify();
 const { getConversationForEdit } = useBackendPostEditApi();
 const updateMutation = useUpdateConversationMutation();
@@ -179,6 +188,7 @@ const errorMessage = ref("");
 const showPollWarning = ref(false);
 const pollWarningMessage = ref("");
 const pendingSaveAction = ref<(() => Promise<void>) | undefined>(undefined);
+const surveyPostAsOrganizationName = ref<string | undefined>(undefined);
 
 const pollComponentRef = ref<InstanceType<typeof PollComponent>>();
 const titleInputRef = ref<HTMLDivElement>();
@@ -220,6 +230,22 @@ const responseSurveyButtonLabel = computed(() => {
   return originalState.value.surveyConfig === null
     ? t("createSurveyButton")
     : t("editSurveyButton");
+});
+const isSurveyFeatureAllowed = computed(() => {
+  const result = checkFeatureManagementAccess({
+    hasExistingFeature: originalState.value.surveyConfig !== null,
+    featureEnabled: processEnv.VITE_SURVEY_ENABLED === "true",
+    isOrgOnly: processEnv.VITE_IS_SURVEY_ORG_ONLY === "true",
+    allowedOrgs:
+      processEnv.VITE_SURVEY_ALLOWED_ORGS ?? DEFAULT_FEATURE_ALLOWED_ORGS,
+    allowedUsers:
+      processEnv.VITE_SURVEY_ALLOWED_USERS ?? DEFAULT_FEATURE_ALLOWED_USERS,
+    postAsOrganization: surveyPostAsOrganizationName.value !== undefined,
+    organizationName: surveyPostAsOrganizationName.value ?? "",
+    userId: userId.value ?? "",
+  });
+
+  return result.allowed;
 });
 
 // Track whether current poll is the original (for poll warnings)
@@ -630,6 +656,7 @@ onMounted(async () => {
       },
       surveyConfig: response.surveyConfig ?? null,
     });
+    surveyPostAsOrganizationName.value = response.postAsOrganizationName;
 
     // Store original state for change detection
     originalState.value = {

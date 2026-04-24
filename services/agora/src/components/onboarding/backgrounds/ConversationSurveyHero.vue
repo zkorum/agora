@@ -1,11 +1,11 @@
 <template>
-  <div class="hero" :class="{ 'hero--compact': compact }">
+  <div class="hero">
     <div class="hero__content">
       <div class="hero__avatar">
         <DynamicProfileImage
           :user-identity="ownerIdentity"
           :organization-image-url="organizationImageUrl || undefined"
-          :size="avatarSize"
+          :size="64"
         />
       </div>
 
@@ -33,26 +33,22 @@ const props = defineProps<{
   authorUsername: string;
   organizationName: string;
   organizationImageUrl: string;
-  compact?: boolean;
 }>();
 
 const ownerIdentity = computed(() => {
   return props.organizationName || props.authorUsername;
 });
 
-const avatarSize = computed(() => {
-  return props.compact ? 52 : 64;
-});
 </script>
 
 <style scoped lang="scss">
 .hero {
-  min-height: 34dvh;
+  min-height: clamp(13rem, 28dvh, 18rem);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-top: 2.5rem;
-  padding-bottom: 4rem;
+  padding-top: clamp(1rem, 3dvh, 2rem);
+  padding-bottom: clamp(1.5rem, 4dvh, 3rem);
 }
 
 .hero__content {
@@ -60,7 +56,7 @@ const avatarSize = computed(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   text-align: center;
 }
 
@@ -68,9 +64,9 @@ const avatarSize = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 5.5rem;
-  height: 5.5rem;
-  padding: 0.75rem;
+  width: clamp(4.5rem, 16vw, 5.5rem);
+  height: clamp(4.5rem, 16vw, 5.5rem);
+  padding: clamp(0.5rem, 2vw, 0.75rem);
   border-radius: 999px;
   background-color: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(8px);
@@ -83,51 +79,18 @@ const avatarSize = computed(() => {
 }
 
 .hero__title {
-  font-size: 1.75rem;
+  max-width: 100%;
+  font-size: clamp(1.35rem, 1.1rem + 1.2vw, 1.75rem);
   font-weight: var(--font-weight-bold);
   line-height: 1.2;
   color: $ink-darkest;
+  overflow-wrap: anywhere;
   text-wrap: balance;
-}
-
-.hero--compact {
-  min-height: 18dvh;
-  padding-top: 1.25rem;
-  padding-bottom: 1.75rem;
-
-  .hero__content {
-    gap: 0.6rem;
-  }
-
-  .hero__avatar {
-    width: 4rem;
-    height: 4rem;
-    padding: 0.4rem;
-  }
-
-  .hero__title {
-    font-size: 1.3rem;
-  }
 }
 
 @media (max-width: 600px) {
   .hero {
-    min-height: 30dvh;
-    padding-bottom: 3rem;
-  }
-
-  .hero__title {
-    font-size: 1.5rem;
-  }
-
-  .hero--compact {
-    min-height: 14dvh;
-    padding-top: 0.75rem;
-    padding-bottom: 1.25rem;
-
-    .hero__title {
-      font-size: 1.15rem;
-    }
+    min-height: clamp(11rem, 24dvh, 15rem);
   }
 }
 </style>

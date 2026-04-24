@@ -1,16 +1,27 @@
 /** **** WARNING: GENERATED FROM SHARED-APP-API DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
-export const DEFAULT_MAXDIFF_ALLOWED_ORGS = "";
-export const DEFAULT_MAXDIFF_GITHUB_ALLOWED_ORGS = "";
+import {
+    checkFeatureAccess,
+    DEFAULT_FEATURE_ALLOWED_ORGS,
+    DEFAULT_FEATURE_ALLOWED_USERS,
+    type FeatureAccessDenialReason,
+} from "./featureAccess.js";
+
+export const DEFAULT_MAXDIFF_ALLOWED_ORGS = DEFAULT_FEATURE_ALLOWED_ORGS;
+export const DEFAULT_MAXDIFF_ALLOWED_USERS = DEFAULT_FEATURE_ALLOWED_USERS;
+export const DEFAULT_MAXDIFF_GITHUB_ALLOWED_ORGS = DEFAULT_FEATURE_ALLOWED_ORGS;
+export const DEFAULT_MAXDIFF_GITHUB_ALLOWED_USERS = DEFAULT_FEATURE_ALLOWED_USERS;
 
 interface CheckMaxDiffAllowedParams {
     maxdiffEnabled: boolean;
     isMaxdiffOrgOnly: boolean;
     maxdiffAllowedOrgs: string; // comma-separated, "" = all orgs
+    maxdiffAllowedUsers: string; // comma-separated, "" = all users
     postAsOrganization: boolean;
     organizationName: string;
+    userId: string;
 }
 
-type MaxDiffDenialReason = "disabled" | "org_required" | "org_not_in_whitelist";
+type MaxDiffDenialReason = FeatureAccessDenialReason;
 
 type CheckMaxDiffAllowedResult =
     | { allowed: true }
@@ -20,35 +31,28 @@ export function checkMaxDiffAllowed({
     maxdiffEnabled,
     isMaxdiffOrgOnly,
     maxdiffAllowedOrgs,
+    maxdiffAllowedUsers,
     postAsOrganization,
     organizationName,
+    userId,
 }: CheckMaxDiffAllowedParams): CheckMaxDiffAllowedResult {
-    if (!maxdiffEnabled) return { allowed: false, reason: "disabled" };
-
-    // If not restricted to orgs, everyone can create maxdiff
-    if (!isMaxdiffOrgOnly) return { allowed: true };
-
-    // Org-only mode: must be posting as org
-    if (!postAsOrganization)
-        return { allowed: false, reason: "org_required" };
-
-    // Check allowed orgs whitelist (empty = all orgs)
-    const trimmed = maxdiffAllowedOrgs.trim();
-    if (trimmed === "") return { allowed: true };
-
-    const orgList = trimmed.split(",").map((s) => s.trim());
-    if (!orgList.includes(organizationName)) {
-        return { allowed: false, reason: "org_not_in_whitelist" };
-    }
-
-    return { allowed: true };
+    return checkFeatureAccess({
+        featureEnabled: maxdiffEnabled,
+        isOrgOnly: isMaxdiffOrgOnly,
+        allowedOrgs: maxdiffAllowedOrgs,
+        allowedUsers: maxdiffAllowedUsers,
+        postAsOrganization,
+        organizationName,
+        userId,
+    });
 }
 
 type MaxDiffGitHubDenialReason =
     | MaxDiffDenialReason
     | "github_disabled"
     | "github_org_required"
-    | "github_org_not_in_whitelist";
+    | "github_org_not_in_whitelist"
+    | "github_user_not_in_whitelist";
 
 type CheckMaxDiffGitHubAllowedResult =
     | { allowed: true }
@@ -58,30 +62,38 @@ interface CheckMaxDiffGitHubAllowedParams {
     maxdiffEnabled: boolean;
     isMaxdiffOrgOnly: boolean;
     maxdiffAllowedOrgs: string;
+    maxdiffAllowedUsers: string;
     maxdiffGitHubEnabled: boolean;
     isMaxdiffGitHubOrgOnly: boolean;
     maxdiffGitHubAllowedOrgs: string;
+    maxdiffGitHubAllowedUsers: string;
     postAsOrganization: boolean;
     organizationName: string;
+    userId: string;
 }
 
 export function checkMaxDiffGitHubAllowed({
     maxdiffEnabled,
     isMaxdiffOrgOnly,
     maxdiffAllowedOrgs,
+    maxdiffAllowedUsers,
     maxdiffGitHubEnabled,
     isMaxdiffGitHubOrgOnly,
     maxdiffGitHubAllowedOrgs,
+    maxdiffGitHubAllowedUsers,
     postAsOrganization,
     organizationName,
+    userId,
 }: CheckMaxDiffGitHubAllowedParams): CheckMaxDiffGitHubAllowedResult {
     // Base MaxDiff must be allowed first
     const baseCheck = checkMaxDiffAllowed({
         maxdiffEnabled,
         isMaxdiffOrgOnly,
         maxdiffAllowedOrgs,
+        maxdiffAllowedUsers,
         postAsOrganization,
         organizationName,
+        userId,
     });
     if (!baseCheck.allowed) return baseCheck;
 
@@ -89,20 +101,32 @@ export function checkMaxDiffGitHubAllowed({
     if (!maxdiffGitHubEnabled)
         return { allowed: false, reason: "github_disabled" };
 
-    // If not restricted to orgs, all MaxDiff-allowed orgs get GitHub
-    if (!isMaxdiffGitHubOrgOnly) return { allowed: true };
-
-    // GitHub org-only mode: must be posting as org
-    if (!postAsOrganization)
-        return { allowed: false, reason: "github_org_required" };
-
-    // Check GitHub-specific org whitelist (empty = all MaxDiff-allowed orgs)
-    const trimmed = maxdiffGitHubAllowedOrgs.trim();
-    if (trimmed === "") return { allowed: true };
-
-    const orgList = trimmed.split(",").map((s) => s.trim());
-    if (!orgList.includes(organizationName)) {
-        return { allowed: false, reason: "github_org_not_in_whitelist" };
+    const githubCheck = checkFeatureAccess({
+        featureEnabled: maxdiffGitHubEnabled,
+        isOrgOnly: isMaxdiffGitHubOrgOnly,
+        allowedOrgs: maxdiffGitHubAllowedOrgs,
+        allowedUsers: maxdiffGitHubAllowedUsers,
+        postAsOrganization,
+        organizationName,
+        userId,
+    });
+    if (!githubCheck.allowed) {
+        switch (githubCheck.reason) {
+            case "disabled":
+                return { allowed: false, reason: "github_disabled" };
+            case "org_required":
+                return { allowed: false, reason: "github_org_required" };
+            case "org_not_in_whitelist":
+                return {
+                    allowed: false,
+                    reason: "github_org_not_in_whitelist",
+                };
+            case "user_not_in_whitelist":
+                return {
+                    allowed: false,
+                    reason: "github_user_not_in_whitelist",
+                };
+        }
     }
 
     return { allowed: true };

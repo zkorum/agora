@@ -1,5 +1,5 @@
 import type { CsvGenerator, ExportAccessLevel } from "./base.js";
-import type { ExportFileType } from "@/shared/types/zod.js";
+import type { ExportFileAudience, ExportFileType } from "@/shared/types/zod.js";
 import { commentsGenerator } from "./comments.js";
 import { surveyFullAggregatesGenerator } from "./surveyFullAggregates.js";
 import { surveyParticipantResponsesGenerator } from "./surveyParticipantResponses.js";
@@ -55,6 +55,14 @@ export function getAvailableExportFileTypes(): string[] {
     return exportGenerators.map((generator) => generator.fileType);
 }
 
+export function getExportGeneratorByFileType({
+    fileType,
+}: {
+    fileType: ExportFileType;
+}): CsvGenerator | undefined {
+    return exportGeneratorByFileType.get(fileType);
+}
+
 export function canAccessExportFileType({
     fileType,
     exportAccessLevel,
@@ -72,4 +80,17 @@ export function canAccessExportFileType({
     }
 
     return exportAccessLevel === "owner";
+}
+
+export function getExportFileAudience({
+    fileType,
+}: {
+    fileType: ExportFileType;
+}): ExportFileAudience | undefined {
+    const generator = exportGeneratorByFileType.get(fileType);
+    if (generator === undefined) {
+        return undefined;
+    }
+
+    return generator.minimumAccessLevel === "public" ? "redacted" : "owner";
 }

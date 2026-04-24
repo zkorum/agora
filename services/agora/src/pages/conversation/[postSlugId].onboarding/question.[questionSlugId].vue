@@ -5,16 +5,7 @@
     :show-close-button="true"
   >
     <template #body>
-      <ConversationSurveyHero
-        v-if="conversationData !== undefined"
-        :conversation-title="conversationData.payload.title"
-        :author-username="conversationData.metadata.authorUsername"
-        :organization-name="conversationData.metadata.organization?.name ?? ''"
-        :organization-image-url="
-          conversationData.metadata.organization?.imageUrl ?? ''
-        "
-      />
-      <DefaultImageExample v-else />
+      <ConversationSurveyOnboardingHero :conversation-data="conversationData" />
     </template>
 
     <template #footer>
@@ -76,36 +67,22 @@
               {{ questionDescription }}
             </div>
 
-            <div
-              v-if="question.questionType === 'mono_choice'"
-              class="survey-card__single-choice-list"
-            >
-              <SurveySelectableOption
-                v-for="option in choiceOptions"
-                :key="option.value"
-                :label="option.label"
-                :selected="selectedSingleOptionSlugId === option.value"
-                @select="
-                  handleToggleSingleOption({ optionSlugId: option.value })
-                "
-              />
-            </div>
-
-            <q-option-group
-              v-else-if="question.questionType === 'multi_choice'"
-              v-model="selectedMultiOptionSlugIds"
-              type="checkbox"
+            <SurveyChoiceInput
+              v-if="question.questionType === 'choice'"
+              :choice-display="question.choiceDisplay"
+              :is-multiple-selection="!isSingleSelectionQuestion"
+              :is-required="question.isRequired"
               :options="choiceOptions"
-            />
-
-            <ZKSelect
-              v-else-if="question.questionType === 'select'"
-              :model-value="selectedSingleOptionSlugId"
-              :clearable="!question.isRequired"
-              :label="t('selectOptionLabel')"
-              :options="choiceOptions"
-              :searchable="true"
-              @update:model-value="handleSelectOptionChange"
+              :selected-single-option-slug-id="selectedSingleOptionSlugId"
+              :selected-multi-option-slug-ids="selectedMultiOptionSlugIds"
+              :select-option-label="t('selectOptionLabel')"
+              :max-selections="question.constraints.maxSelections"
+              @update:selected-single-option-slug-id="
+                selectedSingleOptionSlugId = $event
+              "
+              @update:selected-multi-option-slug-ids="
+                selectedMultiOptionSlugIds = $event
+              "
             />
 
             <div v-else class="survey-card__editor">
@@ -147,15 +124,13 @@
 
 <script setup lang="ts">
 import Editor from "src/components/editor/Editor.vue";
-import ConversationSurveyHero from "src/components/onboarding/backgrounds/ConversationSurveyHero.vue";
-import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
+import ConversationSurveyOnboardingHero from "src/components/onboarding/backgrounds/ConversationSurveyOnboardingHero.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
-import SurveySelectableOption from "src/components/survey/SurveySelectableOption.vue";
+import SurveyChoiceInput from "src/components/survey/SurveyChoiceInput.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKDigitsInput from "src/components/ui-library/ZKDigitsInput.vue";
-import ZKSelect from "src/components/ui-library/ZKSelect.vue";
 import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useSurveyNavigation } from "src/composables/conversation/useSurveyNavigation";
@@ -176,7 +151,10 @@ import {
   isSurveyAnswerSubmittable,
   normalizeSurveyAnswer,
 } from "src/utils/survey/answer";
-import { isIntegerFreeTextQuestion } from "src/utils/survey/config";
+import {
+  isIntegerFreeTextQuestion,
+  isSingleSelectionChoiceQuestion,
+} from "src/utils/survey/config";
 import {
   getConversationPath,
   getConversationSurveyCompletePath,
@@ -275,24 +253,23 @@ watch(
     }
 
     switch (currentQuestion.questionType) {
-      case "mono_choice":
-      case "select":
-        selectedSingleOptionSlugId.value =
-          currentQuestion.currentAnswer?.questionType ===
-          currentQuestion.questionType
-            ? (currentQuestion.currentAnswer.optionSlugIds[0] ?? null)
-            : null;
-        selectedMultiOptionSlugIds.value = [];
-        textValueHtml.value = "";
-        break;
-      case "multi_choice":
-        selectedSingleOptionSlugId.value = null;
+      case "choice": {
+        const currentChoiceAnswer =
+          currentQuestion.currentAnswer?.questionType === "choice"
+            ? currentQuestion.currentAnswer
+            : undefined;
+        selectedSingleOptionSlugId.value = isSingleSelectionChoiceQuestion({
+          question: currentQuestion,
+        })
+          ? (currentChoiceAnswer?.optionSlugIds[0] ?? null)
+          : null;
         selectedMultiOptionSlugIds.value =
-          currentQuestion.currentAnswer?.questionType === "multi_choice"
-            ? [...currentQuestion.currentAnswer.optionSlugIds]
+          currentChoiceAnswer !== undefined
+            ? [...currentChoiceAnswer.optionSlugIds]
             : [];
         textValueHtml.value = "";
         break;
+      }
       case "free_text":
         selectedSingleOptionSlugId.value = null;
         selectedMultiOptionSlugIds.value = [];
@@ -307,20 +284,23 @@ watch(
 );
 
 const choiceOptions = computed<Array<{ label: string; value: string }>>(() => {
-  return (
-    question.value?.options?.flatMap((option) => {
-      if (option.optionSlugId === undefined) {
-        return [];
-      }
+  const currentQuestion = question.value;
+  if (currentQuestion === undefined || currentQuestion.questionType !== "choice") {
+    return [];
+  }
 
-      return [
-        {
-          label: option.optionText,
-          value: option.optionSlugId,
-        },
-      ];
-    }) ?? []
-  );
+  return currentQuestion.options.flatMap((option) => {
+    if (option.optionSlugId === undefined) {
+      return [];
+    }
+
+    return [
+      {
+        label: option.optionText,
+        value: option.optionSlugId,
+      },
+    ];
+  });
 });
 
 const isIntegerQuestion = computed(() => {
@@ -423,51 +403,51 @@ const questionDescription = computed(() => {
   if (currentQuestion === undefined) {
     return "";
   }
-  if (currentQuestion.questionType === "multi_choice") {
-    if (currentQuestion.constraints.type === "multi_choice") {
-      if (!currentQuestion.isRequired) {
-        if (currentQuestion.constraints.maxSelections !== undefined) {
-          return t("optionalMultiChoiceBetweenDescription", {
-            min: currentQuestion.constraints.minSelections,
-            max: currentQuestion.constraints.maxSelections,
-          });
-        }
+  if (currentQuestion.questionType === "choice") {
+    if (isSingleSelectionChoiceQuestion({ question: currentQuestion })) {
+      return currentQuestion.isRequired
+        ? t("chooseOneOptionDescription")
+        : t("chooseZeroOrOneOptionDescription");
+    }
 
-        return t("optionalMultiChoiceAtLeastDescription", {
-          min: currentQuestion.constraints.minSelections,
-        });
-      }
-
+    if (!currentQuestion.isRequired) {
       if (currentQuestion.constraints.maxSelections !== undefined) {
-        return t("multiChoiceBetweenDescription", {
+        return t("optionalMultiChoiceBetweenDescription", {
           min: currentQuestion.constraints.minSelections,
           max: currentQuestion.constraints.maxSelections,
         });
       }
 
-      return t("multiChoiceAtLeastDescription", {
+      return t("optionalMultiChoiceAtLeastDescription", {
         min: currentQuestion.constraints.minSelections,
       });
     }
 
-    return t("chooseOneOptionDescription");
+    if (currentQuestion.constraints.maxSelections !== undefined) {
+      return t("multiChoiceBetweenDescription", {
+        min: currentQuestion.constraints.minSelections,
+        max: currentQuestion.constraints.maxSelections,
+      });
+    }
+
+    return t("multiChoiceAtLeastDescription", {
+      min: currentQuestion.constraints.minSelections,
+    });
   }
-  if (
-    currentQuestion.questionType === "mono_choice" ||
-    currentQuestion.questionType === "select"
-  ) {
-    return currentQuestion.isRequired
-      ? t("chooseOneOptionDescription")
-      : t("chooseZeroOrOneOptionDescription");
-  }
-  if (
-    currentQuestion.questionType === "free_text" &&
-    currentQuestion.constraints.type === "free_text"
-  ) {
+  if (currentQuestion.questionType === "free_text") {
     return "";
   }
 
   return "";
+});
+
+const isSingleSelectionQuestion = computed(() => {
+  const currentQuestion = question.value;
+  if (currentQuestion === undefined) {
+    return false;
+  }
+
+  return isSingleSelectionChoiceQuestion({ question: currentQuestion });
 });
 
 const freeTextMaxLength = computed(() => {
@@ -654,36 +634,6 @@ function getPreviousPath(): string {
   });
 }
 
-function handleToggleSingleOption({
-  optionSlugId,
-}: {
-  optionSlugId: string;
-}): void {
-  const currentQuestion = question.value;
-
-  if (currentQuestion?.questionType !== "mono_choice") {
-    return;
-  }
-
-  if (
-    !currentQuestion.isRequired &&
-    selectedSingleOptionSlugId.value === optionSlugId
-  ) {
-    selectedSingleOptionSlugId.value = null;
-    return;
-  }
-
-  selectedSingleOptionSlugId.value = optionSlugId;
-}
-
-function handleSelectOptionChange(value: string | string[] | null): void {
-  if (Array.isArray(value)) {
-    return;
-  }
-
-  selectedSingleOptionSlugId.value = value;
-}
-
 function getNextPath(): string {
   if (nextQuestionSlugId.value !== undefined) {
     return getConversationSurveyQuestionPath({
@@ -841,11 +791,6 @@ async function handleNext(): Promise<void> {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-}
-
-.survey-card__single-choice-list {
-  display: flex;
-  flex-direction: column;
 }
 
 .survey-card__help-text {

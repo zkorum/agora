@@ -222,6 +222,13 @@ describe("mapSqlType", () => {
         });
     });
 
+    it("maps smallint to Integer", () => {
+        expect(mapSqlType("smallint", noEnums)).toEqual({
+            pyType: "int",
+            saType: "Integer",
+        });
+    });
+
     it("maps timestamp with precision", () => {
         expect(mapSqlType("timestamp (0)", noEnums)).toEqual({
             pyType: "datetime",

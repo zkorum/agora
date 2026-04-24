@@ -1,9 +1,10 @@
 import { httpErrors } from "@fastify/sensible";
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { generateRandomSlugId } from "@/crypto.js";
 import {
     conversationTable,
+    organizationTable,
     surveyAnswerOptionTable,
     surveyAnswerTable,
     surveyConfigTable,
@@ -48,10 +49,12 @@ import {
     type SurveyAnswerSubmission,
     type SurveyCompletionCounts,
     type SurveyConfig,
+    type SurveyChoiceDisplay,
     type SurveyGateSummary,
     type SurveyQuestionConfig,
     type SurveyQuestionConstraints,
     type SurveyQuestionFormItem,
+    type SurveyQuestionOption,
     type SurveyQuestionType,
     type SurveyResultsAccessLevel,
     type SurveyRouteResolution,
@@ -60,7 +63,8 @@ import {
     ZodSupportedDisplayLanguageCodes,
     type SupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
-import { log } from "@/app.js";
+import { config, log } from "@/app.js";
+import { checkFeatureManagementAccess } from "@/shared-app-api/featureAccess.js";
 import { getConversationViewAccessLevel } from "@/service/conversationAccess.js";
 import {
     PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
@@ -75,11 +79,55 @@ interface ConversationAccessContext {
     conversationId: number;
     slugId: string;
     authorId: string;
+    organizationName: string | null;
     participationMode: (typeof conversationTable.$inferSelect)["participationMode"];
     conversationType: (typeof conversationTable.$inferSelect)["conversationType"];
     currentContentId: number | null;
     isClosed: boolean;
     requiresEventTicket: (typeof conversationTable.$inferSelect)["requiresEventTicket"];
+}
+
+function assertSurveyFeatureAllowed({
+    conversation,
+    hasExistingSurvey,
+    userId,
+}: {
+    conversation: ConversationAccessContext;
+    hasExistingSurvey: boolean;
+    userId: string;
+}): void {
+    const surveyAccess = checkFeatureManagementAccess({
+        hasExistingFeature: hasExistingSurvey,
+        featureEnabled: config.SURVEY_ENABLED,
+        isOrgOnly: config.IS_SURVEY_ORG_ONLY,
+        allowedOrgs: config.SURVEY_ALLOWED_ORGS,
+        allowedUsers: config.SURVEY_ALLOWED_USERS,
+        postAsOrganization: conversation.organizationName !== null,
+        organizationName: conversation.organizationName ?? "",
+        userId,
+    });
+    if (surveyAccess.allowed) {
+        return;
+    }
+
+    switch (surveyAccess.reason) {
+        case "disabled":
+            throw httpErrors.serviceUnavailable(
+                "Survey feature is currently disabled",
+            );
+        case "org_required":
+            throw httpErrors.forbidden(
+                "Survey configuration is restricted to organization conversations",
+            );
+        case "org_not_in_whitelist":
+            throw httpErrors.forbidden(
+                "This organization is not allowed to configure surveys",
+            );
+        case "user_not_in_whitelist":
+            throw httpErrors.forbidden(
+                "This user is not allowed to configure surveys",
+            );
+    }
 }
 
 interface SurveyConfigUpdateEffect {
@@ -195,6 +243,7 @@ export interface ActiveSurveyQuestionRecord {
     id: number;
     slugId: string;
     questionType: SurveyQuestionType;
+    choiceDisplay: SurveyChoiceDisplay;
     currentContentId?: number | null;
     currentSemanticVersion: number;
     displayOrder: number;
@@ -289,22 +338,53 @@ export function surveyQuestionToConfig({
 }: {
     question: ActiveSurveyQuestionRecord;
 }): SurveyQuestionConfig {
-    return {
+    const baseQuestion = {
         questionSlugId: question.slugId,
-        questionType: question.questionType,
         questionText: question.questionText,
         isRequired: question.isRequired,
         displayOrder: question.displayOrder,
-        constraints: question.constraints,
-        options:
-            question.questionType === "free_text"
-                ? undefined
-                : question.options.map((option) => ({
-                      optionSlugId: option.slugId,
-                      optionText: option.optionText,
-                      displayOrder: option.displayOrder,
-                  })),
     };
+
+    switch (question.questionType) {
+        case "free_text":
+            if (question.constraints.type !== "free_text") {
+                throw httpErrors.internalServerError(
+                    "Survey free text question has invalid constraints",
+                );
+            }
+
+            return {
+                ...baseQuestion,
+                questionType: "free_text",
+                constraints: question.constraints,
+            };
+        case "choice":
+            if (question.constraints.type !== "choice") {
+                throw httpErrors.internalServerError(
+                    "Survey choice question has invalid constraints",
+                );
+            }
+
+            return {
+                ...baseQuestion,
+                questionType: "choice",
+                choiceDisplay: question.choiceDisplay,
+                constraints: question.constraints,
+                options: question.options.map((option) => ({
+                    optionSlugId: option.slugId,
+                    optionText: option.optionText,
+                    displayOrder: option.displayOrder,
+                })),
+            };
+    }
+}
+
+function getSurveyQuestionConfigOptions({
+    question,
+}: {
+    question: SurveyQuestionConfig;
+}): readonly SurveyQuestionOption[] {
+    return question.questionType === "free_text" ? [] : question.options;
 }
 
 function storedSurveyAnswerToAnswerDraft({
@@ -320,9 +400,7 @@ function storedSurveyAnswerToAnswerDraft({
                 questionType: question.questionType,
                 textValueHtml: storedAnswer.textValueHtml ?? "",
             };
-        case "mono_choice":
-        case "multi_choice":
-        case "select":
+        case "choice":
             return {
                 questionType: question.questionType,
                 optionSlugIds: storedAnswer.optionSlugIds,
@@ -445,26 +523,8 @@ export function validateSurveyAnswer({
                 characterCount <= maxPlainTextLength
             );
         }
-        case "mono_choice":
-        case "select": {
-            const currentOptionSlugIds = new Set(
-                question.options.map((option) => option.slugId),
-            );
-            const uniqueOptionSlugIds = new Set(answer.optionSlugIds);
-            if (uniqueOptionSlugIds.size !== answer.optionSlugIds.length) {
-                return false;
-            }
-
-            for (const optionSlugId of answer.optionSlugIds) {
-                if (!currentOptionSlugIds.has(optionSlugId)) {
-                    return false;
-                }
-            }
-
-            return answer.optionSlugIds.length === 1;
-        }
-        case "multi_choice": {
-            if (question.constraints.type !== "multi_choice") {
+        case "choice": {
+            if (question.constraints.type !== "choice") {
                 return false;
             }
 
@@ -748,6 +808,7 @@ async function getConversationAccessContextBySlugId({
             conversationId: conversationTable.id,
             slugId: conversationTable.slugId,
             authorId: conversationTable.authorId,
+            organizationName: organizationTable.name,
             participationMode: conversationTable.participationMode,
             conversationType: conversationTable.conversationType,
             currentContentId: conversationTable.currentContentId,
@@ -755,6 +816,10 @@ async function getConversationAccessContextBySlugId({
             requiresEventTicket: conversationTable.requiresEventTicket,
         })
         .from(conversationTable)
+        .leftJoin(
+            organizationTable,
+            eq(conversationTable.organizationId, organizationTable.id),
+        )
         .where(eq(conversationTable.slugId, conversationSlugId))
         .limit(1);
 
@@ -797,6 +862,7 @@ export async function getActiveSurveyConfigRecord({
             questionId: surveyQuestionTable.id,
             questionSlugId: surveyQuestionTable.slugId,
             questionType: surveyQuestionTable.questionType,
+            choiceDisplay: surveyQuestionTable.choiceDisplay,
             currentContentId: surveyQuestionTable.currentContentId,
             currentSemanticVersion: surveyQuestionTable.currentSemanticVersion,
             displayOrder: surveyQuestionTable.displayOrder,
@@ -815,7 +881,12 @@ export async function getActiveSurveyConfigRecord({
                 surveyQuestionContentTable.id,
             ),
         )
-        .where(eq(surveyQuestionTable.surveyConfigId, surveyConfig.id))
+        .where(
+            and(
+                eq(surveyQuestionTable.surveyConfigId, surveyConfig.id),
+                isNotNull(surveyQuestionTable.currentContentId),
+            ),
+        )
         .orderBy(asc(surveyQuestionTable.displayOrder));
 
     const questionIds = questionRows.map((question) => question.questionId);
@@ -843,13 +914,16 @@ export async function getActiveSurveyConfigRecord({
                           surveyQuestionOptionContentTable.id,
                       ),
                   )
-                  .where(
-                      inArray(
-                          surveyQuestionOptionTable.surveyQuestionId,
-                          questionIds,
-                      ),
-                  )
-                  .orderBy(asc(surveyQuestionOptionTable.displayOrder));
+                   .where(
+                       and(
+                           inArray(
+                               surveyQuestionOptionTable.surveyQuestionId,
+                               questionIds,
+                           ),
+                           isNotNull(surveyQuestionOptionTable.currentContentId),
+                       ),
+                   )
+                   .orderBy(asc(surveyQuestionOptionTable.displayOrder));
 
     const optionsByQuestionId = new Map<number, ActiveSurveyOptionRecord[]>();
     for (const option of optionRows) {
@@ -874,6 +948,7 @@ export async function getActiveSurveyConfigRecord({
             id: question.questionId,
             slugId: question.questionSlugId,
             questionType: question.questionType,
+            choiceDisplay: question.choiceDisplay,
             currentContentId: question.currentContentId,
             currentSemanticVersion: question.currentSemanticVersion,
             displayOrder: question.displayOrder,
@@ -1490,11 +1565,13 @@ async function softDeleteSurveyResponseAnswers({
 async function insertSurveyQuestion({
     db,
     surveyConfigId,
+    conversationId,
     question,
     now,
 }: {
     db: PostgresJsDatabase;
     surveyConfigId: number;
+    conversationId: number;
     question: SurveyQuestionConfig;
     now: Date;
 }): Promise<void> {
@@ -1504,7 +1581,10 @@ async function insertSurveyQuestion({
         .values({
             slugId: questionSlugId,
             surveyConfigId,
+            conversationId,
             questionType: question.questionType,
+            choiceDisplay:
+                question.questionType === "free_text" ? "auto" : question.choiceDisplay,
             currentContentId: null,
             currentSemanticVersion: 1,
             displayOrder: question.displayOrder,
@@ -1530,7 +1610,7 @@ async function insertSurveyQuestion({
         .set({ currentContentId: insertedContent[0].id })
         .where(eq(surveyQuestionTable.id, surveyQuestionId));
 
-    const options = question.options ?? [];
+    const options = getSurveyQuestionConfigOptions({ question });
     for (const option of options) {
         const optionSlugId = option.optionSlugId ?? generateRandomSlugId();
         const insertedOptions = await db
@@ -1583,15 +1663,19 @@ async function replaceSurveyConfigById({
     surveyConfig: SurveyConfig;
     now: Date;
 }): Promise<{ didSemanticChange: boolean }> {
+    const surveyConfigRows = await db
+        .select({ conversationId: surveyConfigTable.conversationId })
+        .from(surveyConfigTable)
+        .where(eq(surveyConfigTable.id, surveyConfigId))
+        .limit(1);
+    const surveyConfigRow = surveyConfigRows.at(0);
+    if (surveyConfigRow === undefined) {
+        throw httpErrors.notFound("Survey config not found");
+    }
+
     const existingSurveyConfig = await getActiveSurveyConfigRecord({
         db,
-        conversationId: (
-            await db
-                .select({ conversationId: surveyConfigTable.conversationId })
-                .from(surveyConfigTable)
-                .where(eq(surveyConfigTable.id, surveyConfigId))
-                .limit(1)
-        )[0].conversationId,
+        conversationId: surveyConfigRow.conversationId,
     });
     if (existingSurveyConfig === undefined) {
         throw httpErrors.notFound("Survey config not found");
@@ -1610,12 +1694,13 @@ async function replaceSurveyConfigById({
             if (question.isRequired) {
                 didSemanticChange = true;
             }
-            await insertSurveyQuestion({
-                db,
-                surveyConfigId,
-                question,
-                now,
-            });
+                await insertSurveyQuestion({
+                    db,
+                    surveyConfigId,
+                    conversationId: surveyConfigRow.conversationId,
+                    question,
+                    now,
+                });
             continue;
         }
 
@@ -1629,6 +1714,7 @@ async function replaceSurveyConfigById({
             await insertSurveyQuestion({
                 db,
                 surveyConfigId,
+                conversationId: surveyConfigRow.conversationId,
                 question,
                 now,
             });
@@ -1682,8 +1768,9 @@ async function replaceSurveyConfigById({
         const existingOptionsBySlugId = new Map(
             existingQuestion.options.map((option) => [option.slugId, option]),
         );
+        const nextOptions = getSurveyQuestionConfigOptions({ question });
         const nextOptionSlugIds = new Set(
-            (question.options ?? [])
+            nextOptions
                 .map((option) => option.optionSlugId)
                 .filter(
                     (optionSlugId): optionSlugId is string =>
@@ -1704,7 +1791,7 @@ async function replaceSurveyConfigById({
             }
         }
 
-        for (const option of question.options ?? []) {
+        for (const option of nextOptions) {
             if (option.optionSlugId === undefined) {
                 semanticChanged = true;
                 if (questionAffectsEligibility) {
@@ -1810,6 +1897,10 @@ async function replaceSurveyConfigById({
             .update(surveyQuestionTable)
             .set({
                 questionType: question.questionType,
+                choiceDisplay:
+                    question.questionType === "free_text"
+                        ? "auto"
+                        : question.choiceDisplay,
                 currentSemanticVersion: semanticChanged
                     ? existingQuestion.currentSemanticVersion + 1
                     : existingQuestion.currentSemanticVersion,
@@ -1921,6 +2012,7 @@ export async function setSurveyConfigForConversation({
             await insertSurveyQuestion({
                 db,
                 surveyConfigId: insertedSurveyConfig[0].id,
+                conversationId,
                 question,
                 now,
             });
@@ -2356,6 +2448,7 @@ export async function saveSurveyAnswer({
                     .insert(surveyAnswerTable)
                     .values({
                         surveyResponseId,
+                        conversationId: conversation.conversationId,
                         surveyQuestionId: question.id,
                         answeredQuestionSemanticVersion:
                             question.currentSemanticVersion,
@@ -2402,6 +2495,7 @@ export async function saveSurveyAnswer({
                 .insert(surveyAnswerTable)
                 .values({
                     surveyResponseId,
+                    conversationId: conversation.conversationId,
                     surveyQuestionId: question.id,
                     answeredQuestionSemanticVersion:
                         question.currentSemanticVersion,
@@ -2453,6 +2547,7 @@ export async function saveSurveyAnswer({
                         }
                         return {
                             surveyAnswerId,
+                            surveyQuestionId: question.id,
                             surveyQuestionOptionId,
                             deletedAt: null,
                         };
@@ -2635,6 +2730,15 @@ export async function updateSurveyConfigByAuthor({
             "Only the conversation author can edit the survey",
         );
     }
+    const existingSurveyConfig = await getActiveSurveyConfigRecord({
+        db,
+        conversationId: conversation.conversationId,
+    });
+    assertSurveyFeatureAllowed({
+        conversation,
+        hasExistingSurvey: existingSurveyConfig !== undefined,
+        userId,
+    });
 
     const surveyConfigUpdateEffect = await db.transaction(async (tx) => {
         return await setSurveyConfigForConversation({
@@ -2701,6 +2805,15 @@ export async function deleteSurveyConfigByAuthor({
             "Only the conversation author can delete the survey",
         );
     }
+    const existingSurveyConfig = await getActiveSurveyConfigRecord({
+        db,
+        conversationId: conversation.conversationId,
+    });
+    assertSurveyFeatureAllowed({
+        conversation,
+        hasExistingSurvey: existingSurveyConfig !== undefined,
+        userId,
+    });
 
     const surveyConfigUpdateEffect = await db.transaction(async (tx) => {
         return await setSurveyConfigForConversation({

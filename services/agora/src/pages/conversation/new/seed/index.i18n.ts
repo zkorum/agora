@@ -2,6 +2,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 export interface ConversationReviewTranslations {
   nextButton: string;
+  publishButton: string;
   addSeedOpinions: string;
   addMaxDiffItems: string;
   seedOpinionsDescription: string;
@@ -27,6 +28,7 @@ export const conversationReviewTranslations: Record<
 > = {
   en: {
     nextButton: "Next",
+    publishButton: "Publish",
     addSeedOpinions: "Add Seed Statements",
     addMaxDiffItems: "Add Statements to Rank",
     seedOpinionsDescription:
@@ -54,6 +56,7 @@ export const conversationReviewTranslations: Record<
   },
   ar: {
     nextButton: "التالي",
+    publishButton: "نشر",
     addSeedOpinions: "إضافة مقترحات أولية",
     addMaxDiffItems: "إضافة عبارات للترتيب",
     seedOpinionsDescription:
@@ -77,6 +80,7 @@ export const conversationReviewTranslations: Record<
   },
   es: {
     nextButton: "Siguiente",
+    publishButton: "Publicar",
     addSeedOpinions: "Agregar Proposiciones Semilla",
     addMaxDiffItems: "Agregar Declaraciones a Clasificar",
     seedOpinionsDescription:
@@ -101,6 +105,7 @@ export const conversationReviewTranslations: Record<
   },
   fa: {
     nextButton: "بعدی",
+    publishButton: "انتشار",
     addSeedOpinions: "افزودن گزاره‌های اولیه",
     addMaxDiffItems: "افزودن گزاره‌ها برای رتبه‌بندی",
     seedOpinionsDescription:
@@ -125,6 +130,7 @@ export const conversationReviewTranslations: Record<
   },
   he: {
     nextButton: "הבא",
+    publishButton: "פרסום",
     addSeedOpinions: "הוספת הצהרות ראשוניות",
     addMaxDiffItems: "הוספת הצהרות לדירוג",
     seedOpinionsDescription:
@@ -149,6 +155,7 @@ export const conversationReviewTranslations: Record<
   },
   fr: {
     nextButton: "Suivant",
+    publishButton: "Publier",
     addSeedOpinions: "Ajouter des Propositions Initiales",
     addMaxDiffItems: "Ajouter les Propositions à Classer",
     seedOpinionsDescription:
@@ -174,6 +181,7 @@ export const conversationReviewTranslations: Record<
   },
   "zh-Hans": {
     nextButton: "下一步",
+    publishButton: "发布",
     addSeedOpinions: "添加种子观点",
     addMaxDiffItems: "添加待排名的陈述",
     seedOpinionsDescription:
@@ -197,6 +205,7 @@ export const conversationReviewTranslations: Record<
   },
   "zh-Hant": {
     nextButton: "下一步",
+    publishButton: "發布",
     addSeedOpinions: "添加種子觀點",
     addMaxDiffItems: "添加待排名的陳述",
     seedOpinionsDescription:
@@ -220,6 +229,7 @@ export const conversationReviewTranslations: Record<
   },
   ja: {
     nextButton: "次へ",
+    publishButton: "公開",
     addSeedOpinions: "主張の種を追加",
     addMaxDiffItems: "ランク付けするステートメントを追加",
     seedOpinionsDescription:
@@ -244,6 +254,7 @@ export const conversationReviewTranslations: Record<
   },
   ky: {
     nextButton: "Кийинки",
+    publishButton: "Жарыялоо",
     addSeedOpinions: "Баштапкы пикирлерди кошуу",
     addMaxDiffItems: "Рейтингге билдирүүлөрдү кошуу",
     seedOpinionsDescription:
@@ -268,6 +279,7 @@ export const conversationReviewTranslations: Record<
   },
   ru: {
     nextButton: "Далее",
+    publishButton: "Опубликовать",
     addSeedOpinions: "Добавить начальные высказывания",
     addMaxDiffItems: "Добавить утверждения для ранжирования",
     seedOpinionsDescription:

@@ -10,8 +10,9 @@
         </template>
         <template #right>
           <PrimeButton
-            :label="t('nextButton')"
+            :label="submitButtonLabel"
             :loading="isSubmitButtonLoading"
+            class="next-button"
             @click="onSubmit()"
           />
         </template>
@@ -94,6 +95,7 @@
             :model-value="opinion"
             :error-message="opinionErrors[index]"
             :is-active="currentActiveOpinionIndex === index"
+            :submit-on-enter="true"
             @update:model-value="
               (val) => {
                 conversationDraft.seedOpinions[index] = val;
@@ -106,6 +108,7 @@
               }
             "
             @blur="currentActiveOpinionIndex = -1"
+            @enter="addNewOpinion"
             @remove="removeOpinion(index)"
           />
         </div>
@@ -163,11 +166,17 @@ import NewConversationRouteGuard from "src/components/newConversation/NewConvers
 import SeedOpinionItem from "src/components/newConversation/SeedOpinionItem.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import { useConversationDraft } from "src/composables/conversation/draft";
+import { usePublishConversationDraft } from "src/composables/conversation/usePublishConversationDraft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
+import {
+  checkFeatureAccess,
+  DEFAULT_FEATURE_ALLOWED_ORGS,
+  DEFAULT_FEATURE_ALLOWED_USERS,
+} from "src/shared-app-api/featureAccess";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
@@ -176,11 +185,12 @@ import {
   isHistoryBackToPath,
   navigateBackOrReplace,
 } from "src/utils/nav/historyBack";
+import { processEnv } from "src/utils/processEnv";
 import { useNotify } from "src/utils/ui/notify";
-import { type ComponentPublicInstance, nextTick, onMounted, ref } from "vue";
+import { type ComponentPublicInstance, computed, nextTick, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
-const { isLoggedIn } = storeToRefs(useAuthenticationStore());
+const { isLoggedIn, userId } = storeToRefs(useAuthenticationStore());
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
 
@@ -191,6 +201,7 @@ const { validateForReview, isDraftModified, resetDraft } = useConversationDraft(
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
 
 const { previewGitHubIssues } = useMaxDiffApi();
+const { publishConversationDraft } = usePublishConversationDraft();
 
 const showLoginDialog = ref(false);
 const isSubmitButtonLoading = ref(false);
@@ -198,39 +209,9 @@ const isNavigatingAway = ref(false);
 const currentActiveOpinionIndex = ref(-1);
 const routeGuard = ref<{ unlockRoute: () => void } | undefined>(undefined);
 
-function getHistoryPosition(): number | null {
-  const position = window.history.state?.position;
-  return typeof position === "number" ? position : null;
-}
-
-function logSeedNavigation(
-  event: string,
-  details: Record<string, unknown> = {}
-): void {
-  if (!import.meta.env.DEV) {
-    return;
-  }
-
-  console.log("[new-conversation:seed]", event, {
-    path: window.location.pathname + window.location.search + window.location.hash,
-    position: getHistoryPosition(),
-    back: window.history.state?.back,
-    current: window.history.state?.current,
-    forward: window.history.state?.forward,
-    ...details,
-  });
-}
-
 async function handleBack(event: MouseEvent): Promise<void> {
   event.preventDefault();
   isNavigatingAway.value = true;
-
-  logSeedNavigation("back to create", {
-    shouldNavigateBack: isHistoryBackToPath({
-      historyBack: window.history.state?.back,
-      expectedPath: "/conversation/new/create/",
-    }),
-  });
 
   const fallbackRoute = { name: "/conversation/new/create/" } as const;
   await navigateBackOrReplace({
@@ -264,21 +245,32 @@ const { createNewConversationIntention } = useLoginIntentionStore();
 const { t } = useComponentI18n<ConversationReviewTranslations>(
   conversationReviewTranslations
 );
+const isSurveyCreationAllowed = computed(() => {
+  const result = checkFeatureAccess({
+    featureEnabled: processEnv.VITE_SURVEY_ENABLED === "true",
+    isOrgOnly: processEnv.VITE_IS_SURVEY_ORG_ONLY === "true",
+    allowedOrgs:
+      processEnv.VITE_SURVEY_ALLOWED_ORGS ?? DEFAULT_FEATURE_ALLOWED_ORGS,
+    allowedUsers:
+      processEnv.VITE_SURVEY_ALLOWED_USERS ?? DEFAULT_FEATURE_ALLOWED_USERS,
+    postAsOrganization: conversationDraft.value.postAs.postAsOrganization,
+    organizationName: conversationDraft.value.postAs.organizationName,
+    userId: userId.value ?? "",
+  });
+
+  return result.allowed;
+});
+const submitButtonLabel = computed(() => {
+  return isSurveyCreationAllowed.value ? t("nextButton") : t("publishButton");
+});
 
 onMounted(async () => {
   await nextTick();
 
   const validation = validateForReview();
-  logSeedNavigation("mounted", {
-    isValid: validation.isValid,
-    firstErrorField: validation.firstErrorField,
-  });
 
   if (!validation.isValid) {
     isNavigatingAway.value = true;
-    logSeedNavigation("redirect to create after invalid draft", {
-      firstErrorField: validation.firstErrorField,
-    });
     await router.replace({ name: "/conversation/new/create/" });
     return;
   }
@@ -502,18 +494,37 @@ function validateSeedOpinions(): boolean {
 async function onSubmit() {
   if (!isLoggedIn.value) {
     showLoginDialog.value = true;
-  } else {
-    if (!validateSeedOpinions()) {
-      return;
-    }
+    return;
+  }
 
+  if (!validateSeedOpinions()) {
+    return;
+  }
+
+  if (isSurveyCreationAllowed.value) {
     routeGuard.value?.unlockRoute();
     isNavigatingAway.value = true;
-    logSeedNavigation("push to survey");
     await nextTick();
     await router.push({
       name: "/conversation/new/survey/",
     });
+    return;
+  }
+
+  isSubmitButtonLoading.value = true;
+  const wasPublished = await publishConversationDraft({
+    conversationDraft: conversationDraft.value,
+    surveyConfig: null,
+    invalidSurveyMessage: t("errorCreatingConversation"),
+    defaultErrorMessage: t("errorCreatingConversation"),
+    beforeSuccessNavigation: () => {
+      routeGuard.value?.unlockRoute();
+      isNavigatingAway.value = true;
+    },
+  });
+
+  if (!wasPublished) {
+    isSubmitButtonLoading.value = false;
   }
 }
 </script>
@@ -525,6 +536,11 @@ async function onSubmit() {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+}
+
+.next-button:focus-visible {
+  outline: 3px solid rgba(107, 78, 255, 0.4);
+  outline-offset: 3px;
 }
 
 .seed-opinions-section {

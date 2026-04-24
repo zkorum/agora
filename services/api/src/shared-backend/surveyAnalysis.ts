@@ -1,5 +1,5 @@
 /** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { z } from "zod";
 import {
@@ -13,11 +13,7 @@ import {
     surveyResponseTable,
 } from "./schema.js";
 
-export type SurveyQuestionType =
-    | "mono_choice"
-    | "multi_choice"
-    | "select"
-    | "free_text";
+export type SurveyQuestionType = "choice" | "free_text";
 
 export type SurveyGateStatus =
     | "no_survey"
@@ -30,14 +26,7 @@ export type SurveyGateStatus =
 const surveyQuestionConstraintsSchema = z.union([
     z
         .object({
-            type: z.enum(["mono_choice", "select"]),
-            minSelections: z.literal(1),
-            maxSelections: z.literal(1),
-        })
-        .strict(),
-    z
-        .object({
-            type: z.literal("multi_choice"),
+            type: z.literal("choice"),
             minSelections: z.number().int().nonnegative().min(1),
             maxSelections: z.number().int().nonnegative().min(1).optional(),
         })
@@ -179,21 +168,8 @@ export function validateSurveyAnswerForAnalysis({
                 plainTextLength <= question.constraints.maxPlainTextLength
             );
         }
-        case "mono_choice":
-        case "select": {
-            const uniqueOptionSlugIds = new Set(answer.optionSlugIds);
-            if (uniqueOptionSlugIds.size !== answer.optionSlugIds.length) {
-                return false;
-            }
-            if (answer.optionSlugIds.length !== 1) {
-                return false;
-            }
-            return answer.optionSlugIds.every((optionSlugId) =>
-                question.optionSlugIds.includes(optionSlugId),
-            );
-        }
-        case "multi_choice": {
-            if (question.constraints.type !== "multi_choice") {
+        case "choice": {
+            if (question.constraints.type !== "choice") {
                 return false;
             }
             const uniqueOptionSlugIds = new Set(answer.optionSlugIds);
@@ -379,7 +355,12 @@ export async function getEligibleParticipantIdsForAnalysis({
             surveyQuestionContentTable,
             eq(surveyQuestionTable.currentContentId, surveyQuestionContentTable.id),
         )
-        .where(eq(surveyQuestionTable.surveyConfigId, activeSurveyConfig.id))
+        .where(
+            and(
+                eq(surveyQuestionTable.surveyConfigId, activeSurveyConfig.id),
+                isNotNull(surveyQuestionTable.currentContentId),
+            ),
+        )
         .orderBy(asc(surveyQuestionTable.displayOrder));
 
     const questionIds = questionRows.map((question) => question.questionId);
@@ -400,9 +381,12 @@ export async function getEligibleParticipantIdsForAnalysis({
                       ),
                   )
                   .where(
-                      inArray(
-                          surveyQuestionOptionTable.surveyQuestionId,
-                          questionIds,
+                      and(
+                          inArray(
+                              surveyQuestionOptionTable.surveyQuestionId,
+                              questionIds,
+                          ),
+                          isNotNull(surveyQuestionOptionTable.currentContentId),
                       ),
                   );
 

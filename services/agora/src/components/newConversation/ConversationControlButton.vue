@@ -74,6 +74,11 @@ defineEmits<{
       transform: scale(0.98);
     }
 
+    &:focus-visible {
+      outline: 3px solid rgba(107, 78, 255, 0.4);
+      outline-offset: 3px;
+    }
+
     .icon {
       color: #6b4eff;
     }
@@ -104,6 +109,11 @@ defineEmits<{
       box-shadow:
         0 1px 4px rgba(107, 78, 255, 0.2),
         0 1px 2px rgba(107, 78, 255, 0.1);
+    }
+
+    &:focus-visible {
+      outline: 3px solid rgba(107, 78, 255, 0.4);
+      outline-offset: 3px;
     }
 
     .icon {

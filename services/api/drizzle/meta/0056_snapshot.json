@@ -1,5 +1,5 @@
 {
-  "id": "faae5709-b04c-4b74-afa6-ee4a841924a8",
+  "id": "7b64e254-6088-419f-91c9-efbccda294c1",
   "prevId": "f47a5d99-6259-4248-965d-d96dc7a1f18e",
   "version": "7",
   "dialect": "postgresql",
@@ -328,8 +328,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.conversation_export_file": {
-      "name": "conversation_export_file",
+    "public.conversation_export_artifact": {
+      "name": "conversation_export_artifact",
       "schema": "",
       "columns": {
         "id": {
@@ -339,7 +339,7 @@
           "notNull": true,
           "identity": {
             "type": "always",
-            "name": "conversation_export_file_id_seq",
+            "name": "conversation_export_artifact_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -349,8 +349,8 @@
             "cycle": false
           }
         },
-        "export_id": {
-          "name": "export_id",
+        "generation_id": {
+          "name": "generation_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -362,9 +362,30 @@
           "primaryKey": false,
           "notNull": true
         },
+        "audience": {
+          "name": "audience",
+          "type": "export_file_audience_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subject_user_id": {
+          "name": "subject_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "export_artifact_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'queued'"
+        },
         "file_name": {
           "name": "file_name",
-          "type": "varchar(100)",
+          "type": "varchar(160)",
           "primaryKey": false,
           "notNull": true
         },
@@ -372,19 +393,26 @@
           "name": "file_size",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "record_count": {
           "name": "record_count",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "s3_key": {
           "name": "s3_key",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "failure_reason": {
+          "name": "failure_reason",
+          "type": "export_failure_reason_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -392,14 +420,21 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {
-        "conversation_export_file_export_idx": {
-          "name": "conversation_export_file_export_idx",
+        "conversation_export_artifact_generation_idx": {
+          "name": "conversation_export_artifact_generation_idx",
           "columns": [
             {
-              "expression": "export_id",
+              "expression": "generation_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -410,29 +445,89 @@
           "method": "btree",
           "with": {}
         },
-        "conversation_export_file_type_idx": {
-          "name": "conversation_export_file_type_idx",
+        "conversation_export_artifact_shared_unique": {
+          "name": "conversation_export_artifact_shared_unique",
           "columns": [
+            {
+              "expression": "generation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "file_type",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
+            },
+            {
+              "expression": "audience",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
             }
           ],
-          "isUnique": false,
+          "isUnique": true,
+          "where": "\"conversation_export_artifact\".\"subject_user_id\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_export_artifact_requester_unique": {
+          "name": "conversation_export_artifact_requester_unique",
+          "columns": [
+            {
+              "expression": "generation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "file_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "audience",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "subject_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"conversation_export_artifact\".\"subject_user_id\" IS NOT NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
         }
       },
       "foreignKeys": {
-        "conversation_export_file_export_id_conversation_export_id_fk": {
-          "name": "conversation_export_file_export_id_conversation_export_id_fk",
-          "tableFrom": "conversation_export_file",
-          "tableTo": "conversation_export",
+        "conversation_export_artifact_generation_id_conversation_export_generation_id_fk": {
+          "name": "conversation_export_artifact_generation_id_conversation_export_generation_id_fk",
+          "tableFrom": "conversation_export_artifact",
+          "tableTo": "conversation_export_generation",
           "columnsFrom": [
-            "export_id"
+            "generation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "conversation_export_artifact_subject_user_id_user_id_fk": {
+          "name": "conversation_export_artifact_subject_user_id_user_id_fk",
+          "tableFrom": "conversation_export_artifact",
+          "tableTo": "user",
+          "columnsFrom": [
+            "subject_user_id"
           ],
           "columnsTo": [
             "id"
@@ -447,8 +542,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.conversation_export": {
-      "name": "conversation_export",
+    "public.conversation_export_generation": {
+      "name": "conversation_export_generation",
       "schema": "",
       "columns": {
         "id": {
@@ -458,7 +553,7 @@
           "notNull": true,
           "identity": {
             "type": "always",
-            "name": "conversation_export_id_seq",
+            "name": "conversation_export_generation_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -480,6 +575,373 @@
           "primaryKey": false,
           "notNull": true
         },
+        "status": {
+          "name": "status",
+          "type": "export_generation_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'collecting'"
+        },
+        "collecting_ends_at": {
+          "name": "collecting_ends_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_attempt_at": {
+          "name": "next_attempt_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "heartbeat_at": {
+          "name": "heartbeat_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failed_at": {
+          "name": "failed_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failure_reason": {
+          "name": "failure_reason",
+          "type": "export_failure_reason_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "conversation_export_generation_conversation_idx": {
+          "name": "conversation_export_generation_conversation_idx",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_export_generation_collecting_due_idx": {
+          "name": "conversation_export_generation_collecting_due_idx",
+          "columns": [
+            {
+              "expression": "collecting_ends_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"conversation_export_generation\".\"status\" = 'collecting'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_export_generation_queued_due_idx": {
+          "name": "conversation_export_generation_queued_due_idx",
+          "columns": [
+            {
+              "expression": "next_attempt_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"conversation_export_generation\".\"status\" = 'queued'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_export_generation_collecting_unique": {
+          "name": "conversation_export_generation_collecting_unique",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"conversation_export_generation\".\"status\" = 'collecting'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_export_generation_processing_unique": {
+          "name": "conversation_export_generation_processing_unique",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"conversation_export_generation\".\"status\" = 'processing'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "conversation_export_generation_conversation_id_conversation_id_fk": {
+          "name": "conversation_export_generation_conversation_id_conversation_id_fk",
+          "tableFrom": "conversation_export_generation",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "conversation_export_generation_slug_id_unique": {
+          "name": "conversation_export_generation_slug_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.conversation_export_request_file": {
+      "name": "conversation_export_request_file",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "conversation_export_request_file_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "artifact_id": {
+          "name": "artifact_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_type": {
+          "name": "file_type",
+          "type": "export_file_type_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "audience": {
+          "name": "audience",
+          "type": "export_file_audience_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "conversation_export_request_file_artifact_idx": {
+          "name": "conversation_export_request_file_artifact_idx",
+          "columns": [
+            {
+              "expression": "artifact_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_export_request_file_unique": {
+          "name": "conversation_export_request_file_unique",
+          "columns": [
+            {
+              "expression": "request_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "file_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "audience",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "conversation_export_request_file_request_id_conversation_export_request_id_fk": {
+          "name": "conversation_export_request_file_request_id_conversation_export_request_id_fk",
+          "tableFrom": "conversation_export_request_file",
+          "tableTo": "conversation_export_request",
+          "columnsFrom": [
+            "request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "conversation_export_request_file_artifact_id_conversation_export_artifact_id_fk": {
+          "name": "conversation_export_request_file_artifact_id_conversation_export_artifact_id_fk",
+          "tableFrom": "conversation_export_request_file",
+          "tableTo": "conversation_export_artifact",
+          "columnsFrom": [
+            "artifact_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.conversation_export_request": {
+      "name": "conversation_export_request",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "conversation_export_request_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "slug_id": {
+          "name": "slug_id",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "generation_id": {
+          "name": "generation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
         "user_id": {
           "name": "user_id",
           "type": "uuid",
@@ -493,54 +955,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'processing'"
-        },
-        "total_file_size": {
-          "name": "total_file_size",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "total_file_count": {
-          "name": "total_file_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "bundle_file_name": {
-          "name": "bundle_file_name",
-          "type": "varchar(160)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "bundle_file_size": {
-          "name": "bundle_file_size",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "bundle_s3_key": {
-          "name": "bundle_s3_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "owner_bundle_file_name": {
-          "name": "owner_bundle_file_name",
-          "type": "varchar(160)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "owner_bundle_file_size": {
-          "name": "owner_bundle_file_size",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "owner_bundle_s3_key": {
-          "name": "owner_bundle_s3_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "failure_reason": {
           "name": "failure_reason",
@@ -562,15 +976,26 @@
           "primaryKey": false,
           "notNull": true
         },
-        "is_deleted": {
-          "name": "is_deleted",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "deleted_at": {
           "name": "deleted_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_notified_at": {
+          "name": "started_notified_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_notified_at": {
+          "name": "completed_notified_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failed_notified_at": {
+          "name": "failed_notified_at",
           "type": "timestamp (0)",
           "primaryKey": false,
           "notNull": false
@@ -591,8 +1016,8 @@
         }
       },
       "indexes": {
-        "conversation_export_conversation_idx": {
-          "name": "conversation_export_conversation_idx",
+        "conversation_export_request_conversation_idx": {
+          "name": "conversation_export_request_conversation_idx",
           "columns": [
             {
               "expression": "conversation_id",
@@ -606,11 +1031,11 @@
           "method": "btree",
           "with": {}
         },
-        "conversation_export_status_idx": {
-          "name": "conversation_export_status_idx",
+        "conversation_export_request_generation_idx": {
+          "name": "conversation_export_request_generation_idx",
           "columns": [
             {
-              "expression": "status",
+              "expression": "generation_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -621,24 +1046,21 @@
           "method": "btree",
           "with": {}
         },
-        "conversation_export_deleted_idx": {
-          "name": "conversation_export_deleted_idx",
+        "conversation_export_request_active_history_idx": {
+          "name": "conversation_export_request_active_history_idx",
           "columns": [
             {
-              "expression": "is_deleted",
+              "expression": "conversation_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "conversation_export_created_idx": {
-          "name": "conversation_export_created_idx",
-          "columns": [
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "created_at",
               "isExpression": false,
@@ -647,27 +1069,29 @@
             }
           ],
           "isUnique": false,
+          "where": "\"conversation_export_request\".\"deleted_at\" IS NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
         },
-        "conversation_export_user_idx": {
-          "name": "conversation_export_user_idx",
+        "conversation_export_request_expiry_idx": {
+          "name": "conversation_export_request_expiry_idx",
           "columns": [
             {
-              "expression": "user_id",
+              "expression": "expires_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
+          "where": "\"conversation_export_request\".\"deleted_at\" IS NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
         },
-        "conversation_export_active_user_conversation_unique": {
-          "name": "conversation_export_active_user_conversation_unique",
+        "conversation_export_request_active_unique": {
+          "name": "conversation_export_request_active_unique",
           "columns": [
             {
               "expression": "conversation_id",
@@ -683,16 +1107,16 @@
             }
           ],
           "isUnique": true,
-          "where": "\"conversation_export\".\"status\" = 'processing' AND \"conversation_export\".\"is_deleted\" = false",
+          "where": "\"conversation_export_request\".\"status\" = 'processing' AND \"conversation_export_request\".\"deleted_at\" IS NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
         }
       },
       "foreignKeys": {
-        "conversation_export_conversation_id_conversation_id_fk": {
-          "name": "conversation_export_conversation_id_conversation_id_fk",
-          "tableFrom": "conversation_export",
+        "conversation_export_request_conversation_id_conversation_id_fk": {
+          "name": "conversation_export_request_conversation_id_conversation_id_fk",
+          "tableFrom": "conversation_export_request",
           "tableTo": "conversation",
           "columnsFrom": [
             "conversation_id"
@@ -703,9 +1127,22 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "conversation_export_user_id_user_id_fk": {
-          "name": "conversation_export_user_id_user_id_fk",
-          "tableFrom": "conversation_export",
+        "conversation_export_request_generation_id_conversation_export_generation_id_fk": {
+          "name": "conversation_export_request_generation_id_conversation_export_generation_id_fk",
+          "tableFrom": "conversation_export_request",
+          "tableTo": "conversation_export_generation",
+          "columnsFrom": [
+            "generation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "conversation_export_request_user_id_user_id_fk": {
+          "name": "conversation_export_request_user_id_user_id_fk",
+          "tableFrom": "conversation_export_request",
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
@@ -719,8 +1156,8 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "conversation_export_slug_id_unique": {
-          "name": "conversation_export_slug_id_unique",
+        "conversation_export_request_slug_id_unique": {
+          "name": "conversation_export_request_slug_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "slug_id"
@@ -3227,9 +3664,15 @@
           "primaryKey": false,
           "notNull": true
         },
-        "export_id": {
-          "name": "export_id",
+        "export_request_id": {
+          "name": "export_request_id",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "export_slug_id": {
+          "name": "export_slug_id",
+          "type": "varchar(8)",
           "primaryKey": false,
           "notNull": true
         },
@@ -3239,6 +3682,20 @@
           "primaryKey": false,
           "notNull": true
         },
+        "failure_reason": {
+          "name": "failure_reason",
+          "type": "export_failure_reason_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancellation_reason": {
+          "name": "cancellation_reason",
+          "type": "export_cancellation_reason_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
@@ -3247,7 +3704,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "notification_export_notification_idx": {
+          "name": "notification_export_notification_idx",
+          "columns": [
+            {
+              "expression": "notification_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "notification_export_notification_id_notification_id_fk": {
           "name": "notification_export_notification_id_notification_id_fk",
@@ -3262,12 +3735,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "notification_export_export_id_conversation_export_id_fk": {
-          "name": "notification_export_export_id_conversation_export_id_fk",
+        "notification_export_export_request_id_conversation_export_request_id_fk": {
+          "name": "notification_export_export_request_id_conversation_export_request_id_fk",
           "tableFrom": "notification_export",
-          "tableTo": "conversation_export",
+          "tableTo": "conversation_export_request",
           "columnsFrom": [
-            "export_id"
+            "export_request_id"
           ],
           "columnsTo": [
             "id"
@@ -6241,6 +6714,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "survey_question_id": {
+          "name": "survey_question_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
         "survey_question_option_id": {
           "name": "survey_question_option_id",
           "type": "integer",
@@ -6304,6 +6783,36 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "survey_answer_option_answer_question_fk": {
+          "name": "survey_answer_option_answer_question_fk",
+          "tableFrom": "survey_answer_option",
+          "tableTo": "survey_answer",
+          "columnsFrom": [
+            "survey_answer_id",
+            "survey_question_id"
+          ],
+          "columnsTo": [
+            "id",
+            "survey_question_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "survey_answer_option_option_question_fk": {
+          "name": "survey_answer_option_option_question_fk",
+          "tableFrom": "survey_answer_option",
+          "tableTo": "survey_question_option",
+          "columnsFrom": [
+            "survey_question_option_id",
+            "survey_question_id"
+          ],
+          "columnsTo": [
+            "id",
+            "survey_question_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -6335,6 +6844,12 @@
         },
         "survey_response_id": {
           "name": "survey_response_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -6400,27 +6915,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "survey_answer_question_semantic_version_idx": {
-          "name": "survey_answer_question_semantic_version_idx",
-          "columns": [
-            {
-              "expression": "survey_question_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "answered_question_semantic_version",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -6449,10 +6943,49 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "survey_answer_response_conversation_fk": {
+          "name": "survey_answer_response_conversation_fk",
+          "tableFrom": "survey_answer",
+          "tableTo": "survey_response",
+          "columnsFrom": [
+            "survey_response_id",
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "survey_answer_question_conversation_fk": {
+          "name": "survey_answer_question_conversation_fk",
+          "tableFrom": "survey_answer",
+          "tableTo": "survey_question",
+          "columnsFrom": [
+            "survey_question_id",
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "survey_answer_id_question_unique": {
+          "name": "survey_answer_id_question_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "survey_question_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -6528,27 +7061,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "survey_config_conversation_deleted_idx": {
-          "name": "survey_config_conversation_deleted_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "deleted_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -6567,7 +7079,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "survey_config_id_conversation_unique": {
+          "name": "survey_config_id_conversation_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "conversation_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -6959,29 +7480,8 @@
         }
       },
       "indexes": {
-        "survey_question_option_question_content_idx": {
-          "name": "survey_question_option_question_content_idx",
-          "columns": [
-            {
-              "expression": "survey_question_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "current_content_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "survey_question_option_question_display_order_idx": {
-          "name": "survey_question_option_question_display_order_idx",
+        "survey_question_option_active_question_display_order_uidx": {
+          "name": "survey_question_option_active_question_display_order_uidx",
           "columns": [
             {
               "expression": "survey_question_id",
@@ -6996,7 +7496,8 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false,
+          "isUnique": true,
+          "where": "\"survey_question_option\".\"current_content_id\" IS NOT NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -7009,6 +7510,19 @@
           "tableTo": "survey_question",
           "columnsFrom": [
             "survey_question_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "survey_question_option_current_content_id_survey_question_option_content_id_fk": {
+          "name": "survey_question_option_current_content_id_survey_question_option_content_id_fk",
+          "tableFrom": "survey_question_option",
+          "tableTo": "survey_question_option_content",
+          "columnsFrom": [
+            "current_content_id"
           ],
           "columnsTo": [
             "id"
@@ -7031,6 +7545,14 @@
           "nullsNotDistinct": false,
           "columns": [
             "current_content_id"
+          ]
+        },
+        "survey_question_option_id_question_unique": {
+          "name": "survey_question_option_id_question_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "survey_question_id"
           ]
         }
       },
@@ -7071,12 +7593,26 @@
           "primaryKey": false,
           "notNull": true
         },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
         "question_type": {
           "name": "question_type",
           "type": "survey_question_type",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
+        },
+        "choice_display": {
+          "name": "choice_display",
+          "type": "survey_choice_display",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'auto'"
         },
         "current_content_id": {
           "name": "current_content_id",
@@ -7120,29 +7656,8 @@
         }
       },
       "indexes": {
-        "survey_question_config_content_idx": {
-          "name": "survey_question_config_content_idx",
-          "columns": [
-            {
-              "expression": "survey_config_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "current_content_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "survey_question_config_display_order_idx": {
-          "name": "survey_question_config_display_order_idx",
+        "survey_question_active_config_display_order_uidx": {
+          "name": "survey_question_active_config_display_order_uidx",
           "columns": [
             {
               "expression": "survey_config_id",
@@ -7157,22 +7672,17 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false,
+          "isUnique": true,
+          "where": "\"survey_question\".\"current_content_id\" IS NOT NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
         },
-        "survey_question_config_semantic_version_idx": {
-          "name": "survey_question_config_semantic_version_idx",
+        "survey_question_config_idx": {
+          "name": "survey_question_config_idx",
           "columns": [
             {
               "expression": "survey_config_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "current_semantic_version",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -7197,6 +7707,47 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "survey_question_conversation_id_conversation_id_fk": {
+          "name": "survey_question_conversation_id_conversation_id_fk",
+          "tableFrom": "survey_question",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "survey_question_current_content_id_survey_question_content_id_fk": {
+          "name": "survey_question_current_content_id_survey_question_content_id_fk",
+          "tableFrom": "survey_question",
+          "tableTo": "survey_question_content",
+          "columnsFrom": [
+            "current_content_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "survey_question_config_conversation_fk": {
+          "name": "survey_question_config_conversation_fk",
+          "tableFrom": "survey_question",
+          "tableTo": "survey_config",
+          "columnsFrom": [
+            "survey_config_id",
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -7213,6 +7764,14 @@
           "nullsNotDistinct": false,
           "columns": [
             "current_content_id"
+          ]
+        },
+        "survey_question_id_conversation_unique": {
+          "name": "survey_question_id_conversation_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "conversation_id"
           ]
         }
       },
@@ -7281,8 +7840,8 @@
         }
       },
       "indexes": {
-        "survey_response_conversation_withdrawn_idx": {
-          "name": "survey_response_conversation_withdrawn_idx",
+        "survey_response_conversation_created_idx": {
+          "name": "survey_response_conversation_created_idx",
           "columns": [
             {
               "expression": "conversation_id",
@@ -7291,28 +7850,7 @@
               "nulls": "last"
             },
             {
-              "expression": "withdrawn_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "survey_response_conversation_completed_idx": {
-          "name": "survey_response_conversation_completed_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "completed_at",
+              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -7354,11 +7892,19 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "survey_response_participant_id_conversation_id_unique": {
-          "name": "survey_response_participant_id_conversation_id_unique",
+        "survey_response_conversation_participant_unique": {
+          "name": "survey_response_conversation_participant_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "participant_id",
+            "conversation_id",
+            "participant_id"
+          ]
+        },
+        "survey_response_id_conversation_unique": {
+          "name": "survey_response_id_conversation_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
             "conversation_id"
           ]
         }
@@ -8484,6 +9030,16 @@
         "devconnect-2025"
       ]
     },
+    "public.export_artifact_status_enum": {
+      "name": "export_artifact_status_enum",
+      "schema": "public",
+      "values": [
+        "queued",
+        "processing",
+        "completed",
+        "failed"
+      ]
+    },
     "public.export_cancellation_reason_enum": {
       "name": "export_cancellation_reason_enum",
       "schema": "public",
@@ -8501,10 +9057,20 @@
         "server_restart"
       ]
     },
+    "public.export_file_audience_enum": {
+      "name": "export_file_audience_enum",
+      "schema": "public",
+      "values": [
+        "redacted",
+        "owner",
+        "requester"
+      ]
+    },
     "public.export_file_type_enum": {
       "name": "export_file_type_enum",
       "schema": "public",
       "values": [
+        "bundle",
         "comments",
         "votes",
         "participants",
@@ -8515,6 +9081,17 @@
         "survey_participant_responses",
         "survey_public_aggregates",
         "survey_full_aggregates"
+      ]
+    },
+    "public.export_generation_status_enum": {
+      "name": "export_generation_status_enum",
+      "schema": "public",
+      "values": [
+        "collecting",
+        "queued",
+        "processing",
+        "completed",
+        "failed"
       ]
     },
     "public.export_status_enum": {
@@ -8909,13 +9486,20 @@
         "X"
       ]
     },
+    "public.survey_choice_display": {
+      "name": "survey_choice_display",
+      "schema": "public",
+      "values": [
+        "auto",
+        "list",
+        "dropdown"
+      ]
+    },
     "public.survey_question_type": {
       "name": "survey_question_type",
       "schema": "public",
       "values": [
-        "mono_choice",
-        "multi_choice",
-        "select",
+        "choice",
         "free_text"
       ]
     },

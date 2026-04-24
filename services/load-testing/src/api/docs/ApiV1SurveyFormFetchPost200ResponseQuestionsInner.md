@@ -6,14 +6,15 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **questionSlugId** | **string** |  | [optional] [default to undefined]
-**questionType** | **string** |  | [default to undefined]
 **questionText** | **string** |  | [default to undefined]
 **isRequired** | **boolean** |  | [default to undefined]
 **displayOrder** | **number** |  | [default to undefined]
-**constraints** | [**ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraints**](ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerConstraints.md) |  | [default to undefined]
-**_options** | [**Array&lt;ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOptionsInner&gt;**](ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOptionsInner.md) |  | [optional] [default to undefined]
 **textChangeIsSemantic** | **boolean** |  | [optional] [default to undefined]
-**currentAnswer** | [**ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswer**](ApiV1SurveyFormFetchPost200ResponseQuestionsInnerCurrentAnswer.md) |  | [optional] [default to undefined]
+**choiceDisplay** | **string** |  | [default to undefined]
+**_options** | [**Array&lt;ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner&gt;**](ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOfOptionsInner.md) |  | [default to undefined]
+**questionType** | **string** |  | [default to undefined]
+**constraints** | [**ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraints**](ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraints.md) |  | [default to undefined]
+**currentAnswer** | [**ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswer**](ApiV1SurveyFormFetchPost200ResponseQuestionsInnerOneOfCurrentAnswer.md) |  | [optional] [default to undefined]
 **isPassed** | **boolean** |  | [default to undefined]
 **isMissingRequired** | **boolean** |  | [default to undefined]
 **isStale** | **boolean** |  | [default to undefined]
@@ -28,13 +29,14 @@ import { ApiV1SurveyFormFetchPost200ResponseQuestionsInner } from './api';
 
 const instance: ApiV1SurveyFormFetchPost200ResponseQuestionsInner = {
     questionSlugId,
-    questionType,
     questionText,
     isRequired,
     displayOrder,
-    constraints,
-    _options,
     textChangeIsSemantic,
+    choiceDisplay,
+    _options,
+    questionType,
+    constraints,
     currentAnswer,
     isPassed,
     isMissingRequired,

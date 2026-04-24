@@ -17,6 +17,7 @@ import {
     smallint,
     real,
     serial,
+    foreignKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm/sql";
 // import { MAX_LENGTH_OPTION, MAX_LENGTH_TITLE, MAX_LENGTH_OPINION, MAX_LENGTH_BODY } from "./shared/shared.js"; // unfortunately it breaks drizzle generate... :o TODO: find a way
@@ -595,10 +596,14 @@ export const conversationTypeEnum = pgEnum("conversation_type", [
 ]);
 
 export const surveyQuestionTypeEnum = pgEnum("survey_question_type", [
-    "mono_choice",
-    "multi_choice",
-    "select",
+    "choice",
     "free_text",
+]);
+
+export const surveyChoiceDisplayEnum = pgEnum("survey_choice_display", [
+    "auto",
+    "list",
+    "dropdown",
 ]);
 
 export const maxdiffLifecycleStatusEnum = pgEnum("maxdiff_lifecycle_status", [
@@ -618,6 +623,24 @@ export const exportStatusEnum = pgEnum("export_status_enum", [
     "completed",
     "failed",
     "cancelled",
+]);
+
+export const exportGenerationStatusEnum = pgEnum(
+    "export_generation_status_enum",
+    ["collecting", "queued", "processing", "completed", "failed"],
+);
+
+export const exportArtifactStatusEnum = pgEnum("export_artifact_status_enum", [
+    "queued",
+    "processing",
+    "completed",
+    "failed",
+]);
+
+export const exportFileAudienceEnum = pgEnum("export_file_audience_enum", [
+    "redacted",
+    "owner",
+    "requester",
 ]);
 
 // Export cancellation reasons
@@ -645,6 +668,7 @@ export const importFailureReasonEnum = pgEnum("import_failure_reason_enum", [
 
 // Export file types
 export const exportFileTypeEnum = pgEnum("export_file_type_enum", [
+    "bundle",
     "comments",
     "votes",
     "participants",
@@ -1487,13 +1511,13 @@ export const surveyConfigTable = pgTable(
         }),
     },
     (table) => [
+        unique("survey_config_id_conversation_unique").on(
+            table.id,
+            table.conversationId,
+        ),
         uniqueIndex("survey_config_active_conversation_uidx")
             .on(table.conversationId)
             .where(sql`${table.deletedAt} IS NULL`),
-        index("survey_config_conversation_deleted_idx").on(
-            table.conversationId,
-            table.deletedAt,
-        ),
     ],
 );
 
@@ -1506,8 +1530,16 @@ export const surveyQuestionTable = pgTable(
         surveyConfigId: integer("survey_config_id")
             .notNull()
             .references(() => surveyConfigTable.id),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
         questionType: surveyQuestionTypeEnum("question_type").notNull(),
-        currentContentId: integer("current_content_id").unique(),
+        choiceDisplay: surveyChoiceDisplayEnum("choice_display")
+            .notNull()
+            .default("auto"),
+        currentContentId: integer("current_content_id")
+            .references((): AnyPgColumn => surveyQuestionContentTable.id)
+            .unique(),
         currentSemanticVersion: integer("current_semantic_version")
             .notNull()
             .default(1),
@@ -1527,17 +1559,23 @@ export const surveyQuestionTable = pgTable(
             .notNull(),
     },
     (table) => [
-        index("survey_question_config_content_idx").on(
-            table.surveyConfigId,
-            table.currentContentId,
+        unique("survey_question_id_conversation_unique").on(
+            table.id,
+            table.conversationId,
         ),
-        index("survey_question_config_display_order_idx").on(
+        uniqueIndex("survey_question_active_config_display_order_uidx")
+            .on(table.surveyConfigId, table.displayOrder)
+            .where(sql`${table.currentContentId} IS NOT NULL`),
+        foreignKey({
+            columns: [table.surveyConfigId, table.conversationId],
+            foreignColumns: [
+                surveyConfigTable.id,
+                surveyConfigTable.conversationId,
+            ],
+            name: "survey_question_config_conversation_fk",
+        }),
+        index("survey_question_config_idx").on(
             table.surveyConfigId,
-            table.displayOrder,
-        ),
-        index("survey_question_config_semantic_version_idx").on(
-            table.surveyConfigId,
-            table.currentSemanticVersion,
         ),
     ],
 );
@@ -1606,7 +1644,9 @@ export const surveyQuestionOptionTable = pgTable(
         surveyQuestionId: integer("survey_question_id")
             .notNull()
             .references(() => surveyQuestionTable.id),
-        currentContentId: integer("current_content_id").unique(),
+        currentContentId: integer("current_content_id")
+            .references((): AnyPgColumn => surveyQuestionOptionContentTable.id)
+            .unique(),
         displayOrder: smallint("display_order").notNull(),
         createdAt: timestamp("created_at", {
             mode: "date",
@@ -1622,14 +1662,13 @@ export const surveyQuestionOptionTable = pgTable(
             .notNull(),
     },
     (table) => [
-        index("survey_question_option_question_content_idx").on(
+        unique("survey_question_option_id_question_unique").on(
+            table.id,
             table.surveyQuestionId,
-            table.currentContentId,
         ),
-        index("survey_question_option_question_display_order_idx").on(
-            table.surveyQuestionId,
-            table.displayOrder,
-        ),
+        uniqueIndex("survey_question_option_active_question_display_order_uidx")
+            .on(table.surveyQuestionId, table.displayOrder)
+            .where(sql`${table.currentContentId} IS NOT NULL`),
     ],
 );
 
@@ -1723,14 +1762,17 @@ export const surveyResponseTable = pgTable(
             .notNull(),
     },
     (table) => [
-        unique().on(table.participantId, table.conversationId),
-        index("survey_response_conversation_withdrawn_idx").on(
+        unique("survey_response_conversation_participant_unique").on(
             table.conversationId,
-            table.withdrawnAt,
+            table.participantId,
         ),
-        index("survey_response_conversation_completed_idx").on(
+        unique("survey_response_id_conversation_unique").on(
+            table.id,
             table.conversationId,
-            table.completedAt,
+        ),
+        index("survey_response_conversation_created_idx").on(
+            table.conversationId,
+            table.createdAt,
         ),
     ],
 );
@@ -1743,6 +1785,7 @@ export const surveyAnswerTable = pgTable(
         surveyResponseId: integer("survey_response_id")
             .notNull()
             .references(() => surveyResponseTable.id),
+        conversationId: integer("conversation_id").notNull(),
         surveyQuestionId: integer("survey_question_id")
             .notNull()
             .references(() => surveyQuestionTable.id),
@@ -1768,13 +1811,29 @@ export const surveyAnswerTable = pgTable(
             .notNull(),
     },
     (table) => [
+        unique("survey_answer_id_question_unique").on(
+            table.id,
+            table.surveyQuestionId,
+        ),
         uniqueIndex("survey_answer_response_question_active_uidx")
             .on(table.surveyResponseId, table.surveyQuestionId)
             .where(sql`${table.deletedAt} IS NULL`),
-        index("survey_answer_question_semantic_version_idx").on(
-            table.surveyQuestionId,
-            table.answeredQuestionSemanticVersion,
-        ),
+        foreignKey({
+            columns: [table.surveyResponseId, table.conversationId],
+            foreignColumns: [
+                surveyResponseTable.id,
+                surveyResponseTable.conversationId,
+            ],
+            name: "survey_answer_response_conversation_fk",
+        }),
+        foreignKey({
+            columns: [table.surveyQuestionId, table.conversationId],
+            foreignColumns: [
+                surveyQuestionTable.id,
+                surveyQuestionTable.conversationId,
+            ],
+            name: "survey_answer_question_conversation_fk",
+        }),
     ],
 );
 
@@ -1786,6 +1845,7 @@ export const surveyAnswerOptionTable = pgTable(
         surveyAnswerId: integer("survey_answer_id")
             .notNull()
             .references(() => surveyAnswerTable.id),
+        surveyQuestionId: integer("survey_question_id").notNull(),
         surveyQuestionOptionId: integer("survey_question_option_id")
             .notNull()
             .references(() => surveyQuestionOptionTable.id),
@@ -1798,6 +1858,22 @@ export const surveyAnswerOptionTable = pgTable(
         uniqueIndex("survey_answer_option_answer_option_active_uidx")
             .on(table.surveyAnswerId, table.surveyQuestionOptionId)
             .where(sql`${table.deletedAt} IS NULL`),
+        foreignKey({
+            columns: [table.surveyAnswerId, table.surveyQuestionId],
+            foreignColumns: [
+                surveyAnswerTable.id,
+                surveyAnswerTable.surveyQuestionId,
+            ],
+            name: "survey_answer_option_answer_question_fk",
+        }),
+        foreignKey({
+            columns: [table.surveyQuestionOptionId, table.surveyQuestionId],
+            foreignColumns: [
+                surveyQuestionOptionTable.id,
+                surveyQuestionOptionTable.surveyQuestionId,
+            ],
+            name: "survey_answer_option_option_question_fk",
+        }),
     ],
 );
 
@@ -2305,24 +2381,31 @@ export const notificationNewOpinionTable = pgTable("notification_new_opinion", {
         .notNull(),
 });
 
-export const notificationExportTable = pgTable("notification_export", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    notificationId: integer("notification_id")
-        .references(() => notificationTable.id)
-        .notNull(),
-    exportId: integer("export_id")
-        .references(() => conversationExportTable.id)
-        .notNull(),
-    conversationId: integer("conversation_id")
-        .references(() => conversationTable.id)
-        .notNull(),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const notificationExportTable = pgTable(
+    "notification_export",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        notificationId: integer("notification_id")
+            .references(() => notificationTable.id)
+            .notNull(),
+        exportRequestId: integer("export_request_id").references(
+            (): AnyPgColumn => conversationExportRequestTable.id,
+        ),
+        exportSlugId: varchar("export_slug_id", { length: 8 }).notNull(),
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .notNull(),
+        failureReason: exportFailureReasonEnum("failure_reason"),
+        cancellationReason: exportCancellationReasonEnum("cancellation_reason"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [index("notification_export_notification_idx").on(t.notificationId)],
+);
 
 export const notificationImportTable = pgTable("notification_import", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -2557,35 +2640,34 @@ export const conversationUpdateQueueTable = pgTable(
     ],
 );
 
-// Conversation exports table for CSV export feature
-export const conversationExportTable = pgTable(
-    "conversation_export",
+export const conversationExportGenerationTable = pgTable(
+    "conversation_export_generation",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
         conversationId: integer("conversation_id")
             .references(() => conversationTable.id)
             .notNull(),
-        userId: uuid("user_id") // User who requested the export
-            .references(() => userTable.id)
-            .notNull(),
-        status: exportStatusEnum("status").notNull().default("processing"),
-        totalFileSize: integer("total_file_size"), // null until completed
-        totalFileCount: integer("total_file_count"), // null until completed
-        bundleFileName: varchar("bundle_file_name", { length: 160 }),
-        bundleFileSize: integer("bundle_file_size"),
-        bundleS3Key: text("bundle_s3_key"),
-        ownerBundleFileName: varchar("owner_bundle_file_name", { length: 160 }),
-        ownerBundleFileSize: integer("owner_bundle_file_size"),
-        ownerBundleS3Key: text("owner_bundle_s3_key"),
-        failureReason: exportFailureReasonEnum("failure_reason"), // populated if status="failed"
-        cancellationReason: exportCancellationReasonEnum("cancellation_reason"), // populated if status="cancelled"
-        expiresAt: timestamp("expires_at", {
+        status: exportGenerationStatusEnum("status")
+            .notNull()
+            .default("collecting"),
+        collectingEndsAt: timestamp("collecting_ends_at", {
             mode: "date",
             precision: 0,
-        }).notNull(), // export record expiry (30 days)
-        isDeleted: boolean("is_deleted").notNull().default(false),
-        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+        }).notNull(),
+        attempts: integer("attempts").notNull().default(0),
+        nextAttemptAt: timestamp("next_attempt_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        startedAt: timestamp("started_at", { mode: "date", precision: 0 }),
+        heartbeatAt: timestamp("heartbeat_at", { mode: "date", precision: 0 }),
+        completedAt: timestamp("completed_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        failedAt: timestamp("failed_at", { mode: "date", precision: 0 }),
+        failureReason: exportFailureReasonEnum("failure_reason"),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -2600,30 +2682,140 @@ export const conversationExportTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("conversation_export_conversation_idx").on(t.conversationId),
-        index("conversation_export_status_idx").on(t.status),
-        index("conversation_export_deleted_idx").on(t.isDeleted),
-        index("conversation_export_created_idx").on(t.createdAt),
-        index("conversation_export_user_idx").on(t.userId),
-        uniqueIndex("conversation_export_active_user_conversation_unique")
-            .on(t.conversationId, t.userId)
-            .where(sql`${t.status} = 'processing' AND ${t.isDeleted} = false`),
+        index("conversation_export_generation_conversation_idx").on(
+            t.conversationId,
+        ),
+        index("conversation_export_generation_collecting_due_idx")
+            .on(t.collectingEndsAt, t.createdAt)
+            .where(sql`${t.status} = 'collecting'`),
+        index("conversation_export_generation_queued_due_idx")
+            .on(t.nextAttemptAt, t.createdAt)
+            .where(sql`${t.status} = 'queued'`),
+        uniqueIndex("conversation_export_generation_collecting_unique")
+            .on(t.conversationId)
+            .where(sql`${t.status} = 'collecting'`),
+        uniqueIndex("conversation_export_generation_processing_unique")
+            .on(t.conversationId)
+            .where(sql`${t.status} = 'processing'`),
     ],
 );
 
-// Individual files within a conversation export
-export const conversationExportFileTable = pgTable(
-    "conversation_export_file",
+export const conversationExportRequestTable = pgTable(
+    "conversation_export_request",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        exportId: integer("export_id")
-            .references(() => conversationExportTable.id)
+        slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
+        conversationId: integer("conversation_id")
+            .references(() => conversationTable.id)
+            .notNull(),
+        generationId: integer("generation_id")
+            .references(() => conversationExportGenerationTable.id)
+            .notNull(),
+        userId: uuid("user_id")
+            .references(() => userTable.id)
+            .notNull(),
+        status: exportStatusEnum("status").notNull().default("processing"),
+        failureReason: exportFailureReasonEnum("failure_reason"),
+        cancellationReason: exportCancellationReasonEnum("cancellation_reason"),
+        expiresAt: timestamp("expires_at", {
+            mode: "date",
+            precision: 0,
+        }).notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+        startedNotifiedAt: timestamp("started_notified_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        completedNotifiedAt: timestamp("completed_notified_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        failedNotifiedAt: timestamp("failed_notified_at", {
+            mode: "date",
+            precision: 0,
+        }),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("conversation_export_request_conversation_idx").on(
+            t.conversationId,
+        ),
+        index("conversation_export_request_generation_idx").on(t.generationId),
+        index("conversation_export_request_active_history_idx")
+            .on(t.conversationId, t.userId, t.createdAt)
+            .where(sql`${t.deletedAt} IS NULL`),
+        index("conversation_export_request_expiry_idx")
+            .on(t.expiresAt)
+            .where(sql`${t.deletedAt} IS NULL`),
+        uniqueIndex("conversation_export_request_active_unique")
+            .on(t.conversationId, t.userId)
+            .where(sql`${t.status} = 'processing' AND ${t.deletedAt} IS NULL`),
+    ],
+);
+
+export const conversationExportArtifactTable = pgTable(
+    "conversation_export_artifact",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        generationId: integer("generation_id")
+            .references(() => conversationExportGenerationTable.id)
             .notNull(),
         fileType: exportFileTypeEnum("file_type").notNull(),
-        fileName: varchar("file_name", { length: 100 }).notNull(),
-        fileSize: integer("file_size").notNull(),
-        recordCount: integer("record_count").notNull(),
-        s3Key: text("s3_key").notNull(), // Presigned URLs are generated on-demand in getConversationExportStatus
+        audience: exportFileAudienceEnum("audience").notNull(),
+        subjectUserId: uuid("subject_user_id").references(() => userTable.id),
+        status: exportArtifactStatusEnum("status").notNull().default("queued"),
+        fileName: varchar("file_name", { length: 160 }).notNull(),
+        fileSize: integer("file_size"),
+        recordCount: integer("record_count"),
+        s3Key: text("s3_key"),
+        failureReason: exportFailureReasonEnum("failure_reason"),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("conversation_export_artifact_generation_idx").on(t.generationId),
+        uniqueIndex("conversation_export_artifact_shared_unique")
+            .on(t.generationId, t.fileType, t.audience)
+            .where(sql`${t.subjectUserId} IS NULL`),
+        uniqueIndex("conversation_export_artifact_requester_unique")
+            .on(t.generationId, t.fileType, t.audience, t.subjectUserId)
+            .where(sql`${t.subjectUserId} IS NOT NULL`),
+    ],
+);
+
+export const conversationExportRequestFileTable = pgTable(
+    "conversation_export_request_file",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        requestId: integer("request_id")
+            .references(() => conversationExportRequestTable.id)
+            .notNull(),
+        artifactId: integer("artifact_id")
+            .references(() => conversationExportArtifactTable.id)
+            .notNull(),
+        fileType: exportFileTypeEnum("file_type").notNull(),
+        audience: exportFileAudienceEnum("audience").notNull(),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -2632,8 +2824,14 @@ export const conversationExportFileTable = pgTable(
             .notNull(),
     },
     (t) => [
-        index("conversation_export_file_export_idx").on(t.exportId),
-        index("conversation_export_file_type_idx").on(t.fileType),
+        index("conversation_export_request_file_artifact_idx").on(
+            t.artifactId,
+        ),
+        uniqueIndex("conversation_export_request_file_unique").on(
+            t.requestId,
+            t.fileType,
+            t.audience,
+        ),
     ],
 );
 

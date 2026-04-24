@@ -10,26 +10,26 @@ import {
     type SurveyStoredAnswerAnalysisRecord,
 } from "@/shared-backend/surveyAnalysis.js";
 
-const requiredMonoChoiceQuestion: SurveyQuestionAnalysisRecord = {
+const requiredChoiceQuestion: SurveyQuestionAnalysisRecord = {
     questionId: 1,
-    questionType: "mono_choice",
+    questionType: "choice",
     currentSemanticVersion: 2,
     isRequired: true,
     constraints: {
-        type: "mono_choice",
+        type: "choice",
         minSelections: 1,
         maxSelections: 1,
     },
     optionSlugIds: ["yes", "no"],
 };
 
-const optionalMonoChoiceQuestion: SurveyQuestionAnalysisRecord = {
+const optionalChoiceQuestion: SurveyQuestionAnalysisRecord = {
     questionId: 2,
-    questionType: "mono_choice",
+    questionType: "choice",
     currentSemanticVersion: 1,
     isRequired: false,
     constraints: {
-        type: "mono_choice",
+        type: "choice",
         minSelections: 1,
         maxSelections: 1,
     },
@@ -60,7 +60,7 @@ describe("validateSurveyAnswerForAnalysis", () => {
 
         expect(
             validateSurveyAnswerForAnalysis({
-                question: requiredMonoChoiceQuestion,
+                question: requiredChoiceQuestion,
                 answer,
             }),
         ).toBe(false);
@@ -107,10 +107,10 @@ describe("deriveSurveyGateStatusForAnalysis", () => {
         expect(
             deriveSurveyGateStatusForAnalysis({
                 hasSurvey: true,
-                questions: [requiredMonoChoiceQuestion],
+                questions: [requiredChoiceQuestion],
                 answersByQuestionId: new Map([
                     [
-                        requiredMonoChoiceQuestion.questionId,
+                        requiredChoiceQuestion.questionId,
                         {
                             answeredQuestionSemanticVersion: 2,
                             textValueHtml: null,
@@ -127,10 +127,10 @@ describe("deriveSurveyGateStatusForAnalysis", () => {
         expect(
             deriveSurveyGateStatusForAnalysis({
                 hasSurvey: true,
-                questions: [requiredMonoChoiceQuestion],
+                questions: [requiredChoiceQuestion],
                 answersByQuestionId: new Map([
                     [
-                        requiredMonoChoiceQuestion.questionId,
+                        requiredChoiceQuestion.questionId,
                         {
                             answeredQuestionSemanticVersion: 1,
                             textValueHtml: null,
@@ -147,7 +147,7 @@ describe("deriveSurveyGateStatusForAnalysis", () => {
         expect(
             deriveSurveyGateStatusForAnalysis({
                 hasSurvey: true,
-                questions: [optionalMonoChoiceQuestion],
+                questions: [optionalChoiceQuestion],
                 answersByQuestionId: new Map(),
                 withdrawnAt: null,
             }),
@@ -158,10 +158,10 @@ describe("deriveSurveyGateStatusForAnalysis", () => {
         expect(
             deriveSurveyGateStatusForAnalysis({
                 hasSurvey: true,
-                questions: [optionalMonoChoiceQuestion],
+                questions: [optionalChoiceQuestion],
                 answersByQuestionId: new Map([
                     [
-                        optionalMonoChoiceQuestion.questionId,
+                        optionalChoiceQuestion.questionId,
                         {
                             answeredQuestionSemanticVersion: 1,
                             textValueHtml: null,

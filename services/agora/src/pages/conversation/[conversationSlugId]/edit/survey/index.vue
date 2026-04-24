@@ -72,11 +72,23 @@
             @update:model-value="(value) => updateQuestionType({ questionIndex, questionType: value })"
           />
 
+          <q-select
+            v-if="question.questionType !== 'free_text'"
+            :model-value="question.choiceDisplay"
+            outlined
+            emit-value
+            map-options
+            :label="t('choiceDisplayLabel')"
+            :options="choiceDisplayOptions"
+            @update:model-value="(value) => updateQuestionChoiceDisplay({ questionIndex, choiceDisplay: value })"
+          />
+
           <q-input
             :model-value="question.questionText"
             outlined
             autogrow
             :maxlength="500"
+            :error="shouldShowQuestionTextError({ question })"
             :label="t('questionPromptLabel')"
             @update:model-value="(value) => updateQuestionText({ questionIndex, questionText: value })"
           />
@@ -101,21 +113,25 @@
             @update:model-value="(value) => updateQuestionRequired({ questionIndex, isRequired: value })"
           />
 
-          <div v-if="question.questionType === 'multi_choice'" class="constraints-grid">
+          <div v-if="question.questionType === 'choice'" class="constraints-grid">
             <q-input
-              :model-value="question.constraints.type === 'multi_choice' ? question.constraints.minSelections : 1"
+              :model-value="question.constraints.minSelections"
               outlined
               type="number"
+              :min="1"
+              :max="question.options.length"
               :label="t('minSelectionsLabel')"
-              @update:model-value="(value) => updateMultiChoiceConstraints({ questionIndex, minSelections: value, maxSelections: question.constraints.type === 'multi_choice' ? question.constraints.maxSelections : undefined })"
+              @update:model-value="(value) => updateChoiceConstraints({ questionIndex, minSelections: value, maxSelections: question.constraints.maxSelections })"
             />
 
             <q-input
-              :model-value="question.constraints.type === 'multi_choice' ? question.constraints.maxSelections ?? '' : ''"
+              :model-value="question.constraints.maxSelections ?? ''"
               outlined
               type="number"
+              :min="1"
+              :max="question.options.length"
               :label="t('maxSelectionsLabel')"
-              @update:model-value="(value) => updateMultiChoiceConstraints({ questionIndex, minSelections: question.constraints.type === 'multi_choice' ? question.constraints.minSelections : 1, maxSelections: value })"
+              @update:model-value="(value) => updateChoiceConstraints({ questionIndex, minSelections: question.constraints.minSelections, maxSelections: value })"
             />
           </div>
 
@@ -179,10 +195,13 @@
             >
               <q-input
                 :model-value="option.optionText"
+                :data-survey-option-input="getOptionInputKey({ questionIndex, optionIndex })"
                 outlined
                 :maxlength="200"
+                :error="shouldShowOptionTextError({ question, option })"
                 :label="t('optionLabel', { number: optionIndex + 1 })"
                 @update:model-value="(value) => updateOptionText({ questionIndex, optionIndex, optionText: value })"
+                @keydown.enter.prevent="addOption({ questionIndex })"
               >
                 <template #append>
                   <q-btn
@@ -212,6 +231,21 @@
             </div>
 
             <q-btn flat no-caps color="primary" :label="t('addOptionLabel')" @click="addOption({ questionIndex })" />
+
+            <ZKInfoBanner
+              v-if="
+                shouldShowLargeOptionWarning({
+                  choiceDisplay: question.choiceDisplay,
+                  optionCount: question.options?.length ?? 0,
+                })
+              "
+              :message="
+                t('largeOptionCountWarning', {
+                  count: question.options?.length ?? 0,
+                  threshold: largeOptionWarningThreshold,
+                })
+              "
+            />
           </div>
         </div>
 
@@ -246,6 +280,7 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import Button from "primevue/button";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
@@ -254,31 +289,44 @@ import SurveyCompletionCountsCard from "src/components/survey/SurveyCompletionCo
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
+import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type {
+  SurveyChoiceDisplay,
   SurveyConfig,
   SurveyQuestionConfig,
   SurveyQuestionConstraints,
   SurveyQuestionOption,
   SurveyQuestionType,
 } from "src/shared/types/zod";
+import {
+  checkFeatureManagementAccess,
+  DEFAULT_FEATURE_ALLOWED_ORGS,
+  DEFAULT_FEATURE_ALLOWED_USERS,
+} from "src/shared-app-api/featureAccess";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import {
   useSurveyCompletionCountsQuery,
   useSurveyConfigDeleteMutation,
   useSurveyConfigUpdateMutation,
 } from "src/utils/api/survey/useSurveyQueries";
+import { processEnv } from "src/utils/processEnv";
 import { getSingleRouteParam } from "src/utils/router/params";
 import {
   areSurveyConfigsEqual,
   buildSurveyConfigForSave,
   cloneSurveyConfig,
+  createChoiceSurveyQuestionConstraints,
   createEmptySurveyOption,
   createEmptySurveyQuestion,
   createIntegerSurveyQuestionConstraints,
   createRichTextSurveyQuestionConstraints,
+  normalizeChoiceSurveyQuestionConstraints,
+  shouldWarnAboutLargeSurveyOptionSet,
   summarizeSurveyConfigChanges,
+  SURVEY_LARGE_OPTION_WARNING_THRESHOLD,
 } from "src/utils/survey/config";
 import {
   createSurveyTemplateQuestion,
@@ -286,7 +334,7 @@ import {
 } from "src/utils/survey/templates";
 import { surveyTemplateTextTranslations } from "src/utils/survey/templates.i18n";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { type EditSurveyTranslations, editSurveyTranslations } from "./index.i18n";
@@ -301,6 +349,7 @@ const { t, locale } = useComponentI18n<EditSurveyTranslations>(editSurveyTransla
 const { showNotifyMessage } = useNotify();
 const route = useRoute();
 const router = useRouter();
+const { userId } = storeToRefs(useAuthenticationStore());
 const { getConversationForEdit } = useBackendPostEditApi();
 
 const conversationSlugId = getSingleRouteParam(route.params.conversationSlugId);
@@ -309,6 +358,7 @@ const isSaving = ref(false);
 const isDeleting = ref(false);
 const surveyConfig = ref<SurveyConfig | null>(null);
 const originalSurveyConfig = ref<SurveyConfig | null>(null);
+const surveyValidationErrorMessage = ref<string | null>(null);
 
 type PendingRemoval =
   | { type: "question"; questionIndex: number }
@@ -319,6 +369,7 @@ const pendingRemoval = ref<PendingRemoval | null>(null);
 
 const surveyConfigValue = computed(() => surveyConfig.value);
 const surveyQuestions = computed(() => surveyConfig.value?.questions ?? []);
+const largeOptionWarningThreshold = SURVEY_LARGE_OPTION_WARNING_THRESHOLD;
 const completionCountsQuery = useSurveyCompletionCountsQuery({
   conversationSlugId: computed(() => conversationSlugId),
   enabled: computed(() => !isLoading.value),
@@ -343,6 +394,72 @@ const isSaveDisabled = computed(() => {
     !hasUnsavedChanges.value
   );
 });
+
+function shouldShowLargeOptionWarning({
+  choiceDisplay,
+  optionCount,
+}: {
+  choiceDisplay: SurveyChoiceDisplay;
+  optionCount: number;
+}): boolean {
+  return shouldWarnAboutLargeSurveyOptionSet({ choiceDisplay, optionCount });
+}
+
+function clearSurveyValidationError(): void {
+  surveyValidationErrorMessage.value = null;
+}
+
+function showSurveyValidationError(): void {
+  surveyValidationErrorMessage.value = t("validationError");
+}
+
+function shouldShowQuestionTextError({
+  question,
+}: {
+  question: SurveyQuestionConfig;
+}): boolean {
+  return (
+    surveyValidationErrorMessage.value !== null && question.questionText.trim() === ""
+  );
+}
+
+function shouldShowOptionTextError({
+  question,
+  option,
+}: {
+  question: SurveyQuestionConfig;
+  option: SurveyQuestionOption;
+}): boolean {
+  return (
+    surveyValidationErrorMessage.value !== null &&
+    question.questionType === "choice" &&
+    option.optionText.trim() === ""
+  );
+}
+
+function getOptionInputKey({
+  questionIndex,
+  optionIndex,
+}: {
+  questionIndex: number;
+  optionIndex: number;
+}): string {
+  return `${questionIndex}-${optionIndex}`;
+}
+
+async function focusOptionInput({
+  questionIndex,
+  optionIndex,
+}: {
+  questionIndex: number;
+  optionIndex: number;
+}): Promise<void> {
+  await nextTick();
+  const input = document.querySelector<HTMLInputElement>(
+    `[data-survey-option-input="${getOptionInputKey({ questionIndex, optionIndex })}"] input`
+  );
+  input?.focus();
+}
 const changeSummary = computed(() => {
   return summarizeSurveyConfigChanges({
     previousSurveyConfig: originalSurveyConfig.value,
@@ -397,10 +514,13 @@ const removeDialogConfirmText = computed(() => {
 });
 
 const questionTypeOptions: Array<{ label: string; value: SurveyQuestionType }> = [
-  { label: t("typeSingleChoice"), value: "mono_choice" },
-  { label: t("typeMultipleChoice"), value: "multi_choice" },
-  { label: t("typeDropdown"), value: "select" },
+  { label: t("typeChoice"), value: "choice" },
   { label: t("typeFreeText"), value: "free_text" },
+];
+const choiceDisplayOptions: Array<{ label: string; value: SurveyChoiceDisplay }> = [
+  { label: t("choiceDisplayAuto"), value: "auto" },
+  { label: t("choiceDisplayList"), value: "list" },
+  { label: t("choiceDisplayDropdown"), value: "dropdown" },
 ];
 const templateTexts = computed(() => {
   const currentLocale = locale.value as SupportedDisplayLanguageCodes;
@@ -422,6 +542,26 @@ onMounted(async () => {
   if (!response.success) {
     showNotifyMessage(t("loadError"));
     await router.replace({ name: "/conversation/[conversationSlugId]/edit/", params: { conversationSlugId } });
+    return;
+  }
+
+  const surveyAccess = checkFeatureManagementAccess({
+    hasExistingFeature: response.surveyConfig !== null,
+    featureEnabled: processEnv.VITE_SURVEY_ENABLED === "true",
+    isOrgOnly: processEnv.VITE_IS_SURVEY_ORG_ONLY === "true",
+    allowedOrgs:
+      processEnv.VITE_SURVEY_ALLOWED_ORGS ?? DEFAULT_FEATURE_ALLOWED_ORGS,
+    allowedUsers:
+      processEnv.VITE_SURVEY_ALLOWED_USERS ?? DEFAULT_FEATURE_ALLOWED_USERS,
+    postAsOrganization: response.postAsOrganizationName !== undefined,
+    organizationName: response.postAsOrganizationName ?? "",
+    userId: userId.value ?? "",
+  });
+  if (!surveyAccess.allowed) {
+    await router.replace({
+      name: "/conversation/[conversationSlugId]/edit/",
+      params: { conversationSlugId },
+    });
     return;
   }
 
@@ -466,7 +606,12 @@ function getOriginalOption({
     return undefined;
   }
 
-  return getOriginalQuestion({ question })?.options?.find((candidate) => {
+  const originalQuestion = getOriginalQuestion({ question });
+  if (originalQuestion === undefined || originalQuestion.questionType === "free_text") {
+    return undefined;
+  }
+
+  return originalQuestion.options.find((candidate) => {
     return candidate.optionSlugId === option.optionSlugId;
   });
 }
@@ -515,8 +660,12 @@ function syncOptionSemanticChangeFlag({
   optionIndex: number;
 }): void {
   const question = surveyConfig.value?.questions[questionIndex];
-  const option = question?.options?.[optionIndex];
-  if (question === undefined || option === undefined) {
+  if (question === undefined || question.questionType === "free_text") {
+    return;
+  }
+
+  const option = question.options[optionIndex];
+  if (option === undefined) {
     return;
   }
 
@@ -549,7 +698,12 @@ function updateOptionSemanticChange({
   optionIndex: number;
   isSemantic: boolean;
 }): void {
-  const option = surveyConfig.value?.questions[questionIndex].options?.[optionIndex];
+  const question = surveyConfig.value?.questions[questionIndex];
+  if (question === undefined || question.questionType === "free_text") {
+    return;
+  }
+
+  const option = question.options[optionIndex];
   if (option === undefined) {
     return;
   }
@@ -564,6 +718,7 @@ function ensureSurveyConfig(): void {
 }
 
 function addQuestion(): void {
+  clearSurveyValidationError();
   ensureSurveyConfig();
   surveyConfig.value?.questions.push(
     createEmptySurveyQuestion({ displayOrder: surveyConfig.value.questions.length })
@@ -571,6 +726,7 @@ function addQuestion(): void {
 }
 
 function addTemplateQuestion({ templateId }: { templateId: SurveyTemplateId }): void {
+  clearSurveyValidationError();
   ensureSurveyConfig();
   surveyConfig.value?.questions.push(
     createSurveyTemplateQuestion({
@@ -601,79 +757,111 @@ function getRichTextConstraints({
     : undefined;
 }
 
+function reindexSurveyQuestion({ question, displayOrder }: { question: SurveyQuestionConfig; displayOrder: number }): SurveyQuestionConfig {
+  if (question.questionType === "free_text") {
+    return {
+      ...question,
+      displayOrder,
+    };
+  }
+
+  return {
+    ...question,
+    displayOrder,
+    options: question.options.map((option, optionIndex) => ({
+      ...option,
+      displayOrder: optionIndex,
+    })),
+  };
+}
+
 function requestRemoveQuestion({ questionIndex }: { questionIndex: number }): void {
   pendingRemoval.value = { type: "question", questionIndex };
 }
 
 function performRemoveQuestion({ questionIndex }: { questionIndex: number }): void {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) return;
   surveyConfig.value.questions.splice(questionIndex, 1);
   if (surveyConfig.value.questions.length === 0) {
     surveyConfig.value = null;
     return;
   }
-  surveyConfig.value.questions = surveyConfig.value.questions.map((question, index) => ({
-    ...question,
-    displayOrder: index,
-    options: question.options?.map((option, optionIndex) => ({ ...option, displayOrder: optionIndex })),
-  }));
+  surveyConfig.value.questions = surveyConfig.value.questions.map((question, index) =>
+    reindexSurveyQuestion({ question, displayOrder: index })
+  );
 }
 
 function updateQuestionText({ questionIndex, questionText }: { questionIndex: number; questionText: string | number | null }): void {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) return;
   surveyConfig.value.questions[questionIndex].questionText = String(questionText ?? "");
   syncQuestionSemanticChangeFlag({ questionIndex });
 }
 
 function updateQuestionRequired({ questionIndex, isRequired }: { questionIndex: number; isRequired: boolean | null }): void {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) return;
   surveyConfig.value.questions[questionIndex].isRequired = isRequired === true;
 }
 
 function updateQuestionType({ questionIndex, questionType }: { questionIndex: number; questionType: SurveyQuestionType | null }): void {
+  clearSurveyValidationError();
   if (surveyConfig.value === null || questionType === null) return;
 
   const currentQuestion = surveyConfig.value.questions[questionIndex];
+  const questionBase = {
+    questionSlugId: currentQuestion.questionSlugId,
+    questionText: currentQuestion.questionText,
+    isRequired: currentQuestion.isRequired,
+    displayOrder: currentQuestion.displayOrder,
+    textChangeIsSemantic: currentQuestion.textChangeIsSemantic,
+  };
+  const currentChoiceDisplay = currentQuestion.questionType === "free_text"
+    ? "auto"
+    : currentQuestion.choiceDisplay;
+  const currentOptions = currentQuestion.questionType === "free_text"
+    ? []
+    : currentQuestion.options;
+  const nextOptions = currentOptions.length >= 2
+    ? currentOptions
+    : [createEmptySurveyOption({ displayOrder: 0 }), createEmptySurveyOption({ displayOrder: 1 })];
+
   if (questionType === "free_text") {
     surveyConfig.value.questions[questionIndex] = {
-      ...currentQuestion,
+      ...questionBase,
       questionType: "free_text",
       constraints: createRichTextSurveyQuestionConstraints(),
-      options: undefined,
-    };
-    return;
-  }
-
-  if (questionType === "multi_choice") {
-    surveyConfig.value.questions[questionIndex] = {
-      ...currentQuestion,
-      questionType: "multi_choice",
-      constraints: { type: "multi_choice", minSelections: 1, maxSelections: undefined },
-      options: currentQuestion.options && currentQuestion.options.length >= 2
-        ? currentQuestion.options
-        : [createEmptySurveyOption({ displayOrder: 0 }), createEmptySurveyOption({ displayOrder: 1 })],
     };
     return;
   }
 
   surveyConfig.value.questions[questionIndex] = {
-    ...currentQuestion,
-    questionType,
-    constraints: { type: questionType, minSelections: 1, maxSelections: 1 },
-    options: currentQuestion.options && currentQuestion.options.length >= 2
-      ? currentQuestion.options
-      : [createEmptySurveyOption({ displayOrder: 0 }), createEmptySurveyOption({ displayOrder: 1 })],
+    ...questionBase,
+    questionType: "choice",
+    choiceDisplay: currentChoiceDisplay,
+    constraints: createChoiceSurveyQuestionConstraints(),
+    options: nextOptions,
   };
 }
 
-function addOption({ questionIndex }: { questionIndex: number }): void {
+function updateQuestionChoiceDisplay({ questionIndex, choiceDisplay }: { questionIndex: number; choiceDisplay: SurveyChoiceDisplay | null }): void {
+  clearSurveyValidationError();
+  const question = surveyConfig.value?.questions[questionIndex];
+  if (question === undefined || question.questionType === "free_text" || choiceDisplay === null) return;
+  question.choiceDisplay = choiceDisplay;
+}
+
+async function addOption({ questionIndex }: { questionIndex: number }): Promise<void> {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) return;
   const question = surveyConfig.value.questions[questionIndex];
   if (question.questionType === "free_text") return;
-  if (question.options === undefined) {
-    question.options = [createEmptySurveyOption({ displayOrder: 0 }), createEmptySurveyOption({ displayOrder: 1 })];
-  }
   question.options.push(createEmptySurveyOption({ displayOrder: question.options.length }));
+  await focusOptionInput({
+    questionIndex,
+    optionIndex: question.options.length - 1,
+  });
 }
 
 function requestRemoveOption({
@@ -687,15 +875,24 @@ function requestRemoveOption({
 }
 
 function performRemoveOption({ questionIndex, optionIndex }: { questionIndex: number; optionIndex: number }): void {
+  clearSurveyValidationError();
   if (surveyConfig.value === null) return;
   const question = surveyConfig.value.questions[questionIndex];
-  if (question.options === undefined || question.options.length <= 2) return;
+  if (question.questionType === "free_text" || question.options.length <= 2) return;
   question.options.splice(optionIndex, 1);
   question.options = question.options.map((option, index) => ({ ...option, displayOrder: index }));
+  question.constraints = normalizeChoiceSurveyQuestionConstraints({
+    minSelections: question.constraints.minSelections,
+    maxSelections: question.constraints.maxSelections,
+    optionCount: question.options.length,
+  });
 }
 
 function updateOptionText({ questionIndex, optionIndex, optionText }: { questionIndex: number; optionIndex: number; optionText: string | number | null }): void {
-  const option = surveyConfig.value?.questions[questionIndex].options?.[optionIndex];
+  clearSurveyValidationError();
+  const question = surveyConfig.value?.questions[questionIndex];
+  if (question === undefined || question.questionType === "free_text") return;
+  const option = question.options[optionIndex];
   if (option === undefined) return;
   option.optionText = String(optionText ?? "");
   syncOptionSemanticChangeFlag({ questionIndex, optionIndex });
@@ -708,17 +905,21 @@ function parseOptionalInteger(value: string | number | null): number | undefined
   return parsedValue;
 }
 
-function updateMultiChoiceConstraints({ questionIndex, minSelections, maxSelections }: { questionIndex: number; minSelections: string | number | null; maxSelections: string | number | null | undefined }): void {
+function updateChoiceConstraints({ questionIndex, minSelections, maxSelections }: { questionIndex: number; minSelections: string | number | null; maxSelections: string | number | null | undefined }): void {
+  clearSurveyValidationError();
   const question = surveyConfig.value?.questions[questionIndex];
-  if (question === undefined || question.questionType !== "multi_choice") return;
-  question.constraints = {
-    type: "multi_choice",
-    minSelections: Math.max(parseOptionalInteger(minSelections) ?? 1, 1),
-    maxSelections: parseOptionalInteger(maxSelections ?? null),
-  };
+  if (question === undefined || question.questionType !== "choice") return;
+  const parsedMinSelections = Math.max(parseOptionalInteger(minSelections) ?? 1, 1);
+  const parsedMaxSelections = parseOptionalInteger(maxSelections ?? null);
+  question.constraints = normalizeChoiceSurveyQuestionConstraints({
+    minSelections: parsedMinSelections,
+    maxSelections: parsedMaxSelections,
+    optionCount: question.options.length,
+  });
 }
 
 function updateFreeTextInputMode({ questionIndex, inputMode }: { questionIndex: number; inputMode: "rich_text" | "integer" | null }): void {
+  clearSurveyValidationError();
   const question = surveyConfig.value?.questions[questionIndex];
   if (question === undefined || question.questionType !== "free_text" || inputMode === null) return;
   question.constraints = inputMode === "integer"
@@ -727,6 +928,7 @@ function updateFreeTextInputMode({ questionIndex, inputMode }: { questionIndex: 
 }
 
 function updateRichTextConstraints({ questionIndex, minPlainTextLength, maxPlainTextLength }: { questionIndex: number; minPlainTextLength: string | number | null | undefined; maxPlainTextLength: string | number | null }): void {
+  clearSurveyValidationError();
   const question = surveyConfig.value?.questions[questionIndex];
   if (
     question === undefined ||
@@ -745,6 +947,7 @@ function updateRichTextConstraints({ questionIndex, minPlainTextLength, maxPlain
 }
 
 function updateIntegerConstraints({ questionIndex, minValue, maxValue }: { questionIndex: number; minValue: string | number | null | undefined; maxValue: string | number | null | undefined }): void {
+  clearSurveyValidationError();
   const question = surveyConfig.value?.questions[questionIndex];
   if (
     question === undefined ||
@@ -792,6 +995,7 @@ async function saveSurvey(): Promise<void> {
   const normalizedSurveyConfigResult = buildSurveyConfigForSave({ surveyConfig: surveyConfig.value });
   if (!normalizedSurveyConfigResult.success) {
     showNotifyMessage(t("validationError"));
+    showSurveyValidationError();
     return;
   }
 

@@ -5,16 +5,7 @@
     :show-close-button="true"
   >
     <template #body>
-      <ConversationSurveyHero
-        v-if="conversationData !== undefined"
-        :conversation-title="conversationData.payload.title"
-        :author-username="conversationData.metadata.authorUsername"
-        :organization-name="conversationData.metadata.organization?.name ?? ''"
-        :organization-image-url="
-          conversationData.metadata.organization?.imageUrl ?? ''
-        "
-      />
-      <DefaultImageExample v-else />
+      <ConversationSurveyOnboardingHero :conversation-data="conversationData" />
     </template>
 
     <template #footer>
@@ -60,14 +51,14 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import ConversationSurveyHero from "src/components/onboarding/backgrounds/ConversationSurveyHero.vue";
-import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
+import ConversationSurveyOnboardingHero from "src/components/onboarding/backgrounds/ConversationSurveyOnboardingHero.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import SignupAgreement from "src/components/onboarding/ui/SignupAgreement.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import EmailInputForm from "src/components/verification/EmailInputForm.vue";
+import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useEmailSubmit } from "src/composables/verification/useEmailSubmit";
@@ -83,7 +74,6 @@ import { onboardingFlowStore } from "src/stores/onboarding/flow";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import { getSingleRouteParam } from "src/utils/router/params";
 import {
-  getConversationPath,
   getConversationSurveyOnboardingPath,
   getConversationSurveyVerifyHardPath,
   getConversationSurveyVerifyPath,
@@ -104,6 +94,7 @@ const { isLoggedIn, isAuthInitialized, credentials } = storeToRefs(
   useAuthenticationStore()
 );
 const { safeNavigateBack } = useGoBackButtonHandler();
+const { exitToConversation } = useConversationOnboardingExit();
 const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
 const { completeVerification } = useVerificationComplete();
 const { showNotifyMessage } = useNotify();
@@ -227,11 +218,8 @@ async function handleBackToAuthChoice(): Promise<void> {
 
 async function handleBackToConversation(): Promise<void> {
   credentialUpgradeTarget.value = null;
-  conversationOnboardingStore.clearForConversation({
+  await exitToConversation({
     conversationSlugId: conversationSlugId.value,
-  });
-  await router.push({
-    path: getConversationPath({ conversationSlugId: conversationSlugId.value }),
   });
 }
 </script>

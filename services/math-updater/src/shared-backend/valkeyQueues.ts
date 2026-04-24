@@ -22,13 +22,6 @@ export const VALKEY_QUEUE_KEYS = {
     VOTE_BUFFER_DATA: "queue:votes:data",
 
     /**
-     * Export buffer queue - stores export requests for batch processing
-     * Used by: exportBuffer.ts
-     * Pattern: Export requests are added here and processed every 1s
-     */
-    EXPORT_BUFFER: "queue:exports",
-
-    /**
      * Import buffer queue - stores CSV import requests for batch processing
      * Used by: importBuffer.ts
      * Pattern: Import requests are added here and processed every 1s

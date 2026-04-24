@@ -7,7 +7,10 @@
     :options="displayOptions"
     :label="label"
     :multiple="multiple"
-    :use-chips="multiple"
+    :use-chips="resolvedUseChips"
+    :counter="counter"
+    :max-values="maxValues"
+    :display-value="displayValue"
     :clearable="clearable"
     :disable="disable"
     :loading="loading"
@@ -37,6 +40,10 @@ const props = withDefaults(
     options: readonly ZKSelectOption[];
     label: string;
     multiple?: boolean;
+    useChips?: boolean;
+    counter?: boolean;
+    maxValues?: number;
+    displayValue?: string;
     searchable?: boolean;
     clearable?: boolean;
     disable?: boolean;
@@ -45,6 +52,10 @@ const props = withDefaults(
   }>(),
   {
     multiple: false,
+    useChips: undefined,
+    counter: false,
+    maxValues: undefined,
+    displayValue: undefined,
     searchable: false,
     clearable: false,
     disable: false,
@@ -69,6 +80,10 @@ watch(
 
 const displayOptions = computed(() => {
   return props.searchable ? filteredOptions.value : props.options;
+});
+
+const resolvedUseChips = computed(() => {
+  return props.useChips ?? props.multiple;
 });
 
 function handleFilter(

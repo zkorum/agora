@@ -42,6 +42,38 @@ export function generateBundleS3Key({
     return `${S3_EXPORTS_PATH}${conversationSlugId}/${exportSlugId}/${variant === "owner" ? "bundle-owner" : "bundle"}.zip`;
 }
 
+export function generateArtifactS3Key({
+    conversationSlugId,
+    generationSlugId,
+    audience,
+    subjectUserId,
+    fileType,
+}: {
+    conversationSlugId: string;
+    generationSlugId: string;
+    audience: string;
+    subjectUserId?: string | null;
+    fileType: string;
+}): string {
+    const audiencePath =
+        subjectUserId === undefined || subjectUserId === null
+            ? audience
+            : `${audience}/${subjectUserId}`;
+    return `${S3_EXPORTS_PATH}${conversationSlugId}/${generationSlugId}/${audiencePath}/${fileType}.csv`;
+}
+
+export function generateArtifactBundleS3Key({
+    conversationSlugId,
+    generationSlugId,
+    audience,
+}: {
+    conversationSlugId: string;
+    generationSlugId: string;
+    audience: string;
+}): string {
+    return `${S3_EXPORTS_PATH}${conversationSlugId}/${generationSlugId}/${audience}/bundle.zip`;
+}
+
 /**
  * Generate file name for an export file (stored in database and S3 key)
  */

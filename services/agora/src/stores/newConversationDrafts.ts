@@ -10,11 +10,24 @@ import type {
 } from "src/composables/conversation/draft/conversationDraft.types";
 import { createEmptyDraft } from "src/composables/conversation/draft/conversationDraft.utils";
 import type { OrganizationProperties } from "src/shared/types/zod";
+import {
+  checkFeatureAccess,
+  DEFAULT_FEATURE_ALLOWED_ORGS,
+  DEFAULT_FEATURE_ALLOWED_USERS,
+} from "src/shared-app-api/featureAccess";
+import {
+  checkMaxDiffAllowed,
+  DEFAULT_MAXDIFF_ALLOWED_ORGS,
+  DEFAULT_MAXDIFF_ALLOWED_USERS,
+} from "src/shared-app-api/maxdiffLogic";
+import { useAuthenticationStore } from "src/stores/authentication";
 import { processEnv } from "src/utils/processEnv";
 import { areSurveyConfigsEqual } from "src/utils/survey/config";
 import { watch } from "vue";
 
 export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
+  const authStore = useAuthenticationStore();
+
   /**
    * Parses and validates stored draft data using zod schema
    * Returns parsed draft if valid, null otherwise
@@ -256,16 +269,8 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   function disablePostAsOrganization(): void {
     conversationDraft.value.postAs.postAsOrganization = false;
     conversationDraft.value.postAs.organizationName = "";
-    if (processEnv.VITE_IS_ORG_IMPORT_ONLY === "true") {
-      // Reset to manual creation when switching to non-organization account
-      // as Polis URL and CSV import should only be available for organization accounts
-      conversationDraft.value.importSettings.importType = null;
-      conversationDraft.value.importSettings.polisUrl = "";
-      conversationDraft.value.importSettings.csvFileMetadata = {
-        summary: null,
-        comments: null,
-        votes: null,
-      };
+    if (!isImportAllowedForCurrentActor()) {
+      clearImportDraft();
     }
   }
 
@@ -375,32 +380,122 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     }
   }
 
+  function clearImportDraft(): void {
+    conversationDraft.value.importSettings.importType = null;
+    conversationDraft.value.importSettings.polisUrl = "";
+    conversationDraft.value.importSettings.csvFileMetadata = {
+      summary: null,
+      comments: null,
+      votes: null,
+    };
+  }
+
+  function clearMaxDiffDraft(): void {
+    conversationDraft.value.conversationType = "polis";
+    conversationDraft.value.externalSourceConfig = null;
+  }
+
+  function clearSurveyDraft(): void {
+    conversationDraft.value.surveyConfig = null;
+  }
+
+  function canEvaluateCurrentActorRestrictions(): boolean {
+    return (
+      conversationDraft.value.postAs.postAsOrganization || authStore.userId !== undefined
+    );
+  }
+
+  function isImportAllowedForCurrentActor(): boolean {
+    const result = checkFeatureAccess({
+      featureEnabled: true,
+      isOrgOnly: processEnv.VITE_IS_ORG_IMPORT_ONLY === "true",
+      allowedOrgs:
+        processEnv.VITE_IMPORT_ALLOWED_ORGS ?? DEFAULT_FEATURE_ALLOWED_ORGS,
+      allowedUsers:
+        processEnv.VITE_IMPORT_ALLOWED_USERS ?? DEFAULT_FEATURE_ALLOWED_USERS,
+      postAsOrganization: conversationDraft.value.postAs.postAsOrganization,
+      organizationName: conversationDraft.value.postAs.organizationName,
+      userId: authStore.userId ?? "",
+    });
+
+    return result.allowed;
+  }
+
+  function isMaxDiffAllowedForCurrentActor(): boolean {
+    const result = checkMaxDiffAllowed({
+      maxdiffEnabled: processEnv.VITE_MAXDIFF_ENABLED === "true",
+      isMaxdiffOrgOnly: processEnv.VITE_IS_MAXDIFF_ORG_ONLY === "true",
+      maxdiffAllowedOrgs:
+        processEnv.VITE_MAXDIFF_ALLOWED_ORGS ?? DEFAULT_MAXDIFF_ALLOWED_ORGS,
+      maxdiffAllowedUsers:
+        processEnv.VITE_MAXDIFF_ALLOWED_USERS ?? DEFAULT_MAXDIFF_ALLOWED_USERS,
+      postAsOrganization: conversationDraft.value.postAs.postAsOrganization,
+      organizationName: conversationDraft.value.postAs.organizationName,
+      userId: authStore.userId ?? "",
+    });
+
+    return result.allowed;
+  }
+
+  function isSurveyAllowedForCurrentActor(): boolean {
+    const result = checkFeatureAccess({
+      featureEnabled: processEnv.VITE_SURVEY_ENABLED === "true",
+      isOrgOnly: processEnv.VITE_IS_SURVEY_ORG_ONLY === "true",
+      allowedOrgs:
+        processEnv.VITE_SURVEY_ALLOWED_ORGS ?? DEFAULT_FEATURE_ALLOWED_ORGS,
+      allowedUsers:
+        processEnv.VITE_SURVEY_ALLOWED_USERS ?? DEFAULT_FEATURE_ALLOWED_USERS,
+      postAsOrganization: conversationDraft.value.postAs.postAsOrganization,
+      organizationName: conversationDraft.value.postAs.organizationName,
+      userId: authStore.userId ?? "",
+    });
+
+    return result.allowed;
+  }
+
+  function normalizeRestrictedFeatureDraftState(): void {
+    if (!canEvaluateCurrentActorRestrictions()) {
+      return;
+    }
+
+    if (
+      conversationDraft.value.importSettings.importType !== null &&
+      !isImportAllowedForCurrentActor()
+    ) {
+      clearImportDraft();
+    }
+
+    if (
+      conversationDraft.value.conversationType === "maxdiff" &&
+      !isMaxDiffAllowedForCurrentActor()
+    ) {
+      clearMaxDiffDraft();
+    }
+
+    if (
+      conversationDraft.value.surveyConfig !== null &&
+      !isSurveyAllowedForCurrentActor()
+    ) {
+      clearSurveyDraft();
+    }
+  }
+
   // ============================================================================
   // Watchers
   // ============================================================================
 
-  if (processEnv.VITE_IS_ORG_IMPORT_ONLY === "true") {
-    /**
-     * Watcher to automatically reset to manual creation when switching to non-organization account
-     * Polis URL and CSV import should only be available for organization accounts
-     */
-    watch(
-      () => conversationDraft.value.postAs.postAsOrganization,
-      (newValue, oldValue) => {
-        // Only act when switching from true to false (organization to personal)
-        if (oldValue === true && newValue === false) {
-          // Reset to manual creation and clear related settings
-          conversationDraft.value.importSettings.importType = null;
-          conversationDraft.value.importSettings.polisUrl = "";
-          conversationDraft.value.importSettings.csvFileMetadata = {
-            summary: null,
-            comments: null,
-            votes: null,
-          };
-        }
-      }
-    );
-  }
+  normalizeRestrictedFeatureDraftState();
+
+  watch(
+    () => ({
+      postAsOrganization: conversationDraft.value.postAs.postAsOrganization,
+      organizationName: conversationDraft.value.postAs.organizationName,
+      userId: authStore.userId,
+    }),
+    () => {
+      normalizeRestrictedFeatureDraftState();
+    }
+  );
 
   return {
     // Main draft state

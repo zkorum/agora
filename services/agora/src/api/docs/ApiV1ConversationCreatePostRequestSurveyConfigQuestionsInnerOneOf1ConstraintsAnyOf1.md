@@ -1,0 +1,26 @@
+# ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1
+
+
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**type** | **string** |  | [default to undefined]
+**inputMode** | **string** |  | [default to undefined]
+**minValue** | **number** |  | [default to undefined]
+**maxValue** | **number** |  | [optional] [default to undefined]
+
+## Example
+
+```typescript
+import { ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1 } from './api';
+
+const instance: ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1 = {
+    type,
+    inputMode,
+    minValue,
+    maxValue,
+};
+```
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

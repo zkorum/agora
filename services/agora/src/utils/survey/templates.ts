@@ -2,6 +2,7 @@ import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type { SurveyQuestionConfig, SurveyQuestionOption } from "src/shared/types/zod";
 
 import {
+  createChoiceSurveyQuestionConstraints,
   createIntegerSurveyQuestionConstraints,
   createRichTextSurveyQuestionConstraints,
 } from "./config";
@@ -47,15 +48,12 @@ export function createSurveyTemplateQuestion({
   switch (templateId) {
     case "age_group":
       return {
-        questionType: "mono_choice",
+        questionType: "choice",
+        choiceDisplay: "auto",
         questionText: translations.ageGroupPrompt,
         isRequired: true,
         displayOrder,
-        constraints: {
-          type: "mono_choice",
-          minSelections: 1,
-          maxSelections: 1,
-        },
+        constraints: createChoiceSurveyQuestionConstraints(),
         options: createSurveyTemplateOptions({ optionTexts: AGE_GROUP_OPTIONS }),
       };
     case "age":
@@ -65,34 +63,27 @@ export function createSurveyTemplateQuestion({
         isRequired: true,
         displayOrder,
         constraints: createIntegerSurveyQuestionConstraints(),
-        options: undefined,
       };
     case "sex_at_birth":
       return {
-        questionType: "mono_choice",
+        questionType: "choice",
+        choiceDisplay: "auto",
         questionText: translations.sexAtBirthPrompt,
         isRequired: true,
         displayOrder,
-        constraints: {
-          type: "mono_choice",
-          minSelections: 1,
-          maxSelections: 1,
-        },
+        constraints: createChoiceSurveyQuestionConstraints(),
         options: createSurveyTemplateOptions({
           optionTexts: [translations.femaleOption, translations.maleOption],
         }),
       };
     case "gender":
       return {
-        questionType: "mono_choice",
+        questionType: "choice",
+        choiceDisplay: "auto",
         questionText: translations.genderPrompt,
         isRequired: true,
         displayOrder,
-        constraints: {
-          type: "mono_choice",
-          minSelections: 1,
-          maxSelections: 1,
-        },
+        constraints: createChoiceSurveyQuestionConstraints(),
         options: createSurveyTemplateOptions({
           optionTexts: [
             translations.womanOption,
@@ -116,6 +107,5 @@ export function createManualFreeTextQuestion({
     isRequired: true,
     displayOrder,
     constraints: createRichTextSurveyQuestionConstraints(),
-    options: undefined,
   };
 }

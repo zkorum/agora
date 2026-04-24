@@ -1,8 +1,8 @@
 import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { httpErrors } from "@fastify/sensible";
 import {
-    conversationExportTable,
+    conversationExportRequestTable,
     conversationTable,
 } from "@/shared-backend/schema.js";
 import type { GetExportReadinessResponse } from "@/shared/types/dto.js";
@@ -20,14 +20,14 @@ interface GetExportReadinessForConversationParams {
  *
  * Three possible states:
  * - "active": User has a processing export for this conversation
- * - "cooldown": No active export, but someone recently exported (< cooldown period)
+ * - "cooldown": No active export, but this user recently exported (< cooldown period)
  * - "ready": No active export, no cooldown - user can export
  */
 export async function getExportReadinessForConversation({
     db,
     conversationSlugId,
     userId,
-    cooldownSeconds = 300, // 5 minutes default (matching exportBuffer)
+    cooldownSeconds = 300,
 }: GetExportReadinessForConversationParams): Promise<GetExportReadinessResponse> {
     // Find conversation ID from slug
     const conversation = await db
@@ -45,19 +45,19 @@ export async function getExportReadinessForConversation({
     // Step 1: Check for active (processing) export for this user+conversation
     const activeExportList = await db
         .select({
-            exportSlugId: conversationExportTable.slugId,
-            createdAt: conversationExportTable.createdAt,
+            exportSlugId: conversationExportRequestTable.slugId,
+            createdAt: conversationExportRequestTable.createdAt,
         })
-        .from(conversationExportTable)
+        .from(conversationExportRequestTable)
         .where(
             and(
-                eq(conversationExportTable.conversationId, conversationId),
-                eq(conversationExportTable.userId, userId),
-                eq(conversationExportTable.status, "processing"),
-                eq(conversationExportTable.isDeleted, false),
+                eq(conversationExportRequestTable.conversationId, conversationId),
+                eq(conversationExportRequestTable.userId, userId),
+                eq(conversationExportRequestTable.status, "processing"),
+                isNull(conversationExportRequestTable.deletedAt),
             ),
         )
-        .orderBy(desc(conversationExportTable.createdAt))
+        .orderBy(desc(conversationExportRequestTable.createdAt))
         .limit(1);
 
     if (activeExportList.length > 0) {
@@ -68,25 +68,25 @@ export async function getExportReadinessForConversation({
         };
     }
 
-    // Step 2: Check for recent completed exports (cooldown check)
-    // Note: Cooldown is based on ANY user's exports of this conversation
+    // Step 2: Check for this user's recent completed exports (cooldown check)
     const now = new Date();
     const cooldownTime = new Date(now.getTime() - cooldownSeconds * 1000);
 
     const recentExportList = await db
         .select({
-            exportSlugId: conversationExportTable.slugId,
-            createdAt: conversationExportTable.createdAt,
+            exportSlugId: conversationExportRequestTable.slugId,
+            createdAt: conversationExportRequestTable.createdAt,
         })
-        .from(conversationExportTable)
+        .from(conversationExportRequestTable)
         .where(
             and(
-                eq(conversationExportTable.conversationId, conversationId),
-                eq(conversationExportTable.status, "completed"),
-                eq(conversationExportTable.isDeleted, false),
+                eq(conversationExportRequestTable.conversationId, conversationId),
+                eq(conversationExportRequestTable.userId, userId),
+                eq(conversationExportRequestTable.status, "completed"),
+                isNull(conversationExportRequestTable.deletedAt),
             ),
         )
-        .orderBy(desc(conversationExportTable.createdAt))
+        .orderBy(desc(conversationExportRequestTable.createdAt))
         .limit(1);
 
     if (

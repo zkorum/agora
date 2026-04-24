@@ -3,7 +3,6 @@ import type {
   SSEHeartbeatData,
   SSENotificationData,
   SSEPopularConversationData,
-  SSEShutdownData,
 } from "src/shared/types/dto";
 import { zodNotificationItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -50,18 +49,11 @@ export function useRealtimeSSE() {
   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   let shouldReconnect = true;
   let connectionId = 0;
-  let hasEverConnected = false;
   let offlineTimer: ReturnType<typeof setTimeout> | null = null;
   let heartbeatWatchdog: ReturnType<typeof setTimeout> | null = null;
 
   async function connect() {
-    console.log("[SSE] connect() called", {
-      isConnecting: isConnecting.value,
-      isConnected: isConnected.value,
-    });
-
     if (isConnecting.value || isConnected.value) {
-      console.log("[SSE] connect() blocked by guard — already connecting or connected");
       return;
     }
 
@@ -80,7 +72,6 @@ export function useRealtimeSSE() {
       // Abort if connection doesn't establish within timeout
       connectionTimeout = setTimeout(() => {
         if (thisConnectionId !== connectionId) return;
-        console.warn("[SSE] Connection timed out");
         abortController?.abort();
       }, SSE_CONNECTION_TIMEOUT_MS);
 
@@ -110,12 +101,6 @@ export function useRealtimeSSE() {
       clearTimeout(connectionTimeout);
       connectionTimeout = null;
 
-      console.log("[SSE] Response received", {
-        status: response.status,
-        contentType: response.headers.get("content-type"),
-        hasBody: !!response.body,
-      });
-
       if (!response.ok) {
         throw new Error(`SSE connection failed: ${String(response.status)}`);
       }
@@ -126,7 +111,6 @@ export function useRealtimeSSE() {
 
       isConnected.value = true;
       isConnecting.value = false;
-      console.log("[SSE] Stream opened successfully");
       resetHeartbeatWatchdog();
 
       // Clear offline timer if SSE reconnected quickly (< 3s)
@@ -135,11 +119,7 @@ export function useRealtimeSSE() {
         offlineTimer = null;
       }
 
-      if (hasEverConnected) {
-        console.log("[SSE] Reconnected — clearing offline state");
-      }
       setNetworkOffline(false);
-      hasEverConnected = true;
 
       // Read and parse SSE stream
       const reader = response.body.getReader();
@@ -173,7 +153,7 @@ export function useRealtimeSSE() {
       if (shouldReconnect) {
         scheduleReconnect();
       }
-    } catch (error) {
+    } catch {
       clearHeartbeatWatchdog();
       if (connectionTimeout) {
         clearTimeout(connectionTimeout);
@@ -183,7 +163,6 @@ export function useRealtimeSSE() {
       // Don't touch shared state or schedule reconnects.
       if (thisConnectionId !== connectionId) return;
 
-      console.error("[SSE] Connection error:", error);
       isConnected.value = false;
       isConnecting.value = false;
       scheduleOfflineTimer();
@@ -223,11 +202,6 @@ export function useRealtimeSSE() {
           });
           if (parsedNotification.success) {
             notificationStore.addNewNotification(parsedNotification.data);
-          } else {
-            console.error(
-              "[SSE] Failed to parse notification:",
-              parsedNotification.error
-            );
           }
           break;
         }
@@ -248,13 +222,11 @@ export function useRealtimeSSE() {
           break;
         }
         case "shutdown": {
-          const data: SSEShutdownData = JSON.parse(rawData);
-          console.warn("[SSE] Server shutdown:", data.message);
           break;
         }
       }
-    } catch (error) {
-      console.error(`[SSE] Error processing ${event} event:`, error);
+    } catch {
+      return;
     }
   }
 
@@ -262,7 +234,6 @@ export function useRealtimeSSE() {
     if (heartbeatWatchdog) clearTimeout(heartbeatWatchdog);
     heartbeatWatchdog = setTimeout(() => {
       heartbeatWatchdog = null;
-      console.warn("[SSE] Heartbeat timeout — aborting connection");
       if (abortController) {
         abortController.abort();
       }
@@ -285,13 +256,9 @@ export function useRealtimeSSE() {
     const jitter = Math.random() * 250;
     const delay = SSE_RETRY_DELAY_MS + jitter;
 
-    console.log(`[SSE] Reconnecting in ${(delay / 1000).toFixed(1)}s`);
-
     reconnectTimeout = setTimeout(() => {
       if (shouldReconnect) {
-        void connect().catch((error) => {
-          console.error("[SSE] Reconnection failed:", error);
-        });
+        void connect();
       }
     }, delay);
   }
@@ -300,17 +267,14 @@ export function useRealtimeSSE() {
     if (offlineTimer) {
       return;
     }
-    console.log("[SSE] Scheduling offline timer (3s)");
     // Delay 3 seconds before marking offline (avoids flash on brief disconnects)
     offlineTimer = setTimeout(() => {
       offlineTimer = null;
-      console.log("[SSE] Offline timer fired — marking offline");
       setNetworkOffline(true);
     }, 3000);
   }
 
   function forceReconnect() {
-    console.log("[SSE] forceReconnect() — aborting current connection and reconnecting");
     clearHeartbeatWatchdog();
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout);
@@ -359,11 +323,9 @@ export function useRealtimeSSE() {
   // stale — it can never schedule an offline timer or touch shared state.
   function onVisibilityChange() {
     if (document.hidden) {
-      console.log("[SSE] Page hidden — disconnecting");
       disconnect();
       shouldReconnect = true;
     } else {
-      console.log("[SSE] Page visible — reconnecting");
       void connect();
     }
   }
@@ -376,7 +338,6 @@ export function useRealtimeSSE() {
   watch(
     () => authStore.isGuestOrLoggedIn,
     async (isAuthenticated, wasAuthenticated) => {
-      console.log("[SSE] Auth watcher fired", { isAuthenticated, wasAuthenticated });
       if (isAuthenticated !== wasAuthenticated) {
         // Auth state changed — disconnect and reconnect with appropriate headers
         disconnect();

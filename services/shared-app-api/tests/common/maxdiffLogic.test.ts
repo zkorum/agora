@@ -5,8 +5,10 @@ const baseParams = {
     maxdiffEnabled: true,
     isMaxdiffOrgOnly: false,
     maxdiffAllowedOrgs: "Agora",
+    maxdiffAllowedUsers: "",
     postAsOrganization: false,
     organizationName: "",
+    userId: "user-123",
 };
 
 describe("checkMaxDiffAllowed", () => {
@@ -18,25 +20,28 @@ describe("checkMaxDiffAllowed", () => {
         expect(result).toEqual({ allowed: false, reason: "disabled" });
     });
 
-    test("returns allowed when enabled and not org-only", () => {
+    test("returns allowed when enabled, not org-only, and user whitelist is empty", () => {
         const result = checkMaxDiffAllowed({
             ...baseParams,
             maxdiffEnabled: true,
             isMaxdiffOrgOnly: false,
+            maxdiffAllowedOrgs: "",
         });
         expect(result).toEqual({ allowed: true });
     });
 
-    test("returns allowed when not org-only regardless of org params", () => {
+    test("returns user_not_in_whitelist when personal access is restricted to specific users", () => {
         const result = checkMaxDiffAllowed({
             ...baseParams,
             maxdiffEnabled: true,
             isMaxdiffOrgOnly: false,
-            postAsOrganization: false,
-            organizationName: "",
-            maxdiffAllowedOrgs: "Agora",
+            maxdiffAllowedOrgs: "",
+            maxdiffAllowedUsers: "user-999",
         });
-        expect(result).toEqual({ allowed: true });
+        expect(result).toEqual({
+            allowed: false,
+            reason: "user_not_in_whitelist",
+        });
     });
 
     test("returns org_required when org-only and not posting as org", () => {
@@ -68,6 +73,21 @@ describe("checkMaxDiffAllowed", () => {
             maxdiffAllowedOrgs: "Agora,Foo",
         });
         expect(result).toEqual({ allowed: true });
+    });
+
+    test("returns org_not_in_whitelist when org posting is restricted even if personal users are allowed", () => {
+        const result = checkMaxDiffAllowed({
+            ...baseParams,
+            isMaxdiffOrgOnly: false,
+            postAsOrganization: true,
+            organizationName: "Other",
+            maxdiffAllowedOrgs: "Agora",
+        });
+
+        expect(result).toEqual({
+            allowed: false,
+            reason: "org_not_in_whitelist",
+        });
     });
 
     test("returns org_not_in_whitelist when org-only, posting as non-whitelisted org", () => {
