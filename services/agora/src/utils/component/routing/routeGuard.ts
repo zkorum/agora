@@ -1,7 +1,7 @@
 import { wasNavigationTriggeredByHistory } from "src/utils/nav/historyBack";
 import type { Ref } from "vue";
 import { onUnmounted, ref } from "vue";
-import type { RouteRecordNameGeneric } from "vue-router";
+import type { RouteParamsGeneric, RouteRecordNameGeneric } from "vue-router";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 
 /**
@@ -12,6 +12,7 @@ type BeforeLeaveCallback = () => void | Promise<void>;
 export interface RouteGuardDestination {
   fullPath: string;
   name: RouteRecordNameGeneric | null | undefined;
+  params: RouteParamsGeneric;
 }
 
 export interface RouteGuardState {
@@ -74,7 +75,11 @@ export function useRouteGuard(
 
   // Set up Vue Router guard (handles router.push / router.replace navigations)
   onBeforeRouteLeave((to, from) => {
-    const destination = { fullPath: to.fullPath, name: to.name };
+    const destination = {
+      fullPath: to.fullPath,
+      name: to.name,
+      params: to.params,
+    };
 
     if (!isRouteLocked.value) {
       return true;

@@ -113,6 +113,7 @@ import {
   watch,
 } from "vue";
 import { useRoute } from "vue-router";
+import type { RouteNamedMap } from "vue-router/auto-routes";
 
 import {
   type CommentComposerTranslations,
@@ -150,6 +151,62 @@ const emit = defineEmits<{
 const Editor = defineAsyncComponent(
   () => import("src/components/editor/Editor.vue")
 );
+
+type RouteName = keyof RouteNamedMap;
+type ConversationTabRouteName = Extract<
+  RouteName,
+  | "/conversation/[postSlugId]"
+  | "/conversation/[postSlugId]/"
+  | "/conversation/[postSlugId]/analysis"
+  | "/conversation/[postSlugId].embed"
+  | "/conversation/[postSlugId].embed/"
+  | "/conversation/[postSlugId].embed/analysis"
+>;
+type ConversationOnboardingRouteName = Extract<
+  RouteName,
+  `/conversation/[postSlugId].onboarding${string}`
+>;
+type VerificationRouteName = Extract<RouteName, `/verify/${string}`>;
+type DraftAutoSaveRouteName =
+  | "/welcome/"
+  | "/conversation/[conversationSlugId]/report"
+  | ConversationOnboardingRouteName
+  | VerificationRouteName;
+
+const sameConversationTabRouteNames = [
+  "/conversation/[postSlugId]",
+  "/conversation/[postSlugId]/",
+  "/conversation/[postSlugId]/analysis",
+  "/conversation/[postSlugId].embed",
+  "/conversation/[postSlugId].embed/",
+  "/conversation/[postSlugId].embed/analysis",
+] satisfies readonly ConversationTabRouteName[];
+
+const draftAutoSaveRouteNames = [
+  "/welcome/",
+  "/conversation/[conversationSlugId]/report",
+  "/verify/email/",
+  "/verify/email-code/",
+  "/verify/hard/",
+  "/verify/identity/",
+  "/verify/passport/",
+  "/verify/phone/",
+  "/verify/phone-code/",
+  "/conversation/[postSlugId].onboarding",
+  "/conversation/[postSlugId].onboarding/",
+  "/conversation/[postSlugId].onboarding/complete",
+  "/conversation/[postSlugId].onboarding/question.[questionSlugId]",
+  "/conversation/[postSlugId].onboarding/summary",
+  "/conversation/[postSlugId].onboarding/verify",
+  "/conversation/[postSlugId].onboarding/verify/email",
+  "/conversation/[postSlugId].onboarding/verify/email-code",
+  "/conversation/[postSlugId].onboarding/verify/hard",
+  "/conversation/[postSlugId].onboarding/verify/identity",
+  "/conversation/[postSlugId].onboarding/verify/passport",
+  "/conversation/[postSlugId].onboarding/verify/phone",
+  "/conversation/[postSlugId].onboarding/verify/phone-code",
+  "/conversation/[postSlugId].onboarding/verify/ticket",
+] satisfies readonly DraftAutoSaveRouteName[];
 
 const route = useRoute();
 
@@ -228,6 +285,13 @@ function handleGuidelinesDialogClose() {
 watch(showGuidelinesDialog, (isOpen, wasOpen) => {
   if (wasOpen && !isOpen) {
     handleGuidelinesDialogClose();
+  }
+});
+
+watch(opinionBody, () => {
+  checkWordCount();
+  if (characterCount.value === 0) {
+    deleteOpinionDraft(props.postSlugId);
   }
 });
 
@@ -332,6 +396,31 @@ async function noSaveDraft() {
   await proceedWithNavigation(() => {});
 }
 
+function routeNameMatches({
+  routeName,
+  routes,
+}: {
+  routeName: string;
+  routes: readonly RouteName[];
+}): boolean {
+  return routes.some((route) => route === routeName);
+}
+
+function isSameConversationTabRoute(to: RouteGuardDestination): boolean {
+  if (typeof to.name !== "string") {
+    return false;
+  }
+
+  if (
+    !routeNameMatches({ routeName: to.name, routes: sameConversationTabRouteNames })
+  ) {
+    return false;
+  }
+
+  const postSlugId = to.params.postSlugId;
+  return postSlugId === props.postSlugId;
+}
+
 function onLoginCallback() {
   // Save draft before any async operations
   saveOpinionDraft(props.postSlugId, opinionBody.value);
@@ -347,33 +436,28 @@ function onLoginCallback() {
 }
 
 function onBeforeRouteLeaveCallback(to: RouteGuardDestination): boolean {
-  if (characterCount.value > 0 && isRouteLockedCheck()) {
-    // Auto-save draft when navigating into auth/verification or conversation onboarding.
-    const routeName = typeof to.name === "string" ? to.name : "";
-    if (
-      routeName.startsWith("/verify/") ||
-      routeName === "/welcome/" ||
-      routeName === "/conversation/[postSlugId].onboarding/" ||
-      routeName === "/conversation/[postSlugId].onboarding/verify" ||
-      routeName === "/conversation/[postSlugId].onboarding/verify/hard" ||
-      routeName === "/conversation/[postSlugId].onboarding/verify/identity" ||
-      routeName === "/conversation/[postSlugId].onboarding/verify/email" ||
-      routeName === "/conversation/[postSlugId].onboarding/verify/email-code" ||
-      routeName === "/conversation/[postSlugId].onboarding/verify/phone" ||
-      routeName === "/conversation/[postSlugId].onboarding/verify/phone-code" ||
-      routeName === "/conversation/[postSlugId].onboarding/verify/passport" ||
-      routeName === "/conversation/[postSlugId].onboarding/verify/ticket" ||
-      routeName === "/conversation/[postSlugId].onboarding/question.[questionSlugId]" ||
-      routeName === "/conversation/[postSlugId].onboarding/summary" ||
-      routeName === "/conversation/[postSlugId].onboarding/complete"
-    ) {
-      saveOpinionDraft(props.postSlugId, opinionBody.value);
-      return true;
-    }
-    return false;
-  } else {
+  if (characterCount.value === 0) {
+    deleteOpinionDraft(props.postSlugId);
     return true;
   }
+
+  if (!isRouteLockedCheck()) {
+    return true;
+  }
+
+  if (isSameConversationTabRoute(to)) {
+    return true;
+  }
+
+  if (
+    typeof to.name === "string" &&
+    routeNameMatches({ routeName: to.name, routes: draftAutoSaveRouteNames })
+  ) {
+    saveOpinionDraft(props.postSlugId, opinionBody.value);
+    return true;
+  }
+
+  return false;
 }
 
 function editorFocused() {
