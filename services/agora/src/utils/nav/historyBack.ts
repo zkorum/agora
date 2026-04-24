@@ -88,6 +88,23 @@ export function isHistoryBackToPath({
   return isHistoryPathEqual({ historyPath: historyBack, expectedPath });
 }
 
+export function getHistoryPosition({
+  historyState,
+}: {
+  historyState: unknown;
+}): number | null {
+  if (
+    typeof historyState !== "object" ||
+    historyState === null ||
+    !("position" in historyState) ||
+    typeof historyState.position !== "number"
+  ) {
+    return null;
+  }
+
+  return historyState.position;
+}
+
 export async function navigateBackOrReplace({
   router,
   fallbackRoute,
@@ -99,6 +116,29 @@ export async function navigateBackOrReplace({
 }): Promise<void> {
   if (shouldNavigateBack) {
     router.back();
+    return;
+  }
+
+  await router.replace(fallbackRoute);
+}
+
+export async function navigateToHistoryPositionOrReplace({
+  router,
+  fallbackRoute,
+  targetHistoryPosition,
+  currentHistoryPosition,
+}: {
+  router: Pick<Router, "go" | "replace">;
+  fallbackRoute: RouteLocationRaw;
+  targetHistoryPosition: number | null;
+  currentHistoryPosition: number | null;
+}): Promise<void> {
+  if (
+    targetHistoryPosition !== null &&
+    currentHistoryPosition !== null &&
+    targetHistoryPosition < currentHistoryPosition
+  ) {
+    router.go(targetHistoryPosition - currentHistoryPosition);
     return;
   }
 

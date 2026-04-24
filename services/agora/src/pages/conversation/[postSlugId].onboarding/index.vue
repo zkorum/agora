@@ -56,6 +56,7 @@ import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
+import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
@@ -76,6 +77,7 @@ const router = useRouter();
 const route = useRoute();
 const conversationOnboardingStore = useConversationOnboardingStore();
 const { credentialUpgradeTarget } = storeToRefs(onboardingFlowStore());
+const { exitToConversation } = useConversationOnboardingExit();
 const { safeNavigateBack } = useGoBackButtonHandler();
 const { t } = useComponentI18n<ConversationSurveyOnboardingTranslations>(
   conversationSurveyOnboardingTranslations
@@ -133,11 +135,8 @@ watch(
 
 async function handleBackToConversation(): Promise<void> {
   credentialUpgradeTarget.value = null;
-  conversationOnboardingStore.clearForConversation({
+  await exitToConversation({
     conversationSlugId: conversationSlugId.value,
-  });
-  await router.push({
-    path: getConversationPath({ conversationSlugId: conversationSlugId.value }),
   });
 }
 

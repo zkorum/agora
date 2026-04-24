@@ -156,6 +156,7 @@ import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKDigitsInput from "src/components/ui-library/ZKDigitsInput.vue";
 import ZKSelect from "src/components/ui-library/ZKSelect.vue";
+import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useSurveyNavigation } from "src/composables/conversation/useSurveyNavigation";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -198,6 +199,7 @@ const router = useRouter();
 const route = useRoute();
 const { safeNavigateBack } = useGoBackButtonHandler();
 const { showNotifyMessage } = useNotify();
+const { exitToConversation } = useConversationOnboardingExit();
 const { navigateToNextSurveyStep, navigateToSurveyRoot } =
   useSurveyNavigation();
 const conversationOnboardingStore = useConversationOnboardingStore();
@@ -696,11 +698,8 @@ function getNextPath(): string {
 }
 
 async function handleBackToConversation(): Promise<void> {
-  conversationOnboardingStore.clearForConversation({
+  await exitToConversation({
     conversationSlugId: conversationSlugId.value,
-  });
-  await router.push({
-    path: getConversationPath({ conversationSlugId: conversationSlugId.value }),
   });
 }
 

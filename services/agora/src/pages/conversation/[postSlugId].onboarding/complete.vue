@@ -56,16 +56,13 @@ import ConversationSurveyHero from "src/components/onboarding/backgrounds/Conver
 import DefaultImageExample from "src/components/onboarding/backgrounds/DefaultImageExample.vue";
 import StepperLayout from "src/components/onboarding/layouts/StepperLayout.vue";
 import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
+import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import OnboardingLayout from "src/layouts/OnboardingLayout.vue";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { getSingleRouteParam } from "src/utils/router/params";
-import {
-  getConversationPath,
-  getConversationSurveySummaryPath,
-} from "src/utils/survey/navigation";
+import { getConversationSurveySummaryPath } from "src/utils/survey/navigation";
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -79,7 +76,7 @@ const { t } = useComponentI18n<ConversationSurveyCompleteTranslations>(
 );
 const router = useRouter();
 const route = useRoute();
-const conversationOnboardingStore = useConversationOnboardingStore();
+const { exitToConversation } = useConversationOnboardingExit();
 const { isAuthInitialized } = storeToRefs(useAuthenticationStore());
 
 const conversationSlugId = computed(() => {
@@ -94,11 +91,8 @@ const conversationQuery = useConversationQuery({
 const conversationData = computed(() => conversationQuery.data.value);
 
 async function handleBackToConversation(): Promise<void> {
-  conversationOnboardingStore.clearForConversation({
+  await exitToConversation({
     conversationSlugId: conversationSlugId.value,
-  });
-  await router.push({
-    path: getConversationPath({ conversationSlugId: conversationSlugId.value }),
   });
 }
 

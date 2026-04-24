@@ -7,26 +7,59 @@ export const useConversationOnboardingStore = defineStore(
   () => {
     const conversationSlugId = ref<string | null>(null);
     const returnTarget = ref<string | null>(null);
+    const returnHistoryPosition = ref<number | null>(null);
     const isResumeMode = ref(false);
     const justCompletedSurvey = ref(false);
 
-    function startManualEntry({ conversationSlugId: nextConversationSlugId }: { conversationSlugId: string }): void {
+    function startManualEntry({
+      conversationSlugId: nextConversationSlugId,
+      returnTarget: nextReturnTarget,
+      returnHistoryPosition: nextReturnHistoryPosition,
+    }: {
+      conversationSlugId: string;
+      returnTarget?: string;
+      returnHistoryPosition?: number | null;
+    }): void {
       conversationSlugId.value = nextConversationSlugId;
-      returnTarget.value = getConversationPath({ conversationSlugId: nextConversationSlugId });
+      returnTarget.value =
+        nextReturnTarget ??
+        getConversationPath({ conversationSlugId: nextConversationSlugId });
+      returnHistoryPosition.value = nextReturnHistoryPosition ?? null;
       isResumeMode.value = false;
       justCompletedSurvey.value = false;
     }
 
-    function startResumeEntry({ conversationSlugId: nextConversationSlugId }: { conversationSlugId: string }): void {
+    function startResumeEntry({
+      conversationSlugId: nextConversationSlugId,
+      returnTarget: nextReturnTarget,
+      returnHistoryPosition: nextReturnHistoryPosition,
+    }: {
+      conversationSlugId: string;
+      returnTarget?: string;
+      returnHistoryPosition?: number | null;
+    }): void {
       conversationSlugId.value = nextConversationSlugId;
-      returnTarget.value = getConversationPath({ conversationSlugId: nextConversationSlugId });
+      returnTarget.value =
+        nextReturnTarget ??
+        getConversationPath({ conversationSlugId: nextConversationSlugId });
+      returnHistoryPosition.value = nextReturnHistoryPosition ?? null;
       isResumeMode.value = true;
       justCompletedSurvey.value = false;
     }
 
     function markJustCompletedSurvey({ conversationSlugId: nextConversationSlugId }: { conversationSlugId: string }): void {
+      const isSameConversation = conversationSlugId.value === nextConversationSlugId;
+
       conversationSlugId.value = nextConversationSlugId;
-      returnTarget.value = getConversationPath({ conversationSlugId: nextConversationSlugId });
+
+      if (!isSameConversation || returnTarget.value === null) {
+        returnTarget.value = getConversationPath({ conversationSlugId: nextConversationSlugId });
+      }
+
+      if (!isSameConversation) {
+        returnHistoryPosition.value = null;
+      }
+
       justCompletedSurvey.value = true;
     }
 
@@ -37,6 +70,7 @@ export const useConversationOnboardingStore = defineStore(
 
       conversationSlugId.value = null;
       returnTarget.value = null;
+      returnHistoryPosition.value = null;
       isResumeMode.value = false;
       justCompletedSurvey.value = false;
     }
@@ -44,6 +78,7 @@ export const useConversationOnboardingStore = defineStore(
     return {
       conversationSlugId,
       returnTarget,
+      returnHistoryPosition,
       isResumeMode,
       justCompletedSurvey,
       startManualEntry,

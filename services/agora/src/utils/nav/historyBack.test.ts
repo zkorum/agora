@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  getHistoryPosition,
   isBackToConversationCommentTab,
   isHistoryBackToPath,
   isHistoryPathEqual,
   navigateBackOrReplace,
+  navigateToHistoryPositionOrReplace,
   wasNavigationTriggeredByHistory,
 } from "./historyBack";
 
@@ -189,6 +191,24 @@ describe("isHistoryPathEqual", () => {
   });
 });
 
+describe("getHistoryPosition", () => {
+  it("returns the numeric history position when present", () => {
+    expect(
+      getHistoryPosition({
+        historyState: { position: 7 },
+      })
+    ).toBe(7);
+  });
+
+  it("returns null when the history state has no numeric position", () => {
+    expect(
+      getHistoryPosition({
+        historyState: { position: "7" },
+      })
+    ).toBeNull();
+  });
+});
+
 describe("wasNavigationTriggeredByHistory", () => {
   it("returns true when history forward points to the current route", () => {
     expect(
@@ -252,6 +272,43 @@ describe("navigateBackOrReplace", () => {
     });
 
     expect(router.back).not.toHaveBeenCalled();
+    expect(router.replace).toHaveBeenCalledWith(fallbackRoute);
+  });
+});
+
+describe("navigateToHistoryPositionOrReplace", () => {
+  it("uses router.go when the target history entry is earlier in the stack", async () => {
+    const router = {
+      go: vi.fn(),
+      replace: vi.fn(),
+    };
+
+    await navigateToHistoryPositionOrReplace({
+      router,
+      fallbackRoute: "/conversation/abc123/",
+      targetHistoryPosition: 4,
+      currentHistoryPosition: 7,
+    });
+
+    expect(router.go).toHaveBeenCalledWith(-3);
+    expect(router.replace).not.toHaveBeenCalled();
+  });
+
+  it("uses router.replace when there is no earlier history entry to restore", async () => {
+    const router = {
+      go: vi.fn(),
+      replace: vi.fn().mockResolvedValue(undefined),
+    };
+    const fallbackRoute = "/conversation/abc123/";
+
+    await navigateToHistoryPositionOrReplace({
+      router,
+      fallbackRoute,
+      targetHistoryPosition: null,
+      currentHistoryPosition: 7,
+    });
+
+    expect(router.go).not.toHaveBeenCalled();
     expect(router.replace).toHaveBeenCalledWith(fallbackRoute);
   });
 });

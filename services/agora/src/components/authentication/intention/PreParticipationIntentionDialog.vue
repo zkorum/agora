@@ -33,9 +33,10 @@ import { useConversationOnboardingStore } from "src/stores/conversationOnboardin
 import type { PossibleIntentions } from "src/stores/loginIntention";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
+import { getHistoryPosition } from "src/utils/nav/historyBack";
 import { getConversationSurveyVerifyPath } from "src/utils/survey/navigation";
 import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import DialogContainer from "./DialogContainer.vue";
 import {
@@ -60,6 +61,7 @@ const { t } = useComponentI18n<PreParticipationIntentionDialogTranslations>(
 
 const { setActiveUserIntention } = useLoginIntentionStore();
 const conversationOnboardingStore = useConversationOnboardingStore();
+const route = useRoute();
 
 const flowStore = onboardingFlowStore();
 
@@ -184,6 +186,10 @@ async function okButtonClicked() {
     setActiveUserIntention(props.activeIntention);
     conversationOnboardingStore.startResumeEntry({
       conversationSlugId: props.conversationSlugId,
+      returnTarget: route.fullPath,
+      returnHistoryPosition: getHistoryPosition({
+        historyState: window.history.state,
+      }),
     });
     await router.push({
       path: getConversationSurveyVerifyPath({

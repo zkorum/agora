@@ -118,6 +118,7 @@ import InfoHeader from "src/components/onboarding/ui/InfoHeader.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
+import { useConversationOnboardingExit } from "src/composables/conversation/useConversationOnboardingExit";
 import { useConversationSurveyState } from "src/composables/conversation/useConversationSurveyState";
 import { useSurveyNavigation } from "src/composables/conversation/useSurveyNavigation";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -127,7 +128,6 @@ import type {
   ParticipationBlockedReason,
   SurveyQuestionFormItem,
 } from "src/shared/types/zod";
-import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { useSurveyWithdrawMutation } from "src/utils/api/survey/useSurveyQueries";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import { getSingleRouteParam } from "src/utils/router/params";
@@ -148,9 +148,9 @@ import {
 
 const router = useRouter();
 const route = useRoute();
-const conversationOnboardingStore = useConversationOnboardingStore();
 const { safeNavigateBack } = useGoBackButtonHandler();
 const { showNotifyMessage } = useNotify();
+const { exitToConversation } = useConversationOnboardingExit();
 const { navigateToNextSurveyStep, navigateToSurveyRoot } =
   useSurveyNavigation();
 const { t } = useComponentI18n<ConversationSurveySummaryTranslations>(
@@ -439,11 +439,8 @@ function handleOpenWithdrawDialog(): void {
 async function handleBackToConversation(): Promise<void> {
   const conversationSlugIdValue = conversationSlugId.value;
 
-  conversationOnboardingStore.clearForConversation({
+  await exitToConversation({
     conversationSlugId: conversationSlugIdValue,
-  });
-  await router.push({
-    path: getConversationPath({ conversationSlugId: conversationSlugIdValue }),
   });
 }
 

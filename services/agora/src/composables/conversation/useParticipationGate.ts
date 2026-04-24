@@ -10,8 +10,10 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { useUserStore } from "src/stores/user";
 import { useSurveyStatusQuery } from "src/utils/api/survey/useSurveyQueries";
+import { getHistoryPosition } from "src/utils/nav/historyBack";
 import { deriveSurveyRequirementState } from "src/utils/survey/requirements";
 import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from "vue";
+import { useRoute } from "vue-router";
 
 export interface ParticipationGateState {
   needsAuth: ComputedRef<boolean>;
@@ -61,6 +63,7 @@ export function useParticipationGate({
   requiresEventTicket: MaybeRefOrGetter<EventSlug | undefined>;
   surveyGate: MaybeRefOrGetter<SurveyGateSummary | undefined>;
 }) {
+  const route = useRoute();
   const { isAuthInitialized, isLoggedIn, hasStrongVerification, hasEmailVerification } = storeToRefs(
     useAuthenticationStore()
   );
@@ -111,6 +114,16 @@ export function useParticipationGate({
     });
   });
 
+  function startResumeEntry(): void {
+    conversationOnboardingStore.startResumeEntry({
+      conversationSlugId: toValue(conversationSlugId),
+      returnTarget: route.fullPath,
+      returnHistoryPosition: getHistoryPosition({
+        historyState: window.history.state,
+      }),
+    });
+  }
+
   async function shouldOpenParticipationModal(): Promise<boolean> {
     if (requirementState.value.needsAuth || requirementState.value.needsTicket) {
       return true;
@@ -128,9 +141,7 @@ export function useParticipationGate({
   }
 
   async function openParticipationOnboarding(): Promise<void> {
-    conversationOnboardingStore.startResumeEntry({
-      conversationSlugId: toValue(conversationSlugId),
-    });
+    startResumeEntry();
 
     const gate = effectiveSurveyGate.value;
     if (
@@ -151,9 +162,7 @@ export function useParticipationGate({
   }
 
   async function openNextSurveyStep(): Promise<void> {
-    conversationOnboardingStore.startResumeEntry({
-      conversationSlugId: toValue(conversationSlugId),
-    });
+    startResumeEntry();
     await navigateToNextSurveyStep({
       conversationSlugId: toValue(conversationSlugId),
     });
