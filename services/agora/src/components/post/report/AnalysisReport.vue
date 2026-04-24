@@ -428,11 +428,10 @@
         />
 
         <div v-if="clusterCount >= 2" class="survey-cluster-viz-wrapper">
-          <ClusterVisualization
+          <ReportClusterMap
             :clusters="clusters"
             :total-participant-count="participantCount"
-            :current-cluster-tab="page.clusterKey"
-            :report-mode="true"
+            :selected-cluster-key="page.clusterKey"
           />
         </div>
 
@@ -533,6 +532,7 @@ import {
   type AnalysisReportTranslations,
   analysisReportTranslations,
 } from "./AnalysisReport.i18n";
+import ReportClusterMap from "./ReportClusterMap.vue";
 import ReportFooter from "./ReportFooter.vue";
 import ReportGroupsTable from "./ReportGroupsTable.vue";
 import ReportHeader from "./ReportHeader.vue";
@@ -650,28 +650,28 @@ const surveyClusterPages = computed(() => {
   }
 
   return Array.from(clusterIds.values()).flatMap((clusterId) => {
-      const clusterKey = clusterId as PolisKey;
-      const clusterRows = props.surveyRows.filter(
-        (row) => row.scope === "cluster" && row.clusterId === clusterId
-      );
-      const questionChunks = chunkArray(
-        groupSurveyRowsByQuestion({ rows: clusterRows }),
-        effectiveItemsPerPage.value
-      );
-      const pageLabel = getSurveyGroupPageLabel(clusterKey);
-      const pageTitle = `${t("surveyTitle")} - ${pageLabel}`;
+    const clusterKey = clusterId as PolisKey;
+    const clusterRows = props.surveyRows.filter(
+      (row) => row.scope === "cluster" && row.clusterId === clusterId
+    );
+    const questionChunks = chunkArray(
+      groupSurveyRowsByQuestion({ rows: clusterRows }),
+      effectiveItemsPerPage.value
+    );
+    const pageLabel = getSurveyGroupPageLabel(clusterKey);
+    const pageTitle = `${t("surveyTitle")} - ${pageLabel}`;
 
-      return questionChunks.map((questionGroups, pageIndex) => ({
-        key: `${clusterId}-${pageIndex}`,
-        clusterKey,
-        title: pageTitle,
-        sectionName: pageTitle,
-        subtitle: t("surveyGroupSubtitle"),
-        pageIndex,
-        pageCount: questionChunks.length,
-        questionGroups,
-      }));
-    });
+    return questionChunks.map((questionGroups, pageIndex) => ({
+      key: `${clusterId}-${pageIndex}`,
+      clusterKey,
+      title: pageTitle,
+      sectionName: pageTitle,
+      subtitle: t("surveyGroupSubtitle"),
+      pageIndex,
+      pageCount: questionChunks.length,
+      questionGroups,
+    }));
+  });
 });
 
 const surveyPages = computed(() => {
