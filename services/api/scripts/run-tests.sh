@@ -18,5 +18,9 @@ if command -v podman &> /dev/null && podman machine inspect &> /dev/null; then
     fi
 fi
 
+# Typecheck tests before executing them; Vitest transpiles regular tests without
+# running TypeScript's checker by default.
+pnpm typecheck
+
 # Run vitest with any additional arguments passed to this script
 exec pnpm vitest "$@"

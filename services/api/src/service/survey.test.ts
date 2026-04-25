@@ -60,6 +60,7 @@ function createFreeTextQuestion({
         questionText: slugId,
         constraints: {
             type: "free_text",
+            inputMode: "rich_text",
             maxPlainTextLength: 100,
             maxHtmlLength: 1_000,
         },

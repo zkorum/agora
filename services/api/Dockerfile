@@ -15,7 +15,7 @@ COPY package.json pnpm-lock.yaml ./
 COPY pnpm-workspace-docker.yaml ./pnpm-workspace.yaml
 COPY patches ./patches
 RUN pnpm install --frozen-lockfile
-COPY tsconfig.json ./
+COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
 RUN pnpm build
 

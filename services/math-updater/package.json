@@ -7,7 +7,7 @@
         "build": "NODE_ENV=production rm -rf dist && tsc --sourceMap -p tsconfig.json",
         "start": "node --loader esm-module-alias/loader --no-warnings dist/index.js",
         "start:dev": "tsx watch --trace-uncaught src/index.ts",
-        "test": "tsx --test src/**/*.spec.ts",
+        "test": "tsx --test src/**/*.test.ts",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "format:write": "prettier --write \"**/*.{js,ts,jsx,tsx,json}\"",

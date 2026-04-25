@@ -1,7 +1,7 @@
 import { AxiosHeaders } from "axios";
 import axios from "axios";
 import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
+import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
     afterAll,
@@ -46,7 +46,7 @@ function setCurrentNow(value: string | Date) {
 describe("OTP destination throttling", () => {
     let container: StartedTestContainer;
     let sqlClient: postgres.Sql;
-    let db: ReturnType<typeof drizzle>;
+    let db: PostgresJsDatabase;
 
     beforeAll(async () => {
         container = await new GenericContainer("postgres:16-alpine")
@@ -300,7 +300,7 @@ describe("OTP destination throttling", () => {
         });
         await db.insert(emailTable).values({
             email: normalizeEmail(email),
-            type: "register",
+            type: "primary",
             userId: conflictingUserId,
             isDeleted: false,
             emailReachability: null,
@@ -354,7 +354,7 @@ describe("OTP destination throttling", () => {
 
         await db.insert(emailTable).values({
             email: "verified-device@example.com",
-            type: "register",
+            type: "primary",
             userId: deviceUserId,
             isDeleted: false,
             emailReachability: null,
@@ -627,7 +627,9 @@ describe("OTP destination throttling", () => {
         if (finalFailure === null || finalFailure.success) {
             throw new Error("Expected too_many_wrong_guess response");
         }
-        expect(finalFailure.reason).toBe("too_many_wrong_guess");
+        if (finalFailure.reason !== "too_many_wrong_guess") {
+            throw new Error("Expected too_many_wrong_guess response");
+        }
         expect(finalFailure.nextCodeSoonestTime).toBeDefined();
 
         const throttledResponse = await authService.authenticateEmailAttempt({
@@ -648,11 +650,13 @@ describe("OTP destination throttling", () => {
         if (throttledResponse.success) {
             throw new Error("Expected throttled response");
         }
-        expect(throttledResponse.reason).toBe("throttled");
+        if (throttledResponse.reason !== "throttled") {
+            throw new Error("Expected throttled response");
+        }
         expect(throttledResponse.nextCodeSoonestTime).toBeDefined();
 
         setCurrentNow(
-            new Date(finalFailure.nextCodeSoonestTime!.getTime() + 1000),
+            new Date(finalFailure.nextCodeSoonestTime.getTime() + 1000),
         );
 
         const secondResponse = await authService.authenticateEmailAttempt({
@@ -904,7 +908,9 @@ describe("OTP destination throttling", () => {
         if (finalFailure === null || finalFailure.success) {
             throw new Error("Expected too_many_wrong_guess response");
         }
-        expect(finalFailure.reason).toBe("too_many_wrong_guess");
+        if (finalFailure.reason !== "too_many_wrong_guess") {
+            throw new Error("Expected too_many_wrong_guess response");
+        }
         expect(finalFailure.nextCodeSoonestTime).toBeDefined();
 
         const throttledResponse = await authService.authenticateAttempt({
@@ -928,11 +934,13 @@ describe("OTP destination throttling", () => {
         if (throttledResponse.success) {
             throw new Error("Expected throttled response");
         }
-        expect(throttledResponse.reason).toBe("throttled");
+        if (throttledResponse.reason !== "throttled") {
+            throw new Error("Expected throttled response");
+        }
         expect(throttledResponse.nextCodeSoonestTime).toBeDefined();
 
         setCurrentNow(
-            new Date(finalFailure.nextCodeSoonestTime!.getTime() + 1000),
+            new Date(finalFailure.nextCodeSoonestTime.getTime() + 1000),
         );
 
         const secondResponse = await authService.authenticateAttempt({

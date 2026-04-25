@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
+import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
     afterAll,
@@ -36,7 +36,7 @@ type ImportBuffer = import("../src/service/importBuffer.js").ImportBuffer;
 describe("Admission guards", () => {
     let container: StartedTestContainer;
     let sqlClient: postgres.Sql;
-    let db: ReturnType<typeof drizzle>;
+    let db: PostgresJsDatabase;
 
     beforeAll(async () => {
         container = await new GenericContainer("postgres:16-alpine")
@@ -233,7 +233,6 @@ describe("Admission guards", () => {
                     participationMode: "guest",
                     isIndexed: true,
                 },
-                proof: "proof",
                 didWrite: "did:test:queue",
                 importBuffer,
                 realtimeSSEManager: new RealtimeSSEManager(),
