@@ -31,7 +31,6 @@ interface ProcessCsvImportProps {
     db: PostgresJsDatabase;
     voteBuffer: VoteBuffer;
     files: CsvFiles;
-    proof: string;
     didWrite: string;
     authorId: string;
     postAsOrganization: string | undefined;
@@ -162,7 +161,6 @@ export async function processCsvImport(props: ProcessCsvImportProps) {
         importConfig: {
             method: "csv",
         },
-        proof: props.proof,
         didWrite: props.didWrite,
         authorId: props.authorId,
         postAsOrganization: props.postAsOrganization,

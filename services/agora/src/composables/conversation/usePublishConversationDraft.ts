@@ -51,9 +51,6 @@ export function usePublishConversationDraft() {
         postTitle: conversationDraft.title,
         postBody:
           conversationDraft.content === "" ? undefined : conversationDraft.content,
-        pollingOptionList: conversationDraft.poll.enabled
-          ? conversationDraft.poll.options
-          : undefined,
         postAsOrganizationName: conversationDraft.postAs.postAsOrganization
           ? conversationDraft.postAs.organizationName
           : "",

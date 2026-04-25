@@ -40,7 +40,6 @@ interface LoadImportedPolisConversationProps {
     voteBuffer: VoteBuffer;
     importedPolisConversation: ImportPolisResults;
     importConfig: ImportConfig;
-    proof: string;
     didWrite: string;
     authorId: string;
     postAsOrganization: string | undefined;
@@ -55,7 +54,6 @@ export async function loadImportedPolisConversation({
     voteBuffer,
     importedPolisConversation,
     importConfig,
-    proof,
     didWrite,
     authorId,
     postAsOrganization,
@@ -127,10 +125,8 @@ export async function loadImportedPolisConversation({
             voteBuffer: voteBuffer,
             conversationTitle: trimmedTitle,
             conversationBody: conversationBody,
-            pollingOptionList: null,
             authorId: authorId,
             didWrite: didWrite,
-            proof: proof,
             indexConversationAt: indexConversationAt,
             postAsOrganization: postAsOrganization,
             isIndexed: isIndexed,
@@ -227,9 +223,7 @@ export async function loadImportedPolisConversation({
             "Error while updating imported conversations, marking the incomplete imported conversation as deleted and soft-deleting imported users",
         );
         await postService.deletePostBySlugId({
-            proof: proof,
             db: db,
-            didWrite: didWrite,
             conversationSlugId: conversationSlugId,
             userId: authorId,
         });

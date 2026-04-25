@@ -22,12 +22,6 @@ export function createEmptyDraft(): ConversationDraft {
     // Conversation Type
     conversationType: "polis",
 
-    // Polling Configuration
-    poll: {
-      enabled: false,
-      options: ["", ""], // Start with two empty options
-    },
-
     // Publishing Options
     postAs: {
       postAsOrganization: false,
@@ -70,13 +64,7 @@ export function createEmptyDraft(): ConversationDraft {
  */
 export function hasContentThatWouldBeCleared(
   title: string,
-  content: string,
-  pollEnabled: boolean,
-  pollOptions: string[]
+  content: string
 ): boolean {
-  return (
-    title.trim() !== "" ||
-    content.trim() !== "" ||
-    (pollEnabled && pollOptions.some((opt) => opt.trim() !== ""))
-  );
+  return title.trim() !== "" || content.trim() !== "";
 }

@@ -66,18 +66,6 @@
         :import-info="extendedPostData.metadata.importInfo"
       />
 
-      <div v-if="extendedPostData.payload.poll" class="pollContainer">
-        <PollWrapper
-          :participation-mode="
-            extendedPostData.metadata.participationMode
-          "
-          :poll-options="extendedPostData.payload.poll"
-          :post-slug-id="extendedPostData.metadata.conversationSlugId"
-          :user-response="extendedPostData.interaction"
-          :requires-event-ticket="extendedPostData.metadata.requiresEventTicket"
-        />
-      </div>
-
       <ZKCard
         v-if="
           extendedPostData.metadata.moderation.status == 'moderated' ||
@@ -103,7 +91,6 @@ import { defineAsyncComponent } from "vue";
 import ConversationTitle from "../../features/conversation/ConversationTitle.vue";
 import ZKCard from "../../ui-library/ZKCard.vue";
 import ZKHtmlContent from "../../ui-library/ZKHtmlContent.vue";
-import PollWrapper from "./poll/PollWrapper.vue";
 import PostLockedMessage from "./PostLockedMessage.vue";
 import PostMetadata from "./PostMetadata.vue";
 
@@ -131,10 +118,6 @@ const ImportedConversationIndicator = defineAsyncComponent(
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-}
-
-.pollContainer {
-  padding-bottom: 0;
 }
 
 .bodyDiv {

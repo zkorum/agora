@@ -24,7 +24,6 @@
 
     <div class="container">
       <NewConversationControlBar
-        v-model:poll-enabled="pollEnabled"
         v-model:is-private="isPrivate"
         v-model:participation-mode="participationMode"
         v-model:requires-event-ticket="requiresEventTicket"
@@ -35,7 +34,6 @@
         v-model:external-source-config="externalSourceConfig"
         v-model:title="title"
         v-model:content="content"
-        v-model:poll-options="pollOptions"
       />
 
       <!-- Active Import Banner -->
@@ -137,15 +135,6 @@
               @update:is-over-limit="(v: boolean) => (isBodyOverLimit = v)"
             />
           </div>
-
-          <div v-if="pollEnabled">
-            <PollComponent
-              ref="pollComponentRef"
-              v-model:poll-enabled="pollEnabled"
-              v-model:poll-options="pollOptions"
-              v-model:validation-error="pollValidationError"
-            />
-          </div>
         </div>
       </div>
     </div>
@@ -177,9 +166,7 @@ import PolisUrlInput from "src/components/newConversation/import/url/PolisUrlInp
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
-import PollComponent from "src/components/newConversation/poll/PollComponent.vue";
 import {
-  createEmptyDraft,
   useConversationDraft,
   type ValidationErrorField,
 } from "src/composables/conversation/draft";
@@ -227,8 +214,6 @@ const isNavigatingAway = ref(false);
 const {
   title,
   content,
-  pollEnabled,
-  pollOptions,
   conversationType,
   isPrivate,
   participationMode,
@@ -239,7 +224,6 @@ const {
   externalSourceConfig,
   validationState,
   validatePolisUrl,
-  validatePoll,
   validateBody: validateBodyField,
   validateForReview,
   updateTitle,
@@ -247,14 +231,6 @@ const {
   isDraftModified,
   resetDraft,
 } = useConversationDraft({ syncToStore: true });
-
-// Extract poll validation error for passing to PollComponent
-const pollValidationError = computed({
-  get: () => validationState.value.poll.error,
-  set: (value) => {
-    validationState.value.poll.error = value;
-  },
-});
 
 const isSubmitButtonLoading = ref(false);
 const isTitleOverLimit = ref(false);
@@ -288,8 +264,6 @@ const routeGuardRef = ref<InstanceType<
   typeof NewConversationRouteGuard
 > | null>(null);
 
-// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-const pollComponentRef = ref<InstanceType<typeof PollComponent> | null>(null);
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 const polisUrlInputRef = ref<InstanceType<typeof PolisUrlInput> | null>(null);
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
@@ -343,32 +317,9 @@ function onLoginCallback() {
   createNewConversationIntention();
 }
 
-function scrollToPollingRef(): void {
-  if (pollEnabled.value) {
-    setTimeout(function () {
-      pollComponentRef.value?.$el?.scrollIntoView({
-        behavior: "smooth",
-        inline: "start",
-      });
-    }, 100);
-  } else {
-    const emptyDraft = createEmptyDraft();
-    pollOptions.value = [...emptyDraft.poll.options];
-  }
-}
-
 function scrollToTitleInput() {
   setTimeout(function () {
     titleInputRef.value?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  }, 100);
-}
-
-function scrollToPollComponent() {
-  setTimeout(function () {
-    pollComponentRef.value?.$el?.scrollIntoView({
       behavior: "smooth",
       block: "center",
     });
@@ -407,10 +358,6 @@ function handleValidationError(errorField: ValidationErrorField): void {
   switch (errorField) {
     case "title":
       scrollToTitleInput();
-      break;
-    case "poll":
-      validatePoll();
-      scrollToPollComponent();
       break;
     case "body":
       validateBodyField();
@@ -561,12 +508,6 @@ onMounted(() => {
 
   const { profileData } = storeToRefs(useUserStore());
   validateSelectedOrganization(profileData.value.organizationList);
-});
-
-watch(pollEnabled, (enablePolling) => {
-  if (enablePolling === true) {
-    scrollToPollingRef();
-  }
 });
 </script>
 

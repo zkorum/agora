@@ -71,7 +71,6 @@ import {
     fetchOpinionsByOpinionSlugIdList,
     postNewOpinion,
 } from "./service/comment.js";
-import { getUserPollResponse, submitPollResponse } from "./service/poll.js";
 import {
     saveMaxdiffResult,
     loadMaxdiffResult,
@@ -772,18 +771,15 @@ function getEncodedUcan(request: FastifyRequest): string {
 
 interface VerifyUcanAndDeviceStatusReturn {
     didWrite: string;
-    encodedUcan: string;
     deviceStatus: DeviceLoginStatusInternal;
 }
 interface VerifyUcanKnownDeviceReturn {
     didWrite: string;
-    encodedUcan: string;
     deviceStatus: DeviceIsKnownTrueLoginStatus;
 }
 
 interface VerifyUcanReturn {
     didWrite: string;
-    encodedUcan: string;
 }
 async function verifyUcan(request: FastifyRequest): Promise<VerifyUcanReturn> {
     const encodedUcan = getEncodedUcan(request);
@@ -812,7 +808,7 @@ async function verifyUcan(request: FastifyRequest): Promise<VerifyUcanReturn> {
     });
     if (!result.ok) {
         log.error(
-            `UCAN verification failed - encodedUcan: ${encodedUcan}, SERVER_DID: ${SERVER_DID}, scheme: ${scheme}, hierPart: ${hierPart}, parsedUcan: ${JSON.stringify(parsedUcan)}, result: ${JSON.stringify(result)}`,
+            `UCAN verification failed - issuer: ${rootIssuerDid}, SERVER_DID: ${SERVER_DID}, scheme: ${scheme}, hierPart: ${hierPart}, result: ${JSON.stringify(result)}`,
         );
         if (Array.isArray(result.error)) {
             result.error.forEach((err, i) => {
@@ -843,7 +839,6 @@ async function verifyUcan(request: FastifyRequest): Promise<VerifyUcanReturn> {
     }
 
     return {
-        encodedUcan: encodedUcan,
         didWrite: rootIssuerDid,
     };
 }
@@ -863,7 +858,7 @@ async function verifyUcanAndDeviceStatus(
     };
     let actualOptions = options;
     actualOptions ??= defaultOptions;
-    const { encodedUcan, didWrite } = await verifyUcan(request);
+    const { didWrite } = await verifyUcan(request);
     const now = nowZeroMs();
     const deviceStatus = await authUtilService.getDeviceStatus({
         db,
@@ -953,7 +948,6 @@ async function verifyUcanAndDeviceStatus(
 
     return {
         didWrite: didWrite,
-        encodedUcan: encodedUcan,
         deviceStatus: deviceStatus,
     };
 }
@@ -962,16 +956,14 @@ async function verifyUcanAndDeviceStatus(
 // requirements. Use for endpoints that serve both known and unknown devices
 // (e.g. public pages with optional personalization).
 // When no auth header is present, returns an unauthenticated response with
-// didWrite/encodedUcan undefined and isKnown: false.
+// didWrite undefined and isKnown: false.
 type VerifyUcanOptionalAuthReturn =
     | {
           didWrite: string;
-          encodedUcan: string;
           deviceStatus: DeviceLoginStatusInternal;
       }
     | {
           didWrite: undefined;
-          encodedUcan: undefined;
           deviceStatus: Extract<DeviceLoginStatusInternal, { isKnown: false }>;
       };
 
@@ -983,7 +975,6 @@ async function verifyUcanOptionalAuth(
     if (!authHeader?.startsWith("Bearer ")) {
         return {
             didWrite: undefined,
-            encodedUcan: undefined,
             deviceStatus: {
                 isKnown: false,
                 isLoggedIn: false,
@@ -1022,7 +1013,7 @@ async function verifyUcanAndKnownDeviceStatus(
     } else {
         actualOptions = defaultOptions;
     }
-    const { didWrite, encodedUcan, deviceStatus } =
+    const { didWrite, deviceStatus } =
         await verifyUcanAndDeviceStatus(db, request, actualOptions);
     if (!deviceStatus.isKnown) {
         log.error(
@@ -1034,7 +1025,6 @@ async function verifyUcanAndKnownDeviceStatus(
     }
     return {
         didWrite,
-        encodedUcan,
         deviceStatus,
     };
 }
@@ -1775,7 +1765,7 @@ server.after(() => {
             },
         },
         handler: async (request, reply) => {
-            const { didWrite, encodedUcan } = await verifyUcan(request);
+            const { didWrite } = await verifyUcan(request);
 
             const now = nowZeroMs();
             const castVoteResponse = await castVoteForOpinionSlugId({
@@ -1783,64 +1773,12 @@ server.after(() => {
                 voteBuffer: voteBuffer,
                 opinionSlugId: request.body.opinionSlugId,
                 didWrite: didWrite,
-                proof: encodedUcan,
                 votingAction: request.body.chosenOption,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: now,
                 returnIsUserClustered: request.body.returnIsUserClustered,
             });
             reply.send(castVoteResponse);
-        },
-    });
-
-    server.withTypeProvider<ZodTypeProvider>().route({
-        method: "POST",
-        url: `/api/${apiVersion}/poll/respond`,
-        schema: {
-            body: Dto.pollRespondRequest,
-            response: {
-                200: Dto.pollRespondResponse,
-            },
-        },
-        handler: async (request, reply) => {
-            const { didWrite, encodedUcan } = await verifyUcan(request);
-            const now = nowZeroMs();
-            const pollResponse = await submitPollResponse({
-                db: db,
-                proof: encodedUcan,
-                didWrite: didWrite,
-                postSlugId: request.body.conversationSlugId,
-                voteOptionChoice: request.body.voteOptionChoice,
-                userAgent: request.headers["user-agent"] ?? "Unknown device",
-                now: now,
-            });
-            reply.send(pollResponse);
-        },
-    });
-
-    server.withTypeProvider<ZodTypeProvider>().route({
-        method: "POST",
-        url: `/api/${apiVersion}/user/poll/get-response-by-conversations`,
-        schema: {
-            body: Dto.getUserPollResponseByConversationsRequest,
-            response: {
-                200: Dto.getUserPollResponseByConversationsResponse,
-            },
-        },
-        handler: async (request) => {
-            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
-                db,
-                request,
-                {
-                    expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
-                },
-            );
-
-            return await getUserPollResponse({
-                db: db,
-                postSlugIdList: request.body,
-                authorId: deviceStatus.userId,
-            });
         },
     });
 
@@ -2138,7 +2076,7 @@ server.after(() => {
             body: Dto.deleteOpinionRequest,
         },
         handler: async (request, reply) => {
-            const { deviceStatus, encodedUcan, didWrite } =
+            const { deviceStatus } =
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: { isGuestOrLoggedIn: true },
                 });
@@ -2146,8 +2084,6 @@ server.after(() => {
                 db: db,
                 opinionSlugId: request.body.opinionSlugId,
                 userId: deviceStatus.userId,
-                proof: encodedUcan,
-                didWrite: didWrite,
             });
             reply.send();
         },
@@ -2163,7 +2099,7 @@ server.after(() => {
             },
         },
         handler: async (request, reply) => {
-            const { didWrite, encodedUcan } = await verifyUcan(request);
+            const { didWrite } = await verifyUcan(request);
             const now = nowZeroMs();
             const newOpinionResponse = await postNewOpinion({
                 db: db,
@@ -2171,7 +2107,6 @@ server.after(() => {
                 commentBody: request.body.opinionBody,
                 conversationSlugId: request.body.conversationSlugId,
                 didWrite: didWrite,
-                proof: encodedUcan,
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: now,
                 isSeed: false,
@@ -2315,7 +2250,7 @@ server.after(() => {
             body: Dto.deleteConversationRequest,
         },
         handler: async (request, reply) => {
-            const { didWrite, encodedUcan, deviceStatus } =
+            const { deviceStatus } =
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: { isLoggedIn: true },
                 });
@@ -2323,8 +2258,6 @@ server.after(() => {
                 db: db,
                 conversationSlugId: request.body.conversationSlugId,
                 userId: deviceStatus.userId,
-                proof: encodedUcan,
-                didWrite: didWrite,
             });
             reply.send();
         },
@@ -2390,7 +2323,7 @@ server.after(() => {
             },
         },
         handler: async (request, reply) => {
-            const { didWrite, encodedUcan, deviceStatus } =
+            const { didWrite, deviceStatus } =
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: {
                         isLoggedIn: true,
@@ -2467,10 +2400,8 @@ server.after(() => {
                 voteBuffer: voteBuffer,
                 conversationTitle: request.body.conversationTitle,
                 conversationBody: request.body.conversationBody ?? null,
-                pollingOptionList: request.body.pollingOptionList ?? null,
                 authorId: deviceStatus.userId,
                 didWrite: didWrite,
-                proof: encodedUcan,
                 indexConversationAt: request.body.indexConversationAt,
                 postAsOrganization: request.body.postAsOrganization,
                 isIndexed: request.body.isIndexed,
@@ -2511,7 +2442,7 @@ server.after(() => {
                 );
             }
 
-            const { didWrite, encodedUcan, deviceStatus } =
+            const { didWrite, deviceStatus } =
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: {
                         isLoggedIn: true,
@@ -2586,7 +2517,6 @@ server.after(() => {
                     isIndexed: request.body.isIndexed,
                     requiresEventTicket: request.body.requiresEventTicket,
                 },
-                proof: encodedUcan,
                 didWrite,
                 importBuffer,
                 realtimeSSEManager,
@@ -2653,7 +2583,7 @@ server.after(() => {
                 );
             }
 
-            const { didWrite, encodedUcan, deviceStatus } =
+            const { didWrite, deviceStatus } =
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: {
                         isLoggedIn: true,
@@ -2751,7 +2681,6 @@ server.after(() => {
                         isIndexed: parsedFields.isIndexed,
                         requiresEventTicket: parsedFields.requiresEventTicket,
                     },
-                    proof: encodedUcan,
                     didWrite,
                     importBuffer,
                     realtimeSSEManager,
@@ -2882,7 +2811,7 @@ server.after(() => {
             },
         },
         handler: async (request, reply) => {
-            const { didWrite, encodedUcan, deviceStatus } =
+            const { deviceStatus } =
                 await verifyUcanAndKnownDeviceStatus(db, request, {
                     expectedKnownDeviceStatus: {
                         isLoggedIn: true,
@@ -2893,8 +2822,6 @@ server.after(() => {
             const updateResult = await postEditService.updateConversation({
                 db: db,
                 userId: deviceStatus.userId,
-                didWrite: didWrite,
-                proof: encodedUcan,
                 googleCloudCredentials,
                 data: request.body,
             });

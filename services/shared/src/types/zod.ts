@@ -2,7 +2,6 @@ import { z } from "zod";
 import { validateDidKey, validateDidWeb } from "../did/util.js";
 import {
     MAX_LENGTH_TITLE,
-    MAX_LENGTH_OPTION,
     MAX_LENGTH_SURVEY_OPTION,
     MAX_LENGTH_SURVEY_QUESTION,
     MIN_LENGTH_USERNAME,
@@ -183,55 +182,10 @@ export const zodConversationBodyOutput = z
         message: `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_BODY_HTML)} characters`,
     })
     .optional();
-export const zodPollOptionTitle = z.string().max(MAX_LENGTH_OPTION).min(1);
-export const zodPollAction = z.discriminatedUnion("action", [
-    z
-        .object({
-            action: z.literal("none"),
-        })
-        .strict(),
-    z
-        .object({
-            action: z.literal("keep"),
-        })
-        .strict(),
-    z
-        .object({
-            action: z.literal("remove"),
-        })
-        .strict(),
-    z
-        .object({
-            action: z.literal("create"),
-            options: z.array(zodPollOptionTitle).min(2).max(6),
-        })
-        .strict(),
-    z
-        .object({
-            action: z.literal("replace"),
-            options: z.array(zodPollOptionTitle).min(2).max(6),
-        })
-        .strict(),
-]);
-export const zodPollOptionWithResult = z
-    .object({
-        optionNumber: z.number().int().min(1).max(6),
-        optionTitle: zodPollOptionTitle,
-        numResponses: z.number().int().nonnegative(),
-    })
-    .strict();
-export const zodConversationList = z.array(zodPollOptionWithResult).optional();
 export const zodConversationDataWithResult = z
     .object({
         title: zodConversationTitle,
         body: zodConversationBodyOutput,
-        poll: zodConversationList,
-    })
-    .strict();
-export const zodPollResponse = z
-    .object({
-        conversationSlugId: z.string(),
-        optionChosen: z.number().gte(0),
     })
     .strict();
 export const zodCount = z.number().int().nonnegative();
@@ -1526,7 +1480,6 @@ export type ConversationMetadata = z.infer<typeof zodConversationMetadata>;
 export type ExtendedConversationPayload = z.infer<
     typeof zodConversationDataWithResult
 >;
-export type PollOptionWithResult = z.infer<typeof zodPollOptionWithResult>;
 export type CommentContent = z.infer<typeof zodOpinionContentOutput>;
 export type OpinionItem = z.infer<typeof zodOpinionItem>;
 export type AnalysisOpinionItem = z.infer<typeof zodAnalysisOpinionItem>;
@@ -1541,7 +1494,6 @@ export type ExtendedOpinionWithConvId = z.infer<
 export type SlugId = z.infer<typeof zodSlugId>;
 export type VotingOption = z.infer<typeof zodVotingOption>;
 export type VotingAction = z.infer<typeof zodVotingAction>;
-export type PollList = z.infer<typeof zodConversationList>;
 export type ParticipationBlockedReason = z.infer<
     typeof zodParticipationBlockedReason
 >;

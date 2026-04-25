@@ -59,7 +59,7 @@ export function useBackendPostApi() {
 
   async function fetchPostBySlugId(
     postSlugId: string,
-    loadUserPollResponse: boolean
+    loadPersonalizedData: boolean
   ): Promise<ExtendedConversation> {
     try {
       const params: ApiV1ModerationConversationWithdrawPostRequest = {
@@ -68,7 +68,7 @@ export function useBackendPostApi() {
 
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1ConversationGetPost(params);
-      if (!loadUserPollResponse) {
+      if (!loadPersonalizedData) {
         const response = await DefaultApiFactory(
           undefined,
           undefined,
@@ -106,12 +106,12 @@ export function useBackendPostApi() {
     | AxiosErrorResponse;
 
   interface FetchRecentPostProps {
-    loadUserPollData: boolean;
+    loadPersonalizedData: boolean;
     sortAlgorithm: FeedSortAlgorithm;
   }
 
   async function fetchRecentPost({
-    loadUserPollData,
+    loadPersonalizedData,
     sortAlgorithm,
   }: FetchRecentPostProps): Promise<FetchRecentPostResponse> {
     try {
@@ -119,7 +119,7 @@ export function useBackendPostApi() {
         sortAlgorithm: sortAlgorithm,
       };
 
-      if (!loadUserPollData) {
+      if (!loadPersonalizedData) {
         const response = await DefaultApiFactory(
           undefined,
           undefined,
@@ -170,7 +170,6 @@ export function useBackendPostApi() {
   interface CreateNewPostProps {
     postTitle: string;
     postBody: string | undefined;
-    pollingOptionList: string[] | undefined;
     postAsOrganizationName: string;
     targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
@@ -306,7 +305,6 @@ export function useBackendPostApi() {
   async function createNewPost({
     postTitle,
     postBody,
-    pollingOptionList,
     postAsOrganizationName,
     targetIsoConvertDateString,
     isIndexed,
@@ -321,7 +319,6 @@ export function useBackendPostApi() {
       const params = Dto.createNewConversationRequest.parse({
         conversationTitle: postTitle,
         conversationBody: postBody,
-        pollingOptionList: pollingOptionList,
         isIndexed: isIndexed,
         participationMode: participationMode,
         conversationType: conversationType,

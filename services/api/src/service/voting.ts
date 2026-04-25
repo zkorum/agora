@@ -72,7 +72,6 @@ interface CastVoteForOpinionSlugIdProps {
     voteBuffer: VoteBuffer;
     opinionSlugId: string;
     didWrite: string;
-    proof: string;
     votingAction: VotingAction;
     userAgent: string;
     now: Date;
@@ -84,8 +83,6 @@ interface CastVoteForOpinionSlugIdFromUserIdProps {
     voteBuffer: VoteBuffer;
     now: Date;
     opinionSlugId: string;
-    didWrite: string;
-    proof: string;
     votingAction: VotingAction;
     userId: string;
     optionalConversationSlugId?: string;
@@ -104,8 +101,6 @@ export async function castVoteForOpinionSlugIdFromUserId({
     voteBuffer,
     now,
     opinionSlugId,
-    didWrite,
-    proof,
     votingAction,
     userId,
     optionalConversationId,
@@ -173,8 +168,6 @@ export async function castVoteForOpinionSlugIdFromUserId({
             opinionContentId: commentData.contentId,
             conversationId: conversationId,
             vote: votingAction,
-            didWrite: didWrite,
-            proof: proof,
             timestamp: now,
         },
     });
@@ -504,7 +497,6 @@ export async function castVoteForOpinionSlugId({
     voteBuffer,
     opinionSlugId,
     didWrite,
-    proof,
     votingAction,
     userAgent,
     now,
@@ -531,8 +523,6 @@ export async function castVoteForOpinionSlugId({
         voteBuffer,
         now,
         opinionSlugId,
-        didWrite,
-        proof,
         votingAction,
         userId: participationCheck.participantId,
         optionalConversationId: conversationId,

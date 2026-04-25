@@ -41,7 +41,6 @@
     v-model="showImportModeChangeConfirmation"
     :has-title="hasTitle"
     :has-body="hasBody"
-    :has-poll="hasPoll"
     @confirm="handleModeChangeConfirm"
     @cancel="handleModeChangeCancel"
   />
@@ -137,7 +136,6 @@ const { isLoggedIn, userId } = storeToRefs(useAuthenticationStore());
 const { profileData } = storeToRefs(useUserStore());
 
 // Define models for two-way binding
-const pollEnabled = defineModel<boolean>("pollEnabled", { required: true });
 const isPrivate = defineModel<boolean>("isPrivate", { required: true });
 const participationMode = defineModel<ParticipationMode>("participationMode", {
   required: true,
@@ -168,7 +166,6 @@ const externalSourceConfig = defineModel<ExternalSourceConfig | null>(
 // For checking if there's content that would be cleared (parent needs to provide these)
 const title = defineModel<string>("title", { required: true });
 const content = defineModel<string>("content", { required: true });
-const pollOptions = defineModel<string[]>("pollOptions", { required: true });
 
 const postAsDisplayName = computed(() => {
   if (postAs.value.postAsOrganization) {
@@ -204,21 +201,13 @@ const showAsDialog = (): void => {
 // Computed properties to determine what content would be cleared
 const hasTitle = computed(() => title.value.trim() !== "");
 const hasBody = computed(() => content.value.trim() !== "");
-const hasPoll = computed(
-  () => pollEnabled.value && pollOptions.value.some((opt) => opt.trim() !== "")
-);
 
 /**
  * Checks if switching import type would clear content
  * Uses shared utility function with current form values
  */
 function checkHasContentThatWouldBeCleared(): boolean {
-  return hasContentThatWouldBeCleared(
-    title.value,
-    content.value,
-    pollEnabled.value,
-    pollOptions.value
-  );
+  return hasContentThatWouldBeCleared(title.value, content.value);
 }
 
 interface ModeChangeConfig {
@@ -232,9 +221,7 @@ const handleModeChangeRequest = (config: ModeChangeConfig): void => {
   // Set conversation type immediately
   conversationType.value = config.conversationType;
 
-  // MaxDiff doesn't use polls — disable if switching to MaxDiff
   if (config.conversationType === "maxdiff") {
-    pollEnabled.value = false;
     // Auto-open source dialog if GitHub is allowed
     if (isMaxDiffGitHubAllowed.value) {
       showMaxDiffSourceDialog.value = true;
@@ -296,10 +283,6 @@ function setImportTypeWithClearing(
 
 const togglePostTypeDialog = (): void => {
   showPostTypeDialog.value = !showPostTypeDialog.value;
-};
-
-const togglePolling = (): void => {
-  pollEnabled.value = !pollEnabled.value;
 };
 
 const toggleVisibility = (): void => {
@@ -477,16 +460,6 @@ const controlButtons = computed((): ControlButton[] => [
       : "pi pi-chevron-down",
     isVisible: true,
     clickHandler: toggleEventTicketRequirement,
-    clickable: true,
-  },
-  {
-    id: "polling",
-    label: pollEnabled.value ? t("removePoll") : t("addPoll"),
-    icon: pollEnabled.value ? "pi pi-minus" : "pi pi-plus",
-    isVisible:
-      importSettings.value.importType === null &&
-      conversationType.value === "polis",
-    clickHandler: togglePolling,
     clickable: true,
   },
 ]);

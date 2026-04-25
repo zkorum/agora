@@ -6,9 +6,6 @@ import {
     opinionTable,
     polisClusterTable,
     polisClusterUserTable,
-    pollResponseContentTable,
-    pollResponseProofTable,
-    pollResponseTable,
     surveyAnswerOptionTable,
     surveyAnswerTable,
     surveyQuestionOptionTable,
@@ -360,12 +357,8 @@ async function loadSurveyParticipantIds({
     conversationId: number;
     surveyParticipantIds: string[];
 }): Promise<Set<string>> {
-    const [
-        opinionParticipants,
-        voteParticipants,
-        pollParticipants,
-        maxdiffParticipants,
-    ] = await Promise.all([
+    const [opinionParticipants, voteParticipants, maxdiffParticipants] =
+        await Promise.all([
         db
             .select({ participantId: opinionTable.authorId })
             .from(opinionTable)
@@ -389,30 +382,6 @@ async function loadSurveyParticipantIds({
                     eq(userTable.isDeleted, false),
                     isNotNull(opinionTable.currentContentId),
                     isNotNull(voteTable.currentContentId),
-                ),
-            ),
-        db
-            .select({ participantId: pollResponseTable.authorId })
-            .from(pollResponseTable)
-            .innerJoin(userTable, eq(pollResponseTable.authorId, userTable.id))
-            .innerJoin(
-                pollResponseContentTable,
-                eq(
-                    pollResponseTable.currentContentId,
-                    pollResponseContentTable.id,
-                ),
-            )
-            .innerJoin(
-                pollResponseProofTable,
-                eq(
-                    pollResponseContentTable.pollResponseProofId,
-                    pollResponseProofTable.id,
-                ),
-            )
-            .where(
-                and(
-                    eq(pollResponseProofTable.conversationId, conversationId),
-                    eq(userTable.isDeleted, false),
                 ),
             ),
         db
@@ -442,7 +411,6 @@ async function loadSurveyParticipantIds({
         ...surveyParticipantIds,
         ...opinionParticipants.map((row) => row.participantId),
         ...voteParticipants.map((row) => row.participantId),
-        ...pollParticipants.map((row) => row.participantId),
         ...maxdiffParticipants.map((row) => row.participantId),
     ]);
 }

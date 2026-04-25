@@ -116,20 +116,18 @@
           <div v-if="question.questionType === 'choice'" class="constraints-grid">
             <q-input
               :model-value="question.constraints.minSelections"
+              v-bind="getChoiceConstraintInputAttrs({ optionCount: question.options.length })"
               outlined
               type="number"
-              :min="1"
-              :max="question.options.length"
               :label="t('minSelectionsLabel')"
               @update:model-value="(value) => updateChoiceConstraints({ questionIndex, minSelections: value, maxSelections: question.constraints.maxSelections })"
             />
 
             <q-input
               :model-value="question.constraints.maxSelections ?? ''"
+              v-bind="getChoiceConstraintInputAttrs({ optionCount: question.options.length })"
               outlined
               type="number"
-              :min="1"
-              :max="question.options.length"
               :label="t('maxSelectionsLabel')"
               @update:model-value="(value) => updateChoiceConstraints({ questionIndex, minSelections: question.constraints.minSelections, maxSelections: value })"
             />
@@ -191,17 +189,17 @@
             <div
               v-for="(option, optionIndex) in question.options ?? []"
               :key="optionIndex"
+              :id="getOptionInputId({ questionIndex, optionIndex })"
               class="option-editor"
+              @keydown.enter="handleOptionEditorEnter({ event: $event, questionIndex })"
             >
               <q-input
                 :model-value="option.optionText"
-                :data-survey-option-input="getOptionInputKey({ questionIndex, optionIndex })"
                 outlined
                 :maxlength="200"
                 :error="shouldShowOptionTextError({ question, option })"
                 :label="t('optionLabel', { number: optionIndex + 1 })"
                 @update:model-value="(value) => updateOptionText({ questionIndex, optionIndex, optionText: value })"
-                @keydown.enter.prevent="addOption({ questionIndex })"
               >
                 <template #append>
                   <q-btn
@@ -437,14 +435,34 @@ function shouldShowOptionTextError({
   );
 }
 
-function getOptionInputKey({
+function getOptionInputId({
   questionIndex,
   optionIndex,
 }: {
   questionIndex: number;
   optionIndex: number;
 }): string {
-  return `${questionIndex}-${optionIndex}`;
+  return `survey-option-input-${questionIndex}-${optionIndex}`;
+}
+
+function getChoiceConstraintInputAttrs({
+  optionCount,
+}: {
+  optionCount: number;
+}): { min: number; max: number } {
+  return { min: 1, max: optionCount };
+}
+
+async function handleOptionEditorEnter({
+  event,
+  questionIndex,
+}: {
+  event: KeyboardEvent;
+  questionIndex: number;
+}): Promise<void> {
+  if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)) return;
+  event.preventDefault();
+  await addOption({ questionIndex });
 }
 
 async function focusOptionInput({
@@ -455,9 +473,9 @@ async function focusOptionInput({
   optionIndex: number;
 }): Promise<void> {
   await nextTick();
-  const input = document.querySelector<HTMLInputElement>(
-    `[data-survey-option-input="${getOptionInputKey({ questionIndex, optionIndex })}"] input`
-  );
+  const input = document
+    .getElementById(getOptionInputId({ questionIndex, optionIndex }))
+    ?.querySelector<HTMLInputElement>("input");
   input?.focus();
 }
 const changeSummary = computed(() => {

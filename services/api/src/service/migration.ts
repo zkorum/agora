@@ -161,7 +161,6 @@ export async function fixNullPassInOpinionTable({
 //             db,
 //             opinionSlugId,
 //             didWrite,
-//             proof: undefined,
 //             votingAction: "agree",
 //             userAgent: undefined,
 //             axiosPolis,

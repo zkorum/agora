@@ -60,7 +60,6 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
     payload: {
       title: "",
       body: "",
-      poll: [],
     },
     interaction: {
       hasVoted: false,
@@ -100,7 +99,7 @@ export const useHomeFeedStore = defineStore("homeFeed", () => {
 
     try {
       const response = await fetchRecentPost({
-        loadUserPollData: isGuestOrLoggedIn.value,
+        loadPersonalizedData: isGuestOrLoggedIn.value,
         sortAlgorithm: tab,
       });
 

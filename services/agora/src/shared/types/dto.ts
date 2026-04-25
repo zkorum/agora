@@ -5,8 +5,6 @@ import {
     zodSlugId,
     zodOpinionItem,
     zodAnalysisOpinionItem,
-    zodPollOptionTitle,
-    zodPollAction,
     zodConversationTitle,
     zodConversationBodyInput,
     zodConversationBodyOutput,
@@ -14,7 +12,6 @@ import {
     zodVotingOption,
     zodVotingAction,
     zodUsername,
-    zodPollResponse,
     zodExtendedOpinionData,
     zodModerationReason,
     zodModerationExplanation,
@@ -125,7 +122,6 @@ export class Dto {
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             conversationType: zodConversationType,
-            pollingOptionList: zodPollOptionTitle.array().optional(),
             seedOpinionList: z.array(zodOpinionContentInput).max(50),
             requiresEventTicket: zodEventSlug.optional(),
             externalSourceConfig: zodExternalSourceConfig.nullable().optional(),
@@ -312,7 +308,6 @@ export class Dto {
                 conversationSlugId: zodSlugId,
                 conversationTitle: zodConversationTitle,
                 conversationBody: zodConversationBodyOutput,
-                pollingOptionList: z.array(zodPollOptionTitle).optional(),
                 isIndexed: z.boolean(),
                 participationMode: zodParticipationMode,
                 requiresEventTicket: zodEventSlug.optional(),
@@ -321,7 +316,6 @@ export class Dto {
                 indexConversationAt: zodDateTimeFlexible.optional(),
                 createdAt: zodDateTimeFlexible,
                 updatedAt: zodDateTimeFlexible,
-                hasPoll: z.boolean(),
                 isLocked: z.boolean(),
             })
             .strict(),
@@ -337,7 +331,6 @@ export class Dto {
             conversationSlugId: zodSlugId,
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBodyInput,
-            pollAction: zodPollAction,
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             requiresEventTicket: zodEventSlug.optional(),
@@ -359,11 +352,6 @@ export class Dto {
                     "not_author",
                     "conversation_locked",
                     "invalid_access_settings",
-                    "poll_already_exists",
-                    "poll_exists_use_keep_or_remove",
-                    "no_poll_to_remove",
-                    "no_poll_to_keep",
-                    "no_poll_to_replace",
                 ]),
             })
             .strict(),
@@ -499,24 +487,6 @@ export class Dto {
             })
             .strict(),
     ]);
-    static pollRespondRequest = z
-        .object({
-            voteOptionChoice: z.number(),
-            conversationSlugId: z.string(),
-        })
-        .strict();
-    static pollRespondResponse = z.discriminatedUnion("success", [
-        z.object({ success: z.literal(true) }).strict(),
-        z
-            .object({
-                success: z.literal(false),
-                reason: zodParticipationBlockedReason,
-            })
-            .strict(),
-    ]);
-    static getUserPollResponseByConversationsRequest = z.array(z.string());
-    static getUserPollResponseByConversationsResponse =
-        z.array(zodPollResponse);
     static getUserVotesByConversationsRequest = z
         .object({
             conversationSlugIdList: z.array(z.string()),
@@ -1192,9 +1162,6 @@ export type UpdateConversationResponse = z.infer<
     typeof Dto.updateConversationResponse
 >;
 export type CreateCommentResponse = z.infer<typeof Dto.createOpinionResponse>;
-export type GetUserPollResponseByConversations200 = z.infer<
-    typeof Dto.getUserPollResponseByConversationsResponse
->;
 export type FetchUserVotesForPostSlugIdsResponse = z.infer<
     typeof Dto.getUserVotesByConversationsResponse
 >;

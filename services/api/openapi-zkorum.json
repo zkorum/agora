@@ -1313,35 +1313,6 @@
                                                             "body": {
                                                                 "type": "string",
                                                                 "maxLength": 3000
-                                                            },
-                                                            "poll": {
-                                                                "type": "array",
-                                                                "items": {
-                                                                    "type": "object",
-                                                                    "properties": {
-                                                                        "optionNumber": {
-                                                                            "type": "integer",
-                                                                            "minimum": 1,
-                                                                            "maximum": 6
-                                                                        },
-                                                                        "optionTitle": {
-                                                                            "type": "string",
-                                                                            "minLength": 1,
-                                                                            "maxLength": 30
-                                                                        },
-                                                                        "numResponses": {
-                                                                            "type": "integer",
-                                                                            "minimum": 0,
-                                                                            "maximum": 9007199254740991
-                                                                        }
-                                                                    },
-                                                                    "required": [
-                                                                        "optionNumber",
-                                                                        "optionTitle",
-                                                                        "numResponses"
-                                                                    ],
-                                                                    "additionalProperties": false
-                                                                }
                                                             }
                                                         },
                                                         "required": [
@@ -2267,35 +2238,6 @@
                                                     "body": {
                                                         "type": "string",
                                                         "maxLength": 3000
-                                                    },
-                                                    "poll": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                                "optionNumber": {
-                                                                    "type": "integer",
-                                                                    "minimum": 1,
-                                                                    "maximum": 6
-                                                                },
-                                                                "optionTitle": {
-                                                                    "type": "string",
-                                                                    "minLength": 1,
-                                                                    "maxLength": 30
-                                                                },
-                                                                "numResponses": {
-                                                                    "type": "integer",
-                                                                    "minimum": 0,
-                                                                    "maximum": 9007199254740991
-                                                                }
-                                                            },
-                                                            "required": [
-                                                                "optionNumber",
-                                                                "optionTitle",
-                                                                "numResponses"
-                                                            ],
-                                                            "additionalProperties": false
-                                                        }
                                                     }
                                                 },
                                                 "required": [
@@ -2676,35 +2618,6 @@
                                                             "body": {
                                                                 "type": "string",
                                                                 "maxLength": 3000
-                                                            },
-                                                            "poll": {
-                                                                "type": "array",
-                                                                "items": {
-                                                                    "type": "object",
-                                                                    "properties": {
-                                                                        "optionNumber": {
-                                                                            "type": "integer",
-                                                                            "minimum": 1,
-                                                                            "maximum": 6
-                                                                        },
-                                                                        "optionTitle": {
-                                                                            "type": "string",
-                                                                            "minLength": 1,
-                                                                            "maxLength": 30
-                                                                        },
-                                                                        "numResponses": {
-                                                                            "type": "integer",
-                                                                            "minimum": 0,
-                                                                            "maximum": 9007199254740991
-                                                                        }
-                                                                    },
-                                                                    "required": [
-                                                                        "optionNumber",
-                                                                        "optionTitle",
-                                                                        "numResponses"
-                                                                    ],
-                                                                    "additionalProperties": false
-                                                                }
                                                             }
                                                         },
                                                         "required": [
@@ -3058,136 +2971,6 @@
                                             "additionalProperties": false
                                         }
                                     ]
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/poll/respond": {
-            "post": {
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "voteOptionChoice": {
-                                        "type": "number"
-                                    },
-                                    "conversationSlugId": {
-                                        "type": "string"
-                                    }
-                                },
-                                "required": [
-                                    "voteOptionChoice",
-                                    "conversationSlugId"
-                                ],
-                                "additionalProperties": false
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Default Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "oneOf": [
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "success": {
-                                                    "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
-                                                }
-                                            },
-                                            "required": [
-                                                "success"
-                                            ],
-                                            "additionalProperties": false
-                                        },
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "success": {
-                                                    "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
-                                                },
-                                                "reason": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "conversation_locked",
-                                                        "conversation_closed",
-                                                        "event_ticket_required",
-                                                        "account_required",
-                                                        "strong_verification_required",
-                                                        "email_verification_required",
-                                                        "survey_required",
-                                                        "survey_outdated"
-                                                    ]
-                                                }
-                                            },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
-                                            "additionalProperties": false
-                                        }
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/user/poll/get-response-by-conversations": {
-            "post": {
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Default Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "conversationSlugId": {
-                                                "type": "string"
-                                            },
-                                            "optionChosen": {
-                                                "type": "number",
-                                                "minimum": 0
-                                            }
-                                        },
-                                        "required": [
-                                            "conversationSlugId",
-                                            "optionChosen"
-                                        ],
-                                        "additionalProperties": false
-                                    }
                                 }
                             }
                         }
@@ -5615,14 +5398,6 @@
                                             "maxdiff"
                                         ]
                                     },
-                                    "pollingOptionList": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string",
-                                            "minLength": 1,
-                                            "maxLength": 30
-                                        }
-                                    },
                                     "seedOpinionList": {
                                         "maxItems": 50,
                                         "type": "array",
@@ -6613,35 +6388,6 @@
                                                         "body": {
                                                             "type": "string",
                                                             "maxLength": 3000
-                                                        },
-                                                        "poll": {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                    "optionNumber": {
-                                                                        "type": "integer",
-                                                                        "minimum": 1,
-                                                                        "maximum": 6
-                                                                    },
-                                                                    "optionTitle": {
-                                                                        "type": "string",
-                                                                        "minLength": 1,
-                                                                        "maxLength": 30
-                                                                    },
-                                                                    "numResponses": {
-                                                                        "type": "integer",
-                                                                        "minimum": 0,
-                                                                        "maximum": 9007199254740991
-                                                                    }
-                                                                },
-                                                                "required": [
-                                                                    "optionNumber",
-                                                                    "optionTitle",
-                                                                    "numResponses"
-                                                                ],
-                                                                "additionalProperties": false
-                                                            }
                                                         }
                                                     },
                                                     "required": [
@@ -6764,14 +6510,6 @@
                                                 "conversationBody": {
                                                     "type": "string",
                                                     "maxLength": 3000
-                                                },
-                                                "pollingOptionList": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "minLength": 1,
-                                                        "maxLength": 30
-                                                    }
                                                 },
                                                 "isIndexed": {
                                                     "type": "boolean"
@@ -7045,9 +6783,6 @@
                                                     "type": "string",
                                                     "format": "date-time"
                                                 },
-                                                "hasPoll": {
-                                                    "type": "boolean"
-                                                },
                                                 "isLocked": {
                                                     "type": "boolean"
                                                 }
@@ -7060,7 +6795,6 @@
                                                 "participationMode",
                                                 "createdAt",
                                                 "updatedAt",
-                                                "hasPoll",
                                                 "isLocked"
                                             ],
                                             "additionalProperties": false
@@ -7117,107 +6851,6 @@
                                     "conversationBody": {
                                         "type": "string",
                                         "maxLength": 3000
-                                    },
-                                    "pollAction": {
-                                        "oneOf": [
-                                            {
-                                                "type": "object",
-                                                "properties": {
-                                                    "action": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "none"
-                                                        ]
-                                                    }
-                                                },
-                                                "required": [
-                                                    "action"
-                                                ],
-                                                "additionalProperties": false
-                                            },
-                                            {
-                                                "type": "object",
-                                                "properties": {
-                                                    "action": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "keep"
-                                                        ]
-                                                    }
-                                                },
-                                                "required": [
-                                                    "action"
-                                                ],
-                                                "additionalProperties": false
-                                            },
-                                            {
-                                                "type": "object",
-                                                "properties": {
-                                                    "action": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "remove"
-                                                        ]
-                                                    }
-                                                },
-                                                "required": [
-                                                    "action"
-                                                ],
-                                                "additionalProperties": false
-                                            },
-                                            {
-                                                "type": "object",
-                                                "properties": {
-                                                    "action": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "create"
-                                                        ]
-                                                    },
-                                                    "options": {
-                                                        "minItems": 2,
-                                                        "maxItems": 6,
-                                                        "type": "array",
-                                                        "items": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 30
-                                                        }
-                                                    }
-                                                },
-                                                "required": [
-                                                    "action",
-                                                    "options"
-                                                ],
-                                                "additionalProperties": false
-                                            },
-                                            {
-                                                "type": "object",
-                                                "properties": {
-                                                    "action": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "replace"
-                                                        ]
-                                                    },
-                                                    "options": {
-                                                        "minItems": 2,
-                                                        "maxItems": 6,
-                                                        "type": "array",
-                                                        "items": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 30
-                                                        }
-                                                    }
-                                                },
-                                                "required": [
-                                                    "action",
-                                                    "options"
-                                                ],
-                                                "additionalProperties": false
-                                            }
-                                        ]
                                     },
                                     "isIndexed": {
                                         "type": "boolean"
@@ -7484,7 +7117,6 @@
                                 "required": [
                                     "conversationSlugId",
                                     "conversationTitle",
-                                    "pollAction",
                                     "isIndexed",
                                     "participationMode"
                                 ],
@@ -7530,12 +7162,7 @@
                                                         "not_found",
                                                         "not_author",
                                                         "conversation_locked",
-                                                        "invalid_access_settings",
-                                                        "poll_already_exists",
-                                                        "poll_exists_use_keep_or_remove",
-                                                        "no_poll_to_remove",
-                                                        "no_poll_to_keep",
-                                                        "no_poll_to_replace"
+                                                        "invalid_access_settings"
                                                     ]
                                                 }
                                             },

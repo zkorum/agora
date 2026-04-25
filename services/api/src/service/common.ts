@@ -1,6 +1,5 @@
 import {
     conversationContentTable,
-    pollTable,
     conversationTable,
     userTable,
     opinionTable,
@@ -15,7 +14,6 @@ import { toUnionUndefined } from "@/shared/shared.js";
 import type {
     ConversationMetadata,
     ExtendedConversationPayload,
-    PollOptionWithResult,
     ExtendedConversationPerSlugId,
     ExtendedConversation,
     ConversationType,
@@ -30,7 +28,6 @@ import { httpErrors } from "@fastify/sensible";
 import { eq, desc, SQL, and, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import sanitizeHtml from "sanitize-html";
-import { getUserPollResponse } from "./poll.js";
 import { createPostModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
 import { alias } from "drizzle-orm/pg-core";
@@ -140,18 +137,6 @@ export function useCommonPost() {
             .select({
                 title: conversationContentTable.title,
                 body: conversationContentTable.body,
-                option1: pollTable.option1,
-                option1Response: pollTable.option1Response,
-                option2: pollTable.option2,
-                option2Response: pollTable.option2Response,
-                option3: pollTable.option3,
-                option3Response: pollTable.option3Response,
-                option4: pollTable.option4,
-                option4Response: pollTable.option4Response,
-                option5: pollTable.option5,
-                option5Response: pollTable.option5Response,
-                option6: pollTable.option6,
-                option6Response: pollTable.option6Response,
                 // metadata
                 conversationId: conversationTable.id,
                 slugId: conversationTable.slugId,
@@ -209,10 +194,6 @@ export function useCommonPost() {
                     conversationModerationTable.conversationId,
                     conversationTable.id,
                 ),
-            )
-            .leftJoin(
-                pollTable,
-                eq(conversationContentTable.pollId, pollTable.id),
             )
             .leftJoin(
                 organizationTable,
@@ -355,65 +336,10 @@ export function useCommonPost() {
                 metadata.opinionCount = itemCountResult.count;
             }
 
-            let payload: ExtendedConversationPayload;
-            if (
-                postItem.option1 !== null &&
-                postItem.option2 !== null &&
-                postItem.option1Response !== null &&
-                postItem.option2Response !== null
-            ) {
-                // hasPoll
-                const pollList: PollOptionWithResult[] = [
-                    {
-                        optionNumber: 1,
-                        optionTitle: postItem.option1,
-                        numResponses: postItem.option1Response,
-                    },
-                    {
-                        optionNumber: 2,
-                        optionTitle: postItem.option2,
-                        numResponses: postItem.option2Response,
-                    },
-                ];
-                if (postItem.option3 !== null) {
-                    pollList.push({
-                        optionNumber: 3,
-                        optionTitle: postItem.option3,
-                        numResponses: postItem.option3Response ?? 0,
-                    });
-                }
-                if (postItem.option4 !== null) {
-                    pollList.push({
-                        optionNumber: 4,
-                        optionTitle: postItem.option4,
-                        numResponses: postItem.option4Response ?? 0,
-                    });
-                }
-                if (postItem.option5 !== null) {
-                    pollList.push({
-                        optionNumber: 5,
-                        optionTitle: postItem.option5,
-                        numResponses: postItem.option5Response ?? 0,
-                    });
-                }
-                if (postItem.option6 !== null) {
-                    pollList.push({
-                        optionNumber: 6,
-                        optionTitle: postItem.option6,
-                        numResponses: postItem.option6Response ?? 0,
-                    });
-                }
-                payload = {
-                    title: postItem.title, // Typescript inference limitation
-                    body: toUnionUndefined(postItem.body),
-                    poll: pollList,
-                };
-            } else {
-                payload = {
-                    title: postItem.title,
-                    body: toUnionUndefined(postItem.body),
-                };
-            }
+            const payload: ExtendedConversationPayload = {
+                title: postItem.title,
+                body: toUnionUndefined(postItem.body),
+            };
 
             if (excludeLockedPosts && postItem.moderationAction == "lock") {
                 // Skip
@@ -430,39 +356,6 @@ export function useCommonPost() {
         }
 
         if (personalizedUserId) {
-            // Annotate return list with poll response
-            {
-                const pollResponseMap = new Map<string, number>();
-
-                const postSlugIdList: string[] = [];
-                extendedConversationMap.forEach((post) => {
-                    postSlugIdList.push(post.metadata.conversationSlugId);
-                });
-
-                const pollResponses = await getUserPollResponse({
-                    db: db,
-                    authorId: personalizedUserId,
-                    postSlugIdList: postSlugIdList,
-                });
-
-                pollResponses.forEach((response) => {
-                    pollResponseMap.set(
-                        response.conversationSlugId,
-                        response.optionChosen,
-                    );
-                });
-
-                extendedConversationMap.forEach((post) => {
-                    const voteIndex = pollResponseMap.get(
-                        post.metadata.conversationSlugId,
-                    );
-                    post.interaction = {
-                        hasVoted: voteIndex != undefined,
-                        votedIndex: voteIndex ?? 0,
-                    };
-                });
-            }
-
             // Remove muted users from the list
             if (removeMutedAuthors) {
                 const mutedUserItems = await getUserMutePreferences({

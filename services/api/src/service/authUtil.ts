@@ -129,7 +129,7 @@ export async function getOrRegisterUserIdFromDeviceStatus({
     });
     // For non-guest modes, the user must be registered and logged in.
     // The specific verification check (strong/email) is done separately
-    // in voting.ts, comment.ts, and poll.ts.
+    // in voting.ts and comment.ts.
     if (participationMode !== "guest") {
         if (!deviceStatus.isKnown) {
             throw httpErrors.unauthorized("Device is unknown");

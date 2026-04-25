@@ -62,7 +62,6 @@ All URIs are relative to *http://localhost*
 |[**apiV1OpinionFetchByConversationPost**](#apiv1opinionfetchbyconversationpost) | **POST** /api/v1/opinion/fetch-by-conversation | |
 |[**apiV1OpinionFetchBySlugIdListPost**](#apiv1opinionfetchbyslugidlistpost) | **POST** /api/v1/opinion/fetch-by-slug-id-list | |
 |[**apiV1OpinionFetchHiddenByConversationPost**](#apiv1opinionfetchhiddenbyconversationpost) | **POST** /api/v1/opinion/fetch-hidden-by-conversation | |
-|[**apiV1PollRespondPost**](#apiv1pollrespondpost) | **POST** /api/v1/poll/respond | |
 |[**apiV1RealtimeStreamGet**](#apiv1realtimestreamget) | **GET** /api/v1/realtime/stream | |
 |[**apiV1ReportConversationCreatePost**](#apiv1reportconversationcreatepost) | **POST** /api/v1/report/conversation/create | |
 |[**apiV1ReportConversationFetchPost**](#apiv1reportconversationfetchpost) | **POST** /api/v1/report/conversation/fetch | |
@@ -85,7 +84,6 @@ All URIs are relative to *http://localhost*
 |[**apiV1UserLanguagePreferencesGetPost**](#apiv1userlanguagepreferencesgetpost) | **POST** /api/v1/user/language-preferences/get | |
 |[**apiV1UserLanguagePreferencesUpdatePost**](#apiv1userlanguagepreferencesupdatepost) | **POST** /api/v1/user/language-preferences/update | |
 |[**apiV1UserOpinionFetchPost**](#apiv1useropinionfetchpost) | **POST** /api/v1/user/opinion/fetch | |
-|[**apiV1UserPollGetResponseByConversationsPost**](#apiv1userpollgetresponsebyconversationspost) | **POST** /api/v1/user/poll/get-response-by-conversations | |
 |[**apiV1UserProfileGetPost**](#apiv1userprofilegetpost) | **POST** /api/v1/user/profile/get | |
 |[**apiV1UserUsernameUpdatePost**](#apiv1userusernameupdatepost) | **POST** /api/v1/user/username/update | |
 |[**apiV1UserVoteGetByConversationsPost**](#apiv1uservotegetbyconversationspost) | **POST** /api/v1/user/vote/get-by-conversations | |
@@ -2970,57 +2968,6 @@ const { status, data } = await apiInstance.apiV1OpinionFetchHiddenByConversation
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **apiV1PollRespondPost**
-> ApiV1PollRespondPost200Response apiV1PollRespondPost(apiV1PollRespondPostRequest)
-
-
-### Example
-
-```typescript
-import {
-    DefaultApi,
-    Configuration,
-    ApiV1PollRespondPostRequest
-} from './api';
-
-const configuration = new Configuration();
-const apiInstance = new DefaultApi(configuration);
-
-let apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest; //
-
-const { status, data } = await apiInstance.apiV1PollRespondPost(
-    apiV1PollRespondPostRequest
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **apiV1PollRespondPostRequest** | **ApiV1PollRespondPostRequest**|  | |
-
-
-### Return type
-
-**ApiV1PollRespondPost200Response**
-
-### Authorization
-
-[BearerAuth](../README.md#BearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Default Response |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
 # **apiV1RealtimeStreamGet**
 > apiV1RealtimeStreamGet()
 
@@ -3371,7 +3318,7 @@ const { status, data } = await apiInstance.apiV1SurveyCompletionCountsPost(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1SurveyConfigDeletePost**
-> ApiV1PollRespondPost200ResponseOneOf apiV1SurveyConfigDeletePost(apiV1ModerationConversationWithdrawPostRequest)
+> ApiV1ConversationClosePost200ResponseOneOf apiV1SurveyConfigDeletePost(apiV1ModerationConversationWithdrawPostRequest)
 
 
 ### Example
@@ -3402,7 +3349,7 @@ const { status, data } = await apiInstance.apiV1SurveyConfigDeletePost(
 
 ### Return type
 
-**ApiV1PollRespondPost200ResponseOneOf**
+**ApiV1ConversationClosePost200ResponseOneOf**
 
 ### Authorization
 
@@ -4093,56 +4040,6 @@ const { status, data } = await apiInstance.apiV1UserOpinionFetchPost(
 ### Return type
 
 **Array<ApiV1UserOpinionFetchPost200ResponseInner>**
-
-### Authorization
-
-[BearerAuth](../README.md#BearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Default Response |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **apiV1UserPollGetResponseByConversationsPost**
-> Array<ApiV1UserPollGetResponseByConversationsPost200ResponseInner> apiV1UserPollGetResponseByConversationsPost(requestBody)
-
-
-### Example
-
-```typescript
-import {
-    DefaultApi,
-    Configuration
-} from './api';
-
-const configuration = new Configuration();
-const apiInstance = new DefaultApi(configuration);
-
-let requestBody: Array<string>; //
-
-const { status, data } = await apiInstance.apiV1UserPollGetResponseByConversationsPost(
-    requestBody
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **requestBody** | **Array<string>**|  | |
-
-
-### Return type
-
-**Array<ApiV1UserPollGetResponseByConversationsPost200ResponseInner>**
 
 ### Authorization
 

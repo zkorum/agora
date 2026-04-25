@@ -10,7 +10,6 @@
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
   MAX_LENGTH_BODY,
-  MAX_LENGTH_OPTION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
 import type {
@@ -25,12 +24,7 @@ import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { areSurveyConfigsEqual } from "src/utils/survey/config";
 import { computed, type ComputedRef, type Ref, ref, watch } from "vue";
 
-import {
-  VALIDATION_CONSTANTS,
-  zodPolisUrlValidation,
-  zodPollOptions,
-  zodTitleValidation,
-} from "./conversationDraft.schema";
+import { zodPolisUrlValidation, zodTitleValidation } from "./conversationDraft.schema";
 import type {
   ConversationDraft,
   ConversationFormState,
@@ -53,8 +47,6 @@ export interface UseConversationDraftReturn {
   // State (always refs - single source of truth)
   title: Ref<string>;
   content: Ref<string>;
-  pollEnabled: Ref<boolean>;
-  pollOptions: Ref<string[]>;
   seedOpinions: Ref<string[]>;
   conversationType: Ref<ConversationType>;
   isPrivate: Ref<boolean>;
@@ -74,7 +66,6 @@ export interface UseConversationDraftReturn {
   // Validation functions
   validateTitle: () => MutationResult;
   validateBody: () => MutationResult;
-  validatePoll: () => MutationResult;
   validatePolisUrl: () => MutationResult;
   validateForReview: () => ValidationResult;
   clearValidationError: (field: keyof ValidationState) => void;
@@ -83,10 +74,6 @@ export interface UseConversationDraftReturn {
   // Mutation functions
   updateTitle: (newTitle: string) => MutationResult;
   updateContent: (newContent: string) => MutationResult;
-  updatePollOption: (index: number, value: string) => MutationResult;
-  addPollOption: () => MutationResult;
-  removePollOption: (index: number) => MutationResult;
-  togglePoll: (enabled: boolean) => MutationResult;
   addSeedOpinion: (opinion: string) => void;
   updateSeedOpinion: (index: number, value: string) => void;
   removeSeedOpinion: (index: number) => void;
@@ -131,8 +118,6 @@ export function useConversationDraft(
   // All state as refs (single source of truth)
   const title = ref(initialDraft.title);
   const content = ref(initialDraft.content);
-  const pollEnabled = ref(initialDraft.poll.enabled);
-  const pollOptions = ref<string[]>([...initialDraft.poll.options]);
   const seedOpinions = ref<string[]>([...initialDraft.seedOpinions]);
   const conversationType = ref<ConversationType>(initialDraft.conversationType);
   const isPrivate = ref(initialDraft.isPrivate);
@@ -155,7 +140,6 @@ export function useConversationDraft(
   const validationState = ref<ValidationState>({
     title: { isValid: true, error: "", showError: false },
     body: { isValid: true, error: "", showError: false },
-    poll: { isValid: true, error: "", showError: false },
     polisUrl: { isValid: true, error: "", showError: false },
   });
 
@@ -168,8 +152,6 @@ export function useConversationDraft(
     const draftSnapshot = computed(() => ({
       title: title.value,
       content: content.value,
-      pollEnabled: pollEnabled.value,
-      pollOptions: [...pollOptions.value],
       seedOpinions: [...seedOpinions.value],
       conversationType: conversationType.value,
       isPrivate: isPrivate.value,
@@ -188,8 +170,6 @@ export function useConversationDraft(
       (newSnapshot) => {
         store.conversationDraft.title = newSnapshot.title;
         store.conversationDraft.content = newSnapshot.content;
-        store.conversationDraft.poll.enabled = newSnapshot.pollEnabled;
-        store.conversationDraft.poll.options = newSnapshot.pollOptions;
         store.conversationDraft.seedOpinions = newSnapshot.seedOpinions;
         store.conversationDraft.conversationType = newSnapshot.conversationType;
         store.conversationDraft.isPrivate = newSnapshot.isPrivate;
@@ -254,36 +234,6 @@ export function useConversationDraft(
     }
 
     validationState.value.body = {
-      isValid: true,
-      error: "",
-      showError: false,
-    };
-    return { success: true };
-  }
-
-  function validatePoll(): MutationResult {
-    if (!pollEnabled.value) {
-      validationState.value.poll = {
-        isValid: true,
-        error: "",
-        showError: false,
-      };
-      return { success: true };
-    }
-
-    const result = zodPollOptions.safeParse(pollOptions.value);
-
-    if (!result.success) {
-      const error = result.error.issues[0]?.message || "Poll validation failed";
-      validationState.value.poll = {
-        isValid: false,
-        error,
-        showError: true,
-      };
-      return { success: false, error };
-    }
-
-    validationState.value.poll = {
       isValid: true,
       error: "",
       showError: false,
@@ -373,16 +323,6 @@ export function useConversationDraft(
         if (!result.firstErrorField) result.firstErrorField = "body";
       }
 
-      // Validate poll if enabled
-      if (pollEnabled.value) {
-        const pollResult = zodPollOptions.safeParse(pollOptions.value);
-        if (!pollResult.success) {
-          result.isValid = false;
-          result.errors.poll =
-            pollResult.error.issues[0]?.message || "Poll validation failed";
-          if (!result.firstErrorField) result.firstErrorField = "poll";
-        }
-      }
     }
 
     // For Polis URL import, validate URL
@@ -426,84 +366,6 @@ export function useConversationDraft(
     return { success: true };
   }
 
-  function updatePollOption(index: number, value: string): MutationResult {
-    if (index < 0 || index >= pollOptions.value.length) {
-      return { success: false, error: "Invalid poll option index" };
-    }
-
-    // Validate poll option length
-    if (value.length > MAX_LENGTH_OPTION) {
-      console.warn(
-        `Poll option exceeds max length (${value.length}/${MAX_LENGTH_OPTION}), keeping old value`
-      );
-      return { success: false, error: "Poll option too long" };
-    }
-
-    pollOptions.value[index] = value;
-
-    // Clear poll validation error when user starts fixing issues
-    if (validationState.value.poll.showError) {
-      clearValidationError("poll");
-    }
-
-    return { success: true };
-  }
-
-  function addPollOption(): MutationResult {
-    const maxOptions = VALIDATION_CONSTANTS.MAX_POLL_OPTIONS;
-    if (pollOptions.value.length >= maxOptions) {
-      return {
-        success: false,
-        error: t("pollMaxOptionsError", { max: maxOptions.toString() }),
-      };
-    }
-
-    pollOptions.value.push("");
-
-    // Clear poll validation error
-    if (validationState.value.poll.showError) {
-      clearValidationError("poll");
-    }
-
-    return { success: true };
-  }
-
-  function removePollOption(index: number): MutationResult {
-    const minOptions = VALIDATION_CONSTANTS.MIN_POLL_OPTIONS;
-
-    if (pollOptions.value.length <= minOptions) {
-      return {
-        success: false,
-        error: t("pollMinOptionsError", { min: minOptions.toString() }),
-      };
-    }
-
-    if (index < 0 || index >= pollOptions.value.length) {
-      return { success: false, error: "Invalid poll option index" };
-    }
-
-    pollOptions.value.splice(index, 1);
-
-    // Clear poll validation error
-    if (validationState.value.poll.showError) {
-      clearValidationError("poll");
-    }
-
-    return { success: true };
-  }
-
-  function togglePoll(enabled: boolean): MutationResult {
-    pollEnabled.value = enabled;
-
-    if (!enabled) {
-      // Reset poll options when disabling
-      pollOptions.value = ["", ""];
-      clearValidationError("poll");
-    }
-
-    return { success: true };
-  }
-
   function addSeedOpinion(opinion: string): void {
     if (opinion.trim() !== "") {
       seedOpinions.value.push(opinion.trim());
@@ -541,12 +403,6 @@ export function useConversationDraft(
     const hasSeedOpinionsChanges =
       JSON.stringify(seedOpinions.value) !==
       JSON.stringify(emptyDraft.seedOpinions);
-
-    // Check polling changes
-    const hasPollChanges =
-      pollEnabled.value !== emptyDraft.poll.enabled ||
-      JSON.stringify(pollOptions.value) !==
-        JSON.stringify(emptyDraft.poll.options);
 
     // Check conversation type changes
     const hasConversationTypeChanges =
@@ -586,7 +442,6 @@ export function useConversationDraft(
       hasContentChanges ||
       hasSeedOpinionsChanges ||
       hasConversationTypeChanges ||
-      hasPollChanges ||
       hasPostAsChanges ||
       hasPrivacyChanges ||
       hasPrivateSettingsChanges ||
@@ -599,11 +454,7 @@ export function useConversationDraft(
    * Checks if user has content that would be lost when switching creation type
    */
   function hasFormContent(): boolean {
-    return (
-      title.value.trim() !== "" ||
-      content.value.trim() !== "" ||
-      (pollEnabled.value && pollOptions.value.some((opt) => opt.trim() !== ""))
-    );
+    return title.value.trim() !== "" || content.value.trim() !== "";
   }
 
   /**
@@ -615,8 +466,6 @@ export function useConversationDraft(
 
     title.value = emptyDraft.title;
     content.value = emptyDraft.content;
-    pollEnabled.value = emptyDraft.poll.enabled;
-    pollOptions.value = [...emptyDraft.poll.options];
     seedOpinions.value = [];
     conversationType.value = emptyDraft.conversationType;
     isPrivate.value = emptyDraft.isPrivate;
@@ -643,8 +492,6 @@ export function useConversationDraft(
   function initializeFromData(data: ConversationFormState): void {
     title.value = data.title;
     content.value = data.content;
-    pollEnabled.value = data.pollEnabled;
-    pollOptions.value = [...data.pollOptions];
     isPrivate.value = data.isPrivate;
     participationMode.value = data.participationMode;
     requiresEventTicket.value = data.requiresEventTicket;
@@ -662,8 +509,6 @@ export function useConversationDraft(
     return {
       title: title.value,
       content: content.value,
-      pollEnabled: pollEnabled.value,
-      pollOptions: [...pollOptions.value],
       isPrivate: isPrivate.value,
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
@@ -681,8 +526,7 @@ export function useConversationDraft(
   const isFormValid = computed(() => {
     return (
       validationState.value.title.isValid &&
-      validationState.value.body.isValid &&
-      validationState.value.poll.isValid
+      validationState.value.body.isValid
     );
   });
 
@@ -698,8 +542,6 @@ export function useConversationDraft(
     // State
     title,
     content,
-    pollEnabled,
-    pollOptions,
     seedOpinions,
     conversationType,
     isPrivate,
@@ -719,7 +561,6 @@ export function useConversationDraft(
     // Validation functions
     validateTitle,
     validateBody,
-    validatePoll,
     validatePolisUrl,
     validateForReview,
     clearValidationError,
@@ -728,10 +569,6 @@ export function useConversationDraft(
     // Mutation functions
     updateTitle,
     updateContent,
-    updatePollOption,
-    addPollOption,
-    removePollOption,
-    togglePoll,
     addSeedOpinion,
     updateSeedOpinion,
     removeSeedOpinion,

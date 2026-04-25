@@ -2,7 +2,6 @@ import { generateRandomSlugId } from "@/crypto.js";
 import {
     opinionContentTable,
     opinionTable,
-    opinionProofTable,
     conversationTable,
     userTable,
     opinionModerationTable,
@@ -1090,7 +1089,6 @@ interface PostNewOpinionProps {
     commentBody: string;
     conversationSlugId: string;
     didWrite: string;
-    proof: string;
     userAgent: string;
     now: Date;
     isSeed: boolean;
@@ -1113,7 +1111,6 @@ export async function postNewOpinion({
     commentBody,
     conversationSlugId,
     didWrite,
-    proof,
     userAgent,
     now,
     isSeed,
@@ -1190,21 +1187,9 @@ export async function postNewOpinion({
 
         const opinionId = insertCommentResponse[0].opinionId;
 
-        const insertProofResponse = await transactionDb
-            .insert(opinionProofTable)
-            .values({
-                type: "creation",
-                opinionId: opinionId,
-                authorDid: didWrite,
-                proof: proof,
-                proofVersion: 1,
-            })
-            .returning({ proofId: opinionProofTable.id });
-        const proofId = insertProofResponse[0].proofId;
         const commentContentTableResponse = await transactionDb
             .insert(opinionContentTable)
             .values({
-                opinionProofId: proofId,
                 opinionId: opinionId,
                 conversationContentId: participationContext.conversationContentId,
                 content: commentBody,
@@ -1276,7 +1261,6 @@ export async function postNewOpinion({
             voteBuffer: voteBuffer,
             opinionSlugId: opinionSlugId,
             didWrite: didWrite,
-            proof: proof,
             votingAction: "agree",
             userAgent: userAgent,
             now: now,
@@ -1293,16 +1277,12 @@ interface DeleteCommentBySlugIdProps {
     db: PostgresJsDatabase;
     opinionSlugId: string;
     userId: string;
-    proof: string;
-    didWrite: string;
 }
 
 export async function deleteOpinionBySlugId({
     db,
     opinionSlugId,
     userId,
-    proof,
-    didWrite,
 }: DeleteCommentBySlugIdProps): Promise<void> {
     const { isOpinionDeleted } =
         await useCommonComment().getOpinionMetadataFromOpinionSlugId({
@@ -1337,16 +1317,7 @@ export async function deleteOpinionBySlugId({
             tx.rollback();
         }
 
-        const commentId = updatedCommentIdResponse[0].updateCommentId;
         const conversationId = updatedCommentIdResponse[0].conversationId;
-
-        await tx.insert(opinionProofTable).values({
-            type: "deletion",
-            opinionId: commentId,
-            authorDid: didWrite,
-            proof: proof,
-            proofVersion: 1,
-        });
 
         // Reconcile all counters (automatically enqueues math update)
         // Deleting opinion affects opinionCount, voteCount, and participantCount

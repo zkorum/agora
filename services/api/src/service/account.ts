@@ -617,11 +617,9 @@ interface DeleteAccountProps {
 
 export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
     // TODO: 1. confirmation should be requested upon account deletion request (phone number or ZKP)
-    // 2. proof should be recorded once only
     // delay should be given for people to recover their account - so data should not be set to be deleted immediately even though it should immediately not show on the client anymore
-    // 3. old proofs should be set to be deleted as well, except the deletion proof and the proofs binding the devices together
-    // 4. conversation deletion should not necessarily delete other people's opinion
-    // 5. opinion deletion should not necessarily delete other people's replies
+    // 2. conversation deletion should not necessarily delete other people's opinion
+    // 3. opinion deletion should not necessarily delete other people's replies
     await db.transaction(async (tx) => {
         const updatedUserTableResponse = await tx
             .update(userTable)

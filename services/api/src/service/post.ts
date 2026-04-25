@@ -2,9 +2,7 @@
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import {
     opinionTable,
-    pollTable,
     conversationContentTable,
-    conversationProofTable,
     conversationTable,
     userTable,
 } from "@/shared-backend/schema.js";
@@ -47,10 +45,8 @@ interface CreateNewPostProps {
     voteBuffer: VoteBuffer;
     conversationTitle: string;
     conversationBody: string | null;
-    pollingOptionList: string[] | null;
     authorId: string;
     didWrite: string;
-    proof: string;
     postAsOrganization?: string;
     indexConversationAt?: string;
     isIndexed: boolean;
@@ -77,8 +73,6 @@ export async function createNewPost({
     conversationBody,
     authorId,
     didWrite,
-    proof,
-    pollingOptionList,
     postAsOrganization,
     indexConversationAt,
     participationMode,
@@ -172,27 +166,12 @@ export async function createNewPost({
 
             const insertedConversationId = insertPostResponse[0].conversationId;
 
-            const masterProofTableResponse = await tx
-                .insert(conversationProofTable)
-                .values({
-                    type: "creation",
-                    conversationId: insertedConversationId,
-                    authorDid: didWrite,
-                    proof: proof,
-                    proofVersion: 1,
-                })
-                .returning({ proofId: conversationProofTable.id });
-
-            const proofId = masterProofTableResponse[0].proofId;
-
             const conversationContentTableResponse = await tx
                 .insert(conversationContentTable)
                 .values({
-                    conversationProofId: proofId,
                     conversationId: insertedConversationId,
                     title: conversationTitle,
                     body: conversationBody,
-                    pollId: null,
                 })
                 .returning({
                     conversationContentId: conversationContentTable.id,
@@ -207,37 +186,6 @@ export async function createNewPost({
                     currentContentId: insertedConversationContentId,
                 })
                 .where(eq(conversationTable.id, insertedConversationId));
-
-            if (pollingOptionList != null) {
-                const newPollResult = await tx
-                    .insert(pollTable)
-                    .values({
-                        conversationContentId: insertedConversationContentId,
-                        option1: pollingOptionList[0],
-                        option2: pollingOptionList[1],
-                        option3: pollingOptionList[2] ?? null,
-                        option4: pollingOptionList[3] ?? null,
-                        option5: pollingOptionList[4] ?? null,
-                        option6: pollingOptionList[5] ?? null,
-                        option1Response: 0,
-                        option2Response: 0,
-                        option3Response: pollingOptionList[2] ? 0 : null,
-                        option4Response: pollingOptionList[3] ? 0 : null,
-                        option5Response: pollingOptionList[4] ? 0 : null,
-                        option6Response: pollingOptionList[5] ? 0 : null,
-                    })
-                    .returning({ pollId: pollTable.id });
-
-                await tx
-                    .update(conversationContentTable)
-                    .set({ pollId: newPollResult[0].pollId })
-                    .where(
-                        eq(
-                            conversationContentTable.id,
-                            insertedConversationContentId,
-                        ),
-                    );
-            }
 
             // Update the user profile's conversation count
             await tx
@@ -270,7 +218,6 @@ export async function createNewPost({
                             commentBody: seedOpinionText,
                             conversationSlugId,
                             didWrite,
-                            proof,
                             userAgent: "Seed Opinion Creation",
                             now,
                             isSeed: true,
@@ -396,16 +343,12 @@ interface DeletePostBySlugIdProps {
     db: PostgresDatabase;
     conversationSlugId: string;
     userId: string;
-    proof: string;
-    didWrite: string;
 }
 
 export async function deletePostBySlugId({
     db,
     conversationSlugId,
     userId,
-    proof,
-    didWrite,
 }: DeletePostBySlugIdProps): Promise<void> {
     const conversationId = await db.transaction(async (tx) => {
         // Delete the conversation
@@ -435,18 +378,6 @@ export async function deletePostBySlugId({
                 activeConversationCount: sql`${userTable.activeConversationCount} - 1`,
             })
             .where(eq(userTable.id, userId));
-
-        // Create the delete proof
-        await tx
-            .insert(conversationProofTable)
-            .values({
-                type: "deletion",
-                conversationId: conversationId,
-                authorDid: didWrite,
-                proof: proof,
-                proofVersion: 1,
-            })
-            .returning({ proofId: conversationProofTable.id });
 
         // Mark all of the opinions as deleted
         await tx

@@ -654,19 +654,22 @@ export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf1Rari
 /**
  * @type ApiV1ConversationClosePost200Response
  */
-export type ApiV1ConversationClosePost200Response = ApiV1ConversationClosePost200ResponseOneOf | ApiV1PollRespondPost200ResponseOneOf;
+export type ApiV1ConversationClosePost200Response = ApiV1ConversationClosePost200ResponseOneOf | ApiV1ConversationClosePost200ResponseOneOf1;
 
 export interface ApiV1ConversationClosePost200ResponseOneOf {
     'success': boolean;
-    'reason': ApiV1ConversationClosePost200ResponseOneOfReasonEnum;
+}
+export interface ApiV1ConversationClosePost200ResponseOneOf1 {
+    'success': boolean;
+    'reason': ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum;
 }
 
-export const ApiV1ConversationClosePost200ResponseOneOfReasonEnum = {
+export const ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum = {
     NotAllowed: 'not_allowed',
     AlreadyClosed: 'already_closed',
 } as const;
 
-export type ApiV1ConversationClosePost200ResponseOneOfReasonEnum = typeof ApiV1ConversationClosePost200ResponseOneOfReasonEnum[keyof typeof ApiV1ConversationClosePost200ResponseOneOfReasonEnum];
+export type ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationClosePost200ResponseOneOf1ReasonEnum];
 
 export interface ApiV1ConversationCreatePostRequest {
     'conversationTitle': string;
@@ -676,7 +679,6 @@ export interface ApiV1ConversationCreatePostRequest {
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationCreatePostRequestParticipationModeEnum;
     'conversationType': ApiV1ConversationCreatePostRequestConversationTypeEnum;
-    'pollingOptionList'?: Array<string>;
     'seedOpinionList': Array<string>;
     'requiresEventTicket'?: ApiV1ConversationCreatePostRequestRequiresEventTicketEnum;
     'externalSourceConfig'?: ApiV1ConversationCreatePostRequestExternalSourceConfig | null;
@@ -1241,12 +1243,6 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
 export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload {
     'title': string;
     'body'?: string;
-    'poll'?: Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayloadPollInner>;
-}
-export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayloadPollInner {
-    'optionNumber': number;
-    'optionTitle': string;
-    'numResponses': number;
 }
 export interface ApiV1ConversationFetchRecentPostRequest {
     'sortAlgorithm': ApiV1ConversationFetchRecentPostRequestSortAlgorithmEnum;
@@ -1269,7 +1265,6 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
     'conversationSlugId': string;
     'conversationTitle': string;
     'conversationBody'?: string;
-    'pollingOptionList'?: Array<string>;
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum;
     'requiresEventTicket'?: ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum;
@@ -1278,7 +1273,6 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
     'indexConversationAt'?: string;
     'createdAt': string;
     'updatedAt': string;
-    'hasPoll': boolean;
     'isLocked': boolean;
 }
 
@@ -1474,7 +1468,7 @@ export interface ApiV1ConversationImportStatusPostRequest {
 /**
  * @type ApiV1ConversationOpenPost200Response
  */
-export type ApiV1ConversationOpenPost200Response = ApiV1ConversationOpenPost200ResponseOneOf | ApiV1PollRespondPost200ResponseOneOf;
+export type ApiV1ConversationOpenPost200Response = ApiV1ConversationClosePost200ResponseOneOf | ApiV1ConversationOpenPost200ResponseOneOf;
 
 export interface ApiV1ConversationOpenPost200ResponseOneOf {
     'success': boolean;
@@ -1491,7 +1485,7 @@ export type ApiV1ConversationOpenPost200ResponseOneOfReasonEnum = typeof ApiV1Co
 /**
  * @type ApiV1ConversationUpdatePost200Response
  */
-export type ApiV1ConversationUpdatePost200Response = ApiV1ConversationUpdatePost200ResponseOneOf | ApiV1PollRespondPost200ResponseOneOf;
+export type ApiV1ConversationUpdatePost200Response = ApiV1ConversationClosePost200ResponseOneOf | ApiV1ConversationUpdatePost200ResponseOneOf;
 
 export interface ApiV1ConversationUpdatePost200ResponseOneOf {
     'success': boolean;
@@ -1503,11 +1497,6 @@ export const ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum = {
     NotAuthor: 'not_author',
     ConversationLocked: 'conversation_locked',
     InvalidAccessSettings: 'invalid_access_settings',
-    PollAlreadyExists: 'poll_already_exists',
-    PollExistsUseKeepOrRemove: 'poll_exists_use_keep_or_remove',
-    NoPollToRemove: 'no_poll_to_remove',
-    NoPollToKeep: 'no_poll_to_keep',
-    NoPollToReplace: 'no_poll_to_replace',
 } as const;
 
 export type ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum = typeof ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum[keyof typeof ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum];
@@ -1516,7 +1505,6 @@ export interface ApiV1ConversationUpdatePostRequest {
     'conversationSlugId': string;
     'conversationTitle': string;
     'conversationBody'?: string;
-    'pollAction': ApiV1ConversationUpdatePostRequestPollAction;
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationUpdatePostRequestParticipationModeEnum;
     'requiresEventTicket'?: ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum;
@@ -1537,63 +1525,6 @@ export const ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = {
 } as const;
 
 export type ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum = typeof ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum[keyof typeof ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum];
-
-/**
- * @type ApiV1ConversationUpdatePostRequestPollAction
- */
-export type ApiV1ConversationUpdatePostRequestPollAction = ApiV1ConversationUpdatePostRequestPollActionOneOf | ApiV1ConversationUpdatePostRequestPollActionOneOf1 | ApiV1ConversationUpdatePostRequestPollActionOneOf2 | ApiV1ConversationUpdatePostRequestPollActionOneOf3 | ApiV1ConversationUpdatePostRequestPollActionOneOf4;
-
-export interface ApiV1ConversationUpdatePostRequestPollActionOneOf {
-    'action': ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum;
-}
-
-export const ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum = {
-    None: 'none',
-} as const;
-
-export type ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOfActionEnum];
-
-export interface ApiV1ConversationUpdatePostRequestPollActionOneOf1 {
-    'action': ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum;
-}
-
-export const ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum = {
-    Keep: 'keep',
-} as const;
-
-export type ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf1ActionEnum];
-
-export interface ApiV1ConversationUpdatePostRequestPollActionOneOf2 {
-    'action': ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum;
-}
-
-export const ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum = {
-    Remove: 'remove',
-} as const;
-
-export type ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf2ActionEnum];
-
-export interface ApiV1ConversationUpdatePostRequestPollActionOneOf3 {
-    'action': ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum;
-    'options': Array<string>;
-}
-
-export const ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum = {
-    Create: 'create',
-} as const;
-
-export type ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf3ActionEnum];
-
-export interface ApiV1ConversationUpdatePostRequestPollActionOneOf4 {
-    'action': ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum;
-    'options': Array<string>;
-}
-
-export const ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum = {
-    Replace: 'replace',
-} as const;
-
-export type ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum = typeof ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum[keyof typeof ApiV1ConversationUpdatePostRequestPollActionOneOf4ActionEnum];
 
 export interface ApiV1ConversationValidateCsvPost200Response {
     'summaryFile'?: ApiV1ConversationValidateCsvPost200ResponseSummaryFile;
@@ -2166,18 +2097,6 @@ export interface ApiV1OpinionFetchHiddenByConversationPostRequest {
     'conversationSlugId': string;
     'createdAt'?: string;
 }
-/**
- * @type ApiV1PollRespondPost200Response
- */
-export type ApiV1PollRespondPost200Response = ApiV1PollRespondPost200ResponseOneOf | ApiV1VoteCastPost200ResponseOneOf1;
-
-export interface ApiV1PollRespondPost200ResponseOneOf {
-    'success': boolean;
-}
-export interface ApiV1PollRespondPostRequest {
-    'voteOptionChoice': number;
-    'conversationSlugId': string;
-}
 export interface ApiV1ReportConversationCreatePostRequest {
     'conversationSlugId': string;
     'reportReason': ApiV1ReportConversationCreatePostRequestReportReasonEnum;
@@ -2664,10 +2583,6 @@ export interface ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem {
 }
 export interface ApiV1UserOpinionFetchPostRequest {
     'lastOpinionSlugId'?: string;
-}
-export interface ApiV1UserPollGetResponseByConversationsPost200ResponseInner {
-    'conversationSlugId': string;
-    'optionChosen': number;
 }
 export interface ApiV1UserProfileGetPost200Response {
     'activePostCount': number;
@@ -4893,44 +4808,6 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1PollRespondPostRequest} apiV1PollRespondPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1PollRespondPost: async (apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1PollRespondPostRequest' is not null or undefined
-            assertParamExists('apiV1PollRespondPost', 'apiV1PollRespondPostRequest', apiV1PollRespondPostRequest)
-            const localVarPath = `/api/v1/poll/respond`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1PollRespondPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -5732,44 +5609,6 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1UserOpinionFetchPostRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @param {Array<string>} requestBody 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1UserPollGetResponseByConversationsPost: async (requestBody: Array<string>, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'requestBody' is not null or undefined
-            assertParamExists('apiV1UserPollGetResponseByConversationsPost', 'requestBody', requestBody)
-            const localVarPath = `/api/v1/user/poll/get-response-by-conversations`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-            localVarHeaderParameter['Accept'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(requestBody, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -6651,18 +6490,6 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1PollRespondPostRequest} apiV1PollRespondPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1PollRespondPost(apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1PollRespondPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1PollRespondPost(apiV1PollRespondPostRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1PollRespondPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -6750,7 +6577,7 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1SurveyConfigDeletePost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1PollRespondPost200ResponseOneOf>> {
+        async apiV1SurveyConfigDeletePost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationClosePost200ResponseOneOf>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1SurveyConfigDeletePost(apiV1ModerationConversationWithdrawPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1SurveyConfigDeletePost']?.[localVarOperationServerIndex]?.url;
@@ -6919,18 +6746,6 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserOpinionFetchPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {Array<string>} requestBody 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiV1UserPollGetResponseByConversationsPost(requestBody: Array<string>, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1UserPollGetResponseByConversationsPost200ResponseInner>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1UserPollGetResponseByConversationsPost(requestBody, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1UserPollGetResponseByConversationsPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -7514,15 +7329,6 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1PollRespondPostRequest} apiV1PollRespondPostRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1PollRespondPost(apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1PollRespondPost200Response> {
-            return localVarFp.apiV1PollRespondPost(apiV1PollRespondPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -7589,7 +7395,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1SurveyConfigDeletePost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1PollRespondPost200ResponseOneOf> {
+        apiV1SurveyConfigDeletePost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationClosePost200ResponseOneOf> {
             return localVarFp.apiV1SurveyConfigDeletePost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
@@ -7714,15 +7520,6 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest: ApiV1UserOpinionFetchPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1UserOpinionFetchPost200ResponseInner>> {
             return localVarFp.apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {Array<string>} requestBody 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiV1UserPollGetResponseByConversationsPost(requestBody: Array<string>, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1UserPollGetResponseByConversationsPost200ResponseInner>> {
-            return localVarFp.apiV1UserPollGetResponseByConversationsPost(requestBody, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -8346,16 +8143,6 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1PollRespondPostRequest} apiV1PollRespondPostRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiV1PollRespondPost(apiV1PollRespondPostRequest: ApiV1PollRespondPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1PollRespondPost(apiV1PollRespondPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
@@ -8568,16 +8355,6 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest: ApiV1UserOpinionFetchPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1UserOpinionFetchPost(apiV1UserOpinionFetchPostRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {Array<string>} requestBody 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    public apiV1UserPollGetResponseByConversationsPost(requestBody: Array<string>, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1UserPollGetResponseByConversationsPost(requestBody, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

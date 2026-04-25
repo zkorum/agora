@@ -7,7 +7,6 @@ import {
     notificationTable,
     opinionTable,
     phoneTable,
-    pollResponseTable,
     userDisplayLanguageTable,
     userOrganizationMappingTable,
     userSpokenLanguagesTable,
@@ -182,26 +181,7 @@ export async function mergeGuestIntoVerifiedUser({
             .onConflictDoNothing();
     }
 
-    // 14. Transfer poll responses (uses authorId, unique constraint: authorId + pollId)
-    const guestPollResponses = await db
-        .select()
-        .from(pollResponseTable)
-        .where(eq(pollResponseTable.authorId, guestUserId));
-
-    for (const response of guestPollResponses) {
-        await db
-            .insert(pollResponseTable)
-            .values({
-                authorId: verifiedUserId,
-                pollId: response.pollId,
-                currentContentId: response.currentContentId,
-                createdAt: response.createdAt,
-                updatedAt: response.updatedAt,
-            })
-            .onConflictDoNothing();
-    }
-
-    // 15. Reconcile conversation counters for all affected conversations
+    // 14. Reconcile conversation counters for all affected conversations
     // This ensures vote counts, opinion counts, and participant counts are updated
     const conversationIdsSet = new Set<number>();
 
@@ -245,7 +225,7 @@ export async function mergeGuestIntoVerifiedUser({
         await reconcileConversationCounters({ db, conversationId });
     }
 
-    // 16. Soft-delete the guest user
+    // 15. Soft-delete the guest user
     await db
         .update(userTable)
         .set({

@@ -30,7 +30,6 @@ interface RequestConversationImportParams {
         isIndexed: boolean;
         requiresEventTicket?: EventSlug;
     };
-    proof: string;
     didWrite: string;
     importBuffer: ImportBuffer;
     realtimeSSEManager: RealtimeSSEManager;
@@ -51,7 +50,6 @@ export async function requestConversationImport(
         userId,
         files,
         formData,
-        proof,
         didWrite,
         importBuffer,
         realtimeSSEManager,
@@ -112,7 +110,6 @@ export async function requestConversationImport(
             userId,
             files,
             formData,
-            proof,
             didWrite,
             authorId: userId,
         });
@@ -163,7 +160,6 @@ interface RequestUrlImportParams {
         isIndexed: boolean;
         requiresEventTicket?: EventSlug;
     };
-    proof: string;
     didWrite: string;
     importBuffer: ImportBuffer;
     realtimeSSEManager: RealtimeSSEManager;
@@ -180,7 +176,6 @@ export async function requestUrlImport(
         userId,
         polisUrl,
         formData,
-        proof,
         didWrite,
         importBuffer,
         realtimeSSEManager,
@@ -204,7 +199,6 @@ export async function requestUrlImport(
             userId,
             polisUrl,
             formData,
-            proof,
             didWrite,
             authorId: userId,
         });

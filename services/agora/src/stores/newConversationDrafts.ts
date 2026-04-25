@@ -146,12 +146,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       JSON.stringify(current.seedOpinions) !==
       JSON.stringify(emptyDraft.seedOpinions);
 
-    // Check polling changes
-    const hasPollChanges =
-      current.poll.enabled !== emptyDraft.poll.enabled ||
-      JSON.stringify(current.poll.options) !==
-        JSON.stringify(emptyDraft.poll.options);
-
     // Check conversation type changes
     const hasConversationTypeChanges =
       current.conversationType !== emptyDraft.conversationType;
@@ -193,7 +187,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       hasContentChanges ||
       hasSeedOpinionsChanges ||
       hasConversationTypeChanges ||
-      hasPollChanges ||
       hasPostAsChanges ||
       hasPrivacyChanges ||
       hasPrivateSettingsChanges ||
@@ -219,14 +212,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
    */
   function resetDraft(): void {
     conversationDraft.value = createEmptyDraft();
-  }
-
-  /**
-   * Resets the poll to its default state (disabled with two empty options)
-   */
-  function resetPoll(): void {
-    conversationDraft.value.poll.enabled = false;
-    conversationDraft.value.poll.options = ["", ""];
   }
 
   /**
@@ -312,9 +297,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     const draft = conversationDraft.value;
     return (
       draft.title.trim() !== "" ||
-      draft.content.trim() !== "" ||
-      (draft.poll.enabled &&
-        draft.poll.options.some((opt) => opt.trim() !== ""))
+      draft.content.trim() !== ""
     );
   }
 
@@ -324,8 +307,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
   function clearContentFields(): void {
     conversationDraft.value.title = "";
     conversationDraft.value.content = "";
-    conversationDraft.value.poll.enabled = false;
-    conversationDraft.value.poll.options = ["", ""];
   }
 
   /**
@@ -511,7 +492,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
 
     // Draft management functions
     resetDraft,
-    resetPoll,
     addInitialOpinion,
     togglePrivacy,
 

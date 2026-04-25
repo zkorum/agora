@@ -8,7 +8,6 @@ Name | Type | Description | Notes
 **conversationSlugId** | **string** |  | [default to undefined]
 **conversationTitle** | **string** |  | [default to undefined]
 **conversationBody** | **string** |  | [optional] [default to undefined]
-**pollAction** | [**ApiV1ConversationUpdatePostRequestPollAction**](ApiV1ConversationUpdatePostRequestPollAction.md) |  | [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
@@ -24,7 +23,6 @@ const instance: ApiV1ConversationUpdatePostRequest = {
     conversationSlugId,
     conversationTitle,
     conversationBody,
-    pollAction,
     isIndexed,
     participationMode,
     requiresEventTicket,

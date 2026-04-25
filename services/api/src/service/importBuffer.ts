@@ -54,7 +54,6 @@ const zodImportRequestBase = z.object({
     importSlugId: z.string(),
     userId: z.string(),
     formData: zodImportFormData,
-    proof: z.string(),
     didWrite: z.string(),
     authorId: z.string(),
 });
@@ -92,7 +91,6 @@ interface ImportRequestBase {
         isIndexed: boolean;
         requiresEventTicket?: EventSlug;
     };
-    proof: string;
     didWrite: string;
     authorId: string;
 }
@@ -195,7 +193,6 @@ export function createImportBuffer(
                     db,
                     voteBuffer,
                     files: request.files,
-                    proof: request.proof,
                     didWrite: request.didWrite,
                     authorId: request.authorId,
                     postAsOrganization: request.formData.postAsOrganization,
@@ -216,7 +213,6 @@ export function createImportBuffer(
                     voteBuffer,
                     axiosPolis,
                     polisUrl: request.polisUrl,
-                    proof: request.proof,
                     didWrite: request.didWrite,
                     authorId: request.authorId,
                     postAsOrganization: request.formData.postAsOrganization,

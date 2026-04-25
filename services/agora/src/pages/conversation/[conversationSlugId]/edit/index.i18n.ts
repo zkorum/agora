@@ -16,16 +16,8 @@ export interface EditConversationTranslations {
   conversationLockedErrorTitle: string;
   conversationLockedErrorMessage: string;
   invalidAccessSettingsError: string;
-  pollAlreadyExistsError: string;
-  noPollToRemoveError: string;
-  noPollToKeepError: string;
-  noPollToReplaceError: string;
   loadingErrorTitle: string;
   loadingErrorMessage: string;
-  pollChangeWarningMessage: string;
-  removePollWarningMessage: string;
-  pollChangeWarningConfirm: string;
-  pollChangeWarningCancel: string;
   createSurveyButton: string;
   editSurveyButton: string;
 }
@@ -54,22 +46,8 @@ export const editConversationTranslations: Record<
       "Please contact a moderator if you need this conversation to be unlocked",
     invalidAccessSettingsError:
       "Invalid access settings. Login cannot be required for private conversations.",
-    pollAlreadyExistsError:
-      "Cannot create poll: this conversation already has a poll",
-    noPollToRemoveError:
-      "Cannot remove poll: this conversation does not have a poll",
-    noPollToKeepError:
-      "Cannot keep poll: this conversation does not have a poll",
-    noPollToReplaceError:
-      "Cannot replace poll: this conversation does not have a poll",
     loadingErrorTitle: "Failed to load conversation",
     loadingErrorMessage: "An error occurred while loading the conversation",
-    pollChangeWarningMessage:
-      "Changing poll options will reset all existing votes. Are you sure you want to continue?",
-    removePollWarningMessage:
-      "Removing the poll will delete all existing votes. Are you sure you want to continue?",
-    pollChangeWarningConfirm: "Yes, Continue",
-    pollChangeWarningCancel: "Cancel",
     createSurveyButton: "Create survey",
     editSurveyButton: "Edit survey",
   },
@@ -94,23 +72,9 @@ export const editConversationTranslations: Record<
       "Veuillez contacter un modérateur si vous avez besoin de déverrouiller cette conversation",
     invalidAccessSettingsError:
       "Paramètres d'accès invalides. La connexion ne peut pas être requise pour les conversations privées.",
-    pollAlreadyExistsError:
-      "Impossible de créer un sondage : cette conversation a déjà un sondage",
-    noPollToRemoveError:
-      "Impossible de supprimer le sondage : cette conversation n'a pas de sondage",
-    noPollToKeepError:
-      "Impossible de conserver le sondage : cette conversation n'a pas de sondage",
-    noPollToReplaceError:
-      "Impossible de remplacer le sondage : cette conversation n'a pas de sondage",
     loadingErrorTitle: "Échec du chargement de la conversation",
     loadingErrorMessage:
       "Une erreur s'est produite lors du chargement de la conversation",
-    pollChangeWarningMessage:
-      "Modifier les options du sondage réinitialisera tous les votes existants. Êtes-vous sûr de vouloir continuer ?",
-    removePollWarningMessage:
-      "Supprimer le sondage supprimera tous les votes existants. Êtes-vous sûr de vouloir continuer ?",
-    pollChangeWarningConfirm: "Oui, Continuer",
-    pollChangeWarningCancel: "Annuler",
     createSurveyButton: "Créer un questionnaire",
     editSurveyButton: "Modifier le questionnaire",
   },
@@ -135,22 +99,8 @@ export const editConversationTranslations: Record<
       "Por favor contacta a un moderador si necesitas desbloquear esta conversación",
     invalidAccessSettingsError:
       "Configuración de acceso inválida. No se puede requerir inicio de sesión para conversaciones privadas.",
-    pollAlreadyExistsError:
-      "No se puede crear encuesta: esta conversación ya tiene una encuesta",
-    noPollToRemoveError:
-      "No se puede eliminar encuesta: esta conversación no tiene una encuesta",
-    noPollToKeepError:
-      "No se puede mantener encuesta: esta conversación no tiene una encuesta",
-    noPollToReplaceError:
-      "No se puede reemplazar encuesta: esta conversación no tiene una encuesta",
     loadingErrorTitle: "Error al cargar la conversación",
     loadingErrorMessage: "Ocurrió un error al cargar la conversación",
-    pollChangeWarningMessage:
-      "Cambiar las opciones de la encuesta restablecerá todos los votos existentes. ¿Estás seguro de que quieres continuar?",
-    removePollWarningMessage:
-      "Eliminar la encuesta borrará todos los votos existentes. ¿Estás seguro de que quieres continuar?",
-    pollChangeWarningConfirm: "Sí, Continuar",
-    pollChangeWarningCancel: "Cancelar",
     createSurveyButton: "Crear encuesta",
     editSurveyButton: "Editar encuesta",
   },
@@ -172,22 +122,8 @@ export const editConversationTranslations: Record<
       "در صورت نیاز به باز کردن قفل این گفتگو، لطفاً با مدیر محتوا تماس بگیرید",
     invalidAccessSettingsError:
       "تنظیمات دسترسی نامعتبر است. ورود به سیستم برای گفتگوهای خصوصی الزامی نیست.",
-    pollAlreadyExistsError:
-      "امکان ایجاد نظرسنجی وجود ندارد: این گفتگو قبلاً نظرسنجی دارد",
-    noPollToRemoveError:
-      "امکان حذف نظرسنجی وجود ندارد: این گفتگو نظرسنجی ندارد",
-    noPollToKeepError:
-      "امکان حفظ نظرسنجی وجود ندارد: این گفتگو نظرسنجی ندارد",
-    noPollToReplaceError:
-      "امکان جایگزینی نظرسنجی وجود ندارد: این گفتگو نظرسنجی ندارد",
     loadingErrorTitle: "بارگذاری گفتگو ناموفق بود",
     loadingErrorMessage: "هنگام بارگذاری گفتگو خطایی رخ داد",
-    pollChangeWarningMessage:
-      "تغییر گزینه‌های نظرسنجی تمام آراء موجود را بازنشانی می‌کند. آیا مطمئن هستید که می‌خواهید ادامه دهید؟",
-    removePollWarningMessage:
-      "حذف نظرسنجی تمام آراء موجود را حذف می‌کند. آیا مطمئن هستید که می‌خواهید ادامه دهید؟",
-    pollChangeWarningConfirm: "بله، ادامه بده",
-    pollChangeWarningCancel: "لغو",
     createSurveyButton: "ایجاد نظرسنجی",
     editSurveyButton: "ویرایش نظرسنجی",
   },
@@ -209,22 +145,8 @@ export const editConversationTranslations: Record<
       "אנא פנו למנהל/ת התוכן אם יש צורך לפתוח את נעילת שיחה זו",
     invalidAccessSettingsError:
       "הגדרות גישה לא תקינות. לא ניתן לדרוש התחברות עבור שיחות פרטיות.",
-    pollAlreadyExistsError:
-      "לא ניתן ליצור סקר: לשיחה זו כבר יש סקר",
-    noPollToRemoveError:
-      "לא ניתן להסיר סקר: לשיחה זו אין סקר",
-    noPollToKeepError:
-      "לא ניתן לשמור סקר: לשיחה זו אין סקר",
-    noPollToReplaceError:
-      "לא ניתן להחליף סקר: לשיחה זו אין סקר",
     loadingErrorTitle: "טעינת השיחה נכשלה",
     loadingErrorMessage: "אירעה שגיאה בעת טעינת השיחה",
-    pollChangeWarningMessage:
-      "שינוי אפשרויות הסקר יאפס את כל ההצבעות הקיימות. האם ברצונך להמשיך?",
-    removePollWarningMessage:
-      "הסרת הסקר תמחק את כל ההצבעות הקיימות. האם ברצונך להמשיך?",
-    pollChangeWarningConfirm: "כן, המשך",
-    pollChangeWarningCancel: "ביטול",
     createSurveyButton: "יצירת סקר",
     editSurveyButton: "עריכת סקר",
   },
@@ -244,17 +166,8 @@ export const editConversationTranslations: Record<
     conversationLockedErrorTitle: "此对话已锁定，无法编辑",
     conversationLockedErrorMessage: "如需解锁此对话，请联系管理员",
     invalidAccessSettingsError: "访问设置无效。私人对话不能要求登录。",
-    pollAlreadyExistsError: "无法创建投票：此对话已有投票",
-    noPollToRemoveError: "无法删除投票：此对话没有投票",
-    noPollToKeepError: "无法保留投票：此对话没有投票",
-    noPollToReplaceError: "无法替换投票：此对话没有投票",
     loadingErrorTitle: "加载对话失败",
     loadingErrorMessage: "加载对话时发生错误",
-    pollChangeWarningMessage:
-      "更改投票选项将重置所有现有投票。您确定要继续吗？",
-    removePollWarningMessage: "删除投票将删除所有现有投票。您确定要继续吗？",
-    pollChangeWarningConfirm: "是的，继续",
-    pollChangeWarningCancel: "取消",
     createSurveyButton: "创建问卷",
     editSurveyButton: "编辑问卷",
   },
@@ -274,17 +187,8 @@ export const editConversationTranslations: Record<
     conversationLockedErrorTitle: "此對話已鎖定，無法編輯",
     conversationLockedErrorMessage: "如需解鎖此對話，請聯絡管理員",
     invalidAccessSettingsError: "存取設定無效。私人對話不能要求登入。",
-    pollAlreadyExistsError: "無法建立投票：此對話已有投票",
-    noPollToRemoveError: "無法刪除投票：此對話沒有投票",
-    noPollToKeepError: "無法保留投票：此對話沒有投票",
-    noPollToReplaceError: "無法替換投票：此對話沒有投票",
     loadingErrorTitle: "載入對話失敗",
     loadingErrorMessage: "載入對話時發生錯誤",
-    pollChangeWarningMessage:
-      "更改投票選項將重置所有現有投票。您確定要繼續嗎？",
-    removePollWarningMessage: "刪除投票將刪除所有現有投票。您確定要繼續嗎？",
-    pollChangeWarningConfirm: "是的，繼續",
-    pollChangeWarningCancel: "取消",
     createSurveyButton: "建立問卷",
     editSurveyButton: "編輯問卷",
   },
@@ -306,20 +210,8 @@ export const editConversationTranslations: Record<
       "この会話のロックを解除する必要がある場合は、モデレーターにお問い合わせください",
     invalidAccessSettingsError:
       "アクセス設定が無効です。プライベートな会話ではログインを要求できません。",
-    pollAlreadyExistsError:
-      "投票を作成できません：この会話には既に投票があります",
-    noPollToRemoveError: "投票を削除できません：この会話には投票がありません",
-    noPollToKeepError: "投票を保持できません：この会話には投票がありません",
-    noPollToReplaceError:
-      "投票を置き換えできません：この会話には投票がありません",
     loadingErrorTitle: "会話の読み込みに失敗しました",
     loadingErrorMessage: "会話の読み込み中にエラーが発生しました",
-    pollChangeWarningMessage:
-      "投票オプションを変更すると、既存の投票がすべてリセットされます。続行してもよろしいですか？",
-    removePollWarningMessage:
-      "投票を削除すると、既存の投票がすべて削除されます。続行してもよろしいですか？",
-    pollChangeWarningConfirm: "はい、続行します",
-    pollChangeWarningCancel: "キャンセル",
     createSurveyButton: "アンケートを作成",
     editSurveyButton: "アンケートを編集",
   },
@@ -341,22 +233,8 @@ export const editConversationTranslations: Record<
       "يرجى الاتصال بمشرف إذا كنت بحاجة إلى إلغاء قفل هذه المحادثة",
     invalidAccessSettingsError:
       "إعدادات الوصول غير صالحة. لا يمكن طلب تسجيل الدخول للمحادثات الخاصة.",
-    pollAlreadyExistsError:
-      "لا يمكن إنشاء استطلاع: تحتوي هذه المحادثة بالفعل على استطلاع",
-    noPollToRemoveError:
-      "لا يمكن إزالة الاستطلاع: لا تحتوي هذه المحادثة على استطلاع",
-    noPollToKeepError:
-      "لا يمكن الاحتفاظ بالاستطلاع: لا تحتوي هذه المحادثة على استطلاع",
-    noPollToReplaceError:
-      "لا يمكن استبدال الاستطلاع: لا تحتوي هذه المحادثة على استطلاع",
     loadingErrorTitle: "فشل تحميل المحادثة",
     loadingErrorMessage: "حدث خطأ أثناء تحميل المحادثة",
-    pollChangeWarningMessage:
-      "سيؤدي تغيير خيارات الاستطلاع إلى إعادة تعيين جميع الأصوات الموجودة. هل أنت متأكد أنك تريد المتابعة؟",
-    removePollWarningMessage:
-      "ستؤدي إزالة الاستطلاع إلى حذف جميع الأصوات الموجودة. هل أنت متأكد أنك تريد المتابعة؟",
-    pollChangeWarningConfirm: "نعم، تابع",
-    pollChangeWarningCancel: "إلغاء",
     createSurveyButton: "إنشاء استبيان",
     editSurveyButton: "تعديل الاستبيان",
   },
@@ -378,22 +256,8 @@ export const editConversationTranslations: Record<
       "Бул талкуунун кулпусун ачуу керек болсо, модераторго кайрылыңыз",
     invalidAccessSettingsError:
       "Жеткиликтүүлүк жөндөөлөрү жараксыз. Жеке талкуулар үчүн кирүүнү талап кылуу мүмкүн эмес.",
-    pollAlreadyExistsError:
-      "Сурамжылоо түзүү мүмкүн эмес: бул талкууда сурамжылоо бар",
-    noPollToRemoveError:
-      "Сурамжылоону жок кылуу мүмкүн эмес: бул талкууда сурамжылоо жок",
-    noPollToKeepError:
-      "Сурамжылоону сактоо мүмкүн эмес: бул талкууда сурамжылоо жок",
-    noPollToReplaceError:
-      "Сурамжылоону алмаштыруу мүмкүн эмес: бул талкууда сурамжылоо жок",
     loadingErrorTitle: "Талкууну жүктөө ишке ашкан жок",
     loadingErrorMessage: "Талкууну жүктөөдө ката кетти",
-    pollChangeWarningMessage:
-      "Сурамжылоо варианттарын өзгөртүү бардык учурдагы добуштарды баштапкы абалга келтирет. Улантасызбы?",
-    removePollWarningMessage:
-      "Сурамжылоону жок кылуу бардык учурдагы добуштарды жок кылат. Улантасызбы?",
-    pollChangeWarningConfirm: "Ооба, улантуу",
-    pollChangeWarningCancel: "Жокко чыгаруу",
     createSurveyButton: "Сурамжылоо түзүү",
     editSurveyButton: "Сурамжылоону түзөтүү",
   },
@@ -418,22 +282,8 @@ export const editConversationTranslations: Record<
       "Свяжитесь с модератором, если вам нужно разблокировать это обсуждение",
     invalidAccessSettingsError:
       "Недопустимые настройки доступа. Для приватных обсуждений нельзя требовать авторизацию.",
-    pollAlreadyExistsError:
-      "Невозможно создать опрос: в этом обсуждении уже есть опрос",
-    noPollToRemoveError:
-      "Невозможно удалить опрос: в этом обсуждении нет опроса",
-    noPollToKeepError:
-      "Невозможно сохранить опрос: в этом обсуждении нет опроса",
-    noPollToReplaceError:
-      "Невозможно заменить опрос: в этом обсуждении нет опроса",
     loadingErrorTitle: "Не удалось загрузить обсуждение",
     loadingErrorMessage: "Произошла ошибка при загрузке обсуждения",
-    pollChangeWarningMessage:
-      "Изменение вариантов опроса сбросит все существующие голоса. Вы уверены, что хотите продолжить?",
-    removePollWarningMessage:
-      "Удаление опроса приведёт к удалению всех существующих голосов. Вы уверены, что хотите продолжить?",
-    pollChangeWarningConfirm: "Да, продолжить",
-    pollChangeWarningCancel: "Отмена",
     createSurveyButton: "Создать опрос",
     editSurveyButton: "Редактировать опрос",
   },

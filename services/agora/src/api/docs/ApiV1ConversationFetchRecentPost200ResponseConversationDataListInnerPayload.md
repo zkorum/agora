@@ -7,7 +7,6 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **title** | **string** |  | [default to undefined]
 **body** | **string** |  | [optional] [default to undefined]
-**poll** | [**Array&lt;ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayloadPollInner&gt;**](ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayloadPollInner.md) |  | [optional] [default to undefined]
 
 ## Example
 
@@ -17,7 +16,6 @@ import { ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPay
 const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerPayload = {
     title,
     body,
-    poll,
 };
 ```
 

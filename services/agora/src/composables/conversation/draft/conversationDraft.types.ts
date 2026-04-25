@@ -41,16 +41,6 @@ export interface PrivateConversationSettings {
 }
 
 /**
- * Polling configuration for the conversation
- */
-export interface PollSettings {
-  /** Whether this conversation includes a poll */
-  enabled: boolean;
-  /** List of poll options */
-  options: string[];
-}
-
-/**
  * Settings for importing conversations
  */
 export interface ConversationImportSettings {
@@ -81,9 +71,6 @@ export interface ConversationDraft {
   // Conversation Type
   /** The type of conversation: "polis" for standard agree/disagree voting, "maxdiff" for best-worst scaling */
   conversationType: ConversationType;
-
-  // Polling Configuration
-  poll: PollSettings;
 
   // Publishing Options
   postAs: PostAsSettings;
@@ -146,14 +133,13 @@ export interface FieldValidationState {
 export interface ValidationState {
   title: FieldValidationState;
   body: FieldValidationState;
-  poll: FieldValidationState;
   polisUrl: FieldValidationState;
 }
 
 /**
  * Field identifiers for validation errors
  */
-export type ValidationErrorField = "title" | "poll" | "body" | "polisUrl";
+export type ValidationErrorField = "title" | "body" | "polisUrl";
 
 /**
  * Mutation result interface for consistent error handling
@@ -170,7 +156,6 @@ export interface ValidationResult {
   isValid: boolean;
   errors: {
     title?: string;
-    poll?: string;
     body?: string;
     polisUrl?: string;
   };
@@ -188,10 +173,6 @@ export interface ConversationFormState {
   // Basic content
   title: string;
   content: string;
-
-  // Poll configuration
-  pollEnabled: boolean;
-  pollOptions: string[];
 
   // Privacy settings
   isPrivate: boolean;

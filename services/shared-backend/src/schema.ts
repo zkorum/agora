@@ -20,9 +20,8 @@ import {
     foreignKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm/sql";
-// import { MAX_LENGTH_OPTION, MAX_LENGTH_TITLE, MAX_LENGTH_OPINION, MAX_LENGTH_BODY } from "./shared/shared.js"; // unfortunately it breaks drizzle generate... :o TODO: find a way
+// import { MAX_LENGTH_TITLE, MAX_LENGTH_OPINION, MAX_LENGTH_BODY } from "./shared/shared.js"; // unfortunately it breaks drizzle generate... :o TODO: find a way
 // WARNING: when you modify these limits, change this in shared.ts as well
-const MAX_LENGTH_OPTION = 30;
 const MAX_LENGTH_TITLE = 140;
 const MAX_LENGTH_BODY = 1000;
 const MAX_LENGTH_BODY_HTML = 3000; // Reserve extra space for HTML tags
@@ -1106,38 +1105,9 @@ export const deviceTable = pgTable("device", {
     userId: uuid("user_id")
         .references(() => userTable.id)
         .notNull(),
-    idProofId: integer("id_proof_id").references(() => idProofTable.id), // if null, then the corresponding user is not a citizen or the pub key hasn't been associated with an id proof yet
     userAgent: text("user_agent").notNull(), // user-agent length is not fixed
     // TODO: isTrusted: boolean("is_trusted").notNull(), // if set to true by user then, device should stay logged-in indefinitely until log out action
     sessionExpiry: timestamp("session_expiry").notNull(), // on register, a new login session is always started, hence the notNull. This column is updated to now + 15 minutes at each request when isTrusted == false. Otherwise, expiry will be now + 1000 years - meaning no expiry.
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
-
-export const proofType = pgEnum("proof_type", [
-    "root", // proof of passport from rarimo - may be associated with multiple pub keys
-    "delegation", // ucan - delegates rights to potentially multiple other pub keys
-]);
-
-// each proof corresponds to at least one device
-export const idProofTable = pgTable("id_proof", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    userId: uuid("user_id")
-        .references(() => userTable.id)
-        .notNull(),
-    proofType: proofType("proof_type").notNull(),
-    proof: text("proof").notNull(), // base64 encoded proof - rarimo proof if root, else delegation proof
-    proofVersion: integer("proof_version").notNull(),
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -1301,77 +1271,13 @@ export const otpEmailDestinationStateTable = pgTable(
     ],
 );
 
-// conceptually, it is a "pollContentTable"
-export const pollTable = pgTable("poll", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    conversationContentId: integer("conversation_content_id")
-        .notNull()
-        .unique()
-        .references(() => conversationContentTable.id),
-    option1: varchar("option1", { length: MAX_LENGTH_OPTION }).notNull(),
-    option2: varchar("option2", { length: MAX_LENGTH_OPTION }).notNull(),
-    option3: varchar("option3", { length: MAX_LENGTH_OPTION }),
-    option4: varchar("option4", { length: MAX_LENGTH_OPTION }),
-    option5: varchar("option5", { length: MAX_LENGTH_OPTION }),
-    option6: varchar("option6", { length: MAX_LENGTH_OPTION }),
-    // only there for read-speed
-    option1Response: integer("option1_response").default(0).notNull(),
-    option2Response: integer("option2_response").default(0).notNull(),
-    option3Response: integer("option3_response"),
-    option4Response: integer("option4_response"),
-    option5Response: integer("option5_response"),
-    option6Response: integer("option6_response"),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-    updatedAt: timestamp("updated_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
-
-export const proofTypeEnum = pgEnum("proof_type", [
-    "creation",
-    "edit",
-    "deletion",
-]);
-
-export const conversationProofTable = pgTable("conversation_proof", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    type: proofTypeEnum("proof_type").notNull(),
-    conversationId: integer("conversation_id")
-        .notNull()
-        .references(() => conversationTable.id), // the conversationTable never gets deleted
-    authorDid: varchar("author_did", { length: 1000 }) // TODO: make sure of length
-        .notNull()
-        .references(() => deviceTable.didWrite),
-    proof: text("proof").notNull(), // base64 encoded proof
-    proofVersion: integer("proof_version").notNull(),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
-
 export const conversationContentTable = pgTable("conversation_content", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     conversationId: integer("conversation_id")
         .references(() => conversationTable.id)
         .notNull(),
-    conversationProofId: integer("conversation_proof_id")
-        // .notNull() // => may be null for external seed conversation
-        .unique()
-        .references(() => conversationProofTable.id), // cannot point to deletion proof
     title: varchar("title", { length: MAX_LENGTH_TITLE }).notNull(),
     body: varchar("body", { length: MAX_LENGTH_BODY_HTML }),
-    pollId: integer("poll_id").references((): AnyPgColumn => pollTable.id), // for now there is only one poll per conversation at most
     createdAt: timestamp("created_at", {
         mode: "date",
         precision: 0,
@@ -1388,7 +1294,7 @@ export const conversationTable = pgTable(
         slugId: varchar("slug_id", { length: 8 }).notNull().unique(), // used for permanent URL
         authorId: uuid("author_id") // "postAs"
             .notNull()
-            .references(() => userTable.id), // the author of the poll
+            .references(() => userTable.id), // the author of the conversation
         organizationId: integer("organization_id").references(
             () => organizationTable.id,
         ),
@@ -1456,7 +1362,7 @@ export const conversationTable = pgTable(
             .defaultNow()
             .notNull(),
         lastReactedAt: timestamp("last_reacted_at", {
-            // latest response to poll or opinion
+            // latest response to the conversation
             mode: "date",
             precision: 0,
         })
@@ -1877,94 +1783,6 @@ export const surveyAnswerOptionTable = pgTable(
     ],
 );
 
-export const pollResponseTable = pgTable(
-    "poll_response",
-    {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        authorId: uuid("author_id")
-            .notNull()
-            .references(() => userTable.id),
-        pollId: integer("poll_id") // poll response belongs to a specific poll
-            .notNull()
-            .references(() => pollTable.id),
-        currentContentId: integer("current_content_id")
-            .references((): AnyPgColumn => pollResponseContentTable.id)
-            .unique(),
-        createdAt: timestamp("created_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-        updatedAt: timestamp("updated_at", {
-            mode: "date",
-            precision: 0,
-        })
-            .defaultNow()
-            .notNull(),
-    },
-    (t) => [unique().on(t.authorId, t.pollId)],
-);
-
-export const pollResponseProofTable = pgTable("poll_response_proof", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    type: proofTypeEnum("proof_type").notNull(),
-    conversationId: integer("conversation_id")
-        .notNull()
-        .references(() => conversationTable.id), // the conversationTable never gets deleted
-    authorDid: varchar("author_did", { length: 1000 }) // TODO: make sure of length
-        .notNull()
-        .references(() => deviceTable.didWrite),
-    proof: text("proof").notNull(), // base64 encoded proof
-    proofVersion: integer("proof_version").notNull(),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
-
-export const pollResponseContentTable = pgTable("poll_response_content", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    pollResponseId: integer("poll_response_id") //
-        .notNull()
-        .references(() => pollResponseTable.id),
-    pollResponseProofId: integer("poll_response_proof_id")
-        .notNull()
-        .unique()
-        .references((): AnyPgColumn => pollResponseProofTable.id),
-    conversationContentId: integer("conversation_content_id")
-        .references(() => conversationContentTable.id)
-        .notNull(), // exact conversation content and associated poll that existed when this poll was responded.
-    optionChosen: integer("option_chosen").notNull(),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
-
-export const opinionProofTable = pgTable("opinion_proof", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    type: proofTypeEnum("proof_type").notNull(),
-    opinionId: integer("opinion_id")
-        .notNull()
-        .references(() => opinionTable.id), // the opinionTable never gets deleted
-    authorDid: varchar("author_did", { length: 1000 }) // TODO: make sure of length
-        .notNull()
-        .references(() => deviceTable.didWrite),
-    proof: text("proof").notNull(), // base64 encoded proof
-    proofVersion: integer("proof_version").notNull(),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
-
 export const opinionTable = pgTable(
     "opinion",
     {
@@ -2094,9 +1912,6 @@ export const opinionContentTable = pgTable("opinion_content", {
     conversationContentId: integer("conversation_content_id")
         .references(() => conversationContentTable.id)
         .notNull(), // used to cascade delete all opinionContent when deleting a conversation(content)
-    opinionProofId: integer("opinion_proof_id")
-        // .notNull() // => null if the opinion is created from a seed user
-        .references(() => opinionProofTable.id), // cannot point to deletion proof
     content: varchar("content", { length: MAX_LENGTH_OPINION_HTML }).notNull(),
     createdAt: timestamp("created_at", {
         mode: "date",
@@ -2142,33 +1957,11 @@ export const voteTable = pgTable(
     ],
 );
 
-export const voteProofTable = pgTable("vote_proof", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    type: proofTypeEnum("proof_type").notNull(),
-    voteId: integer("vote_id")
-        .notNull()
-        .references(() => voteTable.id), // the conversationTable never gets deleted
-    authorDid: varchar("author_did", { length: 1000 }) // TODO: make sure of length
-        .notNull()
-        .references(() => deviceTable.didWrite),
-    proof: text("proof").notNull(), // base64 encoded proof
-    proofVersion: integer("proof_version").notNull(),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
-
 export const voteContentTable = pgTable("vote_content", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     voteId: integer("vote_id") //
         .notNull()
         .references(() => voteTable.id),
-    voteProofId: integer("vote_proof_id")
-        // .notNull() // => may be null if generated by seed user
-        .references((): AnyPgColumn => voteProofTable.id),
     opinionContentId: integer("opinion_content_id")
         .references(() => opinionContentTable.id)
         .notNull(), // exact opinion content that existed when this vote was cast. Cascade delete from opinionContent if opinionContent was deleted.

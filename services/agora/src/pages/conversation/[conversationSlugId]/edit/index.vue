@@ -32,7 +32,6 @@
 
     <div v-else class="container">
       <NewConversationControlBar
-        v-model:poll-enabled="pollEnabled"
         v-model:is-private="isPrivate"
         v-model:participation-mode="participationMode"
         v-model:requires-event-ticket="requiresEventTicket"
@@ -42,7 +41,6 @@
         v-model:external-source-config="externalSourceConfig"
         v-model:title="title"
         v-model:content="content"
-        v-model:poll-options="pollOptions"
         v-model:conversation-type="conversationType"
         :is-edit-mode="true"
       />
@@ -95,28 +93,9 @@
             />
           </div>
 
-          <div v-if="pollEnabled">
-            <PollComponent
-              ref="pollComponentRef"
-              v-model:poll-enabled="pollEnabled"
-              v-model:poll-options="pollOptions"
-              v-model:validation-error="pollValidationError"
-              :readonly="isCurrentPollOriginal"
-            />
-          </div>
         </div>
       </div>
     </div>
-
-    <ZKConfirmDialog
-      v-model="showPollWarning"
-      :message="pollWarningMessage"
-      :confirm-text="t('pollChangeWarningConfirm')"
-      :cancel-text="t('pollChangeWarningCancel')"
-      variant="destructive"
-      @confirm="handlePollWarningConfirm"
-      @cancel="handlePollWarningCancel"
-    />
   </NewConversationLayout>
 </template>
 
@@ -128,10 +107,8 @@ import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import NewConversationControlBar from "src/components/newConversation/NewConversationControlBar.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
-import PollComponent from "src/components/newConversation/poll/PollComponent.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
-import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import {
   useConversationDraft,
   type ValidationErrorField,
@@ -150,7 +127,7 @@ import { useUpdateConversationMutation } from "src/utils/api/post/useConversatio
 import { processEnv } from "src/utils/processEnv";
 import { getSingleRouteParam } from "src/utils/router/params";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import {
@@ -185,12 +162,8 @@ const loadError = ref(false);
 const errorTitle = ref("");
 const errorMessage = ref("");
 
-const showPollWarning = ref(false);
-const pollWarningMessage = ref("");
-const pendingSaveAction = ref<(() => Promise<void>) | undefined>(undefined);
 const surveyPostAsOrganizationName = ref<string | undefined>(undefined);
 
-const pollComponentRef = ref<InstanceType<typeof PollComponent>>();
 const titleInputRef = ref<HTMLDivElement>();
 
 // Store original state to detect changes
@@ -204,10 +177,6 @@ const originalState = ref<{
     hasScheduledConversion: boolean;
     conversionDate: Date;
   };
-  poll: {
-    enabled: boolean;
-    options: string[];
-  };
   surveyConfig: SurveyConfig | null;
 }>({
   title: "",
@@ -218,10 +187,6 @@ const originalState = ref<{
   privateConversationSettings: {
     hasScheduledConversion: false,
     conversionDate: new Date(),
-  },
-  poll: {
-    enabled: false,
-    options: [],
   },
   surveyConfig: null,
 });
@@ -247,9 +212,6 @@ const isSurveyFeatureAllowed = computed(() => {
 
   return result.allowed;
 });
-
-// Track whether current poll is the original (for poll warnings)
-const isCurrentPollOriginal = ref(false);
 
 // Computed property to detect if any changes have been made
 const hasUnsavedChanges = computed(() => {
@@ -304,26 +266,6 @@ const hasUnsavedChanges = computed(() => {
     }
   }
 
-  // Compare poll state (both should be boolean after initialization)
-  if (pollEnabled.value !== originalState.value.poll.enabled) {
-    return true;
-  }
-
-  // If both have polls, compare options
-  if (pollEnabled.value && originalState.value.poll.enabled) {
-    if (pollOptions.value.length !== originalState.value.poll.options.length) {
-      return true;
-    }
-    for (let i = 0; i < pollOptions.value.length; i++) {
-      if (
-        normalizeText(pollOptions.value[i]) !==
-        normalizeText(originalState.value.poll.options[i])
-      ) {
-        return true;
-      }
-    }
-  }
-
   return false;
 });
 
@@ -331,8 +273,6 @@ const hasUnsavedChanges = computed(() => {
 const {
   title,
   content,
-  pollEnabled,
-  pollOptions,
   isPrivate,
   participationMode,
   requiresEventTicket,
@@ -344,31 +284,14 @@ const {
   validationState,
   validateTitle,
   validateBody,
-  validatePoll,
   updateTitle,
   updateContent,
   initializeFromData,
 } = useConversationDraft({ syncToStore: false });
 
-// Extract poll validation error for passing to PollComponent
-const pollValidationError = computed<string>({
-  get: () => validationState.value.poll.error,
-  set: (value: string) => {
-    validationState.value.poll.error = value;
-  },
-});
-
 async function scrollToTitleInput() {
   await nextTick();
   titleInputRef.value?.scrollIntoView({
-    behavior: "smooth",
-    block: "center",
-  });
-}
-
-async function scrollToPollComponent() {
-  await nextTick();
-  pollComponentRef.value?.$el?.scrollIntoView({
     behavior: "smooth",
     block: "center",
   });
@@ -381,10 +304,6 @@ async function handleValidationError(
     case "title":
       validateTitle();
       await scrollToTitleInput();
-      break;
-    case "poll":
-      validatePoll();
-      await scrollToPollComponent();
       break;
     case "body":
       validateBody();
@@ -409,65 +328,15 @@ function validateSubmission(): {
     return { isValid: false, errorField: "body" };
   }
 
-  // Validate poll if enabled
-  if (pollEnabled.value && !validatePoll().success) {
-    return { isValid: false, errorField: "poll" };
-  }
-
   return { isValid: true };
-}
-
-/**
- * Determines the appropriate poll action based on current and original poll state
- * Note: Poll options are immutable - they cannot be modified once created
- */
-function determinePollAction():
-  | { action: "none" }
-  | { action: "keep" }
-  | { action: "remove" }
-  | { action: "replace"; options: string[] }
-  | { action: "create"; options: string[] } {
-  const originalPollEnabled = originalState.value.poll.enabled;
-
-  // No poll now, no poll before → none (no-op)
-  if (!pollEnabled.value && !originalPollEnabled) {
-    return { action: "none" };
-  }
-
-  // No poll now, had poll before → remove
-  if (!pollEnabled.value && originalPollEnabled) {
-    return { action: "remove" };
-  }
-
-  // Has poll now, no poll before → create
-  if (pollEnabled.value && !originalPollEnabled) {
-    return { action: "create", options: pollOptions.value };
-  }
-
-  // Has poll now, had poll before
-  if (pollEnabled.value && originalPollEnabled) {
-    // If current poll is the original poll → keep
-    if (isCurrentPollOriginal.value) {
-      return { action: "keep" };
-    }
-    // If current poll is NOT the original (user removed and re-added) → replace
-    // This creates a brand new poll, orphaning the old one
-    return { action: "replace", options: pollOptions.value };
-  }
-
-  // Fallback (should never reach here)
-  return { action: "none" };
 }
 
 async function performSave(): Promise<void> {
   try {
-    const pollAction = determinePollAction();
-
     const response = await updateMutation.mutateAsync({
       conversationSlugId: conversationSlugId,
       conversationTitle: title.value,
       conversationBody: content.value,
-      pollAction: pollAction,
       isIndexed: !isPrivate.value,
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
@@ -505,26 +374,6 @@ async function performSave(): Promise<void> {
           errorMsg = t("invalidAccessSettingsError");
           break;
         }
-        case "poll_already_exists": {
-          errorMsg = t("pollAlreadyExistsError");
-          break;
-        }
-        case "poll_exists_use_keep_or_remove": {
-          errorMsg = t("updateError"); // Generic fallback for internal error
-          break;
-        }
-        case "no_poll_to_remove": {
-          errorMsg = t("noPollToRemoveError");
-          break;
-        }
-        case "no_poll_to_keep": {
-          errorMsg = t("noPollToKeepError");
-          break;
-        }
-        case "no_poll_to_replace": {
-          errorMsg = t("noPollToReplaceError");
-          break;
-        }
         default: {
           // TypeScript exhaustiveness check - this should never be reached
           const _exhaustiveCheck: never = response.reason;
@@ -553,9 +402,6 @@ async function onSave(): Promise<void> {
   }
 
   isSaveButtonLoading.value = true;
-
-  // Poll removal warnings are now handled immediately by the watcher
-  // when the user clicks the X button on the poll component
   await performSave();
 }
 
@@ -565,45 +411,6 @@ async function openSurveyEditor(): Promise<void> {
     params: { conversationSlugId },
   });
 }
-
-async function handlePollWarningConfirm(): Promise<void> {
-  showPollWarning.value = false;
-
-  // Mark that we no longer have the original poll
-  if (isCurrentPollOriginal.value) {
-    isCurrentPollOriginal.value = false;
-  }
-
-  if (pendingSaveAction.value !== undefined) {
-    isSaveButtonLoading.value = true;
-    await pendingSaveAction.value();
-    pendingSaveAction.value = undefined;
-  }
-}
-
-function handlePollWarningCancel(): void {
-  showPollWarning.value = false;
-
-  // Restore poll to its previous state
-  if (pendingSaveAction.value === undefined) {
-    // This was triggered by the watcher, restore the poll
-    pollEnabled.value = true;
-    pollOptions.value = [...originalState.value.poll.options];
-  }
-
-  pendingSaveAction.value = undefined;
-}
-
-// Watch for poll changes to show immediate warning when removing original poll
-watch(pollEnabled, (newValue, oldValue) => {
-  // Only trigger when poll is disabled (removed)
-  if (oldValue && !newValue && isCurrentPollOriginal.value) {
-    // Show warning immediately when removing the original poll
-    pollWarningMessage.value = t("removePollWarningMessage");
-    pendingSaveAction.value = undefined; // No save action, just confirming removal
-    showPollWarning.value = true;
-  }
-});
 
 onMounted(async () => {
   try {
@@ -643,8 +450,6 @@ onMounted(async () => {
     initializeFromData({
       title: response.conversationTitle,
       content: response.conversationBody ?? "",
-      pollEnabled: response.hasPoll ?? false,
-      pollOptions: response.pollingOptionList ?? ["", ""],
       isPrivate: !response.isIndexed,
       participationMode: response.participationMode,
       requiresEventTicket: response.requiresEventTicket,
@@ -672,19 +477,7 @@ onMounted(async () => {
           : tomorrow,
       },
       surveyConfig: response.surveyConfig ?? null,
-      poll: {
-        enabled: response.hasPoll ?? false,
-        options: response.pollingOptionList
-          ? [...response.pollingOptionList]
-          : [],
-      },
     };
-
-    // Track if current poll is the original
-    // Only set to true if poll actually exists
-    isCurrentPollOriginal.value =
-      (response.hasPoll ?? false) &&
-      (response.pollingOptionList?.length ?? 0) > 0;
 
     isDataLoaded.value = true;
   } catch (error) {
