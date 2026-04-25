@@ -78,11 +78,11 @@ export const conversationSurveyQuestionTranslations: Record<
       "اختر بين {min} و {max} خيارات.",
     multiChoiceAtLeastDescription: "اختر {min} خيارات على الأقل.",
     optionalMultiChoiceBetweenDescription:
-      "Leave blank or choose between {min} and {max} options.",
+      "اتركه فارغًا أو اختر بين {min} و {max} خيارات.",
     optionalMultiChoiceAtLeastDescription:
-      "Leave blank or choose at least {min} options.",
+      "اتركه فارغًا أو اختر {min} خيارات على الأقل.",
     chooseOneOptionDescription: "اختر خيارًا واحدًا.",
-    chooseZeroOrOneOptionDescription: "Choose zero or one option.",
+    chooseZeroOrOneOptionDescription: "اختر صفرًا أو خيارًا واحدًا.",
     writeAnswerDescription: "اكتب إجابتك أدناه.",
     freeTextHelp:
       "{count} / {max} حرفًا. الحد الأدنى {min} عند الإجابة.",
@@ -108,11 +108,11 @@ export const conversationSurveyQuestionTranslations: Record<
       "Elige entre {min} y {max} opciones.",
     multiChoiceAtLeastDescription: "Elige al menos {min} opciones.",
     optionalMultiChoiceBetweenDescription:
-      "Leave blank or choose between {min} and {max} options.",
+      "Déjalo en blanco o elige entre {min} y {max} opciones.",
     optionalMultiChoiceAtLeastDescription:
-      "Leave blank or choose at least {min} options.",
+      "Déjalo en blanco o elige al menos {min} opciones.",
     chooseOneOptionDescription: "Elige una opción.",
-    chooseZeroOrOneOptionDescription: "Choose zero or one option.",
+    chooseZeroOrOneOptionDescription: "Elige cero o una opción.",
     writeAnswerDescription: "Escribe tu respuesta abajo.",
     freeTextHelp:
       "{count} / {max} caracteres. Mínimo {min} al responder.",
@@ -138,11 +138,11 @@ export const conversationSurveyQuestionTranslations: Record<
       "بین {min} تا {max} گزینه را انتخاب کنید.",
     multiChoiceAtLeastDescription: "حداقل {min} گزینه را انتخاب کنید.",
     optionalMultiChoiceBetweenDescription:
-      "Leave blank or choose between {min} and {max} options.",
+      "خالی بگذارید یا بین {min} تا {max} گزینه را انتخاب کنید.",
     optionalMultiChoiceAtLeastDescription:
-      "Leave blank or choose at least {min} options.",
+      "خالی بگذارید یا حداقل {min} گزینه را انتخاب کنید.",
     chooseOneOptionDescription: "یک گزینه انتخاب کنید.",
-    chooseZeroOrOneOptionDescription: "Choose zero or one option.",
+    chooseZeroOrOneOptionDescription: "صفر یا یک گزینه را انتخاب کنید.",
     writeAnswerDescription: "پاسخ خود را در پایین بنویسید.",
     freeTextHelp:
       "{count} / {max} نویسه. حداقل {min} هنگام پاسخ‌دادن.",
@@ -168,11 +168,11 @@ export const conversationSurveyQuestionTranslations: Record<
       "Choisissez entre {min} et {max} options.",
     multiChoiceAtLeastDescription: "Choisissez au moins {min} options.",
     optionalMultiChoiceBetweenDescription:
-      "Leave blank or choose between {min} and {max} options.",
+      "Laissez vide ou choisissez entre {min} et {max} options.",
     optionalMultiChoiceAtLeastDescription:
-      "Leave blank or choose at least {min} options.",
+      "Laissez vide ou choisissez au moins {min} options.",
     chooseOneOptionDescription: "Choisissez une option.",
-    chooseZeroOrOneOptionDescription: "Choose zero or one option.",
+    chooseZeroOrOneOptionDescription: "Choisissez zéro ou une option.",
     writeAnswerDescription: "Écrivez votre réponse ci-dessous.",
     freeTextHelp:
       "{count} / {max} caractères. Minimum {min} si vous répondez.",
@@ -198,11 +198,11 @@ export const conversationSurveyQuestionTranslations: Record<
       "בחרו בין {min} ל-{max} אפשרויות.",
     multiChoiceAtLeastDescription: "בחרו לפחות {min} אפשרויות.",
     optionalMultiChoiceBetweenDescription:
-      "Leave blank or choose between {min} and {max} options.",
+      "השאירו ריק או בחרו בין {min} ל-{max} אפשרויות.",
     optionalMultiChoiceAtLeastDescription:
-      "Leave blank or choose at least {min} options.",
+      "השאירו ריק או בחרו לפחות {min} אפשרויות.",
     chooseOneOptionDescription: "בחרו אפשרות אחת.",
-    chooseZeroOrOneOptionDescription: "Choose zero or one option.",
+    chooseZeroOrOneOptionDescription: "בחרו אפס או אפשרות אחת.",
     writeAnswerDescription: "כתבו את התשובה שלכם למטה.",
     freeTextHelp:
       "{count} / {max} תווים. מינימום {min} כשעונים.",
@@ -228,11 +228,11 @@ export const conversationSurveyQuestionTranslations: Record<
       "{min} から {max} 個の選択肢を選んでください。",
     multiChoiceAtLeastDescription: "少なくとも {min} 個選んでください。",
     optionalMultiChoiceBetweenDescription:
-      "Leave blank or choose between {min} and {max} options.",
+      "空欄のままにするか、{min} から {max} 個の選択肢を選んでください。",
     optionalMultiChoiceAtLeastDescription:
-      "Leave blank or choose at least {min} options.",
+      "空欄のままにするか、少なくとも {min} 個選んでください。",
     chooseOneOptionDescription: "1 つ選んでください。",
-    chooseZeroOrOneOptionDescription: "Choose zero or one option.",
+    chooseZeroOrOneOptionDescription: "0 個または 1 個の選択肢を選んでください。",
     writeAnswerDescription: "下に回答を入力してください。",
     freeTextHelp:
       "{count} / {max} 文字。回答する場合の最小文字数は {min} です。",
@@ -258,11 +258,11 @@ export const conversationSurveyQuestionTranslations: Record<
       "{min} менен {max} ортосунда вариант тандаңыз.",
     multiChoiceAtLeastDescription: "Жок дегенде {min} вариант тандаңыз.",
     optionalMultiChoiceBetweenDescription:
-      "Leave blank or choose between {min} and {max} options.",
+      "Бош калтырыңыз же {min} менен {max} ортосунда вариант тандаңыз.",
     optionalMultiChoiceAtLeastDescription:
-      "Leave blank or choose at least {min} options.",
+      "Бош калтырыңыз же жок дегенде {min} вариант тандаңыз.",
     chooseOneOptionDescription: "Бир вариант тандаңыз.",
-    chooseZeroOrOneOptionDescription: "Choose zero or one option.",
+    chooseZeroOrOneOptionDescription: "Нөл же бир вариант тандаңыз.",
     writeAnswerDescription: "Төмөндө жообуңузду жазыңыз.",
     freeTextHelp:
       "{count} / {max} белги. Жооп берсеңиз, кеминде {min} керек.",
@@ -289,11 +289,11 @@ export const conversationSurveyQuestionTranslations: Record<
     multiChoiceAtLeastDescription:
       "Выберите как минимум {min} вариантов.",
     optionalMultiChoiceBetweenDescription:
-      "Leave blank or choose between {min} and {max} options.",
+      "Оставьте пустым или выберите от {min} до {max} вариантов.",
     optionalMultiChoiceAtLeastDescription:
-      "Leave blank or choose at least {min} options.",
+      "Оставьте пустым или выберите как минимум {min} вариантов.",
     chooseOneOptionDescription: "Выберите один вариант.",
-    chooseZeroOrOneOptionDescription: "Choose zero or one option.",
+    chooseZeroOrOneOptionDescription: "Выберите ноль или один вариант.",
     writeAnswerDescription: "Напишите ваш ответ ниже.",
     freeTextHelp:
       "{count} / {max} символов. Минимум {min}, если отвечаете.",
@@ -318,11 +318,11 @@ export const conversationSurveyQuestionTranslations: Record<
     multiChoiceBetweenDescription: "请选择 {min} 到 {max} 个选项。",
     multiChoiceAtLeastDescription: "请至少选择 {min} 个选项。",
     optionalMultiChoiceBetweenDescription:
-      "Leave blank or choose between {min} and {max} options.",
+      "可留空，或选择 {min} 到 {max} 个选项。",
     optionalMultiChoiceAtLeastDescription:
-      "Leave blank or choose at least {min} options.",
+      "可留空，或至少选择 {min} 个选项。",
     chooseOneOptionDescription: "请选择一个选项。",
-    chooseZeroOrOneOptionDescription: "Choose zero or one option.",
+    chooseZeroOrOneOptionDescription: "请选择零个或一个选项。",
     writeAnswerDescription: "请在下方填写你的回答。",
     freeTextHelp:
       "{count} / {max} 个字符。作答时最少需要 {min} 个字符。",
@@ -346,11 +346,11 @@ export const conversationSurveyQuestionTranslations: Record<
     multiChoiceBetweenDescription: "請選擇 {min} 到 {max} 個選項。",
     multiChoiceAtLeastDescription: "請至少選擇 {min} 個選項。",
     optionalMultiChoiceBetweenDescription:
-      "Leave blank or choose between {min} and {max} options.",
+      "可留空，或選擇 {min} 到 {max} 個選項。",
     optionalMultiChoiceAtLeastDescription:
-      "Leave blank or choose at least {min} options.",
+      "可留空，或至少選擇 {min} 個選項。",
     chooseOneOptionDescription: "請選擇一個選項。",
-    chooseZeroOrOneOptionDescription: "Choose zero or one option.",
+    chooseZeroOrOneOptionDescription: "請選擇零個或一個選項。",
     writeAnswerDescription: "請在下方填寫你的回答。",
     freeTextHelp:
       "{count} / {max} 個字元。作答時最少需要 {min} 個字元。",

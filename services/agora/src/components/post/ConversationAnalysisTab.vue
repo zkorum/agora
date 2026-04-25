@@ -70,13 +70,18 @@ const surveyResultsQuery = useSurveyResultsAggregatedQuery({
   enabled: hasSurvey,
 });
 
+const isSurveyResultsLoading = computed(
+  () =>
+    hasSurvey.value &&
+    (surveyResultsQuery.isPending.value || surveyResultsQuery.isRefetching.value)
+);
+
 // Report loading state to parent (for spinner in PostActionBar)
 const isLoading = computed(
   () =>
     analysisQuery.isPending.value ||
     analysisQuery.isRefetching.value ||
-    surveyResultsQuery.isPending.value ||
-    surveyResultsQuery.isRefetching.value
+    isSurveyResultsLoading.value
 );
 
 watch(isLoading, (loading) => {

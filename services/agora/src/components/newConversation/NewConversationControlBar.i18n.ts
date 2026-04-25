@@ -56,7 +56,7 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "جعله عامًا: {date}",
     noVerification: "بدون تحقق",
     devconnect2025: "Devconnect 2025",
-    typeStandard: "Standard",
+    typeStandard: "قياسي",
     typeMaxDiff: "ترتيب أولويات جديد",
   },
   es: {
@@ -74,7 +74,7 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "Hacer público: {date}",
     noVerification: "Sin verificación",
     devconnect2025: "Devconnect 2025",
-    typeStandard: "Standard",
+    typeStandard: "Estándar",
     typeMaxDiff: "Nueva Priorización",
   },
   fa: {
@@ -92,7 +92,7 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "عمومی کردن: {date}",
     noVerification: "بدون تأیید هویت",
     devconnect2025: "Devconnect 2025",
-    typeStandard: "Standard",
+    typeStandard: "استاندارد",
     typeMaxDiff: "اولویت‌بندی جدید",
   },
   fr: {
@@ -110,7 +110,7 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "Rendre public : {date}",
     noVerification: "Pas de vérification",
     devconnect2025: "Devconnect 2025",
-    typeStandard: "Standard",
+    typeStandard: "Classique",
     typeMaxDiff: "Nouvelle Hiérarchisation",
   },
   "zh-Hans": {
@@ -128,7 +128,7 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "公开：{date}",
     noVerification: "无需验证",
     devconnect2025: "Devconnect 2025",
-    typeStandard: "Standard",
+    typeStandard: "标准",
     typeMaxDiff: "新建优先排序",
   },
   "zh-Hant": {
@@ -146,7 +146,7 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "公開：{date}",
     noVerification: "無需驗證",
     devconnect2025: "Devconnect 2025",
-    typeStandard: "Standard",
+    typeStandard: "標準",
     typeMaxDiff: "新建優先排序",
   },
   he: {
@@ -164,7 +164,7 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "הפיכה לציבורי: {date}",
     noVerification: "ללא אימות",
     devconnect2025: "Devconnect 2025",
-    typeStandard: "Standard",
+    typeStandard: "רגיל",
     typeMaxDiff: "תיעדוף חדש",
   },
   ja: {
@@ -178,11 +178,11 @@ export const newConversationControlBarTranslations: Record<
     requiresLogin: "強力な認証が必要",
     requiresEmailVerification: "メール認証が必要",
     guestParticipation: "ゲスト参加",
-    makePublicNever: "公開：Never",
+    makePublicNever: "公開：しない",
     makePublic: "公開：{date}",
     noVerification: "検証不要",
     devconnect2025: "Devconnect 2025",
-    typeStandard: "Standard",
+    typeStandard: "標準",
     typeMaxDiff: "新しい優先順位付け",
   },
   ky: {
@@ -200,7 +200,7 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "Ачык кылуу: {date}",
     noVerification: "Текшерүүсүз",
     devconnect2025: "Devconnect 2025",
-    typeStandard: "Standard",
+    typeStandard: "Стандарттуу",
     typeMaxDiff: "Жаңы артыкчылыктуу кылуу",
   },
   ru: {
@@ -218,7 +218,7 @@ export const newConversationControlBarTranslations: Record<
     makePublic: "Сделать публичным: {date}",
     noVerification: "Без проверки",
     devconnect2025: "Devconnect 2025",
-    typeStandard: "Standard",
+    typeStandard: "Стандартный",
     typeMaxDiff: "Новая приоритизация",
   },
 };

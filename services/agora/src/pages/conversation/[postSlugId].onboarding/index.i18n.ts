@@ -111,7 +111,7 @@ export const conversationSurveyOnboardingTranslations: Record<
     currentStatusLabel: "الحالة الحالية",
     welcomeTitle: "مرحباً",
     welcomeDescription:
-      "Continue through this conversation's onboarding before you participate.",
+      "تابع خطوات الانضمام لهذه المحادثة قبل المشاركة.",
     surveyStatusLoading: "جارٍ التحميل",
     surveyStatusComplete: "مكتمل",
     surveyStatusNeedsUpdate: "يحتاج إلى تحديث",
@@ -166,7 +166,7 @@ export const conversationSurveyOnboardingTranslations: Record<
     currentStatusLabel: "Estado actual",
     welcomeTitle: "Bienvenido",
     welcomeDescription:
-      "Continue through this conversation's onboarding before you participate.",
+      "Completa el flujo de acceso de esta conversación antes de participar.",
     surveyStatusLoading: "Cargando",
     surveyStatusComplete: "Completa",
     surveyStatusNeedsUpdate: "Necesita actualización",
@@ -222,7 +222,7 @@ export const conversationSurveyOnboardingTranslations: Record<
     currentStatusLabel: "وضعیت فعلی",
     welcomeTitle: "خوش آمدید",
     welcomeDescription:
-      "Continue through this conversation's onboarding before you participate.",
+      "پیش از مشارکت، مراحل ورود این گفتگو را کامل کنید.",
     surveyStatusLoading: "در حال بارگیری",
     surveyStatusComplete: "کامل",
     surveyStatusNeedsUpdate: "نیاز به به‌روزرسانی دارد",
@@ -278,7 +278,7 @@ export const conversationSurveyOnboardingTranslations: Record<
     currentStatusLabel: "Statut actuel",
     welcomeTitle: "Bienvenue",
     welcomeDescription:
-      "Continue through this conversation's onboarding before you participate.",
+      "Terminez le parcours d'accès de cette conversation avant de participer.",
     surveyStatusLoading: "Chargement",
     surveyStatusComplete: "Terminé",
     surveyStatusNeedsUpdate: "À mettre à jour",
@@ -334,7 +334,7 @@ export const conversationSurveyOnboardingTranslations: Record<
     currentStatusLabel: "מצב נוכחי",
     welcomeTitle: "ברוכים הבאים",
     welcomeDescription:
-      "Continue through this conversation's onboarding before you participate.",
+      "השלימו את תהליך הכניסה לשיחה הזו לפני ההשתתפות.",
     surveyStatusLoading: "טוען",
     surveyStatusComplete: "הושלם",
     surveyStatusNeedsUpdate: "דורש עדכון",
@@ -389,7 +389,7 @@ export const conversationSurveyOnboardingTranslations: Record<
     currentStatusLabel: "現在の状態",
     welcomeTitle: "ようこそ",
     welcomeDescription:
-      "Continue through this conversation's onboarding before you participate.",
+      "参加する前に、この会話のオンボーディングを完了してください。",
     surveyStatusLoading: "読み込み中",
     surveyStatusComplete: "完了",
     surveyStatusNeedsUpdate: "更新が必要",
@@ -445,7 +445,7 @@ export const conversationSurveyOnboardingTranslations: Record<
     currentStatusLabel: "Учурдагы абал",
     welcomeTitle: "Кош келиңиз",
     welcomeDescription:
-      "Continue through this conversation's onboarding before you participate.",
+      "Катышуудан мурун бул сүйлөшүүнүн кирүү кадамдарын бүтүрүңүз.",
     surveyStatusLoading: "Жүктөлүүдө",
     surveyStatusComplete: "Аяктаган",
     surveyStatusNeedsUpdate: "Жаңыртуу керек",
@@ -501,7 +501,7 @@ export const conversationSurveyOnboardingTranslations: Record<
     currentStatusLabel: "Текущий статус",
     welcomeTitle: "Добро пожаловать",
     welcomeDescription:
-      "Continue through this conversation's onboarding before you participate.",
+      "Перед участием пройдите вводные шаги этой беседы.",
     surveyStatusLoading: "Загрузка",
     surveyStatusComplete: "Завершён",
     surveyStatusNeedsUpdate: "Требует обновления",
@@ -557,7 +557,7 @@ export const conversationSurveyOnboardingTranslations: Record<
     currentStatusLabel: "当前状态",
     welcomeTitle: "欢迎",
     welcomeDescription:
-      "Continue through this conversation's onboarding before you participate.",
+      "参与前，请先完成这场对话的引导流程。",
     surveyStatusLoading: "加载中",
     surveyStatusComplete: "已完成",
     surveyStatusNeedsUpdate: "需要更新",
@@ -611,7 +611,7 @@ export const conversationSurveyOnboardingTranslations: Record<
     currentStatusLabel: "目前狀態",
     welcomeTitle: "歡迎",
     welcomeDescription:
-      "Continue through this conversation's onboarding before you participate.",
+      "參與前，請先完成這場對話的引導流程。",
     surveyStatusLoading: "載入中",
     surveyStatusComplete: "已完成",
     surveyStatusNeedsUpdate: "需要更新",

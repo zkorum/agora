@@ -720,7 +720,7 @@ export function deriveSurveyGate({
     };
 }
 
-function deriveSurveyRouteResolution({
+export function deriveSurveyRouteResolution({
     surveyState,
     participantId,
 }: {
@@ -770,14 +770,14 @@ function deriveSurveyRouteResolution({
     }
 
     for (const question of surveyState.activeSurveyConfig.questions) {
-        if (!question.isRequired) {
-            continue;
-        }
         const questionFormItem = deriveSurveyQuestionFormItem({
             question,
             storedAnswer: surveyState.answersByQuestionId.get(question.id),
         });
-        if (!questionFormItem.isCurrentAnswerValid) {
+        if (
+            !questionFormItem.isCurrentAnswerValid &&
+            !questionFormItem.isPassed
+        ) {
             return {
                 kind: "question",
                 questionSlugId: question.slugId,
