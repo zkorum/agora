@@ -163,6 +163,38 @@ describe("deriveSurveyRouteResolution", () => {
     });
 });
 
+describe("deriveSurveyQuestionFormItem", () => {
+    it("does not require updates for optional answers after semantic changes", async () => {
+        const { deriveSurveyQuestionFormItem } = await surveyModulePromise;
+        const optionalQuestion = {
+            ...createFreeTextQuestion({
+                id: 1,
+                slugId: "optional-question",
+                isRequired: false,
+                displayOrder: 0,
+            }),
+            currentSemanticVersion: 2,
+        };
+
+        const formItem = deriveSurveyQuestionFormItem({
+            question: optionalQuestion,
+            storedAnswer: {
+                answerId: 10,
+                answeredQuestionSemanticVersion: 1,
+                textValueHtml: "Saved answer",
+                optionSlugIds: [],
+            },
+        });
+
+        expect(formItem.isStale).toBe(false);
+        expect(formItem.isCurrentAnswerValid).toBe(true);
+        expect(formItem.currentAnswer).toEqual({
+            questionType: "free_text",
+            textValueHtml: "Saved answer",
+        });
+    });
+});
+
 describe("saveSurveyAnswer", () => {
     beforeEach(() => {
         checkConversationParticipationMock.mockReset();

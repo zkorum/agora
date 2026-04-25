@@ -173,6 +173,31 @@ describe("deriveSurveyGateStatusForAnalysis", () => {
             }),
         ).toBe("complete_valid");
     });
+
+    it("does not require updates for stale optional answers", () => {
+        expect(
+            deriveSurveyGateStatusForAnalysis({
+                hasSurvey: true,
+                questions: [
+                    {
+                        ...optionalChoiceQuestion,
+                        currentSemanticVersion: 2,
+                    },
+                ],
+                answersByQuestionId: new Map([
+                    [
+                        optionalChoiceQuestion.questionId,
+                        {
+                            answeredQuestionSemanticVersion: 1,
+                            textValueHtml: null,
+                            optionSlugIds: ["a"],
+                        },
+                    ],
+                ]),
+                withdrawnAt: null,
+            }),
+        ).toBe("complete_valid");
+    });
 });
 
 describe("analysis eligibility helpers", () => {

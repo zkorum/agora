@@ -575,6 +575,7 @@ export function deriveSurveyQuestionFormItem({
         storedAnswer !== undefined &&
         isStoredSurveyAnswerPassed({ question, storedAnswer });
     const isStale =
+        question.isRequired &&
         storedAnswer !== undefined &&
         !isPassed &&
         candidateAnswer !== undefined &&
@@ -1712,13 +1713,13 @@ async function replaceSurveyConfigById({
             if (question.isRequired) {
                 didSemanticChange = true;
             }
-                await insertSurveyQuestion({
-                    db,
-                    surveyConfigId,
-                    conversationId: surveyConfigRow.conversationId,
-                    question,
-                    now,
-                });
+            await insertSurveyQuestion({
+                db,
+                surveyConfigId,
+                conversationId: surveyConfigRow.conversationId,
+                question,
+                now,
+            });
             continue;
         }
 
@@ -1748,13 +1749,19 @@ async function replaceSurveyConfigById({
         });
         if (
             existingQuestion.questionType !== question.questionType ||
-            existingQuestion.isRequired !== question.isRequired ||
             constraintsChanged
         ) {
             semanticChanged = true;
             if (questionAffectsEligibility) {
                 didSemanticChange = true;
             }
+        }
+
+        if (
+            existingQuestion.isRequired !== question.isRequired &&
+            questionAffectsEligibility
+        ) {
+            didSemanticChange = true;
         }
 
         const questionTextChanged =
