@@ -15,7 +15,7 @@
     "prepare": "quasar prepare",
     "test": "vitest run",
     "test:watch": "vitest",
-    "dev": "env-cmd -f .env.dev -- quasar dev",
+    "dev": "quasar dev",
     "start": "serve dist/spa",
     "build:dev": "env-cmd -f .env.dev.build -- quasar build",
     "build:staging": "env-cmd -f .env.staging -- quasar build",
