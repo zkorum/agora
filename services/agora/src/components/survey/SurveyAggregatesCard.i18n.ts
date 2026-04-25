@@ -22,7 +22,7 @@ export const surveyAggregatesCardTranslations: Record<
     noSurvey: "No survey aggregates are available for this conversation.",
     noRows: "No aggregate rows returned.",
     overallScope: "Overall",
-    clusterScope: "Cluster {label}",
+    clusterScope: "Groupe {label}",
     suppressed: "Suppressed",
   },
   ar: {
