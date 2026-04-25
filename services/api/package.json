@@ -93,7 +93,7 @@
         "esm-module-alias": "^2.2.1",
         "extract-first-json": "^2.0.2",
         "fast-csv": "^5.0.5",
-        "fastify": "^5.8.4",
+        "fastify": "^5.8.5",
         "fastify-type-provider-zod": "^6.1.0",
         "jszip": "^3.10.1",
         "keystore-idb": "^0.15.5",
