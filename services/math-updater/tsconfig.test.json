@@ -1,6 +1,6 @@
 {
     "extends": "./tsconfig.json",
-    "include": ["src/**/*.spec.ts"],
+    "include": ["src/**/*.test.ts", "src/**/*.spec.ts"],
     "exclude": ["node_modules", "**/node_modules/*"],
     "compilerOptions": {
         "noEmit": true,
