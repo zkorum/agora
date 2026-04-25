@@ -98,7 +98,9 @@ export function isSurveyQuestionCompletedForAnalysis({
 
     return (
         isSurveyAnswerPassedForAnalysis({ question, answer }) ||
-        validateSurveyAnswerForAnalysis({ question, answer })
+        (question.isRequired
+            ? validateSurveyAnswerForAnalysis({ question, answer })
+            : validateSurveyAnswerContentForAnalysis({ question, answer }))
     );
 }
 
@@ -129,6 +131,16 @@ export function validateSurveyAnswerForAnalysis({
         return false;
     }
 
+    return validateSurveyAnswerContentForAnalysis({ question, answer });
+}
+
+function validateSurveyAnswerContentForAnalysis({
+    question,
+    answer,
+}: {
+    question: SurveyQuestionAnalysisRecord;
+    answer: SurveyStoredAnswerAnalysisRecord;
+}): boolean {
     switch (question.questionType) {
         case "free_text": {
             if (question.constraints.type !== "free_text") {
