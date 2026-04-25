@@ -1689,6 +1689,24 @@ async function replaceSurveyConfigById({
     );
     let didSemanticChange = false;
 
+    // Temporarily move active rows away from their current display orders so
+    // reorders and inserts cannot collide with the partial unique indexes.
+    for (const [index, existingQuestion] of
+        existingSurveyConfig.questions.entries()) {
+        await db
+            .update(surveyQuestionTable)
+            .set({ displayOrder: -(index + 1) })
+            .where(eq(surveyQuestionTable.id, existingQuestion.id));
+
+        for (const [optionIndex, existingOption] of
+            existingQuestion.options.entries()) {
+            await db
+                .update(surveyQuestionOptionTable)
+                .set({ displayOrder: -(optionIndex + 1) })
+                .where(eq(surveyQuestionOptionTable.id, existingOption.id));
+        }
+    }
+
     for (const question of surveyConfig.questions) {
         if (question.questionSlugId === undefined) {
             if (question.isRequired) {
@@ -1786,7 +1804,11 @@ async function replaceSurveyConfigById({
                 }
                 await db
                     .update(surveyQuestionOptionTable)
-                    .set({ currentContentId: null, updatedAt: now })
+                    .set({
+                        currentContentId: null,
+                        displayOrder: existingOption.displayOrder,
+                        updatedAt: now,
+                    })
                     .where(eq(surveyQuestionOptionTable.id, existingOption.id));
             }
         }
@@ -1890,6 +1912,11 @@ async function replaceSurveyConfigById({
                     .update(surveyQuestionOptionTable)
                     .set({ displayOrder: option.displayOrder, updatedAt: now })
                     .where(eq(surveyQuestionOptionTable.id, existingOption.id));
+            } else {
+                await db
+                    .update(surveyQuestionOptionTable)
+                    .set({ displayOrder: option.displayOrder })
+                    .where(eq(surveyQuestionOptionTable.id, existingOption.id));
             }
         }
 
@@ -1926,7 +1953,11 @@ async function replaceSurveyConfigById({
             }
             await db
                 .update(surveyQuestionTable)
-                .set({ currentContentId: null, updatedAt: now })
+                .set({
+                    currentContentId: null,
+                    displayOrder: existingQuestion.displayOrder,
+                    updatedAt: now,
+                })
                 .where(eq(surveyQuestionTable.id, existingQuestion.id));
         }
     }
