@@ -6,16 +6,21 @@ except ImportError:
     LBFGSUniformGBT = None
 
 
-PREFERENCE_LEARNING_NAME = "LBFGSUniformGBT" if LBFGSUniformGBT is not None else "UniformGBT"
+from scoring_worker.maxdiff_sequential import SequentialMaxDiffLearning
+
+PAIRWISE_PREFERENCE_LEARNING_NAME = (
+    "LBFGSUniformGBT" if LBFGSUniformGBT is not None else "UniformGBT"
+)
+MAXDIFF_PREFERENCE_LEARNING_NAME = "SequentialMaxDiffLearning"
 
 PIPELINE_CONFIG = {
-    "preference_learning": PREFERENCE_LEARNING_NAME,
+    "preference_learning": MAXDIFF_PREFERENCE_LEARNING_NAME,
     "voting_rights": "AffineOvertrust",
     "aggregation": "EntitywiseQrQuantile(quantile=0.5)",
 }
 
 
-def create_preference_learning() -> PreferenceLearning:
+def create_pairwise_preference_learning() -> PreferenceLearning:
     if LBFGSUniformGBT is None:
         return UniformGBT(
             prior_std_dev=7.0,
@@ -25,4 +30,13 @@ def create_preference_learning() -> PreferenceLearning:
     return LBFGSUniformGBT(
         prior_std_dev=7.0,
         convergence_error=1e-5,
+    )
+
+
+def create_maxdiff_preference_learning() -> PreferenceLearning:
+    return SequentialMaxDiffLearning(
+        prior_std_dev=7.0,
+        convergence_error=1e-5,
+        high_likelihood_range_threshold=1.0,
+        max_iter=100,
     )

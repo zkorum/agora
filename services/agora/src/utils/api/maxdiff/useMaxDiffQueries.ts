@@ -3,6 +3,8 @@ import type {
   ApiV1MaxdiffItemsFetchPost200ResponseItemsInner,
   ApiV1MaxdiffLoadPost200Response,
 } from "src/api";
+import type { MaxDiffSaveResponse } from "src/shared/types/dto";
+import type { ParticipationBlockedReason } from "src/shared/types/zod";
 import type { ExtendedConversation, MaxDiffComparison } from "src/shared/types/zod";
 import type { MaxDiffState } from "src/utils/maxdiff";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
@@ -91,9 +93,13 @@ interface MaxDiffSaveMutationParams {
 export function useMaxDiffSaveMutation({
   conversationSlugId,
   onRollback,
+  onBlocked,
+  onNetworkError,
 }: {
   conversationSlugId: MaybeRefOrGetter<string>;
   onRollback: (context: MaxDiffSaveContext) => void;
+  onBlocked: (reason: ParticipationBlockedReason) => void;
+  onNetworkError: () => void;
 }) {
   const { saveMaxDiffResult } = useMaxDiffApi();
   const { updateAuthState } = useBackendAuthApi();
@@ -113,7 +119,13 @@ export function useMaxDiffSaveMutation({
       return response.data;
     },
 
-    onSuccess: async (_data, variables) => {
+    onSuccess: async (data: MaxDiffSaveResponse, variables) => {
+      if (!data.success) {
+        onRollback(variables.context);
+        onBlocked(data.reason);
+        return;
+      }
+
       await updateAuthState({ partialLoginStatus: { isKnown: true } });
 
       const slugId = toValue(conversationSlugId);
@@ -184,6 +196,7 @@ export function useMaxDiffSaveMutation({
 
     onError: (_error, variables) => {
       onRollback(variables.context);
+      onNetworkError();
     },
 
     retry: false,

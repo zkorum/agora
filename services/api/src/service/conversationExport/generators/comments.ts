@@ -1,13 +1,12 @@
 import { eq } from "drizzle-orm";
-import { format as formatCsv } from "fast-csv";
 import sanitizeHtml from "sanitize-html";
 import {
     opinionTable,
-    userTable,
     opinionContentTable,
     opinionModerationTable,
 } from "@/shared-backend/schema.js";
 import { formatDatetime } from "../utils.js";
+import { buildCsvBuffer } from "./csv.js";
 import type {
     CsvGenerator,
     GeneratorParams,
@@ -45,17 +44,17 @@ function stripHtmlForCsv(htmlContent: string): string {
 /**
  * Generator for comments.csv following Polis specification
  */
-export class CommentsGenerator implements CsvGenerator {
-    public readonly fileType = "comments";
-
+export const commentsGenerator: CsvGenerator = {
+    fileType: "comments",
+    minimumAccessLevel: "public",
     async generate(params: GeneratorParams): Promise<CsvGeneratorResult> {
-        const { db, conversationId } = params;
+        const { db, conversationId, participantMap } = params;
 
         // Fetch all opinions for this conversation with moderation status
         const opinions = await db
             .select({
                 opinionId: opinionTable.id,
-                authorParticipantId: userTable.polisParticipantId,
+                authorId: opinionTable.authorId,
                 content: opinionContentTable.content,
                 createdAt: opinionTable.createdAt,
                 numAgrees: opinionTable.numAgrees,
@@ -64,7 +63,6 @@ export class CommentsGenerator implements CsvGenerator {
                 moderationAction: opinionModerationTable.moderationAction,
             })
             .from(opinionTable)
-            .innerJoin(userTable, eq(opinionTable.authorId, userTable.id))
             .innerJoin(
                 opinionContentTable,
                 eq(opinionTable.currentContentId, opinionContentTable.id),
@@ -76,18 +74,11 @@ export class CommentsGenerator implements CsvGenerator {
             .where(eq(opinionTable.conversationId, conversationId))
             .orderBy(opinionTable.createdAt);
 
-        // Track author IDs to remap them to sequential integers starting from 0
-        const authorIdMap = new Map<number, number>();
-        let nextAuthorId = 0;
-
         // Generate CSV rows following Polis spec
-        // Note: fast-csv handles escaping automatically, so we don't need escapeCsvField
         const rows = opinions.map((opinion, index) => {
-            let authorId = authorIdMap.get(opinion.authorParticipantId);
-            if (authorId === undefined) {
-                authorId = nextAuthorId++;
-                authorIdMap.set(opinion.authorParticipantId, authorId);
-            }
+            const authorId = participantMap.getOrCreateExportParticipantId({
+                userId: opinion.authorId,
+            });
 
             return {
                 timestamp: Math.floor(opinion.createdAt.getTime() / 1000),
@@ -108,33 +99,11 @@ export class CommentsGenerator implements CsvGenerator {
             };
         });
 
-        const csvStream = formatCsv({ headers: true });
-        const chunks: Buffer[] = [];
-
-        csvStream.on("data", (chunk: Buffer) => {
-            chunks.push(chunk);
-        });
-
-        // Write all rows
-        for (const row of rows) {
-            csvStream.write(row);
-        }
-
-        csvStream.end();
-
-        // Wait for stream to finish
-        await new Promise<void>((resolve, reject) => {
-            csvStream.on("end", () => {
-                resolve();
-            });
-            csvStream.on("error", reject);
-        });
-
-        const csvBuffer = Buffer.concat(chunks);
+        const csvBuffer = await buildCsvBuffer({ rows });
 
         return {
             csvBuffer,
             recordCount: opinions.length,
         };
-    }
-}
+    },
+};

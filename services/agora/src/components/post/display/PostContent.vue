@@ -28,11 +28,22 @@
           :external-source-config="extendedPostData.metadata.externalSourceConfig"
         />
 
-        <EventTicketRequirementBanner
-          v-if="extendedPostData.metadata.requiresEventTicket"
+        <ConversationRequirementBanner
+          v-if="
+            !compactMode &&
+            (extendedPostData.metadata.requiresEventTicket ||
+              extendedPostData.interaction.surveyGate?.hasSurvey)
+          "
+          :conversation-slug-id="extendedPostData.metadata.conversationSlugId"
+          :participation-mode="extendedPostData.metadata.participationMode"
           :requires-event-ticket="extendedPostData.metadata.requiresEventTicket"
-          :read-only="compactMode"
-          @verified="(payload) => $emit('verified', payload)"
+          :survey-gate="
+            extendedPostData.interaction.surveyGate ?? {
+              hasSurvey: false,
+              canParticipate: true,
+              status: 'no_survey',
+            }
+          "
         />
       </div>
 
@@ -54,19 +65,6 @@
         v-if="!compactMode && extendedPostData.metadata.importInfo"
         :import-info="extendedPostData.metadata.importInfo"
       />
-
-      <div v-if="extendedPostData.payload.poll" class="pollContainer">
-        <PollWrapper
-          :participation-mode="
-            extendedPostData.metadata.participationMode
-          "
-          :poll-options="extendedPostData.payload.poll"
-          :post-slug-id="extendedPostData.metadata.conversationSlugId"
-          :user-response="extendedPostData.interaction"
-          :requires-event-ticket="extendedPostData.metadata.requiresEventTicket"
-          @ticket-verified="(payload) => $emit('verified', payload)"
-        />
-      </div>
 
       <ZKCard
         v-if="
@@ -93,7 +91,6 @@ import { defineAsyncComponent } from "vue";
 import ConversationTitle from "../../features/conversation/ConversationTitle.vue";
 import ZKCard from "../../ui-library/ZKCard.vue";
 import ZKHtmlContent from "../../ui-library/ZKHtmlContent.vue";
-import PollWrapper from "./poll/PollWrapper.vue";
 import PostLockedMessage from "./PostLockedMessage.vue";
 import PostMetadata from "./PostMetadata.vue";
 
@@ -107,8 +104,8 @@ defineEmits<{
   verified: [payload: { userIdChanged: boolean; needsCacheRefresh: boolean }];
 }>();
 
-const EventTicketRequirementBanner = defineAsyncComponent(
-  () => import("../EventTicketRequirementBanner.vue")
+const ConversationRequirementBanner = defineAsyncComponent(
+  () => import("../ConversationRequirementBanner.vue")
 );
 
 const ImportedConversationIndicator = defineAsyncComponent(
@@ -121,10 +118,6 @@ const ImportedConversationIndicator = defineAsyncComponent(
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-}
-
-.pollContainer {
-  padding-bottom: 0;
 }
 
 .bodyDiv {

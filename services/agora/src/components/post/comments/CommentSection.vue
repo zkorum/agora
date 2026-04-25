@@ -23,7 +23,6 @@
             :is-voting-disabled="props.isVotingDisabled"
             @deleted="(opinionSlugId) => handleOpinionDeleted(opinionSlugId)"
             @muted-comment="handleOpinionMuted()"
-            @ticket-verified="(payload) => emit('ticketVerified', payload)"
           />
         </AsyncStateHandler>
       </div>

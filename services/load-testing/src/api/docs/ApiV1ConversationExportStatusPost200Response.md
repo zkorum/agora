@@ -11,6 +11,7 @@ Name | Type | Description | Notes
 **createdAt** | **string** |  | [default to undefined]
 **expiresAt** | **string** |  | [default to undefined]
 **files** | [**Array&lt;ApiV1ConversationExportStatusPost200ResponseOneOf1FilesInner&gt;**](ApiV1ConversationExportStatusPost200ResponseOneOf1FilesInner.md) |  | [default to undefined]
+**bundle** | [**ApiV1ConversationExportStatusPost200ResponseOneOf1Bundle**](ApiV1ConversationExportStatusPost200ResponseOneOf1Bundle.md) |  | [optional] [default to undefined]
 **failureReason** | **string** |  | [optional] [default to undefined]
 **cancellationReason** | **string** |  | [default to undefined]
 **deletedAt** | **string** |  | [default to undefined]
@@ -27,6 +28,7 @@ const instance: ApiV1ConversationExportStatusPost200Response = {
     createdAt,
     expiresAt,
     files,
+    bundle,
     failureReason,
     cancellationReason,
     deletedAt,

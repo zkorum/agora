@@ -45,7 +45,7 @@ interface VerifyEventTicketProps {
 }
 
 /**
- * Verifies a Zupass event ticket GPC proof and stores it in the database
+ * Verifies a Zupass event ticket GPC proof and records the verified ticket
  * Uses ZK proofs with nullifiers for maximum privacy
  * Nullifiers are event-specific (via externalNullifier = `agora-${eventSlug}-v1`)
  * Follows castVote pattern: allows unauthenticated requests and creates guest accounts

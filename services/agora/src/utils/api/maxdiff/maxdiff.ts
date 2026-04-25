@@ -5,7 +5,6 @@ import type {
   ApiV1MaxdiffLoadPost200Response,
   ApiV1MaxdiffResultsPost200Response,
   ApiV1MaxdiffResultsPostRequest,
-  ApiV1MaxdiffSavePost200Response,
   ApiV1MaxdiffSavePostRequest,
   ApiV1MaxdiffSyncPost200Response,
 } from "src/api";
@@ -13,6 +12,7 @@ import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
+import { Dto, type MaxDiffSaveResponse } from "src/shared/types/dto";
 import type { MaxDiffComparison } from "src/shared/types/zod";
 
 import { api } from "../client";
@@ -33,8 +33,8 @@ export function useMaxDiffApi() {
     isComplete: boolean;
   }
 
-  type SaveMaxDiffResponse =
-    | AxiosSuccessResponse<ApiV1MaxdiffSavePost200Response>
+  type SaveMaxDiffResponseApi =
+    | AxiosSuccessResponse<MaxDiffSaveResponse>
     | AxiosErrorResponse;
 
   async function saveMaxDiffResult({
@@ -42,7 +42,7 @@ export function useMaxDiffApi() {
     ranking,
     comparisons,
     isComplete,
-  }: SaveMaxDiffParams): Promise<SaveMaxDiffResponse> {
+  }: SaveMaxDiffParams): Promise<SaveMaxDiffResponseApi> {
     try {
       const params: ApiV1MaxdiffSavePostRequest = {
         conversationSlugId,
@@ -63,7 +63,10 @@ export function useMaxDiffApi() {
         createRawAxiosRequestConfig({ encodedUcan })
       );
 
-      return { status: "success", data: response.data };
+      return {
+        status: "success",
+        data: Dto.maxdiffSaveResponse.parse(response.data),
+      };
     } catch (e) {
       return createAxiosErrorResponse(e);
     }

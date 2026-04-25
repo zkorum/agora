@@ -29,7 +29,7 @@
           {{ subtitle }}
         </div>
 
-        <div class="list-container">
+        <CompactFadeContainer :show-fade="compactMode && hasMore">
           <ol class="item-list">
             <li
               v-for="(item, index) in displayItems"
@@ -64,9 +64,7 @@
               </div>
             </li>
           </ol>
-
-          <div v-if="compactMode && hasMore" class="fade-overlay"></div>
-        </div>
+        </CompactFadeContainer>
       </template>
     </template>
   </AnalysisSectionWrapper>
@@ -76,6 +74,7 @@
 import AnalysisActionButton from "src/components/post/analysis/common/AnalysisActionButton.vue";
 import AnalysisSectionWrapper from "src/components/post/analysis/common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "src/components/post/analysis/common/AnalysisTitleHeader.vue";
+import CompactFadeContainer from "src/components/post/analysis/common/CompactFadeContainer.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { computed } from "vue";
@@ -128,10 +127,6 @@ const hasMore = computed(() => props.items.length > COMPACT_LIMIT);
   font-size: 0.85rem;
   color: $color-text-weak;
   margin-bottom: 0.5rem;
-}
-
-.list-container {
-  position: relative;
 }
 
 .item-list {
@@ -209,13 +204,4 @@ const hasMore = computed(() => props.items.length > COMPACT_LIMIT);
   font-style: italic;
 }
 
-.fade-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3rem;
-  background: linear-gradient(transparent, white);
-  pointer-events: none;
-}
 </style>

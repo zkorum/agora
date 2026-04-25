@@ -106,6 +106,7 @@ const props = withDefaults(defineProps<{
   voteCount: number;
   totalParticipantCount: number;
   totalVoteCount: number;
+  hasSurvey?: boolean;
   isLoading?: boolean;
   conversationSlugId: string;
   conversationTitle: string;
@@ -113,6 +114,7 @@ const props = withDefaults(defineProps<{
   onSameTabClick?: () => void;
   conversationType?: ConversationType;
 }>(), {
+  hasSurvey: false,
   onSameTabClick: undefined,
   conversationType: "polis",
 });
@@ -133,16 +135,31 @@ const showVoteBreakdown = ref(false);
 const showParticipantBreakdown = ref(false);
 const notify = useNotify();
 
-const votesExplanation = computed(() =>
-  props.conversationType === "maxdiff"
-    ? t("maxdiffVotesExplanation")
-    : t("moderatedVotesExplanation"),
-);
-const participantsExplanation = computed(() =>
-  props.conversationType === "maxdiff"
-    ? t("maxdiffParticipantsExplanation")
-    : t("moderatedParticipantsExplanation"),
-);
+const votesExplanation = computed(() => {
+  if (props.conversationType === "maxdiff") {
+    return t("maxdiffVotesExplanation");
+  }
+
+  const explanations = [t("moderatedVotesExplanation")];
+  if (props.hasSurvey) {
+    explanations.push(t("surveyVotesExplanation"));
+  }
+
+  return explanations.join("\n");
+});
+
+const participantsExplanation = computed(() => {
+  if (props.conversationType === "maxdiff") {
+    return t("maxdiffParticipantsExplanation");
+  }
+
+  const explanations = [t("moderatedParticipantsExplanation")];
+  if (props.hasSurvey) {
+    explanations.push(t("surveyParticipantsExplanation"));
+  }
+
+  return explanations.join("\n");
+});
 
 function shareClicked(): void {
   const sharePostUrl = getConversationUrl(props.conversationSlugId);

@@ -48,7 +48,6 @@
             :requires-event-ticket="props.requiresEventTicket"
             :on-view-analysis="props.onViewAnalysis"
             :is-voting-disabled="props.isVotingDisabled"
-            @ticket-verified="(payload) => emit('ticketVerified', payload)"
           />
         </div>
       </div>
@@ -81,9 +80,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   deleted: [opinionSlugId: string];
   mutedComment: [];
-  ticketVerified: [
-    payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
-  ];
 }>();
 
 import type { EventSlug, ParticipationMode } from "src/shared/types/zod";

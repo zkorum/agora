@@ -22,10 +22,6 @@
             <q-icon name="mdi-text" class="list-icon" />
             {{ t("bodyText") }}
           </li>
-          <li v-if="hasPoll">
-            <q-icon name="mdi-poll" class="list-icon" />
-            {{ t("pollOptions") }}
-          </li>
         </ul>
 
         <p class="preserved-message">
@@ -66,7 +62,6 @@ import {
 interface Props {
   hasTitle: boolean;
   hasBody: boolean;
-  hasPoll: boolean;
 }
 
 defineProps<Props>();

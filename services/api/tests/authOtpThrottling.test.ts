@@ -88,7 +88,6 @@ describe("OTP destination throttling", () => {
             CREATE TABLE "device" (
                 "did_write" varchar(1000) PRIMARY KEY NOT NULL,
                 "user_id" uuid NOT NULL,
-                "id_proof_id" integer,
                 "user_agent" text NOT NULL,
                 "session_expiry" timestamp NOT NULL,
                 "created_at" timestamp DEFAULT now() NOT NULL,

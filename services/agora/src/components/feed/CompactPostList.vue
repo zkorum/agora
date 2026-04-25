@@ -1,91 +1,89 @@
 <template>
   <div>
     <WidthWrapper :enable="true">
-      <q-pull-to-refresh @refresh="pullDownTriggered">
-        <q-infinite-scroll
-          :offset="2000"
-          :disable="!canLoadMore"
-          @load="onLoad"
+      <q-infinite-scroll
+        :offset="2000"
+        :disable="!canLoadMore"
+        @load="onLoad"
+      >
+        <PageLoadingSpinner v-if="showLoading" />
+
+        <div
+          v-if="isError && !showLoading"
+          class="emptyDivPadding"
         >
-          <PageLoadingSpinner v-if="showLoading" />
-
-          <div
-            v-if="isError && !showLoading"
-            class="emptyDivPadding"
-          >
-            <div class="centerMessage">
-              <div>
-                <q-icon
-                  :name="isOffline ? 'mdi-wifi-off' : 'mdi-alert-circle-outline'"
-                  size="4rem"
-                />
-              </div>
-
-              <div :style="{ fontSize: '1.3rem' }">
-                {{ isOffline ? t("networkErrorTitle") : t("errorStateTitle") }}
-              </div>
-
-              <div v-if="isOffline">
-                {{ t("networkErrorDescription") }}
-              </div>
-
-              <ActionButton
-                v-if="!isOffline"
-                variant="outline"
-                @click="refetch()"
-              >
-                {{ t('retryButton') }}
-              </ActionButton>
-            </div>
-          </div>
-
-          <div
-            v-else-if="partialHomeFeedList.length === 0 && !showLoading"
-            class="emptyDivPadding"
-          >
-            <div class="centerMessage">
-              <div>
-                <q-icon name="mdi-account-group" size="4rem" />
-              </div>
-
-              <div :style="{ fontSize: '1.3rem' }">
-                {{ t("emptyStateTitle") }}
-              </div>
-
-              <div>
-                {{ t("emptyStateDescription") }}
-                <q-icon name="mdi-plus-circle" /> button.
-              </div>
-            </div>
-          </div>
-
-          <div v-else-if="partialHomeFeedList.length > 0">
-            <div
-              class="postListFlex"
-              :class="{ 'loading-overlay': showLoading }"
-            >
-              <PostListItem
-                v-for="postData in partialHomeFeedList"
-                :key="postData.metadata.conversationSlugId"
-                :conversation-data="postData"
+          <div class="centerMessage">
+            <div>
+              <q-icon
+                :name="isOffline ? 'mdi-wifi-off' : 'mdi-alert-circle-outline'"
+                size="4rem"
               />
             </div>
-          </div>
 
-          <div
-            v-if="!isError && partialHomeFeedList.length > 0"
-            class="centerMessage"
-          >
-            <div>
-              <q-icon name="mdi-check" size="4rem" />
+            <div :style="{ fontSize: '1.3rem' }">
+              {{ isOffline ? t("networkErrorTitle") : t("errorStateTitle") }}
             </div>
 
-            <div :style="{ fontSize: '1.3rem' }">{{ t("completedTitle") }}</div>
+            <div v-if="isOffline">
+              {{ t("networkErrorDescription") }}
+            </div>
 
-            <div>{{ t("completedDescription") }}</div>
+            <ActionButton
+              v-if="!isOffline"
+              variant="outline"
+              @click="refetch()"
+            >
+              {{ t('retryButton') }}
+            </ActionButton>
           </div>
-        </q-infinite-scroll>
-      </q-pull-to-refresh>
+        </div>
+
+        <div
+          v-else-if="partialHomeFeedList.length === 0 && !showLoading"
+          class="emptyDivPadding"
+        >
+          <div class="centerMessage">
+            <div>
+              <q-icon name="mdi-account-group" size="4rem" />
+            </div>
+
+            <div :style="{ fontSize: '1.3rem' }">
+              {{ t("emptyStateTitle") }}
+            </div>
+
+            <div>
+              {{ t("emptyStateDescription") }}
+              <q-icon name="mdi-plus-circle" /> button.
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="partialHomeFeedList.length > 0">
+          <div
+            class="postListFlex"
+            :class="{ 'loading-overlay': showLoading }"
+          >
+            <PostListItem
+              v-for="postData in partialHomeFeedList"
+              :key="postData.metadata.conversationSlugId"
+              :conversation-data="postData"
+            />
+          </div>
+        </div>
+
+        <div
+          v-if="!isError && partialHomeFeedList.length > 0"
+          class="centerMessage"
+        >
+          <div>
+            <q-icon name="mdi-check" size="4rem" />
+          </div>
+
+          <div :style="{ fontSize: '1.3rem' }">{{ t("completedTitle") }}</div>
+
+          <div>{{ t("completedDescription") }}</div>
+        </div>
+      </q-infinite-scroll>
     </WidthWrapper>
 
     <!-- @vue-expect-error Quasar q-page-sticky doesn't type onClick event handler -->
@@ -220,7 +218,17 @@ function onLoad(index: number, done: () => void) {
   done();
 }
 
-function pullDownTriggered(done: () => void) {
+async function refetchFeedData(): Promise<void> {
+  const refetchResult = await refetch();
+
+  if (refetchResult.data) {
+    setFeedData(refetchResult.data);
+  }
+
+  canLoadMore.value = true;
+}
+
+function refreshFeed(done: () => void) {
   if (isOffline.value) {
     done();
     return;
@@ -228,8 +236,7 @@ function pullDownTriggered(done: () => void) {
   setTimeout(() => {
     void (async () => {
       try {
-        await refetch();
-        canLoadMore.value = true;
+        await refetchFeedData();
       } finally {
         done();
       }
@@ -245,14 +252,17 @@ async function refreshPage(done: () => void) {
   windowY.value = 0;
 
   try {
-    await refetch();
-    canLoadMore.value = true;
+    await refetchFeedData();
   } finally {
     setTimeout(() => {
       done();
     }, 500);
   }
 }
+
+defineExpose({
+  refreshFeed,
+});
 </script>
 
 <style scoped lang="scss">

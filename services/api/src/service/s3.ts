@@ -39,18 +39,20 @@ export async function uploadToS3({
     buffer,
     bucketName,
     fileName,
+    contentType = "text/csv",
 }: {
     s3Key: string;
     buffer: Buffer;
     bucketName: string;
     fileName?: string;
+    contentType?: string;
 }): Promise<void> {
     await s3Client.send(
         new PutObjectCommand({
             Bucket: bucketName,
             Key: s3Key,
             Body: buffer,
-            ContentType: "text/csv",
+            ContentType: contentType,
             ContentDisposition: fileName
                 ? `attachment; filename="${fileName}"`
                 : undefined,

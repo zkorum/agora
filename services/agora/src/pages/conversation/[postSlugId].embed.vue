@@ -31,6 +31,7 @@
           :author-username="loadedConversationData.metadata.authorUsername"
           :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
           :conversation-type="loadedConversationData.metadata.conversationType"
+          :has-survey="loadedConversationData.interaction.surveyGate?.hasSurvey === true"
         />
         </div>
 
@@ -54,12 +55,27 @@
             </KeepAlive>
           </router-view>
         </div>
+
+        <FloatingBottomContainer
+          v-if="loadedConversationData.metadata.conversationType !== 'maxdiff'"
+        >
+          <CommentComposer
+            :post-slug-id="loadedConversationData.metadata.conversationSlugId"
+            :participation-mode="loadedConversationData.metadata.participationMode"
+            :requires-event-ticket="loadedConversationData.metadata.requiresEventTicket"
+            :survey-gate="loadedConversationData.interaction.surveyGate"
+            :is-composer-disabled="isVotingDisabled"
+            @submitted-comment="handleSubmittedComment"
+          />
+        </FloatingBottomContainer>
       </div>
     </div>
   </EmbedLayout>
 </template>
 
 <script setup lang="ts">
+import FloatingBottomContainer from "src/components/navigation/FloatingBottomContainer.vue";
+import CommentComposer from "src/components/post/comments/CommentComposer.vue";
 import PostContent from "src/components/post/display/PostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import { useConversationParentState } from "src/composables/conversation/useConversationParentState";
@@ -89,6 +105,7 @@ const {
   navigateToDiscoverTab,
   openModerationHistory,
   handleTicketVerified,
+  handleSubmittedComment,
   scrollToActionBar,
   pendingScrollOverride,
 } = useConversationParentState({
@@ -99,6 +116,14 @@ const {
   ],
   routePrefix: "/conversation/{id}/embed",
   scrollContainer,
+});
+
+const isVotingDisabled = computed(() => {
+  const data = loadedConversationData.value;
+  const isModeratedAndLocked =
+    data.metadata.moderation.status === "moderated" &&
+    data.metadata.moderation.action === "lock";
+  return isModeratedAndLocked || data.metadata.isClosed;
 });
 
 const { tabContentStyle } = useTabScrollRestoration({

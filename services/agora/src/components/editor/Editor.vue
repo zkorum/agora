@@ -138,13 +138,16 @@ const props = withDefaults(defineProps<{
   singleLine: boolean;
   maxLength?: number;
   showCharacterCount?: boolean;
+  submitOnEnter?: boolean;
 }>(), {
   maxLength: undefined,
   showCharacterCount: true,
+  submitOnEnter: false,
 });
 const emit = defineEmits<{
   manuallyFocused: [];
   blur: [];
+  enter: [];
   "update:characterCount": [count: number];
   "update:isOverLimit": [isOverLimit: boolean];
 }>();
@@ -283,6 +286,14 @@ const editor = useEditor({
         allowedAttributes: {},
       };
       return sanitizeHtml(html, options);
+    },
+    handleKeyDown(_view, event) {
+      if (props.submitOnEnter && event.key === "Enter" && !event.shiftKey) {
+        emit("enter");
+        return true;
+      }
+
+      return false;
     },
   },
   onCreate: ({ editor }) => {

@@ -36,7 +36,7 @@
           :ai-label="userClusterData.aiLabel"
           :ai-summary="userClusterData.aiSummary"
           :navigate-to-discover-tab="props.navigateToDiscoverTab"
-          @update:model-value="switchToTab"
+          @update:model-value="onTabChange"
         />
       </div>
 
@@ -66,7 +66,7 @@
           :compact-mode="currentTab === 'Summary'"
           :clusters="analysisQuery.data.value?.polisClusters || {}"
           :cluster-labels="clusterLabels"
-          @update:model-value="switchToTab"
+          @update:model-value="onTabChange"
         />
       </div>
 
@@ -83,7 +83,7 @@
           :compact-mode="currentTab === 'Summary'"
           :clusters="analysisQuery.data.value?.polisClusters || {}"
           :cluster-labels="clusterLabels"
-          @update:model-value="switchToTab"
+          @update:model-value="onTabChange"
         />
       </div>
 
@@ -99,7 +99,22 @@
           :compact-mode="currentTab === 'Summary'"
           :clusters="analysisQuery.data.value?.polisClusters || {}"
           :cluster-labels="clusterLabels"
-          @update:model-value="switchToTab"
+          @update:model-value="onTabChange"
+        />
+      </div>
+
+      <!-- Survey -->
+      <div
+        v-if="props.hasSurvey && (currentTab === 'Summary' || currentTab === 'Survey')"
+        class="tabComponent"
+      >
+        <SurveyTab
+          :model-value="currentTab"
+          :survey-query="props.surveyQuery"
+          :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :total-participant-count="props.participantCount"
+          :compact-mode="currentTab === 'Summary'"
+          @update:model-value="onTabChange"
         />
       </div>
     </div>
@@ -111,13 +126,14 @@ import type { UseQueryReturnType } from "@tanstack/vue-query";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
+import type { SurveyResultsAggregatedResponse } from "src/shared/types/dto";
 import type {
   AnalysisOpinionItem,
   PolisClusters,
   PolisKey,
 } from "src/shared/types/zod";
 import { type ShortcutItem, shortcutItemSchema } from "src/utils/component/analysis/shortcutBar";
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import { useRoute } from "vue-router";
 
@@ -134,12 +150,15 @@ import {
   shortcutBarTranslations,
 } from "./shortcutBar/ShortcutBar.i18n";
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
+import SurveyTab from "./surveyTab/SurveyTab.vue";
 
 const props = withDefaults(
   defineProps<{
     participantCount: number;
     conversationSlugId: string;
     analysisQuery: UseQueryReturnType<AnalysisData, Error>;
+    surveyQuery: UseQueryReturnType<SurveyResultsAggregatedResponse, Error>;
+    hasSurvey: boolean;
     showReportButton?: boolean;
     navigateToDiscoverTab: () => void;
   }>(),
@@ -164,10 +183,20 @@ const { t: tShortcut } = useComponentI18n<ShortcutBarTranslations>(
 
 const route = useRoute();
 
-const { currentTab, handleSameTabClick, switchToTab } = useTabNavigation({
+const { currentTab, handleSameTabClick } = useTabNavigation({
   schema: shortcutItemSchema,
   defaultTab: "Summary",
 });
+
+watch(
+  () => props.hasSurvey,
+  (hasSurvey) => {
+    if (!hasSurvey && currentTab.value === "Survey") {
+      currentTab.value = "Summary";
+    }
+  },
+  { immediate: true }
+);
 
 function getPolisTabRoute(item: string): RouteLocationRaw {
   if (item === "Summary") {
@@ -176,14 +205,15 @@ function getPolisTabRoute(item: string): RouteLocationRaw {
   return { path: route.path, query: { tab: item } };
 }
 
-const polisTabItems: ShortcutItem[] = [
+const polisTabItems = computed<ShortcutItem[]>(() => [
   "Summary",
   "Me",
   "Groups",
   "Agreements",
   "Disagreements",
   "Divisive",
-];
+  ...(props.hasSurvey ? (["Survey"] as ShortcutItem[]) : []),
+]);
 
 const polisTabLabelMap: Record<string, string> = {
   Summary: tShortcut("summary"),
@@ -192,6 +222,7 @@ const polisTabLabelMap: Record<string, string> = {
   Agreements: tShortcut("agreements"),
   Disagreements: tShortcut("disagreements"),
   Divisive: tShortcut("divisive"),
+  Survey: tShortcut("survey"),
 };
 
 function getPolisTabLabel(item: string): string {
@@ -201,6 +232,11 @@ function getPolisTabLabel(item: string): string {
 function onTabChange(value: string): void {
   const parsed = shortcutItemSchema.safeParse(value);
   if (parsed.success) {
+    if (parsed.data === "Survey" && !props.hasSurvey) {
+      currentTab.value = "Summary";
+      return;
+    }
+
     currentTab.value = parsed.data;
   }
 }

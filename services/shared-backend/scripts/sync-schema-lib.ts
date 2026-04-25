@@ -142,6 +142,8 @@ export function mapSqlType(
     if (lower === "text") return { pyType: "str", saType: "Text" };
     if (lower === "real") return { pyType: "float", saType: "Float" };
     if (lower === "boolean") return { pyType: "bool", saType: "Boolean" };
+    if (lower === "smallint" || lower === "smallserial")
+        return { pyType: "int", saType: "Integer" };
     if (lower.startsWith("integer") || lower === "serial")
         return { pyType: "int", saType: "Integer" };
     if (lower === "bigint")

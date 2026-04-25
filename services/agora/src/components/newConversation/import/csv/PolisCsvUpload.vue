@@ -54,7 +54,7 @@
     </ZKCard>
 
     <!-- Login Dialog -->
-    <PreLoginIntentionDialog
+    <PreParticipationIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="() => {}"
       active-intention="newConversation"
@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import axios, { type AxiosError } from "axios";
 import { storeToRefs } from "pinia";
-import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_CSV_FILE_SIZE_MB } from "src/shared-app-api/csvUpload";

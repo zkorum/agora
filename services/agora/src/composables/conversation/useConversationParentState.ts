@@ -33,6 +33,12 @@ export interface ConversationParentConfig {
   scrollContainer?: Ref<HTMLElement | null>; // embed pages use a container div instead of window
 }
 
+export interface SubmittedCommentData {
+  opinionSlugId: string;
+  authStateChanged: boolean;
+  needsCacheRefresh: boolean;
+}
+
 export function useConversationParentState({
   analysisRouteName,
   commentRouteNames,
@@ -86,6 +92,7 @@ export function useConversationParentState({
   const {
     invalidateAnalysis: invalidateAnalysisQuery,
     invalidateComments,
+    forceRefreshAnalysis,
   } = useInvalidateCommentQueries();
   const { invalidateConversation } = useInvalidateConversationQuery();
 
@@ -95,6 +102,16 @@ export function useConversationParentState({
     "registerChildRefreshHandler",
     (handler: () => Promise<void>) => {
       childRefreshHandler.value = handler;
+    }
+  );
+
+  const submittedCommentHandler = ref<
+    ((data: SubmittedCommentData) => Promise<void>) | undefined
+  >();
+  provide(
+    "registerSubmittedCommentHandler",
+    (handler: (data: SubmittedCommentData) => Promise<void>) => {
+      submittedCommentHandler.value = handler;
     }
   );
 
@@ -240,6 +257,29 @@ export function useConversationParentState({
     await conversationQuery.refetch();
   }
 
+  async function handleSubmittedComment(
+    data: SubmittedCommentData
+  ): Promise<void> {
+    const handler = submittedCommentHandler.value;
+    if (handler !== undefined) {
+      await handler(data);
+      return;
+    }
+
+    const slugId = conversationData.value?.metadata.conversationSlugId;
+    if (slugId === undefined) {
+      return;
+    }
+
+    opinionCountOffset.value += 1;
+    invalidateComments(slugId);
+    forceRefreshAnalysis(slugId);
+
+    if (data.needsCacheRefresh) {
+      await loadAuthenticatedModules();
+    }
+  }
+
   async function handleRefresh(done: () => void): Promise<void> {
     if (isNetworkOffline.value) {
       done();
@@ -289,6 +329,7 @@ export function useConversationParentState({
     navigateToDiscoverTab,
     openModerationHistory,
     handleTicketVerified,
+    handleSubmittedComment,
     handleRefresh,
     invalidateUserVotes,
     scrollToActionBar,

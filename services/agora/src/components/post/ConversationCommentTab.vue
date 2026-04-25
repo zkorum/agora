@@ -20,26 +20,13 @@
       }"
       @deleted="decrementOpinionCount()"
       @participant-count-delta="handleParticipantCountDelta"
-      @ticket-verified="(payload) => handleTicketVerified(payload)"
     />
-
-    <FloatingBottomContainer>
-      <CommentComposer
-        :post-slug-id="conversationData.metadata.conversationSlugId"
-        :participation-mode="
-          conversationData.metadata.participationMode
-        "
-        :requires-event-ticket="conversationData.metadata.requiresEventTicket"
-        :is-composer-disabled="isVotingDisabled"
-        @submitted-comment="submittedComment"
-        @ticket-verified="(payload) => handleTicketVerified(payload)"
-      />
-    </FloatingBottomContainer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import type { SubmittedCommentData } from "src/composables/conversation/useConversationParentState";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
@@ -51,8 +38,6 @@ import {
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { computed, inject, onActivated, onMounted, type Ref, ref, watch } from "vue";
 
-import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
-import CommentComposer from "./comments/CommentComposer.vue";
 import CommentSection from "./comments/CommentSection.vue";
 
 // Props from parent
@@ -86,6 +71,11 @@ const registerChildRefreshHandler = inject<(handler: () => Promise<void>) => voi
     /* noop */
   }
 );
+const registerSubmittedCommentHandler = inject<
+  (handler: (data: SubmittedCommentData) => Promise<void>) => void
+>("registerSubmittedCommentHandler", () => {
+  /* noop */
+});
 
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
 
@@ -176,11 +166,7 @@ watch(
   }
 );
 
-async function submittedComment(data: {
-  opinionSlugId: string;
-  authStateChanged: boolean;
-  needsCacheRefresh: boolean;
-}): Promise<void> {
+async function submittedComment(data: SubmittedCommentData): Promise<void> {
   opinionCountOffset.value += 1;
 
   if (opinionSectionRef.value) {
@@ -213,23 +199,6 @@ async function submittedComment(data: {
   }
 }
 
-async function handleTicketVerified(payload: {
-  userIdChanged: boolean;
-  needsCacheRefresh: boolean;
-}): Promise<void> {
-  console.log(
-    "[ConversationCommentTab] Ticket verified event received",
-    payload
-  );
-
-  if (payload.needsCacheRefresh) {
-    console.log(
-      "[ConversationCommentTab] New guest via Zupass - performing deferred cache refresh"
-    );
-    await loadAuthenticatedModules();
-  }
-}
-
 watch(
   () => props.moderationHistoryTrigger,
   () => {
@@ -252,11 +221,13 @@ registerChildRefreshHandler(handleChildRefresh);
 
 onActivated(() => {
   registerChildRefreshHandler(handleChildRefresh);
+  registerSubmittedCommentHandler(submittedComment);
 });
 
 onMounted(() => {
   // Report initial loading state to parent
   setCurrentTabLoading(opinionSectionRef.value?.isLoading ?? false);
+  registerSubmittedCommentHandler(submittedComment);
 });
 </script>
 

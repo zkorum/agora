@@ -20,6 +20,9 @@
             :severity="currentStateSeverity"
           />
         </div>
+        <p class="control-help">
+          {{ currentStateExplanation }}
+        </p>
 
         <div class="control-buttons">
           <PrimeButton
@@ -181,13 +184,12 @@
 </template>
 
 <script setup lang="ts">
-import type { UseQueryReturnType } from "@tanstack/vue-query";
 import Button from "primevue/button";
 import Card from "primevue/card";
 import Tag from "primevue/tag";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { computed, ref } from "vue";
+import { computed, type Ref,ref } from "vue";
 
 import {
   type AsyncStateHandlerTestTranslations,
@@ -211,77 +213,47 @@ type MockState =
   | "error"
   | "empty"
   | "success"
-  | "retrying"
-  | "idle";
+  | "retrying";
+
+const defaultState: MockState = "success";
 
 // Define a minimal mock query interface that AsyncStateHandler expects
 interface MockQueryInterface {
-  data: { value: { message: string } | null };
-  error: { value: Error | null };
-  isPending: { value: boolean };
-  isError: { value: boolean };
-  isRefetching: { value: boolean };
+  data: Ref<{ message: string } | null>;
+  error: Ref<Error | null>;
+  isPending: Ref<boolean>;
+  isError: Ref<boolean>;
+  isRefetching: Ref<boolean>;
   refetch: () => Promise<void>;
 }
 
-const currentState = ref<MockState>("idle");
-const mockItems = ref<string[]>([]);
+const currentState = ref<MockState>(defaultState);
+const mockItems = ref<string[]>(["Sample Item 1", "Sample Item 2"]);
 
 // Create mock query objects that satisfy the minimal interface AsyncStateHandler needs
 function createMockQuery(state: MockState): MockQueryInterface {
+  const hasMockData = state === "success" || state === "retrying";
+
   // Create a minimal mock that provides the properties AsyncStateHandler uses
   return {
-    data: ref(state === "success" ? { message: "Success data" } : null),
+    data: ref(hasMockData ? { message: "Success data" } : null),
     error: ref(state === "error" ? new Error("Mock error occurred") : null),
     isPending: ref(state === "loading"),
     isError: ref(state === "error"),
     isRefetching: ref(state === "retrying"),
-    refetch: (): Promise<void> => {
-      console.log("Refetch called");
-      return Promise.resolve();
-    },
+    refetch: async (): Promise<void> => {},
   };
 }
 
-const basicQuery = computed(
-  () =>
-    createMockQuery(currentState.value) as unknown as UseQueryReturnType<
-      unknown,
-      Error
-    >
-);
+const basicQuery = computed(() => createMockQuery(currentState.value));
 
-const customQuery = computed(
-  () =>
-    createMockQuery(currentState.value) as unknown as UseQueryReturnType<
-      unknown,
-      Error
-    >
-);
+const customQuery = computed(() => createMockQuery(currentState.value));
 
-const retryQuery = computed(
-  () =>
-    createMockQuery(currentState.value) as unknown as UseQueryReturnType<
-      unknown,
-      Error
-    >
-);
+const retryQuery = computed(() => createMockQuery(currentState.value));
 
-const functionEmptyQuery = computed(
-  () =>
-    createMockQuery(currentState.value) as unknown as UseQueryReturnType<
-      unknown,
-      Error
-    >
-);
+const functionEmptyQuery = computed(() => createMockQuery(currentState.value));
 
-const slotsQuery = computed(
-  () =>
-    createMockQuery(currentState.value) as unknown as UseQueryReturnType<
-      unknown,
-      Error
-    >
-);
+const slotsQuery = computed(() => createMockQuery(currentState.value));
 
 // New Config API examples
 const customConfig = computed(() => ({
@@ -291,15 +263,15 @@ const customConfig = computed(() => ({
   },
   error: {
     title: t("customErrorMessage"),
-    icon: "pi pi-times-circle",
-    iconColor: "red-600",
+    icon: "mdi-close-circle-outline",
+    iconColor: "negative",
     retryButtonText: t("customRetryText"),
     showRetryButton: true,
   },
   empty: {
     text: t("customEmptyText"),
-    icon: "pi pi-database",
-    iconColor: "blue-500",
+    icon: "storage",
+    iconColor: "blue-5",
   },
   retrying: {
     text: "Please wait, retrying...",
@@ -317,26 +289,24 @@ const retryConfig = computed(() => ({
 const functionEmptyConfig = computed(() => ({
   empty: {
     text: "No items found (function-based check)",
-    icon: "pi pi-list",
-    iconColor: "orange-500",
+    icon: "format_list_bulleted",
+    iconColor: "orange-5",
   },
 }));
 
 const currentStateDisplay = computed(() => {
   const stateMap: Record<MockState, string> = {
-    idle: "Idle",
     loading: "Loading",
     error: "Error",
     empty: "Empty",
     success: "Success",
-    retrying: "Retrying",
+    retrying: "Background refresh",
   };
   return stateMap[currentState.value];
 });
 
 const currentStateSeverity = computed(() => {
   const severityMap: Record<MockState, string> = {
-    idle: "secondary",
     loading: "info",
     error: "danger",
     empty: "warn",
@@ -346,6 +316,23 @@ const currentStateSeverity = computed(() => {
   return severityMap[currentState.value];
 });
 
+const currentStateExplanation = computed(() => {
+  switch (currentState.value) {
+    case "loading":
+      return "Initial load with no cached data yet. The handler should replace content with loading UI.";
+    case "error":
+      return "Failed load. The handler should replace content with an error state and optional retry action.";
+    case "empty":
+      return "Successful request with no usable data. The handler should show the empty state instead of the content slot.";
+    case "success":
+      return "Successful request with data. The handler should render the content slot normally.";
+    case "retrying":
+      return "Background refresh after a prior success. Existing content stays visible and the handler does not add inline UI for this state.";
+  }
+
+  return "";
+});
+
 // Function-based empty state detection
 const customEmptyFunction = (): boolean => {
   return mockItems.value.length === 0;
@@ -353,34 +340,27 @@ const customEmptyFunction = (): boolean => {
 
 // Custom retry handler function
 const customRetryHandler = async (): Promise<void> => {
-  console.log("Custom retry handler executed!");
-  // Simulate async operation
   await new Promise((resolve) => setTimeout(resolve, 1000));
-  // Add some mock items
   mockItems.value.push(`Item ${Date.now()}`);
 };
 
 function simulateState(state: MockState): void {
   currentState.value = state;
-  if (state === "success") {
+  if (state === "success" || state === "retrying") {
     mockItems.value = ["Sample Item 1", "Sample Item 2"];
-  } else if (state === "empty") {
+  } else {
     mockItems.value = [];
   }
 }
 
 function resetState(): void {
-  currentState.value = "idle";
-  mockItems.value = [];
+  currentState.value = defaultState;
+  mockItems.value = ["Sample Item 1", "Sample Item 2"];
 }
 
-function handleCustomRetry(): void {
-  console.log("Custom retry handler called (config example)");
-}
+function handleCustomRetry(): void {}
 
-function onRetryEmitted(): void {
-  console.log("Retry event emitted!");
-}
+function onRetryEmitted(): void {}
 </script>
 
 <style scoped lang="scss">
@@ -431,6 +411,13 @@ function onRetryEmitted(): void {
     flex-wrap: wrap;
     gap: 0.5rem;
   }
+}
+
+.control-help {
+  margin: 0 0 1rem 0;
+  color: $grey-7;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 .examples-container {

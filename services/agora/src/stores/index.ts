@@ -154,12 +154,6 @@ function stateTransformer(
         seedOpinions: conversationDraft.seedOpinions.map(
           () => "[REDACTED_SEED_OPINION]"
         ),
-        poll: {
-          ...conversationDraft.poll,
-          options: conversationDraft.poll.options.map(
-            () => "[REDACTED_POLL_OPTION]"
-          ),
-        },
         postAs: {
           ...conversationDraft.postAs,
           organizationName: redactString(

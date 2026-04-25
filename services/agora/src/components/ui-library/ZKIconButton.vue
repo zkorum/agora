@@ -1,20 +1,33 @@
 <template>
-  <component
-    :is="to && !disabled ? 'router-link' : 'button'"
+  <SpaLink
+    v-if="to && !disabled"
     :to="to"
+    :replace="replace"
     class="zk-icon-button"
-    :disabled="!to ? disabled : undefined"
     v-bind="$attrs"
     @click="handleClick"
     @touchend="handleTouchEnd"
   >
     <ZKIcon :name="icon" :size="iconSize" :color="iconColor" />
-  </component>
+  </SpaLink>
+
+  <button
+    v-else
+    type="button"
+    class="zk-icon-button"
+    :disabled="disabled"
+    v-bind="$attrs"
+    @click="handleClick"
+    @touchend="handleTouchEnd"
+  >
+    <ZKIcon :name="icon" :size="iconSize" :color="iconColor" />
+  </button>
 </template>
 
 <script setup lang="ts">
 import type { RouteLocationRaw } from "vue-router";
 
+import SpaLink from "./SpaLink.vue";
 import ZKIcon from "./ZKIcon.vue";
 
 interface Props {
@@ -23,6 +36,7 @@ interface Props {
   iconColor?: string;
   disabled?: boolean;
   to?: RouteLocationRaw;
+  replace?: boolean;
 }
 
 defineOptions({
@@ -34,6 +48,7 @@ const props = withDefaults(defineProps<Props>(), {
   iconColor: "7D7A85",
   disabled: false,
   to: undefined,
+  replace: false,
 });
 
 const emit = defineEmits<{

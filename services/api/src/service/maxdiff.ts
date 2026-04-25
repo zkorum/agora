@@ -37,6 +37,32 @@ export interface RankedItem {
     participantCount: number;
 }
 
+interface ScoredEntry {
+    score: number;
+}
+
+export function normalizeScores<T extends ScoredEntry>(items: T[]): T[] {
+    if (items.length === 0) {
+        return items;
+    }
+
+    const scoreValues = items.map((item) => item.score);
+    const minScore = Math.min(...scoreValues);
+    const maxScore = Math.max(...scoreValues);
+    const scoreRange = maxScore - minScore;
+
+    if (scoreRange < 1e-6) {
+        return items.map((item) => ({
+            ...item,
+            score: 0.5,
+        }));
+    }
+
+    return items.map((item) => ({
+        ...item,
+        score: (item.score - minScore) / scoreRange,
+    }));
+}
 
 // --- Global Uncertainty (for routing) ---
 
@@ -52,7 +78,6 @@ export async function computeGlobalUncertainty({
     db: PostgresDatabase;
     conversationId: number;
 }): Promise<{ items: string[]; uncertainty: Map<string, number> }> {
-
     const activeItems = await db
         .select({ slugId: maxdiffItemTable.slugId })
         .from(maxdiffItemTable)
@@ -145,10 +170,7 @@ export async function saveMaxdiffResult({
         );
     }
 
-    if (
-        isMaxdiffOrgOnly &&
-        conversationTypeResult[0].organizationId === null
-    ) {
+    if (isMaxdiffOrgOnly && conversationTypeResult[0].organizationId === null) {
         throw httpErrors.forbidden(
             "MaxDiff feature is restricted to organization conversations",
         );
@@ -208,7 +230,6 @@ export async function saveMaxdiffResult({
                 })),
             );
         }
-
     });
 
     // Mark conversation as dirty for the scoring worker to pick up.
@@ -256,7 +277,6 @@ export async function loadMaxdiffResult({
     conversationId,
     userId,
 }: LoadMaxdiffResultProps): Promise<LoadMaxdiffResultData> {
-
     const results = await db
         .select({
             id: maxdiffResultTable.id,
@@ -287,9 +307,7 @@ export async function loadMaxdiffResult({
         .array(zodMaxdiffComparison)
         .parse(row.comparisons);
     const ranking =
-        row.ranking !== null
-            ? z.array(z.string()).parse(row.ranking)
-            : null;
+        row.ranking !== null ? z.array(z.string()).parse(row.ranking) : null;
 
     // Fetch per-user Solidago scores (written by scoring worker)
     const scoreRows = await db
@@ -305,7 +323,7 @@ export async function loadMaxdiffResult({
         ranking,
         comparisons: comparisonsResult,
         isComplete: row.isComplete,
-        perUserScores: scoreRows.length > 0 ? scoreRows : null,
+        perUserScores: scoreRows.length > 0 ? normalizeScores(scoreRows) : null,
     };
 }
 
@@ -358,17 +376,13 @@ export async function getMaxdiffResults({
             lifecycleStatus: maxdiffItemTable.lifecycleStatus,
             snapshotScore: maxdiffItemTable.snapshotScore,
             snapshotRank: maxdiffItemTable.snapshotRank,
-            snapshotParticipantCount:
-                maxdiffItemTable.snapshotParticipantCount,
+            snapshotParticipantCount: maxdiffItemTable.snapshotParticipantCount,
             externalUrl: maxdiffItemExternalSourceTable.externalUrl,
         })
         .from(maxdiffItemTable)
         .innerJoin(
             maxdiffItemContentTable,
-            eq(
-                maxdiffItemContentTable.id,
-                maxdiffItemTable.currentContentId,
-            ),
+            eq(maxdiffItemContentTable.id, maxdiffItemTable.currentContentId),
         )
         .leftJoin(
             maxdiffItemExternalSourceTable,
@@ -388,10 +402,7 @@ export async function getMaxdiffResults({
     const items = itemRows.map((r) => r.slugId);
 
     // For completed/canceled items, return snapshot scores if available
-    if (
-        lifecycleFilter === "completed" ||
-        lifecycleFilter === "canceled"
-    ) {
+    if (lifecycleFilter === "completed" || lifecycleFilter === "canceled") {
         const rankings: MaxDiffResultItem[] = itemRows
             .map((r) => ({
                 itemSlugId: r.slugId,
@@ -451,9 +462,9 @@ export async function getMaxdiffResults({
                     itemSlugId: s.entityId,
                     avgRank: idx + 1,
                     score: s.score,
-                    participantCount:
-                        cachedParticipantCounts[s.entityId] ?? 0,
+                    participantCount: cachedParticipantCounts[s.entityId] ?? 0,
                 }));
+            scored = normalizeScores(scored);
         } else {
             scored = [];
         }
@@ -529,7 +540,6 @@ export async function getMaxdiffResults({
     return { rankings };
 }
 
-
 // --- Snapshot scores for lifecycle transitions ---
 
 interface ComputeSnapshotProps {
@@ -604,15 +614,21 @@ export async function computeItemSnapshot({
     }
 
     // Rank = position in sorted scores (1-based)
-    const rank =
-        cachedScores
-            .filter((s) => s.score >= itemScore.score)
-            .length;
+    const rank = cachedScores.filter((s) => s.score >= itemScore.score).length;
+
+    const normalizedScores = normalizeScores(
+        cachedScores.map((score) => ({
+            entityId: score.entityId,
+            score: score.score,
+        })),
+    );
+    const normalizedItemScore = normalizedScores.find(
+        (score) => score.entityId === itemSlugId,
+    );
 
     return {
-        snapshotScore: itemScore.score,
+        snapshotScore: normalizedItemScore?.score ?? null,
         snapshotRank: rank,
-        snapshotParticipantCount:
-            cachedParticipantCounts[itemSlugId] ?? 0,
+        snapshotParticipantCount: cachedParticipantCounts[itemSlugId] ?? 0,
     };
 }

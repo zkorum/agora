@@ -48,6 +48,13 @@ declare module 'vue-router/auto-routes' {
       { conversationSlugId: ParamValue<false> },
       | never
     >,
+    '/conversation/[conversationSlugId]/edit/survey/': RouteRecordInfo<
+      '/conversation/[conversationSlugId]/edit/survey/',
+      '/conversation/:conversationSlugId/edit/survey',
+      { conversationSlugId: ParamValue<true> },
+      { conversationSlugId: ParamValue<false> },
+      | never
+    >,
     '/conversation/[conversationSlugId]/export': RouteRecordInfo<
       '/conversation/[conversationSlugId]/export',
       '/conversation/:conversationSlugId/export',
@@ -113,6 +120,123 @@ declare module 'vue-router/auto-routes' {
       { postSlugId: ParamValue<false> },
       | never
     >,
+    '/conversation/[postSlugId].onboarding': RouteRecordInfo<
+      '/conversation/[postSlugId].onboarding',
+      '/conversation/:postSlugId/onboarding',
+      { postSlugId: ParamValue<true> },
+      { postSlugId: ParamValue<false> },
+      | '/conversation/[postSlugId].onboarding/'
+      | '/conversation/[postSlugId].onboarding/complete'
+      | '/conversation/[postSlugId].onboarding/question.[questionSlugId]'
+      | '/conversation/[postSlugId].onboarding/summary'
+      | '/conversation/[postSlugId].onboarding/verify'
+      | '/conversation/[postSlugId].onboarding/verify/email'
+      | '/conversation/[postSlugId].onboarding/verify/email-code'
+      | '/conversation/[postSlugId].onboarding/verify/hard'
+      | '/conversation/[postSlugId].onboarding/verify/identity'
+      | '/conversation/[postSlugId].onboarding/verify/passport'
+      | '/conversation/[postSlugId].onboarding/verify/phone'
+      | '/conversation/[postSlugId].onboarding/verify/phone-code'
+      | '/conversation/[postSlugId].onboarding/verify/ticket'
+    >,
+    '/conversation/[postSlugId].onboarding/': RouteRecordInfo<
+      '/conversation/[postSlugId].onboarding/',
+      '/conversation/:postSlugId/onboarding',
+      { postSlugId: ParamValue<true> },
+      { postSlugId: ParamValue<false> },
+      | never
+    >,
+    '/conversation/[postSlugId].onboarding/complete': RouteRecordInfo<
+      '/conversation/[postSlugId].onboarding/complete',
+      '/conversation/:postSlugId/onboarding/complete',
+      { postSlugId: ParamValue<true> },
+      { postSlugId: ParamValue<false> },
+      | never
+    >,
+    '/conversation/[postSlugId].onboarding/question.[questionSlugId]': RouteRecordInfo<
+      '/conversation/[postSlugId].onboarding/question.[questionSlugId]',
+      '/conversation/:postSlugId/onboarding/question/:questionSlugId',
+      { postSlugId: ParamValue<true>, questionSlugId: ParamValue<true> },
+      { postSlugId: ParamValue<false>, questionSlugId: ParamValue<false> },
+      | never
+    >,
+    '/conversation/[postSlugId].onboarding/summary': RouteRecordInfo<
+      '/conversation/[postSlugId].onboarding/summary',
+      '/conversation/:postSlugId/onboarding/summary',
+      { postSlugId: ParamValue<true> },
+      { postSlugId: ParamValue<false> },
+      | never
+    >,
+    '/conversation/[postSlugId].onboarding/verify': RouteRecordInfo<
+      '/conversation/[postSlugId].onboarding/verify',
+      '/conversation/:postSlugId/onboarding/verify',
+      { postSlugId: ParamValue<true> },
+      { postSlugId: ParamValue<false> },
+      | '/conversation/[postSlugId].onboarding/verify/email'
+      | '/conversation/[postSlugId].onboarding/verify/email-code'
+      | '/conversation/[postSlugId].onboarding/verify/hard'
+      | '/conversation/[postSlugId].onboarding/verify/identity'
+      | '/conversation/[postSlugId].onboarding/verify/passport'
+      | '/conversation/[postSlugId].onboarding/verify/phone'
+      | '/conversation/[postSlugId].onboarding/verify/phone-code'
+      | '/conversation/[postSlugId].onboarding/verify/ticket'
+    >,
+    '/conversation/[postSlugId].onboarding/verify/email': RouteRecordInfo<
+      '/conversation/[postSlugId].onboarding/verify/email',
+      '/conversation/:postSlugId/onboarding/verify/email',
+      { postSlugId: ParamValue<true> },
+      { postSlugId: ParamValue<false> },
+      | never
+    >,
+    '/conversation/[postSlugId].onboarding/verify/email-code': RouteRecordInfo<
+      '/conversation/[postSlugId].onboarding/verify/email-code',
+      '/conversation/:postSlugId/onboarding/verify/email-code',
+      { postSlugId: ParamValue<true> },
+      { postSlugId: ParamValue<false> },
+      | never
+    >,
+    '/conversation/[postSlugId].onboarding/verify/hard': RouteRecordInfo<
+      '/conversation/[postSlugId].onboarding/verify/hard',
+      '/conversation/:postSlugId/onboarding/verify/hard',
+      { postSlugId: ParamValue<true> },
+      { postSlugId: ParamValue<false> },
+      | never
+    >,
+    '/conversation/[postSlugId].onboarding/verify/identity': RouteRecordInfo<
+      '/conversation/[postSlugId].onboarding/verify/identity',
+      '/conversation/:postSlugId/onboarding/verify/identity',
+      { postSlugId: ParamValue<true> },
+      { postSlugId: ParamValue<false> },
+      | never
+    >,
+    '/conversation/[postSlugId].onboarding/verify/passport': RouteRecordInfo<
+      '/conversation/[postSlugId].onboarding/verify/passport',
+      '/conversation/:postSlugId/onboarding/verify/passport',
+      { postSlugId: ParamValue<true> },
+      { postSlugId: ParamValue<false> },
+      | never
+    >,
+    '/conversation/[postSlugId].onboarding/verify/phone': RouteRecordInfo<
+      '/conversation/[postSlugId].onboarding/verify/phone',
+      '/conversation/:postSlugId/onboarding/verify/phone',
+      { postSlugId: ParamValue<true> },
+      { postSlugId: ParamValue<false> },
+      | never
+    >,
+    '/conversation/[postSlugId].onboarding/verify/phone-code': RouteRecordInfo<
+      '/conversation/[postSlugId].onboarding/verify/phone-code',
+      '/conversation/:postSlugId/onboarding/verify/phone-code',
+      { postSlugId: ParamValue<true> },
+      { postSlugId: ParamValue<false> },
+      | never
+    >,
+    '/conversation/[postSlugId].onboarding/verify/ticket': RouteRecordInfo<
+      '/conversation/[postSlugId].onboarding/verify/ticket',
+      '/conversation/:postSlugId/onboarding/verify/ticket',
+      { postSlugId: ParamValue<true> },
+      { postSlugId: ParamValue<false> },
+      | never
+    >,
     '/conversation/import/[importSlugId]': RouteRecordInfo<
       '/conversation/import/[importSlugId]',
       '/conversation/import/:importSlugId',
@@ -130,6 +254,20 @@ declare module 'vue-router/auto-routes' {
     '/conversation/new/review/': RouteRecordInfo<
       '/conversation/new/review/',
       '/conversation/new/review',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/conversation/new/seed/': RouteRecordInfo<
+      '/conversation/new/seed/',
+      '/conversation/new/seed',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/conversation/new/survey/': RouteRecordInfo<
+      '/conversation/new/survey/',
+      '/conversation/new/survey',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -394,13 +532,6 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/verify/any/': RouteRecordInfo<
-      '/verify/any/',
-      '/verify/any',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
     '/verify/email/': RouteRecordInfo<
       '/verify/email/',
       '/verify/email',
@@ -411,6 +542,13 @@ declare module 'vue-router/auto-routes' {
     '/verify/email-code/': RouteRecordInfo<
       '/verify/email-code/',
       '/verify/email-code',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/verify/hard/': RouteRecordInfo<
+      '/verify/hard/',
+      '/verify/hard',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -481,6 +619,12 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/conversation/[conversationSlugId]/edit/survey/index.vue': {
+      routes:
+        | '/conversation/[conversationSlugId]/edit/survey/'
+      views:
+        | never
+    }
     'src/pages/conversation/[conversationSlugId]/export.vue': {
       routes:
         | '/conversation/[conversationSlugId]/export'
@@ -539,6 +683,111 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/conversation/[postSlugId].onboarding.vue': {
+      routes:
+        | '/conversation/[postSlugId].onboarding'
+        | '/conversation/[postSlugId].onboarding/'
+        | '/conversation/[postSlugId].onboarding/complete'
+        | '/conversation/[postSlugId].onboarding/question.[questionSlugId]'
+        | '/conversation/[postSlugId].onboarding/summary'
+        | '/conversation/[postSlugId].onboarding/verify'
+        | '/conversation/[postSlugId].onboarding/verify/email'
+        | '/conversation/[postSlugId].onboarding/verify/email-code'
+        | '/conversation/[postSlugId].onboarding/verify/hard'
+        | '/conversation/[postSlugId].onboarding/verify/identity'
+        | '/conversation/[postSlugId].onboarding/verify/passport'
+        | '/conversation/[postSlugId].onboarding/verify/phone'
+        | '/conversation/[postSlugId].onboarding/verify/phone-code'
+        | '/conversation/[postSlugId].onboarding/verify/ticket'
+      views:
+        | 'default'
+    }
+    'src/pages/conversation/[postSlugId].onboarding/index.vue': {
+      routes:
+        | '/conversation/[postSlugId].onboarding/'
+      views:
+        | never
+    }
+    'src/pages/conversation/[postSlugId].onboarding/complete.vue': {
+      routes:
+        | '/conversation/[postSlugId].onboarding/complete'
+      views:
+        | never
+    }
+    'src/pages/conversation/[postSlugId].onboarding/question.[questionSlugId].vue': {
+      routes:
+        | '/conversation/[postSlugId].onboarding/question.[questionSlugId]'
+      views:
+        | never
+    }
+    'src/pages/conversation/[postSlugId].onboarding/summary.vue': {
+      routes:
+        | '/conversation/[postSlugId].onboarding/summary'
+      views:
+        | never
+    }
+    'src/pages/conversation/[postSlugId].onboarding/verify.vue': {
+      routes:
+        | '/conversation/[postSlugId].onboarding/verify'
+        | '/conversation/[postSlugId].onboarding/verify/email'
+        | '/conversation/[postSlugId].onboarding/verify/email-code'
+        | '/conversation/[postSlugId].onboarding/verify/hard'
+        | '/conversation/[postSlugId].onboarding/verify/identity'
+        | '/conversation/[postSlugId].onboarding/verify/passport'
+        | '/conversation/[postSlugId].onboarding/verify/phone'
+        | '/conversation/[postSlugId].onboarding/verify/phone-code'
+        | '/conversation/[postSlugId].onboarding/verify/ticket'
+      views:
+        | 'default'
+    }
+    'src/pages/conversation/[postSlugId].onboarding/verify/email.vue': {
+      routes:
+        | '/conversation/[postSlugId].onboarding/verify/email'
+      views:
+        | never
+    }
+    'src/pages/conversation/[postSlugId].onboarding/verify/email-code.vue': {
+      routes:
+        | '/conversation/[postSlugId].onboarding/verify/email-code'
+      views:
+        | never
+    }
+    'src/pages/conversation/[postSlugId].onboarding/verify/hard.vue': {
+      routes:
+        | '/conversation/[postSlugId].onboarding/verify/hard'
+      views:
+        | never
+    }
+    'src/pages/conversation/[postSlugId].onboarding/verify/identity.vue': {
+      routes:
+        | '/conversation/[postSlugId].onboarding/verify/identity'
+      views:
+        | never
+    }
+    'src/pages/conversation/[postSlugId].onboarding/verify/passport.vue': {
+      routes:
+        | '/conversation/[postSlugId].onboarding/verify/passport'
+      views:
+        | never
+    }
+    'src/pages/conversation/[postSlugId].onboarding/verify/phone.vue': {
+      routes:
+        | '/conversation/[postSlugId].onboarding/verify/phone'
+      views:
+        | never
+    }
+    'src/pages/conversation/[postSlugId].onboarding/verify/phone-code.vue': {
+      routes:
+        | '/conversation/[postSlugId].onboarding/verify/phone-code'
+      views:
+        | never
+    }
+    'src/pages/conversation/[postSlugId].onboarding/verify/ticket.vue': {
+      routes:
+        | '/conversation/[postSlugId].onboarding/verify/ticket'
+      views:
+        | never
+    }
     'src/pages/conversation/import/[importSlugId].vue': {
       routes:
         | '/conversation/import/[importSlugId]'
@@ -554,6 +803,18 @@ declare module 'vue-router/auto-routes' {
     'src/pages/conversation/new/review/index.vue': {
       routes:
         | '/conversation/new/review/'
+      views:
+        | never
+    }
+    'src/pages/conversation/new/seed/index.vue': {
+      routes:
+        | '/conversation/new/seed/'
+      views:
+        | never
+    }
+    'src/pages/conversation/new/survey/index.vue': {
+      routes:
+        | '/conversation/new/survey/'
       views:
         | never
     }
@@ -781,12 +1042,6 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
-    'src/pages/verify/any/index.vue': {
-      routes:
-        | '/verify/any/'
-      views:
-        | never
-    }
     'src/pages/verify/email/index.vue': {
       routes:
         | '/verify/email/'
@@ -796,6 +1051,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/verify/email-code/index.vue': {
       routes:
         | '/verify/email-code/'
+      views:
+        | never
+    }
+    'src/pages/verify/hard/index.vue': {
+      routes:
+        | '/verify/hard/'
       views:
         | never
     }

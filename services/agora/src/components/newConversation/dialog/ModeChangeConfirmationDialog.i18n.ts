@@ -5,7 +5,6 @@ export interface ModeChangeConfirmationDialogTranslations {
   switchingWillClear: string;
   title: string;
   bodyText: string;
-  pollOptions: string;
   settingsPreserved: string;
   cancel: string;
   continue: string;
@@ -21,7 +20,6 @@ export const modeChangeConfirmationDialogTranslations: Record<
       "Switching to import mode will clear the following fields from the conversation draft:",
     title: "Title",
     bodyText: "Body text",
-    pollOptions: "Poll options",
     settingsPreserved:
       "Your privacy settings and organization selection will be preserved.",
     cancel: "Cancel",
@@ -33,7 +31,6 @@ export const modeChangeConfirmationDialogTranslations: Record<
       "التبديل إلى وضع الاستيراد سيمحو الحقول التالية من مسودة المحادثة:",
     title: "العنوان",
     bodyText: "نص المحتوى",
-    pollOptions: "خيارات الاستطلاع",
     settingsPreserved: "سيتم الاحتفاظ بإعدادات الخصوصية واختيار المنظمة.",
     cancel: "إلغاء",
     continue: "متابعة",
@@ -44,7 +41,6 @@ export const modeChangeConfirmationDialogTranslations: Record<
       "Cambiar al modo de importación borrará los siguientes campos del borrador de conversación:",
     title: "Título",
     bodyText: "Texto del cuerpo",
-    pollOptions: "Opciones de encuesta",
     settingsPreserved:
       "Tu configuración de privacidad y selección de organización se preservará.",
     cancel: "Cancelar",
@@ -56,7 +52,6 @@ export const modeChangeConfirmationDialogTranslations: Record<
       "تغییر به حالت واردات فیلدهای زیر را از پیش‌نویس گفتگو پاک می‌کند:",
     title: "عنوان",
     bodyText: "متن اصلی",
-    pollOptions: "گزینه‌های نظرسنجی",
     settingsPreserved:
       "تنظیمات حریم خصوصی و انتخاب سازمان شما حفظ خواهد شد.",
     cancel: "لغو",
@@ -68,7 +63,6 @@ export const modeChangeConfirmationDialogTranslations: Record<
       "Passer en mode d'import effacera les champs suivants du brouillon de conversation :",
     title: "Titre",
     bodyText: "Texte du corps",
-    pollOptions: "Options de sondage",
     settingsPreserved:
       "Vos paramètres de confidentialité et sélection d'organisation seront préservés.",
     cancel: "Annuler",
@@ -79,7 +73,6 @@ export const modeChangeConfirmationDialogTranslations: Record<
     switchingWillClear: "切换到导入模式将清除以下字段：",
     title: "标题",
     bodyText: "正文",
-    pollOptions: "投票选项",
     settingsPreserved: "您的隐私设置和组织选择将被保留。",
     cancel: "取消",
     continue: "继续",
@@ -89,7 +82,6 @@ export const modeChangeConfirmationDialogTranslations: Record<
     switchingWillClear: "切換到導入模式將清除以下字段：",
     title: "標題",
     bodyText: "正文",
-    pollOptions: "投票選項",
     settingsPreserved: "您的隱私設置和組織選擇將被保留。",
     cancel: "取消",
     continue: "繼續",
@@ -100,7 +92,6 @@ export const modeChangeConfirmationDialogTranslations: Record<
       "מעבר למצב ייבוא ימחק את השדות הבאים מטיוטת השיחה:",
     title: "כותרת",
     bodyText: "גוף הטקסט",
-    pollOptions: "אפשרויות סקר",
     settingsPreserved:
       "הגדרות הפרטיות ובחירת הארגון שלך יישמרו.",
     cancel: "ביטול",
@@ -112,7 +103,6 @@ export const modeChangeConfirmationDialogTranslations: Record<
       "インポートモードに切り替えると、以下のフィールドがクリアされます：",
     title: "タイトル",
     bodyText: "本文",
-    pollOptions: "投票オプション",
     settingsPreserved: "あなたのプライバシー設定と組織選択は保持されます。",
     cancel: "キャンセル",
     continue: "続ける",
@@ -123,7 +113,6 @@ export const modeChangeConfirmationDialogTranslations: Record<
       "Импорт режимине которуу талкуу черновигинен төмөнкү талааларды тазалайт:",
     title: "Аталышы",
     bodyText: "Негизги текст",
-    pollOptions: "Сурамжылоо параметрлери",
     settingsPreserved: "Купуялык жөндөөлөрүңүз жана уюм тандооңуз сакталат.",
     cancel: "Жокко чыгаруу",
     continue: "Улантуу",
@@ -134,7 +123,6 @@ export const modeChangeConfirmationDialogTranslations: Record<
       "Переключение в режим импорта очистит следующие поля черновика обсуждения:",
     title: "Заголовок",
     bodyText: "Основной текст",
-    pollOptions: "Варианты опроса",
     settingsPreserved: "Ваши настройки приватности и выбор организации будут сохранены.",
     cancel: "Отмена",
     continue: "Продолжить",

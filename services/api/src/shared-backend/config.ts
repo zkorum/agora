@@ -1,6 +1,23 @@
 /** **** WARNING: GENERATED FROM SHARED-BACKEND DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
-import "dotenv/config";
 import { z } from "zod";
+import { parseValkeyUrl } from "./valkey.js";
+
+const zodQueueValkeyUrl = z.string().optional().transform((value, ctx) => {
+    if (value === undefined || value === "") {
+        return undefined;
+    }
+
+    try {
+        return parseValkeyUrl(value);
+    } catch (error) {
+        ctx.addIssue({
+            code: "custom",
+            message:
+                error instanceof Error ? error.message : "Invalid Valkey URL",
+        });
+        return z.NEVER;
+    }
+});
 
 export const sharedConfigSchema = z.object({
     NODE_ENV: z
@@ -28,11 +45,8 @@ export const sharedConfigSchema = z.object({
     GOOGLE_CLOUD_SERVICE_ACCOUNT_AWS_SECRET_KEY: z.string().optional(),
     // Path to Google Cloud service account JSON file (local development)
     GOOGLE_APPLICATION_CREDENTIALS: z.string().optional(),
-    // Valkey (optional - for vote buffer persistence across instances)
+    // Valkey (optional - parsed into a typed connection config)
     // Empty strings are treated as undefined to prevent connection attempts
-    QUEUE_VALKEY_URL: z
-        .string()
-        .optional()
-        .transform((val) => (val === "" ? undefined : val)),
+    QUEUE_VALKEY_URL: zodQueueValkeyUrl,
 });
 export type SharedConfigSchema = z.infer<typeof sharedConfigSchema>;

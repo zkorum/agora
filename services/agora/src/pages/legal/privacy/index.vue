@@ -126,7 +126,7 @@
           <li>Unique User Identifier (UUID)</li>
           <li>
             Activity history (posts, opinions, interactions (emojis,
-            agree/disagree actions, claps, upvotes/downvotes), poll responses
+            agree/disagree actions, claps, upvotes/downvotes), survey responses
             and flagged/reported content
           </li>
           <li>Communities and topics of interest</li>
@@ -372,7 +372,7 @@
             <tr>
               <td>
                 <strong>Actions you take</strong> (Posts, Opinions, Replies,
-                Reactions, polls)
+                Reactions, surveys)
               </td>
               <td>
                 To facilitate discussions, user interactions and engagement on
@@ -713,28 +713,22 @@
         </p>
         <p>
           6.5. Note that you can delete your own reactions, claps,
-          upvote/downvote, poll responses, agree/disagree actions,
+          upvote/downvote, survey responses, agree/disagree actions,
           conversations, opinions, replies, "views" information and the language
           spoken (at least one must remain).
         </p>
 
-        <h3>6.6. Cryptographic accountability records:</h3>
+        <h3>6.6. Security records:</h3>
         <p>
-          Some cryptographic records are retained after account deletion to ensure accountability:
+          Some security records are retained after account deletion to protect the service:
         </p>
         <ul>
           <li>
-            Zero-Knowledge Proofs (ZKP) and User Controlled Authorization Network (UCAN) proofs
-            associated with your account actions
-          </li>
-          <li>
-            Cryptographic proofs of deletion requests, verifying that deletions were user-initiated
+            Short-lived User Controlled Authorization Network (UCAN) token hashes used for replay attack protection
           </li>
         </ul>
         <p>
-          These cryptographic records exist to prove to third-party auditors
-          that Agora did not censor accounts or data but rather processed deletions
-          only upon user request. This ensures transparency and trust in the system.
+          These records are kept only for the duration needed to prevent reused authorization tokens.
         </p>
 
         <h3>6.7. How to delete your account:</h3>
@@ -755,7 +749,7 @@
           <li>Your verification credentials (phone number, passport proof, event tickets) are invalidated</li>
           <li>Your content (posts, votes, opinions) remains on the platform but is no longer publicly associated with your account</li>
           <li>After 15 days, your account data is permanently removed from our database</li>
-          <li>Cryptographic proofs of the deletion request are retained for accountability and audit purposes</li>
+          <li>Cryptographic proofs of account actions are not retained after verification</li>
         </ul>
 
 

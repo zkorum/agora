@@ -91,7 +91,7 @@ const configSchema = sharedConfigSchema.extend({
     EXPORT_CONVOS_AWS_S3_REGION: z.string().optional(),
     EXPORT_CONVOS_AWS_S3_BUCKET_NAME: z.string().optional(),
     EXPORT_CONVOS_EXPIRY_DAYS: z.coerce.number().int().min(1).default(30), // Export file expiry
-    EXPORT_CONVOS_COOLDOWN_SECONDS: z.coerce.number().int().min(0).default(120), // Cooldown between exports for same conversation (default: 2 minutes)
+    EXPORT_CONVOS_COOLDOWN_SECONDS: z.coerce.number().int().min(0).default(120), // Cooldown between exports for the same user and conversation
     EXPORT_CONVOS_S3_PRESIGNED_URL_EXPIRY_SECONDS: z.coerce
         .number()
         .int()
@@ -113,26 +113,6 @@ const configSchema = sharedConfigSchema.extend({
                 return z.NEVER;
             }
         }),
-    EXPORT_CONVOS_BUFFER_MAX_BATCH_SIZE: z.coerce
-        .number()
-        .int()
-        .min(1)
-        .default(100), // Max exports to take from queue per flush
-    EXPORT_CONVOS_BUFFER_MAX_CONCURRENCY: z.coerce
-        .number()
-        .int()
-        .min(1)
-        .default(5), // Max exports to process in parallel (exports are I/O-bound: CSV generation + S3 upload)
-    EXPORT_CONVOS_BUFFER_STALE_THRESHOLD_MS: z.coerce
-        .number()
-        .int()
-        .min(30000)
-        .default(300000), // 5 minutes - mark "processing" exports as failed after this
-    EXPORT_CONVOS_BUFFER_STALE_CLEANUP_EVERY_N_FLUSHES: z.coerce
-        .number()
-        .int()
-        .min(1)
-        .default(60), // Run stale cleanup every N flushes (~1 minute at 1s flush)
     MAXDIFF_ENABLED: z
         .string()
         .default("false")
@@ -165,7 +145,8 @@ const configSchema = sharedConfigSchema.extend({
                 return z.NEVER;
             }
         }),
-    MAXDIFF_ALLOWED_ORGS: z.string().default(""), // Comma-separated org names allowed to create MaxDiff conversations (empty = all orgs allowed)
+    MAXDIFF_ALLOWED_ORGS: z.string().default(""), // Comma-separated org names allowed to create MaxDiff conversations when posting as org (empty = all orgs allowed)
+    MAXDIFF_ALLOWED_USERS: z.string().default(""), // Comma-separated user IDs allowed to create MaxDiff conversations when posting as user (empty = all users allowed)
     MAXDIFF_GITHUB_ENABLED: z
         .string()
         .default("false")
@@ -198,7 +179,8 @@ const configSchema = sharedConfigSchema.extend({
                 return z.NEVER;
             }
         }),
-    MAXDIFF_GITHUB_ALLOWED_ORGS: z.string().default(""), // Comma-separated org names allowed to use GitHub connector (must be subset of MAXDIFF_ALLOWED_ORGS)
+    MAXDIFF_GITHUB_ALLOWED_ORGS: z.string().default(""), // Comma-separated org names allowed to use GitHub connector when posting as org (must be subset of MAXDIFF_ALLOWED_ORGS if both are set)
+    MAXDIFF_GITHUB_ALLOWED_USERS: z.string().default(""), // Comma-separated user IDs allowed to use GitHub connector when posting as user (must be subset of MAXDIFF_ALLOWED_USERS if both are set)
     GITHUB_WEBHOOK_SECRET: z.string().optional(), // HMAC secret for verifying GitHub webhook payloads
     GITHUB_ACCESS_TOKEN: z.string().optional(), // GitHub personal access token for API calls (sync endpoint)
     IS_ORG_IMPORT_ONLY: z
@@ -217,6 +199,42 @@ const configSchema = sharedConfigSchema.extend({
                 return z.NEVER;
             }
         }),
+    IMPORT_ALLOWED_ORGS: z.string().default(""), // Comma-separated org names allowed to import conversations when posting as org (empty = all orgs allowed)
+    IMPORT_ALLOWED_USERS: z.string().default(""), // Comma-separated user IDs allowed to import conversations when posting as user (empty = all users allowed)
+    SURVEY_ENABLED: z
+        .string()
+        .default("false")
+        .transform((value, ctx) => {
+            if (value.toLowerCase().trim() === "true") {
+                return true;
+            } else if (value.toLowerCase().trim() === "false") {
+                return false;
+            } else {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Value must be true or false",
+                });
+                return z.NEVER;
+            }
+        }),
+    IS_SURVEY_ORG_ONLY: z
+        .string()
+        .default("false")
+        .transform((value, ctx) => {
+            if (value.toLowerCase().trim() === "true") {
+                return true;
+            } else if (value.toLowerCase().trim() === "false") {
+                return false;
+            } else {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Value must be true or false",
+                });
+                return z.NEVER;
+            }
+        }),
+    SURVEY_ALLOWED_ORGS: z.string().default(""), // Comma-separated org names allowed to configure surveys when posting as org (empty = all orgs allowed)
+    SURVEY_ALLOWED_USERS: z.string().default(""), // Comma-separated user IDs allowed to configure surveys when posting as user (empty = all users allowed)
     // CSV Import buffer configuration
     IMPORT_BUFFER_MAX_BATCH_SIZE: z.coerce
         .number()

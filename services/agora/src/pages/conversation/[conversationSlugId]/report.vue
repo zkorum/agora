@@ -30,7 +30,9 @@
         >
           <div class="toolbar-button-content">
             <ZKIcon name="mdi:image-outline" size="1.2rem" color="#333238" />
-            <span>{{ isGeneratingZip ? t("generating") : t("downloadImages") }}</span>
+            <span>{{
+              isGeneratingZip ? t("generating") : t("downloadImages")
+            }}</span>
           </div>
         </ZKButton>
         <ZKButton
@@ -40,7 +42,9 @@
         >
           <div class="toolbar-button-content">
             <ZKIcon name="mdi:file-pdf-box" size="1.2rem" color="#333238" />
-            <span>{{ isGeneratingPdf ? t("generating") : t("downloadPdf") }}</span>
+            <span>{{
+              isGeneratingPdf ? t("generating") : t("downloadPdf")
+            }}</span>
           </div>
         </ZKButton>
       </div>
@@ -53,27 +57,52 @@
           :query="analysisQuery"
           :config="{ error: { title: t('loadingError') } }"
         >
-          <div>
-            <AnalysisReport
-              v-if="conversationQuery.data.value && analysisQuery.data.value"
-              ref="analysisReportRef"
-              :items-per-page="itemsPerPage"
-              :conversation-slug-id="conversationSlugId"
-              :conversation-title="conversationQuery.data.value.payload.title"
-              :author-username="conversationQuery.data.value.metadata.authorUsername"
-              :created-at="conversationQuery.data.value.metadata.createdAt"
-              :participant-count="conversationQuery.data.value.metadata.participantCount"
-              :opinion-count="conversationQuery.data.value.metadata.opinionCount"
-              :vote-count="conversationQuery.data.value.metadata.voteCount"
-              :total-participant-count="conversationQuery.data.value.metadata.totalParticipantCount"
-              :total-opinion-count="conversationQuery.data.value.metadata.totalOpinionCount"
-              :total-vote-count="conversationQuery.data.value.metadata.totalVoteCount"
-              :clusters="analysisQuery.data.value?.polisClusters ?? {}"
-              :agreement-items="agreementItems"
-              :disagreement-items="disagreementItems"
-              :divisive-items="divisiveItems"
-            />
-          </div>
+          <AsyncStateHandler
+            :query="surveyResultsQuery"
+            :config="{ error: { title: t('loadingError') } }"
+          >
+            <div>
+              <AnalysisReport
+                v-if="
+                  conversationQuery.data.value &&
+                  analysisQuery.data.value &&
+                  surveyResultsQuery.data.value
+                "
+                ref="analysisReportRef"
+                v-model:survey-display-mode="surveyDisplayMode"
+                :items-per-page="itemsPerPage"
+                :conversation-slug-id="conversationSlugId"
+                :conversation-title="conversationQuery.data.value.payload.title"
+                :author-username="
+                  conversationQuery.data.value.metadata.authorUsername
+                "
+                :created-at="conversationQuery.data.value.metadata.createdAt"
+                :participant-count="
+                  conversationQuery.data.value.metadata.participantCount
+                "
+                :opinion-count="
+                  conversationQuery.data.value.metadata.opinionCount
+                "
+                :vote-count="conversationQuery.data.value.metadata.voteCount"
+                :total-participant-count="
+                  conversationQuery.data.value.metadata.totalParticipantCount
+                "
+                :total-opinion-count="
+                  conversationQuery.data.value.metadata.totalOpinionCount
+                "
+                :total-vote-count="
+                  conversationQuery.data.value.metadata.totalVoteCount
+                "
+                :clusters="analysisQuery.data.value?.polisClusters ?? {}"
+                :agreement-items="agreementItems"
+                :disagreement-items="disagreementItems"
+                :divisive-items="divisiveItems"
+                :has-survey="surveyResultsQuery.data.value.hasSurvey"
+                :survey-rows="reportSurveyRows"
+                :show-survey-toggle="showSurveyToggle"
+              />
+            </div>
+          </AsyncStateHandler>
         </AsyncStateHandler>
       </AsyncStateHandler>
     </div>
@@ -94,10 +123,20 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
-import { getReportOpinions, REPORT_ITEMS_PER_CAPTURE_PAGE, REPORT_ITEMS_PER_PDF_PAGE } from "src/utils/component/report/reportData";
+import { useSurveyResultsAggregatedQuery } from "src/utils/api/survey/useSurveyQueries";
+import {
+  getReportOpinions,
+  REPORT_ITEMS_PER_CAPTURE_PAGE,
+  REPORT_ITEMS_PER_PDF_PAGE,
+} from "src/utils/component/report/reportData";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import { getSingleRouteParam } from "src/utils/router/params";
-import { computed, nextTick, ref } from "vue";
+import {
+  canViewFullSurveyResults,
+  getDisplayedSurveyRows,
+  type SurveyResultsDisplayMode,
+} from "src/utils/survey/results";
+import { computed, nextTick, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 import {
@@ -121,7 +160,7 @@ const conversationSlugId = computed(() => {
 
 async function handleNarrowBack(): Promise<void> {
   await goBackButtonHandler.safeNavigateBack(
-    `/conversation/${conversationSlugId.value}/analysis`,
+    `/conversation/${conversationSlugId.value}/analysis`
   );
 }
 
@@ -134,35 +173,62 @@ const analysisQuery = useAnalysisQuery({
   conversationSlugId: conversationSlugId,
   voteCount: computed(() => conversationQuery.data.value?.metadata.voteCount),
   enabled: computed(
-    () =>
-      isAuthInitialized.value &&
-      conversationQuery.data.value !== undefined,
+    () => isAuthInitialized.value && conversationQuery.data.value !== undefined
   ),
 });
+
+const surveyResultsQuery = useSurveyResultsAggregatedQuery({
+  conversationSlugId,
+  enabled: computed(
+    () => isAuthInitialized.value && conversationQuery.data.value !== undefined
+  ),
+});
+
+const surveyDisplayMode = ref<SurveyResultsDisplayMode>("suppressed");
+
+const showSurveyToggle = computed(
+  () =>
+    surveyResultsQuery.data.value?.hasSurvey === true &&
+    canViewFullSurveyResults({ surveyResults: surveyResultsQuery.data.value })
+);
+
+const reportSurveyRows = computed(() =>
+  getDisplayedSurveyRows({
+    surveyResults: surveyResultsQuery.data.value,
+    displayMode: surveyDisplayMode.value,
+  })
+);
+
+watch(
+  showSurveyToggle,
+  (shouldShow) => {
+    if (!shouldShow) {
+      surveyDisplayMode.value = "suppressed";
+    }
+  },
+  { immediate: true }
+);
 
 // Full items (top 10)
 const agreementItems = computed(() =>
   getReportOpinions({
     items: analysisQuery.data.value?.consensusAgree ?? [],
     getScore: (item) => item.groupAwareConsensusAgree,
-  }),
+  })
 );
 
 const disagreementItems = computed(() =>
   getReportOpinions({
     items: analysisQuery.data.value?.consensusDisagree ?? [],
     getScore: (item) => item.groupAwareConsensusDisagree,
-  }),
+  })
 );
 
 const divisiveItems = computed(() => {
   const items = (analysisQuery.data.value?.controversial ?? []).filter(
-    (item) => item.divisiveScore > 0,
+    (item) => item.divisiveScore > 0
   );
-  const maxDivisive = Math.max(
-    ...items.map((item) => item.divisiveScore),
-    0,
-  );
+  const maxDivisive = Math.max(...items.map((item) => item.divisiveScore), 0);
   return getReportOpinions({
     items,
     getScore: (item) =>
@@ -173,7 +239,8 @@ const divisiveItems = computed(() => {
 const hasData = computed(
   () =>
     conversationQuery.data.value !== undefined &&
-    analysisQuery.data.value !== undefined,
+    analysisQuery.data.value !== undefined &&
+    surveyResultsQuery.data.value !== undefined
 );
 
 // Narrow screen detection — uses Quasar Screen plugin (reads $breakpoint-xs from SCSS)
@@ -191,6 +258,8 @@ interface AnalysisReportExposed {
   agreementRefs: HTMLElement[];
   disagreementRefs: HTMLElement[];
   divisiveRefs: HTMLElement[];
+  surveyEmptyRef: HTMLElement | null;
+  surveyRefs: HTMLElement[];
   footerRef: HTMLElement | null;
 }
 
@@ -207,9 +276,10 @@ const reportFileName = computed(() => {
 
 const itemsPerPage = ref(REPORT_ITEMS_PER_CAPTURE_PAGE);
 
-const { downloadAsZip, downloadAsPdf, isGeneratingZip, isGeneratingPdf } = useReportDownload({
-  fileName: reportFileName,
-});
+const { downloadAsZip, downloadAsPdf, isGeneratingZip, isGeneratingPdf } =
+  useReportDownload({
+    fileName: reportFileName,
+  });
 
 function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
   const report = analysisReportRef.value;
@@ -230,7 +300,10 @@ function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
     }
   }
   if (report.agreementEmptyRef?.isConnected) {
-    captures.push({ element: report.agreementEmptyRef, name: "agreements-empty" });
+    captures.push({
+      element: report.agreementEmptyRef,
+      name: "agreements-empty",
+    });
   }
   for (let j = 0; j < report.agreementRefs.length; j++) {
     const el = report.agreementRefs[j];
@@ -239,7 +312,10 @@ function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
     }
   }
   if (report.disagreementEmptyRef?.isConnected) {
-    captures.push({ element: report.disagreementEmptyRef, name: "disagreements-empty" });
+    captures.push({
+      element: report.disagreementEmptyRef,
+      name: "disagreements-empty",
+    });
   }
   for (let j = 0; j < report.disagreementRefs.length; j++) {
     const el = report.disagreementRefs[j];
@@ -254,6 +330,15 @@ function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
     const el = report.divisiveRefs[j];
     if (el?.isConnected) {
       captures.push({ element: el, name: `divisive-${j}` });
+    }
+  }
+  if (report.surveyEmptyRef?.isConnected) {
+    captures.push({ element: report.surveyEmptyRef, name: "survey-empty" });
+  }
+  for (let j = 0; j < report.surveyRefs.length; j++) {
+    const el = report.surveyRefs[j];
+    if (el?.isConnected) {
+      captures.push({ element: el, name: `survey-${j}` });
     }
   }
 
@@ -289,8 +374,10 @@ async function handleDownloadPdf(): Promise<void> {
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
   justify-content: center;
+  align-items: center;
   margin-bottom: 1.5rem;
   padding: 1rem;
 }

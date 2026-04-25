@@ -102,7 +102,9 @@ export function useTabNavigation<T extends string>({
                 });
 
                 if (target === "action-bar") {
-                    scrollToActionBar({ behavior: "smooth" });
+                    void nextTick(() => {
+                        scrollToActionBar({ behavior: "smooth" });
+                    });
                 } else {
                     // Wait for DOM update since subtab content is rendered via v-if
                     void nextTick(() => {

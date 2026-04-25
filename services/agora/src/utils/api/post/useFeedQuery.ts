@@ -22,7 +22,7 @@ export function useFeedQuery({
     queryKey: ["feed", computed(() => currentHomeFeedTab.value)],
     queryFn: async () => {
       const response = await fetchRecentPost({
-        loadUserPollData: isGuestOrLoggedIn.value,
+        loadPersonalizedData: isGuestOrLoggedIn.value,
         sortAlgorithm: currentHomeFeedTab.value,
       });
       if (response.status !== "success") {

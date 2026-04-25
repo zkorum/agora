@@ -6,12 +6,14 @@
  * - newConversationDrafts store (persistence validation)
  */
 
+import { MAX_LENGTH_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
 import {
-  MAX_LENGTH_BODY,
-  MAX_LENGTH_OPTION,
-  MAX_LENGTH_TITLE,
-} from "src/shared/shared";
-import { zodConversationType, zodEventSlug, zodExternalSourceConfig, zodParticipationMode } from "src/shared/types/zod";
+  zodConversationType,
+  zodEventSlug,
+  zodExternalSourceConfig,
+  zodParticipationMode,
+  zodSurveyConfig,
+} from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { z } from "zod";
 
@@ -29,21 +31,6 @@ export const zodTitleValidation = z
   .max(MAX_LENGTH_TITLE);
 
 /**
- * Zod schema for validating poll options (when poll is enabled)
- */
-export const zodPollOptions = z
-  .array(z.string().trim().min(1, "All poll options must be filled in"))
-  .min(2, "Poll must have at least 2 options")
-  .max(6, "Maximum 6 poll options allowed")
-  .refine(
-    (options) => {
-      const trimmedLower = options.map((opt) => opt.toLowerCase());
-      return new Set(trimmedLower).size === trimmedLower.length;
-    },
-    { message: "Poll options must be unique" }
-  );
-
-/**
  * Zod schema for Polis URL validation (runtime validation)
  */
 export const zodPolisUrlValidation = z
@@ -55,14 +42,6 @@ export const zodPolisUrlValidation = z
 // ============================================================================
 // Persistence Schemas (for localStorage serialization)
 // ============================================================================
-
-/**
- * Zod schema for poll settings
- */
-export const zodPollSettings = z.object({
-  enabled: z.boolean(),
-  options: z.array(z.string()),
-});
 
 /**
  * Zod schema for post-as settings
@@ -150,9 +129,6 @@ export const zodSerializableConversationDraft = z.object({
   // Conversation type
   conversationType: zodConversationType.default("polis"),
 
-  // Poll configuration
-  poll: zodPollSettings,
-
   // Publishing options
   postAs: zodPostAsSettings,
 
@@ -165,6 +141,9 @@ export const zodSerializableConversationDraft = z.object({
 
   // External source (GitHub integration for MaxDiff)
   externalSourceConfig: zodExternalSourceConfig.nullable().default(null),
+
+  // Survey configuration
+  surveyConfig: zodSurveyConfig.nullable().default(null),
 
   // Import settings
   importSettings: zodConversationImportSettings,
@@ -193,7 +172,4 @@ export type ConversationImportType = z.infer<typeof zodConversationImportType>;
 export const VALIDATION_CONSTANTS = {
   MAX_LENGTH_TITLE,
   MAX_LENGTH_BODY,
-  MAX_LENGTH_OPTION,
-  MIN_POLL_OPTIONS: 2,
-  MAX_POLL_OPTIONS: 6,
 } as const;

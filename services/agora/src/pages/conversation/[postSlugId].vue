@@ -53,6 +53,7 @@
                 :author-username="loadedConversationData.metadata.authorUsername"
                 :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
                 :conversation-type="loadedConversationData.metadata.conversationType"
+                :has-survey="loadedConversationData.interaction.surveyGate?.hasSurvey === true"
               />
               </div>
 
@@ -87,6 +88,19 @@
                   </KeepAlive>
                 </router-view>
               </div>
+
+              <FloatingBottomContainer
+                v-if="loadedConversationData.metadata.conversationType !== 'maxdiff'"
+              >
+                <CommentComposer
+                  :post-slug-id="loadedConversationData.metadata.conversationSlugId"
+                  :participation-mode="loadedConversationData.metadata.participationMode"
+                  :requires-event-ticket="loadedConversationData.metadata.requiresEventTicket"
+                  :survey-gate="loadedConversationData.interaction.surveyGate"
+                  :is-composer-disabled="isVotingDisabled"
+                  @submitted-comment="handleSubmittedComment"
+                />
+              </FloatingBottomContainer>
             </div>
           </ZKHoverEffect>
         </div>
@@ -97,8 +111,10 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
+import FloatingBottomContainer from "src/components/navigation/FloatingBottomContainer.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import WidthWrapper from "src/components/navigation/WidthWrapper.vue";
+import CommentComposer from "src/components/post/comments/CommentComposer.vue";
 import CommentSortingSelector from "src/components/post/comments/group/CommentSortingSelector.vue";
 import PostContent from "src/components/post/display/PostContent.vue";
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
@@ -119,8 +135,11 @@ import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
-import { isBackToConversationCommentTab } from "src/utils/nav/historyBack";
-import { onBeforeUnmount, onMounted, watch } from "vue";
+import {
+  isBackToConversationCommentTab,
+  navigateBackOrReplace,
+} from "src/utils/nav/historyBack";
+import { computed, onBeforeUnmount, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -169,11 +188,24 @@ const {
   navigateToDiscoverTab,
   openModerationHistory,
   handleTicketVerified,
+  handleSubmittedComment,
   handleRefresh,
   invalidateUserVotes,
   scrollToActionBar,
   pendingScrollOverride,
 } = useConversationParentState(conversationConfig);
+
+const isVotingDisabled = computed(() => {
+  const data = conversationData.value;
+  if (data === undefined) {
+    return true;
+  }
+
+  const isModeratedAndLocked =
+    data.metadata.moderation.status === "moderated" &&
+    data.metadata.moderation.action === "lock";
+  return isModeratedAndLocked || data.metadata.isClosed;
+});
 
 const { tabContentStyle } = useTabScrollRestoration({
   analysisRouteName: conversationConfig.analysisRouteName,
@@ -188,20 +220,16 @@ function handleBack(event: MouseEvent): void {
     const slugId = conversationData.value?.metadata.conversationSlugId;
     if (slugId === undefined) return;
 
+    const fallbackRoute = `/conversation/${slugId}/`;
     const conversationPathPrefix = conversationConfig.routePrefix.replace("{id}", slugId);
-    if (
-      isBackToConversationCommentTab({
+    void navigateBackOrReplace({
+      router,
+      fallbackRoute,
+      shouldNavigateBack: isBackToConversationCommentTab({
         historyBack: window.history.state?.back,
         conversationPathPrefix,
-      })
-    ) {
-      router.back();
-    } else {
-      void router.replace({
-        name: "/conversation/[postSlugId]/",
-        params: { postSlugId: slugId },
-      });
-    }
+      }),
+    });
   } else {
     void safeNavigateBack({ name: "/" });
   }

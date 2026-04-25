@@ -3,7 +3,8 @@ import { z } from "zod";
 import { validateDidKey, validateDidWeb } from "../did/util.js";
 import {
     MAX_LENGTH_TITLE,
-    MAX_LENGTH_OPTION,
+    MAX_LENGTH_SURVEY_OPTION,
+    MAX_LENGTH_SURVEY_QUESTION,
     MIN_LENGTH_USERNAME,
     MAX_LENGTH_USERNAME,
     MAX_LENGTH_BODY,
@@ -21,6 +22,7 @@ import {
 } from "../languages.js";
 
 export const zodDateTimeFlexible = z.coerce.date();
+export const zodSlugId = z.string().max(10);
 
 export const zodEventSlug = z.enum(["devconnect-2025"]);
 
@@ -41,8 +43,23 @@ export const zodModerationReason = z.enum([
     "spam",
 ]);
 export const zodFeedSortAlgorithm = z.enum(["following", "new"]);
-export const zodParticipationMode = z.enum(["account_required", "strong_verification", "email_verification", "guest"]);
+export const zodParticipationMode = z.enum([
+    "account_required",
+    "strong_verification",
+    "email_verification",
+    "guest",
+]);
 export const zodConversationType = z.enum(["polis", "maxdiff"]);
+export const zodParticipationBlockedReason = z.enum([
+    "conversation_locked",
+    "conversation_closed",
+    "event_ticket_required",
+    "account_required",
+    "strong_verification_required",
+    "email_verification_required",
+    "survey_required",
+    "survey_outdated",
+]);
 export const zodConversationModerationAction = z.enum(["lock"]);
 export const zodOpinionModerationAction = z.enum(["move", "hide"]);
 export const zodExportStatus = z.enum([
@@ -66,18 +83,33 @@ export const zodImportFailureReason = z.enum([
     "invalid_data_format", // Invalid data format in queue
 ]);
 export const zodExportFileType = z.enum([
+    "bundle",
     "comments",
     "votes",
     "participants",
     "summary",
     "stats",
+    "survey_questions",
+    "survey_question_options",
+    "survey_participant_responses",
+    "survey_public_aggregates",
+    "survey_full_aggregates",
 ]);
+export const zodExportFileAudience = z.enum(["redacted", "owner", "requester"]);
 export const zodExportFileInfo = z
     .object({
         fileType: zodExportFileType,
         fileName: z.string(),
         fileSize: z.number().int().positive(),
         recordCount: z.number().int().nonnegative(),
+        downloadUrl: z.url(),
+        urlExpiresAt: zodDateTimeFlexible,
+    })
+    .strict();
+export const zodExportBundleInfo = z
+    .object({
+        fileName: z.string(),
+        fileSize: z.number().int().positive(),
         downloadUrl: z.url(),
         urlExpiresAt: zodDateTimeFlexible,
     })
@@ -151,58 +183,12 @@ export const zodConversationBodyOutput = z
         message: `Raw HTML content exceeds maximum length of ${String(MAX_LENGTH_BODY_HTML)} characters`,
     })
     .optional();
-export const zodPollOptionTitle = z.string().max(MAX_LENGTH_OPTION).min(1);
-export const zodPollAction = z.discriminatedUnion("action", [
-    z
-        .object({
-            action: z.literal("none"),
-        })
-        .strict(),
-    z
-        .object({
-            action: z.literal("keep"),
-        })
-        .strict(),
-    z
-        .object({
-            action: z.literal("remove"),
-        })
-        .strict(),
-    z
-        .object({
-            action: z.literal("create"),
-            options: z.array(zodPollOptionTitle).min(2).max(6),
-        })
-        .strict(),
-    z
-        .object({
-            action: z.literal("replace"),
-            options: z.array(zodPollOptionTitle).min(2).max(6),
-        })
-        .strict(),
-]);
-export const zodPollOptionWithResult = z
-    .object({
-        optionNumber: z.number().int().min(1).max(6),
-        optionTitle: zodPollOptionTitle,
-        numResponses: z.number().int().nonnegative(),
-    })
-    .strict();
-export const zodConversationList = z.array(zodPollOptionWithResult).optional();
 export const zodConversationDataWithResult = z
     .object({
         title: zodConversationTitle,
         body: zodConversationBodyOutput,
-        poll: zodConversationList,
     })
     .strict();
-export const zodPollResponse = z
-    .object({
-        conversationSlugId: z.string(),
-        optionChosen: z.number().gte(0),
-    })
-    .strict();
-export const zodSlugId = z.string().max(10);
 export const zodCount = z.number().int().nonnegative();
 export const zodCommentFeedFilter = z.enum([
     "hidden",
@@ -479,6 +465,326 @@ export const zodImportInfo = z.object({
 });
 export type ImportInfo = z.infer<typeof zodImportInfo>;
 
+export const zodSurveyQuestionType = z.enum(["choice", "free_text"]);
+
+export const zodSurveyChoiceDisplay = z.enum(["auto", "list", "dropdown"]);
+
+const zodSurveyQuestionChoiceConstraints = z
+    .object({
+        type: z.literal("choice"),
+        minSelections: z.number().int().nonnegative().min(1),
+        maxSelections: z.number().int().nonnegative().min(1).optional(),
+    })
+    .strict();
+
+const zodSurveyQuestionFreeTextRichTextConstraints = z
+    .object({
+        type: z.literal("free_text"),
+        inputMode: z.literal("rich_text").optional().default("rich_text"),
+        minPlainTextLength: z.number().int().nonnegative().optional(),
+        maxPlainTextLength: z.number().int().positive(),
+        maxHtmlLength: z.number().int().positive(),
+    })
+    .strict();
+
+const zodSurveyQuestionFreeTextIntegerConstraints = z
+    .object({
+        type: z.literal("free_text"),
+        inputMode: z.literal("integer"),
+        minValue: z.number().int().min(1),
+        maxValue: z.number().int().min(1).optional(),
+    })
+    .strict();
+
+export const zodSurveyQuestionConstraints = z.union([
+    zodSurveyQuestionChoiceConstraints,
+    zodSurveyQuestionFreeTextRichTextConstraints,
+    zodSurveyQuestionFreeTextIntegerConstraints,
+]);
+
+export const zodSurveyQuestionOption = z
+    .object({
+        optionSlugId: zodSlugId.optional(),
+        optionText: z.string().min(1).max(MAX_LENGTH_SURVEY_OPTION),
+        displayOrder: z.number().int().nonnegative(),
+        textChangeIsSemantic: z.boolean().optional(),
+    })
+    .strict();
+
+const zodSurveyQuestionBase = z
+    .object({
+        questionSlugId: zodSlugId.optional(),
+        questionText: z.string().min(1).max(MAX_LENGTH_SURVEY_QUESTION),
+        isRequired: z.boolean(),
+        displayOrder: z.number().int().nonnegative(),
+        textChangeIsSemantic: z.boolean().optional(),
+    })
+    .strict();
+
+const zodSurveyChoiceQuestionBase = zodSurveyQuestionBase
+    .extend({
+        choiceDisplay: zodSurveyChoiceDisplay,
+        options: z.array(zodSurveyQuestionOption).min(2),
+    })
+    .strict();
+
+const zodSurveyChoiceQuestionConfig = zodSurveyChoiceQuestionBase
+    .extend({
+        questionType: z.literal("choice"),
+        constraints: zodSurveyQuestionChoiceConstraints,
+    })
+    .strict();
+
+const zodSurveyFreeTextQuestionConfig = zodSurveyQuestionBase
+    .extend({
+        questionType: z.literal("free_text"),
+        constraints: z.union([
+            zodSurveyQuestionFreeTextRichTextConstraints,
+            zodSurveyQuestionFreeTextIntegerConstraints,
+        ]),
+    })
+    .strict();
+
+export const zodSurveyQuestionConfig = z
+    .discriminatedUnion("questionType", [
+        zodSurveyChoiceQuestionConfig,
+        zodSurveyFreeTextQuestionConfig,
+    ])
+    .superRefine((value, ctx) => {
+        if (value.questionType !== value.constraints.type) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["constraints", "type"],
+            });
+        }
+
+        if (value.questionType !== "free_text") {
+            const optionSlugIds = value.options
+                .map((option) => option.optionSlugId)
+                .filter(
+                    (optionSlugId): optionSlugId is string =>
+                        optionSlugId !== undefined,
+                );
+            if (new Set(optionSlugIds).size !== optionSlugIds.length) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["options"],
+                });
+            }
+
+            const optionDisplayOrders = value.options.map(
+                (option) => option.displayOrder,
+            );
+            if (
+                new Set(optionDisplayOrders).size !== optionDisplayOrders.length
+            ) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["options"],
+                });
+            }
+        }
+
+        if (
+            value.constraints.type === "choice" &&
+            value.constraints.maxSelections !== undefined &&
+            value.constraints.maxSelections < value.constraints.minSelections
+        ) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["constraints", "maxSelections"],
+            });
+        }
+
+        if (value.questionType === "choice") {
+            if (value.constraints.minSelections > value.options.length) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["constraints", "minSelections"],
+                });
+            }
+
+            if (
+                value.constraints.maxSelections !== undefined &&
+                value.constraints.maxSelections > value.options.length
+            ) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["constraints", "maxSelections"],
+                });
+            }
+        }
+
+        if (value.constraints.type === "free_text") {
+            if (value.constraints.inputMode === "integer") {
+                if (
+                    value.constraints.maxValue !== undefined &&
+                    value.constraints.maxValue < value.constraints.minValue
+                ) {
+                    ctx.addIssue({
+                        code: "custom",
+                        path: ["constraints", "maxValue"],
+                    });
+                }
+            } else if (
+                value.constraints.minPlainTextLength !== undefined &&
+                value.constraints.minPlainTextLength >
+                    value.constraints.maxPlainTextLength
+            ) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["constraints", "minPlainTextLength"],
+                });
+            }
+        }
+    });
+
+export const zodSurveyConfig = z
+    .object({
+        questions: z.array(zodSurveyQuestionConfig),
+    })
+    .strict()
+    .superRefine((value, ctx) => {
+        const questionSlugIds = value.questions
+            .map((question) => question.questionSlugId)
+            .filter(
+                (questionSlugId): questionSlugId is string =>
+                    questionSlugId !== undefined,
+            );
+        if (new Set(questionSlugIds).size !== questionSlugIds.length) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["questions"],
+            });
+        }
+
+        const questionDisplayOrders = value.questions.map(
+            (question) => question.displayOrder,
+        );
+        if (
+            new Set(questionDisplayOrders).size !== questionDisplayOrders.length
+        ) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["questions"],
+            });
+        }
+    });
+
+export const zodSurveyGateStatus = z.enum([
+    "no_survey",
+    "not_started",
+    "in_progress",
+    "needs_update",
+    "complete_valid",
+]);
+
+export const zodSurveyResultsAccessLevel = z.enum(["public", "owner"]);
+
+export const zodSurveyAggregateScope = z.enum(["overall", "cluster"]);
+
+export const zodSurveyAggregateSuppressionReason = z.enum([
+    "count_below_threshold",
+    "cluster_deductive_disclosure",
+]);
+
+export const zodSurveyGateSummary = z
+    .object({
+        hasSurvey: z.boolean(),
+        canParticipate: z.boolean(),
+        status: zodSurveyGateStatus,
+    })
+    .strict();
+
+export const zodSurveyAggregateRow = z
+    .object({
+        scope: zodSurveyAggregateScope,
+        clusterId: z.string(),
+        clusterLabel: z.string(),
+        questionId: zodSlugId,
+        questionType: zodSurveyQuestionType,
+        question: z.string(),
+        optionId: zodSlugId,
+        option: z.string(),
+        count: z.number().int().nonnegative().optional(),
+        percentage: z.number().min(0).max(100).optional(),
+        isSuppressed: z.boolean(),
+        suppressionReason: zodSurveyAggregateSuppressionReason.optional(),
+    })
+    .strict();
+
+export const zodSurveyCompletionCounts = z
+    .object({
+        total: z.number().int().nonnegative(),
+        completeValid: z.number().int().nonnegative(),
+        needsUpdate: z.number().int().nonnegative(),
+        notStarted: z.number().int().nonnegative(),
+        inProgress: z.number().int().nonnegative(),
+    })
+    .strict();
+
+const zodSurveyChoiceAnswerDraftBase = z
+    .object({
+        optionSlugIds: z.array(zodSlugId),
+    })
+    .strict();
+
+const zodSurveyFreeTextAnswerDraft = z
+    .object({
+        questionType: z.literal("free_text"),
+        textValueHtml: z.string().max(MAX_LENGTH_BODY_HTML),
+    })
+    .strict();
+
+export const zodSurveyAnswerDraft = z.discriminatedUnion("questionType", [
+    zodSurveyChoiceAnswerDraftBase
+        .extend({
+            questionType: z.literal("choice"),
+        })
+        .strict(),
+    zodSurveyFreeTextAnswerDraft,
+]);
+
+export const zodSurveyAnswerSubmission = zodSurveyAnswerDraft;
+
+const zodSurveyQuestionFormItemFields = {
+        currentAnswer: zodSurveyAnswerDraft.optional(),
+        isPassed: z.boolean(),
+        isMissingRequired: z.boolean(),
+        isStale: z.boolean(),
+        isCurrentAnswerValid: z.boolean(),
+        currentSemanticVersion: z.number().int().positive(),
+        answeredQuestionSemanticVersion: z.number().int().positive().optional(),
+} satisfies z.ZodRawShape;
+
+export const zodSurveyQuestionFormItem = z.discriminatedUnion("questionType", [
+    zodSurveyChoiceQuestionConfig
+        .extend(zodSurveyQuestionFormItemFields)
+        .strict(),
+    zodSurveyFreeTextQuestionConfig
+        .extend(zodSurveyQuestionFormItemFields)
+        .strict(),
+]);
+
+export const zodSurveyRouteResolution = z.discriminatedUnion("kind", [
+    z
+        .object({
+            kind: z.literal("none"),
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("question"),
+            questionSlugId: zodSlugId,
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("summary"),
+        })
+        .strict(),
+]);
+
 export const zodConversationMetadata = z
     .object({
         conversationSlugId: zodSlugId,
@@ -648,6 +954,7 @@ export const zodUserInteraction = z
     .object({
         hasVoted: z.boolean(),
         votedIndex: z.number().int().nonnegative(),
+        surveyGate: zodSurveyGateSummary.optional(),
     })
     .strict();
 export const zodExtendedConversationData = z
@@ -1174,7 +1481,6 @@ export type ConversationMetadata = z.infer<typeof zodConversationMetadata>;
 export type ExtendedConversationPayload = z.infer<
     typeof zodConversationDataWithResult
 >;
-export type PollOptionWithResult = z.infer<typeof zodPollOptionWithResult>;
 export type CommentContent = z.infer<typeof zodOpinionContentOutput>;
 export type OpinionItem = z.infer<typeof zodOpinionItem>;
 export type AnalysisOpinionItem = z.infer<typeof zodAnalysisOpinionItem>;
@@ -1189,7 +1495,32 @@ export type ExtendedOpinionWithConvId = z.infer<
 export type SlugId = z.infer<typeof zodSlugId>;
 export type VotingOption = z.infer<typeof zodVotingOption>;
 export type VotingAction = z.infer<typeof zodVotingAction>;
-export type PollList = z.infer<typeof zodConversationList>;
+export type ParticipationBlockedReason = z.infer<
+    typeof zodParticipationBlockedReason
+>;
+export type SurveyQuestionType = z.infer<typeof zodSurveyQuestionType>;
+export type SurveyChoiceDisplay = z.infer<typeof zodSurveyChoiceDisplay>;
+export type SurveyQuestionConstraints = z.infer<
+    typeof zodSurveyQuestionConstraints
+>;
+export type SurveyQuestionOption = z.infer<typeof zodSurveyQuestionOption>;
+export type SurveyQuestionConfig = z.infer<typeof zodSurveyQuestionConfig>;
+export type SurveyConfig = z.infer<typeof zodSurveyConfig>;
+export type SurveyAnswerDraft = z.infer<typeof zodSurveyAnswerDraft>;
+export type SurveyAnswerSubmission = z.infer<typeof zodSurveyAnswerSubmission>;
+export type SurveyGateStatus = z.infer<typeof zodSurveyGateStatus>;
+export type SurveyResultsAccessLevel = z.infer<
+    typeof zodSurveyResultsAccessLevel
+>;
+export type SurveyAggregateScope = z.infer<typeof zodSurveyAggregateScope>;
+export type SurveyAggregateSuppressionReason = z.infer<
+    typeof zodSurveyAggregateSuppressionReason
+>;
+export type SurveyGateSummary = z.infer<typeof zodSurveyGateSummary>;
+export type SurveyAggregateRow = z.infer<typeof zodSurveyAggregateRow>;
+export type SurveyCompletionCounts = z.infer<typeof zodSurveyCompletionCounts>;
+export type SurveyQuestionFormItem = z.infer<typeof zodSurveyQuestionFormItem>;
+export type SurveyRouteResolution = z.infer<typeof zodSurveyRouteResolution>;
 export type RarimoStatusAttributes = z.infer<typeof zodRarimoStatusAttributes>;
 export type CountryCodeEnum = z.infer<typeof zodCountryCodeEnum>;
 export type ModerationReason = z.infer<typeof zodModerationReason>;
@@ -1246,7 +1577,9 @@ export type ExportStatus = z.infer<typeof zodExportStatus>;
 export type ExportFailureReason = z.infer<typeof zodExportFailureReason>;
 export type ImportFailureReason = z.infer<typeof zodImportFailureReason>;
 export type ExportFileType = z.infer<typeof zodExportFileType>;
+export type ExportFileAudience = z.infer<typeof zodExportFileAudience>;
 export type ExportFileInfo = z.infer<typeof zodExportFileInfo>;
+export type ExportBundleInfo = z.infer<typeof zodExportBundleInfo>;
 
 // Rarimo ZK Proof Validation Schemas
 // Based on Rarimo circuit spec: https://github.com/rarimo/passport-zk-circuits
@@ -1287,6 +1620,24 @@ export const zodMaxdiffComparison = z.object({
 });
 export type MaxDiffComparison = z.infer<typeof zodMaxdiffComparison>;
 
+// Pairwise comparison types
+export const zodPairwiseComparison = z
+    .object({
+        optionA: z.string(),
+        optionB: z.string(),
+        comparison: z.number(),
+        comparisonMax: z.number().positive(),
+    })
+    .refine(
+        ({ comparison, comparisonMax }) =>
+            Math.abs(comparison) <= comparisonMax,
+        {
+            message: "comparison magnitude must not exceed comparisonMax",
+            path: ["comparison"],
+        },
+    );
+export type PairwiseComparison = z.infer<typeof zodPairwiseComparison>;
+
 export const zodMaxdiffState = z.object({
     ranking: z.array(z.string()).nullable(),
     comparisons: z.array(zodMaxdiffComparison),
@@ -1302,7 +1653,7 @@ export const zodMaxdiffLifecycleStatus = z.enum([
 ]);
 export type MaxdiffLifecycleStatus = z.infer<typeof zodMaxdiffLifecycleStatus>;
 
-// Solidago score output (stored in maxdiff_score.scores JSONB)
+// Ranking score output (stored in ranking_score.scores JSONB)
 export const zodSolidagoEntityScore = z.object({
     entityId: z.string(),
     score: z.number(),

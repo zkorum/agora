@@ -23,7 +23,11 @@ const importDatabase = await import("../src/service/conversationImport/database.
 const importService = await import("../src/service/conversationImport/index.js");
 const realtimeModule = await import("../src/service/realtimeSSE.js");
 
-const { conversationExportTable, conversationImportTable } = schema;
+const {
+    conversationExportGenerationTable,
+    conversationExportRequestTable,
+    conversationImportTable,
+} = schema;
 const { createImportRecord, markImportFailed } = importDatabase;
 const { requestUrlImport } = importService;
 const { RealtimeSSEManager } = realtimeModule;
@@ -74,30 +78,53 @@ describe("Admission guards", () => {
                 ON "conversation_import" ("user_id")
                 WHERE status = 'processing';
 
-            CREATE TABLE "conversation_export" (
+            CREATE TABLE "conversation_export_generation" (
                 "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
                 "slug_id" varchar(8) NOT NULL UNIQUE,
                 "conversation_id" integer NOT NULL,
-                "user_id" uuid NOT NULL,
-                "status" text NOT NULL,
-                "total_file_size" integer,
-                "total_file_count" integer,
+                "status" text NOT NULL DEFAULT 'collecting',
+                "collecting_ends_at" timestamp NOT NULL,
+                "attempts" integer NOT NULL DEFAULT 0,
+                "next_attempt_at" timestamp,
+                "started_at" timestamp,
+                "heartbeat_at" timestamp,
+                "completed_at" timestamp,
+                "failed_at" timestamp,
                 "failure_reason" text,
-                "cancellation_reason" text,
-                "expires_at" timestamp NOT NULL,
-                "is_deleted" boolean NOT NULL DEFAULT false,
-                "deleted_at" timestamp,
                 "created_at" timestamp NOT NULL DEFAULT now(),
                 "updated_at" timestamp NOT NULL DEFAULT now()
             );
-            CREATE INDEX "conversation_export_conversation_idx" ON "conversation_export" ("conversation_id");
-            CREATE INDEX "conversation_export_status_idx" ON "conversation_export" ("status");
-            CREATE INDEX "conversation_export_deleted_idx" ON "conversation_export" ("is_deleted");
-            CREATE INDEX "conversation_export_created_idx" ON "conversation_export" ("created_at");
-            CREATE INDEX "conversation_export_user_idx" ON "conversation_export" ("user_id");
-            CREATE UNIQUE INDEX "conversation_export_active_user_conversation_unique"
-                ON "conversation_export" ("conversation_id", "user_id")
-                WHERE status = 'processing' AND is_deleted = false;
+            CREATE UNIQUE INDEX "conversation_export_generation_collecting_unique"
+                ON "conversation_export_generation" ("conversation_id")
+                WHERE status = 'collecting';
+            CREATE UNIQUE INDEX "conversation_export_generation_processing_unique"
+                ON "conversation_export_generation" ("conversation_id")
+                WHERE status = 'processing';
+
+            CREATE TABLE "conversation_export_request" (
+                "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                "slug_id" varchar(8) NOT NULL UNIQUE,
+                "conversation_id" integer NOT NULL,
+                "generation_id" integer NOT NULL,
+                "user_id" uuid NOT NULL,
+                "status" text NOT NULL DEFAULT 'processing',
+                "failure_reason" text,
+                "cancellation_reason" text,
+                "expires_at" timestamp NOT NULL,
+                "deleted_at" timestamp,
+                "started_notified_at" timestamp,
+                "completed_notified_at" timestamp,
+                "failed_notified_at" timestamp,
+                "created_at" timestamp NOT NULL DEFAULT now(),
+                "updated_at" timestamp NOT NULL DEFAULT now()
+            );
+            CREATE INDEX "conversation_export_request_conversation_idx" ON "conversation_export_request" ("conversation_id");
+            CREATE INDEX "conversation_export_request_generation_idx" ON "conversation_export_request" ("generation_id");
+            CREATE INDEX "conversation_export_request_created_idx" ON "conversation_export_request" ("created_at");
+            CREATE INDEX "conversation_export_request_user_idx" ON "conversation_export_request" ("user_id");
+            CREATE UNIQUE INDEX "conversation_export_request_active_unique"
+                ON "conversation_export_request" ("conversation_id", "user_id")
+                WHERE status = 'processing' AND deleted_at IS NULL;
         `);
     }, 120000);
 
@@ -108,10 +135,32 @@ describe("Admission guards", () => {
 
     beforeEach(async () => {
         await sqlClient.unsafe(`
-            TRUNCATE TABLE "conversation_import", "conversation_export"
+            TRUNCATE TABLE "conversation_import", "conversation_export_request", "conversation_export_generation"
             RESTART IDENTITY;
         `);
     });
+
+    async function createExportGeneration({
+        conversationId,
+        slugId,
+    }: {
+        conversationId: number;
+        slugId: string;
+    }): Promise<number> {
+        const [generation] = await db
+            .insert(conversationExportGenerationTable)
+            .values({
+                slugId,
+                conversationId,
+                status: "collecting",
+                collectingEndsAt: new Date("2026-01-01T00:00:05.000Z"),
+                createdAt: new Date("2026-01-01T00:00:00.000Z"),
+                updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+            })
+            .returning({ id: conversationExportGenerationTable.id });
+
+        return generation.id;
+    }
 
     it("allows only one active import per user", async () => {
         const userId = crypto.randomUUID();
@@ -200,13 +249,18 @@ describe("Admission guards", () => {
     it("allows only one active export per user and conversation", async () => {
         const userId = crypto.randomUUID();
         const conversationId = 42;
+        const generationId = await createExportGeneration({
+            conversationId,
+            slugId: "gen00001",
+        });
         const expiresAt = new Date("2026-01-02T00:00:00.000Z");
 
         const first = await db
-            .insert(conversationExportTable)
+            .insert(conversationExportRequestTable)
             .values({
                 slugId: "export01",
                 conversationId,
+                generationId,
                 userId,
                 status: "processing",
                 expiresAt,
@@ -214,13 +268,14 @@ describe("Admission guards", () => {
                 updatedAt: new Date("2026-01-01T00:00:00.000Z"),
             })
             .onConflictDoNothing()
-            .returning({ id: conversationExportTable.id });
+            .returning({ id: conversationExportRequestTable.id });
 
         const second = await db
-            .insert(conversationExportTable)
+            .insert(conversationExportRequestTable)
             .values({
                 slugId: "export02",
                 conversationId,
+                generationId,
                 userId,
                 status: "processing",
                 expiresAt,
@@ -228,7 +283,7 @@ describe("Admission guards", () => {
                 updatedAt: new Date("2026-01-01T00:00:01.000Z"),
             })
             .onConflictDoNothing()
-            .returning({ id: conversationExportTable.id });
+            .returning({ id: conversationExportRequestTable.id });
 
         expect(first).toHaveLength(1);
         expect(second).toHaveLength(0);
@@ -237,33 +292,37 @@ describe("Admission guards", () => {
     it("allows a new processing export after the old one is deleted", async () => {
         const userId = crypto.randomUUID();
         const conversationId = 42;
+        const generationId = await createExportGeneration({
+            conversationId,
+            slugId: "gen00001",
+        });
         const expiresAt = new Date("2026-01-02T00:00:00.000Z");
 
-        await db.insert(conversationExportTable).values({
+        await db.insert(conversationExportRequestTable).values({
             slugId: "export01",
             conversationId,
+            generationId,
             userId,
             status: "processing",
             expiresAt,
-            isDeleted: false,
             createdAt: new Date("2026-01-01T00:00:00.000Z"),
             updatedAt: new Date("2026-01-01T00:00:00.000Z"),
         });
 
         await db
-            .update(conversationExportTable)
+            .update(conversationExportRequestTable)
             .set({
-                isDeleted: true,
                 deletedAt: new Date("2026-01-01T00:00:02.000Z"),
                 updatedAt: new Date("2026-01-01T00:00:02.000Z"),
             })
-            .where(eq(conversationExportTable.slugId, "export01"));
+            .where(eq(conversationExportRequestTable.slugId, "export01"));
 
         const second = await db
-            .insert(conversationExportTable)
+            .insert(conversationExportRequestTable)
             .values({
                 slugId: "export02",
                 conversationId,
+                generationId,
                 userId,
                 status: "processing",
                 expiresAt,
@@ -271,7 +330,7 @@ describe("Admission guards", () => {
                 updatedAt: new Date("2026-01-01T00:00:03.000Z"),
             })
             .onConflictDoNothing()
-            .returning({ id: conversationExportTable.id });
+            .returning({ id: conversationExportRequestTable.id });
 
         expect(second).toHaveLength(1);
     });

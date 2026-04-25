@@ -1,5 +1,5 @@
 <template>
-  <OnboardingLayout>
+  <OnboardingLayout body-behind-footer>
     <template #body>
       <RarimoImageExample />
     </template>

@@ -63,6 +63,7 @@
     },
     "pnpm": {
         "overrides": {
+            "@tootallnate/once": "3.0.1",
             "fast-xml-parser": ">=5.3.6",
             "js-yaml": ">=4.1.1"
         }

@@ -29,6 +29,7 @@ import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 import { log } from "@/app.js";
 import type { RealtimeSSEManager } from "./realtimeSSE.js";
 import type { VoteBuffer } from "./voteBuffer.js";
+import type { ValkeyRef } from "./valkeyRef.js";
 import type { AxiosInstance } from "axios";
 import pLimit from "p-limit";
 import { processCsvImport, zodCsvFiles, type CsvFiles } from "./csvImport.js";
@@ -53,7 +54,6 @@ const zodImportRequestBase = z.object({
     importSlugId: z.string(),
     userId: z.string(),
     formData: zodImportFormData,
-    proof: z.string(),
     didWrite: z.string(),
     authorId: z.string(),
 });
@@ -91,7 +91,6 @@ interface ImportRequestBase {
         isIndexed: boolean;
         requiresEventTicket?: EventSlug;
     };
-    proof: string;
     didWrite: string;
     authorId: string;
 }
@@ -128,7 +127,7 @@ export interface ImportBuffer {
 
 interface ImportBufferDependencies {
     db: PostgresDatabase;
-    valkey: Valkey | undefined;
+    valkeyRef: ValkeyRef;
     realtimeSSEManager: RealtimeSSEManager;
     voteBuffer: VoteBuffer;
     axiosPolis: AxiosInstance | undefined;
@@ -151,7 +150,7 @@ export function createImportBuffer(
 ): ImportBuffer {
     const {
         db,
-        valkey,
+        valkeyRef,
         realtimeSSEManager,
         voteBuffer,
         axiosPolis,
@@ -176,6 +175,8 @@ export function createImportBuffer(
     // In-memory queue for when Valkey is not configured
     const inMemoryQueue: ImportRequest[] = [];
 
+    const getValkey = (): Valkey | undefined => valkeyRef.current;
+
     /**
      * Process a single import request (CSV or URL)
      */
@@ -192,7 +193,6 @@ export function createImportBuffer(
                     db,
                     voteBuffer,
                     files: request.files,
-                    proof: request.proof,
                     didWrite: request.didWrite,
                     authorId: request.authorId,
                     postAsOrganization: request.formData.postAsOrganization,
@@ -213,7 +213,6 @@ export function createImportBuffer(
                     voteBuffer,
                     axiosPolis,
                     polisUrl: request.polisUrl,
-                    proof: request.proof,
                     didWrite: request.didWrite,
                     authorId: request.authorId,
                     postAsOrganization: request.formData.postAsOrganization,
@@ -472,13 +471,22 @@ export function createImportBuffer(
         // Pop items from queue (at-most-once: remove before processing)
         const batch: ImportRequest[] = [];
 
-        if (valkey !== undefined) {
+        const localItemCount = Math.min(inMemoryQueue.length, maxBatchSize);
+        if (localItemCount > 0) {
+            batch.push(...inMemoryQueue.splice(0, localItemCount));
+            log.info(
+                `[ImportBuffer] Popped ${String(localItemCount)} items from in-memory queue`,
+            );
+        }
+
+        const valkey = getValkey();
+        if (valkey !== undefined && batch.length < maxBatchSize) {
             // Use Valkey queue
             try {
                 // lpopCount returns up to maxBatchSize elements atomically
                 const items = await valkey.lpopCount(
                     VALKEY_QUEUE_KEYS.IMPORT_BUFFER,
-                    maxBatchSize,
+                    maxBatchSize - batch.length,
                 );
 
                 if (items !== null && items.length > 0) {
@@ -513,15 +521,6 @@ export function createImportBuffer(
                 log.error(
                     error,
                     "[ImportBuffer] Failed to pop items from Valkey",
-                );
-            }
-        } else {
-            // Use in-memory queue (not crash-safe)
-            const itemCount = Math.min(inMemoryQueue.length, maxBatchSize);
-            if (itemCount > 0) {
-                batch.push(...inMemoryQueue.splice(0, itemCount));
-                log.info(
-                    `[ImportBuffer] Popped ${String(itemCount)} items from in-memory queue`,
                 );
             }
         }
@@ -562,20 +561,29 @@ export function createImportBuffer(
         }
 
         // Push to Valkey list (FIFO queue) or in-memory queue
+        const valkey = getValkey();
         if (valkey !== undefined) {
-            await valkey.rpush(VALKEY_QUEUE_KEYS.IMPORT_BUFFER, [
-                JSON.stringify(request),
-            ]);
-            log.info(
-                `[ImportBuffer] Added ${request.type} import ${request.importSlugId} to Valkey queue`,
-            );
-        } else {
-            // Use in-memory queue as fallback (not crash-safe)
-            inMemoryQueue.push(request);
-            log.info(
-                `[ImportBuffer] Added ${request.type} import ${request.importSlugId} to in-memory queue`,
-            );
+            try {
+                await valkey.rpush(VALKEY_QUEUE_KEYS.IMPORT_BUFFER, [
+                    JSON.stringify(request),
+                ]);
+                log.info(
+                    `[ImportBuffer] Added ${request.type} import ${request.importSlugId} to Valkey queue`,
+                );
+                return;
+            } catch (error) {
+                log.error(
+                    error,
+                    `[ImportBuffer] Failed to push ${request.importSlugId} to Valkey, falling back to in-memory queue`,
+                );
+            }
         }
+
+        // Use in-memory queue as fallback (not crash-safe)
+        inMemoryQueue.push(request);
+        log.info(
+            `[ImportBuffer] Added ${request.type} import ${request.importSlugId} to in-memory queue`,
+        );
     }
 
     /**

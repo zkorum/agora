@@ -46,6 +46,11 @@ export function extractPolisIdFromUrl(url: string): PolisId {
     }
     const urlObject = new URL(url); // can throw
     const hostname = urlObject.hostname.toLowerCase();
+    const isDeepGovHostname = hasHostnameSuffix({
+        hostname,
+        suffix: ["deepgov", "org"],
+    });
+
     if (!isAllowedPolisHostname(hostname)) {
         throw new Error(`Polis URL ${url} has an incorrect hostname`);
     }
@@ -54,7 +59,8 @@ export function extractPolisIdFromUrl(url: string): PolisId {
     // e.g. https://polis.deepgov.org/conversation/2hdcecwjyc
     const pathParts = urlObject.pathname.split("/").filter((p) => p); // filter out empty strings
     if (pathParts.length === 1) {
-        if (urlObject.hostname.endsWith("deepgov.org")) {
+        // Reuse the parsed hostname classification instead of a raw suffix check.
+        if (isDeepGovHostname) {
             throw new Error(`Deepgov urls start with /conversation`);
         }
         return { conversationId: pathParts[0] }; // e.g. /384anuzye9

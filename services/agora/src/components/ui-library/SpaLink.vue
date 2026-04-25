@@ -28,7 +28,7 @@
 
     Use instead of <RouterLink> for critical navigation links.
   -->
-  <RouterLink v-slot="{ href, navigate }" :to="to" custom>
+  <RouterLink v-slot="{ href, navigate }" :to="to" :replace="replace" custom>
     <a
       ref="anchorRef"
       :href="href"
@@ -49,8 +49,10 @@ defineOptions({ inheritAttrs: false });
 const props = withDefaults(defineProps<{
   to: RouteLocationRaw;
   deferred?: boolean;
+  replace?: boolean;
 }>(), {
   deferred: false,
+  replace: false,
 });
 
 const router = useRouter();
@@ -69,7 +71,7 @@ function handleClick(e: MouseEvent): void {
   if ("onClick" in attrs) return;
   // Middle-click, ctrl+click, etc. — let browser open in new tab natively
   if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-  void router.push(props.to);
+  void (props.replace ? router.replace(props.to) : router.push(props.to));
 }
 </script>
 

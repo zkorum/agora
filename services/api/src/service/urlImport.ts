@@ -10,7 +10,6 @@ interface ProcessUrlImportProps {
     voteBuffer: VoteBuffer;
     axiosPolis: AxiosInstance;
     polisUrl: string;
-    proof: string;
     didWrite: string;
     authorId: string;
     postAsOrganization: string | undefined;
@@ -45,7 +44,6 @@ export async function processUrlImport(
                 polisUrl: props.polisUrl,
                 polisUrlType,
             },
-            proof: props.proof,
             didWrite: props.didWrite,
             authorId: props.authorId,
             postAsOrganization: props.postAsOrganization,

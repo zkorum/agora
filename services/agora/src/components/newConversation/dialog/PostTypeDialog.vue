@@ -30,6 +30,7 @@ interface ModeChangeConfig {
 
 const props = defineProps<{
   isMaxDiffAllowed: boolean;
+  isImportAllowed: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -72,9 +73,17 @@ const postTypeOptions = computed(() => {
       value: "csv-import",
     },
   ];
-  return props.isMaxDiffAllowed
-    ? options
-    : options.filter((o) => o.value !== "maxdiff");
+  return options.filter((option) => {
+    if (option.value === "maxdiff") {
+      return props.isMaxDiffAllowed;
+    }
+
+    if (option.value === "polis-url" || option.value === "csv-import") {
+      return props.isImportAllowed;
+    }
+
+    return true;
+  });
 });
 
 const selectedValue = computed(() => {

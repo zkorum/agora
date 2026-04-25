@@ -1,5 +1,5 @@
 <template>
-  <div ref="target">
+  <div v-if="!hideComposerForRoute" ref="target">
     <div class="container borderStyle" :class="{ focused: innerFocus }">
       <Editor
         v-if="isEditorMounted"
@@ -44,10 +44,9 @@
             isOverLimit ||
             characterCount === 0 ||
             isSubmissionLoading ||
-            isVerifyingZupass ||
             isComposerDisabled
           "
-          :loading="isSubmissionLoading || isVerifyingZupass"
+          :loading="isSubmissionLoading"
           @click="submitPostClicked()"
         />
       </div>
@@ -61,10 +60,11 @@
       :no-save-draft="noSaveDraft"
     />
 
-    <PreLoginIntentionDialog
+    <PreParticipationIntentionDialog
       v-model="showLoginDialog"
       :ok-callback="onLoginCallback"
       active-intention="newOpinion"
+      :conversation-slug-id="props.postSlugId"
       :requires-zupass-event-slug="props.requiresEventTicket"
       :needs-auth="needsLogin"
       :participation-mode="props.participationMode"
@@ -76,22 +76,23 @@
 
 <script setup lang="ts">
 import { onClickOutside, useWindowScroll } from "@vueuse/core";
-import { storeToRefs } from "pinia";
 import Button from "primevue/button";
-import PreLoginIntentionDialog from "src/components/authentication/intention/PreLoginIntentionDialog.vue";
+import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
+import { useParticipationGate } from "src/composables/conversation/useParticipationGate";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useIdleMount } from "src/composables/ui/useIdleMount";
-import { useTicketVerificationFlow } from "src/composables/zupass/useTicketVerificationFlow";
-import { useZupassVerification } from "src/composables/zupass/useZupassVerification";
 import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
-import { useAuthenticationStore } from "src/stores/authentication";
+import type {
+  EventSlug,
+  ParticipationMode,
+  SurveyGateSummary,
+} from "src/shared/types/zod";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useUserStore } from "src/stores/user";
@@ -111,6 +112,8 @@ import {
   useTemplateRef,
   watch,
 } from "vue";
+import { useRoute } from "vue-router";
+import type { RouteNamedMap } from "vue-router/auto-routes";
 
 import {
   type CommentComposerTranslations,
@@ -128,6 +131,7 @@ const props = defineProps<{
   postSlugId: string;
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
+  surveyGate?: SurveyGateSummary;
   isComposerDisabled: boolean;
 }>();
 
@@ -148,6 +152,64 @@ const Editor = defineAsyncComponent(
   () => import("src/components/editor/Editor.vue")
 );
 
+type RouteName = keyof RouteNamedMap;
+type ConversationTabRouteName = Extract<
+  RouteName,
+  | "/conversation/[postSlugId]"
+  | "/conversation/[postSlugId]/"
+  | "/conversation/[postSlugId]/analysis"
+  | "/conversation/[postSlugId].embed"
+  | "/conversation/[postSlugId].embed/"
+  | "/conversation/[postSlugId].embed/analysis"
+>;
+type ConversationOnboardingRouteName = Extract<
+  RouteName,
+  `/conversation/[postSlugId].onboarding${string}`
+>;
+type VerificationRouteName = Extract<RouteName, `/verify/${string}`>;
+type DraftAutoSaveRouteName =
+  | "/welcome/"
+  | "/conversation/[conversationSlugId]/report"
+  | ConversationOnboardingRouteName
+  | VerificationRouteName;
+
+const sameConversationTabRouteNames = [
+  "/conversation/[postSlugId]",
+  "/conversation/[postSlugId]/",
+  "/conversation/[postSlugId]/analysis",
+  "/conversation/[postSlugId].embed",
+  "/conversation/[postSlugId].embed/",
+  "/conversation/[postSlugId].embed/analysis",
+] satisfies readonly ConversationTabRouteName[];
+
+const draftAutoSaveRouteNames = [
+  "/welcome/",
+  "/conversation/[conversationSlugId]/report",
+  "/verify/email/",
+  "/verify/email-code/",
+  "/verify/hard/",
+  "/verify/identity/",
+  "/verify/passport/",
+  "/verify/phone/",
+  "/verify/phone-code/",
+  "/conversation/[postSlugId].onboarding",
+  "/conversation/[postSlugId].onboarding/",
+  "/conversation/[postSlugId].onboarding/complete",
+  "/conversation/[postSlugId].onboarding/question.[questionSlugId]",
+  "/conversation/[postSlugId].onboarding/summary",
+  "/conversation/[postSlugId].onboarding/verify",
+  "/conversation/[postSlugId].onboarding/verify/email",
+  "/conversation/[postSlugId].onboarding/verify/email-code",
+  "/conversation/[postSlugId].onboarding/verify/hard",
+  "/conversation/[postSlugId].onboarding/verify/identity",
+  "/conversation/[postSlugId].onboarding/verify/passport",
+  "/conversation/[postSlugId].onboarding/verify/phone",
+  "/conversation/[postSlugId].onboarding/verify/phone-code",
+  "/conversation/[postSlugId].onboarding/verify/ticket",
+] satisfies readonly DraftAutoSaveRouteName[];
+
+const route = useRoute();
+
 // Defer Editor mounting until browser is idle to improve initial page load performance
 const { isMounted: isEditorMounted } = useIdleMount({});
 
@@ -155,10 +217,7 @@ const dummyInput = ref<HTMLInputElement>();
 
 const { saveOpinionDraft, getOpinionDraft, deleteOpinionDraft } =
   useNewOpinionDraftsStore();
-const authStore = useAuthenticationStore();
-const { isLoggedIn, hasStrongVerification, hasEmailVerification } = storeToRefs(authStore);
 const userStore = useUserStore();
-const { verifiedEventTickets } = storeToRefs(userStore);
 
 const { createNewOpinionIntention, clearNewOpinionIntention } =
   useLoginIntentionStore();
@@ -166,28 +225,30 @@ const { createNewOpinionIntention, clearNewOpinionIntention } =
 const { createNewComment } = useBackendCommentApi();
 
 const { showNotifyMessage } = useNotify();
+const {
+  needsAuth: isAuthBlocked,
+  shouldOpenParticipationModal,
+} = useParticipationGate({
+  conversationSlugId: computed(() => props.postSlugId),
+  participationMode: computed(() => props.participationMode),
+  requiresEventTicket: computed(() => props.requiresEventTicket),
+  surveyGate: computed(() => props.surveyGate),
+});
 
 const { invalidateConversation } = useInvalidateConversationQuery();
 
-// Zupass verification
-const { verifyTicket } = useTicketVerificationFlow();
-const { isVerifying: isVerifyingZupass } = useZupassVerification();
-
 // Check if user needs login/verification based on participation mode
 const needsLogin = computed(() => {
-  if (props.participationMode === "account_required") return !isLoggedIn.value;
-  if (props.participationMode === "strong_verification") return !hasStrongVerification.value;
-  if (props.participationMode === "email_verification") return !hasEmailVerification.value;
-  return false; // guest
+  return isAuthBlocked.value;
 });
 
-// Check if opinion submission is locked due to missing event ticket
-const isOpinionLocked = computed(() => {
-  if (props.requiresEventTicket === undefined) {
-    return false;
-  }
-  const verifiedTicketsArray = Array.from(verifiedEventTickets.value);
-  return !verifiedTicketsArray.includes(props.requiresEventTicket);
+const hideComposerForRoute = computed(() => {
+  const routePath = route.path;
+
+  const isConversationRoute = routePath.startsWith("/conversation/");
+  const isConversationOnboardingRoute = routePath.includes("/onboarding");
+
+  return !isConversationRoute || isConversationOnboardingRoute;
 });
 
 const characterCount = ref(0);
@@ -224,6 +285,13 @@ function handleGuidelinesDialogClose() {
 watch(showGuidelinesDialog, (isOpen, wasOpen) => {
   if (wasOpen && !isOpen) {
     handleGuidelinesDialogClose();
+  }
+});
+
+watch(opinionBody, () => {
+  checkWordCount();
+  if (characterCount.value === 0) {
+    deleteOpinionDraft(props.postSlugId);
   }
 });
 
@@ -328,7 +396,32 @@ async function noSaveDraft() {
   await proceedWithNavigation(() => {});
 }
 
-async function onLoginCallback() {
+function routeNameMatches({
+  routeName,
+  routes,
+}: {
+  routeName: string;
+  routes: readonly RouteName[];
+}): boolean {
+  return routes.some((route) => route === routeName);
+}
+
+function isSameConversationTabRoute(to: RouteGuardDestination): boolean {
+  if (typeof to.name !== "string") {
+    return false;
+  }
+
+  if (
+    !routeNameMatches({ routeName: to.name, routes: sameConversationTabRouteNames })
+  ) {
+    return false;
+  }
+
+  const postSlugId = to.params.postSlugId;
+  return postSlugId === props.postSlugId;
+}
+
+function onLoginCallback() {
   // Save draft before any async operations
   saveOpinionDraft(props.postSlugId, opinionBody.value);
 
@@ -339,30 +432,32 @@ async function onLoginCallback() {
     props.requiresEventTicket
   );
 
-  const hasZupassRequirement = props.requiresEventTicket !== undefined;
-
-  // If user just needs Zupass verification (no login required), trigger it inline
-  if (!needsLogin.value && hasZupassRequirement) {
-    await handleZupassVerification();
-  } else {
-    // Otherwise, unlock route so user can navigate to login
-    unlockRoute();
-  }
+  unlockRoute();
 }
 
 function onBeforeRouteLeaveCallback(to: RouteGuardDestination): boolean {
-  if (characterCount.value > 0 && isRouteLockedCheck()) {
-    // Auto-save draft when navigating to login/verify pages
-    // (triggered by voting on gated conversations via PollWrapper/CommentActionBar)
-    const routeName = typeof to.name === "string" ? to.name : "";
-    if (routeName.startsWith("/verify/") || routeName === "/welcome/") {
-      saveOpinionDraft(props.postSlugId, opinionBody.value);
-      return true;
-    }
-    return false;
-  } else {
+  if (characterCount.value === 0) {
+    deleteOpinionDraft(props.postSlugId);
     return true;
   }
+
+  if (!isRouteLockedCheck()) {
+    return true;
+  }
+
+  if (isSameConversationTabRoute(to)) {
+    return true;
+  }
+
+  if (
+    typeof to.name === "string" &&
+    routeNameMatches({ routeName: to.name, routes: draftAutoSaveRouteNames })
+  ) {
+    saveOpinionDraft(props.postSlugId, opinionBody.value);
+    return true;
+  }
+
+  return false;
 }
 
 function editorFocused() {
@@ -387,102 +482,78 @@ function onCharacterCountUpdate(count: number) {
   characterCount.value = count;
 }
 
-async function handleZupassVerification() {
-  if (props.requiresEventTicket === undefined) {
+async function submitPostClicked() {
+  if (await shouldOpenParticipationModal()) {
+    showLoginDialog.value = true;
     return;
   }
 
-  // Dialog will close when Zupass iframe is ready (via callback)
-  const result = await verifyTicket({
-    eventSlug: props.requiresEventTicket,
-    onIframeReady: () => {
-      // Close dialog as soon as Zupass iframe becomes visible
-      showLoginDialog.value = false;
-    },
-  });
+  isSubmissionLoading.value = true;
 
-  if (result.success) {
-    // Emit to parent so banner gets refreshed
-    emit("ticketVerified", {
-      userIdChanged: result.userIdChanged,
-      needsCacheRefresh: result.needsCacheRefresh,
-    });
+  try {
+    const response = await createNewComment(
+      opinionBody.value,
+      props.postSlugId
+    );
 
-    // Retry submitting the opinion
-    await submitPostClicked();
-  }
-}
+    if (response.success && response.opinionSlugId) {
+      // Successfully created comment
+      // Note: The backend automatically votes "agree" when creating an opinion
+      // Wait 1.3 seconds for the vote buffer to flush (buffer flushes every 1 second)
+      // This ensures the backend has processed the auto-agree vote before we refresh
+      await new Promise((resolve) => setTimeout(resolve, 1300));
 
-async function submitPostClicked() {
-  // Check if user needs login/verification or Zupass verification
-  const needsZupass = isOpinionLocked.value;
+      // Emit to parent to refresh and highlight the opinion
+      emit("submittedComment", {
+        opinionSlugId: response.opinionSlugId,
+        authStateChanged: response.authStateChanged ?? false,
+        needsCacheRefresh: response.needsCacheRefresh ?? false,
+      });
 
-  if (needsLogin.value || needsZupass) {
-    showLoginDialog.value = true;
-  } else {
-    isSubmissionLoading.value = true;
-
-    try {
-      const response = await createNewComment(
-        opinionBody.value,
-        props.postSlugId
-      );
-
-      if (response.success && response.opinionSlugId) {
-        // Successfully created comment
-        // Note: The backend automatically votes "agree" when creating an opinion
-        // Wait 1.3 seconds for the vote buffer to flush (buffer flushes every 1 second)
-        // This ensures the backend has processed the auto-agree vote before we refresh
-        await new Promise((resolve) => setTimeout(resolve, 1300));
-
-        // Emit to parent to refresh and highlight the opinion
-        emit("submittedComment", {
-          opinionSlugId: response.opinionSlugId,
-          authStateChanged: response.authStateChanged ?? false,
-          needsCacheRefresh: response.needsCacheRefresh ?? false,
-        });
-
-        isSubmissionLoading.value = false;
-        innerFocus.value = false;
-        opinionBody.value = "";
-        characterCount.value = 0;
-        unlockRoute(); // Clear the draft since we successfully submitted
-        deleteOpinionDraft(props.postSlugId);
-      } else {
-        isSubmissionLoading.value = false;
-        // Business logic failure
-        if (response.reason) {
-          switch (response.reason) {
-            case "conversation_locked":
-              showNotifyMessage(t("conversationLockedError"));
-              break;
-            case "conversation_closed":
-              // Show error message but keep text so user can copy it
-              showNotifyMessage(t("conversationClosedError"));
-              // Invalidate conversation to refresh UI and show disabled state
-              invalidateConversation(props.postSlugId);
-              // Don't clear opinionBody or unlock route - preserve the text
-              break;
-            case "event_ticket_required":
-              // Backend says ticket required, but our local state might be stale
-              // Refresh user profile to get latest verified tickets, then show dialog
-              await userStore.loadUserProfile();
-              showLoginDialog.value = true;
-              break;
-            case "account_required":
-            case "strong_verification_required":
-            case "email_verification_required":
-              // User lacks required verification for this conversation
-              showLoginDialog.value = true;
-              break;
-          }
+      isSubmissionLoading.value = false;
+      innerFocus.value = false;
+      opinionBody.value = "";
+      characterCount.value = 0;
+      unlockRoute(); // Clear the draft since we successfully submitted
+      deleteOpinionDraft(props.postSlugId);
+    } else {
+      isSubmissionLoading.value = false;
+      // Business logic failure
+      if (response.reason) {
+        switch (response.reason) {
+          case "conversation_locked":
+            showNotifyMessage(t("conversationLockedError"));
+            break;
+          case "conversation_closed":
+            // Show error message but keep text so user can copy it
+            showNotifyMessage(t("conversationClosedError"));
+            // Invalidate conversation to refresh UI and show disabled state
+            invalidateConversation(props.postSlugId);
+            // Don't clear opinionBody or unlock route - preserve the text
+            break;
+          case "event_ticket_required":
+            // Backend says ticket required, but our local state might be stale
+            // Refresh user profile to get latest verified tickets, then show dialog
+            await userStore.loadUserProfile();
+            showLoginDialog.value = true;
+            break;
+          case "account_required":
+          case "strong_verification_required":
+          case "email_verification_required":
+            // User lacks required verification for this conversation
+            showLoginDialog.value = true;
+            break;
+          case "survey_required":
+          case "survey_outdated":
+            showLoginDialog.value = true;
+            break;
         }
       }
-    } catch {
-      // Technical errors (network, server errors, etc.) are handled by TanStack Query
-      isSubmissionLoading.value = false;
-      showNotifyMessage(t("createOpinionError"));
     }
+  } catch {
+    // Technical errors (network, server errors, etc.) are handled by TanStack Query
+    isSubmissionLoading.value = false;
+    showNotifyMessage(t("createOpinionError"));
   }
 }
 </script>

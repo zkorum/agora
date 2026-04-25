@@ -129,7 +129,7 @@ export async function getOrRegisterUserIdFromDeviceStatus({
     });
     // For non-guest modes, the user must be registered and logged in.
     // The specific verification check (strong/email) is done separately
-    // in voting.ts, comment.ts, and poll.ts.
+    // in voting.ts and comment.ts.
     if (participationMode !== "guest") {
         if (!deviceStatus.isKnown) {
             throw httpErrors.unauthorized("Device is unknown");
@@ -532,24 +532,6 @@ export async function getUserIdFromDevice(
         throw new Error("This didWrite is not registered to any user");
     }
     return results[0].userId;
-}
-
-/**
- * Validates that import operations are allowed based on organization restrictions.
- * If IS_ORG_IMPORT_ONLY is enabled, the request must specify a valid organization.
- */
-export function validateOrgImportRestriction(
-    postAsOrganization: string | undefined,
-    isOrgImportOnly: boolean,
-): void {
-    if (
-        (!postAsOrganization || postAsOrganization.trim() === "") &&
-        isOrgImportOnly
-    ) {
-        throw httpErrors.forbidden(
-            "Import feature restricted to organizations",
-        );
-    }
 }
 
 interface CanModerateConversationResult {

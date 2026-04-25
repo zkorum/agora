@@ -9,7 +9,10 @@
           }"
         >
           <q-page>
-            <div class="baseLayer">
+            <div
+              class="baseLayer"
+              :class="{ 'baseLayer--bodyBehindFooter': bodyBehindFooter }"
+            >
               <button
                 v-if="showBackButton"
                 class="backButton"
@@ -17,10 +20,21 @@
               >
                 <q-icon name="mdi-arrow-left" size="1.2rem" />
               </button>
+              <button
+                v-if="showCloseButton"
+                class="closeButton"
+                aria-label="Close"
+                @click="handleClose"
+              >
+                <q-icon name="mdi-close" size="1.2rem" />
+              </button>
               <div class="containerPaddings">
                 <slot name="body" />
               </div>
-              <div class="topLayer">
+              <div
+                class="topLayer"
+                :class="{ 'topLayer--overBody': bodyBehindFooter }"
+              >
                 <div class="widthLimiter">
                   <slot name="footer" />
                 </div>
@@ -40,10 +54,16 @@ const props = withDefaults(
   defineProps<{
     showBackButton?: boolean;
     backCallback?: () => void;
+    showCloseButton?: boolean;
+    closeCallback?: () => void;
+    bodyBehindFooter?: boolean;
   }>(),
   {
     showBackButton: true,
     backCallback: undefined,
+    showCloseButton: false,
+    closeCallback: undefined,
+    bodyBehindFooter: false,
   }
 );
 
@@ -52,6 +72,14 @@ const router = useRouter();
 function handleBack() {
   if (props.backCallback) {
     props.backCallback();
+  } else {
+    router.back();
+  }
+}
+
+function handleClose() {
+  if (props.closeCallback) {
+    props.closeCallback();
   } else {
     router.back();
   }
@@ -65,7 +93,15 @@ function handleBack() {
 
 .baseLayer {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.baseLayer--bodyBehindFooter {
   height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .backButton {
@@ -95,17 +131,49 @@ function handleBack() {
   }
 }
 
-.topLayer {
+.closeButton {
   position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.7);
+  color: rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+
+  &:active {
+    background-color: rgba(255, 255, 255, 1);
+  }
+}
+
+.topLayer {
   width: 100%;
-  max-height: 70dvh;
-  bottom: 0rem;
   display: flex;
   justify-content: center;
   background-color: white;
   border-top: 1px solid $secondary;
+  margin-top: auto;
+}
+
+.topLayer--overBody {
+  position: absolute;
+  bottom: 0;
+  max-height: 70dvh;
   overflow: auto;
   scrollbar-width: none;
+  margin-top: 0;
 }
 
 .containerPaddings {

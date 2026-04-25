@@ -4,7 +4,6 @@ import type {
   ApiV1ConversationImportPostRequest,
 } from "src/api";
 import {
-  type ApiV1ConversationCreatePostRequest,
   type ApiV1ConversationFetchRecentPostRequest,
   type ApiV1ModerationConversationWithdrawPostRequest,
   DefaultApiAxiosParamCreator,
@@ -25,6 +24,7 @@ import type {
   ExternalSourceConfig,
   FeedSortAlgorithm,
   ParticipationMode,
+  SurveyConfig,
 } from "src/shared/types/zod";
 import { zodExtendedConversationData } from "src/shared/types/zod";
 import { CSV_UPLOAD_FIELD_NAMES } from "src/shared-app-api/csvUpload";
@@ -59,7 +59,7 @@ export function useBackendPostApi() {
 
   async function fetchPostBySlugId(
     postSlugId: string,
-    loadUserPollResponse: boolean
+    loadPersonalizedData: boolean
   ): Promise<ExtendedConversation> {
     try {
       const params: ApiV1ModerationConversationWithdrawPostRequest = {
@@ -68,7 +68,7 @@ export function useBackendPostApi() {
 
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1ConversationGetPost(params);
-      if (!loadUserPollResponse) {
+      if (!loadPersonalizedData) {
         const response = await DefaultApiFactory(
           undefined,
           undefined,
@@ -106,12 +106,12 @@ export function useBackendPostApi() {
     | AxiosErrorResponse;
 
   interface FetchRecentPostProps {
-    loadUserPollData: boolean;
+    loadPersonalizedData: boolean;
     sortAlgorithm: FeedSortAlgorithm;
   }
 
   async function fetchRecentPost({
-    loadUserPollData,
+    loadPersonalizedData,
     sortAlgorithm,
   }: FetchRecentPostProps): Promise<FetchRecentPostResponse> {
     try {
@@ -119,7 +119,7 @@ export function useBackendPostApi() {
         sortAlgorithm: sortAlgorithm,
       };
 
-      if (!loadUserPollData) {
+      if (!loadPersonalizedData) {
         const response = await DefaultApiFactory(
           undefined,
           undefined,
@@ -170,7 +170,6 @@ export function useBackendPostApi() {
   interface CreateNewPostProps {
     postTitle: string;
     postBody: string | undefined;
-    pollingOptionList: string[] | undefined;
     postAsOrganizationName: string;
     targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
@@ -179,6 +178,7 @@ export function useBackendPostApi() {
     seedOpinionList: string[];
     requiresEventTicket?: EventSlug;
     externalSourceConfig?: ExternalSourceConfig | null;
+    surveyConfig?: SurveyConfig | null;
   }
 
   type CreateNewPostSuccessResponse =
@@ -305,7 +305,6 @@ export function useBackendPostApi() {
   async function createNewPost({
     postTitle,
     postBody,
-    pollingOptionList,
     postAsOrganizationName,
     targetIsoConvertDateString,
     isIndexed,
@@ -314,12 +313,12 @@ export function useBackendPostApi() {
     seedOpinionList,
     requiresEventTicket,
     externalSourceConfig,
+    surveyConfig,
   }: CreateNewPostProps): Promise<CreateNewPostResponse> {
     try {
-      const params: ApiV1ConversationCreatePostRequest = {
+      const params = Dto.createNewConversationRequest.parse({
         conversationTitle: postTitle,
         conversationBody: postBody,
-        pollingOptionList: pollingOptionList,
         isIndexed: isIndexed,
         participationMode: participationMode,
         conversationType: conversationType,
@@ -328,16 +327,13 @@ export function useBackendPostApi() {
         seedOpinionList: seedOpinionList,
         requiresEventTicket,
         externalSourceConfig: externalSourceConfig ?? undefined,
-      };
-
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1ConversationCreatePost(params);
+        surveyConfig: surveyConfig ?? undefined,
+      });
+      const url = "/api/v1/conversation/create";
+      const options = { method: "POST" };
       const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1ConversationCreatePost(
+      const response = await api.post(
+        url,
         params,
         createRawAxiosRequestConfig({ encodedUcan: encodedUcan })
       );

@@ -53,45 +53,52 @@ async function generateTranslationsForClusters(
     }
 
     // Prepare texts to translate (only translate what's needed)
-    const textsToTranslate: string[] = [];
-    const textMapping: {
-        polisClusterId: number;
-        type: "label" | "summary";
-    }[] = [];
+    const labelTextsToTranslate: string[] = [];
+    const labelMapping: number[] = [];
+    const summaryTextsToTranslate: string[] = [];
+    const summaryMapping: number[] = [];
 
     for (const cluster of clusterData) {
         const missingInfo = missingTranslationsMap.get(cluster.polisClusterId);
         if (!missingInfo) continue;
 
         if (missingInfo.needsLabelTranslation && cluster.aiLabel) {
-            textsToTranslate.push(cluster.aiLabel);
-            textMapping.push({
-                polisClusterId: cluster.polisClusterId,
-                type: "label",
-            });
+            labelTextsToTranslate.push(cluster.aiLabel);
+            labelMapping.push(cluster.polisClusterId);
         }
         if (missingInfo.needsSummaryTranslation && cluster.aiSummary) {
-            textsToTranslate.push(cluster.aiSummary);
-            textMapping.push({
-                polisClusterId: cluster.polisClusterId,
-                type: "summary",
-            });
+            summaryTextsToTranslate.push(cluster.aiSummary);
+            summaryMapping.push(cluster.polisClusterId);
         }
     }
 
-    if (textsToTranslate.length === 0) {
+    if (
+        labelTextsToTranslate.length === 0 &&
+        summaryTextsToTranslate.length === 0
+    ) {
         return 0;
     }
 
-    // Translate all texts in batch
-    const translatedTexts = await batchTranslateTexts(
-        googleCloudCredentials.client,
-        textsToTranslate,
-        sourceLanguageCode,
-        targetLanguageCode,
-        googleCloudCredentials.config.projectId,
-        googleCloudCredentials.config.location,
-    );
+    const [translatedLabels, translatedSummaries] = await Promise.all([
+        batchTranslateTexts({
+            client: googleCloudCredentials.client,
+            texts: labelTextsToTranslate,
+            sourceLanguageCode,
+            targetLanguageCode,
+            projectId: googleCloudCredentials.config.projectId,
+            location: googleCloudCredentials.config.location,
+            contentKind: "ai_label",
+        }),
+        batchTranslateTexts({
+            client: googleCloudCredentials.client,
+            texts: summaryTextsToTranslate,
+            sourceLanguageCode,
+            targetLanguageCode,
+            projectId: googleCloudCredentials.config.projectId,
+            location: googleCloudCredentials.config.location,
+            contentKind: "ai_summary",
+        }),
+    ]);
 
     // Map translations back to clusters
     const clusterTranslations = new Map<
@@ -99,29 +106,29 @@ async function generateTranslationsForClusters(
         { aiLabel: string | null; aiSummary: string | null }
     >();
 
-    for (let i = 0; i < translatedTexts.length; i++) {
-        const mapping = textMapping[i];
-        const translatedText = translatedTexts[i];
-
-        const existingTranslation = clusterTranslations.get(mapping.polisClusterId);
+    for (const [index, translatedText] of translatedLabels.entries()) {
+        const polisClusterId = labelMapping[index];
+        const existingTranslation = clusterTranslations.get(polisClusterId);
         if (existingTranslation !== undefined) {
-            if (mapping.type === "label") {
-                existingTranslation.aiLabel = translatedText;
-            } else {
-                existingTranslation.aiSummary = translatedText;
-            }
+            existingTranslation.aiLabel = translatedText;
         } else {
-            if (mapping.type === "label") {
-                clusterTranslations.set(mapping.polisClusterId, {
-                    aiLabel: translatedText,
-                    aiSummary: null,
-                });
-            } else {
-                clusterTranslations.set(mapping.polisClusterId, {
-                    aiSummary: translatedText,
-                    aiLabel: null,
-                });
-            }
+            clusterTranslations.set(polisClusterId, {
+                aiLabel: translatedText,
+                aiSummary: null,
+            });
+        }
+    }
+
+    for (const [index, translatedText] of translatedSummaries.entries()) {
+        const polisClusterId = summaryMapping[index];
+        const existingTranslation = clusterTranslations.get(polisClusterId);
+        if (existingTranslation !== undefined) {
+            existingTranslation.aiSummary = translatedText;
+        } else {
+            clusterTranslations.set(polisClusterId, {
+                aiLabel: null,
+                aiSummary: translatedText,
+            });
         }
     }
 
