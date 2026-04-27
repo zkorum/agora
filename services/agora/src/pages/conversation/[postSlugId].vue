@@ -28,6 +28,7 @@
                 :extended-post-data="loadedConversationData"
                 :compact-mode="false"
                 @open-moderation-history="openModerationHistory()"
+                @conversation-deleted="handleConversationDeleted"
                 @verified="(payload) => handleTicketVerified(payload)"
               />
 
@@ -93,6 +94,7 @@
                 v-if="loadedConversationData.metadata.conversationType !== 'maxdiff'"
               >
                 <CommentComposer
+                  ref="commentComposerRef"
                   :post-slug-id="loadedConversationData.metadata.conversationSlugId"
                   :participation-mode="loadedConversationData.metadata.participationMode"
                   :requires-event-ticket="loadedConversationData.metadata.requiresEventTicket"
@@ -139,7 +141,7 @@ import {
   isBackToConversationCommentTab,
   navigateBackOrReplace,
 } from "src/utils/nav/historyBack";
-import { computed, onBeforeUnmount, onMounted, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -161,6 +163,7 @@ const { safeNavigateBack } = useGoBackButtonHandler();
 const authStore = useAuthenticationStore();
 const { userId } = storeToRefs(authStore);
 const { reveal: headerRevealed } = storeToRefs(useLayoutHeaderStore());
+const commentComposerRef = ref<InstanceType<typeof CommentComposer>>();
 
 const conversationConfig: ConversationParentConfig = {
   analysisRouteName: "/conversation/[postSlugId]/analysis",
@@ -233,6 +236,10 @@ function handleBack(event: MouseEvent): void {
   } else {
     void safeNavigateBack({ name: "/" });
   }
+}
+
+function handleConversationDeleted(): void {
+  commentComposerRef.value?.discardDraft();
 }
 
 // Handle conversation creation navigation

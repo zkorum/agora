@@ -152,6 +152,7 @@ export function useContentActions() {
       exportConversationCallback: () => void | Promise<void>;
       shareCallback: () => void | Promise<void>;
       syncGitHubCallback: (() => void | Promise<void>) | null;
+      conversationDeletedCallback: () => void | Promise<void>;
     }
   ): void => {
     const currentUser = profileData.value.userName;
@@ -180,6 +181,7 @@ export function useContentActions() {
       const result = await handlers.handlePostDelete(context);
       if (result.success) {
         closeDialog();
+        await callbacks.conversationDeletedCallback();
       }
     };
 

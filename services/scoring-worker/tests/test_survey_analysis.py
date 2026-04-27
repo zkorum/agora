@@ -39,6 +39,17 @@ def test_withdrawn_survey_is_not_eligible_for_analysis() -> None:
     assert is_survey_gate_status_eligible_for_analysis(survey_gate_status="complete_valid")
 
 
+def test_optional_survey_is_eligible_regardless_of_status() -> None:
+    assert is_survey_gate_status_eligible_for_analysis(
+        survey_gate_status="withdrawn",
+        is_optional=True,
+    )
+    assert is_survey_gate_status_eligible_for_analysis(
+        survey_gate_status="needs_update",
+        is_optional=True,
+    )
+
+
 def test_optional_only_survey_is_analysis_eligible_without_response() -> None:
     question = SurveyQuestionAnalysisRecord(
         question_id=2,

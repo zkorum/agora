@@ -168,7 +168,12 @@ def derive_survey_gate_status_for_analysis(
     return "not_started"
 
 
-def is_survey_gate_status_eligible_for_analysis(*, survey_gate_status: str) -> bool:
+def is_survey_gate_status_eligible_for_analysis(
+    *, survey_gate_status: str, is_optional: bool = False
+) -> bool:
+    if is_optional:
+        return True
+
     return survey_gate_status in {"no_survey", "complete_valid"}
 
 
@@ -182,7 +187,7 @@ def _fetch_survey_eligible_participants_batch(
         return {}
 
     survey_configs = session.execute(
-        select(SurveyConfig.id, SurveyConfig.conversation_id).where(
+        select(SurveyConfig.id, SurveyConfig.conversation_id, SurveyConfig.is_optional).where(
             and_(
                 SurveyConfig.conversation_id.in_(conversation_ids),
                 SurveyConfig.deleted_at.is_(None),
@@ -192,7 +197,10 @@ def _fetch_survey_eligible_participants_batch(
     if not survey_configs:
         return {}
 
-    survey_config_ids = [row.id for row in survey_configs]
+    survey_config_ids = [row.id for row in survey_configs if not row.is_optional]
+    if not survey_config_ids:
+        return {}
+
     conversation_id_by_survey_config_id = {row.id: row.conversation_id for row in survey_configs}
 
     question_rows = session.execute(

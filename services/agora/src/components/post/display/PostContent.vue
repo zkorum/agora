@@ -16,6 +16,7 @@
       :conversation-type="extendedPostData.metadata.conversationType"
       :external-source-config="extendedPostData.metadata.externalSourceConfig ?? null"
       @open-moderation-history="$emit('openModerationHistory')"
+      @conversation-deleted="$emit('conversationDeleted')"
     />
 
     <div class="postDiv">
@@ -102,6 +103,7 @@ defineProps<{
 
 defineEmits<{
   openModerationHistory: [];
+  conversationDeleted: [];
   verified: [payload: { userIdChanged: boolean; needsCacheRefresh: boolean }];
 }>();
 

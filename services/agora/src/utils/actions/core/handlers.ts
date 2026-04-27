@@ -3,11 +3,11 @@
  * This composable provides action execution functions with proper error handling
  */
 
+import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useUserStore } from "src/stores/user";
 import { useBackendPostApi } from "src/utils/api/post/post";
 import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
 import { useNotify } from "src/utils/ui/notify";
-import { useRoute, useRouter } from "vue-router";
 
 import type { ContentActionContext, ContentActionResult } from "./types";
 
@@ -15,11 +15,10 @@ import type { ContentActionContext, ContentActionResult } from "./types";
  * Composable for handling action execution
  */
 export function useActionHandlers() {
-  const router = useRouter();
-  const route = useRoute();
   const { showNotifyMessage } = useNotify();
   const { deletePostBySlugId } = useBackendPostApi();
   const { loadUserProfile } = useUserStore();
+  const { deleteOpinionDraft } = useNewOpinionDraftsStore();
   const { invalidateFeed } = useInvalidateFeedQuery();
 
   /**
@@ -39,16 +38,9 @@ export function useActionHandlers() {
       const response = await deletePostBySlugId(context.targetId);
       if (response) {
         showNotifyMessage("Conversation deleted");
+        deleteOpinionDraft(context.targetId);
         invalidateFeed();
         await loadUserProfile();
-
-        const slugPrefix = `/conversation/${context.targetId}`;
-        if (
-          route.path === slugPrefix ||
-          route.path.startsWith(`${slugPrefix}/`)
-        ) {
-          await router.push({ name: "/" });
-        }
 
         return { success: true, message: "Conversation deleted successfully" };
       } else {
