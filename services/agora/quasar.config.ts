@@ -79,7 +79,6 @@ export default defineConfig((ctx) => {
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
     build: {
       sourcemap: "hidden", // generates .map files for Sentry but strips sourceMappingURL from bundles so browsers don't download them
-      minify: "terser",
       target: {
         browser: ["es2020", "firefox115", "chrome86", "safari14"],
         node: "node20",
