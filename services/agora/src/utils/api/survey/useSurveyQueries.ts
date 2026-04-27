@@ -1,9 +1,51 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import { type SurveyAnswerSubmission, type SurveyConfig } from "src/shared/types/zod";
+import type { SurveyStatusCheckResponse } from "src/shared/types/dto";
+import {
+  type SurveyAnswerSubmission,
+  type SurveyConfig,
+  type SurveyGateSummary,
+} from "src/shared/types/zod";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
+import { updateConversationQueryCache } from "../post/useConversationQuery";
 import { useBackendSurveyApi } from "./survey";
+
+function updateSurveyGateViewerCaches({
+  queryClient,
+  conversationSlugId,
+  surveyGate,
+}: {
+  queryClient: ReturnType<typeof useQueryClient>;
+  conversationSlugId: string;
+  surveyGate: SurveyGateSummary;
+}): void {
+  queryClient.setQueriesData<SurveyStatusCheckResponse>(
+    { queryKey: ["survey-status", conversationSlugId] },
+    (oldData) => {
+      if (oldData === undefined) {
+        return oldData;
+      }
+
+      return {
+        ...oldData,
+        surveyGate,
+      };
+    }
+  );
+
+  updateConversationQueryCache({
+    queryClient,
+    conversationSlugId,
+    updateConversation: (conversation) => ({
+      ...conversation,
+      interaction: {
+        ...conversation.interaction,
+        surveyGate,
+      },
+    }),
+  });
+}
 
 async function invalidateSurveyViewerQueries({
   queryClient,
@@ -252,10 +294,19 @@ export function useSurveyConfigUpdateMutation({
       }
       return response.data;
     },
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      const slugId = toValue(conversationSlugId);
+      if (data.surveyGate !== undefined) {
+        updateSurveyGateViewerCaches({
+          queryClient,
+          conversationSlugId: slugId,
+          surveyGate: data.surveyGate,
+        });
+      }
+
       await invalidateSurveyViewerQueries({
         queryClient,
-        conversationSlugId: toValue(conversationSlugId),
+        conversationSlugId: slugId,
         includeDerivedSurveyQueries: true,
       });
     },

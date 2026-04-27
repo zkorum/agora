@@ -2810,6 +2810,7 @@ export async function updateSurveyConfigByAuthor({
     googleCloudCredentials?: GoogleCloudCredentials;
 }): Promise<{
     currentRevision: number;
+    surveyGate: SurveyGateSummary;
 }> {
     const conversation = await getConversationAccessContextBySlugId({
         db,
@@ -2870,6 +2871,11 @@ export async function updateSurveyConfigByAuthor({
 
     return {
         currentRevision: activeSurveyConfig.currentRevision,
+        surveyGate: await getSurveyGateSummary({
+            db,
+            conversationId: conversation.conversationId,
+            participantId: userId,
+        }),
     };
 }
 
