@@ -158,6 +158,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   openModerationHistory: [];
+  conversationDeleted: [];
 }>();
 
 const router = useRouter();
@@ -326,6 +327,15 @@ async function syncGitHubCallback(): Promise<void> {
   }
 }
 
+async function conversationDeletedCallback(): Promise<void> {
+  emit("conversationDeleted");
+
+  const slugPrefix = `/conversation/${props.postSlugId}`;
+  if (route.path === slugPrefix || route.path.startsWith(`${slugPrefix}/`)) {
+    await router.push({ name: "/" });
+  }
+}
+
 function clickedMoreIcon() {
   const showSyncGitHub =
     props.conversationType === "maxdiff" &&
@@ -346,6 +356,7 @@ function clickedMoreIcon() {
       exportConversationCallback,
       shareCallback,
       syncGitHubCallback: showSyncGitHub ? syncGitHubCallback : null,
+      conversationDeletedCallback,
     },
   );
 }

@@ -435,6 +435,18 @@ function onLoginCallback() {
   unlockRoute();
 }
 
+function discardDraft(): void {
+  opinionBody.value = "";
+  characterCount.value = 0;
+  innerFocus.value = false;
+  deleteOpinionDraft(props.postSlugId);
+  unlockRoute();
+}
+
+defineExpose({
+  discardDraft,
+});
+
 function onBeforeRouteLeaveCallback(to: RouteGuardDestination): boolean {
   if (characterCount.value === 0) {
     deleteOpinionDraft(props.postSlugId);
