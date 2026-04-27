@@ -31,7 +31,7 @@
             <ActionButton
               v-if="!isOffline"
               variant="outline"
-              @click="refetch()"
+              @click="refetchFeedData()"
             >
               {{ t('retryButton') }}
             </ActionButton>
