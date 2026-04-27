@@ -718,6 +718,7 @@ export const ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnu
 export type ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum = typeof ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestExternalSourceConfigSourceTypeEnum];
 
 export interface ApiV1ConversationCreatePostRequestSurveyConfig {
+    'isOptional'?: boolean;
     'questions': Array<ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner>;
 }
 /**
@@ -1101,6 +1102,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataList
 }
 export interface ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteractionSurveyGate {
     'hasSurvey': boolean;
+    'isOptional': boolean;
     'canParticipate': boolean;
     'status': ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteractionSurveyGateStatusEnum;
 }
@@ -1303,6 +1305,7 @@ export const ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum = {
 export type ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum];
 
 export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfig {
+    'isOptional': boolean;
     'questions': Array<ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInner>;
 }
 /**
@@ -2190,6 +2193,7 @@ export interface ApiV1SurveyConfigUpdatePostRequest {
     'surveyConfig': ApiV1SurveyConfigUpdatePostRequestSurveyConfig;
 }
 export interface ApiV1SurveyConfigUpdatePostRequestSurveyConfig {
+    'isOptional'?: boolean;
     'questions': Array<ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner>;
 }
 export interface ApiV1SurveyFormFetchPost200Response {

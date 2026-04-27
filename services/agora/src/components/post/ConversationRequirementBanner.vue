@@ -161,6 +161,7 @@ const buttonColor = computed<"warning" | "primary" | "positive">(() => {
 const bannerCopy = computed(() => {
   return resolveRequirementBannerCopy({
     hasSurvey: hasSurvey.value,
+    isOptional: props.surveyGate.isOptional,
     needsAuth: needsAuth.value,
     needsTicket: needsTicket.value,
     surveyGateStatus: props.surveyGate.status,

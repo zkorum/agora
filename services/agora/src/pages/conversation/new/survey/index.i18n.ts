@@ -5,6 +5,9 @@ export interface ConversationSurveyStepTranslations {
   addQuestionButton: string;
   pageTitle: string;
   pageDescription: string;
+  optionalSurveyToggleLabel: string;
+  optionalSurveyToggleHint: string;
+  questionRequirementDisabledHint: string;
   noQuestionsTitle: string;
   noQuestionsDescription: string;
   questionLabel: string;
@@ -46,6 +49,11 @@ export const conversationSurveyStepTranslations: Record<
     pageTitle: "Conversation survey",
     pageDescription:
       "Add an optional demographics survey. Required questions gate participation; fully optional surveys remain informational.",
+    optionalSurveyToggleLabel: "Make survey optional",
+    optionalSurveyToggleHint:
+      "People can participate without answering. Question required settings are ignored until this is turned off.",
+    questionRequirementDisabledHint:
+      "Ignored because the whole survey is optional.",
     noQuestionsTitle: "No survey yet",
     noQuestionsDescription:
       "Leave this empty to publish without a survey, or add questions now.",
@@ -83,6 +91,11 @@ export const conversationSurveyStepTranslations: Record<
     addQuestionButton: "إضافة سؤال",
     pageTitle: "استبيان المحادثة",
     pageDescription: "أضف استبيانًا ديموغرافيًا اختياريًا. الأسئلة المطلوبة تقيّد المشاركة، أما الاستبيانات الاختيارية بالكامل فتبقى معلوماتية.",
+    optionalSurveyToggleLabel: "اجعل الاستبيان اختياريًا",
+    optionalSurveyToggleHint:
+      "يمكن للأشخاص المشاركة دون الإجابة. يتم تجاهل إعدادات إلزامية الأسئلة حتى يتم إيقاف هذا الخيار.",
+    questionRequirementDisabledHint:
+      "يتم تجاهله لأن الاستبيان بأكمله اختياري.",
     noQuestionsTitle: "لا يوجد استبيان بعد",
     noQuestionsDescription: "اترك هذه الصفحة فارغة للنشر بدون استبيان، أو أضف أسئلة الآن.",
     questionLabel: "السؤال {number}",
@@ -119,6 +132,11 @@ export const conversationSurveyStepTranslations: Record<
     addQuestionButton: "Agregar pregunta",
     pageTitle: "Encuesta de la conversación",
     pageDescription: "Agrega una encuesta demográfica opcional. Las preguntas obligatorias bloquean la participación; las encuestas totalmente opcionales siguen siendo informativas.",
+    optionalSurveyToggleLabel: "Hacer la encuesta opcional",
+    optionalSurveyToggleHint:
+      "Las personas pueden participar sin responder. Los ajustes obligatorios de las preguntas se ignoran hasta desactivar esto.",
+    questionRequirementDisabledHint:
+      "Se ignora porque toda la encuesta es opcional.",
     noQuestionsTitle: "Aún no hay encuesta",
     noQuestionsDescription: "Déjalo vacío para publicar sin encuesta o agrega preguntas ahora.",
     questionLabel: "Pregunta {number}",
@@ -155,6 +173,11 @@ export const conversationSurveyStepTranslations: Record<
     addQuestionButton: "افزودن پرسش",
     pageTitle: "نظرسنجی گفتگو",
     pageDescription: "یک نظرسنجی جمعیت‌شناختی اختیاری اضافه کنید. پرسش‌های الزامی مشارکت را محدود می‌کنند؛ نظرسنجی‌های کاملاً اختیاری فقط جنبه اطلاعاتی دارند.",
+    optionalSurveyToggleLabel: "اختیاری کردن کل نظرسنجی",
+    optionalSurveyToggleHint:
+      "افراد می‌توانند بدون پاسخ دادن مشارکت کنند. تنظیمات الزامی پرسش‌ها تا خاموش شدن این گزینه نادیده گرفته می‌شود.",
+    questionRequirementDisabledHint:
+      "نادیده گرفته می‌شود چون کل نظرسنجی اختیاری است.",
     noQuestionsTitle: "هنوز نظرسنجی‌ای وجود ندارد",
     noQuestionsDescription: "برای انتشار بدون نظرسنجی این بخش را خالی بگذارید، یا همین حالا پرسش اضافه کنید.",
     questionLabel: "پرسش {number}",
@@ -191,6 +214,11 @@ export const conversationSurveyStepTranslations: Record<
     addQuestionButton: "Ajouter une question",
     pageTitle: "Questionnaire de la conversation",
     pageDescription: "Ajoutez un questionnaire démographique facultatif. Les questions obligatoires conditionnent la participation ; un questionnaire entièrement facultatif reste informatif.",
+    optionalSurveyToggleLabel: "Rendre le questionnaire facultatif",
+    optionalSurveyToggleHint:
+      "Les personnes peuvent participer sans répondre. Les réglages obligatoires des questions sont ignorés jusqu'à désactivation.",
+    questionRequirementDisabledHint:
+      "Ignoré car tout le questionnaire est facultatif.",
     noQuestionsTitle: "Pas encore de questionnaire",
     noQuestionsDescription: "Laissez cette étape vide pour publier sans questionnaire, ou ajoutez des questions maintenant.",
     questionLabel: "Question {number}",
@@ -227,6 +255,11 @@ export const conversationSurveyStepTranslations: Record<
     addQuestionButton: "הוספת שאלה",
     pageTitle: "סקר השיחה",
     pageDescription: "הוסיפו סקר דמוגרפי אופציונלי. שאלות חובה מגבילות השתתפות; סקר שכל כולו אופציונלי נשאר אינפורמטיבי בלבד.",
+    optionalSurveyToggleLabel: "להפוך את הסקר לאופציונלי",
+    optionalSurveyToggleHint:
+      "אפשר להשתתף בלי לענות. הגדרות החובה של השאלות יזכו להתעלמות עד לכיבוי אפשרות זו.",
+    questionRequirementDisabledHint:
+      "מתעלמים מזה כי כל הסקר אופציונלי.",
     noQuestionsTitle: "עדיין אין סקר",
     noQuestionsDescription: "השאירו את השלב הזה ריק כדי לפרסם בלי סקר, או הוסיפו שאלות עכשיו.",
     questionLabel: "שאלה {number}",
@@ -263,6 +296,11 @@ export const conversationSurveyStepTranslations: Record<
     addQuestionButton: "質問を追加",
     pageTitle: "会話アンケート",
     pageDescription: "任意の属性アンケートを追加します。必須質問は参加条件になります。すべて任意のアンケートは情報表示のみです。",
+    optionalSurveyToggleLabel: "アンケートを任意にする",
+    optionalSurveyToggleHint:
+      "回答しなくても参加できます。この設定をオフにするまで、質問の必須設定は無視されます。",
+    questionRequirementDisabledHint:
+      "アンケート全体が任意のため無視されます。",
     noQuestionsTitle: "アンケートはまだありません",
     noQuestionsDescription: "アンケートなしで公開する場合はこのままにするか、今すぐ質問を追加してください。",
     questionLabel: "質問 {number}",
@@ -299,6 +337,11 @@ export const conversationSurveyStepTranslations: Record<
     addQuestionButton: "Суроо кошуу",
     pageTitle: "Сүйлөшүүнүн сурамжылоосу",
     pageDescription: "Ыктыярдуу демографиялык сурамжылоо кошуңуз. Милдеттүү суроолор катышууну чектейт; толугу менен ыктыярдуу сурамжылоо маалыматтык бойдон калат.",
+    optionalSurveyToggleLabel: "Сурамжылоону ыктыярдуу кылуу",
+    optionalSurveyToggleHint:
+      "Адамдар жооп бербей эле катыша алат. Бул өчүрүлгөнчө суроолордун милдеттүү жөндөөлөрү эске алынбайт.",
+    questionRequirementDisabledHint:
+      "Сурамжылоонун баары ыктыярдуу болгондуктан эске алынбайт.",
     noQuestionsTitle: "Азырынча сурамжылоо жок",
     noQuestionsDescription: "Сурамжылоосуз жарыялоо үчүн муну бош калтырыңыз же азыр суроолорду кошуңуз.",
     questionLabel: "Суроо {number}",
@@ -335,6 +378,11 @@ export const conversationSurveyStepTranslations: Record<
     addQuestionButton: "Добавить вопрос",
     pageTitle: "Опрос беседы",
     pageDescription: "Добавьте необязательный демографический опрос. Обязательные вопросы ограничивают участие; полностью необязательный опрос остаётся информационным.",
+    optionalSurveyToggleLabel: "Сделать опрос необязательным",
+    optionalSurveyToggleHint:
+      "Люди могут участвовать без ответов. Настройки обязательности вопросов игнорируются, пока этот режим включён.",
+    questionRequirementDisabledHint:
+      "Игнорируется, потому что весь опрос необязательный.",
     noQuestionsTitle: "Опроса пока нет",
     noQuestionsDescription: "Оставьте этот шаг пустым, чтобы опубликовать без опроса, или добавьте вопросы сейчас.",
     questionLabel: "Вопрос {number}",
@@ -371,6 +419,11 @@ export const conversationSurveyStepTranslations: Record<
     addQuestionButton: "添加问题",
     pageTitle: "对话问卷",
     pageDescription: "添加一份可选的人口统计问卷。必答问题会限制参与；全部可选的问卷仅用于信息收集。",
+    optionalSurveyToggleLabel: "将问卷设为可选",
+    optionalSurveyToggleHint:
+      "用户无需回答也能参与。关闭此选项前，问题的必答设置会被忽略。",
+    questionRequirementDisabledHint:
+      "由于整个问卷是可选的，此设置会被忽略。",
     noQuestionsTitle: "还没有问卷",
     noQuestionsDescription: "如要无问卷发布，可保持为空；或者现在添加问题。",
     questionLabel: "问题 {number}",
@@ -407,6 +460,11 @@ export const conversationSurveyStepTranslations: Record<
     addQuestionButton: "新增問題",
     pageTitle: "對話問卷",
     pageDescription: "新增一份可選的人口統計問卷。必答問題會限制參與；完全可選的問卷僅作資訊用途。",
+    optionalSurveyToggleLabel: "將問卷設為可選",
+    optionalSurveyToggleHint:
+      "使用者無需回答也能參與。關閉此選項前，問題的必答設定會被忽略。",
+    questionRequirementDisabledHint:
+      "由於整份問卷是可選的，此設定會被忽略。",
     noQuestionsTitle: "還沒有問卷",
     noQuestionsDescription: "若要不含問卷直接發布，可保持空白；或現在新增問題。",
     questionLabel: "問題 {number}",

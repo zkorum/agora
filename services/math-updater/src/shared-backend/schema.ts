@@ -1400,6 +1400,7 @@ export const surveyConfigTable = pgTable(
             .notNull()
             .references(() => conversationTable.id),
         currentRevision: integer("current_revision").notNull().default(1),
+        isOptional: boolean("is_optional").notNull().default(false),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,

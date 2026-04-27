@@ -19,6 +19,14 @@
       <div class="intro-card">
         <div class="intro-card__title">{{ t("pageTitle") }}</div>
         <div class="intro-card__description">{{ t("pageDescription") }}</div>
+        <q-toggle
+          :model-value="isSurveyOptional"
+          :label="t('optionalSurveyToggleLabel')"
+          @update:model-value="(value) => updateSurveyOptional({ isOptional: value })"
+        />
+        <div class="intro-card__description">
+          {{ t("optionalSurveyToggleHint") }}
+        </div>
       </div>
 
       <div v-if="surveyConfigValue === null || surveyConfigValue.questions.length === 0" class="empty-card">
@@ -33,7 +41,7 @@
               {{ t("questionLabel", { number: questionIndex + 1 }) }}
             </div>
             <div class="question-card__subtitle">
-              {{ question.isRequired ? t("requiredLabel") : t("optionalLabel") }}
+              {{ isSurveyOptional || !question.isRequired ? t("optionalLabel") : t("requiredLabel") }}
             </div>
           </div>
 
@@ -78,10 +86,14 @@
         />
 
         <q-toggle
-          :model-value="question.isRequired"
-          :label="question.isRequired ? t('requiredLabel') : t('optionalLabel')"
+          :model-value="isSurveyOptional ? false : question.isRequired"
+          :disable="isSurveyOptional"
+          :label="isSurveyOptional || !question.isRequired ? t('optionalLabel') : t('requiredLabel')"
           @update:model-value="(value) => updateQuestionRequired({ questionIndex, isRequired: value })"
         />
+        <div v-if="isSurveyOptional" class="constraints-help">
+          {{ t("questionRequirementDisabledHint") }}
+        </div>
 
         <div v-if="question.questionType === 'choice'" class="constraints-grid">
           <q-input
@@ -158,8 +170,8 @@
         <div v-if="question.questionType !== 'free_text'" class="options-list">
           <div
             v-for="(option, optionIndex) in question.options ?? []"
-            :key="optionIndex"
             :id="getOptionInputId({ questionIndex, optionIndex })"
+            :key="optionIndex"
             class="option-editor"
             @keydown.enter="handleOptionEditorEnter({ event: $event, questionIndex })"
           >
@@ -340,6 +352,9 @@ const surveyConfigValue = computed(() => surveyConfig.value);
 const surveyQuestions = computed(() => {
   return surveyConfig.value?.questions ?? [];
 });
+const isSurveyOptional = computed(() => {
+  return surveyConfig.value?.isOptional === true;
+});
 const largeOptionWarningThreshold = SURVEY_LARGE_OPTION_WARNING_THRESHOLD;
 
 function clearSurveyValidationError(): void {
@@ -481,8 +496,17 @@ function ensureSurveyConfig(): void {
   }
 
   if (surveyConfig.value === null) {
-    surveyConfig.value = { questions: [] };
+    surveyConfig.value = { isOptional: false, questions: [] };
   }
+}
+
+function updateSurveyOptional({ isOptional }: { isOptional: boolean | null }): void {
+  ensureSurveyConfig();
+  if (surveyConfig.value === null) {
+    return;
+  }
+
+  surveyConfig.value.isOptional = isOptional === true;
 }
 
 function addQuestion(): void {

@@ -138,6 +138,7 @@ interface SurveyConfigUpdateEffect {
 
 interface InternalSurveyGateSummary {
     hasSurvey: boolean;
+    isOptional: boolean;
     canParticipate: boolean;
     status: InternalSurveyGateStatus;
 }
@@ -221,6 +222,7 @@ function toSurveyGateDto({
 }): SurveyGateSummary {
     return {
         hasSurvey: surveyGate.hasSurvey,
+        isOptional: surveyGate.isOptional,
         canParticipate: surveyGate.canParticipate,
         status:
             surveyGate.status === "withdrawn"
@@ -258,6 +260,7 @@ export interface ActiveSurveyQuestionRecord {
 export interface ActiveSurveyConfigRecord {
     id: number;
     currentRevision: number;
+    isOptional: boolean;
     questions: ActiveSurveyQuestionRecord[];
 }
 
@@ -285,6 +288,23 @@ function isStoredSurveyAnswerPassed({
         storedAnswer.optionSlugIds.length === 0 &&
         htmlToCountedText(storedAnswer.textValueHtml ?? "").length === 0
     );
+}
+
+function getParticipantSurveyQuestion({
+    question,
+    surveyIsOptional,
+}: {
+    question: ActiveSurveyQuestionRecord;
+    surveyIsOptional: boolean;
+}): ActiveSurveyQuestionRecord {
+    if (!surveyIsOptional || !question.isRequired) {
+        return question;
+    }
+
+    return {
+        ...question,
+        isRequired: false,
+    };
 }
 
 function isSurveyQuestionCompleted({
@@ -560,42 +580,48 @@ export function validateSurveyAnswer({
 export function deriveSurveyQuestionFormItem({
     question,
     storedAnswer,
+    surveyIsOptional = false,
 }: {
     question: ActiveSurveyQuestionRecord;
     storedAnswer: StoredSurveyAnswer | undefined;
+    surveyIsOptional?: boolean;
 }): SurveyQuestionFormItem {
+    const effectiveQuestion = getParticipantSurveyQuestion({
+        question,
+        surveyIsOptional,
+    });
     const candidateAnswer =
         storedAnswer === undefined
             ? undefined
             : surveyQuestionToAnswerDraft({
-                  question,
+                  question: effectiveQuestion,
                   storedAnswer,
               });
     const isPassed =
         storedAnswer !== undefined &&
-        isStoredSurveyAnswerPassed({ question, storedAnswer });
+        isStoredSurveyAnswerPassed({ question: effectiveQuestion, storedAnswer });
     const isStale =
-        question.isRequired &&
+        effectiveQuestion.isRequired &&
         storedAnswer !== undefined &&
         !isPassed &&
         candidateAnswer !== undefined &&
         (storedAnswer.answeredQuestionSemanticVersion !==
-            question.currentSemanticVersion ||
-            !validateSurveyAnswer({ question, answer: candidateAnswer }));
+            effectiveQuestion.currentSemanticVersion ||
+            !validateSurveyAnswer({ question: effectiveQuestion, answer: candidateAnswer }));
     const currentAnswer = isStale ? undefined : candidateAnswer;
     const isCurrentAnswerValid =
         currentAnswer !== undefined &&
-        validateSurveyAnswer({ question, answer: currentAnswer });
+        validateSurveyAnswer({ question: effectiveQuestion, answer: currentAnswer });
 
     return {
-        ...surveyQuestionToConfig({ question }),
+        ...surveyQuestionToConfig({ question: effectiveQuestion }),
         currentAnswer,
         isPassed,
         isMissingRequired:
-            question.isRequired && !isCurrentAnswerValid && !isStale,
+            effectiveQuestion.isRequired && !isCurrentAnswerValid && !isStale,
         isStale,
         isCurrentAnswerValid,
-        currentSemanticVersion: question.currentSemanticVersion,
+        currentSemanticVersion: effectiveQuestion.currentSemanticVersion,
         answeredQuestionSemanticVersion: isStale
             ? undefined
             : storedAnswer?.answeredQuestionSemanticVersion,
@@ -613,6 +639,7 @@ export function deriveSurveyGate({
     if (activeSurveyConfig === undefined) {
         return {
             hasSurvey: false,
+            isOptional: false,
             canParticipate: true,
             status: "no_survey",
             requiredQuestionCount: 0,
@@ -621,10 +648,12 @@ export function deriveSurveyGate({
         };
     }
 
+    const surveyIsOptional = activeSurveyConfig.isOptional;
     const requiredQuestions = activeSurveyConfig.questions.filter(
         (question) => question.isRequired,
     );
     const requiresSurveyCompletion = doesSurveyRequireCompletion({
+        isOptional: surveyIsOptional,
         requiredQuestionCount: requiredQuestions.length,
     });
 
@@ -632,7 +661,10 @@ export function deriveSurveyGate({
         const completedQuestionCount = activeSurveyConfig.questions.filter(
             (question) => {
                 return isSurveyQuestionCompleted({
-                    question,
+                    question: getParticipantSurveyQuestion({
+                        question,
+                        surveyIsOptional,
+                    }),
                     storedAnswer: answersByQuestionId.get(question.id),
                 });
             },
@@ -651,6 +683,7 @@ export function deriveSurveyGate({
                     : "not_started";
         return {
             hasSurvey: true,
+            isOptional: surveyIsOptional,
             canParticipate: true,
             status,
             requiredQuestionCount: 0,
@@ -662,6 +695,7 @@ export function deriveSurveyGate({
     if (participantId === undefined) {
         return {
             hasSurvey: true,
+            isOptional: surveyIsOptional,
             canParticipate: false,
             status: "not_started",
             requiredQuestionCount: requiredQuestions.length,
@@ -673,6 +707,7 @@ export function deriveSurveyGate({
     if (response?.withdrawnAt !== null && response?.withdrawnAt !== undefined) {
         return {
             hasSurvey: true,
+            isOptional: surveyIsOptional,
             canParticipate: false,
             status: "withdrawn",
             requiredQuestionCount: requiredQuestions.length,
@@ -713,6 +748,7 @@ export function deriveSurveyGate({
 
     return {
         hasSurvey: true,
+        isOptional: surveyIsOptional,
         canParticipate: status === "complete_valid",
         status,
         requiredQuestionCount: requiredQuestions.length,
@@ -747,6 +783,7 @@ export function deriveSurveyRouteResolution({
             const questionFormItem = deriveSurveyQuestionFormItem({
                 question,
                 storedAnswer: surveyState.answersByQuestionId.get(question.id),
+                surveyIsOptional: surveyState.activeSurveyConfig.isOptional,
             });
             if (
                 !questionFormItem.isCurrentAnswerValid &&
@@ -774,6 +811,7 @@ export function deriveSurveyRouteResolution({
         const questionFormItem = deriveSurveyQuestionFormItem({
             question,
             storedAnswer: surveyState.answersByQuestionId.get(question.id),
+            surveyIsOptional: surveyState.activeSurveyConfig.isOptional,
         });
         if (
             !questionFormItem.isCurrentAnswerValid &&
@@ -843,6 +881,7 @@ export async function getActiveSurveyConfigRecord({
         .select({
             id: surveyConfigTable.id,
             currentRevision: surveyConfigTable.currentRevision,
+            isOptional: surveyConfigTable.isOptional,
         })
         .from(surveyConfigTable)
         .where(
@@ -945,6 +984,7 @@ export async function getActiveSurveyConfigRecord({
     return {
         id: surveyConfig.id,
         currentRevision: surveyConfig.currentRevision,
+        isOptional: surveyConfig.isOptional,
         questions: questionRows.map((question) => ({
             id: question.questionId,
             slugId: question.questionSlugId,
@@ -1973,6 +2013,7 @@ async function replaceSurveyConfigById({
         .update(surveyConfigTable)
         .set({
             currentRevision: existingSurveyConfig.currentRevision + 1,
+            isOptional: surveyConfig.isOptional,
             updatedAt: now,
         })
         .where(eq(surveyConfigTable.id, surveyConfigId));
@@ -2008,12 +2049,14 @@ export async function setSurveyConfigForConversation({
         .limit(1);
     const existingSurveyConfig = existingSurveyConfigRows.at(0);
     const previousRequiresSurvey = doesSurveyRequireCompletion({
+        isOptional: previousSurveyConfig?.isOptional ?? false,
         requiredQuestionCount:
             previousSurveyConfig?.questions.filter(
                 (question) => question.isRequired,
             ).length ?? 0,
     });
     const nextRequiresSurvey = doesSurveyRequireCompletion({
+        isOptional: normalizedSurveyConfig?.isOptional ?? false,
         requiredQuestionCount:
             normalizedSurveyConfig?.questions.filter(
                 (question) => question.isRequired,
@@ -2040,6 +2083,7 @@ export async function setSurveyConfigForConversation({
             .values({
                 conversationId,
                 currentRevision: 1,
+                isOptional: normalizedSurveyConfig.isOptional,
                 createdAt: now,
                 updatedAt: now,
                 deletedAt: null,
@@ -2092,6 +2136,7 @@ export async function getSurveyConfigForConversation({
     }
 
     return {
+        isOptional: activeSurveyConfig.isOptional,
         questions: activeSurveyConfig.questions.map((question) =>
             surveyQuestionToConfig({ question }),
         ),
@@ -2169,6 +2214,7 @@ export async function fetchSurveyForm({
                 storedAnswer: localizedSurveyState.answersByQuestionId.get(
                     question.id,
                 ),
+                surveyIsOptional: localizedActiveSurveyConfig.isOptional,
             }),
         ),
         surveyGate: toSurveyGateDto({ surveyGate }),
@@ -2376,12 +2422,16 @@ export async function saveSurveyAnswer({
         throw httpErrors.notFound("Survey not found");
     }
 
-    const question = activeSurveyConfig.questions.find(
+    const storedQuestion = activeSurveyConfig.questions.find(
         (currentQuestion) => currentQuestion.slugId === questionSlugId,
     );
-    if (question === undefined) {
+    if (storedQuestion === undefined) {
         throw httpErrors.notFound("Survey question not found");
     }
+    const question = getParticipantSurveyQuestion({
+        question: storedQuestion,
+        surveyIsOptional: activeSurveyConfig.isOptional,
+    });
 
     if (answer !== null && !validateSurveyAnswer({ question, answer })) {
         throw httpErrors.badRequest("Invalid survey answer payload");
@@ -2619,6 +2669,7 @@ export async function saveSurveyAnswer({
         shouldRecomputeAnalysisForSurveyTransition({
             previousSurveyGateStatus: previousSurveyGate.status,
             nextSurveyGateStatus: nextSurveyGate.status,
+            isOptional: activeSurveyConfig.isOptional,
         })
     ) {
         await refreshConversationAnalysisForSurveyChange({
@@ -2725,6 +2776,7 @@ export async function withdrawSurveyResponse({
         shouldRecomputeAnalysisForSurveyTransition({
             previousSurveyGateStatus: previousSurveyGate.status,
             nextSurveyGateStatus: nextSurveyGate.status,
+            isOptional: previousSurveyState.activeSurveyConfig.isOptional,
         })
     ) {
         await refreshConversationAnalysisForSurveyChange({

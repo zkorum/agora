@@ -19,6 +19,7 @@ import {
 const surveyConfig: ActiveSurveyConfigRecord = {
     id: 1,
     currentRevision: 1,
+    isOptional: false,
     questions: [
         {
             id: 11,

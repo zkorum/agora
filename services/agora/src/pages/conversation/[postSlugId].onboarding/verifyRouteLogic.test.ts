@@ -7,6 +7,7 @@ function createNoSurveyStatus(): SurveyStatusCheckResponse {
   return {
     surveyGate: {
       hasSurvey: false,
+      isOptional: false,
       canParticipate: true,
       status: "no_survey",
     },
@@ -20,6 +21,7 @@ function createSurveyStatus(): SurveyStatusCheckResponse {
   return {
     surveyGate: {
       hasSurvey: true,
+      isOptional: false,
       canParticipate: false,
       status: "not_started",
     },
@@ -101,6 +103,7 @@ describe("resolveVerifyRouteDecision", () => {
       questions: [],
       surveyGate: {
         hasSurvey: false,
+        isOptional: false,
         canParticipate: true,
         status: "no_survey",
       },

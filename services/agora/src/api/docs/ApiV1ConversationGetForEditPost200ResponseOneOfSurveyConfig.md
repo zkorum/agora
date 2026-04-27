@@ -5,6 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**isOptional** | **boolean** |  | [default to false]
 **questions** | [**Array&lt;ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInner&gt;**](ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInner.md) |  | [default to undefined]
 
 ## Example
@@ -13,6 +14,7 @@ Name | Type | Description | Notes
 import { ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfig } from './api';
 
 const instance: ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfig = {
+    isOptional,
     questions,
 };
 ```

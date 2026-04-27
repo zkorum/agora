@@ -6,6 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **hasSurvey** | **boolean** |  | [default to undefined]
+**isOptional** | **boolean** |  | [default to undefined]
 **canParticipate** | **boolean** |  | [default to undefined]
 **status** | **string** |  | [default to undefined]
 
@@ -16,6 +17,7 @@ import { ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInt
 
 const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerInteractionSurveyGate = {
     hasSurvey,
+    isOptional,
     canParticipate,
     status,
 };

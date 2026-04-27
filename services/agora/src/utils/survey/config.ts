@@ -250,6 +250,7 @@ export function normalizeSurveyConfig({
   }
 
   const candidateConfig = {
+    isOptional: surveyConfig.isOptional,
     questions: normalizedQuestions,
   } satisfies SurveyConfig;
 
@@ -469,10 +470,13 @@ export function areSurveyConfigsEqual({
     return left === right;
   }
 
-  return areSurveyQuestionsEqual({
-    left: left.questions,
-    right: right.questions,
-  });
+  return (
+    left.isOptional === right.isOptional &&
+    areSurveyQuestionsEqual({
+      left: left.questions,
+      right: right.questions,
+    })
+  );
 }
 
 export interface SurveyConfigChangeSummary {

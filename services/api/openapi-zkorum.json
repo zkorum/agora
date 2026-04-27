@@ -1337,6 +1337,9 @@
                                                                     "hasSurvey": {
                                                                         "type": "boolean"
                                                                     },
+                                                                    "isOptional": {
+                                                                        "type": "boolean"
+                                                                    },
                                                                     "canParticipate": {
                                                                         "type": "boolean"
                                                                     },
@@ -1353,6 +1356,7 @@
                                                                 },
                                                                 "required": [
                                                                     "hasSurvey",
+                                                                    "isOptional",
                                                                     "canParticipate",
                                                                     "status"
                                                                 ],
@@ -2262,6 +2266,9 @@
                                                             "hasSurvey": {
                                                                 "type": "boolean"
                                                             },
+                                                            "isOptional": {
+                                                                "type": "boolean"
+                                                            },
                                                             "canParticipate": {
                                                                 "type": "boolean"
                                                             },
@@ -2278,6 +2285,7 @@
                                                         },
                                                         "required": [
                                                             "hasSurvey",
+                                                            "isOptional",
                                                             "canParticipate",
                                                             "status"
                                                         ],
@@ -2642,6 +2650,9 @@
                                                                     "hasSurvey": {
                                                                         "type": "boolean"
                                                                     },
+                                                                    "isOptional": {
+                                                                        "type": "boolean"
+                                                                    },
                                                                     "canParticipate": {
                                                                         "type": "boolean"
                                                                     },
@@ -2658,6 +2669,7 @@
                                                                 },
                                                                 "required": [
                                                                     "hasSurvey",
+                                                                    "isOptional",
                                                                     "canParticipate",
                                                                     "status"
                                                                 ],
@@ -5444,6 +5456,10 @@
                                         "nullable": true,
                                         "type": "object",
                                         "properties": {
+                                            "isOptional": {
+                                                "default": false,
+                                                "type": "boolean"
+                                            },
                                             "questions": {
                                                 "type": "array",
                                                 "items": {
@@ -6412,6 +6428,9 @@
                                                                 "hasSurvey": {
                                                                     "type": "boolean"
                                                                 },
+                                                                "isOptional": {
+                                                                    "type": "boolean"
+                                                                },
                                                                 "canParticipate": {
                                                                     "type": "boolean"
                                                                 },
@@ -6428,6 +6447,7 @@
                                                             },
                                                             "required": [
                                                                 "hasSurvey",
+                                                                "isOptional",
                                                                 "canParticipate",
                                                                 "status"
                                                             ],
@@ -6536,6 +6556,10 @@
                                                     "nullable": true,
                                                     "type": "object",
                                                     "properties": {
+                                                        "isOptional": {
+                                                            "default": false,
+                                                            "type": "boolean"
+                                                        },
                                                         "questions": {
                                                             "type": "array",
                                                             "items": {
@@ -6767,6 +6791,7 @@
                                                         }
                                                     },
                                                     "required": [
+                                                        "isOptional",
                                                         "questions"
                                                     ],
                                                     "additionalProperties": false
@@ -6874,6 +6899,10 @@
                                         "nullable": true,
                                         "type": "object",
                                         "properties": {
+                                            "isOptional": {
+                                                "default": false,
+                                                "type": "boolean"
+                                            },
                                             "questions": {
                                                 "type": "array",
                                                 "items": {
@@ -7598,6 +7627,9 @@
                                                 "hasSurvey": {
                                                     "type": "boolean"
                                                 },
+                                                "isOptional": {
+                                                    "type": "boolean"
+                                                },
                                                 "canParticipate": {
                                                     "type": "boolean"
                                                 },
@@ -7614,6 +7646,7 @@
                                             },
                                             "required": [
                                                 "hasSurvey",
+                                                "isOptional",
                                                 "canParticipate",
                                                 "status"
                                             ],
@@ -7669,6 +7702,9 @@
                                                 "hasSurvey": {
                                                     "type": "boolean"
                                                 },
+                                                "isOptional": {
+                                                    "type": "boolean"
+                                                },
                                                 "canParticipate": {
                                                     "type": "boolean"
                                                 },
@@ -7685,6 +7721,7 @@
                                             },
                                             "required": [
                                                 "hasSurvey",
+                                                "isOptional",
                                                 "canParticipate",
                                                 "status"
                                             ],
@@ -7855,6 +7892,9 @@
                                                         "hasSurvey": {
                                                             "type": "boolean"
                                                         },
+                                                        "isOptional": {
+                                                            "type": "boolean"
+                                                        },
                                                         "canParticipate": {
                                                             "type": "boolean"
                                                         },
@@ -7871,6 +7911,7 @@
                                                     },
                                                     "required": [
                                                         "hasSurvey",
+                                                        "isOptional",
                                                         "canParticipate",
                                                         "status"
                                                     ],
@@ -7968,6 +8009,9 @@
                                                         "hasSurvey": {
                                                             "type": "boolean"
                                                         },
+                                                        "isOptional": {
+                                                            "type": "boolean"
+                                                        },
                                                         "canParticipate": {
                                                             "type": "boolean"
                                                         },
@@ -7984,6 +8028,7 @@
                                                     },
                                                     "required": [
                                                         "hasSurvey",
+                                                        "isOptional",
                                                         "canParticipate",
                                                         "status"
                                                     ],
@@ -8049,6 +8094,10 @@
                                     "surveyConfig": {
                                         "type": "object",
                                         "properties": {
+                                            "isOptional": {
+                                                "default": false,
+                                                "type": "boolean"
+                                            },
                                             "questions": {
                                                 "type": "array",
                                                 "items": {
@@ -8312,6 +8361,9 @@
                                                 "hasSurvey": {
                                                     "type": "boolean"
                                                 },
+                                                "isOptional": {
+                                                    "type": "boolean"
+                                                },
                                                 "canParticipate": {
                                                     "type": "boolean"
                                                 },
@@ -8328,6 +8380,7 @@
                                             },
                                             "required": [
                                                 "hasSurvey",
+                                                "isOptional",
                                                 "canParticipate",
                                                 "status"
                                             ],

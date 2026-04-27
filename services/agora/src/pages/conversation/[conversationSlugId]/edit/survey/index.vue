@@ -22,6 +22,14 @@
       <ZKCard padding="1rem" class="intro-card">
         <div class="intro-card__title">{{ t("title") }}</div>
         <div class="intro-card__description">{{ t("description") }}</div>
+        <q-toggle
+          :model-value="isSurveyOptional"
+          :label="t('optionalSurveyToggleLabel')"
+          @update:model-value="(value) => updateSurveyOptional({ isOptional: value })"
+        />
+        <div class="intro-card__description">
+          {{ t("optionalSurveyToggleHint") }}
+        </div>
       </ZKCard>
 
       <ZKCard padding="1rem" class="summary-card">
@@ -108,10 +116,14 @@
           </div>
 
           <q-toggle
-            :model-value="question.isRequired"
-            :label="question.isRequired ? t('requiredLabel') : t('optionalLabel')"
+            :model-value="isSurveyOptional ? false : question.isRequired"
+            :disable="isSurveyOptional"
+            :label="isSurveyOptional || !question.isRequired ? t('optionalLabel') : t('requiredLabel')"
             @update:model-value="(value) => updateQuestionRequired({ questionIndex, isRequired: value })"
           />
+          <div v-if="isSurveyOptional" class="semantic-change-block__hint">
+            {{ t("questionRequirementDisabledHint") }}
+          </div>
 
           <div v-if="question.questionType === 'choice'" class="constraints-grid">
             <q-input
@@ -188,8 +200,8 @@
           <div v-if="question.questionType !== 'free_text'" class="options-list">
             <div
               v-for="(option, optionIndex) in question.options ?? []"
-              :key="optionIndex"
               :id="getOptionInputId({ questionIndex, optionIndex })"
+              :key="optionIndex"
               class="option-editor"
               @keydown.enter="handleOptionEditorEnter({ event: $event, questionIndex })"
             >
@@ -367,6 +379,7 @@ const pendingRemoval = ref<PendingRemoval | null>(null);
 
 const surveyConfigValue = computed(() => surveyConfig.value);
 const surveyQuestions = computed(() => surveyConfig.value?.questions ?? []);
+const isSurveyOptional = computed(() => surveyConfig.value?.isOptional === true);
 const largeOptionWarningThreshold = SURVEY_LARGE_OPTION_WARNING_THRESHOLD;
 const completionCountsQuery = useSurveyCompletionCountsQuery({
   conversationSlugId: computed(() => conversationSlugId),
@@ -731,8 +744,17 @@ function updateOptionSemanticChange({
 
 function ensureSurveyConfig(): void {
   if (surveyConfig.value === null) {
-    surveyConfig.value = { questions: [] };
+    surveyConfig.value = { isOptional: false, questions: [] };
   }
+}
+
+function updateSurveyOptional({ isOptional }: { isOptional: boolean | null }): void {
+  ensureSurveyConfig();
+  if (surveyConfig.value === null) {
+    return;
+  }
+
+  surveyConfig.value.isOptional = isOptional === true;
 }
 
 function addQuestion(): void {

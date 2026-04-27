@@ -48,7 +48,7 @@
                 :label="t('needsUpdateLabel')"
               />
               <q-chip
-                v-else-if="question.isRequired"
+                v-else-if="isQuestionRequired"
                 dense
                 color="primary"
                 text-color="white"
@@ -71,7 +71,7 @@
               v-if="question.questionType === 'choice'"
               :choice-display="question.choiceDisplay"
               :is-multiple-selection="!isSingleSelectionQuestion"
-              :is-required="question.isRequired"
+              :is-required="isQuestionRequired"
               :options="choiceOptions"
               :selected-single-option-slug-id="selectedSingleOptionSlugId"
               :selected-multi-option-slug-ids="selectedMultiOptionSlugIds"
@@ -222,6 +222,14 @@ const question = computed<SurveyQuestionFormItem | undefined>(() => {
   return surveyForm.value?.questions[questionIndex.value];
 });
 
+const isSurveyOptional = computed(() => {
+  return surveyForm.value?.surveyGate.isOptional === true;
+});
+
+const isQuestionRequired = computed(() => {
+  return question.value?.isRequired === true && !isSurveyOptional.value;
+});
+
 const previousQuestionSlugId = computed(() => {
   if (questionIndex.value <= 0) {
     return undefined;
@@ -351,7 +359,7 @@ const hasDraftChanged = computed(() => {
 const shouldPersistPassOnLeave = computed(() => {
   const currentQuestion = question.value;
 
-  if (currentQuestion === undefined || currentQuestion.isRequired) {
+  if (currentQuestion === undefined || isQuestionRequired.value) {
     return false;
   }
 
@@ -369,7 +377,7 @@ const canNavigateForward = computed(() => {
     return false;
   }
   if (draftAnswer.value === undefined) {
-    return !currentQuestion.isRequired || currentQuestion.isCurrentAnswerValid;
+    return !isQuestionRequired.value || currentQuestion.isCurrentAnswerValid;
   }
 
   return isSurveyAnswerSubmittable({
@@ -405,12 +413,12 @@ const questionDescription = computed(() => {
   }
   if (currentQuestion.questionType === "choice") {
     if (isSingleSelectionChoiceQuestion({ question: currentQuestion })) {
-      return currentQuestion.isRequired
+      return isQuestionRequired.value
         ? t("chooseOneOptionDescription")
         : t("chooseZeroOrOneOptionDescription");
     }
 
-    if (!currentQuestion.isRequired) {
+    if (!isQuestionRequired.value) {
       if (currentQuestion.constraints.maxSelections !== undefined) {
         return t("optionalMultiChoiceBetweenDescription", {
           min: currentQuestion.constraints.minSelections,
