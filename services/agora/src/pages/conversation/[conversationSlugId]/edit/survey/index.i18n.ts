@@ -7,6 +7,7 @@ export interface EditSurveyTranslations {
   description: string;
   optionalSurveyToggleLabel: string;
   optionalSurveyToggleHint: string;
+  requiredSurveyToggleHint: string;
   questionRequirementDisabledHint: string;
   loadError: string;
   validationError: string;
@@ -58,12 +59,14 @@ const en: EditSurveyTranslations = {
   saveButton: "Save survey",
   deleteButton: "Delete survey",
   title: "Edit survey",
-  description: "Update the conversation survey. Changes can affect which participant responses stay current.",
-  optionalSurveyToggleLabel: "Make survey optional",
+  description: "Configure the survey step shown before participants can vote on or create statements.",
+  optionalSurveyToggleLabel: "Allow participants to skip the survey",
   optionalSurveyToggleHint:
-    "People can participate without answering. Question required settings are ignored until this is turned off.",
+    "The survey step can be skipped. Participants can vote or create statements without answering the survey; their votes are always included in analysis, and required question settings are ignored.",
+  requiredSurveyToggleHint:
+    "The survey step is required. Participants must pass through it before voting or creating statements, even if some or all questions are optional. Only votes from participants who complete this step are included in analysis.",
   questionRequirementDisabledHint:
-    "Ignored because the whole survey is optional.",
+    "This question is treated as optional because the survey step can be skipped.",
   loadError: "Failed to load survey settings.",
   validationError: "Please complete all survey questions before saving.",
   saveError: "Failed to save survey settings.",
@@ -122,12 +125,14 @@ export const editSurveyTranslations: Record<
     saveButton: "حفظ الاستبيان",
     deleteButton: "حذف الاستبيان",
     title: "تعديل الاستبيان",
-    description: "حدّث استبيان المحادثة. قد تؤثر التغييرات على بقاء ردود المشاركين محدثة.",
-    optionalSurveyToggleLabel: "اجعل الاستبيان اختياريًا",
+    description: "اضبط خطوة الاستبيان التي تظهر قبل أن يتمكن المشاركون من التصويت على العبارات أو إنشاء عبارات جديدة.",
+    optionalSurveyToggleLabel: "السماح للمشاركين بتخطي الاستبيان",
     optionalSurveyToggleHint:
-      "يمكن للأشخاص المشاركة دون الإجابة. يتم تجاهل إعدادات إلزامية الأسئلة حتى يتم إيقاف هذا الخيار.",
+      "يمكن تخطي خطوة الاستبيان. يمكن للمشاركين التصويت أو إنشاء عبارات دون الإجابة على الاستبيان؛ وتُحتسب أصواتهم دائمًا في التحليل، ويتم تجاهل إعدادات إلزامية الأسئلة.",
+    requiredSurveyToggleHint:
+      "خطوة الاستبيان مطلوبة. يجب على المشاركين المرور بها قبل التصويت أو إنشاء عبارات، حتى لو كانت بعض الأسئلة أو كلها اختيارية. تُدرج في التحليل فقط أصوات المشاركين الذين يكملون هذه الخطوة.",
     questionRequirementDisabledHint:
-      "يتم تجاهله لأن الاستبيان بأكمله اختياري.",
+      "يُعامَل هذا السؤال كاختياري لأن خطوة الاستبيان يمكن تخطيها.",
     loadError: "فشل تحميل إعدادات الاستبيان.",
     validationError: "يرجى إكمال جميع أسئلة الاستبيان قبل الحفظ.",
     saveError: "فشل حفظ إعدادات الاستبيان.",
@@ -178,12 +183,14 @@ export const editSurveyTranslations: Record<
     saveButton: "Guardar encuesta",
     deleteButton: "Eliminar encuesta",
     title: "Editar encuesta",
-    description: "Actualiza la encuesta de la conversación. Los cambios pueden afectar qué respuestas de participantes siguen vigentes.",
-    optionalSurveyToggleLabel: "Hacer la encuesta opcional",
+    description: "Configura el paso de encuesta que aparece antes de que los participantes puedan votar sobre propuestas o crear nuevas.",
+    optionalSurveyToggleLabel: "Permitir que los participantes omitan la encuesta",
     optionalSurveyToggleHint:
-      "Las personas pueden participar sin responder. Los ajustes obligatorios de las preguntas se ignoran hasta desactivar esto.",
+      "El paso de encuesta se puede omitir. Los participantes pueden votar o crear propuestas sin responder la encuesta; sus votos siempre se incluyen en el análisis, y se ignoran los ajustes de preguntas obligatorias.",
+    requiredSurveyToggleHint:
+      "El paso de encuesta es obligatorio. Los participantes deben pasar por él antes de votar o crear propuestas, aunque algunas o todas las preguntas sean opcionales. Solo los votos de participantes que completan este paso se incluyen en el análisis.",
     questionRequirementDisabledHint:
-      "Se ignora porque toda la encuesta es opcional.",
+      "Esta pregunta se trata como opcional porque el paso de encuesta se puede omitir.",
     loadError: "No se pudo cargar la configuración de la encuesta.",
     validationError: "Completa todas las preguntas de la encuesta antes de guardar.",
     saveError: "No se pudo guardar la configuración de la encuesta.",
@@ -236,12 +243,14 @@ export const editSurveyTranslations: Record<
     saveButton: "ذخیره نظرسنجی",
     deleteButton: "حذف نظرسنجی",
     title: "ویرایش نظرسنجی",
-    description: "نظرسنجی گفتگو را به‌روزرسانی کنید. این تغییرات ممکن است بر معتبر ماندن پاسخ‌های شرکت‌کنندگان اثر بگذارد.",
-    optionalSurveyToggleLabel: "اختیاری کردن کل نظرسنجی",
+    description: "مرحله نظرسنجی را که پیش از رأی دادن شرکت‌کنندگان به گزاره‌ها یا ایجاد گزاره‌های جدید نمایش داده می‌شود تنظیم کنید.",
+    optionalSurveyToggleLabel: "اجازه دادن به شرکت‌کنندگان برای رد کردن نظرسنجی",
     optionalSurveyToggleHint:
-      "افراد می‌توانند بدون پاسخ دادن مشارکت کنند. تنظیمات الزامی پرسش‌ها تا خاموش شدن این گزینه نادیده گرفته می‌شود.",
+      "مرحله نظرسنجی را می‌توان رد کرد. شرکت‌کنندگان می‌توانند بدون پاسخ دادن به نظرسنجی رأی دهند یا گزاره ایجاد کنند؛ رأی‌های آن‌ها همیشه در تحلیل محاسبه می‌شود و تنظیمات الزامی پرسش‌ها نادیده گرفته می‌شود.",
+    requiredSurveyToggleHint:
+      "مرحله نظرسنجی الزامی است. شرکت‌کنندگان باید پیش از رأی دادن یا ایجاد گزاره از آن عبور کنند، حتی اگر برخی یا همه پرسش‌ها اختیاری باشند. فقط رأی‌های شرکت‌کنندگانی که این مرحله را کامل می‌کنند در تحلیل وارد می‌شود.",
     questionRequirementDisabledHint:
-      "نادیده گرفته می‌شود چون کل نظرسنجی اختیاری است.",
+      "این پرسش اختیاری در نظر گرفته می‌شود چون مرحله نظرسنجی را می‌توان رد کرد.",
     loadError: "بارگیری تنظیمات نظرسنجی انجام نشد.",
     validationError: "پیش از ذخیره، همه پرسش‌های نظرسنجی را کامل کنید.",
     saveError: "ذخیره تنظیمات نظرسنجی انجام نشد.",
@@ -294,12 +303,14 @@ export const editSurveyTranslations: Record<
     saveButton: "Enregistrer le questionnaire",
     deleteButton: "Supprimer le questionnaire",
     title: "Modifier le questionnaire",
-    description: "Mettez à jour le questionnaire de la conversation. Les changements peuvent affecter la validité actuelle des réponses des participants.",
-    optionalSurveyToggleLabel: "Rendre le questionnaire facultatif",
+    description: "Configurez l'étape de questionnaire affichée avant que les participants puissent voter sur des propositions ou en créer.",
+    optionalSurveyToggleLabel: "Autoriser les participants à ignorer le questionnaire",
     optionalSurveyToggleHint:
-      "Les personnes peuvent participer sans répondre. Les réglages obligatoires des questions sont ignorés jusqu'à désactivation.",
+      "L'étape de questionnaire peut être ignorée. Les participants peuvent voter ou créer des propositions sans répondre au questionnaire ; leurs votes sont toujours pris en compte dans l'analyse, et les réglages obligatoires des questions sont ignorés.",
+    requiredSurveyToggleHint:
+      "L'étape de questionnaire est requise. Les participants doivent y passer avant de voter ou de créer des propositions, même si certaines questions ou toutes les questions sont facultatives. Seuls les votes des participants qui terminent cette étape sont pris en compte dans l'analyse.",
     questionRequirementDisabledHint:
-      "Ignoré car tout le questionnaire est facultatif.",
+      "Cette question est traitée comme facultative, car l'étape de questionnaire peut être ignorée.",
     loadError: "Impossible de charger les paramètres du questionnaire.",
     validationError: "Veuillez compléter toutes les questions du questionnaire avant d'enregistrer.",
     saveError: "Impossible d'enregistrer les paramètres du questionnaire.",
@@ -352,12 +363,14 @@ export const editSurveyTranslations: Record<
     saveButton: "שמירת סקר",
     deleteButton: "מחיקת סקר",
     title: "עריכת סקר",
-    description: "עדכנו את סקר השיחה. שינויים עשויים להשפיע על אילו תשובות משתתפים נשארות עדכניות.",
-    optionalSurveyToggleLabel: "להפוך את הסקר לאופציונלי",
+    description: "הגדירו את שלב הסקר שמוצג לפני שמשתתפים יכולים להצביע על הצהרות או ליצור חדשות.",
+    optionalSurveyToggleLabel: "לאפשר למשתתפים לדלג על הסקר",
     optionalSurveyToggleHint:
-      "אפשר להשתתף בלי לענות. הגדרות החובה של השאלות יזכו להתעלמות עד לכיבוי אפשרות זו.",
+      "אפשר לדלג על שלב הסקר. המשתתפים יכולים להצביע או ליצור הצהרות בלי לענות על הסקר; ההצבעות שלהם תמיד נכללות בניתוח, והגדרות החובה של השאלות יזכו להתעלמות.",
+    requiredSurveyToggleHint:
+      "שלב הסקר נדרש. המשתתפים חייבים לעבור דרכו לפני הצבעה או יצירת הצהרות, גם אם חלק מהשאלות או כולן אופציונליות. רק הצבעות של משתתפים שמשלימים את השלב הזה נכללות בניתוח.",
     questionRequirementDisabledHint:
-      "מתעלמים מזה כי כל הסקר אופציונלי.",
+      "השאלה הזו נחשבת אופציונלית כי אפשר לדלג על שלב הסקר.",
     loadError: "טעינת הגדרות הסקר נכשלה.",
     validationError: "יש להשלים את כל שאלות הסקר לפני השמירה.",
     saveError: "שמירת הגדרות הסקר נכשלה.",
@@ -408,12 +421,14 @@ export const editSurveyTranslations: Record<
     saveButton: "アンケートを保存",
     deleteButton: "アンケートを削除",
     title: "アンケートを編集",
-    description: "会話アンケートを更新します。変更により参加者の回答が現在有効かどうかに影響することがあります。",
-    optionalSurveyToggleLabel: "アンケートを任意にする",
+    description: "参加者がステートメントに投票したり新しいステートメントを作成したりする前に表示されるアンケート手順を設定します。",
+    optionalSurveyToggleLabel: "参加者がアンケートをスキップできるようにする",
     optionalSurveyToggleHint:
-      "回答しなくても参加できます。この設定をオフにするまで、質問の必須設定は無視されます。",
+      "アンケート手順はスキップできます。参加者はアンケートに回答せずに投票やステートメント作成ができ、その投票は常に分析に含まれ、質問の必須設定は無視されます。",
+    requiredSurveyToggleHint:
+      "アンケート手順は必須です。一部またはすべての質問が任意でも、参加者は投票やステートメント作成の前にこの手順を通る必要があります。この手順を完了した参加者の投票のみが分析に含まれます。",
     questionRequirementDisabledHint:
-      "アンケート全体が任意のため無視されます。",
+      "アンケート手順をスキップできるため、この質問は任意として扱われます。",
     loadError: "アンケート設定を読み込めませんでした。",
     validationError: "保存前にアンケートの質問をすべて完成させてください。",
     saveError: "アンケート設定を保存できませんでした。",
@@ -464,12 +479,14 @@ export const editSurveyTranslations: Record<
     saveButton: "Сурамжылоону сактоо",
     deleteButton: "Сурамжылоону жок кылуу",
     title: "Сурамжылоону түзөтүү",
-    description: "Сүйлөшүүнүн сурамжылоосун жаңыртыңыз. Өзгөрүүлөр катышуучулардын жоопторунун учурдагы жарактуулугуна таасир этиши мүмкүн.",
-    optionalSurveyToggleLabel: "Сурамжылоону ыктыярдуу кылуу",
+    description: "Катышуучулар билдирүүлөргө добуш берип же жаңыларын түзө алышынан мурун көрсөтүлүүчү сурамжылоо кадамын жөндөңүз.",
+    optionalSurveyToggleLabel: "Катышуучуларга сурамжылоону өткөрүп жиберүүгө уруксат берүү",
     optionalSurveyToggleHint:
-      "Адамдар жооп бербей эле катыша алат. Бул өчүрүлгөнчө суроолордун милдеттүү жөндөөлөрү эске алынбайт.",
+      "Сурамжылоо кадамын өткөрүп жиберүүгө болот. Катышуучулар сурамжылоого жооп бербей эле добуш берип же билдирүү түзө алышат; алардын добуштары ар дайым талдоого кирет, ал эми суроолордун милдеттүү жөндөөлөрү эске алынбайт.",
+    requiredSurveyToggleHint:
+      "Сурамжылоо кадамы милдеттүү. Айрым суроолор же бардык суроолор ыктыярдуу болсо да, катышуучулар добуш берүү же билдирүү түзүүдөн мурун бул кадамдан өтүшү керек. Бул кадамды аяктаган катышуучулардын добуштары гана талдоого кирет.",
     questionRequirementDisabledHint:
-      "Сурамжылоонун баары ыктыярдуу болгондуктан эске алынбайт.",
+      "Сурамжылоо кадамын өткөрүп жиберүүгө болгондуктан, бул суроо ыктыярдуу деп эсептелет.",
     loadError: "Сурамжылоонун жөндөөлөрүн жүктөө ишке ашкан жок.",
     validationError: "Сактоодон мурун сурамжылоонун бардык суроолорун толтуруңуз.",
     saveError: "Сурамжылоонун жөндөөлөрүн сактоо ишке ашкан жок.",
@@ -520,12 +537,14 @@ export const editSurveyTranslations: Record<
     saveButton: "Сохранить опрос",
     deleteButton: "Удалить опрос",
     title: "Редактировать опрос",
-    description: "Обновите опрос беседы. Изменения могут повлиять на то, какие ответы участников остаются актуальными.",
-    optionalSurveyToggleLabel: "Сделать опрос необязательным",
+    description: "Настройте шаг опроса, который показывается перед тем, как участники смогут голосовать за утверждения или создавать новые.",
+    optionalSurveyToggleLabel: "Разрешить участникам пропускать опрос",
     optionalSurveyToggleHint:
-      "Люди могут участвовать без ответов. Настройки обязательности вопросов игнорируются, пока этот режим включён.",
+      "Шаг опроса можно пропустить. Участники могут голосовать или создавать утверждения без ответов на опрос; их голоса всегда включаются в анализ, а настройки обязательности вопросов игнорируются.",
+    requiredSurveyToggleHint:
+      "Шаг опроса обязателен. Участники должны пройти его перед голосованием или созданием утверждений, даже если некоторые или все вопросы необязательные. В анализ включаются только голоса участников, которые завершили этот шаг.",
     questionRequirementDisabledHint:
-      "Игнорируется, потому что весь опрос необязательный.",
+      "Этот вопрос считается необязательным, потому что шаг опроса можно пропустить.",
     loadError: "Не удалось загрузить настройки опроса.",
     validationError: "Перед сохранением заполните все вопросы опроса.",
     saveError: "Не удалось сохранить настройки опроса.",
@@ -576,12 +595,14 @@ export const editSurveyTranslations: Record<
     saveButton: "保存问卷",
     deleteButton: "删除问卷",
     title: "编辑问卷",
-    description: "更新这场对话的问卷。更改可能影响哪些参与者回答仍然保持当前有效。",
-    optionalSurveyToggleLabel: "将问卷设为可选",
+    description: "配置参与者投票或创建陈述前看到的问卷步骤。",
+    optionalSurveyToggleLabel: "允许参与者跳过问卷",
     optionalSurveyToggleHint:
-      "用户无需回答也能参与。关闭此选项前，问题的必答设置会被忽略。",
+      "问卷步骤可以跳过。参与者无需回答问卷即可投票或创建陈述；他们的投票始终会计入分析，问题的必答设置会被忽略。",
+    requiredSurveyToggleHint:
+      "问卷步骤为必需。即使部分或全部问题都是可选的，参与者也必须先经过它，才能投票或创建陈述。只有完成此步骤的参与者投票会计入分析。",
     questionRequirementDisabledHint:
-      "由于整个问卷是可选的，此设置会被忽略。",
+      "由于问卷步骤可以跳过，此问题会被视为可选。",
     loadError: "无法加载问卷设置。",
     validationError: "保存前请完成所有问卷问题。",
     saveError: "无法保存问卷设置。",
@@ -632,12 +653,14 @@ export const editSurveyTranslations: Record<
     saveButton: "儲存問卷",
     deleteButton: "刪除問卷",
     title: "編輯問卷",
-    description: "更新這場對話的問卷。變更可能影響哪些參與者回答仍保持目前有效。",
-    optionalSurveyToggleLabel: "將問卷設為可選",
+    description: "設定參與者投票或建立陳述前看到的問卷步驟。",
+    optionalSurveyToggleLabel: "允許參與者跳過問卷",
     optionalSurveyToggleHint:
-      "使用者無需回答也能參與。關閉此選項前，問題的必答設定會被忽略。",
+      "問卷步驟可以跳過。參與者無需回答問卷即可投票或建立陳述；他們的投票一律會計入分析，問題的必答設定會被忽略。",
+    requiredSurveyToggleHint:
+      "問卷步驟為必需。即使部分或全部問題都是可選的，參與者也必須先經過它，才能投票或建立陳述。只有完成此步驟的參與者投票會計入分析。",
     questionRequirementDisabledHint:
-      "由於整份問卷是可選的，此設定會被忽略。",
+      "由於問卷步驟可以跳過，此問題會被視為可選。",
     loadError: "無法載入問卷設定。",
     validationError: "儲存前請完成所有問卷問題。",
     saveError: "無法儲存問卷設定。",

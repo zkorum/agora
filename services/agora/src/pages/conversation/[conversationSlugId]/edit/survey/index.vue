@@ -28,7 +28,7 @@
           @update:model-value="(value) => updateSurveyOptional({ isOptional: value })"
         />
         <div class="intro-card__description">
-          {{ t("optionalSurveyToggleHint") }}
+          {{ isSurveyOptional ? t("optionalSurveyToggleHint") : t("requiredSurveyToggleHint") }}
         </div>
       </ZKCard>
 
