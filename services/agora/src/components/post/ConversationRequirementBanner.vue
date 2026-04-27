@@ -12,6 +12,7 @@
     <template #action>
       <q-btn
         v-if="showActionButton"
+        class="survey-banner__action-btn"
         flat
         no-caps
         :color="buttonColor"
@@ -200,9 +201,10 @@ async function handleOpenSurvey(): Promise<void> {
 @use "sass:color";
 
 .survey-banner {
-  margin-top: 0.5rem;
-  border-radius: 12px;
+  margin-top: 0.75rem;
+  border-radius: 16px;
   border: 1px solid transparent;
+  padding: 0.85rem 1rem;
 
   &.survey-banner--required {
     background-color: rgba($warning, 0.12);
@@ -221,6 +223,42 @@ async function handleOpenSurvey(): Promise<void> {
     border-color: rgba($positive, 0.22);
     color: color.adjust($positive, $lightness: -12%);
   }
+
+  :deep(.q-banner__avatar > .q-icon) {
+    border-radius: 10px;
+    padding: 0.2rem;
+  }
+
+  &.survey-banner--required :deep(.q-banner__avatar > .q-icon) {
+    background-color: rgba($warning, 0.14);
+  }
+
+  &.survey-banner--progress :deep(.q-banner__avatar > .q-icon) {
+    background-color: rgba($primary, 0.12);
+  }
+
+  &.survey-banner--complete :deep(.q-banner__avatar > .q-icon) {
+    background-color: rgba($positive, 0.12);
+  }
+
+  :deep(.survey-banner__action-btn) {
+    min-height: 2.25rem;
+    border-radius: 999px;
+    padding-inline: 0.85rem;
+    font-weight: 600;
+  }
+
+  &.survey-banner--required :deep(.survey-banner__action-btn) {
+    background-color: rgba($warning, 0.14);
+  }
+
+  &.survey-banner--progress :deep(.survey-banner__action-btn) {
+    background-color: rgba($primary, 0.1);
+  }
+
+  &.survey-banner--complete :deep(.survey-banner__action-btn) {
+    background-color: rgba($positive, 0.12);
+  }
 }
 
 .survey-banner__content {
@@ -230,11 +268,61 @@ async function handleOpenSurvey(): Promise<void> {
 }
 
 .survey-banner__title {
-  font-weight: 600;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 .survey-banner__message {
   font-size: 0.875rem;
   line-height: 1.35;
+}
+
+@media (max-width: $breakpoint-xs-max) {
+  .survey-banner {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "avatar content"
+      ". actions";
+    align-items: start;
+    column-gap: 0.75rem;
+    padding: 0.9rem;
+
+    :deep(.q-banner__avatar) {
+      grid-area: avatar;
+    }
+
+    :deep(.q-banner__avatar:not(:empty) + .q-banner__content) {
+      padding-inline-start: 0;
+    }
+
+    :deep(.q-banner__content) {
+      grid-area: content;
+      min-width: 0;
+    }
+
+    :deep(.q-banner__actions) {
+      grid-area: actions;
+      justify-content: stretch;
+      margin-top: 0.75rem;
+      padding-inline-start: 0;
+      width: 100%;
+    }
+
+    :deep(.survey-banner__action-btn) {
+      width: 100%;
+      min-height: 2.65rem;
+      padding-inline: 1rem;
+    }
+  }
+
+  .survey-banner__content {
+    gap: 0.25rem;
+  }
+
+  .survey-banner__message {
+    font-size: 0.92rem;
+    line-height: 1.4;
+  }
 }
 </style>
