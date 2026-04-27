@@ -63,9 +63,15 @@ function requiresRegisteredLoggedInUser({
 
 export function getParticipationBlockedReasonFromSurveyGateStatus({
     surveyGateStatus,
+    isOptional = false,
 }: {
     surveyGateStatus: SurveyGateStatus;
+    isOptional?: boolean;
 }): ParticipationBlockedReason | undefined {
+    if (isOptional) {
+        return undefined;
+    }
+
     switch (surveyGateStatus) {
         case "needs_update":
             return "survey_outdated";
@@ -280,6 +286,7 @@ export async function checkConversationParticipation({
         const surveyBlockedReason = getParticipationBlockedReasonFromSurveyGateStatus(
             {
                 surveyGateStatus: surveyGate.status,
+                isOptional: surveyGate.isOptional,
             },
         );
         if (surveyBlockedReason !== undefined) {

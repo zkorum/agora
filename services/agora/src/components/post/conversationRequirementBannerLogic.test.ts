@@ -7,6 +7,7 @@ describe("resolveRequirementBannerCopy", () => {
     expect(
       resolveRequirementBannerCopy({
         hasSurvey: true,
+        isOptional: false,
         needsAuth: false,
         needsTicket: true,
         surveyGateStatus: "not_started",
@@ -23,6 +24,7 @@ describe("resolveRequirementBannerCopy", () => {
     expect(
       resolveRequirementBannerCopy({
         hasSurvey: true,
+        isOptional: false,
         needsAuth: true,
         needsTicket: false,
         surveyGateStatus: "not_started",
@@ -39,6 +41,7 @@ describe("resolveRequirementBannerCopy", () => {
     expect(
       resolveRequirementBannerCopy({
         hasSurvey: true,
+        isOptional: false,
         needsAuth: true,
         needsTicket: true,
         surveyGateStatus: "not_started",
@@ -48,6 +51,36 @@ describe("resolveRequirementBannerCopy", () => {
       titleKey: "requiredAccessTitle",
       messageKey: "requiredAccessMessage",
       buttonKey: "continueLabel",
+    });
+  });
+
+  it("uses optional survey copy only for survey-level optional surveys", () => {
+    expect(
+      resolveRequirementBannerCopy({
+        hasSurvey: true,
+        isOptional: true,
+        needsAuth: false,
+        needsTicket: false,
+        surveyGateStatus: "not_started",
+        canParticipate: true,
+      })
+    ).toMatchObject({
+      titleKey: "optionalSurveyTitle",
+      messageKey: "optionalSurveyMessage",
+    });
+
+    expect(
+      resolveRequirementBannerCopy({
+        hasSurvey: true,
+        isOptional: false,
+        needsAuth: false,
+        needsTicket: false,
+        surveyGateStatus: "not_started",
+        canParticipate: true,
+      })
+    ).toMatchObject({
+      titleKey: "surveyAvailableTitle",
+      messageKey: "openViaOnboardingMessage",
     });
   });
 });

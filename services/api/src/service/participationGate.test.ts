@@ -178,4 +178,13 @@ describe("getParticipationBlockedReasonFromSurveyGateStatus", () => {
             }),
         ).toBeUndefined();
     });
+
+    it("returns no block reason for optional surveys", () => {
+        expect(
+            getParticipationBlockedReasonFromSurveyGateStatus({
+                surveyGateStatus: "not_started",
+                isOptional: true,
+            }),
+        ).toBeUndefined();
+    });
 });

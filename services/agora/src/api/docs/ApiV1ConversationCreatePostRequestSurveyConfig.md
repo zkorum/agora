@@ -5,6 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**isOptional** | **boolean** |  | [optional] [default to false]
 **questions** | [**Array&lt;ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner&gt;**](ApiV1ConversationCreatePostRequestSurveyConfigQuestionsInner.md) |  | [default to undefined]
 
 ## Example
@@ -13,6 +14,7 @@ Name | Type | Description | Notes
 import { ApiV1ConversationCreatePostRequestSurveyConfig } from './api';
 
 const instance: ApiV1ConversationCreatePostRequestSurveyConfig = {
+    isOptional,
     questions,
 };
 ```

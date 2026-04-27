@@ -414,6 +414,13 @@
       "when": 1777075824732,
       "tag": "0058_majestic_inertia",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1777301654418,
+      "tag": "0059_dapper_xavin",
+      "breakpoints": true
     }
   ]
 }

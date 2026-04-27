@@ -34,6 +34,7 @@ function deriveSurveyBlocked({
 }): boolean {
   return (
     surveyGate?.hasSurvey === true &&
+    surveyGate.isOptional !== true &&
     !surveyGate.canParticipate &&
     !needsAuth &&
     !needsTicket

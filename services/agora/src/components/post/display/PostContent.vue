@@ -40,6 +40,7 @@
           :survey-gate="
             extendedPostData.interaction.surveyGate ?? {
               hasSurvey: false,
+              isOptional: false,
               canParticipate: true,
               status: 'no_survey',
             }

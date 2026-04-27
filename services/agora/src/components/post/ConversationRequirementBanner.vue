@@ -70,12 +70,16 @@ const {
 
 const isNavigating = ref(false);
 
-const hasSurvey = computed(() => props.surveyGate.hasSurvey);
-
-useSurveyStatusQuery({
+const surveyStatusQuery = useSurveyStatusQuery({
   conversationSlugId: computed(() => props.conversationSlugId),
-  enabled: computed(() => isAuthInitialized.value && hasSurvey.value),
+  enabled: computed(() => isAuthInitialized.value && props.surveyGate.hasSurvey),
 });
+
+const effectiveSurveyGate = computed(() => {
+  return surveyStatusQuery.data.value?.surveyGate ?? props.surveyGate;
+});
+
+const hasSurvey = computed(() => effectiveSurveyGate.value.hasSurvey);
 
 useSurveyFormQuery({
   conversationSlugId: computed(() => props.conversationSlugId),
@@ -105,13 +109,13 @@ const bannerClass = computed(() => {
     return "survey-banner--required";
   }
 
-  const status = props.surveyGate.status;
+  const status = effectiveSurveyGate.value.status;
   if (status === "complete_valid") {
     return "survey-banner--complete";
   }
 
   if (status === "in_progress" || status === "not_started") {
-    return props.surveyGate.canParticipate
+    return effectiveSurveyGate.value.canParticipate
       ? "survey-banner--progress"
       : "survey-banner--required";
   }
@@ -130,7 +134,7 @@ const bannerIcon = computed(() => {
     return "verified_user";
   }
 
-  switch (props.surveyGate.status) {
+  switch (effectiveSurveyGate.value.status) {
     case "complete_valid":
       return "check_circle";
     case "needs_update":
@@ -161,10 +165,11 @@ const buttonColor = computed<"warning" | "primary" | "positive">(() => {
 const bannerCopy = computed(() => {
   return resolveRequirementBannerCopy({
     hasSurvey: hasSurvey.value,
+    isOptional: effectiveSurveyGate.value.isOptional,
     needsAuth: needsAuth.value,
     needsTicket: needsTicket.value,
-    surveyGateStatus: props.surveyGate.status,
-    canParticipate: props.surveyGate.canParticipate,
+    surveyGateStatus: effectiveSurveyGate.value.status,
+    canParticipate: effectiveSurveyGate.value.canParticipate,
   });
 });
 

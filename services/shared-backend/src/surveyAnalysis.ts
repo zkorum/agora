@@ -207,11 +207,13 @@ function validateSurveyAnswerContentForAnalysis({
 
 export function deriveSurveyGateStatusForAnalysis({
     hasSurvey,
+    isOptional = false,
     questions,
     answersByQuestionId,
     withdrawnAt,
 }: {
     hasSurvey: boolean;
+    isOptional?: boolean;
     questions: SurveyQuestionAnalysisRecord[];
     answersByQuestionId: Map<number, SurveyStoredAnswerAnalysisRecord>;
     withdrawnAt: Date | null;
@@ -224,16 +226,24 @@ export function deriveSurveyGateStatusForAnalysis({
         return "withdrawn";
     }
 
-    const requiredQuestions = questions.filter((question) => question.isRequired);
+    const effectiveQuestions = isOptional
+        ? questions.map((question) => ({ ...question, isRequired: false }))
+        : questions;
+    const requiredQuestions = effectiveQuestions.filter(
+        (question) => question.isRequired,
+    );
     if (requiredQuestions.length === 0) {
-        const completedQuestionCount = questions.filter((question) => {
+        const completedQuestionCount = effectiveQuestions.filter((question) => {
             return isSurveyQuestionCompletedForAnalysis({
                 question,
                 answer: answersByQuestionId.get(question.questionId),
             });
         }).length;
 
-        if (completedQuestionCount === questions.length && questions.length > 0) {
+        if (
+            completedQuestionCount === effectiveQuestions.length &&
+            effectiveQuestions.length > 0
+        ) {
             return "complete_valid";
         }
 
@@ -273,9 +283,15 @@ export function deriveSurveyGateStatusForAnalysis({
 
 export function isSurveyGateStatusEligibleForAnalysis({
     surveyGateStatus,
+    isOptional = false,
 }: {
     surveyGateStatus: SurveyGateStatus;
+    isOptional?: boolean;
 }): boolean {
+    if (isOptional) {
+        return true;
+    }
+
     return (
         surveyGateStatus === "no_survey" ||
         surveyGateStatus === "complete_valid"
@@ -285,16 +301,20 @@ export function isSurveyGateStatusEligibleForAnalysis({
 export function shouldRecomputeAnalysisForSurveyTransition({
     previousSurveyGateStatus,
     nextSurveyGateStatus,
+    isOptional = false,
 }: {
     previousSurveyGateStatus: SurveyGateStatus;
     nextSurveyGateStatus: SurveyGateStatus;
+    isOptional?: boolean;
 }): boolean {
     return (
         isSurveyGateStatusEligibleForAnalysis({
             surveyGateStatus: previousSurveyGateStatus,
+            isOptional,
         }) !==
         isSurveyGateStatusEligibleForAnalysis({
             surveyGateStatus: nextSurveyGateStatus,
+            isOptional,
         })
     );
 }
@@ -318,10 +338,16 @@ export function shouldRecomputeAnalysisForSurveyConfigChange({
 }
 
 export function doesSurveyRequireCompletion({
+    isOptional = false,
     requiredQuestionCount,
 }: {
+    isOptional?: boolean;
     requiredQuestionCount: number;
 }): boolean {
+    if (isOptional) {
+        return false;
+    }
+
     return requiredQuestionCount > 0;
 }
 
@@ -335,7 +361,10 @@ export async function getEligibleParticipantIdsForAnalysis({
     candidateParticipantIds: string[];
 }): Promise<Set<string> | undefined> {
     const surveyConfigRows = await db
-        .select({ id: surveyConfigTable.id })
+        .select({
+            id: surveyConfigTable.id,
+            isOptional: surveyConfigTable.isOptional,
+        })
         .from(surveyConfigTable)
         .where(
             and(
@@ -351,6 +380,9 @@ export async function getEligibleParticipantIdsForAnalysis({
     const activeSurveyConfig = surveyConfigRows[0];
     if (candidateParticipantIds.length === 0) {
         return new Set();
+    }
+    if (activeSurveyConfig.isOptional) {
+        return new Set(candidateParticipantIds);
     }
 
     const questionRows = await db
@@ -418,6 +450,7 @@ export async function getEligibleParticipantIdsForAnalysis({
         optionSlugIds: optionSlugIdsByQuestionId.get(question.questionId) ?? [],
     }));
     if (!doesSurveyRequireCompletion({
+        isOptional: activeSurveyConfig.isOptional,
         requiredQuestionCount: questions.filter((question) => question.isRequired)
             .length,
     })) {
@@ -513,6 +546,7 @@ export async function getEligibleParticipantIdsForAnalysis({
     for (const response of responseRows) {
         const surveyGateStatus = deriveSurveyGateStatusForAnalysis({
             hasSurvey: true,
+            isOptional: activeSurveyConfig.isOptional,
             questions,
             answersByQuestionId:
                 answersByResponseId.get(response.responseId) ??
@@ -522,6 +556,7 @@ export async function getEligibleParticipantIdsForAnalysis({
         if (
             isSurveyGateStatusEligibleForAnalysis({
                 surveyGateStatus,
+                isOptional: activeSurveyConfig.isOptional,
             })
         ) {
             eligibleParticipantIds.add(response.participantId);

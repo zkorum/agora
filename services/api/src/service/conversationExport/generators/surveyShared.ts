@@ -725,10 +725,12 @@ export function buildSurveyAggregateRows({
     }
     const exportMetadata = buildSurveyExportMetadata({ activeSurveyConfig });
 
-    const countedParticipantStates = context.participantStates.filter(
-        (participantState) =>
-            participantState.surveyGate.status === "complete_valid",
-    );
+    const countedParticipantStates = activeSurveyConfig.isOptional
+        ? context.participantStates
+        : context.participantStates.filter(
+              (participantState) =>
+                  participantState.surveyGate.status === "complete_valid",
+          );
     const rows: PublicSurveyAggregateRow[] = [];
 
     for (const question of exportMetadata.questionsInExportOrder) {
@@ -745,6 +747,7 @@ export function buildSurveyAggregateRows({
                         participantState.surveyState.answersByQuestionId.get(
                             question.id,
                         ),
+                    surveyIsOptional: activeSurveyConfig.isOptional,
                 }),
             }))
             .filter(
@@ -865,10 +868,12 @@ export function buildSurveyAggregateCsvRows({
     }
     const exportMetadata = buildSurveyExportMetadata({ activeSurveyConfig });
 
-    const countedParticipantStates = context.participantStates.filter(
-        (participantState) =>
-            participantState.surveyGate.status === "complete_valid",
-    );
+    const countedParticipantStates = activeSurveyConfig.isOptional
+        ? context.participantStates
+        : context.participantStates.filter(
+              (participantState) =>
+                  participantState.surveyGate.status === "complete_valid",
+          );
     const rows: SurveyAggregateCsvRow[] = [];
 
     for (const question of exportMetadata.questionsInExportOrder) {
@@ -889,6 +894,7 @@ export function buildSurveyAggregateCsvRows({
                         participantState.surveyState.answersByQuestionId.get(
                             question.id,
                         ),
+                    surveyIsOptional: activeSurveyConfig.isOptional,
                 }),
             }))
             .filter(
@@ -1065,12 +1071,14 @@ export function buildSurveyParticipantResponseRows({
                     participantState.surveyState.answersByQuestionId.get(
                         question.id,
                     ),
+                surveyIsOptional: activeSurveyConfig.isOptional,
             });
 
             const baseRow = {
                 "participant-id": exportParticipantId,
                 "response-status": participantState.surveyGate.status,
                 "is-currently-counted":
+                    activeSurveyConfig.isOptional ||
                     participantState.surveyGate.status === "complete_valid"
                         ? 1
                         : 0,

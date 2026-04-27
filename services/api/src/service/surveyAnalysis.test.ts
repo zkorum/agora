@@ -198,6 +198,18 @@ describe("deriveSurveyGateStatusForAnalysis", () => {
             }),
         ).toBe("complete_valid");
     });
+
+    it("ignores required question gating when the whole survey is optional", () => {
+        expect(
+            deriveSurveyGateStatusForAnalysis({
+                hasSurvey: true,
+                isOptional: true,
+                questions: [requiredChoiceQuestion],
+                answersByQuestionId: new Map(),
+                withdrawnAt: null,
+            }),
+        ).toBe("not_started");
+    });
 });
 
 describe("analysis eligibility helpers", () => {
@@ -222,6 +234,15 @@ describe("analysis eligibility helpers", () => {
                 surveyGateStatus: "needs_update",
             }),
         ).toBe(false);
+    });
+
+    it("treats every optional survey status as analysis-eligible", () => {
+        expect(
+            isSurveyGateStatusEligibleForAnalysis({
+                surveyGateStatus: "not_started",
+                isOptional: true,
+            }),
+        ).toBe(true);
     });
 
     it("recomputes analysis when eligibility changes because a survey is withdrawn or invalidated", () => {
@@ -288,5 +309,11 @@ describe("analysis eligibility helpers", () => {
     it("distinguishes optional-only from required surveys", () => {
         expect(doesSurveyRequireCompletion({ requiredQuestionCount: 0 })).toBe(false);
         expect(doesSurveyRequireCompletion({ requiredQuestionCount: 1 })).toBe(true);
+        expect(
+            doesSurveyRequireCompletion({
+                isOptional: true,
+                requiredQuestionCount: 1,
+            }),
+        ).toBe(false);
     });
 });

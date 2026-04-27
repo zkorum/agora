@@ -4,6 +4,7 @@ import type { ConversationRequirementBannerTranslations } from "./ConversationRe
 
 export interface RequirementBannerCopyState {
   hasSurvey: boolean;
+  isOptional: boolean;
   needsAuth: boolean;
   needsTicket: boolean;
   surveyGateStatus: SurveyGateStatus;
@@ -18,6 +19,7 @@ export interface RequirementBannerCopyKeys {
 
 export function resolveRequirementBannerCopy({
   hasSurvey,
+  isOptional,
   needsAuth,
   needsTicket,
   surveyGateStatus,
@@ -52,9 +54,17 @@ export function resolveRequirementBannerCopy({
 
   if (surveyGateStatus === "not_started") {
     return {
-      titleKey: canParticipate ? "optionalSurveyTitle" : "requiredSurveyTitle",
-      messageKey: canParticipate ? "optionalSurveyMessage" : "requiredSurveyMessage",
-      buttonKey: canParticipate ? "openSurveyLabel" : "startSurveyLabel",
+      titleKey: isOptional
+        ? "optionalSurveyTitle"
+        : canParticipate
+          ? "surveyAvailableTitle"
+          : "requiredSurveyTitle",
+      messageKey: isOptional
+        ? "optionalSurveyMessage"
+        : canParticipate
+          ? "openViaOnboardingMessage"
+          : "requiredSurveyMessage",
+      buttonKey: isOptional || canParticipate ? "openSurveyLabel" : "startSurveyLabel",
     };
   }
 

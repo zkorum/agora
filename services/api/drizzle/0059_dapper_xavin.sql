@@ -1,0 +1,1 @@
+ALTER TABLE "survey_config" ADD COLUMN "is_optional" boolean DEFAULT false NOT NULL;

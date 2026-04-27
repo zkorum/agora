@@ -18,6 +18,7 @@ describe("shouldFetchSurveyForm", () => {
     const surveyStatus: SurveyStatusCheckResponse = {
       surveyGate: {
         hasSurvey: false,
+        isOptional: false,
         canParticipate: true,
         status: "no_survey",
       },
@@ -33,6 +34,7 @@ describe("shouldFetchSurveyForm", () => {
     const surveyStatus: SurveyStatusCheckResponse = {
       surveyGate: {
         hasSurvey: true,
+        isOptional: false,
         canParticipate: false,
         status: "not_started",
       },
@@ -50,6 +52,7 @@ describe("resolveSurveyForm", () => {
     const surveyStatus: SurveyStatusCheckResponse = {
       surveyGate: {
         hasSurvey: false,
+        isOptional: false,
         canParticipate: true,
         status: "no_survey",
       },
@@ -62,6 +65,7 @@ describe("resolveSurveyForm", () => {
       questions: [],
       surveyGate: {
         hasSurvey: true,
+        isOptional: false,
         canParticipate: true,
         status: "complete_valid",
       },

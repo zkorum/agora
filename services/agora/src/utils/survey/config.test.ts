@@ -5,6 +5,7 @@ import { buildSurveyConfigForSave } from "./config";
 
 function createChoiceSurveyConfig(): SurveyConfig {
   return {
+    isOptional: false,
     questions: [
       {
         questionType: "choice",

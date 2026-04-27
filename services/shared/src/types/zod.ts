@@ -640,6 +640,7 @@ export const zodSurveyQuestionConfig = z
 
 export const zodSurveyConfig = z
     .object({
+        isOptional: z.boolean().optional().default(false),
         questions: z.array(zodSurveyQuestionConfig),
     })
     .strict()
@@ -690,6 +691,7 @@ export const zodSurveyAggregateSuppressionReason = z.enum([
 export const zodSurveyGateSummary = z
     .object({
         hasSurvey: z.boolean(),
+        isOptional: z.boolean(),
         canParticipate: z.boolean(),
         status: zodSurveyGateStatus,
     })

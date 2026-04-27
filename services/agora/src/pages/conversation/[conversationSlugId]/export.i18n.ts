@@ -37,7 +37,7 @@ export const exportPageTranslations: Record<
     requestExportAriaLabel: "Request export of conversation data",
     errorActiveExportInProgress:
       "An export is already in progress. Please wait for it to complete.",
-    errorConversationNotFound: "Conversation not found.",
+    errorConversationNotFound: "Conversation not found",
     errorNoOpinions:
       "This conversation has no statements to export. Add some statements first.",
     exportFeatureDisabled: "Export feature is disabled",
@@ -56,7 +56,7 @@ export const exportPageTranslations: Record<
     requestExportAriaLabel: "طلب تصدير بيانات المحادثة",
     errorActiveExportInProgress:
       "التصدير قيد التقدم بالفعل. يرجى الانتظار حتى يكتمل.",
-    errorConversationNotFound: "المحادثة غير موجودة.",
+    errorConversationNotFound: "المحادثة غير موجودة",
     errorNoOpinions:
       "لا توجد مقترحات في هذه المحادثة للتصدير. أضف بعض المقترحات أولاً.",
     exportFeatureDisabled: "ميزة التصدير معطلة",
@@ -78,7 +78,7 @@ export const exportPageTranslations: Record<
     requestExportAriaLabel: "Solicitar exportación de datos de conversación",
     errorActiveExportInProgress:
       "Ya hay una exportación en progreso. Por favor, espera a que se complete.",
-    errorConversationNotFound: "Conversación no encontrada.",
+    errorConversationNotFound: "Conversación no encontrada",
     errorNoOpinions:
       "Esta conversación no tiene proposiciones para exportar. Añade algunas proposiciones primero.",
     exportFeatureDisabled: "La función de exportación está deshabilitada",
@@ -99,7 +99,7 @@ export const exportPageTranslations: Record<
     requestExportAriaLabel: "درخواست خروجی داده‌های گفتگو",
     errorActiveExportInProgress:
       "یک خروجی در حال انجام است. لطفاً تا تکمیل آن صبر کنید.",
-    errorConversationNotFound: "گفتگو یافت نشد.",
+    errorConversationNotFound: "گفتگو یافت نشد",
     errorNoOpinions:
       "این گفتگو گزاره‌ای برای خروجی ندارد. ابتدا چند گزاره اضافه کنید.",
     exportFeatureDisabled: "قابلیت خروجی غیرفعال است",
@@ -120,7 +120,7 @@ export const exportPageTranslations: Record<
     requestExportAriaLabel: "בקשת ייצוא נתוני שיחה",
     errorActiveExportInProgress:
       "ייצוא כבר מתבצע. אנא המתינו לסיומו.",
-    errorConversationNotFound: "השיחה לא נמצאה.",
+    errorConversationNotFound: "השיחה לא נמצאה",
     errorNoOpinions:
       "לשיחה זו אין הצהרות לייצוא. הוסיפו הצהרות תחילה.",
     exportFeatureDisabled: "תכונת הייצוא מושבתת",
@@ -143,7 +143,7 @@ export const exportPageTranslations: Record<
       "Demander l'export des données de conversation",
     errorActiveExportInProgress:
       "Un export est déjà en cours. Veuillez attendre qu'il soit terminé.",
-    errorConversationNotFound: "Conversation introuvable.",
+    errorConversationNotFound: "Conversation introuvable",
     errorNoOpinions:
       "Cette conversation n'a pas de propositions à exporter. Ajoutez d'abord quelques propositions.",
     exportFeatureDisabled: "La fonction d'export est désactivée",
@@ -160,7 +160,7 @@ export const exportPageTranslations: Record<
     viewConversation: "查看对话",
     requestExportAriaLabel: "请求导出对话数据",
     errorActiveExportInProgress: "导出正在进行中。请等待完成。",
-    errorConversationNotFound: "未找到对话。",
+    errorConversationNotFound: "未找到对话",
     errorNoOpinions: "此对话没有可导出的观点。请先添加一些观点。",
     exportFeatureDisabled: "导出功能已禁用",
   },
@@ -176,7 +176,7 @@ export const exportPageTranslations: Record<
     viewConversation: "檢視對話",
     requestExportAriaLabel: "請求匯出對話資料",
     errorActiveExportInProgress: "匯出正在進行中。請等待完成。",
-    errorConversationNotFound: "未找到對話。",
+    errorConversationNotFound: "未找到對話",
     errorNoOpinions: "此對話沒有可匯出的觀點。請先新增一些觀點。",
     exportFeatureDisabled: "匯出功能已停用",
   },
@@ -197,7 +197,7 @@ export const exportPageTranslations: Record<
     requestExportAriaLabel: "会話データのエクスポートをリクエスト",
     errorActiveExportInProgress:
       "エクスポートはすでに進行中です。完了するまでお待ちください。",
-    errorConversationNotFound: "会話が見つかりません。",
+    errorConversationNotFound: "会話が見つかりません",
     errorNoOpinions:
       "この会話にはエクスポートする主張がありません。まず主張を追加してください。",
     exportFeatureDisabled: "エクスポート機能は無効です",
@@ -218,7 +218,7 @@ export const exportPageTranslations: Record<
     requestExportAriaLabel: "Талкуу маалыматтарын экспорттоону суроо",
     errorActiveExportInProgress:
       "Экспорт мурунтан эле жүрүп жатат. Аяктаганча күтүңүз.",
-    errorConversationNotFound: "Талкуу табылган жок.",
+    errorConversationNotFound: "Талкуу табылган жок",
     errorNoOpinions:
       "Бул талкууда экспорттоого пикирлер жок. Алгач пикирлерди кошуңуз.",
     exportFeatureDisabled: "Экспорт функциясы өчүрүлгөн",
@@ -240,7 +240,7 @@ export const exportPageTranslations: Record<
     requestExportAriaLabel: "Запросить экспорт данных обсуждения",
     errorActiveExportInProgress:
       "Экспорт уже выполняется. Пожалуйста, дождитесь его завершения.",
-    errorConversationNotFound: "Обсуждение не найдено.",
+    errorConversationNotFound: "Обсуждение не найдено",
     errorNoOpinions:
       "В этом обсуждении нет высказываний для экспорта. Сначала добавьте высказывания.",
     exportFeatureDisabled: "Функция экспорта отключена",

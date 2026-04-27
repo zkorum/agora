@@ -84,14 +84,17 @@ function createPassedAnswer({
 function createSurveyState({
     questions,
     answersByQuestionId = new Map(),
+    isOptional = false,
 }: {
     questions: ActiveSurveyQuestionRecord[];
     answersByQuestionId?: Map<number, StoredSurveyAnswer>;
+    isOptional?: boolean;
 }): SurveyParticipantState {
     return {
         activeSurveyConfig: {
             id: 1,
             currentRevision: 1,
+            isOptional,
             questions,
         },
         response: undefined,
@@ -100,6 +103,28 @@ function createSurveyState({
 }
 
 describe("deriveSurveyRouteResolution", () => {
+    it("does not gate participation when the whole survey is optional", async () => {
+        const { deriveSurveyGate } = await surveyModulePromise;
+        const requiredQuestion = createFreeTextQuestion({
+            id: 1,
+            slugId: "required-question",
+            isRequired: true,
+            displayOrder: 0,
+        });
+
+        const result = deriveSurveyGate({
+            surveyState: createSurveyState({
+                questions: [requiredQuestion],
+                isOptional: true,
+            }),
+            participantId: "participant-1",
+        });
+
+        expect(result.canParticipate).toBe(true);
+        expect(result.requiredQuestionCount).toBe(0);
+        expect(result.status).toBe("not_started");
+    });
+
     it("routes to the first untouched optional question before later required questions", async () => {
         const { deriveSurveyRouteResolution } = await surveyModulePromise;
         const optionalQuestion = createFreeTextQuestion({
@@ -192,6 +217,25 @@ describe("deriveSurveyQuestionFormItem", () => {
             questionType: "free_text",
             textValueHtml: "Saved answer",
         });
+    });
+
+    it("presents required questions as optional when the whole survey is optional", async () => {
+        const { deriveSurveyQuestionFormItem } = await surveyModulePromise;
+        const requiredQuestion = createFreeTextQuestion({
+            id: 1,
+            slugId: "required-question",
+            isRequired: true,
+            displayOrder: 0,
+        });
+
+        const formItem = deriveSurveyQuestionFormItem({
+            question: requiredQuestion,
+            storedAnswer: undefined,
+            surveyIsOptional: true,
+        });
+
+        expect(formItem.isRequired).toBe(false);
+        expect(formItem.isMissingRequired).toBe(false);
     });
 });
 
