@@ -9,6 +9,7 @@ import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ImportCsvConversationResponse } from "src/shared/types/dto";
 import type {
   FetchFeedResponse,
@@ -38,6 +39,10 @@ import { useNotify } from "../../ui/notify";
 import { api,axiosInstance } from "../client";
 import type { AxiosErrorResponse, AxiosSuccessResponse } from "../common";
 import { useCommonApi } from "../common";
+import {
+  type PostApiTranslations,
+  postApiTranslations,
+} from "./post.i18n";
 
 export function useBackendPostApi() {
   const {
@@ -47,6 +52,7 @@ export function useBackendPostApi() {
   } = useCommonApi();
 
   const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<PostApiTranslations>(postApiTranslations);
 
   const router = useRouter();
 
@@ -92,8 +98,10 @@ export function useBackendPostApi() {
       }
     } catch (error) {
       if (axiosInstance.isAxiosError(error) && error.status === 404) {
-        showNotifyMessage("Conversation resource not found.");
+        const conversationNotFoundMessage = t("conversationNotFound");
+        showNotifyMessage(conversationNotFoundMessage);
         await router.push({ name: "/" });
+        throw new Error(conversationNotFoundMessage, { cause: error });
       }
       throw error;
     }
