@@ -13,6 +13,8 @@ import { toUnionUndefined } from "@/shared/shared.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import {
+    assertSurveyFeatureAllowedForConversation,
+    getActiveSurveyConfigRecord,
     getSurveyConfigForConversation,
     setSurveyConfigForConversation,
     warmSurveyTranslationsForConversation,
@@ -22,6 +24,7 @@ import type {
     UpdateConversationRequest,
     UpdateConversationResponse,
 } from "@/shared/types/dto.js";
+import { isConversationOwner } from "@/service/conversationAccess.js";
 
 interface GetConversationForEditProps {
     db: PostgresDatabase;
@@ -39,6 +42,7 @@ export async function getConversationForEdit({
             conversationId: conversationTable.id,
             conversationSlugId: conversationTable.slugId,
             authorId: conversationTable.authorId,
+            organizationId: conversationTable.organizationId,
             conversationTitle: conversationContentTable.title,
             conversationBody: conversationContentTable.body,
             isIndexed: conversationTable.isIndexed,
@@ -74,8 +78,13 @@ export async function getConversationForEdit({
 
     const conversation = results[0];
 
-    // Check if user is the author
-    if (conversation.authorId !== userId) {
+    const isOwner = await isConversationOwner({
+        db,
+        userId,
+        authorId: conversation.authorId,
+        organizationId: conversation.organizationId,
+    });
+    if (!isOwner) {
         return { success: false, reason: "not_author" };
     }
 
@@ -152,103 +161,116 @@ export async function updateConversation({
 
     let updatedConversationId: number | undefined;
 
-    const result = await db
-        .transaction(async (tx) => {
-            const now = new Date();
-            // Get conversation and check authorization
-            const conversationResults = await tx
-                .select({
-                    conversationId: conversationTable.id,
-                    authorId: conversationTable.authorId,
-                    currentContentId: conversationTable.currentContentId,
-                    moderationAction:
-                        conversationModerationTable.moderationAction,
-                })
-                .from(conversationTable)
-                .leftJoin(
-                    conversationModerationTable,
-                    eq(
-                        conversationModerationTable.conversationId,
-                        conversationTable.id,
-                    ),
-                )
-                .where(eq(conversationTable.slugId, conversationSlugId));
+    const result = await db.transaction(async (tx) => {
+        const now = new Date();
+        // Get conversation and check authorization
+        const conversationResults = await tx
+            .select({
+                conversationId: conversationTable.id,
+                authorId: conversationTable.authorId,
+                organizationId: conversationTable.organizationId,
+                organizationName: organizationTable.name,
+                currentContentId: conversationTable.currentContentId,
+                moderationAction: conversationModerationTable.moderationAction,
+            })
+            .from(conversationTable)
+            .leftJoin(
+                organizationTable,
+                eq(conversationTable.organizationId, organizationTable.id),
+            )
+            .leftJoin(
+                conversationModerationTable,
+                eq(
+                    conversationModerationTable.conversationId,
+                    conversationTable.id,
+                ),
+            )
+            .where(eq(conversationTable.slugId, conversationSlugId));
 
-            if (conversationResults.length === 0) {
-                return { success: false, reason: "not_found" } as const;
-            }
+        if (conversationResults.length === 0) {
+            return { success: false, reason: "not_found" } as const;
+        }
 
-            const conversation = conversationResults[0];
+        const conversation = conversationResults[0];
 
-            // Check if user is the author
-            if (conversation.authorId !== userId) {
-                return { success: false, reason: "not_author" } as const;
-            }
-
-            // Check if conversation is locked
-            if (conversation.moderationAction === "lock") {
-                return {
-                    success: false,
-                    reason: "conversation_locked",
-                } as const;
-            }
-
-            // Check if conversation was deleted
-            if (conversation.currentContentId === null) {
-                return { success: false, reason: "not_found" } as const;
-            }
-
-            const conversationId = conversation.conversationId;
-            updatedConversationId = conversationId;
-
-            // Create new conversation content
-            const newContentResult = await tx
-                .insert(conversationContentTable)
-                .values({
-                    conversationId: conversationId,
-                    title: conversationTitle,
-                    body: sanitizedBody,
-                })
-                .returning({
-                    conversationContentId: conversationContentTable.id,
-                });
-
-            const newContentId = newContentResult[0].conversationContentId;
-
-            // Update conversation with new content and settings
-            await tx
-                .update(conversationTable)
-                .set({
-                    currentContentId: newContentId,
-                    isIndexed: isIndexed,
-                    participationMode: participationMode,
-                    requiresEventTicket: requiresEventTicket ?? null,
-                    indexConversationAt:
-                        indexConversationAt !== undefined
-                            ? new Date(indexConversationAt)
-                            : null,
-                    updatedAt: new Date(),
-                    isEdited: true,
-                })
-                .where(eq(conversationTable.id, conversationId));
-
-            if (surveyConfig !== undefined) {
-                await setSurveyConfigForConversation({
-                    db: tx,
-                    conversationId,
-                    surveyConfig: surveyConfig ?? null,
-                    now,
-                });
-            }
-
-            return { success: true } as const;
-        })
-        .catch((error: unknown) => {
-            log.error(error, "Unexpected error updating conversation");
-            throw httpErrors.internalServerError(
-                "Failed to update conversation",
-            );
+        const isOwner = await isConversationOwner({
+            db: tx,
+            userId,
+            authorId: conversation.authorId,
+            organizationId: conversation.organizationId,
         });
+        if (!isOwner) {
+            return { success: false, reason: "not_author" } as const;
+        }
+
+        // Check if conversation is locked
+        if (conversation.moderationAction === "lock") {
+            return {
+                success: false,
+                reason: "conversation_locked",
+            } as const;
+        }
+
+        // Check if conversation was deleted
+        if (conversation.currentContentId === null) {
+            return { success: false, reason: "not_found" } as const;
+        }
+
+        const conversationId = conversation.conversationId;
+        updatedConversationId = conversationId;
+
+        // Create new conversation content
+        const newContentResult = await tx
+            .insert(conversationContentTable)
+            .values({
+                conversationId: conversationId,
+                title: conversationTitle,
+                body: sanitizedBody,
+            })
+            .returning({
+                conversationContentId: conversationContentTable.id,
+            });
+
+        const newContentId = newContentResult[0].conversationContentId;
+
+        // Update conversation with new content and settings
+        await tx
+            .update(conversationTable)
+            .set({
+                currentContentId: newContentId,
+                isIndexed: isIndexed,
+                participationMode: participationMode,
+                requiresEventTicket: requiresEventTicket ?? null,
+                indexConversationAt:
+                    indexConversationAt !== undefined
+                        ? new Date(indexConversationAt)
+                        : null,
+                updatedAt: new Date(),
+                isEdited: true,
+            })
+            .where(eq(conversationTable.id, conversationId));
+
+        if (surveyConfig !== undefined) {
+            const existingSurveyConfig = await getActiveSurveyConfigRecord({
+                db: tx,
+                conversationId,
+            });
+            assertSurveyFeatureAllowedForConversation({
+                organizationName: conversation.organizationName,
+                hasExistingSurvey: existingSurveyConfig !== undefined,
+                userId,
+            });
+
+            await setSurveyConfigForConversation({
+                db: tx,
+                conversationId,
+                surveyConfig: surveyConfig ?? null,
+                now,
+            });
+        }
+
+        return { success: true } as const;
+    });
 
     if (
         result.success &&

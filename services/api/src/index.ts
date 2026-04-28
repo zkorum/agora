@@ -1426,6 +1426,7 @@ server.after(() => {
                 moderationAction: request.body.moderationAction,
                 moderationExplanation: request.body.moderationExplanation,
                 userId: deviceStatus.userId,
+                isSiteModerator,
             });
         },
     });
@@ -1498,7 +1499,6 @@ server.after(() => {
             await withdrawModerationReportByCommentSlugId({
                 db: db,
                 commentSlugId: request.body.opinionSlugId,
-                callerUserId: deviceStatus.userId,
                 isSiteModerator,
             });
         },

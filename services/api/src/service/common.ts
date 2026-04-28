@@ -25,7 +25,7 @@ import type {
 } from "@/shared/types/zod.js";
 import { zodExternalSourceConfig } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
-import { eq, desc, SQL, and, sql } from "drizzle-orm";
+import { eq, desc, SQL, and, sql, isNotNull, inArray } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import sanitizeHtml from "sanitize-html";
 import { createPostModerationPropertyObject } from "./moderation.js";
@@ -201,7 +201,7 @@ export function useCommonPost() {
             )
             // whereClause = and(whereClause, lt(postTable.createdAt, lastCreatedAt));
             .where(and(where, eq(userTable.isDeleted, false)))
-            .orderBy(desc(conversationTable.createdAt));
+            .orderBy(desc(conversationTable.createdAt), desc(conversationTable.id));
         if (limit !== undefined) {
             postItems = await postItemsQuery.$dynamic().limit(limit);
         } else {
@@ -329,8 +329,11 @@ export function useCommonPost() {
                                 maxdiffItemTable.conversationId,
                                 postItem.conversationId,
                             ),
-                            sql`${maxdiffItemTable.currentContentId} IS NOT NULL`,
-                            sql`${maxdiffItemTable.lifecycleStatus} IN ('active', 'in_progress')`,
+                            isNotNull(maxdiffItemTable.currentContentId),
+                            inArray(maxdiffItemTable.lifecycleStatus, [
+                                "active",
+                                "in_progress",
+                            ]),
                         ),
                     );
                 metadata.opinionCount = itemCountResult.count;

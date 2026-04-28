@@ -16,14 +16,28 @@ import type {
     ExtendedOpinionWithConvId,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
-import { and, eq, lt, desc, inArray, isNotNull } from "drizzle-orm";
+import {
+    and,
+    count,
+    eq,
+    lt,
+    or,
+    ne,
+    desc,
+    inArray,
+    isNotNull,
+} from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
-import { getPostSlugIdLastCreatedAt } from "./feed.js";
+import { getPostSlugIdLastCursor } from "./feed.js";
 import { getCommentSlugIdLastCreatedAt } from "./comment.js";
 import { fetchPostBySlugId } from "./post.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
-import { getOrganizationsByUsername } from "./administrator/organization.js";
+import {
+    getOrganizationIdsByUserId,
+    getOrganizationMembershipsByUserId,
+} from "./administrator/organization.js";
+import { getConversationOwnerFilter } from "./conversationAccess.js";
 import type { ImportPolisResults } from "@/shared/types/polis.js";
 import { generateUUID } from "@/crypto.js";
 import type { UserIdPerParticipantId } from "@/utils/dataStructure.js";
@@ -222,6 +236,49 @@ interface GetUserPostProps {
     limit?: number;
 }
 
+async function getOwnedActiveConversationCount({
+    db,
+    userId,
+    organizationIds,
+}: {
+    db: PostgresJsDatabase;
+    userId: string;
+    organizationIds: number[];
+}): Promise<number> {
+    const authorCountRows = await db
+        .select({ count: count() })
+        .from(conversationTable)
+        .innerJoin(userTable, eq(userTable.id, conversationTable.authorId))
+        .where(
+            and(
+                eq(conversationTable.authorId, userId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+                eq(userTable.isDeleted, false),
+            ),
+        );
+
+    if (organizationIds.length === 0) {
+        return authorCountRows[0].count;
+    }
+
+    const organizationCountRows = await db
+        .select({ count: count() })
+        .from(conversationTable)
+        .innerJoin(userTable, eq(userTable.id, conversationTable.authorId))
+        .where(
+            and(
+                inArray(conversationTable.organizationId, organizationIds),
+                ne(conversationTable.authorId, userId),
+                eq(conversationTable.isImporting, false),
+                isNotNull(conversationTable.currentContentId),
+                eq(userTable.isDeleted, false),
+            ),
+        );
+
+    return authorCountRows[0].count + organizationCountRows[0].count;
+}
+
 export async function getUserPosts({
     db,
     userId,
@@ -232,21 +289,37 @@ export async function getUserPosts({
     try {
         const { fetchPostItems } = useCommonPost();
 
-        const lastCreatedAt = await getPostSlugIdLastCreatedAt({
+        const lastCursor = await getPostSlugIdLastCursor({
             lastSlugId: lastPostSlugId,
             db: db,
         });
+        const organizationIds = await getOrganizationIdsByUserId({ db, userId });
+        const ownershipFilter = getConversationOwnerFilter({
+            userId,
+            organizationIds,
+        });
 
         const whereClause =
-            lastCreatedAt !== undefined
+            lastCursor !== undefined
                 ? and(
-                      eq(conversationTable.authorId, userId),
+                      ownershipFilter,
                       eq(conversationTable.isImporting, false),
-                      lt(conversationTable.createdAt, lastCreatedAt),
+                      isNotNull(conversationTable.currentContentId),
+                      or(
+                          lt(conversationTable.createdAt, lastCursor.createdAt),
+                          and(
+                              eq(conversationTable.createdAt, lastCursor.createdAt),
+                              lt(
+                                  conversationTable.id,
+                                  lastCursor.conversationId,
+                              ),
+                          ),
+                      ),
                   )
                 : and(
-                      eq(conversationTable.authorId, userId),
+                      ownershipFilter,
                       eq(conversationTable.isImporting, false),
+                      isNotNull(conversationTable.currentContentId),
                   );
 
         const conversations: ExtendedConversationPerSlugId =
@@ -337,7 +410,6 @@ export async function getUserProfile({
     try {
         const userTableResponse = await db
             .select({
-                activePostCount: userTable.activeConversationCount,
                 createdAt: userTable.createdAt,
                 username: userTable.username,
                 isSiteModerator: userTable.isSiteModerator,
@@ -349,10 +421,18 @@ export async function getUserProfile({
         if (userTableResponse.length == 0) {
             throw httpErrors.notFound("Failed to locate user profile");
         } else {
-            const organizationNamesResponse = await getOrganizationsByUsername({
+            const organizationMemberships = await getOrganizationMembershipsByUserId({
                 db: db,
-                username: userTableResponse[0].username,
+                userId,
                 baseImageServiceUrl,
+            });
+            const organizationIds = organizationMemberships.map(
+                (membership) => membership.organizationId,
+            );
+            const activePostCount = await getOwnedActiveConversationCount({
+                db,
+                userId,
+                organizationIds,
             });
 
             // Fetch verified event tickets for this user
@@ -373,12 +453,14 @@ export async function getUserProfile({
             );
 
             return {
-                activePostCount: userTableResponse[0].activePostCount,
+                activePostCount,
                 createdAt: userTableResponse[0].createdAt,
                 username: userTableResponse[0].username,
                 isSiteModerator: userTableResponse[0].isSiteModerator,
                 isSiteOrgAdmin: userTableResponse[0].isSiteOrgAdmin,
-                organizationList: organizationNamesResponse.organizationList,
+                organizationList: organizationMemberships.map(
+                    (membership) => membership.organization,
+                ),
                 verifiedEventTickets: verifiedEventTickets,
             };
         }

@@ -6,7 +6,7 @@ import {
     conversationTable,
     userTable,
 } from "@/shared-backend/schema.js";
-import { eq, sql, and } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
 import { useCommonPost } from "./common.js";
@@ -37,6 +37,7 @@ import {
     setSurveyConfigForConversation,
     warmSurveyTranslationsForConversation,
 } from "@/service/survey.js";
+import { isConversationOwner } from "@/service/conversationAccess.js";
 
 const MAX_CONVERSATION_SEED_ITEMS = 50;
 
@@ -351,33 +352,49 @@ export async function deletePostBySlugId({
     userId,
 }: DeletePostBySlugIdProps): Promise<void> {
     const conversationId = await db.transaction(async (tx) => {
-        // Delete the conversation
-        const updatedConversationIdResponse = await tx
+        const conversationRows = await tx
+            .select({
+                conversationId: conversationTable.id,
+                authorId: conversationTable.authorId,
+                organizationId: conversationTable.organizationId,
+                currentContentId: conversationTable.currentContentId,
+            })
+            .from(conversationTable)
+            .where(eq(conversationTable.slugId, conversationSlugId))
+            .limit(1);
+
+        if (conversationRows.length === 0) {
+            throw httpErrors.notFound("Conversation not found");
+        }
+
+        const conversation = conversationRows[0];
+        const isOwner = await isConversationOwner({
+            db: tx,
+            userId,
+            authorId: conversation.authorId,
+            organizationId: conversation.organizationId,
+        });
+        if (!isOwner) {
+            throw httpErrors.forbidden("Only conversation owners can delete it");
+        }
+        if (conversation.currentContentId === null) {
+            throw httpErrors.notFound("Conversation not found");
+        }
+
+        await tx
             .update(conversationTable)
             .set({
                 currentContentId: null,
             })
-            .where(
-                and(
-                    eq(conversationTable.authorId, userId),
-                    eq(conversationTable.slugId, conversationSlugId),
-                ),
-            )
-            .returning({ conversationId: conversationTable.id });
+            .where(eq(conversationTable.id, conversation.conversationId));
 
-        if (updatedConversationIdResponse.length != 1) {
-            tx.rollback();
-        }
-
-        const conversationId = updatedConversationIdResponse[0].conversationId;
-
-        // Update the user's active conversation count
+        // Update the original author's active conversation count
         await tx
             .update(userTable)
             .set({
                 activeConversationCount: sql`${userTable.activeConversationCount} - 1`,
             })
-            .where(eq(userTable.id, userId));
+            .where(eq(userTable.id, conversation.authorId));
 
         // Mark all of the opinions as deleted
         await tx
@@ -385,9 +402,9 @@ export async function deletePostBySlugId({
             .set({
                 currentContentId: null,
             })
-            .where(eq(opinionTable.conversationId, conversationId));
+            .where(eq(opinionTable.conversationId, conversation.conversationId));
 
-        return conversationId;
+        return conversation.conversationId;
     });
 
     // Delete all conversation exports after the transaction completes
@@ -439,18 +456,12 @@ export async function closeConversation({
         throw httpErrors.notFound("Conversation not found");
     }
 
-    // Check authorization: user must be author OR member of the conversation's organization
-    const isAuthor = conversation[0].authorId === userId;
-    let isAuthorized = isAuthor;
-
-    if (!isAuthorized && conversation[0].organizationId !== null) {
-        isAuthorized = await authUtilService.isUserPartOfOrganizationById({
-            db,
-            userId,
-            organizationId: conversation[0].organizationId,
-        });
-    }
-
+    const isAuthorized = await isConversationOwner({
+        db,
+        userId,
+        authorId: conversation[0].authorId,
+        organizationId: conversation[0].organizationId,
+    });
     if (!isAuthorized) {
         return { success: false, reason: "not_allowed" };
     }
@@ -497,18 +508,12 @@ export async function openConversation({
         throw httpErrors.notFound("Conversation not found");
     }
 
-    // Check authorization: user must be author OR member of the conversation's organization
-    const isAuthor = conversation[0].authorId === userId;
-    let isAuthorized = isAuthor;
-
-    if (!isAuthorized && conversation[0].organizationId !== null) {
-        isAuthorized = await authUtilService.isUserPartOfOrganizationById({
-            db,
-            userId,
-            organizationId: conversation[0].organizationId,
-        });
-    }
-
+    const isAuthorized = await isConversationOwner({
+        db,
+        userId,
+        authorId: conversation[0].authorId,
+        organizationId: conversation[0].organizationId,
+    });
     if (!isAuthorized) {
         return { success: false, reason: "not_allowed" };
     }

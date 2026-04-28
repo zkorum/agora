@@ -1,0 +1,1 @@
+CREATE INDEX "conversation_organization_timeline_idx" ON "conversation" USING btree ("organization_id","is_importing","created_at","id") WHERE "conversation"."current_content_id" is not null;

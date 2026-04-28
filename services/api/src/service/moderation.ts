@@ -14,7 +14,7 @@ import type {
     ConversationModerationProperties,
     ModerationReason,
 } from "@/shared/types/zod.js";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/util.js";
 import { httpErrors } from "@fastify/sensible";
 
@@ -77,6 +77,7 @@ interface ModerateByCommentSlugIdProps {
     moderationReason: ModerationReason;
     moderationExplanation: string;
     userId: string;
+    isSiteModerator: boolean;
 }
 
 export async function moderateByCommentSlugId({
@@ -86,24 +87,35 @@ export async function moderateByCommentSlugId({
     userId,
     moderationExplanation,
     moderationAction,
+    isSiteModerator,
 }: ModerateByCommentSlugIdProps) {
     const { getOpinionMetadataFromOpinionSlugId } = useCommonComment();
-    const { opinionId } = await getOpinionMetadataFromOpinionSlugId({
+    const { opinionId, conversationId } = await getOpinionMetadataFromOpinionSlugId({
         db: db,
-        opinionSlugId: commentSlugId,
-    });
-
-    const moderationStatus = await fetchModerationReportByCommentSlugId({
-        db: db,
-        commentSlugId: commentSlugId,
-    });
-    const { conversationId } = await getOpinionMetadataFromOpinionSlugId({
-        db,
         opinionSlugId: commentSlugId,
     });
 
     await db.transaction(async (tx) => {
-        if (moderationStatus.status == "moderated") {
+        const moderationRows = await tx
+            .select({
+                id: opinionModerationTable.id,
+                moderationAction: opinionModerationTable.moderationAction,
+            })
+            .from(opinionModerationTable)
+            .where(eq(opinionModerationTable.opinionId, opinionId))
+            .limit(1);
+
+        const existingModeration = moderationRows.at(0);
+        if (existingModeration !== undefined) {
+            if (
+                existingModeration.moderationAction === "hide" &&
+                !isSiteModerator
+            ) {
+                throw httpErrors.forbidden(
+                    "Only site moderators can modify hidden opinions",
+                );
+            }
+
             // Already moderated - just update the moderation record (no count change)
             await tx
                 .update(opinionModerationTable)
@@ -114,7 +126,7 @@ export async function moderateByCommentSlugId({
                     moderationExplanation: moderationExplanation,
                     updatedAt: nowZeroMs(),
                 })
-                .where(eq(opinionModerationTable.opinionId, opinionId));
+                .where(eq(opinionModerationTable.id, existingModeration.id));
         } else {
             // New moderation - insert record
             await tx.insert(opinionModerationTable).values({
@@ -248,14 +260,12 @@ export async function withdrawModerationReportByPostSlugId({
 interface WithdrawModerationReportByCommentSlugIdProps {
     commentSlugId: string;
     db: PostgresJsDatabase;
-    callerUserId: string;
     isSiteModerator: boolean;
 }
 
 export async function withdrawModerationReportByCommentSlugId({
     db,
     commentSlugId,
-    callerUserId,
     isSiteModerator,
 }: WithdrawModerationReportByCommentSlugIdProps) {
     const { getCommentIdFromCommentSlugId } = useCommonComment();
@@ -271,19 +281,32 @@ export async function withdrawModerationReportByCommentSlugId({
     });
 
     await db.transaction(async (tx) => {
+        const moderationRows = await tx
+            .select({
+                id: opinionModerationTable.id,
+                moderationAction: opinionModerationTable.moderationAction,
+            })
+            .from(opinionModerationTable)
+            .where(eq(opinionModerationTable.opinionId, commentId))
+            .limit(1);
+
+        if (moderationRows.length !== 1) {
+            throw httpErrors.notFound(
+                "Failed to delete moderation action for opinion slug ID: " +
+                    commentSlugId,
+            );
+        }
+
+        const moderation = moderationRows[0];
+        if (moderation.moderationAction === "hide" && !isSiteModerator) {
+            throw httpErrors.forbidden(
+                "Only site moderators can withdraw hidden opinions",
+            );
+        }
+
         const moderationCommentsTableResponse = await tx
             .delete(opinionModerationTable)
-            .where(
-                isSiteModerator
-                    ? eq(opinionModerationTable.opinionId, commentId)
-                    : and(
-                          eq(opinionModerationTable.opinionId, commentId),
-                          eq(
-                              opinionModerationTable.authorId,
-                              callerUserId,
-                          ),
-                      ),
-            )
+            .where(eq(opinionModerationTable.id, moderation.id))
             .returning();
 
         if (moderationCommentsTableResponse.length != 1) {
