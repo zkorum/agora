@@ -421,6 +421,13 @@
       "when": 1777301654418,
       "tag": "0059_dapper_xavin",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1777396555114,
+      "tag": "0060_puzzling_spectrum",
+      "breakpoints": true
     }
   ]
 }

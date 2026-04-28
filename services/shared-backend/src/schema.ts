@@ -19,6 +19,7 @@ import {
     serial,
     foreignKey,
 } from "drizzle-orm/pg-core";
+import { isNotNull } from "drizzle-orm";
 import { sql } from "drizzle-orm/sql";
 // import { MAX_LENGTH_TITLE, MAX_LENGTH_OPINION, MAX_LENGTH_BODY } from "./shared/shared.js"; // unfortunately it breaks drizzle generate... :o TODO: find a way
 // WARNING: when you modify these limits, change this in shared.ts as well
@@ -1387,6 +1388,10 @@ export const conversationTable = pgTable(
             table.isImporting,
             table.createdAt,
         ),
+        // Composite for organization conversation timeline: filters organizationId + isImporting, sorts by createdAt
+        index("conversation_organization_timeline_idx")
+            .on(table.organizationId, table.isImporting, table.createdAt, table.id)
+            .where(isNotNull(table.currentContentId)),
     ],
 );
 

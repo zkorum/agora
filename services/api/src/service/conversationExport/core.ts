@@ -54,7 +54,7 @@ import {
 import { createExportNotification } from "./notifications.js";
 import { getActiveSurveyConfigRecord } from "../survey.js";
 import type { ExportAccessLevel } from "./generators/base.js";
-import { getConversationViewAccessLevel } from "@/service/conversationAccess.js";
+import { getConversationViewAccessLevelForConversation } from "@/service/conversationAccess.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import type { RealtimeSSEManager } from "../realtimeSSE.js";
 
@@ -198,18 +198,28 @@ async function generateExportBundleZip({
     return await zip.generateAsync({ type: "nodebuffer" });
 }
 
+interface ConversationExportConversationRecord {
+    id: number;
+    slugId: string;
+    title: string;
+    authorId: string;
+    organizationId: number | null;
+}
+
 async function findConversationRecord({
     db,
     conversationSlugId,
 }: {
     db: PostgresDatabase;
     conversationSlugId: string;
-}): Promise<{ id: number; slugId: string; title: string } | undefined> {
+}): Promise<ConversationExportConversationRecord | undefined> {
     const conversations = await db
         .select({
             id: conversationTable.id,
             slugId: conversationTable.slugId,
             title: conversationContentTable.title,
+            authorId: conversationTable.authorId,
+            organizationId: conversationTable.organizationId,
         })
         .from(conversationTable)
         .innerJoin(
@@ -228,7 +238,7 @@ async function getConversationRecord({
 }: {
     db: PostgresDatabase;
     conversationSlugId: string;
-}): Promise<{ id: number; slugId: string; title: string }> {
+}): Promise<ConversationExportConversationRecord> {
     const conversation = await findConversationRecord({ db, conversationSlugId });
 
     if (conversation === undefined) {
@@ -694,10 +704,11 @@ export async function requestConversationExport({
         return { success: false, reason: "conversation_not_found" };
     }
 
-    const exportAccessLevel = await getConversationViewAccessLevel({
+    const exportAccessLevel = await getConversationViewAccessLevelForConversation({
         db,
-        conversationId: conversation.id,
         userId,
+        authorId: conversation.authorId,
+        organizationId: conversation.organizationId,
     });
 
     const opinionCount = await getOpinionCount({
@@ -835,6 +846,8 @@ interface RequestStatusRecord {
     status: ExportRequestStatus;
     conversationId: number;
     conversationSlugId: string;
+    conversationAuthorId: string;
+    conversationOrganizationId: number | null;
     failureReason: ExportFailureReason | null;
     cancellationReason: ExportCancellationReason | null;
     createdAt: Date;
@@ -854,6 +867,8 @@ async function getRequestStatusRecord({
             status: conversationExportRequestTable.status,
             conversationId: conversationTable.id,
             conversationSlugId: conversationTable.slugId,
+            conversationAuthorId: conversationTable.authorId,
+            conversationOrganizationId: conversationTable.organizationId,
             failureReason: conversationExportRequestTable.failureReason,
             cancellationReason: conversationExportRequestTable.cancellationReason,
             createdAt: conversationExportRequestTable.createdAt,
@@ -987,10 +1002,11 @@ export async function getConversationExportStatus({
     userId,
 }: GetConversationExportStatusParams): Promise<GetConversationExportStatusResponse> {
     const request = await getRequestStatusRecord({ db, exportSlugId, userId });
-    const exportAccessLevel = await getConversationViewAccessLevel({
+    const exportAccessLevel = await getConversationViewAccessLevelForConversation({
         db,
-        conversationId: request.conversationId,
         userId,
+        authorId: request.conversationAuthorId,
+        organizationId: request.conversationOrganizationId,
     });
 
     if (request.deletedAt !== null || request.expiresAt < new Date()) {

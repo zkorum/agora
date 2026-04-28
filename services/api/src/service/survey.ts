@@ -65,7 +65,10 @@ import {
 } from "@/shared/languages.js";
 import { config, log } from "@/app.js";
 import { checkFeatureManagementAccess } from "@/shared-app-api/featureAccess.js";
-import { getConversationViewAccessLevel } from "@/service/conversationAccess.js";
+import {
+    getConversationViewAccessLevelForConversation,
+    isConversationOwner,
+} from "@/service/conversationAccess.js";
 import {
     PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
     buildSurveyAggregateRows,
@@ -79,6 +82,7 @@ interface ConversationAccessContext {
     conversationId: number;
     slugId: string;
     authorId: string;
+    organizationId: number | null;
     organizationName: string | null;
     participationMode: (typeof conversationTable.$inferSelect)["participationMode"];
     conversationType: (typeof conversationTable.$inferSelect)["conversationType"];
@@ -87,12 +91,12 @@ interface ConversationAccessContext {
     requiresEventTicket: (typeof conversationTable.$inferSelect)["requiresEventTicket"];
 }
 
-function assertSurveyFeatureAllowed({
-    conversation,
+export function assertSurveyFeatureAllowedForConversation({
+    organizationName,
     hasExistingSurvey,
     userId,
 }: {
-    conversation: ConversationAccessContext;
+    organizationName: string | null;
     hasExistingSurvey: boolean;
     userId: string;
 }): void {
@@ -102,8 +106,8 @@ function assertSurveyFeatureAllowed({
         isOrgOnly: config.IS_SURVEY_ORG_ONLY,
         allowedOrgs: config.SURVEY_ALLOWED_ORGS,
         allowedUsers: config.SURVEY_ALLOWED_USERS,
-        postAsOrganization: conversation.organizationName !== null,
-        organizationName: conversation.organizationName ?? "",
+        postAsOrganization: organizationName !== null,
+        organizationName: organizationName ?? "",
         userId,
     });
     if (surveyAccess.allowed) {
@@ -128,6 +132,22 @@ function assertSurveyFeatureAllowed({
                 "This user is not allowed to configure surveys",
             );
     }
+}
+
+function assertSurveyFeatureAllowed({
+    conversation,
+    hasExistingSurvey,
+    userId,
+}: {
+    conversation: ConversationAccessContext;
+    hasExistingSurvey: boolean;
+    userId: string;
+}): void {
+    assertSurveyFeatureAllowedForConversation({
+        organizationName: conversation.organizationName,
+        hasExistingSurvey,
+        userId,
+    });
 }
 
 interface SurveyConfigUpdateEffect {
@@ -847,6 +867,7 @@ async function getConversationAccessContextBySlugId({
             conversationId: conversationTable.id,
             slugId: conversationTable.slugId,
             authorId: conversationTable.authorId,
+            organizationId: conversationTable.organizationId,
             organizationName: organizationTable.name,
             participationMode: conversationTable.participationMode,
             conversationType: conversationTable.conversationType,
@@ -2275,10 +2296,11 @@ export async function fetchSurveyAggregatedResults({
         db,
         conversationSlugId,
     });
-    const accessLevel = await getConversationViewAccessLevel({
+    const accessLevel = await getConversationViewAccessLevelForConversation({
         db,
-        conversationId: conversation.conversationId,
         userId,
+        authorId: conversation.authorId,
+        organizationId: conversation.organizationId,
     });
     const context = await loadSurveyExportContext({
         db,
@@ -2332,14 +2354,15 @@ export async function fetchSurveyCompletionCounts({
         db,
         conversationSlugId,
     });
-    const accessLevel = await getConversationViewAccessLevel({
+    const accessLevel = await getConversationViewAccessLevelForConversation({
         db,
-        conversationId: conversation.conversationId,
         userId,
+        authorId: conversation.authorId,
+        organizationId: conversation.organizationId,
     });
     if (accessLevel !== "owner") {
         throw httpErrors.forbidden(
-            "Only the conversation author or facilitator can view survey completion counts",
+            "Only conversation owners can view survey completion counts",
         );
     }
 
@@ -2816,9 +2839,15 @@ export async function updateSurveyConfigByAuthor({
         db,
         conversationSlugId,
     });
-    if (conversation.authorId !== userId) {
+    const isOwner = await isConversationOwner({
+        db,
+        userId,
+        authorId: conversation.authorId,
+        organizationId: conversation.organizationId,
+    });
+    if (!isOwner) {
         throw httpErrors.forbidden(
-            "Only the conversation author can edit the survey",
+            "Only conversation owners can edit the survey",
         );
     }
     const existingSurveyConfig = await getActiveSurveyConfigRecord({
@@ -2896,9 +2925,15 @@ export async function deleteSurveyConfigByAuthor({
         db,
         conversationSlugId,
     });
-    if (conversation.authorId !== userId) {
+    const isOwner = await isConversationOwner({
+        db,
+        userId,
+        authorId: conversation.authorId,
+        organizationId: conversation.organizationId,
+    });
+    if (!isOwner) {
         throw httpErrors.forbidden(
-            "Only the conversation author can delete the survey",
+            "Only conversation owners can delete the survey",
         );
     }
     const existingSurveyConfig = await getActiveSurveyConfigRecord({

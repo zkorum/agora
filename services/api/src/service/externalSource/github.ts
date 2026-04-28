@@ -18,6 +18,7 @@ import {
 } from "@/shared-app-api/html.js";
 import { marked } from "marked";
 import type { GitHubClient, GitHubIssue, SyncResult } from "./index.js";
+import { isConversationOwner } from "@/service/conversationAccess.js";
 
 // --- Pure functions ---
 
@@ -572,6 +573,7 @@ export async function syncGitHubIssues({
             id: conversationTable.id,
             currentContentId: conversationTable.currentContentId,
             authorId: conversationTable.authorId,
+            organizationId: conversationTable.organizationId,
             externalSourceConfig: conversationTable.externalSourceConfig,
             conversationType: conversationTable.conversationType,
         })
@@ -584,8 +586,14 @@ export async function syncGitHubIssues({
 
     const conversation = conversationRows[0];
 
-    if (conversation.authorId !== requestingUserId) {
-        throw new Error("Only the conversation author can trigger sync");
+    const isOwner = await isConversationOwner({
+        db,
+        userId: requestingUserId,
+        authorId: conversation.authorId,
+        organizationId: conversation.organizationId,
+    });
+    if (!isOwner) {
+        throw new Error("Only conversation owners can trigger sync");
     }
 
     if (conversation.conversationType !== "maxdiff") {

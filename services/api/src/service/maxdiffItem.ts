@@ -19,6 +19,7 @@ import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import { log } from "@/app.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
 import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
+import { isConversationOwner } from "@/service/conversationAccess.js";
 
 /**
  * Mark a MaxDiff conversation as dirty so the scoring worker re-scores
@@ -264,15 +265,23 @@ export async function updateMaxdiffItemLifecycle({
             conversationSlugId,
         });
 
-    // Verify the requesting user is the conversation author
     const [conversation] = await db
-        .select({ authorId: conversationTable.authorId })
+        .select({
+            authorId: conversationTable.authorId,
+            organizationId: conversationTable.organizationId,
+        })
         .from(conversationTable)
         .where(eq(conversationTable.id, conversationId));
 
-    if (conversation.authorId !== requestingUserId) {
+    const isOwner = await isConversationOwner({
+        db,
+        userId: requestingUserId,
+        authorId: conversation.authorId,
+        organizationId: conversation.organizationId,
+    });
+    if (!isOwner) {
         throw httpErrors.forbidden(
-            "Only the conversation author can update item lifecycle",
+            "Only conversation owners can update item lifecycle",
         );
     }
 

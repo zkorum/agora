@@ -60,6 +60,28 @@ interface GetOrganizationsByUsernameProps {
     baseImageServiceUrl: string;
 }
 
+interface GetOrganizationsByUserIdProps {
+    db: PostgresJsDatabase;
+    userId: string;
+    baseImageServiceUrl: string;
+}
+
+interface GetOrganizationIdsByUserIdProps {
+    db: PostgresJsDatabase;
+    userId: string;
+}
+
+interface GetOrganizationMembershipsByUserIdProps {
+    db: PostgresJsDatabase;
+    userId: string;
+    baseImageServiceUrl: string;
+}
+
+export interface OrganizationMembership {
+    organizationId: number;
+    organization: OrganizationProperties;
+}
+
 export async function getOrganizationsByUsername({
     db,
     username,
@@ -71,9 +93,49 @@ export async function getOrganizationsByUsername({
         username: username,
     });
 
-    const organizationList: OrganizationProperties[] = [];
+    return await getOrganizationsByUserId({
+        db,
+        userId: targetUserId,
+        baseImageServiceUrl,
+    });
+}
+
+export async function getOrganizationsByUserId({
+    db,
+    userId,
+    baseImageServiceUrl,
+}: GetOrganizationsByUserIdProps): Promise<GetOrganizationsByUsernameResponse> {
+    const memberships = await getOrganizationMembershipsByUserId({
+        db,
+        userId,
+        baseImageServiceUrl,
+    });
+
+    return {
+        organizationList: memberships.map((membership) => membership.organization),
+    };
+}
+
+export async function getOrganizationIdsByUserId({
+    db,
+    userId,
+}: GetOrganizationIdsByUserIdProps): Promise<number[]> {
+    const organizationTableResponse = await db
+        .select({ organizationId: userOrganizationMappingTable.organizationId })
+        .from(userOrganizationMappingTable)
+        .where(eq(userOrganizationMappingTable.userId, userId));
+
+    return organizationTableResponse.map((response) => response.organizationId);
+}
+
+export async function getOrganizationMembershipsByUserId({
+    db,
+    userId,
+    baseImageServiceUrl,
+}: GetOrganizationMembershipsByUserIdProps): Promise<OrganizationMembership[]> {
     const organizationTableResponse = await db
         .select({
+            organizationId: organizationTable.id,
             name: organizationTable.name,
             description: organizationTable.description,
             imagePath: organizationTable.imagePath,
@@ -81,21 +143,18 @@ export async function getOrganizationsByUsername({
             websiteUrl: organizationTable.websiteUrl,
         })
         .from(userOrganizationMappingTable)
-        .leftJoin(
+        .innerJoin(
             organizationTable,
             eq(
                 organizationTable.id,
                 userOrganizationMappingTable.organizationId,
             ),
         )
-        .where(eq(userOrganizationMappingTable.userId, targetUserId));
-    organizationTableResponse.forEach((response) => {
-        if (
-            response.name &&
-            response.imagePath !== null &&
-            response.isFullImagePath !== null
-        ) {
-            organizationList.push({
+        .where(eq(userOrganizationMappingTable.userId, userId));
+
+    return organizationTableResponse.map((response) => ({
+        organizationId: response.organizationId,
+        organization: {
                 name: response.name,
                 description: response.description ?? "",
                 imageUrl: imagePathToUrl({
@@ -104,13 +163,8 @@ export async function getOrganizationsByUsername({
                     baseImageServiceUrl,
                 }),
                 websiteUrl: response.websiteUrl ?? "",
-            });
-        }
-    });
-
-    return {
-        organizationList: organizationList,
-    };
+        },
+    }));
 }
 
 interface RemoveUserOrganizationMappingProps {
