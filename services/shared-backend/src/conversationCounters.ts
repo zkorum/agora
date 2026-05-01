@@ -326,17 +326,20 @@ async function enqueueMathUpdate({
  * Reconcile all conversation counters by recalculating from database
  *
  * Sets both unmoderated and total counts in a single UPDATE.
- * Automatically enqueues math update since voteCount changes affect clustering.
+ * Automatically enqueues math update since voteCount changes affect clustering,
+ * unless the caller is already running a math update for the same conversation.
  * Use this when actions affect multiple counters (e.g., moderation).
  */
 export async function reconcileConversationCounters({
     db,
     conversationId,
     doUpdateLastReactedAt = false,
+    enqueueMathUpdateAfterReconcile = true,
 }: {
     db: PostgresJsDatabase;
     conversationId: number;
     doUpdateLastReactedAt?: boolean;
+    enqueueMathUpdateAfterReconcile?: boolean;
 }): Promise<void> {
     // MaxDiff counters are owned by the scoring worker (Python).
     // Skip here -- the worker updates counters alongside scoring.
@@ -380,6 +383,8 @@ export async function reconcileConversationCounters({
             .where(eq(conversationTable.id, conversationId));
     }
 
-    // Enqueue math update (voteCount changes affect clustering)
-    await enqueueMathUpdate({ db, conversationId });
+    if (enqueueMathUpdateAfterReconcile) {
+        // Enqueue math update (voteCount changes affect clustering)
+        await enqueueMathUpdate({ db, conversationId });
+    }
 }

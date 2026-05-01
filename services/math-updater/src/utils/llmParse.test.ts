@@ -71,6 +71,33 @@ void test("parseLlmOutputJson parses markdown-fenced JSON", () => {
     });
 });
 
+void test("parseLlmOutputJson repairs a missing comma between object properties", () => {
+    const rawLlmOutput = [
+        "```json",
+        "{",
+        '  "clusters": {',
+        '    "1": {',
+        '      "reasoning": "agreesWith includes L\'IA n\'est pas un risque and concrete harms"',
+        '      "label": "Institutionalists",',
+        '      "summary": "This cluster focuses on near-term risks."',
+        "    }",
+        "  }",
+        "}",
+        "```",
+    ].join("\n");
+
+    deepEqual(parseLlmOutputJson(rawLlmOutput), {
+        clusters: {
+            1: {
+                reasoning:
+                    "agreesWith includes L'IA n'est pas un risque and concrete harms",
+                label: "Institutionalists",
+                summary: "This cluster focuses on near-term risks.",
+            },
+        },
+    });
+});
+
 void test("parseLlmOutputJson extracts JSON from prefixed markdown", () => {
     const rawLlmOutput = [
         "Here is the JSON:",
@@ -98,11 +125,17 @@ void test("parseLlmOutputJson throws when no JSON object is present", () => {
 });
 
 void test("parseLlmOutputJson throws for whitespace-only input", () => {
-    throws(() => parseLlmOutputJson(" \n\t "), /Unable to extract first JSON object/);
+    throws(
+        () => parseLlmOutputJson(" \n\t "),
+        /Unable to extract first JSON object/,
+    );
 });
 
 void test("parseLlmOutputJson throws for a lone opening code fence", () => {
-    throws(() => parseLlmOutputJson("```"), /Unable to extract first JSON object/);
+    throws(
+        () => parseLlmOutputJson("```"),
+        /Unable to extract first JSON object/,
+    );
 });
 
 void test("parseLlmOutputJson extracts JSON from incomplete fenced output", () => {

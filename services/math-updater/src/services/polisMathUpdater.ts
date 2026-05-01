@@ -814,20 +814,20 @@ export async function getAndUpdatePolisMath({
                     conversationBody,
                     clusters: clustersInsightsForLlm,
                 };
-            try {
-                aiClustersLabelsAndSummaries =
-                    await generateAiLabelsAndSummaries({
-                        db: db,
-                        conversationId: conversationId,
-                        polisContentId,
-                        conversationInsightsWithOpinionIds,
-                        awsAiLabelSummaryRegion,
-                        awsAiLabelSummaryModelId,
-                        awsAiLabelSummaryTemperature,
-                        awsAiLabelSummaryTopP,
-                        awsAiLabelSummaryMaxTokens,
-                        awsAiLabelSummaryPrompt,
-                    });
+            aiClustersLabelsAndSummaries = await generateAiLabelsAndSummaries({
+                db: db,
+                conversationId: conversationId,
+                polisContentId,
+                conversationInsightsWithOpinionIds,
+                awsAiLabelSummaryRegion,
+                awsAiLabelSummaryModelId,
+                awsAiLabelSummaryTemperature,
+                awsAiLabelSummaryTopP,
+                awsAiLabelSummaryMaxTokens,
+                awsAiLabelSummaryPrompt,
+            });
+
+            if (aiClustersLabelsAndSummaries !== undefined) {
                 log.info(
                     `[Math] Phase 2: AI labels generated for conversationId=${conversationId} and polisClusterId=${String(polisContentId)}`,
                 );
@@ -844,7 +844,7 @@ export async function getAndUpdatePolisMath({
                             `[Math] Phase 2: Translations generated for conversationId=${conversationId} and polisClusterId=${String(polisContentId)}`,
                         );
                     } catch (translationError: unknown) {
-                        log.error(
+                        log.warn(
                             translationError,
                             `[Math] Phase 2: Translation failed for conversationId=${conversationId} and polisClusterId=${String(polisContentId)}, continuing without translations`,
                         );
@@ -856,13 +856,10 @@ export async function getAndUpdatePolisMath({
                         `[Math] Phase 2: Translations generation disabled, continuing without them for conversationId=${conversationId} and polisClusterId=${String(polisContentId)}`,
                     );
                 }
-            } catch (e: unknown) {
-                log.error(
-                    e,
-                    `[Math] Phase 2: AI/Translation failed for conversationId=${conversationId} and polisClusterId=${String(polisContentId)}, continuing without AI labels`,
+            } else {
+                log.warn(
+                    `[Math] Phase 2: AI labels unavailable for conversationId=${conversationId} and polisClusterId=${String(polisContentId)}, continuing without AI labels or translations`,
                 );
-                // Continue to Phase 3 even if AI fails - we still want to activate the math data
-                aiClustersLabelsAndSummaries = undefined;
                 translations = undefined;
             }
         } else {
