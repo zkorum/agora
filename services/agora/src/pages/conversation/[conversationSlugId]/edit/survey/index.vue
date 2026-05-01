@@ -179,8 +179,6 @@ const hasAnySummaryChanges = computed(() => {
 const surveyEditorTexts = computed(() => ({
   title: t("title"),
   description: t("description"),
-  optionalSurveyToggleLabel: t("optionalSurveyToggleLabel"),
-  optionalSurveyToggleHint: t("optionalSurveyToggleHint"),
   requiredSurveyToggleHint: t("requiredSurveyToggleHint"),
   noQuestionsTitle: t("noSurveyTitle"),
   noQuestionsDescription: t("noSurveyDescription"),
@@ -197,7 +195,6 @@ const surveyEditorTexts = computed(() => ({
   choiceDisplayList: t("choiceDisplayList"),
   choiceDisplayDropdown: t("choiceDisplayDropdown"),
   questionPromptLabel: t("questionPromptLabel"),
-  questionRequirementDisabledHint: t("questionRequirementDisabledHint"),
   minSelectionsLabel: t("minSelectionsLabel"),
   maxSelectionsLabel: t("maxSelectionsLabel"),
   minTextLengthLabel: t("minTextLengthLabel"),

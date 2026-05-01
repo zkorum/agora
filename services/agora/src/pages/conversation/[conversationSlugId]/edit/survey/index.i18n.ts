@@ -64,7 +64,7 @@ const en: EditSurveyTranslations = {
   optionalSurveyToggleHint:
     "The survey step can be skipped. Participants can vote or create statements without answering the survey; their votes are always included in analysis, and required question settings are ignored.",
   requiredSurveyToggleHint:
-    "The survey step is required. Participants must pass through it before voting or creating statements, even if some or all questions are optional. Only votes from participants who complete this step are included in analysis.",
+    "When a survey exists, the survey step is required. Participants must pass through it before voting or creating statements, even if some or all questions are optional. Only votes from participants who complete this step are included in analysis.",
   questionRequirementDisabledHint:
     "This question is treated as optional because the survey step can be skipped.",
   loadError: "Failed to load survey settings.",
@@ -130,7 +130,7 @@ export const editSurveyTranslations: Record<
     optionalSurveyToggleHint:
       "يمكن تخطي خطوة الاستبيان. يمكن للمشاركين التصويت أو إنشاء عبارات دون الإجابة على الاستبيان؛ وتُحتسب أصواتهم دائمًا في التحليل، ويتم تجاهل إعدادات إلزامية الأسئلة.",
     requiredSurveyToggleHint:
-      "خطوة الاستبيان مطلوبة. يجب على المشاركين المرور بها قبل التصويت أو إنشاء عبارات، حتى لو كانت بعض الأسئلة أو كلها اختيارية. تُدرج في التحليل فقط أصوات المشاركين الذين يكملون هذه الخطوة.",
+      "عند وجود استبيان، تكون خطوة الاستبيان مطلوبة. يجب على المشاركين المرور بها قبل التصويت أو إنشاء عبارات، حتى لو كانت بعض الأسئلة أو كلها اختيارية. تُدرج في التحليل فقط أصوات المشاركين الذين يكملون هذه الخطوة.",
     questionRequirementDisabledHint:
       "يُعامَل هذا السؤال كاختياري لأن خطوة الاستبيان يمكن تخطيها.",
     loadError: "فشل تحميل إعدادات الاستبيان.",
@@ -188,7 +188,7 @@ export const editSurveyTranslations: Record<
     optionalSurveyToggleHint:
       "El paso de encuesta se puede omitir. Los participantes pueden votar o crear propuestas sin responder la encuesta; sus votos siempre se incluyen en el análisis, y se ignoran los ajustes de preguntas obligatorias.",
     requiredSurveyToggleHint:
-      "El paso de encuesta es obligatorio. Los participantes deben pasar por él antes de votar o crear propuestas, aunque algunas o todas las preguntas sean opcionales. Solo los votos de participantes que completan este paso se incluyen en el análisis.",
+      "Cuando existe una encuesta, el paso de encuesta es obligatorio. Los participantes deben pasar por él antes de votar o crear propuestas, aunque algunas o todas las preguntas sean opcionales. Solo los votos de participantes que completan este paso se incluyen en el análisis.",
     questionRequirementDisabledHint:
       "Esta pregunta se trata como opcional porque el paso de encuesta se puede omitir.",
     loadError: "No se pudo cargar la configuración de la encuesta.",
@@ -248,7 +248,7 @@ export const editSurveyTranslations: Record<
     optionalSurveyToggleHint:
       "مرحله نظرسنجی را می‌توان رد کرد. شرکت‌کنندگان می‌توانند بدون پاسخ دادن به نظرسنجی رأی دهند یا گزاره ایجاد کنند؛ رأی‌های آن‌ها همیشه در تحلیل محاسبه می‌شود و تنظیمات الزامی پرسش‌ها نادیده گرفته می‌شود.",
     requiredSurveyToggleHint:
-      "مرحله نظرسنجی الزامی است. شرکت‌کنندگان باید پیش از رأی دادن یا ایجاد گزاره از آن عبور کنند، حتی اگر برخی یا همه پرسش‌ها اختیاری باشند. فقط رأی‌های شرکت‌کنندگانی که این مرحله را کامل می‌کنند در تحلیل وارد می‌شود.",
+      "وقتی نظرسنجی وجود دارد، مرحله نظرسنجی الزامی است. شرکت‌کنندگان باید پیش از رأی دادن یا ایجاد گزاره از آن عبور کنند، حتی اگر برخی یا همه پرسش‌ها اختیاری باشند. فقط رأی‌های شرکت‌کنندگانی که این مرحله را کامل می‌کنند در تحلیل وارد می‌شود.",
     questionRequirementDisabledHint:
       "این پرسش اختیاری در نظر گرفته می‌شود چون مرحله نظرسنجی را می‌توان رد کرد.",
     loadError: "بارگیری تنظیمات نظرسنجی انجام نشد.",
@@ -308,7 +308,7 @@ export const editSurveyTranslations: Record<
     optionalSurveyToggleHint:
       "L'étape de questionnaire peut être ignorée. Les participants peuvent voter ou créer des propositions sans répondre au questionnaire ; leurs votes sont toujours pris en compte dans l'analyse, et les réglages obligatoires des questions sont ignorés.",
     requiredSurveyToggleHint:
-      "L'étape de questionnaire est requise. Les participants doivent y passer avant de voter ou de créer des propositions, même si certaines questions ou toutes les questions sont facultatives. Seuls les votes des participants qui terminent cette étape sont pris en compte dans l'analyse.",
+      "Lorsqu'un questionnaire existe, l'étape de questionnaire est requise. Les participants doivent y passer avant de voter ou de créer des propositions, même si certaines questions ou toutes les questions sont facultatives. Seuls les votes des participants qui terminent cette étape sont pris en compte dans l'analyse.",
     questionRequirementDisabledHint:
       "Cette question est traitée comme facultative, car l'étape de questionnaire peut être ignorée.",
     loadError: "Impossible de charger les paramètres du questionnaire.",
@@ -368,7 +368,7 @@ export const editSurveyTranslations: Record<
     optionalSurveyToggleHint:
       "אפשר לדלג על שלב הסקר. המשתתפים יכולים להצביע או ליצור הצהרות בלי לענות על הסקר; ההצבעות שלהם תמיד נכללות בניתוח, והגדרות החובה של השאלות יזכו להתעלמות.",
     requiredSurveyToggleHint:
-      "שלב הסקר נדרש. המשתתפים חייבים לעבור דרכו לפני הצבעה או יצירת הצהרות, גם אם חלק מהשאלות או כולן אופציונליות. רק הצבעות של משתתפים שמשלימים את השלב הזה נכללות בניתוח.",
+      "כאשר קיים סקר, שלב הסקר נדרש. המשתתפים חייבים לעבור דרכו לפני הצבעה או יצירת הצהרות, גם אם חלק מהשאלות או כולן אופציונליות. רק הצבעות של משתתפים שמשלימים את השלב הזה נכללות בניתוח.",
     questionRequirementDisabledHint:
       "השאלה הזו נחשבת אופציונלית כי אפשר לדלג על שלב הסקר.",
     loadError: "טעינת הגדרות הסקר נכשלה.",
@@ -426,7 +426,7 @@ export const editSurveyTranslations: Record<
     optionalSurveyToggleHint:
       "アンケート手順はスキップできます。参加者はアンケートに回答せずに投票やステートメント作成ができ、その投票は常に分析に含まれ、質問の必須設定は無視されます。",
     requiredSurveyToggleHint:
-      "アンケート手順は必須です。一部またはすべての質問が任意でも、参加者は投票やステートメント作成の前にこの手順を通る必要があります。この手順を完了した参加者の投票のみが分析に含まれます。",
+      "アンケートがある場合、アンケート手順は必須です。一部またはすべての質問が任意でも、参加者は投票やステートメント作成の前にこの手順を通る必要があります。この手順を完了した参加者の投票のみが分析に含まれます。",
     questionRequirementDisabledHint:
       "アンケート手順をスキップできるため、この質問は任意として扱われます。",
     loadError: "アンケート設定を読み込めませんでした。",
@@ -484,7 +484,7 @@ export const editSurveyTranslations: Record<
     optionalSurveyToggleHint:
       "Сурамжылоо кадамын өткөрүп жиберүүгө болот. Катышуучулар сурамжылоого жооп бербей эле добуш берип же билдирүү түзө алышат; алардын добуштары ар дайым талдоого кирет, ал эми суроолордун милдеттүү жөндөөлөрү эске алынбайт.",
     requiredSurveyToggleHint:
-      "Сурамжылоо кадамы милдеттүү. Айрым суроолор же бардык суроолор ыктыярдуу болсо да, катышуучулар добуш берүү же билдирүү түзүүдөн мурун бул кадамдан өтүшү керек. Бул кадамды аяктаган катышуучулардын добуштары гана талдоого кирет.",
+      "Сурамжылоо бар болсо, сурамжылоо кадамы милдеттүү. Айрым суроолор же бардык суроолор ыктыярдуу болсо да, катышуучулар добуш берүү же билдирүү түзүүдөн мурун бул кадамдан өтүшү керек. Бул кадамды аяктаган катышуучулардын добуштары гана талдоого кирет.",
     questionRequirementDisabledHint:
       "Сурамжылоо кадамын өткөрүп жиберүүгө болгондуктан, бул суроо ыктыярдуу деп эсептелет.",
     loadError: "Сурамжылоонун жөндөөлөрүн жүктөө ишке ашкан жок.",
@@ -542,7 +542,7 @@ export const editSurveyTranslations: Record<
     optionalSurveyToggleHint:
       "Шаг опроса можно пропустить. Участники могут голосовать или создавать утверждения без ответов на опрос; их голоса всегда включаются в анализ, а настройки обязательности вопросов игнорируются.",
     requiredSurveyToggleHint:
-      "Шаг опроса обязателен. Участники должны пройти его перед голосованием или созданием утверждений, даже если некоторые или все вопросы необязательные. В анализ включаются только голоса участников, которые завершили этот шаг.",
+      "Если есть опрос, шаг опроса обязателен. Участники должны пройти его перед голосованием или созданием утверждений, даже если некоторые или все вопросы необязательные. В анализ включаются только голоса участников, которые завершили этот шаг.",
     questionRequirementDisabledHint:
       "Этот вопрос считается необязательным, потому что шаг опроса можно пропустить.",
     loadError: "Не удалось загрузить настройки опроса.",
@@ -600,7 +600,7 @@ export const editSurveyTranslations: Record<
     optionalSurveyToggleHint:
       "问卷步骤可以跳过。参与者无需回答问卷即可投票或创建陈述；他们的投票始终会计入分析，问题的必答设置会被忽略。",
     requiredSurveyToggleHint:
-      "问卷步骤为必需。即使部分或全部问题都是可选的，参与者也必须先经过它，才能投票或创建陈述。只有完成此步骤的参与者投票会计入分析。",
+      "如果存在问卷，问卷步骤为必需。即使部分或全部问题都是可选的，参与者也必须先经过它，才能投票或创建陈述。只有完成此步骤的参与者投票会计入分析。",
     questionRequirementDisabledHint:
       "由于问卷步骤可以跳过，此问题会被视为可选。",
     loadError: "无法加载问卷设置。",
@@ -658,7 +658,7 @@ export const editSurveyTranslations: Record<
     optionalSurveyToggleHint:
       "問卷步驟可以跳過。參與者無需回答問卷即可投票或建立陳述；他們的投票一律會計入分析，問題的必答設定會被忽略。",
     requiredSurveyToggleHint:
-      "問卷步驟為必需。即使部分或全部問題都是可選的，參與者也必須先經過它，才能投票或建立陳述。只有完成此步驟的參與者投票會計入分析。",
+      "如果存在問卷，問卷步驟為必需。即使部分或全部問題都是可選的，參與者也必須先經過它，才能投票或建立陳述。只有完成此步驟的參與者投票會計入分析。",
     questionRequirementDisabledHint:
       "由於問卷步驟可以跳過，此問題會被視為可選。",
     loadError: "無法載入問卷設定。",
