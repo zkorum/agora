@@ -60,11 +60,10 @@ export const conversationReviewTranslations: Record<
     addSeedOpinions: "إضافة مقترحات أولية",
     addMaxDiffItems: "إضافة عبارات للترتيب",
     seedOpinionsDescription:
-      "يُنصح ببذر 8 إلى 15 مقترحًا عبر مجموعة من وجهات النظر. هذا له تأثير قوي على المشاركة المبكرة.",
+      "يُنصح بإضافة 8 إلى 15 مقترحًا أوليًا تغطي مجموعة من وجهات النظر. هذا له تأثير قوي على المشاركة المبكرة.",
     maxDiffSeedDescription:
       "يتطلب ترتيب الأولويات 4 مقترحات على الأقل. نوصي بـ 10 إلى 25 للحصول على أفضل تجربة.",
-    needMinimumForMaxDiff:
-      "مطلوب 4 مقترحات على الأقل لترتيب الأولويات.",
+    needMinimumForMaxDiff: "مطلوب 4 مقترحات على الأقل لترتيب الأولويات.",
     addOpinion: "أضف مقترحًا",
     addMaxDiffItem: "أضف عبارة",
     opinionCannotBeEmpty: "لا يمكن أن يكون المقترح فارغًا",
@@ -72,19 +71,21 @@ export const conversationReviewTranslations: Record<
     opinionDuplicate: "هذا المقترح مكرر",
     errorCreatingConversation: "خطأ أثناء محاولة إنشاء محادثة جديدة",
     githubSyncTitle: "عناصر من GitHub",
-    githubSyncDescription: "ستتم مزامنة هذه العناصر من مشكلات GitHub. لا يمكن تعديلها هنا؛ أدرها على GitHub.",
+    githubSyncDescription:
+      "ستتم مزامنة هذه العناصر من مشكلات GitHub. لا يمكن تعديلها هنا؛ أدرها على GitHub.",
     loadingGithubPreview: "جارٍ تحميل المشكلات من GitHub...",
-    noGithubIssuesFound: "لم يتم العثور على مشكلات بالتسمية المحددة. ستتم مزامنة العناصر عند إنشاء المشكلات أو إضافة التسمية إليها على GitHub.",
+    noGithubIssuesFound:
+      "لم يتم العثور على مشكلات بالتسمية المحددة. ستتم مزامنة العناصر عند إنشاء المشكلات أو إضافة التسمية إليها على GitHub.",
     githubPreviewError: "فشل تحميل المشكلات من GitHub",
     githubPreviewRetry: "إعادة المحاولة",
   },
   es: {
     nextButton: "Siguiente",
     publishButton: "Publicar",
-    addSeedOpinions: "Agregar Proposiciones Semilla",
+    addSeedOpinions: "Agregar proposiciones iniciales",
     addMaxDiffItems: "Agregar Declaraciones a Clasificar",
     seedOpinionsDescription:
-      "Se recomienda sembrar de 8 a 15 proposiciones en una gama de puntos de vista. Esto tiene un efecto poderoso en la participación temprana.",
+      "Se recomienda agregar de 8 a 15 proposiciones iniciales que cubran una variedad de puntos de vista. Esto tiene un efecto poderoso en la participación temprana.",
     maxDiffSeedDescription:
       "La priorización requiere al menos 4 declaraciones. Recomendamos de 10 a 25 para la mejor experiencia.",
     needMinimumForMaxDiff:
@@ -97,9 +98,11 @@ export const conversationReviewTranslations: Record<
     opinionDuplicate: "Esta proposición es un duplicado",
     errorCreatingConversation: "Error al intentar crear una nueva conversación",
     githubSyncTitle: "Elementos de GitHub",
-    githubSyncDescription: "Estos elementos se sincronizarán desde incidencias de GitHub. No se pueden editar aquí; gestiónalos en GitHub.",
+    githubSyncDescription:
+      "Estos elementos se sincronizarán desde incidencias de GitHub. No se pueden editar aquí; gestiónalos en GitHub.",
     loadingGithubPreview: "Cargando incidencias de GitHub...",
-    noGithubIssuesFound: "No se encontraron incidencias con la etiqueta configurada. Los elementos se sincronizarán cuando se creen incidencias o se etiqueten en GitHub.",
+    noGithubIssuesFound:
+      "No se encontraron incidencias con la etiqueta configurada. Los elementos se sincronizarán cuando se creen incidencias o se etiqueten en GitHub.",
     githubPreviewError: "No se pudieron cargar las incidencias de GitHub",
     githubPreviewRetry: "Reintentar",
   },
@@ -109,11 +112,10 @@ export const conversationReviewTranslations: Record<
     addSeedOpinions: "افزودن گزاره‌های اولیه",
     addMaxDiffItems: "افزودن گزاره‌ها برای رتبه‌بندی",
     seedOpinionsDescription:
-      "توصیه می‌شود ۸ تا ۱۵ گزاره از دیدگاه‌های مختلف اضافه کنید. این تأثیر قدرتمندی بر مشارکت اولیه دارد.",
+      "توصیه می‌شود ۸ تا ۱۵ گزاره اولیه از دیدگاه‌های مختلف اضافه کنید. این تأثیر قدرتمندی بر مشارکت اولیه دارد.",
     maxDiffSeedDescription:
       "اولویت‌بندی حداقل به ۲ گزاره نیاز دارد. برای بهترین تجربه ۱۰ تا ۲۵ عدد توصیه می‌شود.",
-    needMinimumForMaxDiff:
-      "حداقل ۲ گزاره برای اولویت‌بندی لازم است.",
+    needMinimumForMaxDiff: "حداقل ۲ گزاره برای اولویت‌بندی لازم است.",
     addOpinion: "افزودن گزاره",
     addMaxDiffItem: "افزودن گزاره",
     opinionCannotBeEmpty: "گزاره نمی‌تواند خالی باشد",
@@ -122,9 +124,11 @@ export const conversationReviewTranslations: Record<
     opinionDuplicate: "این گزاره تکراری است",
     errorCreatingConversation: "خطا هنگام ایجاد گفتگوی جدید",
     githubSyncTitle: "موارد از GitHub",
-    githubSyncDescription: "این موارد از مسائل GitHub همگام‌سازی می‌شوند. اینجا قابل ویرایش نیستند؛ آن‌ها را در GitHub مدیریت کنید.",
+    githubSyncDescription:
+      "این موارد از مسائل GitHub همگام‌سازی می‌شوند. اینجا قابل ویرایش نیستند؛ آن‌ها را در GitHub مدیریت کنید.",
     loadingGithubPreview: "در حال بارگیری مسائل از GitHub...",
-    noGithubIssuesFound: "هیچ مسئله‌ای با برچسب تنظیم‌شده یافت نشد. موارد زمانی همگام‌سازی می‌شوند که مسئله‌ها در GitHub ایجاد یا برچسب‌گذاری شوند.",
+    noGithubIssuesFound:
+      "هیچ مسئله‌ای با برچسب تنظیم‌شده یافت نشد. موارد زمانی همگام‌سازی می‌شوند که مسئله‌ها در GitHub ایجاد یا برچسب‌گذاری شوند.",
     githubPreviewError: "بارگیری مسائل از GitHub انجام نشد",
     githubPreviewRetry: "تلاش مجدد",
   },
@@ -134,32 +138,32 @@ export const conversationReviewTranslations: Record<
     addSeedOpinions: "הוספת הצהרות ראשוניות",
     addMaxDiffItems: "הוספת הצהרות לדירוג",
     seedOpinionsDescription:
-      "מומלץ להוסיף 8 עד 15 הצהרות ממגוון נקודות מבט. לכך השפעה חזקה על ההשתתפות המוקדמת.",
+      "מומלץ להוסיף 8 עד 15 הצהרות ראשוניות ממגוון נקודות מבט. לכך השפעה חזקה על ההשתתפות המוקדמת.",
     maxDiffSeedDescription:
       "תיעדוף דורש לפחות 2 הצהרות. מומלץ 10 עד 25 לחוויה הטובה ביותר.",
-    needMinimumForMaxDiff:
-      "נדרשות לפחות 2 הצהרות לתיעדוף.",
+    needMinimumForMaxDiff: "נדרשות לפחות 2 הצהרות לתיעדוף.",
     addOpinion: "הוספת הצהרה",
     addMaxDiffItem: "הוספת הצהרה",
     opinionCannotBeEmpty: "ההצהרה לא יכולה להיות ריקה",
-    opinionExceedsLimit:
-      "ההצהרה חורגת ממגבלת {limit} תווים ({count}/{limit})",
+    opinionExceedsLimit: "ההצהרה חורגת ממגבלת {limit} תווים ({count}/{limit})",
     opinionDuplicate: "הצהרה זו כפולה",
     errorCreatingConversation: "שגיאה בעת ניסיון ליצור שיחה חדשה",
     githubSyncTitle: "פריטים מ-GitHub",
-    githubSyncDescription: "הפריטים האלה יסונכרנו מבעיות GitHub. אי אפשר לערוך אותם כאן; נהלו אותם ב-GitHub.",
+    githubSyncDescription:
+      "הפריטים האלה יסונכרנו מבעיות GitHub. אי אפשר לערוך אותם כאן; נהלו אותם ב-GitHub.",
     loadingGithubPreview: "טוען בעיות מ-GitHub...",
-    noGithubIssuesFound: "לא נמצאו בעיות עם התווית שהוגדרה. הפריטים יסונכרנו כשבעיות ייווצרו או יסומנו ב-GitHub.",
+    noGithubIssuesFound:
+      "לא נמצאו בעיות עם התווית שהוגדרה. הפריטים יסונכרנו כשבעיות ייווצרו או יסומנו ב-GitHub.",
     githubPreviewError: "טעינת בעיות מ-GitHub נכשלה",
     githubPreviewRetry: "נסה שוב",
   },
   fr: {
     nextButton: "Suivant",
     publishButton: "Publier",
-    addSeedOpinions: "Ajouter des Propositions Initiales",
+    addSeedOpinions: "Ajouter des propositions initiales",
     addMaxDiffItems: "Ajouter les Propositions à Classer",
     seedOpinionsDescription:
-      "Il est recommandé de semer 8 à 15 propositions à travers une gamme de points de vue. Cela a un effet puissant sur la participation précoce.",
+      "Il est recommandé d'ajouter 8 à 15 propositions initiales couvrant un éventail de points de vue. Cela a un effet puissant sur la participation précoce.",
     maxDiffSeedDescription:
       "La hiérarchisation nécessite au moins 4 propositions. Nous recommandons 10 à 25 pour une meilleure expérience.",
     needMinimumForMaxDiff:
@@ -173,82 +177,87 @@ export const conversationReviewTranslations: Record<
     errorCreatingConversation:
       "Erreur lors de la tentative de création d'une nouvelle conversation",
     githubSyncTitle: "Éléments depuis GitHub",
-    githubSyncDescription: "Ces éléments seront synchronisés depuis les tickets GitHub. Ils ne peuvent pas être modifiés ici; gérez-les sur GitHub.",
+    githubSyncDescription:
+      "Ces éléments seront synchronisés depuis les tickets GitHub. Ils ne peuvent pas être modifiés ici; gérez-les sur GitHub.",
     loadingGithubPreview: "Chargement des tickets GitHub...",
-    noGithubIssuesFound: "Aucun ticket trouvé avec le libellé configuré. Les éléments seront synchronisés lorsque des tickets seront créés ou étiquetés sur GitHub.",
+    noGithubIssuesFound:
+      "Aucun ticket trouvé avec le libellé configuré. Les éléments seront synchronisés lorsque des tickets seront créés ou étiquetés sur GitHub.",
     githubPreviewError: "Impossible de charger les tickets GitHub",
     githubPreviewRetry: "Réessayer",
   },
   "zh-Hans": {
     nextButton: "下一步",
     publishButton: "发布",
-    addSeedOpinions: "添加种子观点",
-    addMaxDiffItems: "添加待排名的陈述",
+    addSeedOpinions: "添加初始观点",
+    addMaxDiffItems: "添加待排名的观点",
     seedOpinionsDescription:
-      "建议在不同观点范围内播种8到15个观点。这会对早期参与产生强大的影响。",
+      "建议添加8到15个涵盖不同立场的初始观点。这会对早期参与产生强大的影响。",
     maxDiffSeedDescription:
-      "优先排序至少需要4条陈述。我们建议10至25条以获得最佳体验。",
-    needMinimumForMaxDiff:
-      "优先排序至少需要4条陈述。",
+      "优先排序至少需要2条观点。我们建议10至25条以获得最佳体验。",
+    needMinimumForMaxDiff: "优先排序至少需要2条观点。",
     addOpinion: "添加观点",
-    addMaxDiffItem: "添加陈述",
+    addMaxDiffItem: "添加观点",
     opinionCannotBeEmpty: "观点不能为空",
     opinionExceedsLimit: "观点超过 {limit} 字符限制 ({count}/{limit})",
     opinionDuplicate: "观点重复",
     errorCreatingConversation: "创建新对话时出错",
     githubSyncTitle: "来自 GitHub 的项目",
-    githubSyncDescription: "这些项目将从 GitHub issue 同步。它们无法在此处编辑，请在 GitHub 上管理。",
+    githubSyncDescription:
+      "这些项目将从 GitHub issue 同步。它们无法在此处编辑，请在 GitHub 上管理。",
     loadingGithubPreview: "正在从 GitHub 加载 issue...",
-    noGithubIssuesFound: "未找到带有已配置标签的 issue。创建 issue 或在 GitHub 上添加标签后，项目将同步。",
+    noGithubIssuesFound:
+      "未找到带有已配置标签的 issue。创建 issue 或在 GitHub 上添加标签后，项目将同步。",
     githubPreviewError: "无法从 GitHub 加载 issue",
     githubPreviewRetry: "重试",
   },
   "zh-Hant": {
     nextButton: "下一步",
     publishButton: "發布",
-    addSeedOpinions: "添加種子觀點",
-    addMaxDiffItems: "添加待排名的陳述",
+    addSeedOpinions: "添加初始觀點",
+    addMaxDiffItems: "添加待排名的觀點",
     seedOpinionsDescription:
-      "建議在不同觀點範圍內播種8到15個觀點。這會對早期參與產生強大的影響。",
+      "建議添加8到15個涵蓋不同立場的初始觀點。這會對早期參與產生強大的影響。",
     maxDiffSeedDescription:
-      "優先排序至少需要4條陳述。我們建議10至25條以獲得最佳體驗。",
-    needMinimumForMaxDiff:
-      "優先排序至少需要4條陳述。",
+      "優先排序至少需要2條觀點。我們建議10至25條以獲得最佳體驗。",
+    needMinimumForMaxDiff: "優先排序至少需要2條觀點。",
     addOpinion: "添加觀點",
-    addMaxDiffItem: "添加陳述",
+    addMaxDiffItem: "添加觀點",
     opinionCannotBeEmpty: "觀點不能為空",
     opinionExceedsLimit: "觀點超過 {limit} 字符限制 ({count}/{limit})",
     opinionDuplicate: "觀點重複",
     errorCreatingConversation: "創建新對話時出錯",
     githubSyncTitle: "來自 GitHub 的項目",
-    githubSyncDescription: "這些項目會從 GitHub issue 同步。它們無法在此處編輯，請在 GitHub 上管理。",
+    githubSyncDescription:
+      "這些項目會從 GitHub issue 同步。它們無法在此處編輯，請在 GitHub 上管理。",
     loadingGithubPreview: "正在從 GitHub 載入 issue...",
-    noGithubIssuesFound: "未找到帶有已設定標籤的 issue。建立 issue 或在 GitHub 上新增標籤後，項目會同步。",
+    noGithubIssuesFound:
+      "未找到帶有已設定標籤的 issue。建立 issue 或在 GitHub 上新增標籤後，項目會同步。",
     githubPreviewError: "無法從 GitHub 載入 issue",
     githubPreviewRetry: "重試",
   },
   ja: {
     nextButton: "次へ",
     publishButton: "公開",
-    addSeedOpinions: "主張の種を追加",
-    addMaxDiffItems: "ランク付けするステートメントを追加",
+    addSeedOpinions: "初期の意見を追加",
+    addMaxDiffItems: "ランク付けする意見を追加",
     seedOpinionsDescription:
-      "様々な視点からで8から15個の主張を投稿（種植え）することをお勧めします。これは初期段階の参加に強力な効果をもたらします。",
+      "様々な視点から8〜15個の初期の意見を追加することをお勧めします。これは初期段階の参加に大きな効果をもたらします。",
     maxDiffSeedDescription:
-      "優先順位付けには少なくとも4つのステートメントが必要です。最良の体験のために10〜25を推奨します。",
-    needMinimumForMaxDiff:
-      "優先順位付けには少なくとも4つのステートメントが必要です。",
-    addOpinion: "主張を追加",
-    addMaxDiffItem: "ステートメントを追加",
-    opinionCannotBeEmpty: "主張を入力してください",
+      "優先順位付けには少なくとも2つの意見が必要です。最良の体験のために10〜25個を推奨します。",
+    needMinimumForMaxDiff: "優先順位付けには少なくとも2つの意見が必要です。",
+    addOpinion: "意見を追加",
+    addMaxDiffItem: "意見を追加",
+    opinionCannotBeEmpty: "意見を入力してください",
     opinionExceedsLimit:
-      "主張が {limit} 文字制限を超えています ({count}/{limit})",
-    opinionDuplicate: "この主張は重複しています",
+      "意見が {limit} 文字制限を超えています ({count}/{limit})",
+    opinionDuplicate: "この意見は重複しています",
     errorCreatingConversation: "新しい会話を作成する際にエラーが発生しました",
     githubSyncTitle: "GitHub の項目",
-    githubSyncDescription: "これらの項目は GitHub Issues から同期されます。ここでは編集できません。GitHub で管理してください。",
+    githubSyncDescription:
+      "これらの項目は GitHub Issues から同期されます。ここでは編集できません。GitHub で管理してください。",
     loadingGithubPreview: "GitHub Issues を読み込み中...",
-    noGithubIssuesFound: "設定されたラベルの Issue は見つかりませんでした。Issue が作成されるか GitHub でラベル付けされると項目が同期されます。",
+    noGithubIssuesFound:
+      "設定されたラベルの Issue は見つかりませんでした。Issue が作成されるか GitHub でラベル付けされると項目が同期されます。",
     githubPreviewError: "GitHub Issues を読み込めませんでした",
     githubPreviewRetry: "再試行",
   },
@@ -258,11 +267,10 @@ export const conversationReviewTranslations: Record<
     addSeedOpinions: "Баштапкы пикирлерди кошуу",
     addMaxDiffItems: "Рейтингге билдирүүлөрдү кошуу",
     seedOpinionsDescription:
-      "Ар кандай көз караштардан 8ден 15ке чейин пикир кошуу сунушталат. Бул эрте катышууга күчтүү таасир тийгизет.",
+      "Ар кандай көз караштардан 8ден 15ке чейин баштапкы пикир кошуу сунушталат. Бул эрте катышууга күчтүү таасир тийгизет.",
     maxDiffSeedDescription:
       "Артыкчылыктуу кылуу үчүн кеминде 4 билдирүү керек. Эң жакшы тажрыйба үчүн 10-25 сунушталат.",
-    needMinimumForMaxDiff:
-      "Артыкчылыктуу кылуу үчүн кеминде 4 билдирүү керек.",
+    needMinimumForMaxDiff: "Артыкчылыктуу кылуу үчүн кеминде 4 билдирүү керек.",
     addOpinion: "Пикир кошуу",
     addMaxDiffItem: "Билдирүү кошуу",
     opinionCannotBeEmpty: "Пикир бош болушу мүмкүн эмес",
@@ -271,9 +279,11 @@ export const conversationReviewTranslations: Record<
     opinionDuplicate: "Бул пикир кайталанган",
     errorCreatingConversation: "Жаңы талкуу түзүүдө ката кетти",
     githubSyncTitle: "GitHub'дан элементтер",
-    githubSyncDescription: "Бул элементтер GitHub маселелеринен синхрондолот. Бул жерден түзөтө албайсыз; аларды GitHub'да башкарыңыз.",
+    githubSyncDescription:
+      "Бул элементтер GitHub маселелеринен синхрондолот. Бул жерден түзөтө албайсыз; аларды GitHub'да башкарыңыз.",
     loadingGithubPreview: "GitHub маселелери жүктөлүүдө...",
-    noGithubIssuesFound: "Көрсөтүлгөн энбелги менен маселелер табылган жок. Маселелер GitHub'да түзүлгөндө же энбелги коюлганда элементтер синхрондолот.",
+    noGithubIssuesFound:
+      "Көрсөтүлгөн энбелги менен маселелер табылган жок. Маселелер GitHub'да түзүлгөндө же энбелги коюлганда элементтер синхрондолот.",
     githubPreviewError: "GitHub маселелерин жүктөө ишке ашкан жок",
     githubPreviewRetry: "Кайра аракет кылуу",
   },
@@ -283,7 +293,7 @@ export const conversationReviewTranslations: Record<
     addSeedOpinions: "Добавить начальные высказывания",
     addMaxDiffItems: "Добавить утверждения для ранжирования",
     seedOpinionsDescription:
-      "Рекомендуется добавить от 8 до 15 высказываний с разных точек зрения. Это значительно стимулирует раннее участие.",
+      "Рекомендуется добавить от 8 до 15 начальных высказываний с разных точек зрения. Это значительно стимулирует раннее участие.",
     maxDiffSeedDescription:
       "Для приоритизации необходимо минимум 4 высказывания. Рекомендуем 10-25 для лучшего опыта.",
     needMinimumForMaxDiff:
@@ -296,9 +306,11 @@ export const conversationReviewTranslations: Record<
     opinionDuplicate: "Это высказывание дублируется",
     errorCreatingConversation: "Ошибка при создании нового обсуждения",
     githubSyncTitle: "Элементы из GitHub",
-    githubSyncDescription: "Эти элементы будут синхронизироваться из задач GitHub. Здесь их нельзя редактировать; управляйте ими в GitHub.",
+    githubSyncDescription:
+      "Эти элементы будут синхронизироваться из задач GitHub. Здесь их нельзя редактировать; управляйте ими в GitHub.",
     loadingGithubPreview: "Загрузка задач из GitHub...",
-    noGithubIssuesFound: "Задачи с настроенной меткой не найдены. Элементы будут синхронизированы, когда задачи будут созданы или помечены в GitHub.",
+    noGithubIssuesFound:
+      "Задачи с настроенной меткой не найдены. Элементы будут синхронизированы, когда задачи будут созданы или помечены в GitHub.",
     githubPreviewError: "Не удалось загрузить задачи из GitHub",
     githubPreviewRetry: "Повторить",
   },

@@ -193,7 +193,7 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     singleIdeaExampleGood: "网约车司机应该与出租车司机有相同的保险要求",
     singleIdeaExampleBad: "应该禁止优步，出租车需要更好的应用程序和评级系统",
     easyVoteTitle: "易于同意/不同意",
-    easyVoteDescription: "避免复杂或多部分的陈述",
+    easyVoteDescription: "避免复杂或多部分的观点",
     easyVoteExampleGood: "社交媒体公司应该对其平台上的错误信息负责",
     easyVoteExampleBad: "社交媒体监管很复杂，取决于各种因素和文化背景",
     keepBriefTitle: "保持简短",
@@ -218,7 +218,7 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     singleIdeaExampleGood: "網約車司機應該與計程車司機有相同的保險要求",
     singleIdeaExampleBad: "應該禁止優步，計程車需要更好的應用程式和評級系統",
     easyVoteTitle: "易於同意/不同意",
-    easyVoteDescription: "避免複雜或多部分的陳述",
+    easyVoteDescription: "避免複雜或多部分的觀點",
     easyVoteExampleGood: "社群媒體公司應該對其平台上的錯誤資訊負責",
     easyVoteExampleBad: "社群媒體監管很複雜，取決於各種因素和文化背景",
     keepBriefTitle: "保持簡短",
@@ -261,7 +261,7 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     dontCombineExampleGood2: "שכר לימוד אקדמי צריך להיות חינם",
   },
   ja: {
-    title: "良い主張を書くためのヒント",
+    title: "良い意見を書くためのヒント",
     singleIdeaTitle: "1つの具体的なアイデア",
     singleIdeaDescription: "他の人が投票できる単一のポイントに焦点を当てる",
     singleIdeaExampleGood:
@@ -269,7 +269,7 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     singleIdeaExampleBad:
       "Uberは禁止すべきで、タクシーにはより良いアプリと評価システムが必要です",
     easyVoteTitle: "賛成/反対しやすい",
-    easyVoteDescription: "複雑な、または複数の部分から成る声明を避ける",
+    easyVoteDescription: "複雑な、または複数の部分から成る意見を避ける",
     easyVoteExampleGood:
       "ソーシャルメディア企業は、プラットフォーム上の誤情報に対して責任を負うべきです",
     easyVoteExampleBad:
@@ -286,7 +286,7 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
       "テレワークのパラダイムは組織のダイナミクスの再考を必要とします",
     dontCombineTitle: "組み合わせない",
     dontCombineDescription:
-      "「AとB」を別々の主張に分割して、より明確な投票を実現する",
+      "「AとB」を別々の意見に分割して、より明確な投票を実現する",
     dontCombineExampleBad: "普遍的な医療と無料の大学授業料が必要です",
     dontCombineExampleGood1: "医療はサービスポイントで無料であるべきです",
     dontCombineExampleGood2: "大学の授業料は無料であるべきです",

@@ -125,7 +125,7 @@ export const reportContentDialogTranslations: Record<
     skipButton: "スキップ",
     submitButton: "送信",
     reportTypeConversation: "会話",
-    reportTypeOpinion: "主張",
+    reportTypeOpinion: "意見",
   },
   ky: {
     submitReportTitle: "Кабар жөнөтүү",

@@ -79,7 +79,7 @@ export const eventTicketRequirementDialogTranslations: Record<
       "イベントチケットの検証なしで誰でも参加できます",
     requiresEventTicketTitle: "イベントチケットが必要",
     requiresEventTicketDescription:
-      "検証済みのイベントチケット保有者のみが投票と主張の投稿ができます",
+      "検証済みのイベントチケット保有者のみが投票と意見の投稿ができます",
   },
   ky: {
     noVerificationTitle: "Текшерүү талап кылынбайт",

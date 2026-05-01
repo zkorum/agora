@@ -78,9 +78,9 @@ export const opinionGroupCommentsTranslations: Record<
     allOtherGroups: "כל הקבוצות האחרות",
   },
   ja: {
-    opinionsTitle: "主張",
-    opinionsTitleLong: "代表的な主張",
-    noOpinionsMessage: "このグループには主張がありません。",
+    opinionsTitle: "意見",
+    opinionsTitleLong: "代表的な意見",
+    noOpinionsMessage: "このグループには意見がありません。",
     thisGroup: "このグループ",
     allOthers: "すべての他の",
     allOtherGroups: "すべての他のグループ",

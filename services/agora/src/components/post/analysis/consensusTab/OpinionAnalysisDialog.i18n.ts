@@ -87,13 +87,13 @@ export const opinionAnalysisDialogTranslations: Record<
     viewOriginal: "צפייה בהצהרה המקורית",
   },
   ja: {
-    title: "主張の分析",
+    title: "意見の分析",
     agree: "同意",
     pass: "わからない",
     disagree: "同意しない",
     total: "合計",
     noGroup: "グループなし",
-    viewOriginal: "元の主張を見る",
+    viewOriginal: "元の意見を見る",
   },
   ky: {
     title: "Пикир анализи",

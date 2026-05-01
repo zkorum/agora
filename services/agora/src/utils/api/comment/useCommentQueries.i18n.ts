@@ -40,9 +40,9 @@ export const useCommentQueriesTranslations: Record<
     failedToDeleteComment: "删除观点失败。请重试。",
   },
   ja: {
-    commentDeletedSuccessfully: "主張を正常に削除しました",
+    commentDeletedSuccessfully: "意見を正常に削除しました",
     failedToDeleteComment:
-      "主張の削除に失敗しました。もう一度お試しください。",
+      "意見の削除に失敗しました。もう一度お試しください。",
   },
   ar: {
     commentDeletedSuccessfully: "تم حذف المقترح بنجاح",

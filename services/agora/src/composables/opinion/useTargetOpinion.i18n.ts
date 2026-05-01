@@ -33,7 +33,7 @@ export const useTargetOpinionTranslations: Record<
     statementNotFound: "無法找到請求的觀點。",
   },
   ja: {
-    statementNotFound: "リクエストされた主張が見つかりませんでした。",
+    statementNotFound: "リクエストされた意見が見つかりませんでした。",
   },
   ky: {
     statementNotFound: "Суралган пикир табылган жок.",

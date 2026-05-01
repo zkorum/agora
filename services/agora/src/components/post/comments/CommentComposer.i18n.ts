@@ -145,17 +145,17 @@ export const commentComposerTranslations: Record<
     validationWarningMultipleIdeas: "טיפ: ייתכן שזה מכיל מספר רעיונות — ודאו שהמצביעים יכולים להסכים או לא להסכים בבירור",
   },
   ja: {
-    placeholder: "あなたの主張を追加",
+    placeholder: "あなたの意見を追加",
     placeholderExpanded: "賛成または反対しやすい単一の論点に焦点を当てる",
     postButton: "投稿",
-    conversationLockedError: "会話がロックされているため、主張を作成できません",
+    conversationLockedError: "会話がロックされているため、意見を作成できません",
     conversationClosedError:
       "この会話は終了しました",
-    createOpinionError: "新しい主張を作成しようとした際にエラーが発生しました",
+    createOpinionError: "新しい意見を作成しようとした際にエラーが発生しました",
     eventTicketRequiredTitle: "イベントチケットが必要",
     eventTicketRequiredMessage:
       "この会話に参加するには、Devconnect 2025 チケットを確認する必要があります。",
-    exitPromptTitle: "主張を下書きとして保存しますか？",
+    exitPromptTitle: "意見を下書きとして保存しますか？",
     exitPromptDescription: "下書きは戻ったときにここにあります。",
     validationWarningMultipleIdeas:
       "ヒント：これには複数のアイデアが含まれている可能性があります - 投票者が明確に賛成または反対できることを確認してください",

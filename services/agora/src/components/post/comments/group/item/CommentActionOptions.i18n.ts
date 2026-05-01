@@ -42,7 +42,7 @@ export const commentActionOptionsTranslations: Record<
     copiedToClipboard: "הקישור הועתק ללוח",
   },
   ja: {
-    agoraOpinion: "Agora 主張",
+    agoraOpinion: "Agora 意見",
     copiedToClipboard: "リンクをクリップボードにコピーしました",
   },
   ky: {

@@ -58,9 +58,9 @@ export const postLockedMessageTranslations: Record<
   },
   ja: {
     lockedMessage:
-      "投稿が「{reason}」によってロックされています。新しい主張を投稿できません。",
+      "投稿が「{reason}」によってロックされています。新しい意見を投稿できません。",
     closedMessage:
-      "この会話はオーナーによって閉じられました。新しい主張や投票を投稿できません。",
+      "この会話はオーナーによって閉じられました。新しい意見や投票を投稿できません。",
     editButton: "編集",
   },
   ky: {

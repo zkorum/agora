@@ -84,7 +84,7 @@ export const clusterInformationDialogTranslations: Record<
   ja: {
     title: "合意形成グループ",
     description1:
-      "合意形成グループは、人々が主張に対して同意しているか、同意していないかに基づいて作成されます。",
+      "合意形成グループは、人々が意見に対して同意しているか、同意していないかに基づいて作成されます。",
     description2:
       "我々は機械学習を使用して、異なる思想流派を識別します。これは、 Computational Democracy によって開発されたオープンソースの wiki 調査ツール pol.is によって使用されるのと同じアルゴリズムです。",
     description3:

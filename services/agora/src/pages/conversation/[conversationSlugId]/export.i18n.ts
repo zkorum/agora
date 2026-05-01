@@ -183,7 +183,7 @@ export const exportPageTranslations: Record<
   ja: {
     pageTitle: "会話をエクスポート",
     pageDescription:
-      "この会話のすべての主張と投票のCSVエクスポートをダウンロードします。",
+      "この会話のすべての意見と投票のCSVエクスポートをダウンロードします。",
     previousExports: "以前のエクスポート",
     conversationLoadError:
       "会話の詳細を読み込めませんでした。もう一度お試しください。",
@@ -199,7 +199,7 @@ export const exportPageTranslations: Record<
       "エクスポートはすでに進行中です。完了するまでお待ちください。",
     errorConversationNotFound: "会話が見つかりません",
     errorNoOpinions:
-      "この会話にはエクスポートする主張がありません。まず主張を追加してください。",
+      "この会話にはエクスポートする意見がありません。まず意見を追加してください。",
     exportFeatureDisabled: "エクスポート機能は無効です",
   },
   ky: {

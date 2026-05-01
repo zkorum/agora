@@ -421,12 +421,12 @@ export const editSurveyTranslations: Record<
     saveButton: "アンケートを保存",
     deleteButton: "アンケートを削除",
     title: "アンケートを編集",
-    description: "参加者がステートメントに投票したり新しいステートメントを作成したりする前に表示されるアンケート手順を設定します。",
+    description: "参加者が意見に投票したり新しい意見を作成したりする前に表示されるアンケート手順を設定します。",
     optionalSurveyToggleLabel: "参加者がアンケートをスキップできるようにする",
     optionalSurveyToggleHint:
-      "アンケート手順はスキップできます。参加者はアンケートに回答せずに投票やステートメント作成ができ、その投票は常に分析に含まれ、質問の必須設定は無視されます。",
+      "アンケート手順はスキップできます。参加者はアンケートに回答せずに投票や意見の作成ができ、その投票は常に分析に含まれ、質問の必須設定は無視されます。",
     requiredSurveyToggleHint:
-      "アンケートがある場合、アンケート手順は必須です。一部またはすべての質問が任意でも、参加者は投票やステートメント作成の前にこの手順を通る必要があります。この手順を完了した参加者の投票のみが分析に含まれます。",
+      "アンケートがある場合、アンケート手順は必須です。一部またはすべての質問が任意でも、参加者は投票や意見の作成の前にこの手順を通る必要があります。この手順を完了した参加者の投票のみが分析に含まれます。",
     questionRequirementDisabledHint:
       "アンケート手順をスキップできるため、この質問は任意として扱われます。",
     loadError: "アンケート設定を読み込めませんでした。",
@@ -434,7 +434,7 @@ export const editSurveyTranslations: Record<
     saveError: "アンケート設定を保存できませんでした。",
     deleteError: "アンケートを削除できませんでした。",
     confirmDeleteMessage: "この会話からアンケートを削除しますか？",
-    changeSummaryTitle: "変更概要",
+    changeSummaryTitle: "変更サマリー",
     addedQuestions: "追加された質問: {count}",
     removedQuestions: "削除された質問: {count}",
     updatedQuestions: "更新された質問: {count}",
@@ -595,12 +595,12 @@ export const editSurveyTranslations: Record<
     saveButton: "保存问卷",
     deleteButton: "删除问卷",
     title: "编辑问卷",
-    description: "配置参与者投票或创建陈述前看到的问卷步骤。",
+    description: "配置参与者投票或创建观点前看到的问卷步骤。",
     optionalSurveyToggleLabel: "允许参与者跳过问卷",
     optionalSurveyToggleHint:
-      "问卷步骤可以跳过。参与者无需回答问卷即可投票或创建陈述；他们的投票始终会计入分析，问题的必答设置会被忽略。",
+      "问卷步骤可以跳过。参与者无需回答问卷即可投票或创建观点；他们的投票始终会计入分析，问题的必答设置会被忽略。",
     requiredSurveyToggleHint:
-      "如果存在问卷，问卷步骤为必需。即使部分或全部问题都是可选的，参与者也必须先经过它，才能投票或创建陈述。只有完成此步骤的参与者投票会计入分析。",
+      "如果存在问卷，问卷步骤为必需。即使部分或全部问题都是可选的，参与者也必须先经过它，才能投票或创建观点。只有完成此步骤的参与者投票会计入分析。",
     questionRequirementDisabledHint:
       "由于问卷步骤可以跳过，此问题会被视为可选。",
     loadError: "无法加载问卷设置。",
@@ -608,7 +608,7 @@ export const editSurveyTranslations: Record<
     saveError: "无法保存问卷设置。",
     deleteError: "无法删除问卷。",
     confirmDeleteMessage: "要从这场对话中删除这份问卷吗？",
-    changeSummaryTitle: "变更摘要",
+    changeSummaryTitle: "变更总结",
     addedQuestions: "新增问题：{count}",
     removedQuestions: "删除问题：{count}",
     updatedQuestions: "更新问题：{count}",
@@ -653,12 +653,12 @@ export const editSurveyTranslations: Record<
     saveButton: "儲存問卷",
     deleteButton: "刪除問卷",
     title: "編輯問卷",
-    description: "設定參與者投票或建立陳述前看到的問卷步驟。",
+    description: "設定參與者投票或創建觀點前看到的問卷步驟。",
     optionalSurveyToggleLabel: "允許參與者跳過問卷",
     optionalSurveyToggleHint:
-      "問卷步驟可以跳過。參與者無需回答問卷即可投票或建立陳述；他們的投票一律會計入分析，問題的必答設定會被忽略。",
+      "問卷步驟可以跳過。參與者無需回答問卷即可投票或創建觀點；他們的投票一律會計入分析，問題的必答設定會被忽略。",
     requiredSurveyToggleHint:
-      "如果存在問卷，問卷步驟為必需。即使部分或全部問題都是可選的，參與者也必須先經過它，才能投票或建立陳述。只有完成此步驟的參與者投票會計入分析。",
+      "如果存在問卷，問卷步驟為必需。即使部分或全部問題都是可選的，參與者也必須先經過它，才能投票或創建觀點。只有完成此步驟的參與者投票會計入分析。",
     questionRequirementDisabledHint:
       "由於問卷步驟可以跳過，此問題會被視為可選。",
     loadError: "無法載入問卷設定。",
@@ -666,7 +666,7 @@ export const editSurveyTranslations: Record<
     saveError: "無法儲存問卷設定。",
     deleteError: "無法刪除問卷。",
     confirmDeleteMessage: "要從這場對話中刪除這份問卷嗎？",
-    changeSummaryTitle: "變更摘要",
+    changeSummaryTitle: "變更總結",
     addedQuestions: "新增問題：{count}",
     removedQuestions: "刪除問題：{count}",
     updatedQuestions: "更新問題：{count}",
