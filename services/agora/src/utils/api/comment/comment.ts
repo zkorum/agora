@@ -18,6 +18,7 @@ import type {
 } from "src/shared/types/zod";
 import { zodOpinionItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import { shouldHideGroupAnalysis } from "src/utils/component/opinion";
 
 import { useBackendAuthApi } from "../auth";
 import { api } from "../client";
@@ -213,6 +214,7 @@ export function useBackendCommentApi() {
     consensusDisagree: AnalysisOpinionItem[];
     controversial: AnalysisOpinionItem[];
     polisClusters: Partial<PolisClusters>;
+    hasVotedOnAllAvailableOpinions?: boolean;
   }> {
     let data: ApiV1OpinionFetchAnalysisByConversationPost200Response;
     // Use authenticated endpoint only if auth is initialized AND user is logged in/guest
@@ -248,12 +250,15 @@ export function useBackendCommentApi() {
 
     // Use zod to parse and validate - zodDateTimeFlexible handles date conversion automatically
     const parsedData = Dto.fetchAnalysisResponse.parse(data);
+    const polisClusters = parsedData.clusters ?? {};
+    const hideGroupAnalysis = shouldHideGroupAnalysis(polisClusters);
 
     return {
-      consensusAgree: parsedData.consensusAgree,
-      consensusDisagree: parsedData.consensusDisagree,
-      controversial: parsedData.controversial,
-      polisClusters: parsedData.clusters ?? {},
+      consensusAgree: hideGroupAnalysis ? [] : parsedData.consensusAgree,
+      consensusDisagree: hideGroupAnalysis ? [] : parsedData.consensusDisagree,
+      controversial: hideGroupAnalysis ? [] : parsedData.controversial,
+      polisClusters: hideGroupAnalysis ? {} : polisClusters,
+      hasVotedOnAllAvailableOpinions: parsedData.hasVotedOnAllAvailableOpinions,
     };
   }
 

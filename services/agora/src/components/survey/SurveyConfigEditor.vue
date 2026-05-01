@@ -3,14 +3,8 @@
     <div class="survey-config-editor__intro-card">
       <div class="survey-config-editor__title">{{ texts.title }}</div>
       <div class="survey-config-editor__description">{{ texts.description }}</div>
-      <q-toggle
-        v-if="hasSurveyQuestions"
-        :model-value="isSurveyOptional"
-        :label="texts.optionalSurveyToggleLabel"
-        @update:model-value="(value) => updateSurveyOptional({ isOptional: value })"
-      />
       <div v-if="hasSurveyQuestions" class="survey-config-editor__description">
-        {{ isSurveyOptional ? texts.optionalSurveyToggleHint : texts.requiredSurveyToggleHint }}
+        {{ texts.requiredSurveyToggleHint }}
       </div>
     </div>
 
@@ -38,7 +32,7 @@
               {{ texts.questionTitle({ number: questionIndex + 1 }) }}
             </div>
             <div class="survey-config-editor__description">
-              {{ isSurveyOptional || !question.isRequired ? texts.optionalLabel : texts.requiredLabel }}
+              {{ !question.isRequired ? texts.optionalLabel : texts.requiredLabel }}
             </div>
           </div>
 
@@ -97,14 +91,10 @@
         </div>
 
         <q-toggle
-          :model-value="isSurveyOptional ? false : question.isRequired"
-          :disable="isSurveyOptional"
-          :label="isSurveyOptional || !question.isRequired ? texts.optionalLabel : texts.requiredLabel"
+          :model-value="question.isRequired"
+          :label="!question.isRequired ? texts.optionalLabel : texts.requiredLabel"
           @update:model-value="(value) => updateQuestionRequired({ questionIndex, isRequired: value })"
         />
-        <div v-if="isSurveyOptional" class="survey-config-editor__help">
-          {{ texts.questionRequirementDisabledHint }}
-        </div>
 
         <div v-if="question.questionType === 'choice'" class="survey-config-editor__constraints-grid">
           <q-input
@@ -338,8 +328,6 @@ import { computed, nextTick, ref } from "vue";
 interface SurveyConfigEditorTexts {
   title: string;
   description: string;
-  optionalSurveyToggleLabel: string;
-  optionalSurveyToggleHint: string;
   requiredSurveyToggleHint: string;
   noQuestionsTitle: string;
   noQuestionsDescription: string;
@@ -355,7 +343,6 @@ interface SurveyConfigEditorTexts {
   choiceDisplayList: string;
   choiceDisplayDropdown: string;
   questionPromptLabel: string;
-  questionRequirementDisabledHint: string;
   minSelectionsLabel: string;
   maxSelectionsLabel: string;
   minTextLengthLabel: string;
@@ -427,9 +414,6 @@ const surveyQuestions = computed(() => {
 const hasSurveyQuestions = computed(() => {
   return surveyQuestions.value.length > 0;
 });
-const isSurveyOptional = computed(() => {
-  return surveyConfig.value?.isOptional === true;
-});
 const questionTypeOptions = computed<Array<{ label: string; value: SurveyQuestionType }>>(
   () => [
     { label: props.texts.typeChoice, value: "choice" },
@@ -485,21 +469,6 @@ const removeDialogConfirmText = computed(() => {
 
 function clearSurveyValidationError(): void {
   emit("clearValidationError");
-}
-
-function ensureSurveyConfig(): void {
-  if (surveyConfig.value === null) {
-    surveyConfig.value = { isOptional: false, questions: [] };
-  }
-}
-
-function updateSurveyOptional({ isOptional }: { isOptional: boolean | null }): void {
-  ensureSurveyConfig();
-  if (surveyConfig.value === null) {
-    return;
-  }
-
-  surveyConfig.value.isOptional = isOptional === true;
 }
 
 function addQuestion(): void {

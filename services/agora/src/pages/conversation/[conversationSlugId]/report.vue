@@ -93,7 +93,7 @@
                 :total-vote-count="
                   conversationQuery.data.value.metadata.totalVoteCount
                 "
-                :clusters="analysisQuery.data.value?.polisClusters ?? {}"
+                :clusters="polisClusters"
                 :agreement-items="agreementItems"
                 :disagreement-items="disagreementItems"
                 :divisive-items="divisiveItems"
@@ -120,6 +120,7 @@ import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useReportDownload } from "src/composables/report/useReportDownload";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { PolisClusters } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
@@ -186,6 +187,14 @@ const surveyResultsQuery = useSurveyResultsAggregatedQuery({
 
 const surveyDisplayMode = ref<SurveyResultsDisplayMode>("suppressed");
 
+const polisClusters = computed<Partial<PolisClusters>>(
+  () => analysisQuery.data.value?.polisClusters ?? {}
+);
+
+const hasGroupAnalysis = computed(
+  () => Object.keys(polisClusters.value).length >= 2
+);
+
 const showSurveyToggle = computed(
   () =>
     surveyResultsQuery.data.value?.hasSurvey === true &&
@@ -196,7 +205,7 @@ const reportSurveyRows = computed(() =>
   getDisplayedSurveyRows({
     surveyResults: surveyResultsQuery.data.value,
     displayMode: surveyDisplayMode.value,
-  })
+  }).filter((row) => hasGroupAnalysis.value || row.scope === "overall")
 );
 
 watch(

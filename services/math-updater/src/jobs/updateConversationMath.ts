@@ -134,7 +134,11 @@ export async function updateConversationMathHandler(
         // Reconcile conversation counters (safety net)
         // This ensures opinionCount, voteCount, and participantCount are accurate
         // before calculating math, in case of any drift from real-time updates
-        await reconcileConversationCounters({ db, conversationId });
+        await reconcileConversationCounters({
+            db,
+            conversationId,
+            enqueueMathUpdateAfterReconcile: false,
+        });
 
         log.info(
             `[Math Updater] Reconciled conversation counters for conversation ${conversationSlugId}`,
@@ -189,7 +193,10 @@ export async function updateConversationMathHandler(
                         requestedAtDate,
                     ), // Must match!
                 ),
-            );
+            )
+            .returning({
+                conversationId: conversationUpdateQueueTable.conversationId,
+            });
 
         if (processedResult.length > 0) {
             log.info(

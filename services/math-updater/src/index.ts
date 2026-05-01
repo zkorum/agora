@@ -16,6 +16,24 @@ import pLimit from "p-limit";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { sql } from "drizzle-orm";
 
+function installFatalProcessHandlers(): void {
+    process.on("uncaughtException", (error) => {
+        log.error(
+            error,
+            "[Math Updater] Uncaught exception; exiting for container restart",
+        );
+        process.exit(1);
+    });
+
+    process.on("unhandledRejection", (reason) => {
+        log.error(
+            reason,
+            "[Math Updater] Unhandled promise rejection; exiting for container restart",
+        );
+        process.exit(1);
+    });
+}
+
 /**
  * Creates a reusable worker handler for processing math update jobs.
  * Extracted to avoid code duplication between main registration and watchdog restart.
@@ -562,6 +580,8 @@ async function startWithRetry(): Promise<void> {
         }
     }
 }
+
+installFatalProcessHandlers();
 
 startWithRetry().catch((error: unknown) => {
     log.error(error, "[Math Updater] Unexpected error in startWithRetry");

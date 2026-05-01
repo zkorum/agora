@@ -9,6 +9,7 @@ import {
     polisClusterOpinionTable,
     polisClusterUserTable,
     polisContentTable,
+    userMutePreferenceTable,
     voteTable,
 } from "@/shared-backend/schema.js";
 import type { RealtimeSSEManager } from "./realtimeSSE.js";
@@ -959,12 +960,19 @@ export async function fetchAnalysisByConversationSlugId({
     googleCloudCredentials?: GoogleCloudCredentials;
 }): Promise<ConversationAnalysis> {
     const { getPolisMetadata } = useCommonPost();
-    const polisMetadata = await getPolisMetadata({
-        db: db,
-        conversationSlugId,
-        personalizationUserId,
-        displayLanguage,
-    });
+    const [hasVotedOnAllAvailableOpinions, polisMetadata] = await Promise.all([
+        getHasVotedOnAllAvailableOpinions({
+            db,
+            conversationSlugId,
+            personalizationUserId,
+        }),
+        getPolisMetadata({
+            db: db,
+            conversationSlugId,
+            personalizationUserId,
+            displayLanguage,
+        }),
+    ]);
     if (polisMetadata === undefined) {
         return {
             polisContentId: undefined,
@@ -972,6 +980,7 @@ export async function fetchAnalysisByConversationSlugId({
             consensusDisagree: [],
             controversial: [],
             clusters: {},
+            hasVotedOnAllAvailableOpinions,
         };
     }
 
@@ -1058,8 +1067,64 @@ export async function fetchAnalysisByConversationSlugId({
         consensusDisagree: Array.from(consensusDisagreeOpinions.values()),
         controversial: Array.from(controversialOpinions.values()),
         clusters: polisClusters,
+        hasVotedOnAllAvailableOpinions,
     };
     return result;
+}
+
+async function getHasVotedOnAllAvailableOpinions({
+    db,
+    conversationSlugId,
+    personalizationUserId,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    personalizationUserId?: string;
+}): Promise<boolean | undefined> {
+    if (personalizationUserId === undefined) {
+        return undefined;
+    }
+
+    const unvotedOpinions = await db
+        .select({ opinionId: opinionTable.id })
+        .from(opinionTable)
+        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, opinionTable.conversationId),
+        )
+        .leftJoin(
+            opinionModerationTable,
+            eq(opinionModerationTable.opinionId, opinionTable.id),
+        )
+        .leftJoin(
+            voteTable,
+            and(
+                eq(voteTable.opinionId, opinionTable.id),
+                eq(voteTable.authorId, personalizationUserId),
+                isNotNull(voteTable.currentContentId),
+            ),
+        )
+        .leftJoin(
+            userMutePreferenceTable,
+            and(
+                eq(userMutePreferenceTable.sourceUserId, personalizationUserId),
+                eq(userMutePreferenceTable.targetUserId, opinionTable.authorId),
+            ),
+        )
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                isNotNull(opinionTable.currentContentId),
+                isNull(opinionModerationTable.id),
+                isNull(voteTable.id),
+                isNull(userMutePreferenceTable.id),
+                eq(userTable.isDeleted, false),
+            ),
+        )
+        .limit(1);
+
+    return unvotedOpinions.length === 0;
 }
 
 async function getPostIdFromPostSlugId(

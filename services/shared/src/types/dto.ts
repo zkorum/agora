@@ -103,6 +103,7 @@ export class Dto {
             consensusDisagree: z.array(zodAnalysisOpinionItem),
             controversial: z.array(zodAnalysisOpinionItem),
             clusters: zodPolisClusters,
+            hasVotedOnAllAvailableOpinions: z.boolean().optional(),
         })
         .strict();
     static fetchHiddenOpinionsRequest = z

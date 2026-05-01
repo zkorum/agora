@@ -35,6 +35,7 @@
           :cluster-key="userClusterData.clusterKey"
           :ai-label="userClusterData.aiLabel"
           :ai-summary="userClusterData.aiSummary"
+          :has-voted-on-all-available-opinions="analysisQuery.data.value?.hasVotedOnAllAvailableOpinions"
           :navigate-to-discover-tab="props.navigateToDiscoverTab"
           @update:model-value="onTabChange"
         />
@@ -47,7 +48,7 @@
       >
         <OpinionGroupTab
           :conversation-slug-id="props.conversationSlugId"
-          :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :clusters="polisClusters"
           :total-participant-count="props.participantCount"
           :compact-mode="currentTab === 'Summary'"
         />
@@ -64,7 +65,7 @@
           :conversation-slug-id="props.conversationSlugId"
           :item-list="agreementItems"
           :compact-mode="currentTab === 'Summary'"
-          :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :clusters="polisClusters"
           :cluster-labels="clusterLabels"
           @update:model-value="onTabChange"
         />
@@ -81,7 +82,7 @@
           :conversation-slug-id="props.conversationSlugId"
           :item-list="disagreementItems"
           :compact-mode="currentTab === 'Summary'"
-          :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :clusters="polisClusters"
           :cluster-labels="clusterLabels"
           @update:model-value="onTabChange"
         />
@@ -97,7 +98,7 @@
           :conversation-slug-id="props.conversationSlugId"
           :item-list="controversialItems"
           :compact-mode="currentTab === 'Summary'"
-          :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :clusters="polisClusters"
           :cluster-labels="clusterLabels"
           @update:model-value="onTabChange"
         />
@@ -110,8 +111,10 @@
       >
         <SurveyTab
           :model-value="currentTab"
+          :conversation-slug-id="props.conversationSlugId"
+          :survey-gate="props.surveyGate"
           :survey-query="props.surveyQuery"
-          :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :clusters="polisClusters"
           :total-participant-count="props.participantCount"
           :compact-mode="currentTab === 'Summary'"
           @update:model-value="onTabChange"
@@ -131,6 +134,7 @@ import type {
   AnalysisOpinionItem,
   PolisClusters,
   PolisKey,
+  SurveyGateSummary,
 } from "src/shared/types/zod";
 import { type ShortcutItem, shortcutItemSchema } from "src/utils/component/analysis/shortcutBar";
 import { computed, watch } from "vue";
@@ -159,11 +163,13 @@ const props = withDefaults(
     analysisQuery: UseQueryReturnType<AnalysisData, Error>;
     surveyQuery: UseQueryReturnType<SurveyResultsAggregatedResponse, Error>;
     hasSurvey: boolean;
+    surveyGate?: SurveyGateSummary;
     showReportButton?: boolean;
     navigateToDiscoverTab: () => void;
   }>(),
   {
     showReportButton: true,
+    surveyGate: undefined,
   }
 );
 
@@ -172,6 +178,7 @@ type AnalysisData = {
   consensusDisagree: AnalysisOpinionItem[];
   controversial: AnalysisOpinionItem[];
   polisClusters: Partial<PolisClusters>;
+  hasVotedOnAllAvailableOpinions?: boolean;
 };
 
 const { t } = useComponentI18n<AnalysisPageTranslations>(
@@ -244,12 +251,15 @@ function onTabChange(value: string): void {
 // Use the passed-in analysis query instead of creating our own
 const analysisQuery = props.analysisQuery;
 
+const polisClusters = computed<Partial<PolisClusters>>(
+  () => analysisQuery.data.value?.polisClusters ?? {}
+);
+
 // Extract only cluster labels for optimal performance (300 bytes instead of 300KB)
 const clusterLabels = computed(() => {
   const labels: Partial<Record<PolisKey, string>> = {};
-  if (!analysisQuery.data.value?.polisClusters) return labels;
 
-  for (const [key, cluster] of Object.entries(analysisQuery.data.value.polisClusters)) {
+  for (const [key, cluster] of Object.entries(polisClusters.value)) {
     if (cluster?.aiLabel) {
       labels[key as PolisKey] = cluster.aiLabel;
     }
@@ -278,11 +288,7 @@ const controversialItems = computed(() =>
 
 // Find the cluster the user belongs to
 const userClusterData = computed(() => {
-  if (!analysisQuery.data.value?.polisClusters) {
-    return { clusterKey: undefined, aiLabel: undefined, aiSummary: undefined };
-  }
-
-  for (const [key, cluster] of Object.entries(analysisQuery.data.value.polisClusters)) {
+  for (const [key, cluster] of Object.entries(polisClusters.value)) {
     if (cluster?.isUserInCluster) {
       return {
         clusterKey: key as PolisKey,

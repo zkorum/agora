@@ -116,8 +116,6 @@ const isSurveyAllowed = computed(() => {
 const surveyEditorTexts = computed(() => ({
   title: t("pageTitle"),
   description: t("pageDescription"),
-  optionalSurveyToggleLabel: t("optionalSurveyToggleLabel"),
-  optionalSurveyToggleHint: t("optionalSurveyToggleHint"),
   requiredSurveyToggleHint: t("requiredSurveyToggleHint"),
   noQuestionsTitle: t("noQuestionsTitle"),
   noQuestionsDescription: t("noQuestionsDescription"),
@@ -134,7 +132,6 @@ const surveyEditorTexts = computed(() => ({
   choiceDisplayList: t("choiceDisplayList"),
   choiceDisplayDropdown: t("choiceDisplayDropdown"),
   questionPromptLabel: t("questionPromptLabel"),
-  questionRequirementDisabledHint: t("questionRequirementDisabledHint"),
   minSelectionsLabel: t("minSelectionsLabel"),
   maxSelectionsLabel: t("maxSelectionsLabel"),
   minTextLengthLabel: t("minTextLengthLabel"),

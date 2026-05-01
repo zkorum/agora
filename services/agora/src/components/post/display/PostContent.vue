@@ -28,25 +28,6 @@
           :conversation-type="extendedPostData.metadata.conversationType"
           :external-source-config="extendedPostData.metadata.externalSourceConfig"
         />
-
-        <ConversationRequirementBanner
-          v-if="
-            !compactMode &&
-            (extendedPostData.metadata.requiresEventTicket ||
-              extendedPostData.interaction.surveyGate?.hasSurvey)
-          "
-          :conversation-slug-id="extendedPostData.metadata.conversationSlugId"
-          :participation-mode="extendedPostData.metadata.participationMode"
-          :requires-event-ticket="extendedPostData.metadata.requiresEventTicket"
-          :survey-gate="
-            extendedPostData.interaction.surveyGate ?? {
-              hasSurvey: false,
-              isOptional: false,
-              canParticipate: true,
-              status: 'no_survey',
-            }
-          "
-        />
       </div>
 
       <div
@@ -106,10 +87,6 @@ defineEmits<{
   conversationDeleted: [];
   verified: [payload: { userIdChanged: boolean; needsCacheRefresh: boolean }];
 }>();
-
-const ConversationRequirementBanner = defineAsyncComponent(
-  () => import("../ConversationRequirementBanner.vue")
-);
 
 const ImportedConversationIndicator = defineAsyncComponent(
   () => import("./ImportedConversationIndicator.vue")
