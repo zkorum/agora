@@ -1,4 +1,4 @@
-import type { PolisKey } from "src/shared/types/zod";
+import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 
 export type CommentFilterOptions = "new" | "moderated" | "hidden" | "discover" | "my_votes";
 
@@ -25,6 +25,21 @@ export function isClustersImbalanced(clusterSizes: number[]): boolean {
     clusterSizes.length;
   const cv = Math.sqrt(variance) / mean;
   return cv > CLUSTER_IMBALANCE_CV_THRESHOLD;
+}
+
+type PolisCluster = NonNullable<PolisClusters[PolisKey]>;
+
+export function shouldHideGroupAnalysis(
+  clusters: Partial<PolisClusters>
+): boolean {
+  const clusterList = Object.values(clusters).filter(
+    (cluster): cluster is PolisCluster => cluster !== undefined
+  );
+
+  return (
+    clusterList.length === 2 &&
+    clusterList.some((cluster) => cluster.numUsers <= 1)
+  );
 }
 
 export function formatClusterLabel(

@@ -48,7 +48,7 @@
       >
         <OpinionGroupTab
           :conversation-slug-id="props.conversationSlugId"
-          :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :clusters="polisClusters"
           :total-participant-count="props.participantCount"
           :compact-mode="currentTab === 'Summary'"
         />
@@ -65,7 +65,7 @@
           :conversation-slug-id="props.conversationSlugId"
           :item-list="agreementItems"
           :compact-mode="currentTab === 'Summary'"
-          :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :clusters="polisClusters"
           :cluster-labels="clusterLabels"
           @update:model-value="onTabChange"
         />
@@ -82,7 +82,7 @@
           :conversation-slug-id="props.conversationSlugId"
           :item-list="disagreementItems"
           :compact-mode="currentTab === 'Summary'"
-          :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :clusters="polisClusters"
           :cluster-labels="clusterLabels"
           @update:model-value="onTabChange"
         />
@@ -98,7 +98,7 @@
           :conversation-slug-id="props.conversationSlugId"
           :item-list="controversialItems"
           :compact-mode="currentTab === 'Summary'"
-          :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :clusters="polisClusters"
           :cluster-labels="clusterLabels"
           @update:model-value="onTabChange"
         />
@@ -112,7 +112,7 @@
         <SurveyTab
           :model-value="currentTab"
           :survey-query="props.surveyQuery"
-          :clusters="analysisQuery.data.value?.polisClusters || {}"
+          :clusters="polisClusters"
           :total-participant-count="props.participantCount"
           :compact-mode="currentTab === 'Summary'"
           @update:model-value="onTabChange"
@@ -246,12 +246,15 @@ function onTabChange(value: string): void {
 // Use the passed-in analysis query instead of creating our own
 const analysisQuery = props.analysisQuery;
 
+const polisClusters = computed<Partial<PolisClusters>>(
+  () => analysisQuery.data.value?.polisClusters ?? {}
+);
+
 // Extract only cluster labels for optimal performance (300 bytes instead of 300KB)
 const clusterLabels = computed(() => {
   const labels: Partial<Record<PolisKey, string>> = {};
-  if (!analysisQuery.data.value?.polisClusters) return labels;
 
-  for (const [key, cluster] of Object.entries(analysisQuery.data.value.polisClusters)) {
+  for (const [key, cluster] of Object.entries(polisClusters.value)) {
     if (cluster?.aiLabel) {
       labels[key as PolisKey] = cluster.aiLabel;
     }
@@ -280,11 +283,7 @@ const controversialItems = computed(() =>
 
 // Find the cluster the user belongs to
 const userClusterData = computed(() => {
-  if (!analysisQuery.data.value?.polisClusters) {
-    return { clusterKey: undefined, aiLabel: undefined, aiSummary: undefined };
-  }
-
-  for (const [key, cluster] of Object.entries(analysisQuery.data.value.polisClusters)) {
+  for (const [key, cluster] of Object.entries(polisClusters.value)) {
     if (cluster?.isUserInCluster) {
       return {
         clusterKey: key as PolisKey,
