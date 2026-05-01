@@ -69,7 +69,7 @@ export const meTabTranslations: Record<string, MeTabTranslations> = {
     whereDoIStandTitle: "私の立場",
     notAssignedToGroup: "グループに割り当てられていません",
     youAgreeWith: "あなたは同意します",
-    voteToUnlock: "もっと主張に投票して解除する",
+    voteToUnlock: "もっと意見に投票して解除する",
     keepVotingToRefineAnalysis: "投票を続けて分析を改善する",
     voteMore: "もっと投票する",
   },

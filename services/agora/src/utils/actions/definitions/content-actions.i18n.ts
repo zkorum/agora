@@ -198,9 +198,9 @@ export const actionsTranslations: Record<
     cancel: "キャンセル",
     confirm: "確認",
     confirmDeletePost: "この会話を削除してもよろしいですか？",
-    confirmDeleteComment: "この主張を削除してもよろしいですか？",
+    confirmDeleteComment: "この意見を削除してもよろしいですか？",
     confirmMuteUser:
-      "このユーザーをミュートしてもよろしいですか？このユーザーの会話や主張は表示されなくなります。",
+      "このユーザーをミュートしてもよろしいですか？このユーザーの会話や意見は表示されなくなります。",
     confirmGenericAction: "この操作を実行してもよろしいですか？",
   },
   ky: {

@@ -78,8 +78,8 @@ export const modeChangeConfirmationDialogTranslations: Record<
     continue: "继续",
   },
   "zh-Hant": {
-    switchToImportMode: "切換到導入模式？",
-    switchingWillClear: "切換到導入模式將清除以下字段：",
+    switchToImportMode: "切換到匯入模式？",
+    switchingWillClear: "切換到匯入模式將清除以下欄位：",
     title: "標題",
     bodyText: "正文",
     settingsPreserved: "您的隱私設置和組織選擇將被保留。",

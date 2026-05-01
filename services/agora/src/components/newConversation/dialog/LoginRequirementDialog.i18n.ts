@@ -130,16 +130,16 @@ export const loginRequirementDialogTranslations: Record<
   ja: {
     requiresAccountTitle: "アカウントが必要",
     requiresAccountDescription:
-      "リンクを持つ人は誰でも会話を閲覧できますが、投票や主張の投稿にはアカウントが必要です",
+      "リンクを持つ人は誰でも会話を閲覧できますが、投票や意見の投稿にはアカウントが必要です",
     requiresLoginTitle: "強力な認証が必要",
     requiresLoginDescription:
-      "リンクを持つ人は誰でも会話を閲覧できますが、投票や主張の投稿には電話またはパスポートの認証が必要です",
+      "リンクを持つ人は誰でも会話を閲覧できますが、投票や意見の投稿には電話またはパスポートの認証が必要です",
     requiresEmailVerificationTitle: "メール認証が必要",
     requiresEmailVerificationDescription:
-      "リンクを持つ人は誰でも会話を閲覧できますが、投票や主張の投稿にはメール認証が必要です",
+      "リンクを持つ人は誰でも会話を閲覧できますが、投票や意見の投稿にはメール認証が必要です",
     guestParticipationTitle: "ゲスト参加",
     guestParticipationDescription:
-      "リンクを持つ人は誰でも会話を閲覧、投票、主張の投稿ができます",
+      "リンクを持つ人は誰でも会話を閲覧、投票、意見の投稿ができます",
   },
   ky: {
     requiresAccountTitle: "Аккаунт талап кылынат",

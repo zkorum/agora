@@ -150,10 +150,10 @@ export const postMetadataTranslations: Record<
   },
   ja: {
     closeConfirmMessage:
-      "この会話を閉じてもよろしいですか？ユーザーは新しい主張や投票を投稿できなくなります。",
+      "この会話を閉じてもよろしいですか？ユーザーは新しい意見や投票を投稿できなくなります。",
     closeConfirmButton: "会話を閉じる",
     reopenConfirmMessage:
-      "この会話を再開しますか？ユーザーは再び主張を投稿したり投票したりできるようになります。",
+      "この会話を再開しますか？ユーザーは再び意見を投稿したり投票したりできるようになります。",
     reopenConfirmButton: "会話を再開する",
     cancelButton: "キャンセル",
     closeSuccess: "会話を正常に閉じました",

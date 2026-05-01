@@ -71,8 +71,8 @@ export const polisUrlInputTranslations: Record<
     ccLicense: "CC BY 4.0",
   },
   "zh-Hant": {
-    importTitle: "從 Polis 導入對話",
-    description: "粘貼一個 Polis URL 以導入對話。",
+    importTitle: "從 Polis 匯入對話",
+    description: "貼上一個 Polis URL 以匯入對話。",
     validUrlExamples: "有效 URL 示例：",
     urlPlaceholder: "例如，https://pol.is/xxxxx",
     polisTerms: "Pol.is 條款",

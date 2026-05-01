@@ -62,7 +62,7 @@ export const groupConsensusSummaryTranslations: Record<
     groupSummaryTitle: "グループサマリー",
     aiSummaryTitle: "AI サマリー",
     aiSummaryDescription:
-      "我々は Mistral Large (LLM モデル) を使用して、各合意形成グループの要約とラベルを生成します。",
+      "我々は Mistral Large (LLM モデル) を使用して、各合意形成グループのサマリーとラベルを生成します。",
   },
   ky: {
     groupSummaryTitle: "Топтун корутундусу",

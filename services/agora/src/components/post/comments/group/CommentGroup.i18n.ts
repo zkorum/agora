@@ -79,13 +79,13 @@ export const commentGroupTranslations: Record<
     retryLoadOpinions: "נסה שוב לטעון הצהרות",
   },
   ja: {
-    noOpinionsMessage: "この会話フィルターには主張がありません。",
-    loadingOpinions: "主張を読み込み中...",
+    noOpinionsMessage: "この会話フィルターには意見がありません。",
+    loadingOpinions: "意見を読み込み中...",
     retrying: "再試行中...",
-    opinionsLoadFailed: "主張を読み込めませんでした",
+    opinionsLoadFailed: "意見を読み込めませんでした",
     unexpectedErrorRetry:
       "何らかの問題が発生しました。もう一度お試しください。",
-    retryLoadOpinions: "主張の読み込みを再試行",
+    retryLoadOpinions: "意見の読み込みを再試行",
   },
   ky: {
     noOpinionsMessage: "Бул талкуу чыпкасында пикирлер жок.",

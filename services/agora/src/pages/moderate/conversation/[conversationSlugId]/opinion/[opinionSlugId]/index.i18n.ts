@@ -87,7 +87,7 @@ export const opinionModerationTranslations: Record<
     withdrawButton: "撤回",
   },
   ja: {
-    title: "主張を管理",
+    title: "意見を管理",
     actionLabel: "操作",
     reasonLabel: "理由",
     explanationLabel: "説明（任意）",

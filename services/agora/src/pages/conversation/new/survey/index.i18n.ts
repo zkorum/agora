@@ -308,12 +308,12 @@ export const conversationSurveyStepTranslations: Record<
     publishButton: "公開",
     addQuestionButton: "質問を追加",
     pageTitle: "会話アンケート",
-    pageDescription: "参加者がステートメントに投票したり新しいステートメントを作成したりする前に表示されるアンケート手順を設定します。",
+    pageDescription: "参加者が意見に投票したり新しい意見を作成したりする前に表示されるアンケート手順を設定します。",
     optionalSurveyToggleLabel: "参加者がアンケートをスキップできるようにする",
     optionalSurveyToggleHint:
-      "アンケート手順はスキップできます。参加者はアンケートに回答せずに投票やステートメント作成ができ、その投票は常に分析に含まれ、質問の必須設定は無視されます。",
+      "アンケート手順はスキップできます。参加者はアンケートに回答せずに投票や意見の作成ができ、その投票は常に分析に含まれ、質問の必須設定は無視されます。",
     requiredSurveyToggleHint:
-      "アンケートがある場合、アンケート手順は必須です。一部またはすべての質問が任意でも、参加者は投票やステートメント作成の前にこの手順を通る必要があります。この手順を完了した参加者の投票のみが分析に含まれます。",
+      "アンケートがある場合、アンケート手順は必須です。一部またはすべての質問が任意でも、参加者は投票や意見の作成の前にこの手順を通る必要があります。この手順を完了した参加者の投票のみが分析に含まれます。",
     questionRequirementDisabledHint:
       "アンケート手順をスキップできるため、この質問は任意として扱われます。",
     noQuestionsTitle: "アンケートはまだありません",
@@ -437,12 +437,12 @@ export const conversationSurveyStepTranslations: Record<
     publishButton: "发布",
     addQuestionButton: "添加问题",
     pageTitle: "对话问卷",
-    pageDescription: "配置参与者投票或创建陈述前看到的问卷步骤。",
+    pageDescription: "配置参与者投票或创建观点前看到的问卷步骤。",
     optionalSurveyToggleLabel: "允许参与者跳过问卷",
     optionalSurveyToggleHint:
-      "问卷步骤可以跳过。参与者无需回答问卷即可投票或创建陈述；他们的投票始终会计入分析，问题的必答设置会被忽略。",
+      "问卷步骤可以跳过。参与者无需回答问卷即可投票或创建观点；他们的投票始终会计入分析，问题的必答设置会被忽略。",
     requiredSurveyToggleHint:
-      "如果存在问卷，问卷步骤为必需。即使部分或全部问题都是可选的，参与者也必须先经过它，才能投票或创建陈述。只有完成此步骤的参与者投票会计入分析。",
+      "如果存在问卷，问卷步骤为必需。即使部分或全部问题都是可选的，参与者也必须先经过它，才能投票或创建观点。只有完成此步骤的参与者投票会计入分析。",
     questionRequirementDisabledHint:
       "由于问卷步骤可以跳过，此问题会被视为可选。",
     noQuestionsTitle: "还没有问卷",
@@ -480,12 +480,12 @@ export const conversationSurveyStepTranslations: Record<
     publishButton: "發布",
     addQuestionButton: "新增問題",
     pageTitle: "對話問卷",
-    pageDescription: "設定參與者投票或建立陳述前看到的問卷步驟。",
+    pageDescription: "設定參與者投票或創建觀點前看到的問卷步驟。",
     optionalSurveyToggleLabel: "允許參與者跳過問卷",
     optionalSurveyToggleHint:
-      "問卷步驟可以跳過。參與者無需回答問卷即可投票或建立陳述；他們的投票一律會計入分析，問題的必答設定會被忽略。",
+      "問卷步驟可以跳過。參與者無需回答問卷即可投票或創建觀點；他們的投票一律會計入分析，問題的必答設定會被忽略。",
     requiredSurveyToggleHint:
-      "如果存在問卷，問卷步驟為必需。即使部分或全部問題都是可選的，參與者也必須先經過它，才能投票或建立陳述。只有完成此步驟的參與者投票會計入分析。",
+      "如果存在問卷，問卷步驟為必需。即使部分或全部問題都是可選的，參與者也必須先經過它，才能投票或創建觀點。只有完成此步驟的參與者投票會計入分析。",
     questionRequirementDisabledHint:
       "由於問卷步驟可以跳過，此問題會被視為可選。",
     noQuestionsTitle: "還沒有問卷",

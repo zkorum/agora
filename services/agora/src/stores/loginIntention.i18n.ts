@@ -75,10 +75,10 @@ export const welcomeTranslations: Record<
     voting: "当您返回时，将回到此对话。",
   },
   ja: {
-    newOpinion: "お書きいただいたご主張の下書きは、戻られた際に復元されます。",
+    newOpinion: "お書きいただいたご意見の下書きは、戻られた際に復元されます。",
     newConversation:
       "お書きいただいた会話の下書きは、戻られた際に復元されます。",
-    agreement: "戻られた際に、このご主張に戻ります。",
+    agreement: "戻られた際に、このご意見に戻ります。",
     reportUserContent:
       "ユーザーコンテンツを報告するには、アカウントが必要です。",
     voting: "戻られた際に、この会話に戻ります。",

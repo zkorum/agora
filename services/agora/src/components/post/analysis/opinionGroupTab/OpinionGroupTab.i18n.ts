@@ -49,14 +49,14 @@ export const opinionGroupTabTranslations: Record<
   },
   "zh-Hans": {
     groupsTitle: "意见群组",
-    groupsSubtitle: "群组根据投票行为创建，与语言无关。然后由人工智能模型阅读各群组的观点，为其生成名称和摘要。",
+    groupsSubtitle: "群组根据投票行为创建，与语言无关。然后由人工智能模型阅读各群组的观点，为其生成名称和总结。",
     groupsSubtitleNoAi: "群组根据投票行为创建，与语言无关。",
     notEnoughGroupsMessage: "群组数量不足以显示。",
     imbalanceNotice: "大多数参与者在同一群组中，因为他们的投票几乎完全相同。",
   },
   "zh-Hant": {
     groupsTitle: "意見群組",
-    groupsSubtitle: "群組根據投票行為建立，與語言無關。然後由人工智慧模型閱讀各群組的觀點，為其產生名稱和摘要。",
+    groupsSubtitle: "群組根據投票行為建立，與語言無關。然後由人工智慧模型閱讀各群組的觀點，為其產生名稱和總結。",
     groupsSubtitleNoAi: "群組根據投票行為建立，與語言無關。",
     notEnoughGroupsMessage: "群組數量不足以顯示。",
     imbalanceNotice: "大多數參與者在同一群組中，因為他們的投票幾乎完全相同。",
@@ -70,7 +70,7 @@ export const opinionGroupTabTranslations: Record<
   },
   ja: {
     groupsTitle: "意見グループ",
-    groupsSubtitle: "グループは投票行動に基づいて作成され、言語は考慮されません。その後、AIモデルが各グループの意見を読み取り、名前と要約を生成します。",
+    groupsSubtitle: "グループは投票行動に基づいて作成され、言語は考慮されません。その後、AIモデルが各グループの意見を読み取り、名前とサマリーを生成します。",
     groupsSubtitleNoAi: "グループは投票行動に基づいて作成され、言語は考慮されません。",
     notEnoughGroupsMessage: "表示するグループが不足しています。",
     imbalanceNotice: "ほとんどの参加者はほぼ同じ投票をしたため、同じグループに属しています。",

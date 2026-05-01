@@ -72,8 +72,8 @@ export const seedOpinionItemTranslations: Record<
   },
   ja: {
     inputTextPlaceholder: "テキストを入力",
-    deleteOpinion: "主張を削除",
-    confirmDeleteMessage: "この主張を削除してもよろしいですか？",
+    deleteOpinion: "意見を削除",
+    confirmDeleteMessage: "この意見を削除してもよろしいですか？",
     confirmDeleteConfirm: "削除",
     confirmDeleteCancel: "キャンセル",
   },
