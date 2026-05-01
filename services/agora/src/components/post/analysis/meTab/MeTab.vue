@@ -20,18 +20,13 @@
         <div>
           <div>{{ getUserAnalysis() }}</div>
 
-          <!-- Vote banner - shown below cluster summary -->
-          <div v-if="shouldShowVoteBanner" class="voteBanner">
-            <div class="bannerContent">
-              <div class="bannerMessage">{{ bannerMessage }}</div>
-              <a
-                class="keepVotingLink"
-                @click="props.navigateToDiscoverTab()"
-              >
-                {{ t('voteMore') }}
-              </a>
-            </div>
-          </div>
+          <AnalysisInlineActionBanner
+            v-if="shouldShowVoteBanner"
+            class="vote-banner"
+            :message="bannerMessage"
+            :action-label="t('voteMore')"
+            @action-click="props.navigateToDiscoverTab()"
+          />
         </div>
       </template>
     </AnalysisSectionWrapper>
@@ -46,6 +41,7 @@ import { formatClusterLabel } from "src/utils/component/opinion";
 import { computed } from "vue";
 
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
+import AnalysisInlineActionBanner from "../common/AnalysisInlineActionBanner.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import { type MeTabTranslations, meTabTranslations } from "./MeTab.i18n";
@@ -88,7 +84,6 @@ function handleActionButtonClick() {
   }
 }
 
-// Simplified vote banner logic
 const bannerMessage = computed(() => {
   // User has cluster assignment - encourage voting to refine
   if (props.clusterKey !== undefined) {
@@ -105,38 +100,7 @@ const shouldShowVoteBanner = computed(
 </script>
 
 <style lang="scss" scoped>
-.voteBanner {
-  background-color: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
-  padding: 0.75rem 1rem;
+.vote-banner {
   margin-top: 0.75rem;
-}
-
-.bannerContent {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.bannerMessage {
-  flex: 1;
-  color: #495057;
-  font-size: 0.875rem;
-  font-weight: 400;
-}
-
-.keepVotingLink {
-  color: $primary;
-  font-size: 0.875rem;
-  font-weight: 400;
-  text-decoration: none;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.keepVotingLink:hover {
-  text-decoration: underline;
 }
 </style>

@@ -1,10 +1,28 @@
 <template>
-  <div>
+  <div class="survey-tab">
+    <AnalysisSectionWrapper v-if="!compactMode">
+      <template #header>
+        <AnalysisTitleHeader
+          :show-star-in-title="false"
+          :title="t('myAnswersTitle')"
+        />
+      </template>
+
+      <template #body>
+        <AnalysisInlineActionBanner
+          :message="answerCalloutMessage"
+          :action-label="answerCalloutActionLabel"
+          :loading="isOpeningSurveyResponses"
+          @action-click="handleOpenSurveyResponses"
+        />
+      </template>
+    </AnalysisSectionWrapper>
+
     <AnalysisSectionWrapper>
       <template #header>
         <AnalysisTitleHeader
           :show-star-in-title="false"
-          :title="t('surveyTitle')"
+          :title="compactMode ? t('surveyTitle') : t('surveyResultsTitle')"
         >
           <template #action-button>
             <AnalysisActionButton
@@ -133,11 +151,18 @@ import SurveySuppressedQuestionNotice from "src/components/survey/SurveySuppress
 import SurveyVisibilityToggle from "src/components/survey/SurveyVisibilityToggle.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import { useSurveyNavigation } from "src/composables/conversation/useSurveyNavigation";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { SurveyResultsAggregatedResponse } from "src/shared/types/dto";
-import type { PolisClusters, PolisKey } from "src/shared/types/zod";
+import type {
+  PolisClusters,
+  PolisKey,
+  SurveyGateSummary,
+} from "src/shared/types/zod";
+import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
 import { formatAmount, formatPercentage } from "src/utils/common";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
+import { getHistoryPosition } from "src/utils/nav/historyBack";
 import {
   canViewFullSurveyResults,
   getDisplayedSurveyRows,
@@ -145,8 +170,10 @@ import {
   type SurveyResultsDisplayMode,
 } from "src/utils/survey/results";
 import { computed, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
+import AnalysisInlineActionBanner from "../common/AnalysisInlineActionBanner.vue";
 import AnalysisSectionWrapper from "../common/AnalysisSectionWrapper.vue";
 import AnalysisTitleHeader from "../common/AnalysisTitleHeader.vue";
 import CompactFadeContainer from "../common/CompactFadeContainer.vue";
@@ -161,6 +188,8 @@ import {
 
 const props = withDefaults(
   defineProps<{
+    conversationSlugId: string;
+    surveyGate?: SurveyGateSummary;
     surveyQuery: UseQueryReturnType<SurveyResultsAggregatedResponse, Error>;
     clusters: Partial<PolisClusters>;
     totalParticipantCount: number;
@@ -168,6 +197,7 @@ const props = withDefaults(
   }>(),
   {
     compactMode: false,
+    surveyGate: undefined,
   }
 );
 
@@ -178,6 +208,62 @@ const { t } = useComponentI18n<SurveyTabTranslations>(surveyTabTranslations);
 const selectedClusterKey = ref<PolisKey>();
 const showSurveyInfo = ref(false);
 const displayMode = ref<SurveyResultsDisplayMode>("suppressed");
+const isOpeningSurveyResponses = ref(false);
+
+const route = useRoute();
+const conversationOnboardingStore = useConversationOnboardingStore();
+const { navigateToNextSurveyStep, navigateToSurveySummary } =
+  useSurveyNavigation();
+
+interface SurveyAnswerCalloutCopy {
+  messageKey: keyof SurveyTabTranslations;
+  actionLabelKey: keyof SurveyTabTranslations;
+}
+
+const surveyAnswerCalloutCopy = computed((): SurveyAnswerCalloutCopy => {
+  const gate = props.surveyGate;
+
+  if (gate?.status === "complete_valid") {
+    return {
+      messageKey: "myAnswersSavedMessage",
+      actionLabelKey: "reviewMyAnswersLabel",
+    };
+  }
+
+  if (gate?.status === "needs_update") {
+    return {
+      messageKey: "myAnswersNeedUpdateMessage",
+      actionLabelKey: "updateMyAnswersLabel",
+    };
+  }
+
+  if (gate?.status === "in_progress") {
+    return {
+      messageKey: "myAnswersInProgressMessage",
+      actionLabelKey: "continueSurveyLabel",
+    };
+  }
+
+  if (gate?.isOptional === true) {
+    return {
+      messageKey: "myAnswersOptionalMessage",
+      actionLabelKey: "answerSurveyLabel",
+    };
+  }
+
+  return {
+    messageKey: "myAnswersRequiredMessage",
+    actionLabelKey: "continueSurveyLabel",
+  };
+});
+
+const answerCalloutMessage = computed(() => {
+  return t(surveyAnswerCalloutCopy.value.messageKey);
+});
+
+const answerCalloutActionLabel = computed(() => {
+  return t(surveyAnswerCalloutCopy.value.actionLabelKey);
+});
 
 const canViewFullResults = computed(() =>
   canViewFullSurveyResults({ surveyResults: props.surveyQuery.data.value })
@@ -273,6 +359,33 @@ watch(
 function switchTab(): void {
   currentTab.value = "Survey";
 }
+
+async function handleOpenSurveyResponses(): Promise<void> {
+  conversationOnboardingStore.startResumeEntry({
+    conversationSlugId: props.conversationSlugId,
+    returnTarget: route.fullPath,
+    returnHistoryPosition: getHistoryPosition({
+      historyState: window.history.state,
+    }),
+  });
+
+  isOpeningSurveyResponses.value = true;
+
+  try {
+    if (props.surveyGate?.status === "complete_valid") {
+      await navigateToSurveySummary({
+        conversationSlugId: props.conversationSlugId,
+      });
+      return;
+    }
+
+    await navigateToNextSurveyStep({
+      conversationSlugId: props.conversationSlugId,
+    });
+  } finally {
+    isOpeningSurveyResponses.value = false;
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -281,6 +394,12 @@ function switchTab(): void {
   align-items: center;
   column-gap: 0.8rem;
   row-gap: 0.4rem;
+}
+
+.survey-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 .survey-subtitle {

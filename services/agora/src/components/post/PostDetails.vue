@@ -43,6 +43,7 @@
           :analysis-query="analysisQuery"
           :survey-query="surveyResultsQuery"
           :has-survey="hasSurvey"
+          :survey-gate="conversationData.interaction.surveyGate"
           :navigate-to-discover-tab="navigateToDiscoverTab"
         />
 

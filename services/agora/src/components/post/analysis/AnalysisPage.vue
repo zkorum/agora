@@ -111,6 +111,8 @@
       >
         <SurveyTab
           :model-value="currentTab"
+          :conversation-slug-id="props.conversationSlugId"
+          :survey-gate="props.surveyGate"
           :survey-query="props.surveyQuery"
           :clusters="polisClusters"
           :total-participant-count="props.participantCount"
@@ -132,6 +134,7 @@ import type {
   AnalysisOpinionItem,
   PolisClusters,
   PolisKey,
+  SurveyGateSummary,
 } from "src/shared/types/zod";
 import { type ShortcutItem, shortcutItemSchema } from "src/utils/component/analysis/shortcutBar";
 import { computed, watch } from "vue";
@@ -160,11 +163,13 @@ const props = withDefaults(
     analysisQuery: UseQueryReturnType<AnalysisData, Error>;
     surveyQuery: UseQueryReturnType<SurveyResultsAggregatedResponse, Error>;
     hasSurvey: boolean;
+    surveyGate?: SurveyGateSummary;
     showReportButton?: boolean;
     navigateToDiscoverTab: () => void;
   }>(),
   {
     showReportButton: true,
+    surveyGate: undefined,
   }
 );
 

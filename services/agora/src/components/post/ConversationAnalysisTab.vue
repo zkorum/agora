@@ -7,6 +7,7 @@
       :analysis-query="analysisQuery"
       :survey-query="surveyResultsQuery"
       :has-survey="hasSurvey"
+      :survey-gate="conversationData.interaction.surveyGate"
       :show-report-button="showReportButton"
       :navigate-to-discover-tab="props.navigateToDiscoverTab"
     />

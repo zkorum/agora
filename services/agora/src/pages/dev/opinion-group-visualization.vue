@@ -120,6 +120,19 @@
                 class="control-select"
               />
             </div>
+            <div class="control-item">
+              <label for="survey-status" class="control-label">
+                Survey status
+              </label>
+              <PrimeSelect
+                id="survey-status"
+                v-model="surveyGateScenario"
+                :options="surveyStatusOptions"
+                option-label="label"
+                option-value="value"
+                class="control-select"
+              />
+            </div>
           </div>
         </template>
       </PrimeCard>
@@ -142,9 +155,24 @@
               />
             </div>
 
+            <!-- Me tab -->
+            <div
+              v-if="currentTab === 'Summary' || currentTab === 'Me'"
+              class="tab-component"
+            >
+              <MeTab
+                v-model="currentTab"
+                :cluster-key="userClusterData.clusterKey"
+                :ai-label="userClusterData.aiLabel"
+                :ai-summary="userClusterData.aiSummary"
+                :has-voted-on-all-available-opinions="false"
+                :navigate-to-discover-tab="handleDevVoteMore"
+              />
+            </div>
+
             <!-- Opinion groups -->
             <div
-              v-if="currentTab === 'Summary' || currentTab === 'Groups'"
+              v-if="currentTab === 'Summary' || currentTab === 'Groups' || currentTab === 'Me'"
               class="tab-component"
             >
               <OpinionGroupTab
@@ -209,6 +237,8 @@
             >
               <SurveyTab
                 v-model="currentTab"
+                :conversation-slug-id="mockConversationSlugId"
+                :survey-gate="mockSurveyGate"
                 :survey-query="surveyResultsQuery"
                 :clusters="mockClusters"
                 :total-participant-count="totalParticipantCount"
@@ -228,6 +258,7 @@ import Select from "primevue/select";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ConsensusTab from "src/components/post/analysis/consensusTab/ConsensusTab.vue";
 import DivisiveTab from "src/components/post/analysis/divisivenessTab/DivisiveTab.vue";
+import MeTab from "src/components/post/analysis/meTab/MeTab.vue";
 import OpinionGroupTab from "src/components/post/analysis/opinionGroupTab/OpinionGroupTab.vue";
 import {
   type ShortcutBarTranslations,
@@ -242,6 +273,8 @@ import type {
   ClusterStats,
   PolisClusters,
   PolisKey,
+  SurveyGateStatus,
+  SurveyGateSummary,
 } from "src/shared/types/zod";
 import { formatAmount } from "src/utils/common";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
@@ -333,6 +366,14 @@ const emptySectionsMode = ref<
 >("none");
 const surveyViewerAccess = ref<"public" | "owner">("owner");
 const surveyScenario = ref<SurveyScenario>("visible");
+type SurveyGateScenario =
+  | "completeValid"
+  | "needsUpdate"
+  | "inProgress"
+  | "notStartedRequired"
+  | "notStartedOptional"
+  | "noSurvey";
+const surveyGateScenario = ref<SurveyGateScenario>("completeValid");
 
 const clusterCountOptions = computed(() => [
   { label: t("clusterCount0"), value: 0 },
@@ -394,6 +435,15 @@ const surveyScenarioOptions = computed(() => [
   { label: "Mixed groups", value: "mixed" as const },
   { label: "No results yet", value: "empty" as const },
 ]);
+
+const surveyStatusOptions = [
+  { label: "Complete valid", value: "completeValid" },
+  { label: "Needs update", value: "needsUpdate" },
+  { label: "In progress", value: "inProgress" },
+  { label: "Not started (required)", value: "notStartedRequired" },
+  { label: "Not started (optional)", value: "notStartedOptional" },
+  { label: "No survey", value: "noSurvey" },
+] satisfies Array<{ label: string; value: SurveyGateScenario }>;
 
 const effectiveSurveyScenario = computed<SurveyScenario>(() =>
   emptySectionsMode.value === "noSurvey" ? "absent" : surveyScenario.value
@@ -573,6 +623,22 @@ const clusterLabels = computed(() => {
   return labels;
 });
 
+const userClusterData = computed(() => {
+  const cluster = Object.values(mockClusters.value).find(
+    (item) => item?.isUserInCluster === true,
+  );
+
+  return {
+    clusterKey: cluster?.key,
+    aiLabel: cluster?.aiLabel,
+    aiSummary: cluster?.aiSummary,
+  };
+});
+
+function handleDevVoteMore(): void {
+  currentTab.value = "Summary";
+}
+
 const mockAgreementItems = computed(() => {
   if (selectedClusterCount.value === 0) return [];
   if (emptySectionsMode.value === "all" || emptySectionsMode.value === "agreements") return [];
@@ -628,7 +694,32 @@ const mockSurveyResults = computed(() =>
   }),
 );
 
-const hasMockSurvey = computed(() => mockSurveyResults.value.hasSurvey);
+const hasMockSurvey = computed(
+  () =>
+    mockSurveyResults.value.hasSurvey && surveyGateScenario.value !== "noSurvey",
+);
+
+const surveyStatusByScenario = {
+  completeValid: "complete_valid",
+  needsUpdate: "needs_update",
+  inProgress: "in_progress",
+  notStartedRequired: "not_started",
+  notStartedOptional: "not_started",
+  noSurvey: "no_survey",
+} satisfies Record<SurveyGateScenario, SurveyGateStatus>;
+
+const mockSurveyStatus = computed<SurveyGateStatus>(
+  () => surveyStatusByScenario[surveyGateScenario.value],
+);
+
+const mockSurveyGate = computed<SurveyGateSummary>(() => ({
+  hasSurvey: hasMockSurvey.value,
+  isOptional: surveyGateScenario.value === "notStartedOptional",
+  canParticipate:
+    surveyGateScenario.value === "completeValid" ||
+    surveyGateScenario.value === "notStartedOptional",
+  status: mockSurveyStatus.value,
+}));
 
 const surveyResultsQuery = useQuery({
   queryKey: computed(() => [
@@ -638,6 +729,7 @@ const surveyResultsQuery = useQuery({
     surveyViewerAccess.value,
     effectiveSurveyScenario.value,
     participantScaleMultiplier.value,
+    surveyGateScenario.value,
   ]),
   queryFn: () => mockSurveyResults.value,
   staleTime: Infinity,
