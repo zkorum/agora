@@ -35,6 +35,7 @@
           :cluster-key="userClusterData.clusterKey"
           :ai-label="userClusterData.aiLabel"
           :ai-summary="userClusterData.aiSummary"
+          :has-voted-on-all-available-opinions="analysisQuery.data.value?.hasVotedOnAllAvailableOpinions"
           :navigate-to-discover-tab="props.navigateToDiscoverTab"
           @update:model-value="onTabChange"
         />
@@ -172,6 +173,7 @@ type AnalysisData = {
   consensusDisagree: AnalysisOpinionItem[];
   controversial: AnalysisOpinionItem[];
   polisClusters: Partial<PolisClusters>;
+  hasVotedOnAllAvailableOpinions?: boolean;
 };
 
 const { t } = useComponentI18n<AnalysisPageTranslations>(

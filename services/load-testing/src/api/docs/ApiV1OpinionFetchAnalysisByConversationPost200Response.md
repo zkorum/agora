@@ -10,6 +10,7 @@ Name | Type | Description | Notes
 **consensusDisagree** | [**Array&lt;ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner&gt;**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner.md) |  | [default to undefined]
 **controversial** | [**Array&lt;ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner&gt;**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner.md) |  | [default to undefined]
 **clusters** | [**{ [key: string]: ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue; }**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue.md) |  | [default to undefined]
+**hasVotedOnAllAvailableOpinions** | **boolean** |  | [optional] [default to undefined]
 
 ## Example
 
@@ -22,6 +23,7 @@ const instance: ApiV1OpinionFetchAnalysisByConversationPost200Response = {
     consensusDisagree,
     controversial,
     clusters,
+    hasVotedOnAllAvailableOpinions,
 };
 ```
 

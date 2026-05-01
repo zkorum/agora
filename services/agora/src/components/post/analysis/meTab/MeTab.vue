@@ -21,7 +21,7 @@
           <div>{{ getUserAnalysis() }}</div>
 
           <!-- Vote banner - shown below cluster summary -->
-          <div class="voteBanner">
+          <div v-if="shouldShowVoteBanner" class="voteBanner">
             <div class="bannerContent">
               <div class="bannerMessage">{{ bannerMessage }}</div>
               <a
@@ -54,6 +54,7 @@ const props = defineProps<{
   clusterKey: PolisKey | undefined; // happens when the user has not been found to belong to a given cluster
   aiLabel: string | undefined;
   aiSummary: string | undefined;
+  hasVotedOnAllAvailableOpinions: boolean | undefined;
   navigateToDiscoverTab: () => void;
 }>();
 
@@ -97,6 +98,10 @@ const bannerMessage = computed(() => {
   // User not clustered yet - show unlock message
   return t("voteToUnlock");
 });
+
+const shouldShowVoteBanner = computed(
+  () => props.hasVotedOnAllAvailableOpinions !== true
+);
 </script>
 
 <style lang="scss" scoped>

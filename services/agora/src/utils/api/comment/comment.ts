@@ -213,6 +213,7 @@ export function useBackendCommentApi() {
     consensusDisagree: AnalysisOpinionItem[];
     controversial: AnalysisOpinionItem[];
     polisClusters: Partial<PolisClusters>;
+    hasVotedOnAllAvailableOpinions?: boolean;
   }> {
     let data: ApiV1OpinionFetchAnalysisByConversationPost200Response;
     // Use authenticated endpoint only if auth is initialized AND user is logged in/guest
@@ -254,6 +255,7 @@ export function useBackendCommentApi() {
       consensusDisagree: parsedData.consensusDisagree,
       controversial: parsedData.controversial,
       polisClusters: parsedData.clusters ?? {},
+      hasVotedOnAllAvailableOpinions: parsedData.hasVotedOnAllAvailableOpinions,
     };
   }
 

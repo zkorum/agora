@@ -4828,6 +4828,9 @@
                                                 ],
                                                 "additionalProperties": false
                                             }
+                                        },
+                                        "hasVotedOnAllAvailableOpinions": {
+                                            "type": "boolean"
                                         }
                                     },
                                     "required": [

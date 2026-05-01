@@ -2009,6 +2009,7 @@ export interface ApiV1OpinionFetchAnalysisByConversationPost200Response {
     'consensusDisagree': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner>;
     'controversial': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner>;
     'clusters': { [key: string]: ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue; };
+    'hasVotedOnAllAvailableOpinions'?: boolean;
 }
 export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue {
     'key': ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValueKeyEnum;
