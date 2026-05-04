@@ -1,10 +1,15 @@
 import type { ApiV1UserUsernameUpdatePostRequest } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useUserStore } from "src/stores/user";
 
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { queryClient } from "../query/client";
 import { useNotify } from "../ui/notify";
+import {
+  type AccountApiTranslations,
+  accountApiTranslations,
+} from "./account.i18n";
 import { api } from "./client";
 import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
 import { useCommonApi } from "./common";
@@ -19,6 +24,9 @@ export function useBackendAccountApi() {
   const { loadUserProfile } = useUserStore();
 
   const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<AccountApiTranslations>(
+    accountApiTranslations
+  );
 
   type SubmitUsernameChangeSuccessResponse = AxiosSuccessResponse<boolean>;
 
@@ -89,7 +97,7 @@ export function useBackendAccountApi() {
       return response.data;
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Error while checking if the username is in use.");
+      showNotifyMessage(t("failedToCheckUsername"));
       return true;
     }
   }
@@ -104,7 +112,7 @@ export function useBackendAccountApi() {
       return response.data;
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to generate random username");
+      showNotifyMessage(t("failedToGenerateRandomUsername"));
       return null;
     }
   }

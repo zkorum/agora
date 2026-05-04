@@ -12,6 +12,31 @@ import type {
     GeneratorParams,
     CsvGeneratorResult,
 } from "./base.js";
+import type { ExportParticipantMap } from "./participantMap.js";
+
+export const commentHeaders = [
+    "timestamp",
+    "datetime",
+    "comment-id",
+    "author-id",
+    "agrees",
+    "disagrees",
+    "passes",
+    "votes",
+    "moderated",
+    "comment_text",
+] as const;
+
+interface CommentExportOpinion {
+    authorId: string;
+    content: string;
+    createdAt: Date;
+    numAgrees: number;
+    numDisagrees: number;
+    numPasses: number;
+    moderationId: number | null;
+    moderationAction: string | null;
+}
 
 /**
  * Strip all HTML tags from content for CSV export.
@@ -41,8 +66,42 @@ function stripHtmlForCsv(htmlContent: string): string {
     return text;
 }
 
+export function buildCommentRows({
+    opinions,
+    participantMap,
+}: {
+    opinions: CommentExportOpinion[];
+    participantMap: ExportParticipantMap;
+}): Record<string, string | number | null>[] {
+    return opinions.map((opinion, index) => {
+        const authorId = participantMap.getOrCreateExportParticipantId({
+            userId: opinion.authorId,
+        });
+
+        return {
+            timestamp: Math.floor(opinion.createdAt.getTime() / 1000),
+            datetime: formatDatetime(opinion.createdAt),
+            "comment-id": index, // Remap comment_id to 0-based index
+            "author-id": authorId, // Remap author_id to 0-based index per conversation
+            agrees: opinion.numAgrees,
+            disagrees: opinion.numDisagrees,
+            passes: opinion.numPasses,
+            votes: opinion.numAgrees + opinion.numDisagrees + opinion.numPasses,
+            moderated:
+                opinion.moderationId === null
+                    ? 0 // unmoderated
+                    : opinion.moderationAction === "hide"
+                      ? -1 // banned/hidden
+                      : opinion.moderationAction === "move"
+                        ? -1 // moved (also treated as banned)
+                        : 1, // approved (fallback, though no explicit "approve" action exists)
+            comment_text: stripHtmlForCsv(opinion.content),
+        };
+    });
+}
+
 /**
- * Generator for comments.csv following Polis specification
+ * Generator for Sensemaker-compatible comments.csv
  */
 export const commentsGenerator: CsvGenerator = {
     fileType: "comments",
@@ -59,6 +118,7 @@ export const commentsGenerator: CsvGenerator = {
                 createdAt: opinionTable.createdAt,
                 numAgrees: opinionTable.numAgrees,
                 numDisagrees: opinionTable.numDisagrees,
+                numPasses: opinionTable.numPasses,
                 moderationId: opinionModerationTable.id,
                 moderationAction: opinionModerationTable.moderationAction,
             })
@@ -74,32 +134,10 @@ export const commentsGenerator: CsvGenerator = {
             .where(eq(opinionTable.conversationId, conversationId))
             .orderBy(opinionTable.createdAt);
 
-        // Generate CSV rows following Polis spec
-        const rows = opinions.map((opinion, index) => {
-            const authorId = participantMap.getOrCreateExportParticipantId({
-                userId: opinion.authorId,
-            });
+        // Generate CSV rows following Sensemaker's expected comments.csv shape.
+        const rows = buildCommentRows({ opinions, participantMap });
 
-            return {
-                timestamp: Math.floor(opinion.createdAt.getTime() / 1000),
-                datetime: formatDatetime(opinion.createdAt),
-                "comment-id": index, // Remap comment_id to 0-based index
-                "author-id": authorId, // Remap author_id to 0-based index per conversation
-                agrees: opinion.numAgrees,
-                disagrees: opinion.numDisagrees,
-                moderated:
-                    opinion.moderationId === null
-                        ? 0 // unmoderated
-                        : opinion.moderationAction === "hide"
-                          ? -1 // banned/hidden
-                          : opinion.moderationAction === "move"
-                            ? -1 // moved (also treated as banned)
-                            : 1, // approved (fallback, though no explicit "approve" action exists)
-                "comment-body": stripHtmlForCsv(opinion.content),
-            };
-        });
-
-        const csvBuffer = await buildCsvBuffer({ rows });
+        const csvBuffer = await buildCsvBuffer({ headers: commentHeaders, rows });
 
         return {
             csvBuffer,

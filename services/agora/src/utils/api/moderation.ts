@@ -6,6 +6,7 @@ import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { Dto } from "src/shared/types/dto";
 import type {
   ConversationModerationAction,
@@ -19,11 +20,18 @@ import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useNotify } from "../ui/notify";
 import { api } from "./client";
 import { useCommonApi } from "./common";
+import {
+  type ModerationApiTranslations,
+  moderationApiTranslations,
+} from "./moderation.i18n";
 
 export function useBackendModerateApi() {
   const { buildEncodedUcan } = useCommonApi();
 
   const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<ModerationApiTranslations>(
+    moderationApiTranslations
+  );
 
   async function moderatePost(
     postSlugId: string,
@@ -53,14 +61,14 @@ export function useBackendModerateApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
-      showNotifyMessage("Moderation decision completed");
+      showNotifyMessage(t("moderationDecisionCompleted"));
       return true;
     } catch (e) {
       console.error(
         "Error while submitting moderation decision on conversation",
         e
       );
-      showNotifyMessage("Failed to submit moderation decision");
+      showNotifyMessage(t("failedToSubmitModerationDecision"));
       return false;
     }
   }
@@ -93,11 +101,11 @@ export function useBackendModerateApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
-      showNotifyMessage("Moderation decision completed");
+      showNotifyMessage(t("moderationDecisionCompleted"));
       return true;
     } catch (e) {
       console.error("Error while submitting moderation decision on opinion", e);
-      showNotifyMessage("Failed to submit moderation decision");
+      showNotifyMessage(t("failedToSubmitModerationDecision"));
       return false;
     }
   }
@@ -128,7 +136,7 @@ export function useBackendModerateApi() {
       return Dto.getConversationModerationStatusResponse.parse(response.data);
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to fetch post moderation details");
+      showNotifyMessage(t("failedToFetchPostModerationDetails"));
       return {
         status: "unmoderated",
       };
@@ -161,7 +169,7 @@ export function useBackendModerateApi() {
       return Dto.getOpinionModerationStatusResponse.parse(response.data);
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to fetch comment moderation details");
+      showNotifyMessage(t("failedToFetchCommentModerationDetails"));
       return {
         status: "unmoderated",
       };
@@ -190,14 +198,14 @@ export function useBackendModerateApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
-      showNotifyMessage("Moderation decision withdrawn");
+      showNotifyMessage(t("moderationDecisionWithdrawn"));
       return true;
     } catch (e) {
       console.error(
         "Error while withdrawing moderation decision on conversation",
         e
       );
-      showNotifyMessage("Failed to withdraw moderation decision");
+      showNotifyMessage(t("failedToWithdrawModerationDecision"));
       return false;
     }
   }
@@ -224,14 +232,14 @@ export function useBackendModerateApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
-      showNotifyMessage("Moderation decision withdrawn");
+      showNotifyMessage(t("moderationDecisionWithdrawn"));
       return true;
     } catch (e) {
       console.error(
         "Error while withdrawing moderation decision on opinion",
         e
       );
-      showNotifyMessage("Failed to withdraw moderation decision");
+      showNotifyMessage(t("failedToWithdrawModerationDecision"));
       return false;
     }
   }

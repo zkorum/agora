@@ -1,4 +1,5 @@
 import { defineStore, storeToRefs } from "pinia";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ZodTopicObject } from "src/shared/types/zod";
 import { useCommonApi } from "src/utils/api/common";
 import { useBackendTopicApi } from "src/utils/api/topic";
@@ -6,6 +7,10 @@ import { useNotify } from "src/utils/ui/notify";
 import { ref } from "vue";
 
 import { useAuthenticationStore } from "./authentication";
+import {
+  type TopicStoreTranslations,
+  topicStoreTranslations,
+} from "./topic.i18n";
 
 export const useTopicStore = defineStore("topic", () => {
   const {
@@ -18,6 +23,7 @@ export const useTopicStore = defineStore("topic", () => {
   const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 
   const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<TopicStoreTranslations>(topicStoreTranslations);
 
   const fullTopicList = ref<ZodTopicObject[]>([]);
   const followedTopicCodeSet = ref(new Set<string>());
@@ -39,7 +45,7 @@ export const useTopicStore = defineStore("topic", () => {
     if (response.status == "success") {
       // already captured state
     } else {
-      showNotifyMessage("Failed to follow topic");
+      showNotifyMessage(t("failedToFollowTopic"));
       followedTopicCodeSet.value.delete(topicCode);
     }
   }
@@ -57,7 +63,7 @@ export const useTopicStore = defineStore("topic", () => {
     if (response.status == "success") {
       // already captured state
     } else {
-      showNotifyMessage("Failed to unfollow topic");
+      showNotifyMessage(t("failedToUnfollowTopic"));
       followedTopicCodeSet.value.add(topicCode);
     }
   }

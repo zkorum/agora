@@ -59,6 +59,7 @@
           :requires-event-ticket="
             conversationData.metadata.requiresEventTicket
           "
+          :survey-gate="conversationData.interaction.surveyGate"
           :on-view-analysis="viewAnalysisTab"
           :is-voting-disabled="isVotingDisabled"
           :preloaded-queries="{

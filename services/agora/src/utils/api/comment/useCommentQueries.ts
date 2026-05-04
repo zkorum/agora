@@ -130,6 +130,9 @@ export function useCreateCommentMutation() {
   const { createNewComment } = useBackendCommentApi();
   const queryClient = useQueryClient();
   const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<UseCommentQueriesTranslations>(
+    useCommentQueriesTranslations
+  );
   const { markAnalysisAsStale } = useInvalidateCommentQueries();
 
   return useMutation({
@@ -152,7 +155,11 @@ export function useCreateCommentMutation() {
         markAnalysisAsStale(variables.conversationSlugId);
       } else {
         // Handle business logic failures (like conversation_locked)
-        showNotifyMessage(`Failed to create comment: ${data.reason}`);
+        showNotifyMessage(
+          t("failedToCreateCommentWithReason", {
+            reason: data.reason ?? "unknown",
+          })
+        );
       }
     },
     onError: (error: AxiosErrorResponse) => {
@@ -160,7 +167,7 @@ export function useCreateCommentMutation() {
       if (error?.code) {
         showNotifyMessage(getErrorMessage(error));
       } else {
-        showNotifyMessage("Failed to create comment. Please try again.");
+        showNotifyMessage(t("failedToCreateComment"));
       }
     },
     retry: false, // Disable auto-retry

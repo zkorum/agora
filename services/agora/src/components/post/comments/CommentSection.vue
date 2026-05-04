@@ -19,6 +19,7 @@
             }"
             :participation-mode="props.participationMode"
             :requires-event-ticket="props.requiresEventTicket"
+            :survey-gate="props.surveyGate"
             :on-view-analysis="props.onViewAnalysis"
             :is-voting-disabled="props.isVotingDisabled"
             @deleted="(opinionSlugId) => handleOpinionDeleted(opinionSlugId)"
@@ -39,7 +40,12 @@ import { useOpinionPagination } from "src/composables/opinion/useOpinionPaginati
 import { useOpinionVoting } from "src/composables/opinion/useOpinionVoting";
 import { useTargetOpinion } from "src/composables/opinion/useTargetOpinion";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { OpinionItem } from "src/shared/types/zod";
+import type {
+  EventSlug,
+  OpinionItem,
+  ParticipationMode,
+  SurveyGateSummary,
+} from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
@@ -58,6 +64,7 @@ const props = defineProps<{
   conversationOrganizationName: string;
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
+  surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
   preloadedQueries: {
@@ -76,8 +83,6 @@ const emit = defineEmits<{
     payload: { userIdChanged: boolean; needsCacheRefresh: boolean }
   ];
 }>();
-
-import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 
 const isComponentMounted = ref(false);
 const isInitialActivation = ref(true);

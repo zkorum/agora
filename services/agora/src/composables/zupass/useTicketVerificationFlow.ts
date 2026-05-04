@@ -148,9 +148,9 @@ export function useTicketVerificationFlow() {
         showNotifyMessage(successMessage);
       } else {
         if (verifyResult.accountMerged) {
-          showNotifyMessage("Account merged successfully");
+          showNotifyMessage(t("accountMergedSuccessfully"));
         } else {
-          showNotifyMessage("Event ticket verified successfully");
+          showNotifyMessage(t("eventTicketVerifiedSuccessfully"));
         }
       }
 

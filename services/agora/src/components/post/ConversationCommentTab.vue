@@ -9,6 +9,7 @@
         conversationData.metadata.participationMode
       "
       :requires-event-ticket="conversationData.metadata.requiresEventTicket"
+      :survey-gate="conversationData.interaction.surveyGate"
       :on-view-analysis="props.onViewAnalysis"
       :is-voting-disabled="isVotingDisabled"
       :preloaded-queries="{

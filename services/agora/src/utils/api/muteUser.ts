@@ -3,6 +3,7 @@ import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { GetMutedUsersResponse } from "src/shared/types/dto";
 import type { UserMuteAction } from "src/shared/types/zod";
 
@@ -10,11 +11,18 @@ import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useNotify } from "../ui/notify";
 import { api } from "./client";
 import { useCommonApi } from "./common";
+import {
+  type MuteUserApiTranslations,
+  muteUserApiTranslations,
+} from "./muteUser.i18n";
 
 export function useBackendUserMuteApi() {
   const { buildEncodedUcan } = useCommonApi();
 
   const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<MuteUserApiTranslations>(
+    muteUserApiTranslations
+  );
 
   async function muteUser(
     targetUsername: string,
@@ -40,17 +48,17 @@ export function useBackendUserMuteApi() {
       });
 
       if (userMuteAction == "mute") {
-        showNotifyMessage("User muted");
+        showNotifyMessage(t("userMuted"));
       } else {
-        showNotifyMessage("User unmuted");
+        showNotifyMessage(t("userUnmuted"));
       }
       return true;
     } catch (e) {
       console.error(e);
       if (userMuteAction == "mute") {
-        showNotifyMessage("Failed to mute user");
+        showNotifyMessage(t("failedToMuteUser"));
       } else {
-        showNotifyMessage("Failed to unmute user");
+        showNotifyMessage(t("failedToUnmuteUser"));
       }
       return false;
     }
@@ -82,7 +90,7 @@ export function useBackendUserMuteApi() {
       return muteUserItemList;
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to fetch muted user list");
+      showNotifyMessage(t("failedToFetchMutedUsers"));
       return [];
     }
   }
