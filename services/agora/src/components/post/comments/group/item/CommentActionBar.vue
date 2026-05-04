@@ -72,9 +72,11 @@ import { useConversationLoginIntentions } from "src/composables/auth/useConversa
 import { useParticipationGate } from "src/composables/conversation/useParticipationGate";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 import {
+  type EventSlug,
   type OpinionItem,
+  type ParticipationMode,
+  type SurveyGateSummary,
   type VotingAction,
 } from "src/shared/types/zod";
 import { calculatePercentage } from "src/shared/util";
@@ -98,6 +100,7 @@ const props = defineProps<{
   votingUtilities: OpinionVotingUtilities;
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
+  surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
 }>();
@@ -112,7 +115,7 @@ const {
   conversationSlugId: computed(() => props.postSlugId),
   participationMode: computed(() => props.participationMode),
   requiresEventTicket: computed(() => props.requiresEventTicket),
-  surveyGate: computed(() => undefined),
+  surveyGate: computed(() => props.surveyGate),
 });
 
 const { showNotifyMessage } = useNotify();

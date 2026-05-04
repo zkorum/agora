@@ -46,6 +46,7 @@
             :voting-utilities="votingUtilities"
             :participation-mode="participationMode"
             :requires-event-ticket="props.requiresEventTicket"
+            :survey-gate="props.surveyGate"
             :on-view-analysis="props.onViewAnalysis"
             :is-voting-disabled="props.isVotingDisabled"
           />
@@ -58,7 +59,12 @@
 <script setup lang="ts">
 import OpinionIdentityCard from "src/components/post/comments/OpinionIdentityCard.vue";
 import type { OpinionVotingUtilities } from "src/composables/opinion/types";
-import type { OpinionItem } from "src/shared/types/zod";
+import type {
+  EventSlug,
+  OpinionItem,
+  ParticipationMode,
+  SurveyGateSummary,
+} from "src/shared/types/zod";
 
 import ZKHtmlContent from "../../../../ui-library/ZKHtmlContent.vue";
 import CommentActionBar from "./CommentActionBar.vue";
@@ -73,6 +79,7 @@ const props = defineProps<{
   votingUtilities: OpinionVotingUtilities;
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
+  surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
 }>();
@@ -81,8 +88,6 @@ const emit = defineEmits<{
   deleted: [opinionSlugId: string];
   mutedComment: [];
 }>();
-
-import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 
 function deletedComment() {
   emit("deleted", props.commentItem.opinionSlugId);

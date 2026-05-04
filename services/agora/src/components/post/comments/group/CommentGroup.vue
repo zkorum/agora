@@ -48,6 +48,7 @@
         :voting-utilities="votingUtilities"
         :participation-mode="participationMode"
         :requires-event-ticket="props.requiresEventTicket"
+        :survey-gate="props.surveyGate"
         :on-view-analysis="props.onViewAnalysis"
         :is-voting-disabled="props.isVotingDisabled"
         @deleted="deletedComment(commentItem.opinionSlugId)"
@@ -64,7 +65,12 @@ import {
   localizedDateTimeFormatOptions,
   useLocalizedDateTimeFormatter,
 } from "src/composables/ui/useLocalizedDateTime";
-import type { OpinionItem } from "src/shared/types/zod";
+import type {
+  EventSlug,
+  OpinionItem,
+  ParticipationMode,
+  SurveyGateSummary,
+} from "src/shared/types/zod";
 import { computed, nextTick } from "vue";
 
 import CommentItem from "./item/CommentItem.vue";
@@ -78,6 +84,7 @@ const props = defineProps<{
   votingUtilities: OpinionVotingUtilities;
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
+  surveyGate: SurveyGateSummary | undefined;
   onViewAnalysis: () => void;
   isVotingDisabled: boolean;
 }>();
@@ -89,8 +96,6 @@ const emit = defineEmits<{
     payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
   ];
 }>();
-
-import type { EventSlug, ParticipationMode } from "src/shared/types/zod";
 
 const formatDateForScreenReader = useLocalizedDateTimeFormatter({
   options: localizedDateTimeFormatOptions.dateTime,
