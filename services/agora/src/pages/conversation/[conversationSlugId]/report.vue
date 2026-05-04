@@ -70,6 +70,7 @@
                 "
                 ref="analysisReportRef"
                 v-model:survey-display-mode="surveyDisplayMode"
+                v-model:all-statements-order="allStatementsOrder"
                 :items-per-page="itemsPerPage"
                 :conversation-slug-id="conversationSlugId"
                 :conversation-title="conversationQuery.data.value.payload.title"
@@ -97,6 +98,8 @@
                 :agreement-items="agreementItems"
                 :disagreement-items="disagreementItems"
                 :divisive-items="divisiveItems"
+                :all-items="allItems"
+                :all-statements-order-options="allStatementsOrderOptions"
                 :has-survey="surveyResultsQuery.data.value.hasSurvey"
                 :survey-rows="reportSurveyRows"
                 :show-survey-toggle="showSurveyToggle"
@@ -126,9 +129,11 @@ import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { useSurveyResultsAggregatedQuery } from "src/utils/api/survey/useSurveyQueries";
 import {
+  getReportAllOpinions,
   getReportOpinions,
   REPORT_ITEMS_PER_CAPTURE_PAGE,
   REPORT_ITEMS_PER_PDF_PAGE,
+  type ReportAllStatementsOrder,
 } from "src/utils/component/report/reportData";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import { getSingleRouteParam } from "src/utils/router/params";
@@ -186,6 +191,14 @@ const surveyResultsQuery = useSurveyResultsAggregatedQuery({
 });
 
 const surveyDisplayMode = ref<SurveyResultsDisplayMode>("suppressed");
+const allStatementsOrder = ref<ReportAllStatementsOrder>("newest");
+
+const allStatementsOrderOptions = computed(() => [
+  { label: t("allStatementsOrderNewest"), value: "newest" as const },
+  { label: t("allStatementsOrderAgreement"), value: "agreement" as const },
+  { label: t("allStatementsOrderDisagreement"), value: "disagreement" as const },
+  { label: t("allStatementsOrderDivisive"), value: "divisive" as const },
+]);
 
 const polisClusters = computed<Partial<PolisClusters>>(
   () => analysisQuery.data.value?.polisClusters ?? {}
@@ -245,6 +258,17 @@ const divisiveItems = computed(() => {
   });
 });
 
+const allItems = computed(() =>
+  getReportAllOpinions({
+    order: allStatementsOrder.value,
+    items: [
+      ...(analysisQuery.data.value?.consensusAgree ?? []),
+      ...(analysisQuery.data.value?.consensusDisagree ?? []),
+      ...(analysisQuery.data.value?.controversial ?? []),
+    ],
+  })
+);
+
 const hasData = computed(
   () =>
     conversationQuery.data.value !== undefined &&
@@ -264,9 +288,11 @@ interface AnalysisReportExposed {
   agreementEmptyRef: HTMLElement | null;
   disagreementEmptyRef: HTMLElement | null;
   divisiveEmptyRef: HTMLElement | null;
+  allEmptyRef: HTMLElement | null;
   agreementRefs: HTMLElement[];
   disagreementRefs: HTMLElement[];
   divisiveRefs: HTMLElement[];
+  allRefs: HTMLElement[];
   surveyEmptyRef: HTMLElement | null;
   surveyRefs: HTMLElement[];
   footerRef: HTMLElement | null;
@@ -348,6 +374,15 @@ function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
     const el = report.surveyRefs[j];
     if (el?.isConnected) {
       captures.push({ element: el, name: `survey-${j}` });
+    }
+  }
+  if (report.allEmptyRef?.isConnected) {
+    captures.push({ element: report.allEmptyRef, name: "all-empty" });
+  }
+  for (let j = 0; j < report.allRefs.length; j++) {
+    const el = report.allRefs[j];
+    if (el?.isConnected) {
+      captures.push({ element: el, name: `all-${j}` });
     }
   }
 

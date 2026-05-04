@@ -494,6 +494,102 @@
       />
     </div>
 
+    <div
+      v-if="allChunks.length === 0"
+      ref="allEmptyRef"
+      class="report-section-block detail-section"
+    >
+      <div class="detail-context capture-only">
+        <span class="detail-branding">Agora Citizen Network</span>
+        <span class="detail-separator">·</span>
+        <span class="detail-title">{{ conversationTitle }}</span>
+        <span class="detail-separator">·</span>
+        <span class="detail-section-name">{{ t("allStatements") }}</span>
+      </div>
+      <ReportSectionHeader
+        :title="t('allStatementsLong')"
+        :subtitle="t('allStatementsSubtitle')"
+      >
+        <template #action>
+          <ZKSelect
+            :model-value="allStatementsOrderSelectValue"
+            class="all-statements-order-select"
+            :label="t('allStatementsOrderLabel')"
+            :options="allStatementsOrderOptions"
+            @update:model-value="handleAllStatementsOrderUpdate"
+          />
+        </template>
+      </ReportSectionHeader>
+      <ReportOpinionList
+        :title="t('allStatementsLong')"
+        title-color="#333238"
+        :items="[]"
+        :clusters="clusters"
+        :total-participants="participantCount"
+        :hide-title="true"
+        :empty-message="t('noAllStatementsMessage')"
+      />
+      <ReportFooter
+        :conversation-slug-id="conversationSlugId"
+        class="capture-footer"
+      />
+    </div>
+    <div
+      v-for="(chunk, chunkIdx) in allChunks"
+      :key="`all-${chunkIdx}`"
+      :ref="(el) => setAllRef({ el, index: chunkIdx })"
+      class="report-section-block detail-section"
+    >
+      <div class="detail-context capture-only">
+        <span class="detail-branding">Agora Citizen Network</span>
+        <span class="detail-separator">·</span>
+        <span class="detail-title">{{ conversationTitle }}</span>
+        <span class="detail-separator">·</span>
+        <span class="detail-section-name">{{
+          getPagedSectionLabel({
+            baseLabel: t("allStatements"),
+            pageIndex: chunkIdx,
+            pageCount: allChunks.length,
+          })
+        }}</span>
+      </div>
+      <ReportSectionHeader
+        v-if="chunkIdx === 0"
+        :title="t('allStatementsLong')"
+        :subtitle="t('allStatementsSubtitle')"
+      >
+        <template #action>
+          <ZKSelect
+            :model-value="allStatementsOrderSelectValue"
+            class="all-statements-order-select"
+            :label="t('allStatementsOrderLabel')"
+            :options="allStatementsOrderOptions"
+            @update:model-value="handleAllStatementsOrderUpdate"
+          />
+        </template>
+      </ReportSectionHeader>
+      <ReportOpinionList
+        :title="t('allStatementsLong')"
+        title-color="#333238"
+        :items="chunk"
+        :clusters="clusters"
+        :total-participants="participantCount"
+        :start-rank="chunkIdx * effectiveItemsPerPage"
+        :hide-title="true"
+      >
+        <template v-if="clusterCount >= 2" #after-subtitle>
+          <VoteLegend
+            :items="reportLegendItems"
+            style="margin-bottom: 0.75rem"
+          />
+        </template>
+      </ReportOpinionList>
+      <ReportFooter
+        :conversation-slug-id="conversationSlugId"
+        class="capture-footer"
+      />
+    </div>
+
     <!-- Footer -->
     <div class="report-section-block">
       <div ref="footerRef">
@@ -512,6 +608,7 @@ import {
   voteLegendTranslations,
 } from "src/components/ui/VoteLegend.i18n";
 import VoteLegend from "src/components/ui/VoteLegend.vue";
+import ZKSelect from "src/components/ui-library/ZKSelect.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   AnalysisOpinionItem,
@@ -521,7 +618,10 @@ import type {
 } from "src/shared/types/zod";
 import { formatAmount, formatPercentage } from "src/utils/common";
 import { formatClusterLabel } from "src/utils/component/opinion";
-import { REPORT_ITEMS_PER_CAPTURE_PAGE } from "src/utils/component/report/reportData";
+import {
+  REPORT_ITEMS_PER_CAPTURE_PAGE,
+  type ReportAllStatementsOrder,
+} from "src/utils/component/report/reportData";
 import {
   groupSurveyRowsByQuestion,
   type SurveyResultsDisplayMode,
@@ -555,6 +655,11 @@ const props = defineProps<{
   agreementItems: AnalysisOpinionItem[];
   disagreementItems: AnalysisOpinionItem[];
   divisiveItems: AnalysisOpinionItem[];
+  allItems: AnalysisOpinionItem[];
+  allStatementsOrderOptions: ReadonlyArray<{
+    label: string;
+    value: ReportAllStatementsOrder;
+  }>;
   hasSurvey: boolean;
   surveyRows: SurveyAggregateRow[];
   showSurveyToggle?: boolean;
@@ -567,6 +672,37 @@ const surveyDisplayMode = defineModel<SurveyResultsDisplayMode>(
     default: "suppressed",
   }
 );
+
+const allStatementsOrder = defineModel<ReportAllStatementsOrder>(
+  "allStatementsOrder",
+  { required: true }
+);
+
+function isReportAllStatementsOrder(
+  value: string | string[] | null
+): value is ReportAllStatementsOrder {
+  return (
+    value === "newest" ||
+    value === "agreement" ||
+    value === "disagreement" ||
+    value === "divisive"
+  );
+}
+
+const allStatementsOrderSelectValue = computed<string | null>({
+  get: () => allStatementsOrder.value,
+  set: (value) => {
+    if (isReportAllStatementsOrder(value)) {
+      allStatementsOrder.value = value;
+    }
+  },
+});
+
+function handleAllStatementsOrderUpdate(value: string | string[] | null): void {
+  if (isReportAllStatementsOrder(value)) {
+    allStatementsOrder.value = value;
+  }
+}
 
 const effectiveItemsPerPage = computed(
   () => props.itemsPerPage ?? REPORT_ITEMS_PER_CAPTURE_PAGE
@@ -610,6 +746,9 @@ const disagreementChunks = computed(() =>
 );
 const divisiveChunks = computed(() =>
   chunkArray(props.divisiveItems, effectiveItemsPerPage.value)
+);
+const allChunks = computed(() =>
+  chunkArray(props.allItems, effectiveItemsPerPage.value)
 );
 
 const surveyOverallChunks = computed(() => {
@@ -699,6 +838,7 @@ const footerRef = ref<HTMLElement | null>(null);
 const agreementEmptyRef = ref<HTMLElement | null>(null);
 const disagreementEmptyRef = ref<HTMLElement | null>(null);
 const divisiveEmptyRef = ref<HTMLElement | null>(null);
+const allEmptyRef = ref<HTMLElement | null>(null);
 const surveyEmptyRef = ref<HTMLElement | null>(null);
 
 // Dynamic arrays of refs
@@ -706,6 +846,7 @@ const groupsAndRepresentativeRefs = ref<HTMLElement[]>([]);
 const agreementRefs = ref<HTMLElement[]>([]);
 const disagreementRefs = ref<HTMLElement[]>([]);
 const divisiveRefs = ref<HTMLElement[]>([]);
+const allRefs = ref<HTMLElement[]>([]);
 const surveyRefs = ref<HTMLElement[]>([]);
 
 function createRefSetter(target: Ref<HTMLElement[]>) {
@@ -723,6 +864,7 @@ const setGroupRepRef = createRefSetter(groupsAndRepresentativeRefs);
 const setAgreementRef = createRefSetter(agreementRefs);
 const setDisagreementRef = createRefSetter(disagreementRefs);
 const setDivisiveRef = createRefSetter(divisiveRefs);
+const setAllRef = createRefSetter(allRefs);
 const setSurveyRef = createRefSetter(surveyRefs);
 
 function getPagedSectionLabel({
@@ -748,10 +890,12 @@ defineExpose({
   agreementEmptyRef,
   disagreementEmptyRef,
   divisiveEmptyRef,
+  allEmptyRef,
   surveyEmptyRef,
   agreementRefs,
   disagreementRefs,
   divisiveRefs,
+  allRefs,
   surveyRefs,
   footerRef,
 });
@@ -789,6 +933,10 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.all-statements-order-select {
+  min-width: 220px;
 }
 
 .survey-cluster-viz-wrapper {

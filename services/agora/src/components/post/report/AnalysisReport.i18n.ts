@@ -5,19 +5,24 @@ export interface AnalysisReportTranslations {
   agreements: string;
   disagreements: string;
   divisive: string;
+  allStatements: string;
   surveyTitle: string;
   surveyOverallLabel: string;
   agreementsLong: string;
   disagreementsLong: string;
   divisiveLong: string;
+  allStatementsLong: string;
   surveySubtitle: string;
   surveyGroupSubtitle: string;
   agreementsSubtitle: string;
   disagreementsSubtitle: string;
   divisiveSubtitle: string;
+  allStatementsSubtitle: string;
+  allStatementsOrderLabel: string;
   noAgreementsMessage: string;
   noDisagreementsMessage: string;
   noDivisiveMessage: string;
+  noAllStatementsMessage: string;
   noSurveyResultsMessage: string;
   suppressed: string;
 }
@@ -31,11 +36,13 @@ export const analysisReportTranslations: Record<
     agreements: "Approved",
     disagreements: "Rejected",
     divisive: "Divisive",
+    allStatements: "All statements",
     surveyTitle: "Survey",
     surveyOverallLabel: "Overall",
     agreementsLong: "Which statements are approved by all groups?",
     disagreementsLong: "Which statements are rejected by all groups?",
     divisiveLong: "What divides people across groups?",
+    allStatementsLong: "All statements",
     surveySubtitle:
       "See how each survey question is answered overall or within each opinion group.",
     surveyGroupSubtitle: "Only responses from this opinion group are included here.",
@@ -45,9 +52,12 @@ export const analysisReportTranslations: Record<
       "Cross-group consensus, not simple majority. Only the most statistically significant are shown first.",
     divisiveSubtitle:
       "Statements that split opinion groups against each other. Only the most statistically significant are shown first.",
+    allStatementsSubtitle: "All statements included in the analysis, ordered by the selected report setting.",
+    allStatementsOrderLabel: "Order by",
     noAgreementsMessage: "No consensus has emerged yet.",
     noDisagreementsMessage: "No consensus has emerged yet.",
     noDivisiveMessage: "No significant divisive statements found yet.",
+    noAllStatementsMessage: "No statements are available yet.",
     noSurveyResultsMessage: "No survey results are available yet.",
     suppressed: "Suppressed",
   },
@@ -56,11 +66,13 @@ export const analysisReportTranslations: Record<
     agreements: "معتمدة",
     disagreements: "مرفوضة",
     divisive: "مثير للجدل",
+    allStatements: "كل المقترحات",
     surveyTitle: "الاستبيان",
     surveyOverallLabel: "إجمالي",
     agreementsLong: "ما المقترحات المعتمدة من جميع المجموعات؟",
     disagreementsLong: "ما المقترحات المرفوضة من جميع المجموعات؟",
     divisiveLong: "ما الذي يقسم المشاركين عبر مجموعات الرأي؟",
+    allStatementsLong: "كل المقترحات",
     surveySubtitle:
       "اطّلع على إجابات كل سؤال في الاستبيان على مستوى الجميع أو داخل كل مجموعة رأي.",
     surveyGroupSubtitle: "تُعرض هنا فقط إجابات المشاركين ضمن مجموعة الرأي هذه.",
@@ -70,9 +82,12 @@ export const analysisReportTranslations: Record<
       "إجماع بين المجموعات وليس أغلبية بسيطة. تُعرض الأكثر دلالة إحصائياً أولاً.",
     divisiveSubtitle:
       "مقترحات تفرّق مجموعات الرأي. تُعرض الأكثر دلالة إحصائياً أولاً.",
+    allStatementsSubtitle: "كل المقترحات المدرجة في التحليل، مرتبة حسب إعداد التقرير المحدد.",
+    allStatementsOrderLabel: "ترتيب حسب",
     noAgreementsMessage: "لم يظهر أي إجماع بعد.",
     noDisagreementsMessage: "لم يظهر أي إجماع بعد.",
     noDivisiveMessage: "لم يتم العثور على مقترحات مثيرة للجدل ذات دلالة بعد.",
+    noAllStatementsMessage: "لا توجد مقترحات متاحة بعد.",
     noSurveyResultsMessage: "لا توجد نتائج استبيان متاحة بعد.",
     suppressed: "محجوب",
   },
@@ -81,12 +96,14 @@ export const analysisReportTranslations: Record<
     agreements: "Aprobados",
     disagreements: "Rechazados",
     divisive: "Divisivo",
+    allStatements: "Todas las afirmaciones",
     surveyTitle: "Encuesta",
     surveyOverallLabel: "General",
     agreementsLong: "¿Qué afirmaciones son aprobadas por todos los grupos?",
     disagreementsLong: "¿Qué afirmaciones son rechazadas por todos los grupos?",
     divisiveLong:
       "¿Qué divide a los participantes entre los grupos de opinión?",
+    allStatementsLong: "Todas las afirmaciones",
     surveySubtitle:
       "Consulta cómo se responde cada pregunta de la encuesta en general o dentro de cada grupo de opinión.",
     surveyGroupSubtitle: "Aquí solo se incluyen las respuestas de este grupo de opinión.",
@@ -96,10 +113,14 @@ export const analysisReportTranslations: Record<
       "Consenso entre grupos, no una mayoría simple. Solo se muestran las más significativas estadísticamente primero.",
     divisiveSubtitle:
       "Afirmaciones que dividen a los grupos de opinión entre sí. Solo se muestran las más significativas estadísticamente primero.",
+    allStatementsSubtitle:
+      "Todas las afirmaciones incluidas en el análisis, ordenadas según la configuración seleccionada del informe.",
+    allStatementsOrderLabel: "Ordenar por",
     noAgreementsMessage: "Aún no ha surgido ningún consenso.",
     noDisagreementsMessage: "Aún no ha surgido ningún consenso.",
     noDivisiveMessage:
       "Aún no se encontraron proposiciones divisivas significativas.",
+    noAllStatementsMessage: "Todavía no hay afirmaciones disponibles.",
     noSurveyResultsMessage:
       "Todavía no hay resultados de la encuesta disponibles.",
     suppressed: "Suprimido",
@@ -109,11 +130,13 @@ export const analysisReportTranslations: Record<
     agreements: "تأیید شده",
     disagreements: "رد شده",
     divisive: "اختلاف‌برانگیز",
+    allStatements: "همه گزاره‌ها",
     surveyTitle: "نظرسنجی",
     surveyOverallLabel: "کلی",
     agreementsLong: "کدام گزاره‌ها توسط همه گروه‌ها تأیید شده‌اند؟",
     disagreementsLong: "کدام گزاره‌ها توسط همه گروه‌ها رد شده‌اند؟",
     divisiveLong: "چه چیزی افراد را در بین گروه‌ها تفرقه می‌اندازد؟",
+    allStatementsLong: "همه گزاره‌ها",
     surveySubtitle:
       "ببینید هر پرسش نظرسنجی به صورت کلی یا درون هر گروه نظر چگونه پاسخ داده شده است.",
     surveyGroupSubtitle: "فقط پاسخ‌های این گروه نظر در اینجا نشان داده می‌شود.",
@@ -123,9 +146,12 @@ export const analysisReportTranslations: Record<
       "اجماع بین‌گروهی، نه اکثریت ساده. ابتدا فقط مهم‌ترین موارد از نظر آماری نمایش داده می‌شوند.",
     divisiveSubtitle:
       "گزاره‌هایی که گروه‌های نظر را در برابر یکدیگر قرار می‌دهند. ابتدا فقط مهم‌ترین موارد از نظر آماری نمایش داده می‌شوند.",
+    allStatementsSubtitle: "همه گزاره‌های موجود در تحلیل، مرتب‌شده بر اساس تنظیم انتخاب‌شده گزارش.",
+    allStatementsOrderLabel: "مرتب‌سازی بر اساس",
     noAgreementsMessage: "هنوز اجماعی شکل نگرفته است.",
     noDisagreementsMessage: "هنوز اجماعی شکل نگرفته است.",
     noDivisiveMessage: "هنوز گزاره اختلاف‌برانگیز مهمی یافت نشده است.",
+    noAllStatementsMessage: "هنوز گزاره‌ای در دسترس نیست.",
     noSurveyResultsMessage: "هنوز نتیجه‌ای از نظرسنجی در دسترس نیست.",
     suppressed: "پنهان‌شده",
   },
@@ -134,6 +160,7 @@ export const analysisReportTranslations: Record<
     agreements: "Approuvés",
     disagreements: "Rejetés",
     divisive: "Controversé",
+    allStatements: "Toutes les propositions",
     surveyTitle: "Questionnaire",
     surveyOverallLabel: "Global",
     agreementsLong:
@@ -142,6 +169,7 @@ export const analysisReportTranslations: Record<
       "Quelles propositions sont rejetées par tous les groupes ?",
     divisiveLong:
       "Qu'est-ce qui divise les participants entre les groupes d'opinion ?",
+    allStatementsLong: "Toutes les propositions",
     surveySubtitle:
       "Voyez comment chaque question du questionnaire est répondue globalement ou dans chaque groupe d'opinion.",
     surveyGroupSubtitle: "Seules les réponses de ce groupe d'opinion sont incluses ici.",
@@ -151,10 +179,14 @@ export const analysisReportTranslations: Record<
       "Consensus entre groupes, pas une simple majorité. Seules les plus significatives statistiquement sont affichées en premier.",
     divisiveSubtitle:
       "Propositions qui divisent les groupes d'opinion entre eux. Seules les plus significatives statistiquement sont affichées en premier.",
+    allStatementsSubtitle:
+      "Toutes les propositions incluses dans l'analyse, triées selon le réglage sélectionné du rapport.",
+    allStatementsOrderLabel: "Trier par",
     noAgreementsMessage: "Aucun consensus n'a encore émergé.",
     noDisagreementsMessage: "Aucun consensus n'a encore émergé.",
     noDivisiveMessage:
       "Aucune proposition controversée significative trouvée pour le moment.",
+    noAllStatementsMessage: "Aucune proposition n'est encore disponible.",
     noSurveyResultsMessage:
       "Aucun résultat de questionnaire n'est encore disponible.",
     suppressed: "Masqué",
@@ -164,19 +196,24 @@ export const analysisReportTranslations: Record<
     agreements: "通过",
     disagreements: "否决",
     divisive: "分歧",
+    allStatements: "所有观点",
     surveyTitle: "问卷",
     surveyOverallLabel: "整体",
     agreementsLong: "哪些观点被所有群组认可？",
     disagreementsLong: "哪些观点被所有群组否决？",
     divisiveLong: "什么使参与者在各意见群组之间产生分歧？",
+    allStatementsLong: "所有观点",
     surveySubtitle: "查看每个问卷问题在整体人群或各意见群组内的回答分布。",
     surveyGroupSubtitle: "此处仅包含该意见群组的回答结果。",
     agreementsSubtitle: "跨群组共识，非简单多数。仅先显示统计上最显著的结果。",
     disagreementsSubtitle: "跨群组共识，非简单多数。仅先显示统计上最显著的结果。",
     divisiveSubtitle: "使意见群组相互对立的观点。仅先显示统计上最显著的结果。",
+    allStatementsSubtitle: "分析中包含的所有观点，按所选报告设置排序。",
+    allStatementsOrderLabel: "排序方式",
     noAgreementsMessage: "尚未形成共识。",
     noDisagreementsMessage: "尚未形成共识。",
     noDivisiveMessage: "尚未找到显著的分歧观点。",
+    noAllStatementsMessage: "暂时没有可用的观点。",
     noSurveyResultsMessage: "暂时没有可用的问卷结果。",
     suppressed: "已隐藏",
   },
@@ -185,19 +222,24 @@ export const analysisReportTranslations: Record<
     agreements: "通過",
     disagreements: "否決",
     divisive: "分歧",
+    allStatements: "所有觀點",
     surveyTitle: "問卷",
     surveyOverallLabel: "整體",
     agreementsLong: "哪些觀點被所有群組認可？",
     disagreementsLong: "哪些觀點被所有群組否決？",
     divisiveLong: "什麼使參與者在各意見群組之間產生分歧？",
+    allStatementsLong: "所有觀點",
     surveySubtitle: "查看每個問卷問題在整體或各意見群組內的回答分布。",
     surveyGroupSubtitle: "此處僅包含此意見群組的回答結果。",
     agreementsSubtitle: "跨群組共識，非簡單多數。僅先顯示統計上最顯著的結果。",
     disagreementsSubtitle: "跨群組共識，非簡單多數。僅先顯示統計上最顯著的結果。",
     divisiveSubtitle: "使意見群組相互對立的觀點。僅先顯示統計上最顯著的結果。",
+    allStatementsSubtitle: "分析中包含的所有觀點，按所選報告設定排序。",
+    allStatementsOrderLabel: "排序方式",
     noAgreementsMessage: "尚未形成共識。",
     noDisagreementsMessage: "尚未形成共識。",
     noDivisiveMessage: "尚未找到顯著的分歧觀點。",
+    noAllStatementsMessage: "目前沒有可用的觀點。",
     noSurveyResultsMessage: "目前沒有可用的問卷結果。",
     suppressed: "已隱藏",
   },
@@ -206,11 +248,13 @@ export const analysisReportTranslations: Record<
     agreements: "אושרו",
     disagreements: "נדחו",
     divisive: "מפלג",
+    allStatements: "כל ההצהרות",
     surveyTitle: "סקר",
     surveyOverallLabel: "כללי",
     agreementsLong: "אילו הצהרות אושרו על ידי כל הקבוצות?",
     disagreementsLong: "אילו הצהרות נדחו על ידי כל הקבוצות?",
     divisiveLong: "מה מפלג את המשתתפים בין הקבוצות?",
+    allStatementsLong: "כל ההצהרות",
     surveySubtitle:
       "ראו כיצד נענית כל שאלה בסקר בכלל המשתתפים או בתוך כל קבוצת דעה.",
     surveyGroupSubtitle: "כאן מוצגות רק התשובות של קבוצת הדעה הזו.",
@@ -220,9 +264,12 @@ export const analysisReportTranslations: Record<
       "קונצנזוס בין-קבוצתי, לא רוב פשוט. רק המובהקות ביותר מבחינה סטטיסטית מוצגות תחילה.",
     divisiveSubtitle:
       "הצהרות שמפלגות בין קבוצות הדעה. רק המובהקות ביותר מבחינה סטטיסטית מוצגות תחילה.",
+    allStatementsSubtitle: "כל ההצהרות שנכללות בניתוח, מסודרות לפי הגדרת הדוח שנבחרה.",
+    allStatementsOrderLabel: "סידור לפי",
     noAgreementsMessage: "טרם התגבש קונצנזוס.",
     noDisagreementsMessage: "טרם התגבש קונצנזוס.",
     noDivisiveMessage: "טרם נמצאו הצהרות מפלגות מובהקות.",
+    noAllStatementsMessage: "עדיין אין הצהרות זמינות.",
     noSurveyResultsMessage: "עדיין אין תוצאות סקר זמינות.",
     suppressed: "מוסתר",
   },
@@ -231,11 +278,13 @@ export const analysisReportTranslations: Record<
     agreements: "承認",
     disagreements: "否決",
     divisive: "分断",
+    allStatements: "すべての意見",
     surveyTitle: "アンケート",
     surveyOverallLabel: "全体",
     agreementsLong: "すべてのグループに承認された意見は？",
     disagreementsLong: "すべてのグループに否決された意見は？",
     divisiveLong: "意見グループ間で参加者を分断しているものは何ですか？",
+    allStatementsLong: "すべての意見",
     surveySubtitle:
       "各アンケート設問への回答が全体または各意見グループ内でどう分かれているかを確認できます。",
     surveyGroupSubtitle: "ここにはこの意見グループの回答のみが表示されます。",
@@ -245,9 +294,12 @@ export const analysisReportTranslations: Record<
       "グループ間の合意であり、単純多数決ではありません。統計的に最も有意なものが最初に表示されます。",
     divisiveSubtitle:
       "意見グループを対立させる意見。統計的に最も有意なものが最初に表示されます。",
+    allStatementsSubtitle: "分析に含まれるすべての意見を、選択したレポート設定で並べます。",
+    allStatementsOrderLabel: "並び順",
     noAgreementsMessage: "まだ合意は形成されていません。",
     noDisagreementsMessage: "まだ合意は形成されていません。",
     noDivisiveMessage: "有意な分断的意見はまだ見つかりません。",
+    noAllStatementsMessage: "利用可能な意見はまだありません。",
     noSurveyResultsMessage: "利用可能なアンケート結果はまだありません。",
     suppressed: "非表示",
   },
@@ -256,11 +308,13 @@ export const analysisReportTranslations: Record<
     agreements: "Жактырылган",
     disagreements: "Четке кагылган",
     divisive: "Талаштуу",
+    allStatements: "Бардык пикирлер",
     surveyTitle: "Сурамжылоо",
     surveyOverallLabel: "Жалпы",
     agreementsLong: "Кайсы пикирлер бардык топтор тарабынан жактырылган?",
     disagreementsLong: "Кайсы пикирлер бардык топтор тарабынан четке кагылган?",
     divisiveLong: "Топтор аралык катышуучуларды эмне бөлөт?",
+    allStatementsLong: "Бардык пикирлер",
     surveySubtitle:
       "Ар бир сурамжылоо суроосуна жооптор жалпы же ар бир пикир тобунун ичинде кандай бөлүнгөнүн көрүңүз.",
     surveyGroupSubtitle: "Бул жерде ушул пикир тобунун жооптору гана көрсөтүлөт.",
@@ -270,9 +324,12 @@ export const analysisReportTranslations: Record<
       "Топтор аралык консенсус, жөнөкөй көпчүлүк эмес. Алгач статистикалык жактан эң маанилүүлөрү көрсөтүлөт.",
     divisiveSubtitle:
       "Пикир топторун бири-бирине каршы коюучу пикирлер. Алгач статистикалык жактан эң маанилүүлөрү көрсөтүлөт.",
+    allStatementsSubtitle: "Талдоого кирген бардык пикирлер тандалган отчет жөндөөсү боюнча иреттелген.",
+    allStatementsOrderLabel: "Иреттөө",
     noAgreementsMessage: "Азырынча консенсус түзүлө элек.",
     noDisagreementsMessage: "Азырынча консенсус түзүлө элек.",
     noDivisiveMessage: "Азырынча маанилүү талаштуу пикирлер табылган жок.",
+    noAllStatementsMessage: "Азырынча жеткиликтүү пикирлер жок.",
     noSurveyResultsMessage:
       "Азырынча сурамжылоонун жыйынтыктары жеткиликтүү эмес.",
     suppressed: "Жашырылган",
@@ -282,11 +339,13 @@ export const analysisReportTranslations: Record<
     agreements: "Одобрено",
     disagreements: "Отклонено",
     divisive: "Спорные",
+    allStatements: "Все высказывания",
     surveyTitle: "Опрос",
     surveyOverallLabel: "В целом",
     agreementsLong: "Какие высказывания одобрены всеми группами?",
     disagreementsLong: "Какие высказывания отклонены всеми группами?",
     divisiveLong: "Что разделяет участников между группами?",
+    allStatementsLong: "Все высказывания",
     surveySubtitle:
       "Смотрите, как отвечают на каждый вопрос опроса в целом или внутри каждой группы мнений.",
     surveyGroupSubtitle: "Здесь показаны только ответы этой группы мнений.",
@@ -296,9 +355,13 @@ export const analysisReportTranslations: Record<
       "Межгрупповой консенсус, а не простое большинство. Сначала показаны наиболее статистически значимые.",
     divisiveSubtitle:
       "Высказывания, по которым группы мнений расходятся. Сначала показаны наиболее статистически значимые.",
+    allStatementsSubtitle:
+      "Все высказывания, включенные в анализ, отсортированы по выбранной настройке отчёта.",
+    allStatementsOrderLabel: "Сортировать по",
     noAgreementsMessage: "Консенсус пока не сформирован.",
     noDisagreementsMessage: "Консенсус пока не сформирован.",
     noDivisiveMessage: "Значимых спорных высказываний пока не найдено.",
+    noAllStatementsMessage: "Высказывания пока недоступны.",
     noSurveyResultsMessage: "Результаты опроса пока недоступны.",
     suppressed: "Скрыто",
   },

@@ -10,6 +10,10 @@ export interface ReportPageTranslations {
   narrowScreenTitle: string;
   narrowScreenMessage: string;
   goBack: string;
+  allStatementsOrderNewest: string;
+  allStatementsOrderAgreement: string;
+  allStatementsOrderDisagreement: string;
+  allStatementsOrderDivisive: string;
 }
 
 export const reportPageTranslations: Record<
@@ -27,6 +31,10 @@ export const reportPageTranslations: Record<
     narrowScreenMessage:
       "This report is designed for larger screens. Please open it on a desktop or tablet.",
     goBack: "Go back",
+    allStatementsOrderNewest: "Newest first",
+    allStatementsOrderAgreement: "Most approved first",
+    allStatementsOrderDisagreement: "Most rejected first",
+    allStatementsOrderDivisive: "Most divisive first",
   },
   ar: {
     pageTitle: "تقرير التحليل",
@@ -39,6 +47,10 @@ export const reportPageTranslations: Record<
     narrowScreenMessage:
       "هذا التقرير مصمم للشاشات الكبيرة. يرجى فتحه على جهاز مكتبي أو جهاز لوحي.",
     goBack: "العودة",
+    allStatementsOrderNewest: "الأحدث أولاً",
+    allStatementsOrderAgreement: "الأكثر اعتماداً أولاً",
+    allStatementsOrderDisagreement: "الأكثر رفضاً أولاً",
+    allStatementsOrderDivisive: "الأكثر إثارة للجدل أولاً",
   },
   es: {
     pageTitle: "Informe de análisis",
@@ -51,6 +63,10 @@ export const reportPageTranslations: Record<
     narrowScreenMessage:
       "Este informe está diseñado para pantallas más grandes. Ábrelo en un ordenador o tableta.",
     goBack: "Volver",
+    allStatementsOrderNewest: "Más recientes primero",
+    allStatementsOrderAgreement: "Más aprobadas primero",
+    allStatementsOrderDisagreement: "Más rechazadas primero",
+    allStatementsOrderDivisive: "Más divisivas primero",
   },
   fa: {
     pageTitle: "گزارش تحلیل",
@@ -63,6 +79,10 @@ export const reportPageTranslations: Record<
     narrowScreenMessage:
       "این گزارش برای صفحه‌های بزرگ‌تر طراحی شده است. لطفاً آن را در رایانه رومیزی یا تبلت باز کنید.",
     goBack: "بازگشت",
+    allStatementsOrderNewest: "جدیدترین‌ها اول",
+    allStatementsOrderAgreement: "تأییدشده‌ترین‌ها اول",
+    allStatementsOrderDisagreement: "ردشده‌ترین‌ها اول",
+    allStatementsOrderDivisive: "اختلاف‌برانگیزترین‌ها اول",
   },
   he: {
     pageTitle: "דוח ניתוח",
@@ -75,6 +95,10 @@ export const reportPageTranslations: Record<
     narrowScreenMessage:
       "דוח זה מיועד למסכים גדולים יותר. אנא פתחו אותו במחשב שולחני או טאבלט.",
     goBack: "חזרה",
+    allStatementsOrderNewest: "החדשות תחילה",
+    allStatementsOrderAgreement: "המאושרות ביותר תחילה",
+    allStatementsOrderDisagreement: "הנדחות ביותר תחילה",
+    allStatementsOrderDivisive: "המפלגות ביותר תחילה",
   },
   fr: {
     pageTitle: "Rapport d'analyse",
@@ -87,6 +111,10 @@ export const reportPageTranslations: Record<
     narrowScreenMessage:
       "Ce rapport est conçu pour les grands écrans. Veuillez l'ouvrir sur un ordinateur ou une tablette.",
     goBack: "Retour",
+    allStatementsOrderNewest: "Plus récentes d'abord",
+    allStatementsOrderAgreement: "Plus approuvées d'abord",
+    allStatementsOrderDisagreement: "Plus rejetées d'abord",
+    allStatementsOrderDivisive: "Plus controversées d'abord",
   },
   "zh-Hans": {
     pageTitle: "分析报告",
@@ -98,6 +126,10 @@ export const reportPageTranslations: Record<
     narrowScreenTitle: "需要更大的屏幕",
     narrowScreenMessage: "此报告适用于大屏幕。请在桌面设备或平板电脑上打开。",
     goBack: "返回",
+    allStatementsOrderNewest: "最新优先",
+    allStatementsOrderAgreement: "最受认可优先",
+    allStatementsOrderDisagreement: "最受否决优先",
+    allStatementsOrderDivisive: "最具分歧优先",
   },
   "zh-Hant": {
     pageTitle: "分析報告",
@@ -109,6 +141,10 @@ export const reportPageTranslations: Record<
     narrowScreenTitle: "需要更大的螢幕",
     narrowScreenMessage: "此報告適用於大螢幕。請在桌面裝置或平板電腦上開啟。",
     goBack: "返回",
+    allStatementsOrderNewest: "最新優先",
+    allStatementsOrderAgreement: "最受認可優先",
+    allStatementsOrderDisagreement: "最受否決優先",
+    allStatementsOrderDivisive: "最具分歧優先",
   },
   ja: {
     pageTitle: "分析レポート",
@@ -121,6 +157,10 @@ export const reportPageTranslations: Record<
     narrowScreenMessage:
       "このレポートは大きな画面用に設計されています。デスクトップまたはタブレットで開いてください。",
     goBack: "戻る",
+    allStatementsOrderNewest: "新しい順",
+    allStatementsOrderAgreement: "承認度が高い順",
+    allStatementsOrderDisagreement: "否決度が高い順",
+    allStatementsOrderDivisive: "分断度が高い順",
   },
   ky: {
     pageTitle: "Анализ отчету",
@@ -133,6 +173,10 @@ export const reportPageTranslations: Record<
     narrowScreenMessage:
       "Бул отчет чоң экрандар үчүн иштелип чыккан. Компьютерде же планшетте ачыңыз.",
     goBack: "Артка",
+    allStatementsOrderNewest: "Эң жаңылары биринчи",
+    allStatementsOrderAgreement: "Эң жактырылгандары биринчи",
+    allStatementsOrderDisagreement: "Эң четке кагылгандары биринчи",
+    allStatementsOrderDivisive: "Эң талаштуулары биринчи",
   },
   ru: {
     pageTitle: "Аналитический отчёт",
@@ -145,5 +189,9 @@ export const reportPageTranslations: Record<
     narrowScreenMessage:
       "Этот отчёт предназначен для больших экранов. Пожалуйста, откройте его на компьютере или планшете.",
     goBack: "Назад",
+    allStatementsOrderNewest: "Сначала новые",
+    allStatementsOrderAgreement: "Сначала самые одобренные",
+    allStatementsOrderDisagreement: "Сначала самые отклонённые",
+    allStatementsOrderDivisive: "Сначала самые спорные",
   },
 };

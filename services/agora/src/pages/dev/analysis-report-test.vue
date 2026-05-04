@@ -91,6 +91,19 @@
               class="control-select"
             />
           </div>
+          <div class="control-item">
+            <label for="all-statements-order" class="control-label">
+              All statements order
+            </label>
+            <PrimeSelect
+              id="all-statements-order"
+              v-model="allStatementsOrder"
+              :options="allStatementsOrderOptions"
+              option-label="label"
+              option-value="value"
+              class="control-select"
+            />
+          </div>
         </div>
       </template>
     </PrimeCard>
@@ -113,8 +126,9 @@
     <div class="report-preview">
       <AnalysisReport
         ref="analysisReportRef"
-        :key="`${selectedClusterCount}-${aiLabelMode}-${emptySectionsMode}-${numberScale}-${surveyViewerAccess}-${surveyScenario}-${reportSurveyDisplayMode}`"
+        :key="`${selectedClusterCount}-${aiLabelMode}-${emptySectionsMode}-${numberScale}-${surveyViewerAccess}-${surveyScenario}-${reportSurveyDisplayMode}-${allStatementsOrder}`"
         v-model:survey-display-mode="reportSurveyDisplayMode"
+        v-model:all-statements-order="allStatementsOrder"
         :items-per-page="itemsPerPage"
         :conversation-slug-id="mockConversationSlugId"
         :conversation-title="mockConversationTitle"
@@ -130,6 +144,8 @@
         :agreement-items="mockAgreementItems"
         :disagreement-items="mockDisagreementItems"
         :divisive-items="mockDivisiveItems"
+        :all-items="mockAllItems"
+        :all-statements-order-options="allStatementsOrderOptions"
         :has-survey="hasMockSurvey"
         :survey-rows="reportSurveyRows"
         :show-survey-toggle="showReportSurveyToggle"
@@ -154,8 +170,10 @@ import type {
   PolisClusters,
 } from "src/shared/types/zod";
 import {
+  getReportAllOpinions,
   REPORT_ITEMS_PER_CAPTURE_PAGE,
   REPORT_ITEMS_PER_PDF_PAGE,
+  type ReportAllStatementsOrder,
 } from "src/utils/component/report/reportData";
 import {
   canViewFullSurveyResults,
@@ -205,6 +223,7 @@ const numberScale = ref<"normal" | "large" | "veryLarge">("large");
 const surveyViewerAccess = ref<"public" | "owner">("owner");
 const surveyScenario = ref<SurveyScenario>("visible");
 const reportSurveyDisplayMode = ref<SurveyResultsDisplayMode>("suppressed");
+const allStatementsOrder = ref<ReportAllStatementsOrder>("newest");
 
 const mockConversationSlugId = "dev-test-report";
 const mockConversationTitle =
@@ -272,6 +291,13 @@ const surveyScenarioOptions = computed(() => [
   { label: "Mixed groups", value: "mixed" as const },
   { label: "No results yet", value: "empty" as const },
 ]);
+
+const allStatementsOrderOptions = [
+  { label: "Newest first", value: "newest" as const },
+  { label: "Most approved first", value: "agreement" as const },
+  { label: "Most rejected first", value: "disagreement" as const },
+  { label: "Most divisive first", value: "divisive" as const },
+];
 
 const emptySectionsOptions = computed(() => [
   { label: t("emptySectionsNone"), value: "none" as const },
@@ -461,6 +487,17 @@ const mockDivisiveItems = computed(() => {
   return items;
 });
 
+const mockAllItems = computed(() =>
+  getReportAllOpinions({
+    order: allStatementsOrder.value,
+    items: [
+      ...mockAgreementItems.value,
+      ...mockDisagreementItems.value,
+      ...mockDivisiveItems.value,
+    ],
+  })
+);
+
 const surveyResultsQuery = useQuery({
   queryKey: computed(() => [
     "dev-survey-results",
@@ -504,9 +541,11 @@ interface AnalysisReportExposed {
   agreementEmptyRef: HTMLElement | null;
   disagreementEmptyRef: HTMLElement | null;
   divisiveEmptyRef: HTMLElement | null;
+  allEmptyRef: HTMLElement | null;
   agreementRefs: HTMLElement[];
   disagreementRefs: HTMLElement[];
   divisiveRefs: HTMLElement[];
+  allRefs: HTMLElement[];
   surveyEmptyRef: HTMLElement | null;
   surveyRefs: HTMLElement[];
   footerRef: HTMLElement | null;
@@ -579,6 +618,15 @@ function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
     const el = report.surveyRefs[j];
     if (el?.isConnected) {
       captures.push({ element: el, name: `survey-${j}` });
+    }
+  }
+  if (report.allEmptyRef?.isConnected) {
+    captures.push({ element: report.allEmptyRef, name: "all-empty" });
+  }
+  for (let j = 0; j < report.allRefs.length; j++) {
+    const el = report.allRefs[j];
+    if (el?.isConnected) {
+      captures.push({ element: el, name: `all-${j}` });
     }
   }
 
