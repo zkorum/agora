@@ -258,6 +258,7 @@ function processDeleteAccount() {
           await deleteUserAccount();
           await updateAuthState({ partialLoginStatus: { isKnown: false } });
           showNotifyMessage(t("accountDeleted"));
+          await router.push({ name: "/welcome/" });
         } catch (e) {
           console.error("Failed to delete user account", e);
           showNotifyMessage(t("accountDeletionFailed"));
