@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { VotingAction } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { computed, type MaybeRefOrGetter, reactive, toValue } from "vue";
@@ -10,6 +11,10 @@ import { useInvalidateCommentQueries } from "../comment/useCommentQueries";
 import type { AxiosErrorResponse } from "../common";
 import { useCommonApi } from "../common";
 import { useBackendVoteApi } from "../vote";
+import {
+  type UseVoteQueriesTranslations,
+  useVoteQueriesTranslations,
+} from "./useVoteQueries.i18n";
 
 // Track clustering status across component mounts (session-level persistence)
 // reactive() makes Vue track .get()/.set() so computed properties re-evaluate
@@ -32,6 +37,9 @@ export function useVoteMutation(postSlugId: string) {
   const queryClient = useQueryClient();
   const { castVoteForComment } = useBackendVoteApi();
   const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<UseVoteQueriesTranslations>(
+    useVoteQueriesTranslations
+  );
   const { markAnalysisAsStale } = useInvalidateCommentQueries();
   const { getErrorMessage } = useCommonApi();
   const { updateAuthState } = useBackendAuthApi();
@@ -154,7 +162,7 @@ export function useVoteMutation(postSlugId: string) {
       if (error?.code) {
         showNotifyMessage(getErrorMessage(error));
       } else {
-        showNotifyMessage("Failed to cast vote. Please try again.");
+        showNotifyMessage(t("failedToCastVote"));
       }
     },
 

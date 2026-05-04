@@ -7,6 +7,7 @@ import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   FetchUserReportsByCommentSlugIdResponse,
   FetchUserReportsByPostSlugIdResponse,
@@ -21,11 +22,18 @@ import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { useNotify } from "../ui/notify";
 import { api } from "./client";
 import { useCommonApi } from "./common";
+import {
+  type ReportApiTranslations,
+  reportApiTranslations,
+} from "./report.i18n";
 
 export function useBackendReportApi() {
   const { buildEncodedUcan } = useCommonApi();
 
   const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<ReportApiTranslations>(
+    reportApiTranslations
+  );
 
   async function createUserReportByPostSlugId(
     postSlugId: string,
@@ -56,11 +64,11 @@ export function useBackendReportApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
-      showNotifyMessage("Submitted report");
+      showNotifyMessage(t("submittedReport"));
       return true;
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to submit user report for post");
+      showNotifyMessage(t("failedToSubmitPostReport"));
       return false;
     }
   }
@@ -94,11 +102,11 @@ export function useBackendReportApi() {
           ...buildAuthorizationHeader(encodedUcan),
         },
       });
-      showNotifyMessage("Submitted report");
+      showNotifyMessage(t("submittedReport"));
       return true;
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to submit user report for comment");
+      showNotifyMessage(t("failedToSubmitCommentReport"));
       return false;
     }
   }
@@ -146,7 +154,7 @@ export function useBackendReportApi() {
       return createInternalUserReportObjectList(response.data);
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to fetch post reports");
+      showNotifyMessage(t("failedToFetchPostReports"));
       return [];
     }
   }
@@ -175,7 +183,7 @@ export function useBackendReportApi() {
       return createInternalUserReportObjectList(response.data);
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to fetch post reports");
+      showNotifyMessage(t("failedToFetchPostReports"));
       return [];
     }
   }

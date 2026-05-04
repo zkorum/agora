@@ -368,7 +368,7 @@ export function useBackendPostApi() {
         "Failed to parse conversation data with zod:",
         conversationListResult.error
       );
-      showNotifyMessage("Invalid conversation data received from server.");
+      showNotifyMessage(t("invalidConversationData"));
       return [];
     }
 
@@ -396,7 +396,7 @@ export function useBackendPostApi() {
       return true;
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to delete the post.");
+      showNotifyMessage(t("failedToDeletePost"));
       return false;
     }
   }

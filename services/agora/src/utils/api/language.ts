@@ -1,5 +1,6 @@
 import type { ApiV1UserLanguagePreferencesUpdatePostRequest } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import {
   type LanguagePreferences as LanguagePreferencesData,
@@ -10,6 +11,10 @@ import { useNotify } from "../ui/notify";
 import { api } from "./client";
 import type { AxiosErrorResponse, AxiosSuccessResponse } from "./common";
 import { useCommonApi } from "./common";
+import {
+  type LanguageApiTranslations,
+  languageApiTranslations,
+} from "./language.i18n";
 
 export function useBackendLanguageApi() {
   const {
@@ -19,6 +24,9 @@ export function useBackendLanguageApi() {
   } = useCommonApi();
 
   const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<LanguageApiTranslations>(
+    languageApiTranslations
+  );
 
   type FetchLanguagePreferencesSuccessResponse =
     AxiosSuccessResponse<LanguagePreferencesData>;
@@ -103,7 +111,7 @@ export function useBackendLanguageApi() {
       };
     } catch (e) {
       console.error("Failed to update language preferences:", e);
-      showNotifyMessage("Failed to save language preferences");
+      showNotifyMessage(t("failedToSaveLanguagePreferences"));
       return createAxiosErrorResponse(e);
     }
   }

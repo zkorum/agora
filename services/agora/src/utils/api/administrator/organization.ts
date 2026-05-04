@@ -5,17 +5,25 @@ import type {
   ApiV1UserUsernameUpdatePostRequest,
 } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { OrganizationProperties } from "src/shared/types/zod";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
 
 import { api } from "../client";
 import { useCommonApi } from "../common";
+import {
+  type AdministratorOrganizationApiTranslations,
+  administratorOrganizationApiTranslations,
+} from "./organization.i18n";
 
 export function useBackendAdministratorOrganizationApi() {
   const { buildEncodedUcan } = useCommonApi();
 
   const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<AdministratorOrganizationApiTranslations>(
+    administratorOrganizationApiTranslations
+  );
 
   async function getAllOrganizations(): Promise<OrganizationProperties[]> {
     try {
@@ -35,12 +43,12 @@ export function useBackendAdministratorOrganizationApi() {
       if (response.status == 200) {
         return response.data.organizationList;
       } else {
-        showNotifyMessage("Failed to fetch organizations");
+        showNotifyMessage(t("failedToFetchOrganizations"));
         return [];
       }
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to fetch organizations");
+      showNotifyMessage(t("failedToFetchOrganizations"));
       return [];
     }
   }
@@ -72,15 +80,15 @@ export function useBackendAdministratorOrganizationApi() {
       });
 
       if (response.status == 200) {
-        showNotifyMessage("Added user organization mapping");
+        showNotifyMessage(t("addedUserOrganizationMapping"));
         return true;
       } else {
-        showNotifyMessage("Failed to add user organization mapping");
+        showNotifyMessage(t("failedToAddUserOrganizationMapping"));
         return false;
       }
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to add user organization mapping");
+      showNotifyMessage(t("failedToAddUserOrganizationMapping"));
       return false;
     }
   }
@@ -115,15 +123,15 @@ export function useBackendAdministratorOrganizationApi() {
       );
 
       if (response.status == 200) {
-        showNotifyMessage("Removed user organization mapping");
+        showNotifyMessage(t("removedUserOrganizationMapping"));
         return true;
       } else {
-        showNotifyMessage("Failed to remove user organization mapping");
+        showNotifyMessage(t("failedToRemoveUserOrganizationMapping"));
         return false;
       }
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to remove user organization mapping");
+      showNotifyMessage(t("failedToRemoveUserOrganizationMapping"));
       return false;
     }
   }
@@ -151,15 +159,15 @@ export function useBackendAdministratorOrganizationApi() {
       });
 
       if (response.status == 200) {
-        showNotifyMessage("Deleted organization");
+        showNotifyMessage(t("deletedOrganization"));
         return true;
       } else {
-        showNotifyMessage("Failed to delete organization");
+        showNotifyMessage(t("failedToDeleteOrganization"));
         return false;
       }
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to delete organization");
+      showNotifyMessage(t("failedToDeleteOrganization"));
       return false;
     }
   }
@@ -197,15 +205,15 @@ export function useBackendAdministratorOrganizationApi() {
       });
 
       if (response.status == 200) {
-        showNotifyMessage("Created user organization");
+        showNotifyMessage(t("createdUserOrganization"));
         return true;
       } else {
-        showNotifyMessage("Failed to create user organization");
+        showNotifyMessage(t("failedToCreateUserOrganization"));
         return false;
       }
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to create user organization");
+      showNotifyMessage(t("failedToCreateUserOrganization"));
       return false;
     }
   }
@@ -239,12 +247,12 @@ export function useBackendAdministratorOrganizationApi() {
       if (response.status == 200) {
         return response.data.organizationList;
       } else {
-        showNotifyMessage("Failed to get user's organizations");
+        showNotifyMessage(t("failedToGetUserOrganizations"));
         return [];
       }
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to get user's organizations");
+      showNotifyMessage(t("failedToGetUserOrganizations"));
       return [];
     }
   }

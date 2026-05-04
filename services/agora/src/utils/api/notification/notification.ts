@@ -1,5 +1,6 @@
 import type { ApiV1NotificationFetchPostRequest } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { FetchNotificationsResponse } from "src/shared/types/dto";
 import {
   type NotificationItem,
@@ -10,11 +11,18 @@ import { buildAuthorizationHeader } from "../../crypto/ucan/operation";
 import { useNotify } from "../../ui/notify";
 import { api } from "../client";
 import { useCommonApi } from "../common";
+import {
+  type NotificationApiTranslations,
+  notificationApiTranslations,
+} from "./notification.i18n";
 
 export function useNotificationApi() {
   const { buildEncodedUcan } = useCommonApi();
 
   const { showNotifyMessage } = useNotify();
+  const { t } = useComponentI18n<NotificationApiTranslations>(
+    notificationApiTranslations
+  );
 
   async function fetchNotifications(
     lastSlugId: string | undefined
@@ -56,7 +64,6 @@ export function useNotificationApi() {
       };
     } catch (e) {
       console.error(e);
-      // showNotifyMessage("Failed to fetch user notifications");
       return undefined;
     }
   }
@@ -77,7 +84,7 @@ export function useNotificationApi() {
       });
     } catch (e) {
       console.error(e);
-      showNotifyMessage("Failed to mark user notifications as read");
+      showNotifyMessage(t("failedToMarkNotificationsRead"));
     }
   }
 
