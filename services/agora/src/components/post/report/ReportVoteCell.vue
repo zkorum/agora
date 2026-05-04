@@ -35,9 +35,16 @@ const props = defineProps<{
   numUsers: number;
 }>();
 
-const agreePct = computed(() => calculatePercentage(props.numAgrees, props.numUsers));
-const passPct = computed(() => calculatePercentage(props.numPasses, props.numUsers));
-const disagreePct = computed(() => calculatePercentage(props.numDisagrees, props.numUsers));
+const denominator = computed(() =>
+  Math.max(
+    props.numUsers,
+    props.numAgrees + props.numPasses + props.numDisagrees
+  )
+);
+
+const agreePct = computed(() => calculatePercentage(props.numAgrees, denominator.value));
+const passPct = computed(() => calculatePercentage(props.numPasses, denominator.value));
+const disagreePct = computed(() => calculatePercentage(props.numDisagrees, denominator.value));
 
 const agreeStr = computed(() => formatPercentage(agreePct.value));
 const passStr = computed(() => formatPercentage(passPct.value));
