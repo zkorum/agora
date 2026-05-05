@@ -3,11 +3,11 @@ title: "از پخش گسترده تا شنیدن گسترده"
 description: "Bestian Tang از vTaiwan چارچوبی روشن برای فهم Agora ارائه می‌کند: شنیدن گسترده، معناپردازی و دیدن فراتر از گروه نظر خودمان."
 author: "تیم Agora"
 date: "September 2025"
-thumbnail: "https://img.youtube.com/vi/MBs6Kx8cSSo/hqdefault.jpg"
-image: "https://img.youtube.com/vi/MBs6Kx8cSSo/hqdefault.jpg"
+thumbnail: "/images/blog/broadcasting-to-broad-listening.png"
+image: "/images/blog/broadcasting-to-broad-listening.png"
 ---
 
-Bestian Tang (唐宗浩) از [vTaiwan](https://vtaiwan.tw/) ویدیویی به زبان ماندارین درباره Agora و گذار از **broadcasting** به **broadlistening** ساخته است.
+Bestian Tang (唐宗浩) از [vTaiwan](https://vtaiwan.tw/) ویدیویی به زبان ماندارین درباره Agora و گذار از **broadcasting** به **broad listening** ساخته است.
 
 نکته اصلی ساده و مهم است: هرچه مشارکت بزرگ‌تر می‌شود، دموکراسی دشوارتر می‌شود. موضوع فقط این نیست که افراد بیشتری بتوانند حرف بزنند. مسئله این است که چگونه صداهای بسیار را بشنویم، آنچه می‌گویند را سازمان‌دهی کنیم و شکل افکار عمومی را قابل فهم کنیم.
 

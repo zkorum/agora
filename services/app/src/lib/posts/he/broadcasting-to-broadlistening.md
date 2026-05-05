@@ -3,11 +3,11 @@ title: "משידור להקשבה רחבה"
 description: "Bestian Tang מ-vTaiwan מציע מסגרת ברורה ל-Agora: הקשבה רחבה, יצירת משמעות, וראייה מעבר לקבוצת הדעה שלנו."
 author: "צוות Agora"
 date: "September 2025"
-thumbnail: "https://img.youtube.com/vi/MBs6Kx8cSSo/hqdefault.jpg"
-image: "https://img.youtube.com/vi/MBs6Kx8cSSo/hqdefault.jpg"
+thumbnail: "/images/blog/broadcasting-to-broad-listening.png"
+image: "/images/blog/broadcasting-to-broad-listening.png"
 ---
 
-Bestian Tang (唐宗浩) מ-[vTaiwan](https://vtaiwan.tw/) יצר סרטון במנדרינית על Agora ועל המעבר מ-**broadcasting** ל-**broadlistening**.
+Bestian Tang (唐宗浩) מ-[vTaiwan](https://vtaiwan.tw/) יצר סרטון במנדרינית על Agora ועל המעבר מ-**broadcasting** ל-**broad listening**.
 
 המסגרת פשוטה וחשובה: ככל שההשתתפות גדלה, הדמוקרטיה נעשית קשה יותר. לא מספיק שיותר אנשים יוכלו לדבר. צריך גם לשמוע קולות רבים, לארגן את מה שהם אומרים, ולהפוך את צורת דעת הקהל למובנת.
 

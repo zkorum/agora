@@ -2,6 +2,7 @@
   import screenshotAuth from "$lib/assets/screenshot-auth.png?enhanced";
   import screenshotDemographics from "$lib/assets/screenshot-demographics.png?enhanced";
   import screenshotPolis from "$lib/assets/screenshot-polis.png?enhanced";
+  import screenshotPluralVoting from "$lib/assets/screenshot-plural-voting.png?enhanced";
   import screenshotSensemaker from "$lib/assets/screenshot-sensemaker.png?enhanced";
   import * as m from "$lib/paraglide/messages.js";
   import Chip from "$ui/shared/chip.svelte";
@@ -26,6 +27,14 @@
       text: () => m.facilitators_feature_sensemaker(),
       source: () => m.facilitators_feature_sensemaker_source(),
       sourceUrl: "https://jigsaw-code.github.io/sensemaking-tools/",
+    },
+    {
+      id: "plural-voting",
+      img: screenshotPluralVoting,
+      chip: () => m.facilitators_chip_plural_voting(),
+      text: () => m.facilitators_feature_plural_voting(),
+      source: () => m.facilitators_feature_plural_voting_source(),
+      sourceUrl: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4311507",
     },
     {
       id: "auth",
@@ -79,12 +88,13 @@
 
     <div
       class="
-        mb-8 flex flex-col items-center gap-[13px]
-        md:flex-row md:items-start
+        mb-8 grid grid-cols-1 justify-items-center gap-[13px]
+        sm:grid-cols-2
+        lg:grid-cols-5
       "
     >
       {#each features as feature (feature.id)}
-        <div class="flex w-[270px] flex-col gap-[10px]">
+        <div class="flex w-full max-w-[270px] flex-col gap-[10px]">
           <div
             class="
               flex h-[250px] items-center justify-center overflow-hidden

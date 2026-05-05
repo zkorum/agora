@@ -1,13 +1,13 @@
 ---
-title: "De broadcasting a broadlistening"
+title: "De broadcasting a broad listening"
 description: "Bestian Tang, de vTaiwan, ofrece una forma clara de entender Agora: escucha amplia, síntesis de opiniones y una mirada más allá del propio grupo."
 author: "Equipo Agora"
 date: "September 2025"
-thumbnail: "https://img.youtube.com/vi/MBs6Kx8cSSo/hqdefault.jpg"
-image: "https://img.youtube.com/vi/MBs6Kx8cSSo/hqdefault.jpg"
+thumbnail: "/images/blog/broadcasting-to-broad-listening.png"
+image: "/images/blog/broadcasting-to-broad-listening.png"
 ---
 
-Bestian Tang (唐宗浩), de [vTaiwan](https://vtaiwan.tw/), hizo un video en mandarín sobre Agora y el paso de **broadcasting** a **broadlistening**.
+Bestian Tang (唐宗浩), de [vTaiwan](https://vtaiwan.tw/), hizo un video en mandarín sobre Agora y el paso de **broadcasting** a **broad listening**.
 
 La idea de fondo es sencilla e importante: la democracia se vuelve más difícil cuando la participación crece. No basta con que más personas puedan hablar. También necesitamos escuchar muchas voces, ordenar lo que dicen y hacer visible la forma de la opinión pública.
 
@@ -15,7 +15,7 @@ Por eso la democracia a gran escala puede acercarse a la "ley de hierro de la ol
 
 ## Tres ideas
 
-**Broadlistening:** en lugar de optimizar para difusión y viralidad, la tecnología cívica puede ayudar a que muchas personas hablen y muchas personas escuchen. El objetivo no es amplificar más, sino comprender mejor.
+**Broad Listening:** en lugar de optimizar para difusión y viralidad, la tecnología cívica puede ayudar a que muchas personas hablen y muchas personas escuchen. El objetivo no es amplificar más, sino comprender mejor.
 
 **Sensemaking:** la IA puede ayudar a analizar grandes volúmenes de opiniones y votos, mostrando patrones como consensos, desacuerdos y distribución de grupos de opinión.
 
@@ -24,7 +24,7 @@ Por eso la democracia a gran escala puede acercarse a la "ley de hierro de la ol
 El video está en mandarín. Quienes no hablen mandarín pueden usar los subtítulos automáticos y la traducción automática de YouTube.
 
 <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 28px 0; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 24px rgba(9, 15, 83, 0.16);">
-  <iframe src="https://www.youtube.com/embed/MBs6Kx8cSSo" title="De broadcasting a broadlistening: Bestian Tang sobre Agora" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  <iframe src="https://www.youtube.com/embed/MBs6Kx8cSSo" title="De broadcasting a broad listening: Bestian Tang sobre Agora" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 </div>
 
 [Ver en YouTube](https://www.youtube.com/watch?v=MBs6Kx8cSSo)

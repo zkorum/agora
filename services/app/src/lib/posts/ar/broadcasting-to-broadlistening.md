@@ -3,8 +3,8 @@ title: "من البث إلى الإصغاء الواسع"
 description: "يقدّم Bestian Tang من vTaiwan إطاراً واضحاً لفهم Agora: الإصغاء الواسع، واستخلاص المعنى، ورؤية ما يتجاوز مجموعة الرأي الخاصة بنا."
 author: "فريق Agora"
 date: "September 2025"
-thumbnail: "https://img.youtube.com/vi/MBs6Kx8cSSo/hqdefault.jpg"
-image: "https://img.youtube.com/vi/MBs6Kx8cSSo/hqdefault.jpg"
+thumbnail: "/images/blog/broadcasting-to-broad-listening.png"
+image: "/images/blog/broadcasting-to-broad-listening.png"
 ---
 
 أنشأ Bestian Tang (唐宗浩) من [vTaiwan](https://vtaiwan.tw/) فيديو باللغة المندرينية عن Agora وعن الانتقال من **البث** إلى **الإصغاء الواسع**.

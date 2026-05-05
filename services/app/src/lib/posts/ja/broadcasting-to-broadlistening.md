@@ -3,8 +3,8 @@ title: "ブロードキャスティングからブロードリスニングへ"
 description: "vTaiwanのBestian Tangが、Agoraを理解するための明快な視点を示します。広く聴くこと、意味づけ、そして自分の意見グループを越えて見ることです。"
 author: "Agoraチーム"
 date: "September 2025"
-thumbnail: "https://img.youtube.com/vi/MBs6Kx8cSSo/hqdefault.jpg"
-image: "https://img.youtube.com/vi/MBs6Kx8cSSo/hqdefault.jpg"
+thumbnail: "/images/blog/broadcasting-to-broad-listening.png"
+image: "/images/blog/broadcasting-to-broad-listening.png"
 ---
 
 [vTaiwan](https://vtaiwan.tw/)のBestian Tang（唐宗浩）が、Agoraと**ブロードキャスティング**から**ブロードリスニング**への転換について、中国語（標準中国語）の解説動画を公開しました。
