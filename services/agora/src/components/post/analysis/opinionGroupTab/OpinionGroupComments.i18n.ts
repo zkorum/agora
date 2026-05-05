@@ -18,7 +18,7 @@ export const opinionGroupCommentsTranslations: Record<
     opinionsTitleLong: "Representative statements",
     noOpinionsMessage: "No statements available for this group.",
     thisGroup: "This group",
-    allOthers: "All others",
+    allOthers: "All other participants",
     allOtherGroups: "All other groups",
   },
   ar: {
@@ -26,7 +26,7 @@ export const opinionGroupCommentsTranslations: Record<
     opinionsTitleLong: "المقترحات الممثّلة",
     noOpinionsMessage: "لا توجد مقترحات متاحة لهذه المجموعة.",
     thisGroup: "هذه المجموعة",
-    allOthers: "جميع الآخرين",
+    allOthers: "جميع المشاركين الآخرين",
     allOtherGroups: "جميع المجموعات الأخرى",
   },
   es: {
@@ -34,7 +34,7 @@ export const opinionGroupCommentsTranslations: Record<
     opinionsTitleLong: "Proposiciones representativas",
     noOpinionsMessage: "No hay proposiciones disponibles para este grupo.",
     thisGroup: "Este grupo",
-    allOthers: "Todos los demás",
+    allOthers: "Todos los demás participantes",
     allOtherGroups: "Los otros grupos",
   },
   fa: {
@@ -42,7 +42,7 @@ export const opinionGroupCommentsTranslations: Record<
     opinionsTitleLong: "گزاره‌های شاخص",
     noOpinionsMessage: "هیچ گزاره‌ای برای این گروه موجود نیست.",
     thisGroup: "این گروه",
-    allOthers: "همه دیگران",
+    allOthers: "همه شرکت‌کنندگان دیگر",
     allOtherGroups: "همه گروه‌های دیگر",
   },
   fr: {
@@ -50,7 +50,7 @@ export const opinionGroupCommentsTranslations: Record<
     opinionsTitleLong: "Propositions représentatives",
     noOpinionsMessage: "Aucune proposition disponible pour ce groupe.",
     thisGroup: "Ce groupe",
-    allOthers: "Tous les autres",
+    allOthers: "Tous les autres participants",
     allOtherGroups: "Les autres groupes",
   },
   "zh-Hans": {
@@ -58,7 +58,7 @@ export const opinionGroupCommentsTranslations: Record<
     opinionsTitleLong: "代表性观点",
     noOpinionsMessage: "此群组没有观点。",
     thisGroup: "此群组",
-    allOthers: "所有其他",
+    allOthers: "所有其他参与者",
     allOtherGroups: "所有其他群组",
   },
   "zh-Hant": {
@@ -66,7 +66,7 @@ export const opinionGroupCommentsTranslations: Record<
     opinionsTitleLong: "代表性觀點",
     noOpinionsMessage: "此群組沒有觀點。",
     thisGroup: "此群組",
-    allOthers: "所有其他",
+    allOthers: "所有其他參與者",
     allOtherGroups: "所有其他群組",
   },
   he: {
@@ -74,7 +74,7 @@ export const opinionGroupCommentsTranslations: Record<
     opinionsTitleLong: "הצהרות מייצגות",
     noOpinionsMessage: "אין הצהרות זמינות עבור קבוצה זו.",
     thisGroup: "קבוצה זו",
-    allOthers: "כל השאר",
+    allOthers: "כל שאר המשתתפים",
     allOtherGroups: "כל הקבוצות האחרות",
   },
   ja: {
@@ -82,7 +82,7 @@ export const opinionGroupCommentsTranslations: Record<
     opinionsTitleLong: "代表的な意見",
     noOpinionsMessage: "このグループには意見がありません。",
     thisGroup: "このグループ",
-    allOthers: "すべての他の",
+    allOthers: "他のすべての参加者",
     allOtherGroups: "すべての他のグループ",
   },
   ky: {
@@ -90,7 +90,7 @@ export const opinionGroupCommentsTranslations: Record<
     opinionsTitleLong: "Өкүлчүлүктүү пикирлер",
     noOpinionsMessage: "Бул топ үчүн пикирлер жок.",
     thisGroup: "Бул топ",
-    allOthers: "Бардык башкалар",
+    allOthers: "Бардык башка катышуучулар",
     allOtherGroups: "Бардык башка топтор",
   },
   ru: {
@@ -98,7 +98,7 @@ export const opinionGroupCommentsTranslations: Record<
     opinionsTitleLong: "Характерные высказывания",
     noOpinionsMessage: "Для этой группы нет высказываний.",
     thisGroup: "Эта группа",
-    allOthers: "Все остальные",
+    allOthers: "Все остальные участники",
     allOtherGroups: "Все остальные группы",
   },
 };
