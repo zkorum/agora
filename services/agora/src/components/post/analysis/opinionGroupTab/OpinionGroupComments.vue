@@ -9,17 +9,21 @@
 
       <div class="group-selector">
         <q-btn
+          class="group-selector-button"
           flat
           round
           dense
+          size="sm"
           :icon="chevronBack"
           @click="togglePreviousMode"
         />
         <span class="group-name">{{ currentModeName }}</span>
         <q-btn
+          class="group-selector-button"
           flat
           round
           dense
+          size="sm"
           :icon="chevronForward"
           @click="toggleNextMode"
         />
@@ -213,10 +217,11 @@ const togglePreviousMode = () => {
 <style lang="scss" scoped>
 .opinion-group-comments {
   padding: 0 0 1rem 0;
+  container-type: inline-size;
 }
 
 .title {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: var(--font-weight-medium);
   margin: 0;
   color: #434149;
@@ -226,7 +231,7 @@ const togglePreviousMode = () => {
   display: none;
 }
 
-@media (min-width: $breakpoint-sm-min) {
+@container (min-width: 30rem) {
   .title-short {
     display: none;
   }
@@ -244,12 +249,19 @@ const togglePreviousMode = () => {
 .group-selector {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  flex-shrink: 0;
+  gap: 0.125rem;
+}
+
+.group-selector-button {
+  min-width: 1.5rem;
+  min-height: 1.5rem;
 }
 
 .group-name {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: var(--font-weight-medium);
+  white-space: nowrap;
 }
 
 .no-comments {
@@ -261,7 +273,9 @@ const togglePreviousMode = () => {
 .header-flex-style {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  align-items: center;
+  column-gap: 0.35rem;
+  row-gap: 0.5rem;
   justify-content: space-between;
 }
 </style>
