@@ -66,7 +66,8 @@
     "onlyBuiltDependencies": [
       "@sentry/cli",
       "esbuild",
-      "sharp"
+      "sharp",
+      "unrs-resolver"
     ],
     "overrides": {
       "eslint>ajv": "^6.14.0",
