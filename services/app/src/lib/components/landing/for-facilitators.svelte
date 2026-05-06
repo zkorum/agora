@@ -1,8 +1,8 @@
 <script lang="ts">
   import screenshotAuth from "$lib/assets/screenshot-auth.png?enhanced";
   import screenshotDemographics from "$lib/assets/screenshot-demographics.png?enhanced";
-  import screenshotPolis from "$lib/assets/screenshot-polis.png?enhanced";
   import screenshotPluralVoting from "$lib/assets/screenshot-plural-voting.png?enhanced";
+  import screenshotPolis from "$lib/assets/screenshot-polis.png?enhanced";
   import screenshotSensemaker from "$lib/assets/screenshot-sensemaker.png?enhanced";
   import * as m from "$lib/paraglide/messages.js";
   import Chip from "$ui/shared/chip.svelte";
