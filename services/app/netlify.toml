@@ -1,7 +1,7 @@
 [build]
 command = "pnpm build"
 publish = "build"
-ignore = "test -n \"$CACHED_COMMIT_REF\" && git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- ."
+ignore = 'if [ "$CONTEXT" = "production" ]; then git diff --quiet "$COMMIT_REF^" "$COMMIT_REF" -- .; else test -n "$CACHED_COMMIT_REF" && git diff --quiet "$CACHED_COMMIT_REF" "$COMMIT_REF" -- .; fi'
 
 [build.environment]
 NODE_VERSION = "24"
