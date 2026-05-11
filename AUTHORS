@@ -1,6 +1,7 @@
 Agora is written by:
+
 - Nicolas Gimenez <nicolas.gimenez@zkorum.com>
-- Robin Marien  <robin.marien@hotmail.fr>
+- Robin Marien <robin.marien@hotmail.fr>
 - Hazim Benslimane <hazim_benslimane@hotmail.com>
 - Edmund Wong <edmundwongh@gmail.com>
 - Hanaan Shafi <hanaan.sh@protonmail.com>
@@ -8,8 +9,10 @@ Agora is written by:
 - Phoebe Choudy-Lartisant <phoebe.contactme@protonmail.com>
 - Dima Alrahaife <dalrahaife@sfcg.org> (reviewed Arabic translations)
 - Takeru Fukushima <takeru.f.2004@gmail.com> (proofread Japanese translations)
+- Christophe Bruchansky <christophe@bruchansky.xyz> (minimal UI update)
 
 With help from many libraries and frameworks including:
+
 - Rarimo SDK
 - UCAN
 - WebCrypto API
@@ -19,9 +22,10 @@ With help from many libraries and frameworks including:
 - Fastify
 - Vite
 - pnpm
-...
+  ...
 
 Algorithm inspiration:
+
 - MaxDiff scoring: Bradley-Terry MLE via MM algorithm
   - choix (MIT): https://github.com/lucasmaystre/choix
   - Solidago/Tournesol (LGPL): https://github.com/tournesol-app/tournesol

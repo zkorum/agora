@@ -519,9 +519,16 @@ onMounted(() => {
   padding-right: 0.5rem;
 }
 
+.title-editor {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+}
+
 .editor-style {
-  padding-bottom: 2rem;
+  margin-bottom: 2rem;
   font-size: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
 }
 
 .cardBackground {
