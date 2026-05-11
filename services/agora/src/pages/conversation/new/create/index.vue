@@ -512,15 +512,14 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.title-style {
-  font-size: 1.1rem;
-  font-weight: var(--font-weight-semibold);
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+.title-editor,
+.editor-style {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
 }
 
 .editor-style {
-  padding-bottom: 2rem;
+  margin-bottom: 2rem;
   font-size: 1rem;
 }
 
