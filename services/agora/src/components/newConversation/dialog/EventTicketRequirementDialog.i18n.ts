@@ -56,14 +56,14 @@ export const eventTicketRequirementDialogTranslations: Record<
     noVerificationDescription: "任何人都可以参与，无需活动门票验证",
     requiresEventTicketTitle: "需要活动门票",
     requiresEventTicketDescription:
-      "只有经过验证的活动门票持有者才能投票和贡献观点",
+      "只有经过验证的活动门票持有者才能投票和贡献意见",
   },
   "zh-Hant": {
     noVerificationTitle: "無需驗證",
     noVerificationDescription: "任何人都可以參與，無需活動門票驗證",
     requiresEventTicketTitle: "需要活動門票",
     requiresEventTicketDescription:
-      "只有經過驗證的活動門票持有者才能投票和貢獻觀點",
+      "只有經過驗證的活動門票持有者才能投票和貢獻意見",
   },
   he: {
     noVerificationTitle: "ללא אימות",

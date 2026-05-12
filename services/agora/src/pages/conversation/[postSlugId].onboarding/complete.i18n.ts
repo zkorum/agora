@@ -67,13 +67,13 @@ export const conversationSurveyCompleteTranslations: Record<
   },
   "zh-Hans": {
     title: "回答已保存",
-    description: "你现在可以对本次咨询中的观点投票。",
+    description: "你现在可以对本次咨询中的意见投票。",
     continueLabel: "继续",
     reviewAnswersLabel: "查看我的回答",
   },
   "zh-Hant": {
     title: "回答已儲存",
-    description: "你現在可以對本次諮詢中的觀點投票。",
+    description: "你現在可以對本次諮詢中的意見投票。",
     continueLabel: "繼續",
     reviewAnswersLabel: "查看我的回答",
   },

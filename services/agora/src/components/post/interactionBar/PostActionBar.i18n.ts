@@ -113,9 +113,9 @@ export const postActionBarTranslations: Record<
     totalVotes: "总投票数",
     totalParticipants: "总参与人数",
     usedForAnalysis: "用于分析",
-    moderatedVotesExplanation: "对已审核观点的投票不计入分析。",
+    moderatedVotesExplanation: "对已审核意见的投票不计入分析。",
     moderatedParticipantsExplanation:
-      "仅对已审核观点投票的参与者不计入分析。",
+      "仅对已审核意见投票的参与者不计入分析。",
     surveyVotesExplanation: "未完成问卷的参与者所投的票不计入分析。",
     surveyParticipantsExplanation: "未完成问卷的参与者不计入分析。",
     maxdiffVotesExplanation: "对已完成和已取消项目的投票不计入排名。",
@@ -128,9 +128,9 @@ export const postActionBarTranslations: Record<
     totalVotes: "總投票數",
     totalParticipants: "總參與人數",
     usedForAnalysis: "用於分析",
-    moderatedVotesExplanation: "對已審核觀點的投票不計入分析。",
+    moderatedVotesExplanation: "對已審核意見的投票不計入分析。",
     moderatedParticipantsExplanation:
-      "僅對已審核觀點投票的參與者不計入分析。",
+      "僅對已審核意見投票的參與者不計入分析。",
     surveyVotesExplanation: "未完成問卷的參與者所投的票不計入分析。",
     surveyParticipantsExplanation: "未完成問卷的參與者不計入分析。",
     maxdiffVotesExplanation: "對已完成和已取消項目的投票不計入排名。",

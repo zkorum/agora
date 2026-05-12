@@ -89,7 +89,7 @@ export const reportContentDialogTranslations: Record<
     skipButton: "跳过",
     submitButton: "提交",
     reportTypeConversation: "对话",
-    reportTypeOpinion: "观点",
+    reportTypeOpinion: "意见",
   },
   "zh-Hant": {
     submitReportTitle: "提交報告",
@@ -101,7 +101,7 @@ export const reportContentDialogTranslations: Record<
     skipButton: "跳過",
     submitButton: "提交",
     reportTypeConversation: "對話",
-    reportTypeOpinion: "觀點",
+    reportTypeOpinion: "意見",
   },
   he: {
     submitReportTitle: "שליחת דיווח",

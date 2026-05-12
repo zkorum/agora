@@ -100,33 +100,33 @@ export const commentComposerTranslations: Record<
       "Conseil : Ceci pourrait contenir plusieurs idées - assurez-vous que les votants puissent clairement être d'accord ou en désaccord",
   },
   "zh-Hans": {
-    placeholder: "添加你的观点",
-    placeholderExpanded: "专注于一个容易同意或不同意的单一观点",
+    placeholder: "添加你的意见",
+    placeholderExpanded: "专注于一个容易同意或不同意的单一意见",
     postButton: "发布",
-    conversationLockedError: "无法创建观点，因为对话已锁定",
+    conversationLockedError: "无法创建意见，因为对话已锁定",
     conversationClosedError:
       "此对话已被关闭",
-    createOpinionError: "尝试创建新观点时出错",
+    createOpinionError: "尝试创建新意见时出错",
     eventTicketRequiredTitle: "需要活动门票",
     eventTicketRequiredMessage:
       "您需要验证您的 Devconnect 2025 门票才能参与此对话。",
-    exitPromptTitle: "将观点保存为草稿？",
+    exitPromptTitle: "将意见保存为草稿？",
     exitPromptDescription: "您的草稿将在您返回时保留在这里。",
     validationWarningMultipleIdeas:
       "提示：这可能包含多个想法 - 确保投票者可以清楚地同意或不同意",
   },
   "zh-Hant": {
-    placeholder: "添加你的觀點",
-    placeholderExpanded: "專注於一個容易同意或不同意的單一觀點",
+    placeholder: "添加你的意見",
+    placeholderExpanded: "專注於一個容易同意或不同意的單一意見",
     postButton: "發布",
-    conversationLockedError: "無法創建觀點，因為對話已鎖定",
+    conversationLockedError: "無法創建意見，因為對話已鎖定",
     conversationClosedError:
       "此對話已被關閉",
-    createOpinionError: "嘗試創建新觀點時出錯",
+    createOpinionError: "嘗試創建新意見時出錯",
     eventTicketRequiredTitle: "需要活動門票",
     eventTicketRequiredMessage:
       "您需要驗證您的 Devconnect 2025 門票才能參與此對話。",
-    exitPromptTitle: "將觀點儲存為草稿？",
+    exitPromptTitle: "將意見儲存為草稿？",
     exitPromptDescription: "您的草稿將在您返回時保留在這裡。",
     validationWarningMultipleIdeas:
       "提示：這可能包含多個想法 - 確保投票者可以清楚地同意或不同意",

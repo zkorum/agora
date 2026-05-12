@@ -49,13 +49,13 @@ export const maxDiffSourceDialogTranslations: Record<
   },
   "zh-Hans": {
     manualTitle: "手动",
-    manualDescription: "手动添加要排名的观点",
+    manualDescription: "手动添加要排名的意见",
     githubTitle: "GitHub",
     githubDescription: "从带有特定标签的 GitHub issue 导入项目",
   },
   "zh-Hant": {
     manualTitle: "手動",
-    manualDescription: "手動添加要排名的觀點",
+    manualDescription: "手動添加要排名的意見",
     githubTitle: "GitHub",
     githubDescription: "從帶有特定標籤的 GitHub issue 匯入項目",
   },

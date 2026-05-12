@@ -44,14 +44,14 @@ export const useCommentQueriesTranslations: Record<
     failedToCreateCommentWithReason: "Échec de la création du commentaire : {reason}",
   },
   "zh-Hant": {
-    commentDeletedSuccessfully: "觀點已成功刪除",
-    failedToDeleteComment: "刪除觀點失敗。請重試。",
+    commentDeletedSuccessfully: "意見已成功刪除",
+    failedToDeleteComment: "刪除意見失敗。請重試。",
     failedToCreateComment: "建立評論失敗。請重試。",
     failedToCreateCommentWithReason: "建立評論失敗：{reason}",
   },
   "zh-Hans": {
-    commentDeletedSuccessfully: "观点已成功删除",
-    failedToDeleteComment: "删除观点失败。请重试。",
+    commentDeletedSuccessfully: "意见已成功删除",
+    failedToDeleteComment: "删除意见失败。请重试。",
     failedToCreateComment: "创建评论失败。请重试。",
     failedToCreateCommentWithReason: "创建评论失败：{reason}",
   },

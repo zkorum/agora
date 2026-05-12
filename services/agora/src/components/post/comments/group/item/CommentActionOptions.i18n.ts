@@ -30,11 +30,11 @@ export const commentActionOptionsTranslations: Record<
     copiedToClipboard: "Lien copié dans le presse-papiers",
   },
   "zh-Hans": {
-    agoraOpinion: "Agora 观点",
+    agoraOpinion: "Agora 意见",
     copiedToClipboard: "链接已复制到剪贴板",
   },
   "zh-Hant": {
-    agoraOpinion: "Agora 觀點",
+    agoraOpinion: "Agora 意見",
     copiedToClipboard: "連結已複製到剪貼簿",
   },
   he: {

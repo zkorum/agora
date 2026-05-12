@@ -69,7 +69,7 @@ export const opinionModerationTranslations: Record<
     withdrawButton: "Retirer",
   },
   "zh-Hans": {
-    title: "管理观点",
+    title: "管理意见",
     actionLabel: "操作",
     reasonLabel: "原因",
     explanationLabel: "解释（可选）",
@@ -78,7 +78,7 @@ export const opinionModerationTranslations: Record<
     withdrawButton: "撤回",
   },
   "zh-Hant": {
-    title: "管理觀點",
+    title: "管理意見",
     actionLabel: "操作",
     reasonLabel: "原因",
     explanationLabel: "解釋（可選）",

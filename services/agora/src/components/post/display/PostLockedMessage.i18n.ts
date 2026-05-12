@@ -42,13 +42,13 @@ export const postLockedMessageTranslations: Record<
     editButton: "Modifier",
   },
   "zh-Hans": {
-    lockedMessage: '帖子被锁定为"{reason}"。无法发布新观点。',
-    closedMessage: "此对话已被所有者关闭。无法发布新观点和投票。",
+    lockedMessage: '帖子被锁定为"{reason}"。无法发布新意见。',
+    closedMessage: "此对话已被所有者关闭。无法发布新意见和投票。",
     editButton: "编辑",
   },
   "zh-Hant": {
-    lockedMessage: '帖子被鎖定為"{reason}"。無法發布新觀點。',
-    closedMessage: "此對話已被所有者關閉。無法發布新觀點和投票。",
+    lockedMessage: '帖子被鎖定為"{reason}"。無法發布新意見。',
+    closedMessage: "此對話已被所有者關閉。無法發布新意見和投票。",
     editButton: "編輯",
   },
   he: {

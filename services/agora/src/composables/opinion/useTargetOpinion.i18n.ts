@@ -27,10 +27,10 @@ export const useTargetOpinionTranslations: Record<
     statementNotFound: "La proposition demandée n'a pas pu être trouvée.",
   },
   "zh-Hans": {
-    statementNotFound: "无法找到请求的观点。",
+    statementNotFound: "无法找到请求的意见。",
   },
   "zh-Hant": {
-    statementNotFound: "無法找到請求的觀點。",
+    statementNotFound: "無法找到請求的意見。",
   },
   ja: {
     statementNotFound: "リクエストされた意見が見つかりませんでした。",

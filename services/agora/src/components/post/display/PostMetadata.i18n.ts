@@ -104,9 +104,9 @@ export const postMetadataTranslations: Record<
     syncError: "Échec de la synchronisation depuis GitHub",
   },
   "zh-Hans": {
-    closeConfirmMessage: "您确定要关闭此对话吗？用户将无法发布新观点或投票。",
+    closeConfirmMessage: "您确定要关闭此对话吗？用户将无法发布新意见或投票。",
     closeConfirmButton: "关闭对话",
-    reopenConfirmMessage: "重新打开此对话？用户将能够再次发布观点和投票。",
+    reopenConfirmMessage: "重新打开此对话？用户将能够再次发布意见和投票。",
     reopenConfirmButton: "重新打开对话",
     cancelButton: "取消",
     closeSuccess: "成功关闭对话",
@@ -119,9 +119,9 @@ export const postMetadataTranslations: Record<
     syncError: "从 GitHub 同步失败",
   },
   "zh-Hant": {
-    closeConfirmMessage: "您確定要關閉此對話嗎？用戶將無法發布新觀點或投票。",
+    closeConfirmMessage: "您確定要關閉此對話嗎？用戶將無法發布新意見或投票。",
     closeConfirmButton: "關閉對話",
-    reopenConfirmMessage: "重新打開此對話？用戶將能夠再次發布觀點和投票。",
+    reopenConfirmMessage: "重新打開此對話？用戶將能夠再次發布意見和投票。",
     reopenConfirmButton: "重新打開對話",
     cancelButton: "取消",
     closeSuccess: "成功關閉對話",

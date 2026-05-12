@@ -34,12 +34,12 @@ export const reportOpinionListTranslations: Record<
       "Aucun élément statistiquement significatif trouvé pour cette section.",
   },
   "zh-Hans": {
-    statement: "观点",
+    statement: "意见",
     overall: "总计",
     noItems: "本节未找到具有统计意义的项目。",
   },
   "zh-Hant": {
-    statement: "觀點",
+    statement: "意見",
     overall: "總計",
     noItems: "本節未找到具有統計意義的項目。",
   },
