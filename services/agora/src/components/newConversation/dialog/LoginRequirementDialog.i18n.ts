@@ -88,30 +88,30 @@ export const loginRequirementDialogTranslations: Record<
   "zh-Hans": {
     requiresAccountTitle: "需要账户",
     requiresAccountDescription:
-      "任何有链接的人都可以查看对话，但需要账户才能投票和贡献观点",
+      "任何有链接的人都可以查看对话，但需要账户才能投票和贡献意见",
     requiresLoginTitle: "需要强验证",
     requiresLoginDescription:
-      "任何有链接的人都可以查看对话，但需要通过手机或护照验证才能投票和贡献观点",
+      "任何有链接的人都可以查看对话，但需要通过手机或护照验证才能投票和贡献意见",
     requiresEmailVerificationTitle: "需要邮箱验证",
     requiresEmailVerificationDescription:
-      "任何有链接的人都可以查看对话，但需要验证邮箱才能投票和贡献观点",
+      "任何有链接的人都可以查看对话，但需要验证邮箱才能投票和贡献意见",
     guestParticipationTitle: "访客参与",
     guestParticipationDescription:
-      "任何有链接的人都可以查看对话、投票和贡献观点",
+      "任何有链接的人都可以查看对话、投票和贡献意见",
   },
   "zh-Hant": {
     requiresAccountTitle: "需要帳戶",
     requiresAccountDescription:
-      "任何有連結的人都可以查看對話，但需要帳戶才能投票和貢獻觀點",
+      "任何有連結的人都可以查看對話，但需要帳戶才能投票和貢獻意見",
     requiresLoginTitle: "需要強驗證",
     requiresLoginDescription:
-      "任何有連結的人都可以查看對話，但需要透過手機或護照驗證才能投票和貢獻觀點",
+      "任何有連結的人都可以查看對話，但需要透過手機或護照驗證才能投票和貢獻意見",
     requiresEmailVerificationTitle: "需要電郵驗證",
     requiresEmailVerificationDescription:
-      "任何有連結的人都可以查看對話，但需要驗證電郵才能投票和貢獻觀點",
+      "任何有連結的人都可以查看對話，但需要驗證電郵才能投票和貢獻意見",
     guestParticipationTitle: "訪客參與",
     guestParticipationDescription:
-      "任何有連結的人都可以查看對話、投票和貢獻觀點",
+      "任何有連結的人都可以查看對話、投票和貢獻意見",
   },
   he: {
     requiresAccountTitle: "נדרש חשבון",

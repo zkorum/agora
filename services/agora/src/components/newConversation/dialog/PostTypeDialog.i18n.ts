@@ -87,7 +87,7 @@ export const postTypeDialogTranslations: Record<
     newConversationDescription: "创建一个新的话题进行讨论。",
     newPrioritization: "新建优先排序",
     newPrioritizationDescription:
-      "创建一个参与者通过 Best-Worst Scaling 按重要性排列观点的对话。",
+      "创建一个参与者通过 Best-Worst Scaling 按重要性排列意见的对话。",
     importFromPolis: "从 Polis URL 导入",
     importFromPolisDescription: "导入并继续一个现有的 Polis 对话。",
     importFromCsv: "从 CSV 导入",
@@ -98,7 +98,7 @@ export const postTypeDialogTranslations: Record<
     newConversationDescription: "創建一個新的話題進行討論。",
     newPrioritization: "新建優先排序",
     newPrioritizationDescription:
-      "創建一個參與者通過 Best-Worst Scaling 按重要性排列觀點的對話。",
+      "創建一個參與者通過 Best-Worst Scaling 按重要性排列意見的對話。",
     importFromPolis: "從 Polis URL 匯入",
     importFromPolisDescription: "匯入並繼續一個現有的 Polis 對話。",
     importFromCsv: "從 CSV 匯入",

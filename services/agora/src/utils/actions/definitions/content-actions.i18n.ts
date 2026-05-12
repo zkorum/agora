@@ -160,8 +160,8 @@ export const actionsTranslations: Record<
     cancel: "取消",
     confirm: "确认",
     confirmDeletePost: "您确定要删除此对话吗？",
-    confirmDeleteComment: "您确定要删除此观点吗？",
-    confirmMuteUser: "您确定要屏蔽此用户吗？您将不再看到他们的对话和观点。",
+    confirmDeleteComment: "您确定要删除此意见吗？",
+    confirmMuteUser: "您确定要屏蔽此用户吗？您将不再看到他们的对话和意见。",
     confirmGenericAction: "您确定要执行此操作吗？",
   },
   "zh-Hant": {
@@ -179,8 +179,8 @@ export const actionsTranslations: Record<
     cancel: "取消",
     confirm: "確認",
     confirmDeletePost: "您確定要刪除此對話嗎？",
-    confirmDeleteComment: "您確定要刪除此觀點嗎？",
-    confirmMuteUser: "您確定要屏蔽此用戶嗎？您將不再看到他們的對話和觀點。",
+    confirmDeleteComment: "您確定要刪除此意見嗎？",
+    confirmMuteUser: "您確定要屏蔽此用戶嗎？您將不再看到他們的對話和意見。",
     confirmGenericAction: "您確定要執行此操作嗎？",
   },
   ja: {

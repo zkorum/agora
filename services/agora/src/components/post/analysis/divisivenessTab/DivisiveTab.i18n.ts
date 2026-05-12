@@ -71,9 +71,9 @@ export const divisiveTabTranslations: Record<
     divisiveLongTitle: "什么使参与者在各意见群组之间产生{keyword}？",
     divisiveKeyword: "分歧",
     subtitle:
-      "使意见群组之间产生对立的观点。仅先显示统计上最显著的观点。",
+      "使意见群组之间产生对立的意见。仅先显示统计上最显著的意见。",
     loadMore: "全部加载",
-    noDivisiveOpinionsMessage: "尚未找到显著的分歧观点。",
+    noDivisiveOpinionsMessage: "尚未找到显著的分歧意见。",
     lowerRankedDivider: "统计显著性较低",
   },
   "zh-Hant": {
@@ -81,9 +81,9 @@ export const divisiveTabTranslations: Record<
     divisiveLongTitle: "什麼使參與者在各意見群組之間產生{keyword}？",
     divisiveKeyword: "分歧",
     subtitle:
-      "使意見群組之間產生對立的觀點。僅先顯示統計上最顯著的觀點。",
+      "使意見群組之間產生對立的意見。僅先顯示統計上最顯著的意見。",
     loadMore: "全部載入",
-    noDivisiveOpinionsMessage: "尚未找到顯著的分歧觀點。",
+    noDivisiveOpinionsMessage: "尚未找到顯著的分歧意見。",
     lowerRankedDivider: "統計顯著性較低",
   },
   he: {

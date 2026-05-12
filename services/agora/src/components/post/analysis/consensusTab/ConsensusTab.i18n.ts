@@ -110,14 +110,14 @@ export const consensusTabTranslations: Record<
   "zh-Hans": {
     agreementsTitle: "通过",
     disagreementsTitle: "否决",
-    agreementsLongTitle: "哪些观点被所有群组{keyword}？",
-    disagreementsLongTitle: "哪些观点被所有群组{keyword}？",
+    agreementsLongTitle: "哪些意见被所有群组{keyword}？",
+    disagreementsLongTitle: "哪些意见被所有群组{keyword}？",
     agreementsKeyword: "认可",
     disagreementsKeyword: "否决",
     subtitleAgree:
-      "所有意见群组一致同意认可的观点——跨群组共识，而非简单的多数投票。仅先显示统计上最显著的观点。",
+      "所有意见群组一致同意认可的意见——跨群组共识，而非简单的多数投票。仅先显示统计上最显著的意见。",
     subtitleDisagree:
-      "所有意见群组一致同意否决的观点——跨群组共识，而非简单的多数投票。仅先显示统计上最显著的观点。",
+      "所有意见群组一致同意否决的意见——跨群组共识，而非简单的多数投票。仅先显示统计上最显著的意见。",
     loadMore: "全部加载",
     noAgreementsMessage: "尚未形成共识。",
     noDisagreementsMessage: "尚未形成共识。",
@@ -126,14 +126,14 @@ export const consensusTabTranslations: Record<
   "zh-Hant": {
     agreementsTitle: "通過",
     disagreementsTitle: "否決",
-    agreementsLongTitle: "哪些觀點被所有群組{keyword}？",
-    disagreementsLongTitle: "哪些觀點被所有群組{keyword}？",
+    agreementsLongTitle: "哪些意見被所有群組{keyword}？",
+    disagreementsLongTitle: "哪些意見被所有群組{keyword}？",
     agreementsKeyword: "認可",
     disagreementsKeyword: "否決",
     subtitleAgree:
-      "所有意見群組一致同意認可的觀點——跨群組共識，而非簡單的多數投票。僅先顯示統計上最顯著的觀點。",
+      "所有意見群組一致同意認可的意見——跨群組共識，而非簡單的多數投票。僅先顯示統計上最顯著的意見。",
     subtitleDisagree:
-      "所有意見群組一致同意否決的觀點——跨群組共識，而非簡單的多數投票。僅先顯示統計上最顯著的觀點。",
+      "所有意見群組一致同意否決的意見——跨群組共識，而非簡單的多數投票。僅先顯示統計上最顯著的意見。",
     loadMore: "全部載入",
     noAgreementsMessage: "尚未形成共識。",
     noDisagreementsMessage: "尚未形成共識。",

@@ -89,7 +89,7 @@ export const reportGroupsTableTranslations: Record<
   },
   "zh-Hans": {
     title: "意见群组",
-    subtitle: "群组根据投票行为创建，与语言无关。然后由人工智能模型阅读各群组的观点，为其生成名称和总结。",
+    subtitle: "群组根据投票行为创建，与语言无关。然后由人工智能模型阅读各群组的意见，为其生成名称和总结。",
     subtitleNoAi: "群组根据投票行为创建，与语言无关。",
     label: "群组",
     participants: "参与者",
@@ -98,11 +98,11 @@ export const reportGroupsTableTranslations: Record<
     noSummary: "总结尚不可用。",
     noGroup: "无群组",
     imbalanceNotice: "大多数参与者在同一群组中，因为他们的投票几乎完全相同。",
-    noGroupExplanation: "投票少于 {minVotes} 条观点的参与者",
+    noGroupExplanation: "投票少于 {minVotes} 条意见的参与者",
   },
   "zh-Hant": {
     title: "意見群組",
-    subtitle: "群組根據投票行為建立，與語言無關。然後由人工智慧模型閱讀各群組的觀點，為其產生名稱和總結。",
+    subtitle: "群組根據投票行為建立，與語言無關。然後由人工智慧模型閱讀各群組的意見，為其產生名稱和總結。",
     subtitleNoAi: "群組根據投票行為建立，與語言無關。",
     label: "群組",
     participants: "參與者",
@@ -111,7 +111,7 @@ export const reportGroupsTableTranslations: Record<
     noSummary: "總結尚不可用。",
     noGroup: "無群組",
     imbalanceNotice: "大多數參與者在同一群組中，因為他們的投票幾乎完全相同。",
-    noGroupExplanation: "投票少於 {minVotes} 條觀點的參與者",
+    noGroupExplanation: "投票少於 {minVotes} 條意見的參與者",
   },
   he: {
     title: "קבוצות דעה",

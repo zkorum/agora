@@ -150,7 +150,7 @@ export const exportPageTranslations: Record<
   },
   "zh-Hans": {
     pageTitle: "导出对话",
-    pageDescription: "下载此对话的所有观点和投票的CSV导出。",
+    pageDescription: "下载此对话的所有意见和投票的CSV导出。",
     previousExports: "以前的导出",
     conversationLoadError: "无法加载对话详情。请重试。",
     exportRequestError: "无法创建导出。请重试。",
@@ -161,12 +161,12 @@ export const exportPageTranslations: Record<
     requestExportAriaLabel: "请求导出对话数据",
     errorActiveExportInProgress: "导出正在进行中。请等待完成。",
     errorConversationNotFound: "未找到对话",
-    errorNoOpinions: "此对话没有可导出的观点。请先添加一些观点。",
+    errorNoOpinions: "此对话没有可导出的意见。请先添加一些意见。",
     exportFeatureDisabled: "导出功能已禁用",
   },
   "zh-Hant": {
     pageTitle: "匯出對話",
-    pageDescription: "下載此對話的所有觀點和投票的CSV匯出。",
+    pageDescription: "下載此對話的所有意見和投票的CSV匯出。",
     previousExports: "先前的匯出",
     conversationLoadError: "無法載入對話詳情。請重試。",
     exportRequestError: "無法建立匯出。請重試。",
@@ -177,7 +177,7 @@ export const exportPageTranslations: Record<
     requestExportAriaLabel: "請求匯出對話資料",
     errorActiveExportInProgress: "匯出正在進行中。請等待完成。",
     errorConversationNotFound: "未找到對話",
-    errorNoOpinions: "此對話沒有可匯出的觀點。請先新增一些觀點。",
+    errorNoOpinions: "此對話沒有可匯出的意見。請先新增一些意見。",
     exportFeatureDisabled: "匯出功能已停用",
   },
   ja: {

@@ -35,14 +35,14 @@ export const divisiveInformationDialogTranslations: Record<
       "Propositions sur lesquelles les groupes d'opinion sont en désaccord entre eux. Un groupe approuve tandis qu'un autre rejette.\n\nElles révèlent les principales lignes de fracture de la conversation.\n\nSeules les plus statistiquement significatives sont affichées en premier.",
   },
   "zh-Hans": {
-    title: "争议性观点",
+    title: "争议性意见",
     description:
-      "意见群组之间产生分歧的观点。一个群组认可而另一个群组否决。\n\n这些揭示了对话中的主要分歧线。\n\n仅先显示统计上最显著的观点。",
+      "意见群组之间产生分歧的意见。一个群组认可而另一个群组否决。\n\n这些揭示了对话中的主要分歧线。\n\n仅先显示统计上最显著的意见。",
   },
   "zh-Hant": {
-    title: "爭議性觀點",
+    title: "爭議性意見",
     description:
-      "意見群組之間產生分歧的觀點。一個群組認可而另一個群組否決。\n\n這些揭示了對話中的主要分歧線。\n\n僅先顯示統計上最顯著的觀點。",
+      "意見群組之間產生分歧的意見。一個群組認可而另一個群組否決。\n\n這些揭示了對話中的主要分歧線。\n\n僅先顯示統計上最顯著的意見。",
   },
   he: {
     title: "הצהרות מפלגות",

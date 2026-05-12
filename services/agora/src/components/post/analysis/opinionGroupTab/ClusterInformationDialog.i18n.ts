@@ -58,19 +58,19 @@ export const clusterInformationDialogTranslations: Record<
   },
   "zh-Hans": {
     title: "共识群组",
-    description1: "共识群组是根据人们对观点的同意和不同意程度创建的。",
+    description1: "共识群组是根据人们对意见的同意和不同意程度创建的。",
     description2:
       "我们使用机器学习来识别不同的思想流派。这是与 pol.is 相同的算法，pol.is 是 Computational Democracy 开发的开放源码的 wiki 调查工具。",
     description3:
-      "参与者必须对至少 {minVotes} 条观点进行投票才能被分配到群组。尚未达到此门槛的参与者显示为未分组。",
+      "参与者必须对至少 {minVotes} 条意见进行投票才能被分配到群组。尚未达到此门槛的参与者显示为未分组。",
   },
   "zh-Hant": {
     title: "共識群組",
-    description1: "共識群組是根據人們對觀點的同意和不同意程度創建的。",
+    description1: "共識群組是根據人們對意見的同意和不同意程度創建的。",
     description2:
       "我們使用機器學習來識別不同的思想流派。這是與 pol.is 相同的算法，pol.is 是 Computational Democracy 開發的開放源碼的 wiki 調查工具。",
     description3:
-      "參與者必須對至少 {minVotes} 條觀點進行投票才能被分配到群組。尚未達到此門檻的參與者顯示為未分組。",
+      "參與者必須對至少 {minVotes} 條意見進行投票才能被分配到群組。尚未達到此門檻的參與者顯示為未分組。",
   },
   he: {
     title: "קבוצות קונצנזוס",

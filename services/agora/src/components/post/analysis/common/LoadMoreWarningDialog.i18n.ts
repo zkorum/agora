@@ -53,17 +53,17 @@ export const loadMoreWarningDialogTranslations: Record<
     loadMoreButton: "Tout charger",
   },
   "zh-Hans": {
-    title: "加载所有观点",
+    title: "加载所有意见",
     description:
-      "将显示所有观点，按统计显著性从高到低排序，包括一些可能{emphasis}不具有显著性的观点。",
+      "将显示所有意见，按统计显著性从高到低排序，包括一些可能{emphasis}不具有显著性的意见。",
     descriptionEmphasis: "完全",
     cancelButton: "取消",
     loadMoreButton: "全部加载",
   },
   "zh-Hant": {
-    title: "載入所有觀點",
+    title: "載入所有意見",
     description:
-      "將顯示所有觀點，按統計顯著性從高到低排序，包括一些可能{emphasis}不具有顯著性的觀點。",
+      "將顯示所有意見，按統計顯著性從高到低排序，包括一些可能{emphasis}不具有顯著性的意見。",
     descriptionEmphasis: "完全",
     cancelButton: "取消",
     loadMoreButton: "全部載入",

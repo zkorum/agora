@@ -24,10 +24,10 @@ export const opinionIdentityCardTranslations: Record<
     seedOpinion: "Proposition initiale",
   },
   "zh-Hans": {
-    seedOpinion: "初始观点",
+    seedOpinion: "初始意见",
   },
   "zh-Hant": {
-    seedOpinion: "初始觀點",
+    seedOpinion: "初始意見",
   },
   he: {
     seedOpinion: "הצהרה ראשונית",
