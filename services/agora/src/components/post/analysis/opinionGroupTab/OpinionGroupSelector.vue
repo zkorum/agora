@@ -1,6 +1,10 @@
 <template>
   <div>
-    <div v-if="Object.keys(clusterMetadataList).length > 1" class="container">
+    <div
+      v-if="Object.keys(clusterMetadataList).length > 1"
+      class="container"
+      :class="{ 'container--nowrap': !wrap }"
+    >
       <ZKTab
         v-if="showAllTab"
         :text="allLabel"
@@ -37,12 +41,14 @@ const props = withDefaults(
     showAllTab?: boolean;
     allLabel?: string;
     allowClearToAll?: boolean;
+    wrap?: boolean;
   }>(),
   {
     selectedClusterKey: undefined,
     showAllTab: false,
     allLabel: "All",
     allowClearToAll: false,
+    wrap: true,
   }
 );
 
@@ -70,5 +76,9 @@ function clickedAllTab() {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.container--nowrap {
+  flex-wrap: nowrap;
 }
 </style>

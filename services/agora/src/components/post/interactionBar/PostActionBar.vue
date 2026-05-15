@@ -10,6 +10,7 @@
           :conversation-slug-id="conversationSlugId"
           :on-same-tab-click="props.onSameTabClick"
           :conversation-type="props.conversationType"
+          :enable-route-navigation="props.enableRouteNavigation"
         />
       </div>
 
@@ -113,6 +114,7 @@ const props = withDefaults(defineProps<{
   authorUsername: string;
   onSameTabClick?: () => void;
   conversationType?: ConversationType;
+  enableRouteNavigation: boolean;
 }>(), {
   hasSurvey: false,
   onSameTabClick: undefined,

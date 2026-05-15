@@ -6,6 +6,7 @@ export interface OpinionGroupTabTranslations {
   groupsSubtitleNoAi: string;
   notEnoughGroupsMessage: string;
   imbalanceNotice: string;
+  selectGroup: string;
 }
 
 export const opinionGroupTabTranslations: Record<
@@ -18,6 +19,7 @@ export const opinionGroupTabTranslations: Record<
     groupsSubtitleNoAi: "Groups are formed based on voting behavior, regardless of language.",
     notEnoughGroupsMessage: "Not enough groups to display.",
     imbalanceNotice: "Most participants are in the same group because they voted almost identically.",
+    selectGroup: "Select group",
   },
   ar: {
     groupsTitle: "مجموعات الرأي",
@@ -25,6 +27,7 @@ export const opinionGroupTabTranslations: Record<
     groupsSubtitleNoAi: "تُنشأ المجموعات بناءً على سلوك التصويت، بغض النظر عن اللغة.",
     notEnoughGroupsMessage: "لا توجد مجموعات كافية للعرض.",
     imbalanceNotice: "معظم المشاركين في نفس المجموعة لأنهم صوّتوا بشكل شبه متطابق.",
+    selectGroup: "اختر مجموعة",
   },
   es: {
     groupsTitle: "Grupos de opinión",
@@ -32,6 +35,7 @@ export const opinionGroupTabTranslations: Record<
     groupsSubtitleNoAi: "Los grupos se crean en función del comportamiento de voto, sin tener en cuenta el idioma.",
     notEnoughGroupsMessage: "No hay suficientes grupos para mostrar.",
     imbalanceNotice: "La mayoría de los participantes están en el mismo grupo porque votaron de manera casi idéntica.",
+    selectGroup: "Seleccionar grupo",
   },
   fa: {
     groupsTitle: "گروه‌های نظر",
@@ -39,6 +43,7 @@ export const opinionGroupTabTranslations: Record<
     groupsSubtitleNoAi: "گروه‌ها بر اساس رفتار رأی‌گیری، بدون توجه به زبان، شکل می‌گیرند.",
     notEnoughGroupsMessage: "تعداد گروه‌ها برای نمایش کافی نیست.",
     imbalanceNotice: "بیشتر شرکت‌کنندگان در یک گروه هستند زیرا تقریباً به‌طور یکسان رأی داده‌اند.",
+    selectGroup: "انتخاب گروه",
   },
   fr: {
     groupsTitle: "Groupes d'opinion",
@@ -46,6 +51,7 @@ export const opinionGroupTabTranslations: Record<
     groupsSubtitleNoAi: "Les groupes sont créés en fonction des comportements de vote, sans tenir compte de la langue.",
     notEnoughGroupsMessage: "Pas assez de groupes à afficher.",
     imbalanceNotice: "La plupart des participants sont dans le même groupe car ils ont voté de manière quasi identique.",
+    selectGroup: "Sélectionner un groupe",
   },
   "zh-Hans": {
     groupsTitle: "意见群组",
@@ -53,6 +59,7 @@ export const opinionGroupTabTranslations: Record<
     groupsSubtitleNoAi: "群组根据投票行为创建，与语言无关。",
     notEnoughGroupsMessage: "群组数量不足以显示。",
     imbalanceNotice: "大多数参与者在同一群组中，因为他们的投票几乎完全相同。",
+    selectGroup: "选择群组",
   },
   "zh-Hant": {
     groupsTitle: "意見群組",
@@ -60,6 +67,7 @@ export const opinionGroupTabTranslations: Record<
     groupsSubtitleNoAi: "群組根據投票行為建立，與語言無關。",
     notEnoughGroupsMessage: "群組數量不足以顯示。",
     imbalanceNotice: "大多數參與者在同一群組中，因為他們的投票幾乎完全相同。",
+    selectGroup: "選擇群組",
   },
   he: {
     groupsTitle: "קבוצות דעה",
@@ -67,6 +75,7 @@ export const opinionGroupTabTranslations: Record<
     groupsSubtitleNoAi: "קבוצות נוצרות על בסיס התנהגות ההצבעה, ללא קשר לשפה.",
     notEnoughGroupsMessage: "אין מספיק קבוצות להצגה.",
     imbalanceNotice: "רוב המשתתפים נמצאים באותה קבוצה כי הצביעו כמעט זהה.",
+    selectGroup: "בחירת קבוצה",
   },
   ja: {
     groupsTitle: "意見グループ",
@@ -74,6 +83,7 @@ export const opinionGroupTabTranslations: Record<
     groupsSubtitleNoAi: "グループは投票行動に基づいて作成され、言語は考慮されません。",
     notEnoughGroupsMessage: "表示するグループが不足しています。",
     imbalanceNotice: "ほとんどの参加者はほぼ同じ投票をしたため、同じグループに属しています。",
+    selectGroup: "グループを選択",
   },
   ky: {
     groupsTitle: "Пикир топтору",
@@ -81,6 +91,7 @@ export const opinionGroupTabTranslations: Record<
     groupsSubtitleNoAi: "Топтор добуш берүү жүрүм-турумуна негизделип, тилге карабастан түзүлөт.",
     notEnoughGroupsMessage: "Көрсөтүү үчүн топтор жетишсиз.",
     imbalanceNotice: "Катышуучулардын көпчүлүгү дээрлик бирдей добуш бергендиктен, бир топто турушат.",
+    selectGroup: "Топ тандоо",
   },
   ru: {
     groupsTitle: "Группы мнений",
@@ -88,5 +99,6 @@ export const opinionGroupTabTranslations: Record<
     groupsSubtitleNoAi: "Группы формируются на основе голосования, независимо от языка.",
     notEnoughGroupsMessage: "Недостаточно групп для отображения.",
     imbalanceNotice: "Большинство участников находятся в одной группе, так как голосовали почти одинаково.",
+    selectGroup: "Выбрать группу",
   },
 };

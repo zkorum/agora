@@ -51,6 +51,7 @@
           :clusters="polisClusters"
           :total-participant-count="props.participantCount"
           :compact-mode="currentTab === 'Summary'"
+          :conversation-scroll-context="props.conversationScrollContext"
         />
       </div>
 
@@ -127,6 +128,7 @@
 <script setup lang="ts">
 import type { UseQueryReturnType } from "@tanstack/vue-query";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
+import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
 import type { SurveyResultsAggregatedResponse } from "src/shared/types/dto";
@@ -166,6 +168,7 @@ const props = withDefaults(
     surveyGate?: SurveyGateSummary;
     showReportButton?: boolean;
     navigateToDiscoverTab: () => void;
+    conversationScrollContext: ConversationScrollContext;
   }>(),
   {
     showReportButton: true,

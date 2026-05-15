@@ -29,6 +29,7 @@
           :author-username="conversationData.metadata.authorUsername"
           :conversation-type="conversationData.metadata.conversationType"
           :has-survey="conversationData.interaction.surveyGate?.hasSurvey === true"
+          :enable-route-navigation="true"
         />
 
         <AnalysisPage
@@ -45,6 +46,7 @@
           :has-survey="hasSurvey"
           :survey-gate="conversationData.interaction.surveyGate"
           :navigate-to-discover-tab="navigateToDiscoverTab"
+          :conversation-scroll-context="conversationScrollContext"
         />
 
         <CommentSection
@@ -94,6 +96,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
@@ -104,6 +107,11 @@ import {
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
 import { useSurveyResultsAggregatedQuery } from "src/utils/api/survey/useSurveyQueries";
+import {
+  getElementScrollTop,
+  getScrollTop,
+  scrollTo,
+} from "src/utils/html/scroll";
 import { computed, onMounted, ref, watch } from "vue";
 
 import FloatingBottomContainer from "../navigation/FloatingBottomContainer.vue";
@@ -129,6 +137,23 @@ const currentTab = ref<"comment" | "analysis">("comment");
 
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
 const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
+
+const conversationScrollContext = computed<ConversationScrollContext>(() => ({
+  actionBarElement: null,
+  scrollContainerElement: null,
+  getScrollPosition: () => getScrollTop({ scrollContainer: null }),
+  getElementScrollPosition: ({ element }: { element: HTMLElement }) =>
+    getElementScrollTop({ element, scrollContainer: null }),
+  scrollToPosition: ({
+    top,
+    behavior,
+  }: {
+    top: number;
+    behavior: ScrollBehavior;
+  }) => {
+    scrollTo({ top, behavior, scrollContainer: null });
+  },
+}));
 
 const opinionCountOffset = ref(0);
 

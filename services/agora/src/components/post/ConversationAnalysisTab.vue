@@ -10,11 +10,13 @@
       :survey-gate="conversationData.interaction.surveyGate"
       :show-report-button="showReportButton"
       :navigate-to-discover-tab="props.navigateToDiscoverTab"
+      :conversation-scroll-context="props.conversationScrollContext"
     />
   </div>
 </template>
 
 <script setup lang="ts">
+import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
 import { useSurveyResultsAggregatedQuery } from "src/utils/api/survey/useSurveyQueries";
@@ -28,6 +30,7 @@ const props = withDefaults(
     hasConversationData: boolean;
     showReportButton?: boolean;
     navigateToDiscoverTab: () => void;
+    conversationScrollContext: ConversationScrollContext;
   }>(),
   {
     showReportButton: true,

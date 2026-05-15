@@ -39,6 +39,14 @@ export interface SubmittedCommentData {
   needsCacheRefresh: boolean;
 }
 
+export interface ConversationScrollContext {
+  actionBarElement: HTMLElement | null;
+  scrollContainerElement: HTMLElement | null;
+  getScrollPosition: () => number;
+  getElementScrollPosition: (params: { element: HTMLElement }) => number;
+  scrollToPosition: (params: { top: number; behavior: ScrollBehavior }) => void;
+}
+
 export function useConversationParentState({
   analysisRouteName,
   commentRouteNames,
@@ -124,6 +132,40 @@ export function useConversationParentState({
 
   // Ref for scroll targeting — bound to a wrapper div around PostActionBar in parent pages
   const actionBarElement = ref<HTMLElement | null>(null);
+  const scrollContainerRef = scrollContainer ?? ref<HTMLElement | null>(null);
+
+  function getCurrentScrollPosition(): number {
+    return getScrollTop({ scrollContainer: scrollContainerRef.value });
+  }
+
+  function getElementScrollPosition({
+    element,
+  }: {
+    element: HTMLElement;
+  }): number {
+    return getElementScrollTop({
+      element,
+      scrollContainer: scrollContainerRef.value,
+    });
+  }
+
+  function scrollToPosition({
+    top,
+    behavior,
+  }: {
+    top: number;
+    behavior: ScrollBehavior;
+  }): void {
+    scrollTo({ top, behavior, scrollContainer: scrollContainerRef.value });
+  }
+
+  const conversationScrollContext = computed<ConversationScrollContext>(() => ({
+    actionBarElement: actionBarElement.value,
+    scrollContainerElement: scrollContainerRef.value,
+    getScrollPosition: getCurrentScrollPosition,
+    getElementScrollPosition,
+    scrollToPosition,
+  }));
 
   // When true, the tab scroll restoration watcher should skip
   // restoring the saved position and let scrollToActionBar handle it instead.
@@ -161,12 +203,16 @@ export function useConversationParentState({
   });
   provide("scrollToActionBar", scrollToActionBar);
   provide("getScrollPosition", () =>
-    getScrollTop({ scrollContainer: scrollContainer?.value }),
+    getCurrentScrollPosition(),
   );
   provide(
     "scrollToPosition",
     ({ top, behavior }: { top: number; behavior?: ScrollBehavior }) =>
-      scrollTo({ top, behavior, scrollContainer: scrollContainer?.value }),
+      scrollTo({
+        top,
+        behavior,
+        scrollContainer: scrollContainerRef.value,
+      }),
   );
 
   // Navigation functions for banner actions (parameterized by route prefix)
@@ -333,6 +379,7 @@ export function useConversationParentState({
     handleRefresh,
     invalidateUserVotes,
     scrollToActionBar,
+    conversationScrollContext,
     pendingScrollOverride,
     scrollContainer,
   };

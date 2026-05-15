@@ -28,6 +28,8 @@ export interface OpinionGroupVisualizationTranslations {
   clusterCount5: string;
   clusterCount6: string;
   analysisPreview: string;
+  devConversationTitle: string;
+  commentPlaceholder: string;
 }
 
 export const opinionGroupVisualizationTranslations: Record<
@@ -62,6 +64,8 @@ export const opinionGroupVisualizationTranslations: Record<
     clusterCount5: "5 Groups",
     clusterCount6: "6 Groups",
     analysisPreview: "Analysis Preview",
+    devConversationTitle: "Dev analysis preview",
+    commentPlaceholder: "Select the analysis tab to test the sticky group behavior.",
   },
   ar: {
     analysisTabTest: "اختبار تبويب التحليل",
@@ -91,6 +95,8 @@ export const opinionGroupVisualizationTranslations: Record<
     clusterCount5: "5 مجموعات",
     clusterCount6: "6 مجموعات",
     analysisPreview: "معاينة التحليل",
+    devConversationTitle: "معاينة تحليل للتطوير",
+    commentPlaceholder: "اختر تبويب التحليل لاختبار سلوك تثبيت المجموعة.",
   },
   es: {
     analysisTabTest: "Prueba de Pestaña de Análisis",
@@ -120,6 +126,8 @@ export const opinionGroupVisualizationTranslations: Record<
     clusterCount5: "5 Grupos",
     clusterCount6: "6 Grupos",
     analysisPreview: "Vista Previa del Análisis",
+    devConversationTitle: "Vista previa de análisis de desarrollo",
+    commentPlaceholder: "Selecciona la pestaña de análisis para probar el comportamiento fijo del grupo.",
   },
   fa: {
     analysisTabTest: "آزمایش زبانه تحلیل",
@@ -149,6 +157,8 @@ export const opinionGroupVisualizationTranslations: Record<
     clusterCount5: "۵ گروه",
     clusterCount6: "۶ گروه",
     analysisPreview: "پیش‌نمایش تحلیل",
+    devConversationTitle: "پیش‌نمایش تحلیل توسعه",
+    commentPlaceholder: "برای آزمایش رفتار چسبان گروه، زبانه تحلیل را انتخاب کنید.",
   },
   he: {
     analysisTabTest: "בדיקת לשונית ניתוח",
@@ -178,6 +188,8 @@ export const opinionGroupVisualizationTranslations: Record<
     clusterCount5: "5 קבוצות",
     clusterCount6: "6 קבוצות",
     analysisPreview: "תצוגה מקדימה של ניתוח",
+    devConversationTitle: "תצוגה מקדימה של ניתוח לפיתוח",
+    commentPlaceholder: "בחרו בלשונית הניתוח כדי לבדוק את התנהגות הקבוצה הדביקה.",
   },
   fr: {
     analysisTabTest: "Test de l'Onglet Analyse",
@@ -207,6 +219,8 @@ export const opinionGroupVisualizationTranslations: Record<
     clusterCount5: "5 Groupes",
     clusterCount6: "6 Groupes",
     analysisPreview: "Aperçu de l'Analyse",
+    devConversationTitle: "Aperçu d'analyse de développement",
+    commentPlaceholder: "Sélectionnez l'onglet analyse pour tester le comportement sticky du groupe.",
   },
   "zh-Hans": {
     analysisTabTest: "分析标签测试",
@@ -236,6 +250,8 @@ export const opinionGroupVisualizationTranslations: Record<
     clusterCount5: "5 个群组",
     clusterCount6: "6 个群组",
     analysisPreview: "分析预览",
+    devConversationTitle: "开发分析预览",
+    commentPlaceholder: "选择分析标签以测试群组粘性行为。",
   },
   "zh-Hant": {
     analysisTabTest: "分析標籤測試",
@@ -265,6 +281,8 @@ export const opinionGroupVisualizationTranslations: Record<
     clusterCount5: "5 個群組",
     clusterCount6: "6 個群組",
     analysisPreview: "分析預覽",
+    devConversationTitle: "開發分析預覽",
+    commentPlaceholder: "選擇分析標籤以測試群組黏性行為。",
   },
   ja: {
     analysisTabTest: "分析タブテスト",
@@ -294,6 +312,8 @@ export const opinionGroupVisualizationTranslations: Record<
     clusterCount5: "5 グループ",
     clusterCount6: "6 グループ",
     analysisPreview: "分析プレビュー",
+    devConversationTitle: "開発用分析プレビュー",
+    commentPlaceholder: "グループの固定表示をテストするには、分析タブを選択してください。",
   },
   ky: {
     analysisTabTest: "Анализ өтмөгүн тестирлөө",
@@ -323,6 +343,8 @@ export const opinionGroupVisualizationTranslations: Record<
     clusterCount5: "5 топ",
     clusterCount6: "6 топ",
     analysisPreview: "Анализди алдын ала көрүү",
+    devConversationTitle: "Иштеп чыгуу анализинин алдын ала көрүнүшү",
+    commentPlaceholder: "Топтун жабышчаак жүрүм-турумун текшерүү үчүн анализ өтмөгүн тандаңыз.",
   },
   ru: {
     analysisTabTest: "Тест вкладки анализа",
@@ -352,5 +374,7 @@ export const opinionGroupVisualizationTranslations: Record<
     clusterCount5: "5 групп",
     clusterCount6: "6 групп",
     analysisPreview: "Предпросмотр анализа",
+    devConversationTitle: "Предпросмотр анализа для разработки",
+    commentPlaceholder: "Выберите вкладку анализа, чтобы проверить закрепление группы.",
   },
 };

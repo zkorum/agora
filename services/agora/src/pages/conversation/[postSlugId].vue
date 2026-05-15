@@ -55,6 +55,7 @@
                 :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
                 :conversation-type="loadedConversationData.metadata.conversationType"
                 :has-survey="loadedConversationData.interaction.surveyGate?.hasSurvey === true"
+                :enable-route-navigation="true"
               />
               </div>
 
@@ -82,6 +83,7 @@
                       :comment-filter="commentFilter"
                       :on-view-analysis="onViewAnalysis"
                       :navigate-to-discover-tab="navigateToDiscoverTab"
+                      v-bind="analysisRouteProps"
                       @update:comment-filter="
                         (filter: CommentFilterOptions) => { commentFilter = filter }
                       "
@@ -195,6 +197,7 @@ const {
   handleRefresh,
   invalidateUserVotes,
   scrollToActionBar,
+  conversationScrollContext,
   pendingScrollOverride,
 } = useConversationParentState(conversationConfig);
 
@@ -208,6 +211,16 @@ const isVotingDisabled = computed(() => {
     data.metadata.moderation.status === "moderated" &&
     data.metadata.moderation.action === "lock";
   return isModeratedAndLocked || data.metadata.isClosed;
+});
+
+const analysisRouteProps = computed(() => {
+  if (currentTab.value !== "analysis") {
+    return {};
+  }
+
+  return {
+    conversationScrollContext: conversationScrollContext.value,
+  };
 });
 
 const { tabContentStyle } = useTabScrollRestoration({

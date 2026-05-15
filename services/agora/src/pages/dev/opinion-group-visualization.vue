@@ -145,105 +145,136 @@
           </div>
         </template>
         <template #content>
-          <div class="analysis-container">
-            <div class="analysis-header">
-              <ShortcutBar
-                :model-value="currentTab"
-                :items="polisTabItems"
-                :get-label="getPolisTabLabel"
-                @update:model-value="onTabChange"
-              />
-            </div>
+          <div
+            ref="actionBarElement"
+            class="sticky-below-header sticky-action-bar dev-action-bar"
+            :style="{ '--header-height': `${actionBarHeaderOffset}px` }"
+          >
+            <PostActionBar
+              v-model="conversationTab"
+              :compact-mode="false"
+              :opinion-count="mockOpinionCount"
+              :participant-count="totalParticipantCount"
+              :vote-count="mockVoteCount"
+              :total-participant-count="totalParticipantCount"
+              :total-vote-count="mockVoteCount"
+              :is-loading="false"
+              :conversation-slug-id="mockConversationSlugId"
+              :conversation-title="t('devConversationTitle')"
+              author-username="dev"
+              conversation-type="polis"
+              :has-survey="hasMockSurvey"
+              :enable-route-navigation="false"
+              :on-same-tab-click="scrollToDevActionBar"
+            />
+          </div>
 
-            <!-- Me tab -->
-            <div
-              v-if="currentTab === 'Summary' || currentTab === 'Me'"
-              class="tab-component"
-            >
-              <MeTab
-                v-model="currentTab"
-                :cluster-key="userClusterData.clusterKey"
-                :ai-label="userClusterData.aiLabel"
-                :ai-summary="userClusterData.aiSummary"
-                :has-voted-on-all-available-opinions="false"
-                :navigate-to-discover-tab="handleDevVoteMore"
-              />
-            </div>
+          <div v-if="conversationTab === 'comment'" class="comment-placeholder">
+            {{ t("commentPlaceholder") }}
+          </div>
 
-            <!-- Opinion groups -->
-            <div
-              v-if="currentTab === 'Summary' || currentTab === 'Groups' || currentTab === 'Me'"
-              class="tab-component"
-            >
-              <OpinionGroupTab
-                :key="`groups-${selectedClusterCount}-${aiLabelMode}-${distributionMode}-${numberScale}-${ungroupedMode}`"
-                :conversation-slug-id="mockConversationSlugId"
-                :clusters="mockClusters"
-                :total-participant-count="totalParticipantCount"
-                :compact-mode="currentTab === 'Summary'"
-              />
-            </div>
+          <div v-if="conversationTab === 'analysis'" class="tab-content">
+            <div class="analysis-container">
+              <div class="analysis-header">
+                <ShortcutBar
+                  :model-value="currentTab"
+                  :items="polisTabItems"
+                  :get-label="getPolisTabLabel"
+                  @update:model-value="onTabChange"
+                />
+              </div>
 
-            <!-- Agreements -->
-            <div
-              v-if="currentTab === 'Summary' || currentTab === 'Agreements'"
-              class="tab-component"
-            >
-              <ConsensusTab
-                v-model="currentTab"
-                direction="agree"
-                :conversation-slug-id="mockConversationSlugId"
-                :item-list="mockAgreementItems"
-                :compact-mode="currentTab === 'Summary'"
-                :clusters="mockClusters"
-                :cluster-labels="clusterLabels"
-              />
-            </div>
+              <!-- Me tab -->
+              <div
+                v-if="currentTab === 'Summary' || currentTab === 'Me'"
+                class="tab-component"
+              >
+                <MeTab
+                  v-model="currentTab"
+                  :cluster-key="userClusterData.clusterKey"
+                  :ai-label="userClusterData.aiLabel"
+                  :ai-summary="userClusterData.aiSummary"
+                  :has-voted-on-all-available-opinions="false"
+                  :navigate-to-discover-tab="handleDevVoteMore"
+                />
+              </div>
 
-            <!-- Disagreements -->
-            <div
-              v-if="currentTab === 'Summary' || currentTab === 'Disagreements'"
-              class="tab-component"
-            >
-              <ConsensusTab
-                v-model="currentTab"
-                direction="disagree"
-                :conversation-slug-id="mockConversationSlugId"
-                :item-list="mockDisagreementItems"
-                :compact-mode="currentTab === 'Summary'"
-                :clusters="mockClusters"
-                :cluster-labels="clusterLabels"
-              />
-            </div>
+              <!-- Opinion groups -->
+              <div
+                v-if="currentTab === 'Summary' || currentTab === 'Groups' || currentTab === 'Me'"
+                class="tab-component"
+              >
+                <OpinionGroupTab
+                  :key="`groups-${selectedClusterCount}-${aiLabelMode}-${distributionMode}-${numberScale}-${ungroupedMode}`"
+                  :conversation-slug-id="mockConversationSlugId"
+                  :clusters="mockClusters"
+                  :total-participant-count="totalParticipantCount"
+                  :compact-mode="currentTab === 'Summary'"
+                  :conversation-scroll-context="conversationScrollContext"
+                />
+              </div>
 
-            <!-- Divisive -->
-            <div
-              v-if="currentTab === 'Summary' || currentTab === 'Divisive'"
-              class="tab-component"
-            >
-              <DivisiveTab
-                v-model="currentTab"
-                :conversation-slug-id="mockConversationSlugId"
-                :item-list="mockDivisiveItems"
-                :compact-mode="currentTab === 'Summary'"
-                :clusters="mockClusters"
-                :cluster-labels="clusterLabels"
-              />
-            </div>
+              <!-- Agreements -->
+              <div
+                v-if="currentTab === 'Summary' || currentTab === 'Agreements'"
+                class="tab-component"
+              >
+                <ConsensusTab
+                  v-model="currentTab"
+                  direction="agree"
+                  :conversation-slug-id="mockConversationSlugId"
+                  :item-list="mockAgreementItems"
+                  :compact-mode="currentTab === 'Summary'"
+                  :clusters="mockClusters"
+                  :cluster-labels="clusterLabels"
+                />
+              </div>
 
-            <div
-              v-if="hasMockSurvey && (currentTab === 'Summary' || currentTab === 'Survey')"
-              class="tab-component"
-            >
-              <SurveyTab
-                v-model="currentTab"
-                :conversation-slug-id="mockConversationSlugId"
-                :survey-gate="mockSurveyGate"
-                :survey-query="surveyResultsQuery"
-                :clusters="mockClusters"
-                :total-participant-count="totalParticipantCount"
-                :compact-mode="currentTab === 'Summary'"
-              />
+              <!-- Disagreements -->
+              <div
+                v-if="currentTab === 'Summary' || currentTab === 'Disagreements'"
+                class="tab-component"
+              >
+                <ConsensusTab
+                  v-model="currentTab"
+                  direction="disagree"
+                  :conversation-slug-id="mockConversationSlugId"
+                  :item-list="mockDisagreementItems"
+                  :compact-mode="currentTab === 'Summary'"
+                  :clusters="mockClusters"
+                  :cluster-labels="clusterLabels"
+                />
+              </div>
+
+              <!-- Divisive -->
+              <div
+                v-if="currentTab === 'Summary' || currentTab === 'Divisive'"
+                class="tab-component"
+              >
+                <DivisiveTab
+                  v-model="currentTab"
+                  :conversation-slug-id="mockConversationSlugId"
+                  :item-list="mockDivisiveItems"
+                  :compact-mode="currentTab === 'Summary'"
+                  :clusters="mockClusters"
+                  :cluster-labels="clusterLabels"
+                />
+              </div>
+
+              <div
+                v-if="hasMockSurvey && (currentTab === 'Summary' || currentTab === 'Survey')"
+                class="tab-component"
+              >
+                <SurveyTab
+                  v-model="currentTab"
+                  :conversation-slug-id="mockConversationSlugId"
+                  :survey-gate="mockSurveyGate"
+                  :survey-query="surveyResultsQuery"
+                  :clusters="mockClusters"
+                  :total-participant-count="totalParticipantCount"
+                  :compact-mode="currentTab === 'Summary'"
+                />
+              </div>
             </div>
           </div>
         </template>
@@ -253,6 +284,7 @@
 
 <script setup lang="ts">
 import { useQuery } from "@tanstack/vue-query";
+import { storeToRefs } from "pinia";
 import Card from "primevue/card";
 import Select from "primevue/select";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
@@ -266,6 +298,8 @@ import {
 } from "src/components/post/analysis/shortcutBar/ShortcutBar.i18n";
 import ShortcutBar from "src/components/post/analysis/shortcutBar/ShortcutBar.vue";
 import SurveyTab from "src/components/post/analysis/surveyTab/SurveyTab.vue";
+import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
+import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
@@ -276,10 +310,17 @@ import type {
   SurveyGateStatus,
   SurveyGateSummary,
 } from "src/shared/types/zod";
+import { useLayoutHeaderStore } from "src/stores/layout/header";
 import { formatAmount } from "src/utils/common";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
 import { shortcutItemSchema } from "src/utils/component/analysis/shortcutBar";
-import { computed, ref, watch } from "vue";
+import {
+  getElementScrollTop,
+  getHeaderHeight,
+  getScrollTop,
+  scrollTo,
+} from "src/utils/html/scroll";
+import { computed, onMounted, ref, watch } from "vue";
 
 import {
   type AnalysisReportTestTranslations,
@@ -323,7 +364,52 @@ const { t: tSurveyControls } =
   );
 
 const mockConversationSlugId = "dev-test";
+const conversationTab = ref<"comment" | "analysis">("analysis");
 const currentTab = ref<ShortcutItem>("Summary");
+const actionBarElement = ref<HTMLElement | null>(null);
+const headerHeight = ref(0);
+const { reveal: headerRevealed } = storeToRefs(useLayoutHeaderStore());
+
+const actionBarHeaderOffset = computed(() =>
+  headerRevealed.value ? headerHeight.value : 0
+);
+
+const conversationScrollContext = computed<ConversationScrollContext>(() => ({
+  actionBarElement: actionBarElement.value,
+  scrollContainerElement: null,
+  getScrollPosition: () => getScrollTop({ scrollContainer: null }),
+  getElementScrollPosition: ({ element }: { element: HTMLElement }) =>
+    getElementScrollTop({ element, scrollContainer: null }),
+  scrollToPosition: ({
+    top,
+    behavior,
+  }: {
+    top: number;
+    behavior: ScrollBehavior;
+  }) => {
+    scrollTo({ top, behavior, scrollContainer: null });
+  },
+}));
+
+onMounted(() => {
+  headerHeight.value = getHeaderHeight();
+});
+
+function scrollToDevActionBar(): void {
+  const element = actionBarElement.value;
+  if (element === null) {
+    return;
+  }
+
+  scrollTo({
+    top: Math.max(
+      0,
+      getElementScrollTop({ element, scrollContainer: null }) - getHeaderHeight()
+    ),
+    behavior: "smooth",
+    scrollContainer: null,
+  });
+}
 
 const polisTabItems = computed<ShortcutItem[]>(() => [
   "Summary",
@@ -635,6 +721,17 @@ const userClusterData = computed(() => {
   };
 });
 
+const mockOpinionCount = computed(() =>
+  Object.values(mockClusters.value).reduce(
+    (sum, cluster) => sum + (cluster?.representative.length ?? 0),
+    0
+  )
+);
+
+const mockVoteCount = computed(
+  () => totalParticipantCount.value * Math.max(mockOpinionCount.value, 1)
+);
+
 function handleDevVoteMore(): void {
   currentTab.value = "Summary";
 }
@@ -798,7 +895,24 @@ watch(
   width: 100%;
 }
 
+.dev-action-bar {
+  background-color: $app-background-color;
+  margin-bottom: 1rem;
+  z-index: 200;
+}
+
+.comment-placeholder {
+  border: 1px dashed #d8d6de;
+  border-radius: 16px;
+  padding: 2rem;
+  color: #6d6a74;
+  background: white;
+  text-align: center;
+}
+
 .analysis-container {
+  position: relative;
+  z-index: 0;
   background-color: white;
   border-radius: 25px;
   border: 1px solid #e9e9f1;

@@ -1,33 +1,19 @@
 <template>
   <div class="opinion-group-comments">
-    <div class="header-flex-style">
+    <div ref="headerElement" class="header-flex-style">
       <h2 class="title">
         <span class="title-short">{{ t("opinionsTitle") }}</span>
         <span class="title-long">{{ t("opinionsTitleLong") }}</span>
         <span class="count">{{ itemList.length }}</span>
       </h2>
 
-      <div class="group-selector">
-        <q-btn
-          class="group-selector-button"
-          flat
-          round
-          dense
-          size="sm"
-          :icon="chevronBack"
-          @click="togglePreviousMode"
-        />
-        <span class="group-name">{{ currentModeName }}</span>
-        <q-btn
-          class="group-selector-button"
-          flat
-          round
-          dense
-          size="sm"
-          :icon="chevronForward"
-          @click="toggleNextMode"
-        />
-      </div>
+      <OpinionGroupScopeSelector
+        v-if="props.showScopeSelector"
+        :display-mode="props.displayMode"
+        variant="regular"
+        @previous="emit('previousDisplayMode')"
+        @next="emit('nextDisplayMode')"
+      />
     </div>
 
     <slot name="after-header" />
@@ -50,46 +36,37 @@
 </template>
 
 <script setup lang="ts">
-import { useQuasar } from "quasar";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { AnalysisOpinionItem, PolisKey } from "src/shared/types/zod";
-import { computed, ref, watch } from "vue";
-
-const props = defineProps<{
-  conversationSlugId: string;
-  itemList: AnalysisOpinionItem[];
-  currentClusterTab: PolisKey;
-  hasUngroupedParticipants: boolean;
-  clusterLabels: Partial<Record<PolisKey, string>>;
-}>();
-const $q = useQuasar();
-const chevronForward = computed(() =>
-  $q.lang.rtl ? "mdi-chevron-left" : "mdi-chevron-right"
-);
-const chevronBack = computed(() =>
-  $q.lang.rtl ? "mdi-chevron-right" : "mdi-chevron-left"
-);
+import { ref } from "vue";
 
 import ConsensusItem from "../consensusTab/ConsensusItem.vue";
 import {
   type OpinionGroupCommentsTranslations,
   opinionGroupCommentsTranslations,
 } from "./OpinionGroupComments.i18n";
+import type { OpinionGroupDisplayMode } from "./opinionGroupDisplayMode";
+import OpinionGroupScopeSelector from "./OpinionGroupScopeSelector.vue";
+
+const props = defineProps<{
+  conversationSlugId: string;
+  itemList: AnalysisOpinionItem[];
+  currentClusterTab: PolisKey;
+  clusterLabels: Partial<Record<PolisKey, string>>;
+  displayMode: OpinionGroupDisplayMode;
+  showScopeSelector: boolean;
+}>();
+
+const emit = defineEmits<{
+  previousDisplayMode: [];
+  nextDisplayMode: [];
+}>();
 
 const { t } = useComponentI18n<OpinionGroupCommentsTranslations>(
   opinionGroupCommentsTranslations
 );
 
-const displayMode = ref<"current" | "all_other_groups" | "all_others">(
-  "current"
-);
-
-watch(
-  () => props.currentClusterTab,
-  () => {
-    displayMode.value = "current";
-  }
-);
+const headerElement = ref<HTMLElement | null>(null);
 
 function getActiveVotes(comment: AnalysisOpinionItem) {
   const currentClusterStats = comment.clustersStats.find(
@@ -98,7 +75,7 @@ function getActiveVotes(comment: AnalysisOpinionItem) {
   const allOthersClustersStats = comment.clustersStats.filter(
     (clusterStats) => clusterStats.key !== props.currentClusterTab
   );
-  switch (displayMode.value) {
+  switch (props.displayMode) {
     case "current":
       return (
         currentClusterStats || {
@@ -166,51 +143,11 @@ function getModifiedOpinionItem(
   };
 }
 
-const currentModeName = computed(() => {
-  return displayMode.value === "current"
-    ? t("thisGroup")
-    : displayMode.value === "all_others"
-      ? t("allOthers")
-      : t("allOtherGroups");
-});
+function getHeaderElement(): HTMLElement | null {
+  return headerElement.value;
+}
 
-const toggleNextMode = () => {
-  if (props.hasUngroupedParticipants) {
-    displayMode.value =
-      displayMode.value === "current"
-        ? "all_other_groups"
-        : displayMode.value === "all_other_groups"
-          ? "all_others"
-          : "current";
-  } else {
-    // all_other_groups will never be displayed
-    displayMode.value =
-      displayMode.value === "current"
-        ? "all_others"
-        : displayMode.value === "all_other_groups"
-          ? "all_others"
-          : "current";
-  }
-};
-
-const togglePreviousMode = () => {
-  if (props.hasUngroupedParticipants) {
-    displayMode.value =
-      displayMode.value === "current"
-        ? "all_others"
-        : displayMode.value === "all_other_groups"
-          ? "current"
-          : "all_other_groups";
-  } else {
-    // all_other_groups will never be displayed
-    displayMode.value =
-      displayMode.value === "current"
-        ? "all_others"
-        : displayMode.value === "all_other_groups"
-          ? "all_others"
-          : "current";
-  }
-};
+defineExpose({ getHeaderElement });
 
 </script>
 
@@ -244,24 +181,6 @@ const togglePreviousMode = () => {
   font-size: 0.9rem;
   color: #9a97a4;
   margin-left: 0.5rem;
-}
-
-.group-selector {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  gap: 0.125rem;
-}
-
-.group-selector-button {
-  min-width: 1.5rem;
-  min-height: 1.5rem;
-}
-
-.group-name {
-  font-size: 0.85rem;
-  font-weight: var(--font-weight-medium);
-  white-space: nowrap;
 }
 
 .no-comments {

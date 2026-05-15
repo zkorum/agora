@@ -3,7 +3,7 @@
     <div>{{ t("emailDescription") }}</div>
 
     <q-input
-      v-model="emailData.email"
+      :model-value="emailData.email"
       type="email"
       name="email"
       autocomplete="email"
@@ -48,7 +48,7 @@ const { t } = useComponentI18n<EmailInputFormTranslations>(
 );
 
 const emailData = reactive({
-  email: "" as string | number | null,
+  email: "",
   isValid: false,
   hasError: false,
   errorMessage: "",

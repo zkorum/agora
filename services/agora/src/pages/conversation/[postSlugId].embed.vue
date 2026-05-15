@@ -32,6 +32,7 @@
           :on-same-tab-click="() => scrollToActionBar({ behavior: 'smooth' })"
           :conversation-type="loadedConversationData.metadata.conversationType"
           :has-survey="loadedConversationData.interaction.surveyGate?.hasSurvey === true"
+          :enable-route-navigation="true"
         />
         </div>
 
@@ -48,6 +49,7 @@
                 :comment-filter="commentFilter"
                 :on-view-analysis="onViewAnalysis"
                 :navigate-to-discover-tab="navigateToDiscoverTab"
+                :conversation-scroll-context="conversationScrollContext"
                 @update:comment-filter="
                   (filter: CommentFilterOptions) => { commentFilter = filter }
                 "
@@ -107,6 +109,7 @@ const {
   handleTicketVerified,
   handleSubmittedComment,
   scrollToActionBar,
+  conversationScrollContext,
   pendingScrollOverride,
 } = useConversationParentState({
   analysisRouteName: "/conversation/[postSlugId].embed/analysis",
