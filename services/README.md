@@ -10,7 +10,6 @@ This directory contains all Agora services and shared code packages.
 - **export-worker/** - Background worker for S3 data exports *(planned)*
 - **python-bridge/** - Python service for Polis math
 - **llm/** - LLM service for AI-generated summaries
-- **nlp/** - NLP utilities
 - **images/** - Image processing service
 
 ## Shared Code Packages

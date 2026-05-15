@@ -27,6 +27,10 @@ dependencies = [
 
 ]
 
+[tool.uv]
+required-version = ">=0.11.6"
+exclude-newer = "5 days"
+
 [tool.setuptools]
 py-modules = ["main"]
 

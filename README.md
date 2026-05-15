@@ -61,8 +61,6 @@ For detailed information about each service, licenses, and documentation, see [C
 
 **[LLM](./services/llm)** - LLM prompts and Python scripts for AI-related development.
 
-**[NLP](./services/nlp)** - Natural language processing utilities and tools.
-
 ### OpenAPI
 
 We generate an `openapi-zkorum.json` file from the backend, and then use [openapi-generator-cli](https://openapi-generator.tech/) to generate the corresponding frontend client.

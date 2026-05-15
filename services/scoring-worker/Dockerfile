@@ -10,6 +10,7 @@ RUN apt-get update && \
 
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
+RUN python -m pip install --no-cache-dir --upgrade "pip>=26.1.1" "setuptools>=78.1.1" "wheel>=0.46.2"
 
 COPY pyproject.toml uv.lock ./
 COPY src/ src/
@@ -21,6 +22,8 @@ FROM python:3.13-slim-bookworm
 RUN apt-get update && \
     apt-get install -y --no-install-recommends tini && \
     rm -rf /var/lib/apt/lists/*
+
+RUN python -m pip install --no-cache-dir --upgrade "pip>=26.1.1" "setuptools>=78.1.1" "wheel>=0.46.2"
 
 WORKDIR /app
 

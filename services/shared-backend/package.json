@@ -22,7 +22,7 @@
         "@google-cloud/translate": "^9.3.0",
         "@valkey/valkey-glide": "^2.3.1",
         "drizzle-orm": "^0.45.2",
-        "fastify": "^5.8.4",
+        "fastify": "^5.8.5",
         "p-limit": "^7.3.0",
         "postgres": "^3.4.9",
         "zod": "^4.3.6"
@@ -37,9 +37,13 @@
     },
     "pnpm": {
         "overrides": {
-            "fast-xml-parser": ">=5.3.6",
+            "@protobufjs/utf8": "1.1.1",
+            "fast-xml-builder": "1.1.7",
+            "fast-xml-parser": ">=5.7.0",
             "brace-expansion": "2.0.3",
             "minimatch": "9.0.7",
+            "postcss": "8.5.10",
+            "protobufjs": "7.5.6",
             "@tootallnate/once": "3.0.1"
         }
     }

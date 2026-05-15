@@ -1,6 +1,6 @@
 from .aggregation import EntitywiseQrQuantile as EntitywiseQrQuantile
-from .judgments import Judgments as Judgments
 from .judgments import DataFrameJudgments as DataFrameJudgments
+from .judgments import Judgments as Judgments
 from .pipeline import Pipeline as Pipeline
 from .post_process import NoPostProcess as NoPostProcess
 from .preference_learning import LBFGSUniformGBT as LBFGSUniformGBT
