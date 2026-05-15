@@ -77,7 +77,7 @@ const currentModeName = computed(() => {
 }
 
 .group-selector--compact {
-  gap: 0;
+  gap: 0.125rem;
 }
 
 .group-selector-button {
