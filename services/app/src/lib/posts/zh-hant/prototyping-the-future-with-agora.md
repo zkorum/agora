@@ -3,6 +3,7 @@ title: "用 Agora 原型化未來"
 description: "RadicalxChange Foundation 與 Learning Planet Institute 如何在一場未來想像工作坊中使用 Agora，讓集體智慧變得可見。"
 author: "Yuting Jiang"
 date: "March 2026"
+type: "case-study"
 thumbnail: "https://whtwnd.com/api/cache?did=did:plc:s6qge557msxw27rq6sv7j5sd&cid=bafkreicri7kcjbonkcnzkauczyszdedehxgbhfjczxmstxmoydpjszdlv4"
 image: "https://whtwnd.com/api/cache?did=did:plc:s6qge557msxw27rq6sv7j5sd&cid=bafkreicri7kcjbonkcnzkauczyszdedehxgbhfjczxmstxmoydpjszdlv4"
 ---

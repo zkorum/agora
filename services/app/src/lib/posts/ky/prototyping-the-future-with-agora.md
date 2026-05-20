@@ -3,6 +3,7 @@ title: "Agora менен келечекти прототиптөө"
 description: "RadicalxChange Foundation жана Learning Planet Institute Париждеги келечекти элестетүү семинарында Agora аркылуу жамааттык интеллектти кантип көрүнүктүү кылды."
 author: "Yuting Jiang"
 date: "March 2026"
+type: "case-study"
 thumbnail: "https://whtwnd.com/api/cache?did=did:plc:s6qge557msxw27rq6sv7j5sd&cid=bafkreicri7kcjbonkcnzkauczyszdedehxgbhfjczxmstxmoydpjszdlv4"
 image: "https://whtwnd.com/api/cache?did=did:plc:s6qge557msxw27rq6sv7j5sd&cid=bafkreicri7kcjbonkcnzkauczyszdedehxgbhfjczxmstxmoydpjszdlv4"
 ---

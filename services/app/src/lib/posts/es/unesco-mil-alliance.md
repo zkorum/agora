@@ -3,7 +3,8 @@ title: "Escuchar a escala: notas de un piloto con la Alianza MIL de la UNESCO"
 description: "En octubre de 2025, la UNESCO se asoció con Agora para apoyar la Semana de la Alfabetización Mediática e Informacional. Este piloto exploró si la deliberación digital estructurada podía prolongar la vida de las conversaciones generadas en conferencias."
 author: "Yuting Jiang"
 date: "Octubre 2025"
-thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
+type: "case-study"
+thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---
 
 En octubre de 2025, la UNESCO se asoció con Agora para apoyar la Semana de la Alfabetización Mediática e Informacional (MIL), que abarcó Cartagena, Mumbai y Bangkok.
@@ -13,7 +14,7 @@ Los eventos globales generan energía, ideas e intercambios poderosos. Pero tamb
 Este piloto exploró si un espacio de deliberación digital estructurado podía prolongar la vida de esas conversaciones y enriquecer la experiencia de los participantes.
 
 <div class="text-center my-4">
-  <img src="/images/blog/unesco-mil-alliance.jpeg" alt="Participantes de la Semana MIL de la UNESCO usando Agora para la deliberación digital" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+  <img src="/images/resources/unesco-mil-alliance.jpeg" alt="Participantes de la Semana MIL de la UNESCO usando Agora para la deliberación digital" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
 </div>
 
 ## El experimento

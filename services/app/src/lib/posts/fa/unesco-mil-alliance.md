@@ -3,7 +3,8 @@ title: "شنیدن در مقیاس بزرگ: یادداشت‌هایی از یک
 description: "در اکتبر ۲۰۲۵، یونسکو با آگورا برای حمایت از هفته سواد رسانه‌ای و اطلاعاتی همکاری کرد. این پروژه آزمایشی بررسی کرد که آیا مشورت دیجیتال ساختارمند می‌تواند عمر گفتگوهای همایشی را افزایش دهد."
 author: "Yuting Jiang"
 date: "October 2025"
-thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
+type: "case-study"
+thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---
 
 در اکتبر ۲۰۲۵، یونسکو با آگورا برای حمایت از هفته سواد رسانه‌ای و اطلاعاتی (MIL) همکاری کرد که در Cartagena، Mumbai و Bangkok برگزار شد.
@@ -13,7 +14,7 @@ thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
 این پروژه آزمایشی بررسی کرد که آیا یک فضای مشورت دیجیتال ساختارمند می‌تواند عمر آن گفتگوها را افزایش دهد و تجربه شرکت‌کنندگان را بهبود بخشد.
 
 <div class="text-center my-4">
-  <img src="/images/blog/unesco-mil-alliance.jpeg" alt="شرکت‌کنندگان هفته MIL یونسکو در حال استفاده از آگورا برای مشورت دیجیتال" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+  <img src="/images/resources/unesco-mil-alliance.jpeg" alt="شرکت‌کنندگان هفته MIL یونسکو در حال استفاده از آگورا برای مشورت دیجیتال" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
 </div>
 
 ## آزمایش

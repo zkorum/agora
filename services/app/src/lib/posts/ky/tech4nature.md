@@ -3,6 +3,7 @@ title: "Жаратылышты коргоодо блокчейн боюнча к
 description: "Agora Tech4Nature уюмуна инновациялык семинарда блокчейн технологиясы боюнча ар түрдүү көз караштарды чечүүгө кантип жардам берди."
 author: "Agora тобу"
 date: "Октябрь 2025"
+type: "case-study"
 thumbnail: "https://iucn.org/sites/default/files/styles/article_image/public/2025-08/006_flona_carajas_joao-marcos-rosac-1.jpg?h=4cc6839d&itok=2_-LFOvZ"
 image: "https://iucn.org/sites/default/files/styles/article_image/public/2025-08/006_flona_carajas_joao-marcos-rosac-1.jpg?h=4cc6839d&itok=2_-LFOvZ"
 ---

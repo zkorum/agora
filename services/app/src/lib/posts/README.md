@@ -1,8 +1,8 @@
 # Posts
 
-Markdown blog posts, organized by locale. Processed at build time — not served as-is.
+Markdown resource posts, organized by locale. Processed at build time — not served as-is.
 
-This follows the convention from [Josh Collinsworth's SvelteKit blog starter](https://joshcollinsworth.com/blog/build-static-sveltekit-markdown-blog) of placing posts under `src/lib/posts/`, leveraging SvelteKit's built-in `$lib` alias. Files are loaded via Vite's `import.meta.glob` in `src/lib/server/landing/blog.ts`.
+This follows the convention from [Josh Collinsworth's SvelteKit blog starter](https://joshcollinsworth.com/blog/build-static-sveltekit-markdown-blog) of placing posts under `src/lib/posts/`, leveraging SvelteKit's built-in `$lib` alias. Files are loaded via Vite's `import.meta.glob` in `src/lib/server/landing/resources.ts`.
 
 ## Why not `static/`?
 
@@ -31,7 +31,7 @@ posts/
 
 Each locale folder mirrors the same set of slugs. The slug is derived from the filename.
 
-## Adding a new blog post
+## Adding a new resource post
 
 1. Create a `.md` file in the appropriate locale folder (e.g., `en/my-post.md`)
 2. Add YAML frontmatter:

@@ -7,7 +7,7 @@
 </script>
 
 <section
-  id="casestudies"
+  id="resources"
   class="
     px-4 py-20
     sm:px-8
@@ -25,7 +25,7 @@
       "
     >
       <a
-        href={localizeHref("/blog/broadcasting-to-broadlistening")}
+        href={localizeHref("/resources/broadcasting-to-broadlistening")}
         class="
           group relative flex aspect-544/305 flex-col justify-end
           overflow-hidden rounded-2xl p-8
@@ -71,7 +71,7 @@
       </a>
 
       <a
-        href={localizeHref("/blog/bloquonstout")}
+        href={localizeHref("/resources/bloquonstout")}
         class="
           group relative flex aspect-544/305 flex-col justify-end
           overflow-hidden rounded-2xl p-8
@@ -117,7 +117,7 @@
       </a>
 
       <a
-        href={localizeHref("/blog/unesco-mil-alliance")}
+        href={localizeHref("/resources/unesco-mil-alliance")}
         class="
           group relative flex aspect-544/305 flex-col justify-end
           overflow-hidden rounded-2xl p-8
@@ -164,7 +164,7 @@
     </div>
 
     <div class="flex justify-center">
-      <GradientButton href={localizeHref("/blog")} variant="primary">
+      <GradientButton href={localizeHref("/resources")} variant="primary">
         {m.casestudies_cta()}
       </GradientButton>
     </div>

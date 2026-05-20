@@ -3,6 +3,7 @@ title: "تحويل الإحباط إلى قوة جماعية"
 description: "كيف تم استخدام شبكة أجورا المواطنة لتحويل التعبئة الجماعية إلى مطالبديمقراطية مشتركة خلال إضراب #bloquonstout في فرنسا."
 author: "فريق أجورا"
 date: "September 2025"
+type: "case-study"
 thumbnail: "/images/bloquonstout-thumbnail.jpg"
 image: "/images/bloquonstout-thumbnail.jpg"
 ---

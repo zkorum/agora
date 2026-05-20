@@ -6,6 +6,12 @@
   import GradientLink from "$ui/shared/gradient-link.svelte";
   import SocialIcons from "$ui/shared/social-icons.svelte";
   import Text from "$ui/shared/text.svelte";
+
+  interface Props {
+    showFunding?: boolean;
+  }
+
+  let { showFunding = true }: Props = $props();
 </script>
 
 <footer
@@ -68,39 +74,41 @@
         </GradientLink>
       </Text>
 
-      <!-- EU Funding Acknowledgement -->
-      <p
-        class="
-          mt-4 max-w-md text-[10px]/relaxed text-muted-foreground
-          sm:text-xs/relaxed
-        "
-      >
-        {m.footer_eu_funding_1()}
-        <a
-          href="https://trustchain.ngi.eu/"
-          target="_blank"
-          rel="noopener noreferrer"
+      {#if showFunding}
+        <!-- EU Funding Acknowledgement -->
+        <p
           class="
-            underline transition-opacity
-            hover:opacity-70
+            mt-4 max-w-md text-[10px]/relaxed text-muted-foreground
+            sm:text-xs/relaxed
           "
         >
-          NGI TRUSTCHAIN
-        </a>
-        {m.footer_eu_funding_2()}
-        <a
-          href="https://ngisargasso.eu/"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="
-            underline transition-opacity
-            hover:opacity-70
-          "
-        >
-          NGI SARGASSO
-        </a>
-        {m.footer_eu_funding_3()}
-      </p>
+          {m.footer_eu_funding_1()}
+          <a
+            href="https://trustchain.ngi.eu/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="
+              underline transition-opacity
+              hover:opacity-70
+            "
+          >
+            NGI TRUSTCHAIN
+          </a>
+          {m.footer_eu_funding_2()}
+          <a
+            href="https://ngisargasso.eu/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="
+              underline transition-opacity
+              hover:opacity-70
+            "
+          >
+            NGI SARGASSO
+          </a>
+          {m.footer_eu_funding_3()}
+        </p>
+      {/if}
     </div>
   </div>
 </footer>

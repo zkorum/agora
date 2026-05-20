@@ -3,6 +3,7 @@ title: "Картирование консенсуса по блокчейну в
 description: "Как Agora помогла Tech4Nature разобраться в разнообразии мнений о технологии блокчейн во время инновационного воркшопа."
 author: "Команда Agora"
 date: "Октябрь 2025"
+type: "case-study"
 thumbnail: "https://iucn.org/sites/default/files/styles/article_image/public/2025-08/006_flona_carajas_joao-marcos-rosac-1.jpg?h=4cc6839d&itok=2_-LFOvZ"
 image: "https://iucn.org/sites/default/files/styles/article_image/public/2025-08/006_flona_carajas_joao-marcos-rosac-1.jpg?h=4cc6839d&itok=2_-LFOvZ"
 ---

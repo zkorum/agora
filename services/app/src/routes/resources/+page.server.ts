@@ -1,10 +1,10 @@
 import { getLocale } from "$lib/paraglide/runtime";
-import { getBlogPosts } from "$server/landing/blog";
+import { getResourcePosts } from "$server/landing/resources";
 
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = () => {
   const locale = getLocale();
-  const posts = getBlogPosts({ locale });
+  const posts = getResourcePosts({ locale });
   return { posts };
 };

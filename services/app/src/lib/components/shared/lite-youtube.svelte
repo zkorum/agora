@@ -5,10 +5,11 @@
 
   interface Props {
     videoid: string;
+    poster?: string;
     videotitle?: string;
   }
 
-  let { videoid, videotitle }: Props = $props();
+  let { videoid, poster, videotitle }: Props = $props();
   let ready = $state(false);
 
   onMount(async () => {
@@ -18,6 +19,9 @@
 </script>
 
 {#if browser && ready}
-  <lite-youtube {videoid} {videotitle} posterquality="maxresdefault"
-  ></lite-youtube>
+  <lite-youtube {videoid} {videotitle} posterquality="maxresdefault">
+    {#if poster}
+      <img slot="image" src={poster} alt={videotitle ?? "Video thumbnail"} loading="lazy" />
+    {/if}
+  </lite-youtube>
 {/if}

@@ -3,8 +3,9 @@ title: "From Broadcasting to Broad Listening"
 description: "Bestian Tang from vTaiwan offers a clear frame for Agora: broad listening, sensemaking, and seeing beyond our own opinion groups."
 author: "Agora Team"
 date: "September 2025"
-thumbnail: "/images/blog/broadcasting-to-broad-listening.png"
-image: "/images/blog/broadcasting-to-broad-listening.png"
+type: "vision"
+thumbnail: "/images/resources/broadcasting-to-broad-listening.png"
+image: "/images/resources/broadcasting-to-broad-listening.png"
 ---
 
 Bestian Tang (唐宗浩), from [vTaiwan](https://vtaiwan.tw/), made a thoughtful Mandarin explainer on Agora and the shift from **broadcasting** to **broad listening**.

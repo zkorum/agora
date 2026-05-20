@@ -3,7 +3,8 @@ title: "大規模な傾聴：ユネスコMILアライアンスとのパイロッ
 description: "2025年10月、ユネスコはメディア情報リテラシー週間を支援するためにAgoraと提携しました。このパイロットでは、構造化されたデジタル審議が会議で生まれた対話の寿命を延ばせるかどうかを探りました。"
 author: "ユーティン・ジアン"
 date: "2025年10月"
-thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
+type: "case-study"
+thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---
 
 2025年10月、ユネスコはメディア情報リテラシー（MIL）週間を支援するためにAgoraと提携し、カルタヘナ、ムンバイ、バンコクにまたがるイベントを開催しました。
@@ -13,7 +14,7 @@ thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
 このパイロットでは、構造化されたデジタル審議空間がそうした対話の寿命を延ばし、参加者の体験を向上させることができるかどうかを探りました。
 
 <div class="text-center my-4">
-  <img src="/images/blog/unesco-mil-alliance.jpeg" alt="デジタル審議のためにAgoraを使用するユネスコMIL週間の参加者" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+  <img src="/images/resources/unesco-mil-alliance.jpeg" alt="デジタル審議のためにAgoraを使用するユネスコMIL週間の参加者" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
 </div>
 
 ## 実験

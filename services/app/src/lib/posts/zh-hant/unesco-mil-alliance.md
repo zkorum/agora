@@ -3,7 +3,8 @@ title: "大規模傾聽：與聯合國教科文組織媒體與資訊素養聯盟
 description: "2025年10月，聯合國教科文組織與Agora合作支持媒體與資訊素養週。該試點探索了結構化數位審議是否能延續會議對話的生命力。"
 author: "蔣雨婷"
 date: "2025年10月"
-thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
+type: "case-study"
+thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---
 
 2025年10月，聯合國教科文組織與Agora合作支持媒體與資訊素養（MIL）週，活動橫跨卡塔赫納、孟買和曼谷。
@@ -13,7 +14,7 @@ thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
 該試點探索了一個結構化的數位審議空間是否能延續這些對話的生命力，並提升參與者的體驗。
 
 <div class="text-center my-4">
-  <img src="/images/blog/unesco-mil-alliance.jpeg" alt="聯合國教科文組織MIL週參與者使用Agora進行數位審議" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+  <img src="/images/resources/unesco-mil-alliance.jpeg" alt="聯合國教科文組織MIL週參與者使用Agora進行數位審議" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
 </div>
 
 ## 實驗

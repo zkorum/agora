@@ -3,7 +3,8 @@ title: "大规模倾听：与联合国教科文组织媒介与信息素养联盟
 description: "2025年10月，联合国教科文组织与Agora合作支持媒介与信息素养周。该试点探索了结构化数字审议是否能延续会议对话的生命力。"
 author: "蒋雨婷"
 date: "2025年10月"
-thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
+type: "case-study"
+thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---
 
 2025年10月，联合国教科文组织与Agora合作支持媒介与信息素养（MIL）周，活动横跨卡塔赫纳、孟买和曼谷。
@@ -13,7 +14,7 @@ thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
 该试点探索了一个结构化的数字审议空间是否能延续这些对话的生命力，并提升参与者的体验。
 
 <div class="text-center my-4">
-  <img src="/images/blog/unesco-mil-alliance.jpeg" alt="联合国教科文组织MIL周参与者使用Agora进行数字审议" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+  <img src="/images/resources/unesco-mil-alliance.jpeg" alt="联合国教科文组织MIL周参与者使用Agora进行数字审议" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
 </div>
 
 ## 实验

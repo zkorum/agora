@@ -3,6 +3,7 @@ title: "מיפוי קונצנזוס בנושא בלוקצ'יין בשימור ה
 description: "כיצד Agora סייעה ל-Tech4Nature לנווט בין נקודות מבט מגוונות על טכנולוגיית בלוקצ'יין במהלך סדנת החדשנות שלהם."
 author: "Agora Team"
 date: "October 2025"
+type: "case-study"
 thumbnail: "https://iucn.org/sites/default/files/styles/article_image/public/2025-08/006_flona_carajas_joao-marcos-rosac-1.jpg?h=4cc6839d&itok=2_-LFOvZ"
 image: "https://iucn.org/sites/default/files/styles/article_image/public/2025-08/006_flona_carajas_joao-marcos-rosac-1.jpg?h=4cc6839d&itok=2_-LFOvZ"
 ---

@@ -3,6 +3,7 @@ title: "نمذجة المستقبل باستخدام Agora"
 description: "كيف استخدمت RadicalxChange Foundation وLearning Planet Institute منصة Agora لجعل الذكاء الجماعي مرئياً في ورشة لتخيل المستقبل."
 author: "Yuting Jiang"
 date: "March 2026"
+type: "case-study"
 thumbnail: "https://whtwnd.com/api/cache?did=did:plc:s6qge557msxw27rq6sv7j5sd&cid=bafkreicri7kcjbonkcnzkauczyszdedehxgbhfjczxmstxmoydpjszdlv4"
 image: "https://whtwnd.com/api/cache?did=did:plc:s6qge557msxw27rq6sv7j5sd&cid=bafkreicri7kcjbonkcnzkauczyszdedehxgbhfjczxmstxmoydpjszdlv4"
 ---

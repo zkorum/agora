@@ -3,6 +3,7 @@ title: "绘制区块链在环境保护中的共识地图"
 description: "Agora如何帮助Tech4Nature在创新研讨会期间应对关于区块链技术的不同观点。"
 author: "Agora团队"
 date: "2025年10月"
+type: "case-study"
 thumbnail: "https://iucn.org/sites/default/files/styles/article_image/public/2025-08/006_flona_carajas_joao-marcos-rosac-1.jpg?h=4cc6839d&itok=2_-LFOvZ"
 image: "https://iucn.org/sites/default/files/styles/article_image/public/2025-08/006_flona_carajas_joao-marcos-rosac-1.jpg?h=4cc6839d&itok=2_-LFOvZ"
 ---

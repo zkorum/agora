@@ -6,7 +6,7 @@ Server-only code. SvelteKit enforces this cannot be imported from client.
 
 ```
 server/{app}/
-  landing/      # Blog, marketing data
+  landing/      # Resources and marketing data
   facilitator/  # Facilitator data fetching
   participant/  # Participant data fetching
 ```

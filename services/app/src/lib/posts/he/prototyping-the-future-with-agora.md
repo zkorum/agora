@@ -3,6 +3,7 @@ title: "אב-טיפוס לעתיד עם Agora"
 description: "איך RadicalxChange Foundation ו-Learning Planet Institute השתמשו ב-Agora כדי להפוך אינטליגנציה קולקטיבית לגלויה בסדנת דמיון עתיד בפריז."
 author: "Yuting Jiang"
 date: "March 2026"
+type: "case-study"
 thumbnail: "https://whtwnd.com/api/cache?did=did:plc:s6qge557msxw27rq6sv7j5sd&cid=bafkreicri7kcjbonkcnzkauczyszdedehxgbhfjczxmstxmoydpjszdlv4"
 image: "https://whtwnd.com/api/cache?did=did:plc:s6qge557msxw27rq6sv7j5sd&cid=bafkreicri7kcjbonkcnzkauczyszdedehxgbhfjczxmstxmoydpjszdlv4"
 ---
