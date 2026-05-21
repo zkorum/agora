@@ -28,11 +28,32 @@ export const VALKEY_QUEUE_KEYS = {
     IMPORT_BUFFER: "queue:imports",
 
     /**
+     * Import worker events - stores worker events for API SSE fanout
+     * Used by: import-worker, API event bridge
+     * Pattern: Worker pushes persisted notification events; API pops and broadcasts.
+     */
+    IMPORT_EVENTS: "queue:imports:events",
+
+    /**
      * Scoring dirty set: conversations needing Solidago rescoring.
      * Used by: maxdiff.ts (API writes SADD), scoring-worker (SPOP to process)
      * Pattern: SET of conversationId strings. SADD deduplicates, SPOP is atomic.
      */
     SCORING_DIRTY_SOLIDAGO: "scoring:dirty:solidago",
+
+    /**
+     * Opinion-group analysis dirty set: conversations needing analysis refresh.
+     * Used by: API/shared-backend scheduler (ZADD), math-updater Python worker (ZPOPMIN)
+     * Pattern: Sorted set of conversationId strings. Score = due timestamp in milliseconds.
+     */
+    ANALYSIS_DIRTY: "analysis:dirty",
+
+    /**
+     * Opinion-group AI description dirty set: conversations needing label or translation work.
+     * Used by: API AI-label warm-up, math-updater Python worker (ZPOPMIN)
+     * Pattern: Sorted set of conversationId strings. Score = due timestamp in milliseconds.
+     */
+    AI_DESCRIPTION_DIRTY: "analysis:ai-description:dirty",
 
     /**
      * UCAN replay protection - key prefix for used UCAN hashes

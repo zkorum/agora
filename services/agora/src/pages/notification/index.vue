@@ -107,7 +107,10 @@ import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { isNetworkOffline } from "src/composables/useNetworkStatus";
-import type { NotificationType, RouteTarget } from "src/shared/types/zod";
+import type {
+  NotificationType,
+  RouteTarget,
+} from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNotificationStore } from "src/stores/notification";
 import { useNotificationApi } from "src/utils/api/notification/notification";

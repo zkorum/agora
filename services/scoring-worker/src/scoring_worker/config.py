@@ -1,5 +1,5 @@
-from pydantic import AnyUrl, TypeAdapter, field_validator
-from pydantic_settings import BaseSettings
+from pydantic import AnyUrl, Field, TypeAdapter, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_VALKEY_URL: AnyUrl = TypeAdapter(AnyUrl).validate_python(
     "valkey://localhost:6379",
@@ -9,23 +9,29 @@ ALLOWED_VALKEY_SCHEMES = {"valkey", "valkeys", "redis", "rediss"}
 
 class Settings(BaseSettings):
     # Database
-    connection_string: str = ""
-    connection_string_read: str = ""  # read replica; falls back to primary
+    connection_string: str = Field(default="", min_length=1)
+    connection_string_read: str | None = Field(default=None, min_length=1)
 
     # Valkey
     valkey_url: AnyUrl = DEFAULT_VALKEY_URL
 
     # Worker tuning
-    poll_interval_seconds: float = 1.0
+    poll_interval_seconds: float = Field(default=1.0, gt=0)
     # TODO: when scaling to multiple workers, reconciliation should move
     # to a dedicated service to avoid redundant DB queries from every worker.
-    reconcile_interval_seconds: int = 300
-    batch_size: int = 50  # max conversations to ZPOPMIN per cycle
-    max_workers: int = 4  # ThreadPoolExecutor size for parallel Solidago
-    backoff_seconds: float = 10.0  # per-conversation retry delay after failure
-    valkey_retry_interval_seconds: float = 5.0
+    reconcile_interval_seconds: int = Field(default=300, ge=1)
+    batch_size: int = Field(default=50, ge=1)  # max conversations to ZPOPMIN per cycle
+    max_workers: int = Field(default=4, ge=1)  # ThreadPoolExecutor size for parallel Solidago
+    backoff_seconds: float = Field(default=10.0, ge=0)  # retry delay after failure
+    valkey_retry_interval_seconds: float = Field(default=5.0, gt=0)
 
-    model_config = {"env_prefix": "SCORING_WORKER_", "env_file": ".env"}
+    model_config = SettingsConfigDict(
+        env_prefix="SCORING_WORKER_",
+        env_file=".env",
+        extra="forbid",
+        str_strip_whitespace=True,
+        validate_default=True,
+    )
 
     @field_validator("valkey_url")
     @classmethod

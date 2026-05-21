@@ -18,10 +18,8 @@
         <PostActionBar
           v-model="currentTab"
           :compact-mode="false"
-          :opinion-count="
-            loadedConversationData.metadata.opinionCount + opinionCountOffset
-          "
-          :participant-count="participantCountLocal"
+          :opinion-count="loadedConversationData.metadata.opinionCount"
+          :participant-count="loadedConversationData.metadata.participantCount"
           :vote-count="loadedConversationData.metadata.voteCount"
           :total-participant-count="loadedConversationData.metadata.totalParticipantCount"
           :total-vote-count="loadedConversationData.metadata.totalVoteCount"
@@ -96,12 +94,10 @@ const {
   route,
   hasConversationData,
   loadedConversationData,
-  opinionCountOffset,
   currentTab,
   isCurrentTabLoading,
   moderationHistoryTrigger,
   commentFilter,
-  participantCountLocal,
   actionBarElement,
   onViewAnalysis,
   navigateToDiscoverTab,

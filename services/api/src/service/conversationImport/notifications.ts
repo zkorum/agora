@@ -5,16 +5,20 @@ import {
 } from "@/shared-backend/schema.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import { log } from "@/app.js";
-import type { NotificationType } from "@/shared/types/zod.js";
 import type { RealtimeSSEManager } from "../realtimeSSE.js";
 import { broadcastImportNotification } from "../notification.js";
+
+type ImportNotificationType =
+    | "import_started"
+    | "import_completed"
+    | "import_failed";
 
 interface CreateImportNotificationParams {
     db: PostgresJsDatabase;
     userId: string;
     importId: number;
     conversationId: number | null;
-    type: NotificationType;
+    type: ImportNotificationType;
     realtimeSSEManager: RealtimeSSEManager;
 }
 

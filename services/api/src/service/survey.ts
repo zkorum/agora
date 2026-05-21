@@ -1,10 +1,18 @@
 import { httpErrors } from "@fastify/sensible";
-import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { z } from "zod";
 import { generateRandomSlugId } from "@/crypto.js";
 import {
     conversationTable,
+    opinionGroupLineageTable,
+    opinionGroupTable,
     organizationTable,
+    surveyAggregateOptionTable,
+    surveyAggregateOwnerCurrentTable,
+    surveyAggregateQuestionTable,
+    surveyAggregateResultTable,
+    surveyAggregateSnapshotTable,
     surveyAnswerOptionTable,
     surveyAnswerTable,
     surveyConfigTable,
@@ -16,7 +24,8 @@ import {
     surveyQuestionTable,
     surveyResponseTable,
 } from "@/shared-backend/schema.js";
-import { reconcileConversationCounters } from "@/shared-backend/conversationCounters.js";
+import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
+import { wakeScheduledAnalysisForConversation } from "@/shared-backend/analysisScheduler.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
 import {
     getSurveyQuestionContentTranslations,
@@ -63,20 +72,25 @@ import {
     ZodSupportedDisplayLanguageCodes,
     type SupportedDisplayLanguageCodes,
 } from "@/shared/languages.js";
-import { config, log } from "@/app.js";
-import { checkFeatureManagementAccess } from "@/shared-app-api/featureAccess.js";
+import { log } from "@/app.js";
 import {
     getConversationViewAccessLevelForConversation,
     isConversationOwner,
 } from "@/service/conversationAccess.js";
 import {
     PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
-    buildSurveyAggregateRows,
     buildSurveyCompletionCounts,
     loadSurveyExportContext,
-    type SurveyExportContext,
 } from "./conversationExport/generators/surveyShared.js";
 import { checkConversationParticipation } from "./participationGate.js";
+import {
+    getDescriptionTextsByGroupId,
+    getSelectedOpinionGroupCandidate,
+} from "./opinionGroupAnalysis.js";
+import {
+    getPremiumEntitlementSubjectForConversation,
+    requirePremiumAccess,
+} from "./premiumEntitlement.js";
 
 interface ConversationAccessContext {
     conversationId: number;
@@ -89,65 +103,6 @@ interface ConversationAccessContext {
     currentContentId: number | null;
     isClosed: boolean;
     requiresEventTicket: (typeof conversationTable.$inferSelect)["requiresEventTicket"];
-}
-
-export function assertSurveyFeatureAllowedForConversation({
-    organizationName,
-    hasExistingSurvey,
-    userId,
-}: {
-    organizationName: string | null;
-    hasExistingSurvey: boolean;
-    userId: string;
-}): void {
-    const surveyAccess = checkFeatureManagementAccess({
-        hasExistingFeature: hasExistingSurvey,
-        featureEnabled: config.SURVEY_ENABLED,
-        isOrgOnly: config.IS_SURVEY_ORG_ONLY,
-        allowedOrgs: config.SURVEY_ALLOWED_ORGS,
-        allowedUsers: config.SURVEY_ALLOWED_USERS,
-        postAsOrganization: organizationName !== null,
-        organizationName: organizationName ?? "",
-        userId,
-    });
-    if (surveyAccess.allowed) {
-        return;
-    }
-
-    switch (surveyAccess.reason) {
-        case "disabled":
-            throw httpErrors.serviceUnavailable(
-                "Survey feature is currently disabled",
-            );
-        case "org_required":
-            throw httpErrors.forbidden(
-                "Survey configuration is restricted to organization conversations",
-            );
-        case "org_not_in_whitelist":
-            throw httpErrors.forbidden(
-                "This organization is not allowed to configure surveys",
-            );
-        case "user_not_in_whitelist":
-            throw httpErrors.forbidden(
-                "This user is not allowed to configure surveys",
-            );
-    }
-}
-
-function assertSurveyFeatureAllowed({
-    conversation,
-    hasExistingSurvey,
-    userId,
-}: {
-    conversation: ConversationAccessContext;
-    hasExistingSurvey: boolean;
-    userId: string;
-}): void {
-    assertSurveyFeatureAllowedForConversation({
-        organizationName: conversation.organizationName,
-        hasExistingSurvey,
-        userId,
-    });
 }
 
 interface SurveyConfigUpdateEffect {
@@ -219,9 +174,16 @@ async function refreshConversationAnalysisForSurveyChange({
         return;
     }
 
-    await reconcileConversationCounters({
+    await scheduleConversationAnalysisRefresh({
         db,
         conversationId: conversation.conversationId,
+        log,
+    });
+    await wakeScheduledAnalysisForConversation({
+        db,
+        valkey,
+        conversationId: conversation.conversationId,
+        log,
     });
 }
 
@@ -520,7 +482,10 @@ function validateIntegerSurveyTextAnswer({
         return false;
     }
 
-    return parsedValue >= minValue && (maxValue === undefined || parsedValue <= maxValue);
+    return (
+        parsedValue >= minValue &&
+        (maxValue === undefined || parsedValue <= maxValue)
+    );
 }
 
 export function validateSurveyAnswer({
@@ -619,7 +584,10 @@ export function deriveSurveyQuestionFormItem({
               });
     const isPassed =
         storedAnswer !== undefined &&
-        isStoredSurveyAnswerPassed({ question: effectiveQuestion, storedAnswer });
+        isStoredSurveyAnswerPassed({
+            question: effectiveQuestion,
+            storedAnswer,
+        });
     const isStale =
         effectiveQuestion.isRequired &&
         storedAnswer !== undefined &&
@@ -627,11 +595,17 @@ export function deriveSurveyQuestionFormItem({
         candidateAnswer !== undefined &&
         (storedAnswer.answeredQuestionSemanticVersion !==
             effectiveQuestion.currentSemanticVersion ||
-            !validateSurveyAnswer({ question: effectiveQuestion, answer: candidateAnswer }));
+            !validateSurveyAnswer({
+                question: effectiveQuestion,
+                answer: candidateAnswer,
+            }));
     const currentAnswer = isStale ? undefined : candidateAnswer;
     const isCurrentAnswerValid =
         currentAnswer !== undefined &&
-        validateSurveyAnswer({ question: effectiveQuestion, answer: currentAnswer });
+        validateSurveyAnswer({
+            question: effectiveQuestion,
+            answer: currentAnswer,
+        });
 
     return {
         ...surveyQuestionToConfig({ question: effectiveQuestion }),
@@ -955,18 +929,19 @@ export async function getActiveSurveyConfigRecord({
         questionIds.length === 0
             ? []
             : await db
-                   .select({
-                       questionId: surveyQuestionOptionTable.surveyQuestionId,
-                       optionId: surveyQuestionOptionTable.id,
-                       optionSlugId: surveyQuestionOptionTable.slugId,
-                       currentContentId: surveyQuestionOptionTable.currentContentId,
-                       displayOrder: surveyQuestionOptionTable.displayOrder,
-                       optionText: surveyQuestionOptionContentTable.optionText,
-                       sourceLanguageCode:
-                           surveyQuestionOptionContentTable.sourceLanguageCode,
-                       sourceLanguageConfidence:
-                           surveyQuestionOptionContentTable.sourceLanguageConfidence,
-                   })
+                  .select({
+                      questionId: surveyQuestionOptionTable.surveyQuestionId,
+                      optionId: surveyQuestionOptionTable.id,
+                      optionSlugId: surveyQuestionOptionTable.slugId,
+                      currentContentId:
+                          surveyQuestionOptionTable.currentContentId,
+                      displayOrder: surveyQuestionOptionTable.displayOrder,
+                      optionText: surveyQuestionOptionContentTable.optionText,
+                      sourceLanguageCode:
+                          surveyQuestionOptionContentTable.sourceLanguageCode,
+                      sourceLanguageConfidence:
+                          surveyQuestionOptionContentTable.sourceLanguageConfidence,
+                  })
                   .from(surveyQuestionOptionTable)
                   .innerJoin(
                       surveyQuestionOptionContentTable,
@@ -975,16 +950,16 @@ export async function getActiveSurveyConfigRecord({
                           surveyQuestionOptionContentTable.id,
                       ),
                   )
-                   .where(
-                       and(
-                           inArray(
-                               surveyQuestionOptionTable.surveyQuestionId,
-                               questionIds,
-                           ),
-                           isNotNull(surveyQuestionOptionTable.currentContentId),
-                       ),
-                   )
-                   .orderBy(asc(surveyQuestionOptionTable.displayOrder));
+                  .where(
+                      and(
+                          inArray(
+                              surveyQuestionOptionTable.surveyQuestionId,
+                              questionIds,
+                          ),
+                          isNotNull(surveyQuestionOptionTable.currentContentId),
+                      ),
+                  )
+                  .orderBy(asc(surveyQuestionOptionTable.displayOrder));
 
     const optionsByQuestionId = new Map<number, ActiveSurveyOptionRecord[]>();
     for (const option of optionRows) {
@@ -1061,7 +1036,9 @@ function buildSurveyDetectionCorpus({
         question.questionText,
         ...question.options
             .map((option) => option.optionText)
-            .filter((optionText) => hasLexicalSurveyContent({ text: optionText })),
+            .filter((optionText) =>
+                hasLexicalSurveyContent({ text: optionText }),
+            ),
     ]);
 
     return texts
@@ -1151,15 +1128,15 @@ function applySurveyTranslationsToActiveSurveyConfig({
             questionText:
                 question.currentContentId == null
                     ? question.questionText
-                    : questionTranslations.get(question.currentContentId) ??
-                      question.questionText,
+                    : (questionTranslations.get(question.currentContentId) ??
+                      question.questionText),
             options: question.options.map((option) => ({
                 ...option,
                 optionText:
                     option.currentContentId == null
                         ? option.optionText
-                        : optionTranslations.get(option.currentContentId) ??
-                          option.optionText,
+                        : (optionTranslations.get(option.currentContentId) ??
+                          option.optionText),
             })),
         })),
     };
@@ -1181,7 +1158,9 @@ async function ensureSurveyTranslations({
     });
 
     if (sourceLanguage === undefined) {
-        const detectionCorpus = buildSurveyDetectionCorpus({ activeSurveyConfig });
+        const detectionCorpus = buildSurveyDetectionCorpus({
+            activeSurveyConfig,
+        });
         if (detectionCorpus.length > 0) {
             sourceLanguage = await detectLanguage({
                 client: googleCloudCredentials.client,
@@ -1211,18 +1190,22 @@ async function ensureSurveyTranslations({
             continue;
         }
 
-        const questionTranslations = await getSurveyQuestionContentTranslations({
-            db,
-            surveyQuestionContentIds: collectSurveyQuestionContentIds({
-                activeSurveyConfig,
-            }),
-            displayLanguageCode,
-        });
+        const questionTranslations = await getSurveyQuestionContentTranslations(
+            {
+                db,
+                surveyQuestionContentIds: collectSurveyQuestionContentIds({
+                    activeSurveyConfig,
+                }),
+                displayLanguageCode,
+            },
+        );
         const optionTranslations =
             await getSurveyQuestionOptionContentTranslations({
                 db,
                 surveyQuestionOptionContentIds:
-                    collectSurveyQuestionOptionContentIds({ activeSurveyConfig }),
+                    collectSurveyQuestionOptionContentIds({
+                        activeSurveyConfig,
+                    }),
                 displayLanguageCode,
             });
 
@@ -1292,7 +1275,9 @@ async function ensureSurveyTranslations({
         if (missingOptionTranslations.length > 0) {
             const translatedOptionTexts = await batchTranslateTexts({
                 client: googleCloudCredentials.client,
-                texts: missingOptionTranslations.map((option) => option.optionText),
+                texts: missingOptionTranslations.map(
+                    (option) => option.optionText,
+                ),
                 sourceLanguageCode: sourceLanguage?.languageCode,
                 targetLanguageCode: displayLanguageCode,
                 projectId: googleCloudCredentials.config.projectId,
@@ -1353,9 +1338,10 @@ async function localizeActiveSurveyConfigRecord({
         }),
         optionTranslations: await getSurveyQuestionOptionContentTranslations({
             db,
-            surveyQuestionOptionContentIds: collectSurveyQuestionOptionContentIds({
-                activeSurveyConfig,
-            }),
+            surveyQuestionOptionContentIds:
+                collectSurveyQuestionOptionContentIds({
+                    activeSurveyConfig,
+                }),
             displayLanguageCode: displayLanguage,
         }),
     });
@@ -1646,7 +1632,9 @@ async function insertSurveyQuestion({
             conversationId,
             questionType: question.questionType,
             choiceDisplay:
-                question.questionType === "free_text" ? "auto" : question.choiceDisplay,
+                question.questionType === "free_text"
+                    ? "auto"
+                    : question.choiceDisplay,
             currentContentId: null,
             currentSemanticVersion: 1,
             displayOrder: question.displayOrder,
@@ -1753,15 +1741,19 @@ async function replaceSurveyConfigById({
 
     // Temporarily move active rows away from their current display orders so
     // reorders and inserts cannot collide with the partial unique indexes.
-    for (const [index, existingQuestion] of
-        existingSurveyConfig.questions.entries()) {
+    for (const [
+        index,
+        existingQuestion,
+    ] of existingSurveyConfig.questions.entries()) {
         await db
             .update(surveyQuestionTable)
             .set({ displayOrder: -(index + 1) })
             .where(eq(surveyQuestionTable.id, existingQuestion.id));
 
-        for (const [optionIndex, existingOption] of
-            existingQuestion.options.entries()) {
+        for (const [
+            optionIndex,
+            existingOption,
+        ] of existingQuestion.options.entries()) {
             await db
                 .update(surveyQuestionOptionTable)
                 .set({ displayOrder: -(optionIndex + 1) })
@@ -2273,18 +2265,358 @@ export async function checkSurveyStatus({
     };
 }
 
+async function fetchSurveyAggregateRowsFromSnapshot({
+    db,
+    surveyAggregateSnapshotId,
+    selectedCandidateId,
+    displayLanguage,
+    useSystemDescriptions,
+}: {
+    db: PostgresJsDatabase;
+    surveyAggregateSnapshotId: number;
+    selectedCandidateId: number;
+    displayLanguage: SupportedDisplayLanguageCodes;
+    useSystemDescriptions: boolean;
+}): Promise<SurveyAggregateRow[]> {
+    const aggregateRows = await db
+        .select({
+            scope: surveyAggregateResultTable.scope,
+            groupId: surveyAggregateResultTable.groupId,
+            groupKey: opinionGroupTable.key,
+            systemDescriptionId: opinionGroupLineageTable.systemDescriptionId,
+            adminDescriptionId: opinionGroupLineageTable.adminDescriptionId,
+            questionId: surveyAggregateQuestionTable.questionSlugId,
+            questionType: surveyAggregateQuestionTable.questionType,
+            question: surveyAggregateQuestionTable.questionText,
+            questionOrder: surveyAggregateQuestionTable.questionOrder,
+            optionId: surveyAggregateOptionTable.optionSlugId,
+            option: surveyAggregateOptionTable.optionText,
+            optionOrder: surveyAggregateOptionTable.optionOrder,
+            count: surveyAggregateResultTable.count,
+            percentage: surveyAggregateResultTable.percentage,
+            isSuppressed: surveyAggregateResultTable.isSuppressed,
+            suppressionReason: surveyAggregateResultTable.suppressionReason,
+        })
+        .from(surveyAggregateResultTable)
+        .innerJoin(
+            surveyAggregateQuestionTable,
+            eq(
+                surveyAggregateQuestionTable.id,
+                surveyAggregateResultTable.surveyAggregateQuestionId,
+            ),
+        )
+        .innerJoin(
+            surveyAggregateOptionTable,
+            eq(
+                surveyAggregateOptionTable.id,
+                surveyAggregateResultTable.surveyAggregateOptionId,
+            ),
+        )
+        .leftJoin(
+            opinionGroupTable,
+            eq(opinionGroupTable.id, surveyAggregateResultTable.groupId),
+        )
+        .leftJoin(
+            opinionGroupLineageTable,
+            eq(opinionGroupLineageTable.id, opinionGroupTable.lineageId),
+        )
+        .where(
+            and(
+                eq(
+                    surveyAggregateResultTable.surveyAggregateSnapshotId,
+                    surveyAggregateSnapshotId,
+                ),
+                or(
+                    eq(surveyAggregateResultTable.scope, "overall"),
+                    and(
+                        eq(surveyAggregateResultTable.scope, "opinion_group"),
+                        eq(
+                            surveyAggregateResultTable.candidateId,
+                            selectedCandidateId,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        .orderBy(
+            asc(surveyAggregateQuestionTable.questionOrder),
+            asc(surveyAggregateQuestionTable.questionSlugId),
+            asc(surveyAggregateResultTable.scope),
+            asc(opinionGroupTable.key),
+            asc(surveyAggregateOptionTable.optionOrder),
+            asc(surveyAggregateOptionTable.optionSlugId),
+        );
+
+    const groupsById = new Map<
+        number,
+        {
+            groupId: number;
+            systemDescriptionId: number | null;
+            adminDescriptionId: number | null;
+        }
+    >();
+    for (const row of aggregateRows) {
+        if (row.scope !== "opinion_group") {
+            continue;
+        }
+        if (row.groupId === null || row.groupKey === null) {
+            throw httpErrors.internalServerError(
+                "Survey aggregate group row is missing opinion group metadata",
+            );
+        }
+        groupsById.set(row.groupId, {
+            groupId: row.groupId,
+            systemDescriptionId: row.systemDescriptionId,
+            adminDescriptionId: row.adminDescriptionId,
+        });
+    }
+
+    const descriptionsByGroupId = await getDescriptionTextsByGroupId({
+        db,
+        groups: Array.from(groupsById.values()),
+        displayLanguage,
+        includeSystemDescriptions: useSystemDescriptions,
+    });
+
+    return aggregateRows.map((row) => {
+        let count: number | undefined;
+        let percentage: number | undefined;
+        let suppressionReason: SurveyAggregateRow["suppressionReason"];
+        if (row.isSuppressed) {
+            if (row.suppressionReason === null) {
+                throw httpErrors.internalServerError(
+                    "Suppressed survey aggregate row is missing suppression reason",
+                );
+            }
+            suppressionReason = row.suppressionReason;
+        } else {
+            if (row.count === null) {
+                throw httpErrors.internalServerError(
+                    "Unsuppressed survey aggregate row is missing count",
+                );
+            }
+            count = row.count;
+            percentage = row.percentage ?? undefined;
+        }
+
+        if (row.scope === "overall") {
+            return {
+                scope: "overall",
+                clusterId: "",
+                clusterLabel: "",
+                questionId: row.questionId,
+                questionType: row.questionType,
+                question: row.question,
+                optionId: row.optionId,
+                option: row.option,
+                count,
+                percentage,
+                isSuppressed: row.isSuppressed,
+                suppressionReason,
+            };
+        }
+
+        if (row.groupId === null || row.groupKey === null) {
+            throw httpErrors.internalServerError(
+                "Survey aggregate group row is missing opinion group metadata",
+            );
+        }
+
+        const description = descriptionsByGroupId.get(row.groupId);
+        return {
+            scope: "cluster",
+            clusterId: row.groupKey,
+            clusterLabel: description?.label ?? `Group ${row.groupKey}`,
+            questionId: row.questionId,
+            questionType: row.questionType,
+            question: row.question,
+            optionId: row.optionId,
+            option: row.option,
+            count,
+            percentage,
+            isSuppressed: row.isSuppressed,
+            suppressionReason,
+        };
+    });
+}
+
+async function fetchOwnerCurrentSurveyAggregateRowsFromSnapshot({
+    db,
+    surveyAggregateSnapshotId,
+    selectedCandidateId,
+    displayLanguage,
+    useSystemDescriptions,
+}: {
+    db: PostgresJsDatabase;
+    surveyAggregateSnapshotId: number;
+    selectedCandidateId: number;
+    displayLanguage: SupportedDisplayLanguageCodes;
+    useSystemDescriptions: boolean;
+}): Promise<SurveyAggregateRow[] | undefined> {
+    const ownerCurrentSnapshotRows = await db
+        .select({
+            rows: surveyAggregateOwnerCurrentTable.rows,
+        })
+        .from(surveyAggregateOwnerCurrentTable)
+        .where(
+            eq(
+                surveyAggregateOwnerCurrentTable.surveyAggregateSnapshotId,
+                surveyAggregateSnapshotId,
+            ),
+        )
+        .limit(1);
+    const ownerCurrentSnapshot = ownerCurrentSnapshotRows.at(0);
+    if (ownerCurrentSnapshot === undefined) {
+        return undefined;
+    }
+
+    const zodStoredOwnerCurrentSurveyAggregateRows = z.array(
+        z
+            .object({
+                scope: z.enum(["overall", "cluster"]),
+                candidateId: z.number().int().positive().nullable().optional(),
+                groupId: z.number().int().positive().nullable().optional(),
+                questionId: z.string(),
+                questionType: z.enum(["choice", "free_text"]),
+                question: z.string(),
+                optionId: z.string(),
+                option: z.string(),
+                count: z.number().int().nonnegative(),
+                percentage: z
+                    .number()
+                    .nonnegative()
+                    .max(100)
+                    .nullable()
+                    .optional(),
+            })
+            .strict(),
+    );
+    const aggregateRows = zodStoredOwnerCurrentSurveyAggregateRows
+        .parse(ownerCurrentSnapshot.rows)
+        .filter((row) => {
+            return (
+                row.scope === "overall" ||
+                row.candidateId === selectedCandidateId
+            );
+        });
+
+    const groupIds = Array.from(
+        new Set(
+            aggregateRows.flatMap((row) => {
+                if (row.scope !== "cluster" || row.groupId == null) {
+                    return [];
+                }
+                return [row.groupId];
+            }),
+        ),
+    );
+    const groupRows =
+        groupIds.length === 0
+            ? []
+            : await db
+                  .select({
+                      groupId: opinionGroupTable.id,
+                      groupKey: opinionGroupTable.key,
+                      systemDescriptionId:
+                          opinionGroupLineageTable.systemDescriptionId,
+                      adminDescriptionId:
+                          opinionGroupLineageTable.adminDescriptionId,
+                  })
+                  .from(opinionGroupTable)
+                  .leftJoin(
+                      opinionGroupLineageTable,
+                      eq(
+                          opinionGroupLineageTable.id,
+                          opinionGroupTable.lineageId,
+                      ),
+                  )
+                  .where(inArray(opinionGroupTable.id, groupIds))
+                  .orderBy(asc(opinionGroupTable.key));
+
+    const groupsById = new Map<
+        number,
+        {
+            groupId: number;
+            groupKey: string;
+            systemDescriptionId: number | null;
+            adminDescriptionId: number | null;
+        }
+    >();
+    for (const row of groupRows) {
+        groupsById.set(row.groupId, {
+            groupId: row.groupId,
+            groupKey: row.groupKey,
+            systemDescriptionId: row.systemDescriptionId,
+            adminDescriptionId: row.adminDescriptionId,
+        });
+    }
+
+    const descriptionsByGroupId = await getDescriptionTextsByGroupId({
+        db,
+        groups: Array.from(groupsById.values()),
+        displayLanguage,
+        includeSystemDescriptions: useSystemDescriptions,
+    });
+
+    return aggregateRows.map((row) => {
+        if (row.scope === "overall") {
+            return {
+                scope: "overall",
+                clusterId: "",
+                clusterLabel: "",
+                questionId: row.questionId,
+                questionType: row.questionType,
+                question: row.question,
+                optionId: row.optionId,
+                option: row.option,
+                count: row.count,
+                percentage: row.percentage ?? undefined,
+                isSuppressed: false,
+                suppressionReason: undefined,
+            };
+        }
+
+        if (row.groupId == null) {
+            throw httpErrors.internalServerError(
+                "Owner survey aggregate row is missing opinion group metadata",
+            );
+        }
+
+        const group = groupsById.get(row.groupId);
+        if (group === undefined) {
+            throw httpErrors.internalServerError(
+                "Owner survey aggregate row references a missing opinion group",
+            );
+        }
+
+        const description = descriptionsByGroupId.get(row.groupId);
+        return {
+            scope: "cluster",
+            clusterId: group.groupKey,
+            clusterLabel: description?.label ?? `Group ${group.groupKey}`,
+            questionId: row.questionId,
+            questionType: row.questionType,
+            question: row.question,
+            optionId: row.optionId,
+            option: row.option,
+            count: row.count,
+            percentage: row.percentage ?? undefined,
+            isSuppressed: false,
+            suppressionReason: undefined,
+        };
+    });
+}
+
 export async function fetchSurveyAggregatedResults({
     db,
     conversationSlugId,
     userId,
     displayLanguage,
-    googleCloudCredentials,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
     userId: string | undefined;
     displayLanguage: SupportedDisplayLanguageCodes;
-    googleCloudCredentials: GoogleCloudCredentials | undefined;
 }): Promise<{
     hasSurvey: boolean;
     accessLevel: SurveyResultsAccessLevel;
@@ -2302,39 +2634,85 @@ export async function fetchSurveyAggregatedResults({
         authorId: conversation.authorId,
         organizationId: conversation.organizationId,
     });
-    const context = await loadSurveyExportContext({
+    const hasActiveSurvey =
+        (await getActiveSurveyConfigRecord({
+            db,
+            conversationId: conversation.conversationId,
+        })) !== undefined;
+    if (!hasActiveSurvey) {
+        return {
+            hasSurvey: false,
+            accessLevel,
+            suppressionThreshold: PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
+            suppressedRows: [],
+            fullRows: undefined,
+        };
+    }
+
+    const selectedCandidate = await getSelectedOpinionGroupCandidate({
         db,
         conversationId: conversation.conversationId,
+        displayLanguage,
     });
-    const localizedActiveSurveyConfig =
-        context.activeSurveyConfig === undefined
+    if (selectedCandidate?.surveyAggregateSnapshotId == null) {
+        return {
+            hasSurvey: false,
+            accessLevel,
+            suppressionThreshold: PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
+            suppressedRows: [],
+            fullRows: undefined,
+        };
+    }
+
+    const snapshotRows = await db
+        .select({
+            suppressionThreshold:
+                surveyAggregateSnapshotTable.suppressionThreshold,
+        })
+        .from(surveyAggregateSnapshotTable)
+        .where(
+            eq(
+                surveyAggregateSnapshotTable.id,
+                selectedCandidate.surveyAggregateSnapshotId,
+            ),
+        )
+        .limit(1);
+    if (snapshotRows.length === 0) {
+        return {
+            hasSurvey: false,
+            accessLevel,
+            suppressionThreshold: PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
+            suppressedRows: [],
+            fullRows: undefined,
+        };
+    }
+
+    const suppressedRows = await fetchSurveyAggregateRowsFromSnapshot({
+        db,
+        surveyAggregateSnapshotId: selectedCandidate.surveyAggregateSnapshotId,
+        selectedCandidateId: selectedCandidate.candidateId,
+        displayLanguage,
+        useSystemDescriptions: selectedCandidate.useSystemDescriptions,
+    });
+    const ownerCurrentFullRows =
+        accessLevel !== "owner"
             ? undefined
-            : await localizeActiveSurveyConfigRecord({
+            : await fetchOwnerCurrentSurveyAggregateRowsFromSnapshot({
                   db,
-                  activeSurveyConfig: context.activeSurveyConfig,
+                  surveyAggregateSnapshotId:
+                      selectedCandidate.surveyAggregateSnapshotId,
+                  selectedCandidateId: selectedCandidate.candidateId,
                   displayLanguage,
-                  googleCloudCredentials,
+                  useSystemDescriptions:
+                      selectedCandidate.useSystemDescriptions,
               });
-    const localizedContext = {
-        ...context,
-        activeSurveyConfig: localizedActiveSurveyConfig,
-    } satisfies SurveyExportContext;
 
     return {
-        hasSurvey: localizedContext.activeSurveyConfig !== undefined,
+        hasSurvey: true,
         accessLevel,
-        suppressionThreshold: PUBLIC_SURVEY_SUPPRESSION_THRESHOLD,
-        suppressedRows: buildSurveyAggregateRows({
-            context: localizedContext,
-            includeSuppression: true,
-        }),
-        fullRows:
-            accessLevel === "owner"
-                ? buildSurveyAggregateRows({
-                      context: localizedContext,
-                      includeSuppression: false,
-                  })
-                : undefined,
+        suppressionThreshold: snapshotRows[0].suppressionThreshold,
+        suppressedRows,
+        fullRows: ownerCurrentFullRows,
     };
 }
 
@@ -2854,10 +3232,12 @@ export async function updateSurveyConfigByAuthor({
         db,
         conversationId: conversation.conversationId,
     });
-    assertSurveyFeatureAllowed({
-        conversation,
-        hasExistingSurvey: existingSurveyConfig !== undefined,
-        userId,
+    await requirePremiumAccess({
+        db,
+        subject: getPremiumEntitlementSubjectForConversation({ conversation }),
+        features: ["survey"],
+        mode: existingSurveyConfig === undefined ? "creation" : "edit",
+        now,
     });
 
     const surveyConfigUpdateEffect = await db.transaction(async (tx) => {
@@ -2936,16 +3316,6 @@ export async function deleteSurveyConfigByAuthor({
             "Only conversation owners can delete the survey",
         );
     }
-    const existingSurveyConfig = await getActiveSurveyConfigRecord({
-        db,
-        conversationId: conversation.conversationId,
-    });
-    assertSurveyFeatureAllowed({
-        conversation,
-        hasExistingSurvey: existingSurveyConfig !== undefined,
-        userId,
-    });
-
     const surveyConfigUpdateEffect = await db.transaction(async (tx) => {
         return await setSurveyConfigForConversation({
             db: tx,

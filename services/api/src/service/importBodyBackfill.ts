@@ -41,8 +41,7 @@ function parseMetadataFromBody(metadataText: string): ParsedImportMetadata {
     const lines = metadataText.split(/<br\s*\/?>/gi).map((l) => l.trim());
 
     const importedFromRegex = /imported from (?!Polis CSV)(.+?)\.?\s*$/i;
-    const conversationUrlRegex =
-        /original conversation url is (.+?)\.?\s*$/i;
+    const conversationUrlRegex = /original conversation url is (.+?)\.?\s*$/i;
     const reportUrlRegex = /original report url is (.+?)\.?\s*$/i;
     const authorRegex = /original author is "(.+?)"/i;
     const dateRegex = /original creation date is (.+?)\.?\s*$/i;
@@ -106,22 +105,17 @@ export async function backfillImportBodies({
         .from(conversationTable)
         .innerJoin(
             conversationContentTable,
-            eq(
-                conversationTable.currentContentId,
-                conversationContentTable.id,
-            ),
+            eq(conversationTable.currentContentId, conversationContentTable.id),
         )
         .where(
             and(
                 isNotNull(conversationTable.currentContentId),
-                like(conversationContentTable.body, "%--------------%" ),
+                like(conversationContentTable.body, "%--------------%"),
             ),
         );
 
     if (candidates.length === 0) {
-        log.info(
-            "[Import Backfill] No conversations need body cleanup",
-        );
+        log.info("[Import Backfill] No conversations need body cleanup");
         return;
     }
 
@@ -166,8 +160,7 @@ export async function backfillImportBodies({
                 candidate.importConversationUrl === null &&
                 parsed.conversationUrl !== undefined
             ) {
-                columnsToUpdate.importConversationUrl =
-                    parsed.conversationUrl;
+                columnsToUpdate.importConversationUrl = parsed.conversationUrl;
             }
             if (
                 candidate.importExportUrl === null &&

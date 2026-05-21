@@ -4,7 +4,7 @@ import {
     conversationModerationTable,
     conversationTable,
 } from "@/shared-backend/schema.js";
-import { reconcileConversationCounters } from "@/shared-backend/conversationCounters.js";
+import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonComment, useCommonPost } from "./common.js";
 import type {
@@ -17,6 +17,7 @@ import type {
 import { eq } from "drizzle-orm";
 import { nowZeroMs } from "@/shared/util.js";
 import { httpErrors } from "@fastify/sensible";
+import { log } from "@/app.js";
 
 interface ModerateByPostSlugIdProps {
     postSlugId: string;
@@ -90,10 +91,11 @@ export async function moderateByCommentSlugId({
     isSiteModerator,
 }: ModerateByCommentSlugIdProps) {
     const { getOpinionMetadataFromOpinionSlugId } = useCommonComment();
-    const { opinionId, conversationId } = await getOpinionMetadataFromOpinionSlugId({
-        db: db,
-        opinionSlugId: commentSlugId,
-    });
+    const { opinionId, conversationId } =
+        await getOpinionMetadataFromOpinionSlugId({
+            db: db,
+            opinionSlugId: commentSlugId,
+        });
 
     await db.transaction(async (tx) => {
         const moderationRows = await tx
@@ -139,7 +141,11 @@ export async function moderateByCommentSlugId({
 
             // Reconcile counters (automatically enqueues math update)
             // Moderation affects opinionCount, voteCount, and participantCount
-            await reconcileConversationCounters({ db: tx, conversationId });
+            await scheduleConversationAnalysisRefresh({
+                db: tx,
+                conversationId,
+                log,
+            });
         }
     });
 }
@@ -318,7 +324,11 @@ export async function withdrawModerationReportByCommentSlugId({
 
         // Reconcile counters (automatically enqueues math update)
         // Removing moderation affects opinionCount, voteCount, and participantCount
-        await reconcileConversationCounters({ db: tx, conversationId });
+        await scheduleConversationAnalysisRefresh({
+            db: tx,
+            conversationId,
+            log,
+        });
     });
 }
 

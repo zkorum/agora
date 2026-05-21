@@ -27,13 +27,13 @@
         v-model:is-private="isPrivate"
         v-model:participation-mode="participationMode"
         v-model:requires-event-ticket="requiresEventTicket"
-        v-model:private-conversation-settings="privateConversationSettings"
         v-model:post-as="postAs"
         v-model:conversation-type="conversationType"
         v-model:import-settings="importSettings"
         v-model:external-source-config="externalSourceConfig"
         v-model:title="title"
         v-model:content="content"
+        v-model:ai-labeling-enabled="aiLabelingEnabled"
       />
 
       <!-- Active Import Banner -->
@@ -218,7 +218,7 @@ const {
   isPrivate,
   participationMode,
   requiresEventTicket,
-  privateConversationSettings,
+  aiLabelingEnabled,
   postAs,
   importSettings,
   externalSourceConfig,
@@ -406,13 +406,10 @@ async function handleImportSubmission(): Promise<void> {
         commentsFile: files.comments,
         votesFile: files.votes,
         postAsOrganizationName: conversationDraft.value.postAs.organizationName,
-        targetIsoConvertDateString: conversationDraft.value
-          .privateConversationSettings.hasScheduledConversion
-          ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
-          : undefined,
         isIndexed: !conversationDraft.value.isPrivate,
         participationMode: conversationDraft.value.participationMode,
         requiresEventTicket: conversationDraft.value.requiresEventTicket,
+        aiLabelingEnabled: conversationDraft.value.aiLabelingEnabled,
       });
 
       resetDraft();
@@ -436,13 +433,10 @@ async function handleImportSubmission(): Promise<void> {
     const response = await importConversation({
       polisUrl: conversationDraft.value.importSettings.polisUrl,
       postAsOrganizationName: conversationDraft.value.postAs.organizationName,
-      targetIsoConvertDateString: conversationDraft.value
-        .privateConversationSettings.hasScheduledConversion
-        ? conversationDraft.value.privateConversationSettings.conversionDate.toISOString()
-        : undefined,
       isIndexed: !conversationDraft.value.isPrivate,
       participationMode: conversationDraft.value.participationMode,
       requiresEventTicket: conversationDraft.value.requiresEventTicket,
+      aiLabelingEnabled: conversationDraft.value.aiLabelingEnabled,
     });
 
     if (response.status === "success") {

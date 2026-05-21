@@ -1,6 +1,8 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import sanitizeHtml from "sanitize-html";
 import {
+    analysisSnapshotOpinionTable,
+    conversationViewSnapshotTable,
     opinionTable,
     opinionContentTable,
     opinionModerationTable,
@@ -109,6 +111,31 @@ export const commentsGenerator: CsvGenerator = {
     async generate(params: GeneratorParams): Promise<CsvGeneratorResult> {
         const { db, conversationId, participantMap } = params;
 
+        const latestViewSnapshotRows = await db
+            .select({
+                analysisSnapshotId:
+                    conversationViewSnapshotTable.analysisSnapshotId,
+            })
+            .from(conversationViewSnapshotTable)
+            .where(
+                eq(
+                    conversationViewSnapshotTable.conversationId,
+                    conversationId,
+                ),
+            )
+            .orderBy(
+                desc(conversationViewSnapshotTable.createdAt),
+                desc(conversationViewSnapshotTable.id),
+            )
+            .limit(1);
+
+        if (latestViewSnapshotRows.length === 0) {
+            throw new Error(
+                `Missing conversation view snapshot counts for conversation ${String(conversationId)}`,
+            );
+        }
+        const latestViewSnapshot = latestViewSnapshotRows[0];
+
         // Fetch all opinions for this conversation with moderation status
         const opinions = await db
             .select({
@@ -116,9 +143,6 @@ export const commentsGenerator: CsvGenerator = {
                 authorId: opinionTable.authorId,
                 content: opinionContentTable.content,
                 createdAt: opinionTable.createdAt,
-                numAgrees: opinionTable.numAgrees,
-                numDisagrees: opinionTable.numDisagrees,
-                numPasses: opinionTable.numPasses,
                 moderationId: opinionModerationTable.id,
                 moderationAction: opinionModerationTable.moderationAction,
             })
@@ -134,10 +158,63 @@ export const commentsGenerator: CsvGenerator = {
             .where(eq(opinionTable.conversationId, conversationId))
             .orderBy(opinionTable.createdAt);
 
-        // Generate CSV rows following Sensemaker's expected comments.csv shape.
-        const rows = buildCommentRows({ opinions, participantMap });
+        const opinionCountsById = new Map<
+            number,
+            { numAgrees: number; numDisagrees: number; numPasses: number }
+        >();
+        if (
+            latestViewSnapshot.analysisSnapshotId !== null &&
+            opinions.length > 0
+        ) {
+            const snapshotOpinionRows = await db
+                .select({
+                    opinionId: analysisSnapshotOpinionTable.opinionId,
+                    numAgrees: analysisSnapshotOpinionTable.numAgrees,
+                    numDisagrees: analysisSnapshotOpinionTable.numDisagrees,
+                    numPasses: analysisSnapshotOpinionTable.numPasses,
+                })
+                .from(analysisSnapshotOpinionTable)
+                .where(
+                    and(
+                        eq(
+                            analysisSnapshotOpinionTable.analysisSnapshotId,
+                            latestViewSnapshot.analysisSnapshotId,
+                        ),
+                        inArray(
+                            analysisSnapshotOpinionTable.opinionId,
+                            opinions.map((opinion) => opinion.opinionId),
+                        ),
+                    ),
+                );
+            for (const row of snapshotOpinionRows) {
+                opinionCountsById.set(row.opinionId, {
+                    numAgrees: row.numAgrees,
+                    numDisagrees: row.numDisagrees,
+                    numPasses: row.numPasses,
+                });
+            }
+        }
 
-        const csvBuffer = await buildCsvBuffer({ headers: commentHeaders, rows });
+        const opinionsWithCounts = opinions.map((opinion) => {
+            const counts = opinionCountsById.get(opinion.opinionId);
+            return {
+                ...opinion,
+                numAgrees: counts?.numAgrees ?? 0,
+                numDisagrees: counts?.numDisagrees ?? 0,
+                numPasses: counts?.numPasses ?? 0,
+            };
+        });
+
+        // Generate CSV rows following Sensemaker's expected comments.csv shape.
+        const rows = buildCommentRows({
+            opinions: opinionsWithCounts,
+            participantMap,
+        });
+
+        const csvBuffer = await buildCsvBuffer({
+            headers: commentHeaders,
+            rows,
+        });
 
         return {
             csvBuffer,

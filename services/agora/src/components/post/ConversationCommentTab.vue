@@ -19,8 +19,6 @@
         hiddenCommentsQuery,
         commentsMyVotesQuery,
       }"
-      @deleted="decrementOpinionCount()"
-      @participant-count-delta="handleParticipantCountDelta"
     />
   </div>
 </template>
@@ -37,7 +35,7 @@ import {
   useInvalidateCommentQueries,
 } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
-import { computed, inject, onActivated, onMounted, type Ref, ref, watch } from "vue";
+import { computed, inject, onActivated, onMounted, ref, watch } from "vue";
 
 import CommentSection from "./comments/CommentSection.vue";
 
@@ -54,18 +52,12 @@ const emit = defineEmits<{
   "update:commentFilter": [filter: CommentFilterOptions];
 }>();
 
-// Inject shared state from parent
-const opinionCountOffset = inject<Ref<number>>("opinionCountOffset", ref(0));
-const participantCountOffset = inject<Ref<number>>("participantCountOffset", ref(0));
 const setCurrentTabLoading = inject<(loading: boolean) => void>(
   "setCurrentTabLoading",
   () => {
     /* noop */
   }
 );
-const decrementOpinionCount = inject<() => void>("decrementOpinionCount", () => {
-  /* noop */
-});
 const registerChildRefreshHandler = inject<(handler: () => Promise<void>) => void>(
   "registerChildRefreshHandler",
   () => {
@@ -135,10 +127,6 @@ const hiddenCommentsQuery = useHiddenCommentsQuery({
   enabled: false, // Lazy: fetched on-demand when user selects this filter
 });
 
-function handleParticipantCountDelta(delta: number): void {
-  participantCountOffset.value += delta;
-}
-
 // Report loading state to parent (for spinner in PostActionBar)
 watch(
   () => opinionSectionRef.value?.isLoading ?? false,
@@ -168,8 +156,6 @@ watch(
 );
 
 async function submittedComment(data: SubmittedCommentData): Promise<void> {
-  opinionCountOffset.value += 1;
-
   if (opinionSectionRef.value) {
     await opinionSectionRef.value.refreshAndHighlightOpinion(
       data.opinionSlugId

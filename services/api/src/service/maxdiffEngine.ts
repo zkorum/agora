@@ -82,8 +82,7 @@ export function bronKerbosch<T>(edges: [T, T][]): T[][] {
         }
         const candidatesCopy = new Set(candidates);
         for (const candidate of setDifference(candidatesCopy, pivotNeighbors)) {
-            const candidateNeighbors =
-                neighbors.get(candidate) ?? new Set<T>();
+            const candidateNeighbors = neighbors.get(candidate) ?? new Set<T>();
             findCliques(
                 new Set(clique).add(candidate),
                 setIntersection(candidates, candidateNeighbors),
@@ -127,9 +126,8 @@ export function buildComparisonMatrix({ items }: { items: string[] }): {
 
     // comparisons[i][j] = -1 means i < j (i comes before j)
     // +1 means i > j, 0 means same item, undefined means unknown
-    const matrix: (number | undefined)[][] = Array.from(
-        { length: n },
-        () => Array.from({ length: n }, () => undefined),
+    const matrix: (number | undefined)[][] = Array.from({ length: n }, () =>
+        Array.from({ length: n }, () => undefined),
     );
     for (let i = 0; i < n; i++) {
         matrix[i][i] = 0;
@@ -237,5 +235,10 @@ export function buildComparisonMatrix({ items }: { items: string[] }): {
         return groups;
     };
 
-    return { applyComparison, getUnorderedPairs, getOrderedPairs, getUnorderedGroups };
+    return {
+        applyComparison,
+        getUnorderedPairs,
+        getOrderedPairs,
+        getUnorderedGroups,
+    };
 }

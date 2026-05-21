@@ -49,6 +49,12 @@ export const zodParticipationMode = z.enum([
     "guest",
 ]);
 export const zodConversationType = z.enum(["polis", "maxdiff"]);
+export const zodPremiumFeature = z.enum([
+    "survey",
+    "prioritization",
+    "event_ticket",
+    "analysis_variants",
+]);
 export const zodParticipationBlockedReason = z.enum([
     "conversation_locked",
     "conversation_closed",
@@ -1612,6 +1618,7 @@ export type ProofData = z.infer<typeof zodProofData>;
 export type ZKProof = z.infer<typeof zodZKProof>;
 export type StatusResponse = z.infer<typeof zodStatusResponse>;
 export type ConversationType = z.infer<typeof zodConversationType>;
+export type PremiumFeature = z.infer<typeof zodPremiumFeature>;
 
 // MaxDiff (Best-Worst Scaling) types
 export const zodMaxdiffComparison = z.object({

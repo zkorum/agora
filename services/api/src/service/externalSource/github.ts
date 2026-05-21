@@ -32,8 +32,7 @@ export function verifyWebhookSignature({
     secret: string;
 }): boolean {
     const expected =
-        "sha256=" +
-        createHmac("sha256", secret).update(payload).digest("hex");
+        "sha256=" + createHmac("sha256", secret).update(payload).digest("hex");
     if (signature.length !== expected.length) {
         return false;
     }
@@ -103,10 +102,7 @@ const zodGitHubWebhookIssue = z.object({
     html_url: z.string(),
     labels: z.array(zodGitHubWebhookLabel),
     assignees: z.array(z.object({ login: z.string() })),
-    milestone: z
-        .object({ title: z.string() })
-        .nullable()
-        .default(null),
+    milestone: z.object({ title: z.string() }).nullable().default(null),
 });
 
 const zodGitHubWebhookPayload = z.object({
@@ -173,9 +169,7 @@ export async function handleIssueWebhook({
         if (parsed.data.repository !== repo) continue;
 
         const targetLabel = parsed.data.label;
-        const issueHasLabel = issue.labels.some(
-            (l) => l.name === targetLabel,
-        );
+        const issueHasLabel = issue.labels.some((l) => l.name === targetLabel);
 
         // For "labeled" action, check the label that was just added
         if (payload.action === "labeled") {
@@ -280,8 +274,7 @@ async function upsertItemFromGitHubIssue({
         // Check if item already exists for this conversation
         const existingRows = await tx
             .select({
-                maxdiffItemId:
-                    maxdiffItemExternalSourceTable.maxdiffItemId,
+                maxdiffItemId: maxdiffItemExternalSourceTable.maxdiffItemId,
             })
             .from(maxdiffItemExternalSourceTable)
             .innerJoin(
@@ -293,10 +286,7 @@ async function upsertItemFromGitHubIssue({
             )
             .where(
                 and(
-                    eq(
-                        maxdiffItemExternalSourceTable.externalId,
-                        externalId,
-                    ),
+                    eq(maxdiffItemExternalSourceTable.externalId, externalId),
                     eq(maxdiffItemTable.conversationId, conversationId),
                 ),
             );
@@ -364,10 +354,7 @@ async function upsertItemFromGitHubIssue({
                     lastSyncedAt: new Date(),
                 })
                 .where(
-                    eq(
-                        maxdiffItemExternalSourceTable.maxdiffItemId,
-                        itemId,
-                    ),
+                    eq(maxdiffItemExternalSourceTable.maxdiffItemId, itemId),
                 );
 
             // Update content (title/body)
@@ -405,8 +392,7 @@ async function upsertItemFromGitHubIssue({
                 currentItem.lifecycleStatus === "active" ||
                 currentItem.lifecycleStatus === "in_progress";
             const isDeactivating =
-                newLifecycle === "completed" ||
-                newLifecycle === "canceled";
+                newLifecycle === "completed" || newLifecycle === "canceled";
 
             if (wasActive && isDeactivating) {
                 // Snapshot before deactivating
@@ -533,9 +519,7 @@ async function deactivateItemByExternalId({
         })
         .where(eq(maxdiffItemTable.id, itemId));
 
-    log.info(
-        `[GitHub] Deactivated item from ${externalId} (label removed)`,
-    );
+    log.info(`[GitHub] Deactivated item from ${externalId} (label removed)`);
 
     if (valkey !== undefined) {
         const member = `${String(conversationId)}:${conversationSlugId}`;
@@ -706,9 +690,7 @@ export function createGitHubClient({
                             stateReason: item.state_reason,
                             htmlUrl: item.html_url,
                             labels: item.labels.map((l) => l.name),
-                            assignees: item.assignees.map(
-                                (a) => a.login,
-                            ),
+                            assignees: item.assignees.map((a) => a.login),
                             milestone: item.milestone?.title ?? null,
                         });
                     }
@@ -738,10 +720,7 @@ const zodGitHubApiIssueList = z.array(
         html_url: z.string(),
         labels: z.array(z.object({ name: z.string() })),
         assignees: z.array(z.object({ login: z.string() })),
-        milestone: z
-            .object({ title: z.string() })
-            .nullable()
-            .default(null),
+        milestone: z.object({ title: z.string() }).nullable().default(null),
         pull_request: z.object({}).optional(),
     }),
 );

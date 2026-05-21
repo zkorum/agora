@@ -16,10 +16,8 @@
         <PostActionBar
           v-model="currentTab"
           :compact-mode="compactMode"
-          :opinion-count="
-            conversationData.metadata.opinionCount + opinionCountOffset
-          "
-          :participant-count="participantCountLocal"
+          :opinion-count="conversationData.metadata.opinionCount"
+          :participant-count="conversationData.metadata.participantCount"
           :vote-count="props.conversationData.metadata.voteCount"
           :total-participant-count="props.conversationData.metadata.totalParticipantCount"
           :total-vote-count="props.conversationData.metadata.totalVoteCount"
@@ -71,10 +69,6 @@
             hiddenCommentsQuery,
             commentsMyVotesQuery,
           }"
-          @deleted="decrementOpinionCount()"
-          @participant-count-delta="
-            (delta: number) => (participantCountLocal += delta)
-          "
         />
       </div>
     </ZKHoverEffect>
@@ -155,8 +149,6 @@ const conversationScrollContext = computed<ConversationScrollContext>(() => ({
   },
 }));
 
-const opinionCountOffset = ref(0);
-
 const {
   invalidateAnalysis,
   forceRefreshAnalysis,
@@ -166,9 +158,6 @@ const {
 const { loadAuthenticatedModules } = useBackendAuthApi();
 const userStore = useUserStore();
 
-const participantCountLocal = ref(
-  props.conversationData.metadata.participantCount
-);
 const hasSurvey = computed(
   () => props.conversationData.interaction.surveyGate?.hasSurvey === true
 );
@@ -274,17 +263,11 @@ function openModerationHistory(): void {
   }
 }
 
-function decrementOpinionCount(): void {
-  opinionCountOffset.value -= 1;
-}
-
 async function submittedComment(data: {
   opinionSlugId: string;
   authStateChanged: boolean;
   needsCacheRefresh: boolean;
 }): Promise<void> {
-  opinionCountOffset.value += 1;
-
   // The 1.3s wait for vote buffer flush happens in CommentComposer
   // before this function is called, so the vote is already in the database
 
@@ -328,10 +311,6 @@ async function submittedComment(data: {
 }
 
 onMounted(async () => {
-  // Reset local state
-  participantCountLocal.value =
-    props.conversationData.metadata.participantCount;
-
   await refreshAllData();
 });
 
@@ -370,11 +349,6 @@ watch(currentTab, async (newTab) => {
 });
 
 async function refreshAllData(): Promise<void> {
-  // Reset local state
-  opinionCountOffset.value = 0;
-  participantCountLocal.value =
-    props.conversationData.metadata.participantCount;
-
   const slugId = props.conversationData.metadata.conversationSlugId;
 
   // Invalidate all queries to force fresh data

@@ -152,8 +152,7 @@ class COCMVotingRights:
             # Count connected co-scorers (Paper Eq. 15: K function, binary)
             # Connected = shares at least one group (friend_matrix > 0)
             connected_co_scorers = sum(
-                1 for other in scorer_set
-                if other != user and fm.get(user, {}).get(other, 0) > 0
+                1 for other in scorer_set if other != user and fm.get(user, {}).get(other, 0) > 0
             )
 
             # COCM attenuation: trust / sqrt(1 + connections)

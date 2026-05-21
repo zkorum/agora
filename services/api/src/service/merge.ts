@@ -18,7 +18,7 @@ import { eq } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { nowZeroMs } from "@/shared/util.js";
 import { log } from "@/app.js";
-import { reconcileConversationCounters } from "@/shared-backend/conversationCounters.js";
+import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
 
 interface MergeGuestIntoVerifiedUserProps {
     db: PostgresDatabase;
@@ -222,7 +222,11 @@ export async function mergeGuestIntoVerifiedUser({
     );
 
     for (const conversationId of conversationIdsSet) {
-        await reconcileConversationCounters({ db, conversationId });
+        await scheduleConversationAnalysisRefresh({
+            db,
+            conversationId,
+            log,
+        });
     }
 
     // 15. Soft-delete the guest user

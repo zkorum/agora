@@ -40,6 +40,64 @@ export interface ApiV1AdministratorOrganizationDeleteOrganizationPostRequest {
 export interface ApiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost200Response {
     'organizationList': Array<ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadataOrganization>;
 }
+export interface ApiV1AdministratorPremiumEntitlementCreatePostRequest {
+    'subject': ApiV1AdministratorPremiumEntitlementCreatePostRequestSubject;
+    'features': Array<ApiV1AdministratorPremiumEntitlementCreatePostRequestFeaturesEnum>;
+    'startsAt': string;
+    'expiresAt'?: string;
+    'adminNote'?: string;
+}
+
+export const ApiV1AdministratorPremiumEntitlementCreatePostRequestFeaturesEnum = {
+    Survey: 'survey',
+    Prioritization: 'prioritization',
+    EventTicket: 'event_ticket',
+    AnalysisVariants: 'analysis_variants',
+} as const;
+
+export type ApiV1AdministratorPremiumEntitlementCreatePostRequestFeaturesEnum = typeof ApiV1AdministratorPremiumEntitlementCreatePostRequestFeaturesEnum[keyof typeof ApiV1AdministratorPremiumEntitlementCreatePostRequestFeaturesEnum];
+
+export interface ApiV1AdministratorPremiumEntitlementCreatePostRequestSubject {
+    'username'?: string;
+    'organizationName'?: string;
+}
+export interface ApiV1AdministratorPremiumEntitlementListPost200Response {
+    'entitlements': Array<ApiV1AdministratorPremiumEntitlementListPost200ResponseEntitlementsInner>;
+}
+export interface ApiV1AdministratorPremiumEntitlementListPost200ResponseEntitlementsInner {
+    'id': number;
+    'userId'?: string;
+    'username'?: string;
+    'organizationId'?: number;
+    'organizationName'?: string;
+    'feature': ApiV1AdministratorPremiumEntitlementListPost200ResponseEntitlementsInnerFeatureEnum;
+    'startsAt': string;
+    'expiresAt'?: string;
+    'revokedAt'?: string;
+    'adminNote'?: string;
+    'createdAt': string;
+    'updatedAt': string;
+}
+
+export const ApiV1AdministratorPremiumEntitlementListPost200ResponseEntitlementsInnerFeatureEnum = {
+    Survey: 'survey',
+    Prioritization: 'prioritization',
+    EventTicket: 'event_ticket',
+    AnalysisVariants: 'analysis_variants',
+} as const;
+
+export type ApiV1AdministratorPremiumEntitlementListPost200ResponseEntitlementsInnerFeatureEnum = typeof ApiV1AdministratorPremiumEntitlementListPost200ResponseEntitlementsInnerFeatureEnum[keyof typeof ApiV1AdministratorPremiumEntitlementListPost200ResponseEntitlementsInnerFeatureEnum];
+
+export interface ApiV1AdministratorPremiumEntitlementRevokePostRequest {
+    'entitlementId': number;
+}
+export interface ApiV1AdministratorPremiumEntitlementUpdatePostRequest {
+    'entitlementId': number;
+    'startsAt': string;
+    'expiresAt'?: string;
+    'revokedAt'?: string | null;
+    'adminNote'?: string;
+}
 /**
  * @type ApiV1AuthAuthenticatePost200Response
  */
@@ -675,12 +733,12 @@ export interface ApiV1ConversationCreatePostRequest {
     'conversationTitle': string;
     'conversationBody'?: string;
     'postAsOrganization'?: string;
-    'indexConversationAt'?: string;
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationCreatePostRequestParticipationModeEnum;
     'conversationType': ApiV1ConversationCreatePostRequestConversationTypeEnum;
     'seedOpinionList': Array<string>;
     'requiresEventTicket'?: ApiV1ConversationCreatePostRequestRequiresEventTicketEnum;
+    'aiLabelingEnabled'?: boolean;
     'externalSourceConfig'?: ApiV1ConversationCreatePostRequestExternalSourceConfig | null;
     'surveyConfig'?: ApiV1ConversationCreatePostRequestSurveyConfig | null;
 }
@@ -1270,12 +1328,13 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOf {
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum;
     'requiresEventTicket'?: ApiV1ConversationGetForEditPost200ResponseOneOfRequiresEventTicketEnum;
+    'aiLabelingEnabled': boolean;
     'postAsOrganizationName'?: string;
     'surveyConfig'?: ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfig | null;
-    'indexConversationAt'?: string;
     'createdAt': string;
     'updatedAt': string;
     'isLocked': boolean;
+    'editPermissions': ApiV1ConversationGetForEditPost200ResponseOneOfEditPermissions;
 }
 
 export const ApiV1ConversationGetForEditPost200ResponseOneOfParticipationModeEnum = {
@@ -1303,6 +1362,27 @@ export const ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum = {
 } as const;
 
 export type ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum];
+
+export interface ApiV1ConversationGetForEditPost200ResponseOneOfEditPermissions {
+    'canEditNormalSettings': boolean;
+    'canEditConversationContent': boolean;
+    'canEditSurvey': boolean;
+    'canDeleteSurvey': boolean;
+    'canAddEventTicket': boolean;
+    'canChangeEventTicket': boolean;
+    'canRemoveEventTicket': boolean;
+    'restrictedPremiumFeatures': Array<ApiV1ConversationGetForEditPost200ResponseOneOfEditPermissionsRestrictedPremiumFeaturesEnum>;
+    'premiumEditAccessEndsAt'?: string;
+}
+
+export const ApiV1ConversationGetForEditPost200ResponseOneOfEditPermissionsRestrictedPremiumFeaturesEnum = {
+    Survey: 'survey',
+    Prioritization: 'prioritization',
+    EventTicket: 'event_ticket',
+    AnalysisVariants: 'analysis_variants',
+} as const;
+
+export type ApiV1ConversationGetForEditPost200ResponseOneOfEditPermissionsRestrictedPremiumFeaturesEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfEditPermissionsRestrictedPremiumFeaturesEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfEditPermissionsRestrictedPremiumFeaturesEnum];
 
 export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfig {
     'isOptional': boolean;
@@ -1391,10 +1471,10 @@ export interface ApiV1ConversationImportPost200Response {
 export interface ApiV1ConversationImportPostRequest {
     'polisUrl': string;
     'postAsOrganization'?: string;
-    'indexConversationAt'?: string;
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationImportPostRequestParticipationModeEnum;
     'requiresEventTicket'?: ApiV1ConversationImportPostRequestRequiresEventTicketEnum;
+    'aiLabelingEnabled'?: boolean;
 }
 
 export const ApiV1ConversationImportPostRequestParticipationModeEnum = {
@@ -1500,6 +1580,7 @@ export const ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum = {
     NotAuthor: 'not_author',
     ConversationLocked: 'conversation_locked',
     InvalidAccessSettings: 'invalid_access_settings',
+    PremiumAccessExpired: 'premium_access_expired',
 } as const;
 
 export type ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum = typeof ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum[keyof typeof ApiV1ConversationUpdatePost200ResponseOneOfReasonEnum];
@@ -1511,8 +1592,8 @@ export interface ApiV1ConversationUpdatePostRequest {
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationUpdatePostRequestParticipationModeEnum;
     'requiresEventTicket'?: ApiV1ConversationUpdatePostRequestRequiresEventTicketEnum;
+    'aiLabelingEnabled'?: boolean;
     'surveyConfig'?: ApiV1ConversationCreatePostRequestSurveyConfig | null;
-    'indexConversationAt'?: string;
 }
 
 export const ApiV1ConversationUpdatePostRequestParticipationModeEnum = {
@@ -2956,6 +3037,155 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorPremiumEntitlementCreatePostRequest} apiV1AdministratorPremiumEntitlementCreatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorPremiumEntitlementCreatePost: async (apiV1AdministratorPremiumEntitlementCreatePostRequest: ApiV1AdministratorPremiumEntitlementCreatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorPremiumEntitlementCreatePostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorPremiumEntitlementCreatePost', 'apiV1AdministratorPremiumEntitlementCreatePostRequest', apiV1AdministratorPremiumEntitlementCreatePostRequest)
+            const localVarPath = `/api/v1/administrator/premium-entitlement/create`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorPremiumEntitlementCreatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {object} body 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorPremiumEntitlementListPost: async (body: object, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'body' is not null or undefined
+            assertParamExists('apiV1AdministratorPremiumEntitlementListPost', 'body', body)
+            const localVarPath = `/api/v1/administrator/premium-entitlement/list`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorPremiumEntitlementRevokePostRequest} apiV1AdministratorPremiumEntitlementRevokePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorPremiumEntitlementRevokePost: async (apiV1AdministratorPremiumEntitlementRevokePostRequest: ApiV1AdministratorPremiumEntitlementRevokePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorPremiumEntitlementRevokePostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorPremiumEntitlementRevokePost', 'apiV1AdministratorPremiumEntitlementRevokePostRequest', apiV1AdministratorPremiumEntitlementRevokePostRequest)
+            const localVarPath = `/api/v1/administrator/premium-entitlement/revoke`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorPremiumEntitlementRevokePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorPremiumEntitlementUpdatePostRequest} apiV1AdministratorPremiumEntitlementUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorPremiumEntitlementUpdatePost: async (apiV1AdministratorPremiumEntitlementUpdatePostRequest: ApiV1AdministratorPremiumEntitlementUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorPremiumEntitlementUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorPremiumEntitlementUpdatePost', 'apiV1AdministratorPremiumEntitlementUpdatePostRequest', apiV1AdministratorPremiumEntitlementUpdatePostRequest)
+            const localVarPath = `/api/v1/administrator/premium-entitlement/update`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorPremiumEntitlementUpdatePostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -5903,6 +6133,54 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1AdministratorPremiumEntitlementCreatePostRequest} apiV1AdministratorPremiumEntitlementCreatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorPremiumEntitlementCreatePost(apiV1AdministratorPremiumEntitlementCreatePostRequest: ApiV1AdministratorPremiumEntitlementCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorPremiumEntitlementCreatePost(apiV1AdministratorPremiumEntitlementCreatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorPremiumEntitlementCreatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {object} body 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorPremiumEntitlementListPost(body: object, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorPremiumEntitlementListPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorPremiumEntitlementListPost(body, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorPremiumEntitlementListPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorPremiumEntitlementRevokePostRequest} apiV1AdministratorPremiumEntitlementRevokePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorPremiumEntitlementRevokePost(apiV1AdministratorPremiumEntitlementRevokePostRequest: ApiV1AdministratorPremiumEntitlementRevokePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorPremiumEntitlementRevokePost(apiV1AdministratorPremiumEntitlementRevokePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorPremiumEntitlementRevokePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorPremiumEntitlementUpdatePostRequest} apiV1AdministratorPremiumEntitlementUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorPremiumEntitlementUpdatePost(apiV1AdministratorPremiumEntitlementUpdatePostRequest: ApiV1AdministratorPremiumEntitlementUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorPremiumEntitlementUpdatePost(apiV1AdministratorPremiumEntitlementUpdatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorPremiumEntitlementUpdatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -6892,6 +7170,42 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1AdministratorPremiumEntitlementCreatePostRequest} apiV1AdministratorPremiumEntitlementCreatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorPremiumEntitlementCreatePost(apiV1AdministratorPremiumEntitlementCreatePostRequest: ApiV1AdministratorPremiumEntitlementCreatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1AdministratorPremiumEntitlementCreatePost(apiV1AdministratorPremiumEntitlementCreatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {object} body 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorPremiumEntitlementListPost(body: object, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorPremiumEntitlementListPost200Response> {
+            return localVarFp.apiV1AdministratorPremiumEntitlementListPost(body, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorPremiumEntitlementRevokePostRequest} apiV1AdministratorPremiumEntitlementRevokePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorPremiumEntitlementRevokePost(apiV1AdministratorPremiumEntitlementRevokePostRequest: ApiV1AdministratorPremiumEntitlementRevokePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1AdministratorPremiumEntitlementRevokePost(apiV1AdministratorPremiumEntitlementRevokePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorPremiumEntitlementUpdatePostRequest} apiV1AdministratorPremiumEntitlementUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorPremiumEntitlementUpdatePost(apiV1AdministratorPremiumEntitlementUpdatePostRequest: ApiV1AdministratorPremiumEntitlementUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1AdministratorPremiumEntitlementUpdatePost(apiV1AdministratorPremiumEntitlementUpdatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1AuthAuthenticatePostRequest} apiV1AuthAuthenticatePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -7652,6 +7966,46 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost(apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest: ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost(apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1AdministratorPremiumEntitlementCreatePostRequest} apiV1AdministratorPremiumEntitlementCreatePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorPremiumEntitlementCreatePost(apiV1AdministratorPremiumEntitlementCreatePostRequest: ApiV1AdministratorPremiumEntitlementCreatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorPremiumEntitlementCreatePost(apiV1AdministratorPremiumEntitlementCreatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {object} body 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorPremiumEntitlementListPost(body: object, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorPremiumEntitlementListPost(body, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1AdministratorPremiumEntitlementRevokePostRequest} apiV1AdministratorPremiumEntitlementRevokePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorPremiumEntitlementRevokePost(apiV1AdministratorPremiumEntitlementRevokePostRequest: ApiV1AdministratorPremiumEntitlementRevokePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorPremiumEntitlementRevokePost(apiV1AdministratorPremiumEntitlementRevokePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1AdministratorPremiumEntitlementUpdatePostRequest} apiV1AdministratorPremiumEntitlementUpdatePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorPremiumEntitlementUpdatePost(apiV1AdministratorPremiumEntitlementUpdatePostRequest: ApiV1AdministratorPremiumEntitlementUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorPremiumEntitlementUpdatePost(apiV1AdministratorPremiumEntitlementUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

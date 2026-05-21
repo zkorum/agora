@@ -19,6 +19,7 @@ export interface SettingsTranslations {
   communityGuidelines: string;
   logOut: string;
   moderatorOrganization: string;
+  moderatorPremiumEntitlements: string;
   componentTesting: string;
   accountDeleted: string;
   accountDeletionFailed: string;
@@ -52,6 +53,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "Community Guidelines",
     logOut: "Log Out",
     moderatorOrganization: "Moderator - Organization",
+    moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 Component Testing",
     accountDeleted: "Account deleted",
     accountDeletionFailed: "Oops! Account deletion failed. Please try again",
@@ -80,6 +82,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "إرشادات المجتمع",
     logOut: "تسجيل الخروج",
     moderatorOrganization: "المشرف - المنظمة",
+    moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 اختبار المكونات",
     accountDeleted: "تم حذف الحساب",
     accountDeletionFailed: "عذراً! فشل حذف الحساب. يرجى المحاولة مرة أخرى",
@@ -108,6 +111,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "Directrices de la comunidad",
     logOut: "Cerrar sesión",
     moderatorOrganization: "Moderador - Organización",
+    moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 Pruebas de componentes",
     accountDeleted: "Cuenta eliminada",
     accountDeletionFailed:
@@ -137,6 +141,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "راهنمای جامعه",
     logOut: "خروج",
     moderatorOrganization: "مدیر محتوا - سازمان",
+    moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 آزمایش کامپوننت‌ها",
     accountDeleted: "حساب کاربری حذف شد",
     accountDeletionFailed: "متأسفیم! حذف حساب ناموفق بود. لطفاً دوباره تلاش کنید",
@@ -165,6 +170,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "הנחיות קהילה",
     logOut: "התנתקות",
     moderatorOrganization: "מנהל/ת תוכן - ארגון",
+    moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 בדיקת רכיבים",
     accountDeleted: "החשבון נמחק",
     accountDeletionFailed: "אופס! מחיקת החשבון נכשלה. אנא נסו שוב",
@@ -193,6 +199,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "Règles de la communauté",
     logOut: "Se déconnecter",
     moderatorOrganization: "Modérateur - Organisation",
+    moderatorPremiumEntitlements: "Modérateur - Droits premium",
     componentTesting: "🔧 Tests de composants",
     accountDeleted: "Compte supprimé",
     accountDeletionFailed:
@@ -222,6 +229,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "社区准则",
     logOut: "登出",
     moderatorOrganization: "版主 - 组织",
+    moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 组件测试",
     accountDeleted: "账户已删除",
     accountDeletionFailed: "哎呀！账户删除失败，请重试",
@@ -250,6 +258,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "社群準則",
     logOut: "登出",
     moderatorOrganization: "版主 - 組織",
+    moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 組件測試",
     accountDeleted: "帳戶已刪除",
     accountDeletionFailed: "哎呀！帳戶刪除失敗，請重試",
@@ -278,6 +287,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "コミュニティガイドライン",
     logOut: "ログアウト",
     moderatorOrganization: "モデレーター - 組織",
+    moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 コンポーネントテスト",
     accountDeleted: "アカウントが削除されました",
     accountDeletionFailed:
@@ -307,6 +317,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "Коомчулук эрежелери",
     logOut: "Чыгуу",
     moderatorOrganization: "Модератор - Уюм",
+    moderatorPremiumEntitlements: "Moderator - Premium entitlements",
     componentTesting: "🔧 Компоненттерди тестирлөө",
     accountDeleted: "Каттоо эсеби жок кылынды",
     accountDeletionFailed: "Ой! Каттоо эсебин жок кылуу ишке ашкан жок. Кайра аракет кылыңыз",
@@ -335,6 +346,7 @@ export const settingsTranslations: Record<
     communityGuidelines: "Правила сообщества",
     logOut: "Выйти",
     moderatorOrganization: "Модератор - Организация",
+    moderatorPremiumEntitlements: "Модератор - Премиум-доступ",
     componentTesting: "🔧 Тестирование компонентов",
     accountDeleted: "Аккаунт удалён",
     accountDeletionFailed: "Ой! Не удалось удалить аккаунт. Попробуйте ещё раз",

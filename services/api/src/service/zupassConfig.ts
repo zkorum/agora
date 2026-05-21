@@ -11,5 +11,5 @@ export {
     getZupassEventConfig,
     getZupassSignerPublicKey,
     getZupassCollectionName,
-    type ZupassEventConfig
+    type ZupassEventConfig,
 } from "@/shared/zupass/eventConfig.js";

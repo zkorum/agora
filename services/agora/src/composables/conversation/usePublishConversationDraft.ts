@@ -54,15 +54,12 @@ export function usePublishConversationDraft() {
         postAsOrganizationName: conversationDraft.postAs.postAsOrganization
           ? conversationDraft.postAs.organizationName
           : "",
-        targetIsoConvertDateString:
-          conversationDraft.privateConversationSettings.hasScheduledConversion
-            ? conversationDraft.privateConversationSettings.conversionDate.toISOString()
-            : undefined,
         isIndexed: !conversationDraft.isPrivate,
         participationMode: conversationDraft.participationMode,
         conversationType: conversationDraft.conversationType,
         seedOpinionList: conversationDraft.seedOpinions,
         requiresEventTicket: conversationDraft.requiresEventTicket,
+        aiLabelingEnabled: conversationDraft.aiLabelingEnabled,
         externalSourceConfig: conversationDraft.externalSourceConfig,
         surveyConfig: normalizedSurveyConfigResult.surveyConfig,
       });

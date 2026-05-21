@@ -8,6 +8,7 @@ import { computed, type MaybeRefOrGetter, toValue } from "vue";
 import { useNotify } from "../../ui/notify";
 import type { AxiosErrorResponse } from "../common";
 import { getErrorMessage } from "../common";
+import { updateConversationQueryCache } from "../post/useConversationQuery";
 import type { CommentTabFilters } from "./comment";
 import { useBackendCommentApi } from "./comment";
 import {
@@ -38,12 +39,10 @@ export function useCommentsQuery({
       clusterKey,
     ],
     queryFn: () =>
-      fetchCommentsForPost(
-        toValue(conversationSlugId),
-        filter,
-        clusterKey
-      ),
-    enabled: computed(() => toValue(enabled) && toValue(conversationSlugId) !== ""),
+      fetchCommentsForPost(toValue(conversationSlugId), filter, clusterKey),
+    enabled: computed(
+      () => toValue(enabled) && toValue(conversationSlugId) !== ""
+    ),
     staleTime: getAnalysisStaleTime(toValue(voteCount)), // Dynamic cache based on conversation size
     // Note: bypassed by manual invalidation on tab changes
     placeholderData: (previousData) => previousData, // Preserve previous data during refetches
@@ -65,7 +64,9 @@ export function useHiddenCommentsQuery({
   return useQuery({
     queryKey: ["hiddenComments", computed(() => toValue(conversationSlugId))],
     queryFn: () => fetchHiddenCommentsForPost(toValue(conversationSlugId)),
-    enabled: computed(() => toValue(enabled) && toValue(conversationSlugId) !== ""),
+    enabled: computed(
+      () => toValue(enabled) && toValue(conversationSlugId) !== ""
+    ),
     staleTime: getAnalysisStaleTime(toValue(voteCount)), // Dynamic cache based on conversation size
     // Note: bypassed by manual invalidation on tab changes
     placeholderData: (previousData) => previousData, // Preserve previous data during refetches
@@ -118,7 +119,9 @@ export function useAnalysisQuery({
     queryKey: ["analysis", computed(() => toValue(conversationSlugId))],
     queryFn: () =>
       fetchAnalysisData({ conversationSlugId: toValue(conversationSlugId) }),
-    enabled: computed(() => toValue(enabled) && toValue(conversationSlugId) !== ""),
+    enabled: computed(
+      () => toValue(enabled) && toValue(conversationSlugId) !== ""
+    ),
     staleTime: getAnalysisStaleTime(toValue(voteCount)), // Dynamic cache based on conversation size
     // Note: When votes/comments happen, markAnalysisAsStale() is called
     // This marks data as stale immediately, so next access will refetch
@@ -183,15 +186,22 @@ export function useDeleteCommentMutation() {
   );
   const userStore = useUserStore();
 
+  interface DeleteCommentMutationVariables {
+    commentSlugId: string;
+    conversationSlugId: string;
+    moderation: OpinionItem["moderation"];
+  }
+
   return useMutation({
-    mutationFn: (commentSlugId: string) => deleteCommentBySlugId(commentSlugId),
-    onSuccess: (_data, commentSlugId, _context: unknown) => {
+    mutationFn: ({ commentSlugId }: DeleteCommentMutationVariables) =>
+      deleteCommentBySlugId(commentSlugId),
+    onSuccess: (_data, variables, _context: unknown) => {
       // Remove from TanStack Query cache (conversation page - all filters)
       queryClient.setQueriesData<OpinionItem[]>(
         { queryKey: ["comments"] },
         (oldData) =>
           oldData?.filter(
-            (opinion) => opinion.opinionSlugId !== commentSlugId
+            (opinion) => opinion.opinionSlugId !== variables.commentSlugId
           ) ?? []
       );
 
@@ -199,13 +209,54 @@ export function useDeleteCommentMutation() {
         { queryKey: ["hiddenComments"] },
         (oldData) =>
           oldData?.filter(
-            (opinion) => opinion.opinionSlugId !== commentSlugId
+            (opinion) => opinion.opinionSlugId !== variables.commentSlugId
           ) ?? []
       );
 
+      updateConversationQueryCache({
+        queryClient,
+        conversationSlugId: variables.conversationSlugId,
+        updateConversation: (conversation) => {
+          const isUnmoderated = variables.moderation.status === "unmoderated";
+          const isMoved =
+            variables.moderation.status === "moderated" &&
+            variables.moderation.action === "move";
+          const isHidden =
+            variables.moderation.status === "moderated" &&
+            variables.moderation.action === "hide";
+
+          return {
+            ...conversation,
+            metadata: {
+              ...conversation.metadata,
+              opinionCount: Math.max(
+                0,
+                conversation.metadata.opinionCount - (isUnmoderated ? 1 : 0)
+              ),
+              totalOpinionCount: Math.max(
+                0,
+                conversation.metadata.totalOpinionCount - 1
+              ),
+              moderatedOpinionCount: Math.max(
+                0,
+                conversation.metadata.moderatedOpinionCount - (isMoved ? 1 : 0)
+              ),
+              hiddenOpinionCount: Math.max(
+                0,
+                conversation.metadata.hiddenOpinionCount - (isHidden ? 1 : 0)
+              ),
+            },
+          };
+        },
+      });
+
+      void queryClient.invalidateQueries({
+        queryKey: ["conversation", variables.conversationSlugId],
+      });
+
       // Remove from Pinia store (profile page)
       const indexToRemove = userStore.profileData.userCommentList.findIndex(
-        (item) => item.opinionItem.opinionSlugId === commentSlugId
+        (item) => item.opinionItem.opinionSlugId === variables.commentSlugId
       );
       if (indexToRemove !== -1) {
         userStore.profileData.userCommentList.splice(indexToRemove, 1);

@@ -428,6 +428,55 @@
       "when": 1777396555114,
       "tag": "0060_puzzling_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1779224939718,
+      "tag": "0061_spooky_shockwave",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1779225152700,
+      "tag": "0062_graceful_princess_powerful",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1779226460875,
+      "tag": "0063_good_vapor",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1779284862741,
+      "tag": "0064_warm_joseph",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1779311404816,
+      "tag": "0065_dashing_edwin_jarvis",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1779320897832,
+      "tag": "0066_marvelous_kinsey_walden",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1779322050021,
+      "tag": "0067_blue_nick_fury",
+      "breakpoints": true
     }
   ]
 }

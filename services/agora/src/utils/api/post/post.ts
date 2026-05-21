@@ -179,12 +179,12 @@ export function useBackendPostApi() {
     postTitle: string;
     postBody: string | undefined;
     postAsOrganizationName: string;
-    targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
     participationMode: ParticipationMode;
     conversationType: ConversationType;
     seedOpinionList: string[];
     requiresEventTicket?: EventSlug;
+    aiLabelingEnabled: boolean;
     externalSourceConfig?: ExternalSourceConfig | null;
     surveyConfig?: SurveyConfig | null;
   }
@@ -198,10 +198,10 @@ export function useBackendPostApi() {
   interface ImportConversationProps {
     polisUrl: string;
     postAsOrganizationName: string;
-    targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
     participationMode: ParticipationMode;
     requiresEventTicket?: EventSlug;
+    aiLabelingEnabled: boolean;
   }
 
   type ImportConversationSuccessResponse =
@@ -215,10 +215,10 @@ export function useBackendPostApi() {
     commentsFile: File;
     votesFile: File;
     postAsOrganizationName: string;
-    targetIsoConvertDateString: string | undefined;
     isIndexed: boolean;
     participationMode: ParticipationMode;
     requiresEventTicket?: EventSlug;
+    aiLabelingEnabled: boolean;
   }
 
   async function importConversationFromCsv(
@@ -233,13 +233,10 @@ export function useBackendPostApi() {
 
     // Add metadata
     formData.append("postAsOrganization", params.postAsOrganizationName);
-    formData.append(
-      "indexConversationAt",
-      params.targetIsoConvertDateString || ""
-    );
     formData.append("isIndexed", String(params.isIndexed));
     formData.append("participationMode", params.participationMode);
     formData.append("requiresEventTicket", params.requiresEventTicket || "");
+    formData.append("aiLabelingEnabled", String(params.aiLabelingEnabled));
 
     // Get URL from OpenAPI spec
     const { url, options } =
@@ -271,19 +268,19 @@ export function useBackendPostApi() {
   async function importConversation({
     polisUrl,
     postAsOrganizationName,
-    targetIsoConvertDateString,
     isIndexed,
     participationMode,
     requiresEventTicket,
+    aiLabelingEnabled,
   }: ImportConversationProps): Promise<ImportConversationResponse> {
     try {
       const params: ApiV1ConversationImportPostRequest = {
         polisUrl,
         postAsOrganization: postAsOrganizationName,
-        indexConversationAt: targetIsoConvertDateString,
         isIndexed,
         participationMode,
         requiresEventTicket,
+        aiLabelingEnabled,
       };
 
       const { url, options } =
@@ -314,12 +311,12 @@ export function useBackendPostApi() {
     postTitle,
     postBody,
     postAsOrganizationName,
-    targetIsoConvertDateString,
     isIndexed,
     participationMode,
     conversationType,
     seedOpinionList,
     requiresEventTicket,
+    aiLabelingEnabled,
     externalSourceConfig,
     surveyConfig,
   }: CreateNewPostProps): Promise<CreateNewPostResponse> {
@@ -331,9 +328,9 @@ export function useBackendPostApi() {
         participationMode: participationMode,
         conversationType: conversationType,
         postAsOrganization: postAsOrganizationName,
-        indexConversationAt: targetIsoConvertDateString,
         seedOpinionList: seedOpinionList,
         requiresEventTicket,
+        aiLabelingEnabled,
         externalSourceConfig: externalSourceConfig ?? undefined,
         surveyConfig: surveyConfig ?? undefined,
       });

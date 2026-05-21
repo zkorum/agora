@@ -89,8 +89,9 @@ describe("buildComparisonMatrix", () => {
     });
 
     it("handles empty items", () => {
-        const { getUnorderedPairs, getUnorderedGroups } =
-            buildComparisonMatrix({ items: [] });
+        const { getUnorderedPairs, getUnorderedGroups } = buildComparisonMatrix(
+            { items: [] },
+        );
         expect(getUnorderedPairs()).toEqual([]);
         expect(getUnorderedGroups()).toEqual([]);
     });
@@ -110,9 +111,7 @@ describe("buildComparisonMatrix", () => {
 
 describe("generateCandidateSets", () => {
     const items = ["A", "B", "C", "D", "E"];
-    const uniformUncertainty = new Map(
-        items.map((item) => [item, 1.0]),
-    );
+    const uniformUncertainty = new Map(items.map((item) => [item, 1.0]));
 
     it("returns empty for fewer than 2 items", () => {
         const result = generateCandidateSets({
@@ -269,7 +268,10 @@ describe("generateCandidateSets", () => {
         }
         // H (highest uncertainty) should appear at least as often as average
         const hCount = counts.get("H") ?? 0;
-        const totalAppearances = [...counts.values()].reduce((a, b) => a + b, 0);
+        const totalAppearances = [...counts.values()].reduce(
+            (a, b) => a + b,
+            0,
+        );
         const avgCount = totalAppearances / manyItems.length;
         expect(hCount).toBeGreaterThanOrEqual(avgCount);
     });
@@ -412,9 +414,7 @@ describe("pair coverage", () => {
         const items = ["A", "B", "C", "D", "E", "F"];
         const uncertainty = new Map(items.map((id) => [id, 1.0]));
         // A>B, A>C, B>C resolved. 12 pairs remain unordered.
-        const comparisons = [
-            { best: "A", worst: "C", set: ["A", "B", "C"] },
-        ];
+        const comparisons = [{ best: "A", worst: "C", set: ["A", "B", "C"] }];
         const result = generateCandidateSets({
             userComparisons: comparisons,
             items,

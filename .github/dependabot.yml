@@ -32,16 +32,6 @@ updates:
         update-types: ["minor", "patch"]
 
   - package-ecosystem: "npm"
-    directory: "/services/math-updater"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 10
-    groups:
-      minor-and-patch:
-        update-types: ["minor", "patch"]
-
-  - package-ecosystem: "npm"
     directory: "/services/shared"
     schedule:
       interval: "weekly"
@@ -79,7 +69,19 @@ updates:
 
   # Python dependencies
   - package-ecosystem: "pip"
-    directory: "/services/python-bridge"
+    directory: "/services/import-worker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+
+  - package-ecosystem: "pip"
+    directory: "/services/math-updater"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+
+  - package-ecosystem: "pip"
+    directory: "/services/scoring-worker"
     schedule:
       interval: "weekly"
       day: "monday"

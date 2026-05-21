@@ -25,10 +25,10 @@ interface RequestConversationImportParams {
     files: CsvFiles;
     formData: {
         postAsOrganization?: string;
-        indexConversationAt?: string;
         participationMode: ParticipationMode;
         isIndexed: boolean;
         requiresEventTicket?: EventSlug;
+        aiLabelingEnabled: boolean;
     };
     didWrite: string;
     importBuffer: ImportBuffer;
@@ -155,10 +155,10 @@ interface RequestUrlImportParams {
     polisUrl: string;
     formData: {
         postAsOrganization?: string;
-        indexConversationAt?: string;
         participationMode: ParticipationMode;
         isIndexed: boolean;
         requiresEventTicket?: EventSlug;
+        aiLabelingEnabled: boolean;
     };
     didWrite: string;
     importBuffer: ImportBuffer;

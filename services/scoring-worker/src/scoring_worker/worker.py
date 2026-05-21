@@ -111,9 +111,6 @@ def _connect_to_valkey_with_retry(settings: Settings) -> valkey_lib.Valkey | Non
 
 def main() -> None:
     settings = Settings()
-    if settings.connection_string == "":
-        msg = "SCORING_WORKER_CONNECTION_STRING must be set"
-        raise ValueError(msg)
 
     signal.signal(signal.SIGTERM, _handle_signal)
     signal.signal(signal.SIGINT, _handle_signal)

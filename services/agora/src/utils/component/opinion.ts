@@ -2,19 +2,17 @@ import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 
 export type CommentFilterOptions = "new" | "moderated" | "hidden" | "discover" | "my_votes";
 
-/** Mirrors min_user_vote_threshold in python-bridge/main.py */
+/** Mirrors the default minimum vote threshold used by opinion-group analysis. */
 export const MIN_VOTES_FOR_CLUSTER = 7;
 
 /**
  * Coefficient of Variation threshold for cluster imbalance detection.
- * Same threshold used in python-bridge/main.py for distribution balancing.
+ * Same threshold historically used for distribution balancing.
  * CV = std_dev / mean of group sizes. Higher CV = more imbalanced.
- * If changing this value, also update the corresponding threshold in
- * services/python-bridge/main.py (and vice versa).
  */
 const CLUSTER_IMBALANCE_CV_THRESHOLD = 0.9;
 
-/** Returns true when cluster sizes are imbalanced (CV > 0.9), matching python-bridge logic. */
+/** Returns true when cluster sizes are imbalanced (CV > 0.9). */
 export function isClustersImbalanced(clusterSizes: number[]): boolean {
   if (clusterSizes.length < 2) return false;
   const mean =

@@ -10,7 +10,7 @@ dependencies = [
     "psycopg[binary]>=3.2",
     "pydantic>=2.12",
     "pydantic-settings>=2.0",
-    "red-dwarf @ git+https://github.com/nicobao/red-dwarf.git@099f32cc1a35bb2131ceb383551e60e0aabe65de",
+    "red-dwarf @ git+https://github.com/nicobao/red-dwarf.git@6563d9c91ddc4a284adc65620ce033020733d28b",
     "scikit-learn>=1.7,<2",
     "sqlalchemy[postgresql-psycopg]>=2.0",
     "valkey>=6.0",

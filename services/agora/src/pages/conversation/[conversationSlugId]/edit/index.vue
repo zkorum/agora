@@ -35,15 +35,27 @@
         v-model:is-private="isPrivate"
         v-model:participation-mode="participationMode"
         v-model:requires-event-ticket="requiresEventTicket"
-        v-model:private-conversation-settings="privateConversationSettings"
         v-model:post-as="postAs"
         v-model:import-settings="importSettings"
         v-model:external-source-config="externalSourceConfig"
         v-model:title="title"
         v-model:content="content"
         v-model:conversation-type="conversationType"
+        v-model:ai-labeling-enabled="aiLabelingEnabled"
         :is-edit-mode="true"
+        :can-add-event-ticket="canAddEventTicket"
+        :can-change-event-ticket="canChangeEventTicket"
+        :can-remove-event-ticket="canRemoveEventTicket"
       />
+
+      <ZKCard
+        v-if="showPremiumEditRestrictedBanner"
+        class="premium-restricted-banner"
+        padding="1rem"
+      >
+        <q-icon name="mdi-lock-alert-outline" class="premium-restricted-icon" />
+        <span>{{ t("premiumEditRestrictedBanner") }}</span>
+      </ZKCard>
 
         <div class="contentFlexStyle">
           <div v-if="isSurveyFeatureAllowed" class="surveyActionRow">
@@ -67,7 +79,7 @@
             :placeholder="t('titlePlaceholder')"
             :show-toolbar="false"
             :single-line="true"
-            :disabled="false"
+            :disabled="!canEditConversationContent"
             :max-length="MAX_LENGTH_TITLE"
             :show-character-count="true"
             min-height="auto"
@@ -85,7 +97,7 @@
               min-height="5rem"
               :show-toolbar="true"
               :single-line="false"
-              :disabled="false"
+              :disabled="!canEditConversationContent"
               :max-length="MAX_LENGTH_BODY"
               :show-character-count="true"
               @update:model-value="updateContent"
@@ -100,7 +112,6 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import Button from "primevue/button";
 import Editor from "src/components/editor/Editor.vue";
 import BackButton from "src/components/navigation/buttons/BackButton.vue";
@@ -115,16 +126,10 @@ import {
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
+import type { GetConversationForEditResponse } from "src/shared/types/dto";
 import type { ParticipationMode, SurveyConfig } from "src/shared/types/zod";
-import {
-  checkFeatureManagementAccess,
-  DEFAULT_FEATURE_ALLOWED_ORGS,
-  DEFAULT_FEATURE_ALLOWED_USERS,
-} from "src/shared-app-api/featureAccess";
-import { useAuthenticationStore } from "src/stores/authentication";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import { useUpdateConversationMutation } from "src/utils/api/post/useConversationMutations";
-import { processEnv } from "src/utils/processEnv";
 import { getSingleRouteParam } from "src/utils/router/params";
 import { useNotify } from "src/utils/ui/notify";
 import { computed, nextTick, onMounted, ref } from "vue";
@@ -147,7 +152,6 @@ const { t } = useComponentI18n<EditConversationTranslations>(
 
 const route = useRoute();
 const router = useRouter();
-const { userId } = storeToRefs(useAuthenticationStore());
 const { showNotifyMessage } = useNotify();
 const { getConversationForEdit } = useBackendPostEditApi();
 const updateMutation = useUpdateConversationMutation();
@@ -162,7 +166,11 @@ const loadError = ref(false);
 const errorTitle = ref("");
 const errorMessage = ref("");
 
-const surveyPostAsOrganizationName = ref<string | undefined>(undefined);
+type EditPermissions = Extract<
+  GetConversationForEditResponse,
+  { success: true }
+>["editPermissions"];
+const editPermissions = ref<EditPermissions | null>(null);
 
 const titleInputRef = ref<HTMLDivElement>();
 
@@ -173,10 +181,7 @@ const originalState = ref<{
   isPrivate: boolean;
   participationMode: ParticipationMode;
   requiresEventTicket: string | undefined;
-  privateConversationSettings: {
-    hasScheduledConversion: boolean;
-    conversionDate: Date;
-  };
+  aiLabelingEnabled: boolean;
   surveyConfig: SurveyConfig | null;
 }>({
   title: "",
@@ -184,10 +189,7 @@ const originalState = ref<{
   isPrivate: false,
   participationMode: "account_required",
   requiresEventTicket: undefined,
-  privateConversationSettings: {
-    hasScheduledConversion: false,
-    conversionDate: new Date(),
-  },
+  aiLabelingEnabled: true,
   surveyConfig: null,
 });
 
@@ -197,20 +199,26 @@ const responseSurveyButtonLabel = computed(() => {
     : t("editSurveyButton");
 });
 const isSurveyFeatureAllowed = computed(() => {
-  const result = checkFeatureManagementAccess({
-    hasExistingFeature: originalState.value.surveyConfig !== null,
-    featureEnabled: processEnv.VITE_SURVEY_ENABLED === "true",
-    isOrgOnly: processEnv.VITE_IS_SURVEY_ORG_ONLY === "true",
-    allowedOrgs:
-      processEnv.VITE_SURVEY_ALLOWED_ORGS ?? DEFAULT_FEATURE_ALLOWED_ORGS,
-    allowedUsers:
-      processEnv.VITE_SURVEY_ALLOWED_USERS ?? DEFAULT_FEATURE_ALLOWED_USERS,
-    postAsOrganization: surveyPostAsOrganizationName.value !== undefined,
-    organizationName: surveyPostAsOrganizationName.value ?? "",
-    userId: userId.value ?? "",
-  });
-
-  return result.allowed;
+  return (
+    editPermissions.value?.canEditSurvey === true ||
+    (originalState.value.surveyConfig !== null &&
+      editPermissions.value?.canDeleteSurvey === true)
+  );
+});
+const canEditConversationContent = computed(() => {
+  return editPermissions.value?.canEditConversationContent ?? true;
+});
+const canAddEventTicket = computed(() => {
+  return editPermissions.value?.canAddEventTicket ?? true;
+});
+const canChangeEventTicket = computed(() => {
+  return editPermissions.value?.canChangeEventTicket ?? true;
+});
+const canRemoveEventTicket = computed(() => {
+  return editPermissions.value?.canRemoveEventTicket ?? true;
+});
+const showPremiumEditRestrictedBanner = computed(() => {
+  return (editPermissions.value?.restrictedPremiumFeatures.length ?? 0) > 0;
 });
 
 // Computed property to detect if any changes have been made
@@ -244,26 +252,8 @@ const hasUnsavedChanges = computed(() => {
     return true;
   }
 
-  // Compare scheduled conversion settings
-  if (
-    privateConversationSettings.value.hasScheduledConversion !==
-    originalState.value.privateConversationSettings.hasScheduledConversion
-  ) {
+  if (aiLabelingEnabled.value !== originalState.value.aiLabelingEnabled) {
     return true;
-  }
-
-  if (
-    privateConversationSettings.value.hasScheduledConversion &&
-    originalState.value.privateConversationSettings.hasScheduledConversion
-  ) {
-    // Compare dates (ignore milliseconds)
-    const currentDate =
-      privateConversationSettings.value.conversionDate.getTime();
-    const originalDate =
-      originalState.value.privateConversationSettings.conversionDate.getTime();
-    if (Math.abs(currentDate - originalDate) > 1000) {
-      return true;
-    }
   }
 
   return false;
@@ -276,7 +266,7 @@ const {
   isPrivate,
   participationMode,
   requiresEventTicket,
-  privateConversationSettings,
+  aiLabelingEnabled,
   postAs,
   importSettings,
   externalSourceConfig,
@@ -340,10 +330,7 @@ async function performSave(): Promise<void> {
       isIndexed: !isPrivate.value,
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
-      indexConversationAt: privateConversationSettings.value
-        .hasScheduledConversion
-        ? privateConversationSettings.value.conversionDate.toISOString()
-        : undefined,
+      aiLabelingEnabled: aiLabelingEnabled.value,
     });
 
     if (response.success) {
@@ -372,6 +359,10 @@ async function performSave(): Promise<void> {
         }
         case "invalid_access_settings": {
           errorMsg = t("invalidAccessSettingsError");
+          break;
+        }
+        case "premium_access_expired": {
+          errorMsg = t("premiumAccessExpiredError");
           break;
         }
         default: {
@@ -443,25 +434,16 @@ onMounted(async () => {
       return;
     }
 
-    // Populate the form with loaded data using initializeFromData
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
     initializeFromData({
       title: response.conversationTitle,
       content: response.conversationBody ?? "",
       isPrivate: !response.isIndexed,
       participationMode: response.participationMode,
       requiresEventTicket: response.requiresEventTicket,
-      privateConversationSettings: {
-        hasScheduledConversion: !!response.indexConversationAt,
-        conversionDate: response.indexConversationAt
-          ? new Date(response.indexConversationAt)
-          : tomorrow,
-      },
+      aiLabelingEnabled: response.aiLabelingEnabled,
       surveyConfig: response.surveyConfig ?? null,
     });
-    surveyPostAsOrganizationName.value = response.postAsOrganizationName;
+    editPermissions.value = response.editPermissions;
 
     // Store original state for change detection
     originalState.value = {
@@ -470,12 +452,7 @@ onMounted(async () => {
       isPrivate: !response.isIndexed,
       participationMode: response.participationMode,
       requiresEventTicket: response.requiresEventTicket,
-      privateConversationSettings: {
-        hasScheduledConversion: !!response.indexConversationAt,
-        conversionDate: response.indexConversationAt
-          ? new Date(response.indexConversationAt)
-          : tomorrow,
-      },
+      aiLabelingEnabled: response.aiLabelingEnabled,
       surveyConfig: response.surveyConfig ?? null,
     };
 
@@ -506,6 +483,18 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.premium-restricted-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: $color-text-weak;
+}
+
+.premium-restricted-icon {
+  color: $warning;
+  font-size: 1.25rem;
 }
 
 .container {

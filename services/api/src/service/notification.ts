@@ -13,7 +13,10 @@ import {
     userOrganizationMappingTable,
 } from "@/shared-backend/schema.js";
 import type { FetchNotificationsResponse } from "@/shared/types/dto.js";
-import type { ExportRouteTarget, NotificationItem } from "@/shared/types/zod.js";
+import type {
+    ExportRouteTarget,
+    NotificationItem,
+} from "@/shared/types/zod.js";
 import { zodNotificationItem } from "@/shared/types/zod.js";
 import { and, desc, eq, inArray, lt } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -115,9 +118,7 @@ export async function getNotifications({
     // correct notification type. Without a type filter, the LIMIT can be filled
     // by wrong-type notifications (which are then skipped by NULL checks),
     // causing valid notifications and their unread counts to be missed.
-    function buildWhereClause(
-        typeFilter: ReturnType<typeof eq>,
-    ) {
+    function buildWhereClause(typeFilter: ReturnType<typeof eq>) {
         return lastSlugId
             ? and(
                   eq(notificationTable.userId, userId),
@@ -167,10 +168,7 @@ export async function getNotifications({
             )
             .where(
                 buildWhereClause(
-                    eq(
-                        notificationTable.notificationType,
-                        "new_opinion",
-                    ),
+                    eq(notificationTable.notificationType, "new_opinion"),
                 ),
             )
             .orderBy(orderByClause)
@@ -245,10 +243,7 @@ export async function getNotifications({
             )
             .where(
                 buildWhereClause(
-                    eq(
-                        notificationTable.notificationType,
-                        "opinion_vote",
-                    ),
+                    eq(notificationTable.notificationType, "opinion_vote"),
                 ),
             )
             .orderBy(orderByClause)
@@ -576,7 +571,10 @@ async function buildExportNotification(
             )
             .leftJoin(
                 conversationTable,
-                eq(conversationTable.id, notificationExportTable.conversationId),
+                eq(
+                    conversationTable.id,
+                    notificationExportTable.conversationId,
+                ),
             )
             .leftJoin(
                 conversationContentTable,
@@ -828,10 +826,7 @@ export async function getNotificationRecipients({
             .select({ userId: userOrganizationMappingTable.userId })
             .from(userOrganizationMappingTable)
             .where(
-                eq(
-                    userOrganizationMappingTable.organizationId,
-                    organizationId,
-                ),
+                eq(userOrganizationMappingTable.organizationId, organizationId),
             );
         for (const member of orgMembers) {
             recipientSet.add(member.userId);
@@ -988,7 +983,10 @@ export async function broadcastExportNotification(
     }
 
     try {
-        const notification = await buildExportNotification(db, notificationSlugId);
+        const notification = await buildExportNotification(
+            db,
+            notificationSlugId,
+        );
 
         if (notification) {
             // Validate notification before broadcasting

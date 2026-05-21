@@ -206,21 +206,17 @@ export class RealtimeSSEManager {
         // Send to all authenticated connections
         for (const [userId, userConnections] of this.connections) {
             for (const reply of userConnections) {
-                reply.sse
-                    .send({ event, data })
-                    .catch(() => {
-                        deadAuthenticated.push({ userId, reply });
-                    });
+                reply.sse.send({ event, data }).catch(() => {
+                    deadAuthenticated.push({ userId, reply });
+                });
             }
         }
 
         // Send to all anonymous connections
         for (const reply of this.anonymousConnections) {
-            reply.sse
-                .send({ event, data })
-                .catch(() => {
-                    deadAnonymous.push(reply);
-                });
+            reply.sse.send({ event, data }).catch(() => {
+                deadAnonymous.push(reply);
+            });
         }
 
         // Clean up dead connections
@@ -253,21 +249,17 @@ export class RealtimeSSEManager {
                 continue;
             }
             for (const reply of userConnections) {
-                reply.sse
-                    .send({ event, data })
-                    .catch(() => {
-                        deadAuthenticated.push({ userId, reply });
-                    });
+                reply.sse.send({ event, data }).catch(() => {
+                    deadAuthenticated.push({ userId, reply });
+                });
             }
         }
 
         // Send to all anonymous connections
         for (const reply of this.anonymousConnections) {
-            reply.sse
-                .send({ event, data })
-                .catch(() => {
-                    deadAnonymous.push(reply);
-                });
+            reply.sse.send({ event, data }).catch(() => {
+                deadAnonymous.push(reply);
+            });
         }
 
         // Clean up dead connections
@@ -284,7 +276,8 @@ export class RealtimeSSEManager {
      */
     private cleanupStaleConnections(): void {
         const now = Date.now();
-        const staleAuthenticated: { userId: string; reply: FastifyReply }[] = [];
+        const staleAuthenticated: { userId: string; reply: FastifyReply }[] =
+            [];
         const staleAnonymous: FastifyReply[] = [];
 
         for (const [userId, userConnections] of this.connections.entries()) {
@@ -336,7 +329,8 @@ export class RealtimeSSEManager {
             (sum, set) => sum + set.size,
             0,
         );
-        const totalConnections = authenticatedCount + this.anonymousConnections.size;
+        const totalConnections =
+            authenticatedCount + this.anonymousConnections.size;
 
         if (totalConnections === 0) {
             return;
@@ -369,14 +363,14 @@ export class RealtimeSSEManager {
         // Heartbeat to anonymous connections
         const deadAnonymous: FastifyReply[] = [];
         for (const reply of this.anonymousConnections) {
-                reply.sse
-                    .send({
-                        event: "heartbeat",
-                        data: heartbeatData,
-                    })
-                    .catch(() => {
-                        deadAnonymous.push(reply);
-                    });
+            reply.sse
+                .send({
+                    event: "heartbeat",
+                    data: heartbeatData,
+                })
+                .catch(() => {
+                    deadAnonymous.push(reply);
+                });
         }
 
         for (const deadReply of deadAnonymous) {

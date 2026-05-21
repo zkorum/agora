@@ -41,6 +41,7 @@
             no-caps
             color="negative"
             :label="texts.removeQuestionLabel"
+            :disable="props.readOnly"
             @click="requestRemoveQuestion({ questionIndex })"
           />
         </div>
@@ -52,6 +53,7 @@
           map-options
           :label="texts.questionTypeLabel"
           :options="questionTypeOptions"
+          :disable="props.readOnly"
           @update:model-value="(value) => updateQuestionType({ questionIndex, questionType: value })"
         />
 
@@ -63,6 +65,7 @@
           map-options
           :label="texts.choiceDisplayLabel"
           :options="choiceDisplayOptions"
+          :disable="props.readOnly"
           @update:model-value="(value) => updateQuestionChoiceDisplay({ questionIndex, choiceDisplay: value })"
         />
 
@@ -73,6 +76,7 @@
           :maxlength="500"
           :error="shouldShowQuestionTextError({ question })"
           :label="texts.questionPromptLabel"
+          :disable="props.readOnly"
           @update:model-value="(value) => updateQuestionText({ questionIndex, questionText: value })"
         />
 
@@ -83,6 +87,7 @@
           <q-toggle
             :model-value="question.textChangeIsSemantic === true"
             :label="texts.questionSemanticChangeLabel ?? ''"
+            :disable="props.readOnly"
             @update:model-value="(value) => updateQuestionSemanticChange({ questionIndex, isSemantic: value === true })"
           />
           <div class="survey-config-editor__help">
@@ -93,6 +98,7 @@
         <q-toggle
           :model-value="question.isRequired"
           :label="!question.isRequired ? texts.optionalLabel : texts.requiredLabel"
+          :disable="props.readOnly"
           @update:model-value="(value) => updateQuestionRequired({ questionIndex, isRequired: value })"
         />
 
@@ -103,6 +109,7 @@
             outlined
             type="number"
             :label="texts.minSelectionsLabel"
+            :disable="props.readOnly"
             @update:model-value="(value) => updateChoiceConstraints({ questionIndex, minSelections: value, maxSelections: question.constraints.maxSelections })"
           />
 
@@ -112,6 +119,7 @@
             outlined
             type="number"
             :label="texts.maxSelectionsLabel"
+            :disable="props.readOnly"
             @update:model-value="(value) => updateChoiceConstraints({ questionIndex, minSelections: question.constraints.minSelections, maxSelections: value })"
           />
         </div>
@@ -124,6 +132,7 @@
             map-options
             :label="templateTexts.answerFormatLabel"
             :options="freeTextInputModeOptions"
+            :disable="props.readOnly"
             @update:model-value="(value) => updateFreeTextInputMode({ questionIndex, inputMode: value })"
           />
 
@@ -136,6 +145,7 @@
               outlined
               type="number"
               :label="templateTexts.minValueLabel"
+              :disable="props.readOnly"
               @update:model-value="(value) => updateIntegerConstraints({ questionIndex, minValue: value, maxValue: getIntegerConstraints({ constraints: question.constraints })?.maxValue })"
             />
 
@@ -144,6 +154,7 @@
               outlined
               type="number"
               :label="templateTexts.maxValueLabel"
+              :disable="props.readOnly"
               @update:model-value="(value) => updateIntegerConstraints({ questionIndex, minValue: getIntegerConstraints({ constraints: question.constraints })?.minValue, maxValue: value })"
             />
           </div>
@@ -154,6 +165,7 @@
               outlined
               type="number"
               :label="texts.minTextLengthLabel"
+              :disable="props.readOnly"
               @update:model-value="(value) => updateRichTextConstraints({ questionIndex, minPlainTextLength: value, maxPlainTextLength: getRichTextConstraints({ constraints: question.constraints })?.maxPlainTextLength ?? 300 })"
             />
 
@@ -162,6 +174,7 @@
               outlined
               type="number"
               :label="texts.maxTextLengthLabel"
+              :disable="props.readOnly"
               @update:model-value="(value) => updateRichTextConstraints({ questionIndex, minPlainTextLength: getRichTextConstraints({ constraints: question.constraints })?.minPlainTextLength, maxPlainTextLength: value })"
             />
           </div>
@@ -188,6 +201,7 @@
               :maxlength="200"
               :error="shouldShowOptionTextError({ question, option })"
               :label="texts.optionLabel({ number: optionIndex + 1 })"
+              :disable="props.readOnly"
               @update:model-value="(value) => updateOptionText({ questionIndex, optionIndex, optionText: value })"
             >
               <template #append>
@@ -197,6 +211,7 @@
                   round
                   dense
                   icon="mdi-close"
+                  :disable="props.readOnly"
                   @click.stop="requestRemoveOption({ questionIndex, optionIndex })"
                 />
               </template>
@@ -209,6 +224,7 @@
               <q-toggle
                 :model-value="option.textChangeIsSemantic === true"
                 :label="texts.optionSemanticChangeLabel ?? ''"
+                :disable="props.readOnly"
                 @update:model-value="(value) => updateOptionSemanticChange({ questionIndex, optionIndex, isSemantic: value === true })"
               />
               <div class="survey-config-editor__help">
@@ -222,6 +238,7 @@
             no-caps
             color="primary"
             :label="texts.addOptionLabel"
+            :disable="props.readOnly"
             @click="addOption({ questionIndex })"
           />
 
@@ -248,6 +265,7 @@
           no-caps
           color="primary"
           :label="texts.addQuestionLabel"
+          :disable="props.readOnly"
           @click="addQuestion"
         />
         <q-btn
@@ -255,6 +273,7 @@
           no-caps
           color="primary"
           :label="templateTexts.addAgeGroupLabel"
+          :disable="props.readOnly"
           @click="addTemplateQuestion({ templateId: 'age_group' })"
         />
         <q-btn
@@ -262,6 +281,7 @@
           no-caps
           color="primary"
           :label="templateTexts.addAgeLabel"
+          :disable="props.readOnly"
           @click="addTemplateQuestion({ templateId: 'age' })"
         />
         <q-btn
@@ -269,6 +289,7 @@
           no-caps
           color="primary"
           :label="templateTexts.addSexAtBirthLabel"
+          :disable="props.readOnly"
           @click="addTemplateQuestion({ templateId: 'sex_at_birth' })"
         />
         <q-btn
@@ -276,6 +297,7 @@
           no-caps
           color="primary"
           :label="templateTexts.addGenderLabel"
+          :disable="props.readOnly"
           @click="addTemplateQuestion({ templateId: 'gender' })"
         />
         <slot name="actions" />
@@ -376,6 +398,7 @@ interface Props {
   showActions?: boolean;
   showValidationErrors?: boolean;
   originalSurveyConfig?: SurveyConfig | null;
+  readOnly?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -383,6 +406,7 @@ const props = withDefaults(defineProps<Props>(), {
   showActions: true,
   showValidationErrors: false,
   originalSurveyConfig: null,
+  readOnly: false,
 });
 
 const emit = defineEmits<{

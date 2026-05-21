@@ -1,4 +1,3 @@
-import { getClusterIdByUserAndConv } from "@/service/polis.js";
 import {
     conversationTable,
     opinionTable,
@@ -21,6 +20,7 @@ import { httpErrors } from "@fastify/sensible";
 import { and, eq, inArray, sql, SQL } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonComment, useCommonPost } from "./common.js";
+import { isUserInSelectedOpinionGroup } from "./opinionGroupAnalysis.js";
 import { checkConversationParticipation } from "./participationGate.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 
@@ -444,43 +444,16 @@ interface CheckUserIsClusteredProps {
     conversationId: number;
 }
 
-/**
- * Check if user has been assigned to a cluster for this conversation.
- *
- * Uses two-step indexed lookup approach for optimal performance:
- * 1. Get polisContentId from conversation (PK lookup)
- * 2. Check cluster membership (unique index on polis_content_id, user_id)
- *
- * This is 5-50x faster than joining tables, as it uses existing indexes optimally.
- */
 async function checkUserIsClustered({
     db,
     userId,
     conversationId,
 }: CheckUserIsClusteredProps): Promise<boolean> {
-    // Step 1: Get polisContentId from conversation (fast PK lookup)
-    const conversation = await db
-        .select({ currentPolisContentId: conversationTable.currentPolisContentId })
-        .from(conversationTable)
-        .where(eq(conversationTable.id, conversationId))
-        .limit(1);
-
-    if (conversation.length === 0 || conversation[0].currentPolisContentId === null) {
-        // No clustering exists yet for this conversation
-        return false;
-    }
-
-    const polisContentId = conversation[0].currentPolisContentId;
-
-    // Step 2: Check if user is in a cluster (fast unique index lookup)
-    // Reuses optimized function from polis.ts that uses the unique constraint index
-    const clusterId = await getClusterIdByUserAndConv({
+    return await isUserInSelectedOpinionGroup({
         db,
         userId,
-        polisContentId,
+        conversationId,
     });
-
-    return clusterId !== undefined;
 }
 
 /**

@@ -57,7 +57,10 @@ function countUncoveredInPool({
 }): number {
     let count = 0;
     for (const other of pool) {
-        if (other !== candidate && !coveredPairs.has(pairKey(candidate, other))) {
+        if (
+            other !== candidate &&
+            !coveredPairs.has(pairKey(candidate, other))
+        ) {
             count++;
         }
     }
@@ -99,8 +102,7 @@ function buildUnorderedLookup(
         adjacency.get(a)?.add(b);
         adjacency.get(b)?.add(a);
     }
-    return (a: string, b: string): boolean =>
-        adjacency.get(a)?.has(b) ?? false;
+    return (a: string, b: string): boolean => adjacency.get(a)?.has(b) ?? false;
 }
 
 /**
@@ -146,22 +148,34 @@ function buildOneSet({
             if (selectedSet.has(item)) continue;
 
             // Primary: uncovered pairs (dominates)
-            const uncovered = selected.length > 0
-                ? countUncoveredWith({ candidate: item, selected, coveredPairs })
-                : countUncoveredInPool({ candidate: item, pool, coveredPairs });
+            const uncovered =
+                selected.length > 0
+                    ? countUncoveredWith({
+                          candidate: item,
+                          selected,
+                          coveredPairs,
+                      })
+                    : countUncoveredInPool({
+                          candidate: item,
+                          pool,
+                          coveredPairs,
+                      });
 
             // Secondary: global uncertainty (breaks ties among equal coverage)
             const uncertainty = globalUncertainty.get(item) ?? 0;
 
             // Tertiary: unresolved pairs for this user (further tie-breaking)
-            const unresolved = selected.length > 0
-                ? countUnresolvedWith({ candidate: item, selected, isUnordered })
-                : 0;
+            const unresolved =
+                selected.length > 0
+                    ? countUnresolvedWith({
+                          candidate: item,
+                          selected,
+                          isUnordered,
+                      })
+                    : 0;
 
             const score =
-                uncovered * coverageWeight +
-                uncertainty +
-                unresolved * 0.1;
+                uncovered * coverageWeight + uncertainty + unresolved * 0.1;
 
             if (score > bestScore) {
                 bestScore = score;
@@ -255,9 +269,10 @@ export function generateCandidateSets({
         // distinct sets as long as C(n,k) > bufferSize.
         let set: string[] = [];
         for (let offset = 0; offset <= pool.length; offset++) {
-            const rotatedPool = offset === 0
-                ? pool
-                : [...pool.slice(offset), ...pool.slice(0, offset)];
+            const rotatedPool =
+                offset === 0
+                    ? pool
+                    : [...pool.slice(offset), ...pool.slice(0, offset)];
 
             set = buildOneSet({
                 pool: rotatedPool,

@@ -307,8 +307,12 @@ describe("analysis eligibility helpers", () => {
     });
 
     it("distinguishes optional-only from required surveys", () => {
-        expect(doesSurveyRequireCompletion({ requiredQuestionCount: 0 })).toBe(false);
-        expect(doesSurveyRequireCompletion({ requiredQuestionCount: 1 })).toBe(true);
+        expect(doesSurveyRequireCompletion({ requiredQuestionCount: 0 })).toBe(
+            false,
+        );
+        expect(doesSurveyRequireCompletion({ requiredQuestionCount: 1 })).toBe(
+            true,
+        );
         expect(
             doesSurveyRequireCompletion({
                 isOptional: true,

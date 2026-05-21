@@ -172,11 +172,6 @@ import {
   MAX_LENGTH_OPINION,
   validateHtmlStringCharacterCount,
 } from "src/shared/shared";
-import {
-  checkFeatureAccess,
-  DEFAULT_FEATURE_ALLOWED_ORGS,
-  DEFAULT_FEATURE_ALLOWED_USERS,
-} from "src/shared-app-api/featureAccess";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
@@ -185,12 +180,11 @@ import {
   isHistoryBackToPath,
   navigateBackOrReplace,
 } from "src/utils/nav/historyBack";
-import { processEnv } from "src/utils/processEnv";
 import { useNotify } from "src/utils/ui/notify";
 import { type ComponentPublicInstance, computed, nextTick, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
-const { isLoggedIn, userId } = storeToRefs(useAuthenticationStore());
+const { isLoggedIn } = storeToRefs(useAuthenticationStore());
 const router = useRouter();
 const { showNotifyMessage } = useNotify();
 
@@ -245,21 +239,7 @@ const { createNewConversationIntention } = useLoginIntentionStore();
 const { t } = useComponentI18n<ConversationReviewTranslations>(
   conversationReviewTranslations
 );
-const isSurveyCreationAllowed = computed(() => {
-  const result = checkFeatureAccess({
-    featureEnabled: processEnv.VITE_SURVEY_ENABLED === "true",
-    isOrgOnly: processEnv.VITE_IS_SURVEY_ORG_ONLY === "true",
-    allowedOrgs:
-      processEnv.VITE_SURVEY_ALLOWED_ORGS ?? DEFAULT_FEATURE_ALLOWED_ORGS,
-    allowedUsers:
-      processEnv.VITE_SURVEY_ALLOWED_USERS ?? DEFAULT_FEATURE_ALLOWED_USERS,
-    postAsOrganization: conversationDraft.value.postAs.postAsOrganization,
-    organizationName: conversationDraft.value.postAs.organizationName,
-    userId: userId.value ?? "",
-  });
-
-  return result.allowed;
-});
+const isSurveyCreationAllowed = computed(() => true);
 const submitButtonLabel = computed(() => {
   return isSurveyCreationAllowed.value ? t("nextButton") : t("publishButton");
 });

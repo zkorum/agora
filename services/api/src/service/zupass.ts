@@ -122,9 +122,8 @@ export async function verifyEventTicket({
         const path = await import("node:path");
         const artifactsPath = path.dirname(
             fileURLToPath(
-                import.meta.resolve(
-                    "@pcd/proto-pod-gpc-artifacts/package.json",
-                ),
+                import.meta
+                    .resolve("@pcd/proto-pod-gpc-artifacts/package.json"),
             ),
         );
 
@@ -461,9 +460,7 @@ export async function verifyEventTicket({
 
         // Step 8: Calculate session expiry
         const sessionExpiry = new Date(now);
-        sessionExpiry.setDate(
-            sessionExpiry.getDate() + sessionLifetimeDays,
-        );
+        sessionExpiry.setDate(sessionExpiry.getDate() + sessionLifetimeDays);
 
         // Step 9: Execute appropriate action
         await db.transaction(async (tx) => {
@@ -551,7 +548,9 @@ export async function verifyEventTicket({
         });
 
         const userId =
-            authResult.type === "merge" ? authResult.toUserId : authResult.userId;
+            authResult.type === "merge"
+                ? authResult.toUserId
+                : authResult.userId;
         log.info(
             {
                 userId,
@@ -607,7 +606,6 @@ export async function hasEventTicket({
 // ============================================================================
 // Helper Functions for Ticket Authentication (following phone/Rarimo pattern)
 // ============================================================================
-
 
 interface GetZupassAuthenticationTypeProps {
     db: PostgresDatabase;

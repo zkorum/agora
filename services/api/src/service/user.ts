@@ -30,7 +30,10 @@ import {
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { getPostSlugIdLastCursor } from "./feed.js";
-import { getCommentSlugIdLastCreatedAt } from "./comment.js";
+import {
+    fetchOpinionDisplayCounts,
+    getCommentSlugIdLastCreatedAt,
+} from "./comment.js";
 import { fetchPostBySlugId } from "./post.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import {
@@ -118,14 +121,11 @@ export async function getUserComments({
 
         const preparedQuery = db
             .select({
+                opinionId: opinionTable.id,
                 commentSlugId: opinionTable.slugId,
                 createdAt: opinionTable.createdAt,
                 updatedAt: opinionTable.updatedAt,
                 comment: opinionContentTable.content,
-                numParticipants: conversationTable.participantCount,
-                numAgrees: opinionTable.numAgrees,
-                numDisagrees: opinionTable.numDisagrees,
-                numPasses: opinionTable.numPasses,
                 username: userTable.username,
                 postId: conversationTable.id,
                 postSlugId: conversationTable.slugId,
@@ -177,6 +177,11 @@ export async function getUserComments({
         const extendedCommentList: ExtendedOpinionWithConvId[] = [];
 
         for (const opinionResponse of commentResponseList) {
+            const counts = await fetchOpinionDisplayCounts({
+                db,
+                conversationId: opinionResponse.postId,
+                opinionId: opinionResponse.opinionId,
+            });
             const moderationProperties = createCommentModerationPropertyObject(
                 opinionResponse.moderationAction,
                 opinionResponse.moderationExplanation,
@@ -190,10 +195,10 @@ export async function getUserComments({
                 opinionSlugId: opinionResponse.commentSlugId,
                 createdAt: opinionResponse.createdAt,
                 updatedAt: opinionResponse.updatedAt,
-                numParticipants: opinionResponse.numParticipants,
-                numDisagrees: opinionResponse.numDisagrees,
-                numAgrees: opinionResponse.numAgrees,
-                numPasses: opinionResponse.numPasses,
+                numParticipants: counts.numParticipants,
+                numDisagrees: counts.numDisagrees,
+                numAgrees: counts.numAgrees,
+                numPasses: counts.numPasses,
                 username: opinionResponse.username,
                 moderation: moderationProperties,
                 isSeed: opinionResponse.isSeed,
@@ -293,7 +298,10 @@ export async function getUserPosts({
             lastSlugId: lastPostSlugId,
             db: db,
         });
-        const organizationIds = await getOrganizationIdsByUserId({ db, userId });
+        const organizationIds = await getOrganizationIdsByUserId({
+            db,
+            userId,
+        });
         const ownershipFilter = getConversationOwnerFilter({
             userId,
             organizationIds,
@@ -308,7 +316,10 @@ export async function getUserPosts({
                       or(
                           lt(conversationTable.createdAt, lastCursor.createdAt),
                           and(
-                              eq(conversationTable.createdAt, lastCursor.createdAt),
+                              eq(
+                                  conversationTable.createdAt,
+                                  lastCursor.createdAt,
+                              ),
                               lt(
                                   conversationTable.id,
                                   lastCursor.conversationId,
@@ -421,11 +432,12 @@ export async function getUserProfile({
         if (userTableResponse.length == 0) {
             throw httpErrors.notFound("Failed to locate user profile");
         } else {
-            const organizationMemberships = await getOrganizationMembershipsByUserId({
-                db: db,
-                userId,
-                baseImageServiceUrl,
-            });
+            const organizationMemberships =
+                await getOrganizationMembershipsByUserId({
+                    db: db,
+                    userId,
+                    baseImageServiceUrl,
+                });
             const organizationIds = organizationMemberships.map(
                 (membership) => membership.organizationId,
             );
@@ -572,82 +584,4 @@ export async function bulkInsertUsersFromExternalPolisConvo({
         voteCount: voteCount,
         opinionCount: opinionCount,
     };
-}
-
-interface SoftDeleteImportedUsersForConversationProps {
-    db: PostgresJsDatabase;
-    conversationId: number;
-}
-
-/**
- * Soft-deletes all imported users who participated in a specific conversation.
- * Uses database joins to find users via opinions and votes rather than username patterns.
- * This is called when an import fails and we need to clean up the created users.
- */
-export async function softDeleteImportedUsersForConversation({
-    db,
-    conversationId,
-}: SoftDeleteImportedUsersForConversationProps): Promise<number> {
-    const now = new Date();
-
-    // Find all imported users who have opinions in this conversation
-    const usersFromOpinions = await db
-        .selectDistinct({ userId: opinionTable.authorId })
-        .from(opinionTable)
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
-        .where(
-            and(
-                eq(opinionTable.conversationId, conversationId),
-                eq(userTable.isImported, true),
-                eq(userTable.isDeleted, false),
-            ),
-        );
-
-    // Find all imported users who have votes on opinions in this conversation
-    // (users may have only voted, without creating opinions)
-    const usersFromVotes = await db
-        .selectDistinct({ userId: voteTable.authorId })
-        .from(voteTable)
-        .innerJoin(opinionTable, eq(opinionTable.id, voteTable.opinionId))
-        .innerJoin(userTable, eq(userTable.id, voteTable.authorId))
-        .where(
-            and(
-                eq(opinionTable.conversationId, conversationId),
-                eq(userTable.isImported, true),
-                eq(userTable.isDeleted, false),
-            ),
-        );
-
-    // Combine and deduplicate user IDs from both sources
-    const userIdSet = new Set<string>();
-    for (const row of usersFromOpinions) {
-        userIdSet.add(row.userId);
-    }
-    for (const row of usersFromVotes) {
-        userIdSet.add(row.userId);
-    }
-    const userIds = Array.from(userIdSet);
-
-    if (userIds.length === 0) {
-        log.info(
-            `[Import Cleanup] No imported users found for conversationId=${String(conversationId)}`,
-        );
-        return 0;
-    }
-
-    // Soft-delete the users
-    await db
-        .update(userTable)
-        .set({
-            isDeleted: true,
-            deletedAt: now,
-            updatedAt: now,
-        })
-        .where(inArray(userTable.id, userIds));
-
-    log.info(
-        `[Import Cleanup] Soft-deleted ${String(userIds.length)} imported users for conversationId=${String(conversationId)}`,
-    );
-
-    return userIds.length;
 }

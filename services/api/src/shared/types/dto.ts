@@ -55,12 +55,28 @@ import {
     zodSurveyResultsAccessLevel,
     zodSurveyRouteResolution,
     zodSurveyAnswerSubmission,
+    zodPremiumFeature,
+    zodUserId,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
     ZodSupportedSpokenLanguageCodes,
     ZodSupportedDisplayLanguageCodes,
 } from "../languages.js";
+
+const zodConversationEditPermissions = z
+    .object({
+        canEditNormalSettings: z.boolean(),
+        canEditConversationContent: z.boolean(),
+        canEditSurvey: z.boolean(),
+        canDeleteSurvey: z.boolean(),
+        canAddEventTicket: z.boolean(),
+        canChangeEventTicket: z.boolean(),
+        canRemoveEventTicket: z.boolean(),
+        restrictedPremiumFeatures: z.array(zodPremiumFeature),
+        premiumEditAccessEndsAt: zodDateTimeFlexible.optional(),
+    })
+    .strict();
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
@@ -119,12 +135,12 @@ export class Dto {
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBodyInput,
             postAsOrganization: z.string().optional(),
-            indexConversationAt: z.iso.datetime().optional(),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             conversationType: zodConversationType,
             seedOpinionList: z.array(zodOpinionContentInput).max(50),
             requiresEventTicket: zodEventSlug.optional(),
+            aiLabelingEnabled: z.boolean().default(true),
             externalSourceConfig: zodExternalSourceConfig.nullable().optional(),
             surveyConfig: zodSurveyConfig.nullable().optional(),
         })
@@ -136,10 +152,10 @@ export class Dto {
         .object({
             polisUrl: zodPolisUrl,
             postAsOrganization: z.string().optional(),
-            indexConversationAt: z.iso.datetime().optional(),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             requiresEventTicket: zodEventSlug.optional(),
+            aiLabelingEnabled: z.boolean().default(true),
         })
         .strict();
     static importConversationResponse = z
@@ -150,7 +166,6 @@ export class Dto {
     static importCsvConversationRequest = z
         .object({
             postAsOrganization: z.string().optional(),
-            indexConversationAt: z.iso.datetime().optional(),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
         })
@@ -160,10 +175,6 @@ export class Dto {
             postAsOrganization: z.preprocess(
                 (val) => (val === "" || val === undefined ? undefined : val),
                 z.string().optional(),
-            ),
-            indexConversationAt: z.preprocess(
-                (val) => (val === "" || val === undefined ? undefined : val),
-                z.iso.datetime().optional(),
             ),
             isIndexed: z.preprocess(
                 (val) => val === "true" || val === true,
@@ -179,6 +190,10 @@ export class Dto {
             requiresEventTicket: z.preprocess(
                 (val) => (val === "" || val === undefined ? undefined : val),
                 zodEventSlug.optional(),
+            ),
+            aiLabelingEnabled: z.preprocess(
+                (val) => val === "true" || val === true,
+                z.boolean().default(true),
             ),
         })
         .strict();
@@ -312,12 +327,13 @@ export class Dto {
                 isIndexed: z.boolean(),
                 participationMode: zodParticipationMode,
                 requiresEventTicket: zodEventSlug.optional(),
+                aiLabelingEnabled: z.boolean(),
                 postAsOrganizationName: z.string().optional(),
                 surveyConfig: zodSurveyConfig.nullable().optional(),
-                indexConversationAt: zodDateTimeFlexible.optional(),
                 createdAt: zodDateTimeFlexible,
                 updatedAt: zodDateTimeFlexible,
                 isLocked: z.boolean(),
+                editPermissions: zodConversationEditPermissions,
             })
             .strict(),
         z
@@ -335,8 +351,8 @@ export class Dto {
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
             requiresEventTicket: zodEventSlug.optional(),
+            aiLabelingEnabled: z.boolean().optional(),
             surveyConfig: zodSurveyConfig.nullable().optional(),
-            indexConversationAt: z.iso.datetime().optional(),
         })
         .strict();
     static updateConversationResponse = z.discriminatedUnion("success", [
@@ -353,6 +369,7 @@ export class Dto {
                     "not_author",
                     "conversation_locked",
                     "invalid_access_settings",
+                    "premium_access_expired",
                 ]),
             })
             .strict(),
@@ -752,6 +769,65 @@ export class Dto {
         .object({
             username: zodUsername,
             organizationName: z.string(),
+        })
+        .strict();
+    static premiumFeatureEntitlementSubjectRequest = z
+        .object({
+            username: zodUsername.optional(),
+            organizationName: z.string().optional(),
+        })
+        .strict()
+        .refine(
+            ({ username, organizationName }) =>
+                (username !== undefined && organizationName === undefined) ||
+                (username === undefined && organizationName !== undefined),
+            {
+                message: "Exactly one of username or organizationName is required",
+            },
+        );
+    static premiumFeatureEntitlementItem = z
+        .object({
+            id: z.number().int().positive(),
+            userId: zodUserId.optional(),
+            username: zodUsername.optional(),
+            organizationId: z.number().int().positive().optional(),
+            organizationName: z.string().optional(),
+            feature: zodPremiumFeature,
+            startsAt: zodDateTimeFlexible,
+            expiresAt: zodDateTimeFlexible.optional(),
+            revokedAt: zodDateTimeFlexible.optional(),
+            adminNote: z.string().optional(),
+            createdAt: zodDateTimeFlexible,
+            updatedAt: zodDateTimeFlexible,
+        })
+        .strict();
+    static listPremiumFeatureEntitlementsRequest = z.object({}).strict();
+    static listPremiumFeatureEntitlementsResponse = z
+        .object({
+            entitlements: z.array(Dto.premiumFeatureEntitlementItem),
+        })
+        .strict();
+    static createPremiumFeatureEntitlementRequest = z
+        .object({
+            subject: Dto.premiumFeatureEntitlementSubjectRequest,
+            features: z.array(zodPremiumFeature).min(1),
+            startsAt: z.iso.datetime(),
+            expiresAt: z.iso.datetime().optional(),
+            adminNote: z.string().max(1000).optional(),
+        })
+        .strict();
+    static updatePremiumFeatureEntitlementRequest = z
+        .object({
+            entitlementId: z.number().int().positive(),
+            startsAt: z.iso.datetime(),
+            expiresAt: z.iso.datetime().optional(),
+            revokedAt: z.iso.datetime().nullable().optional(),
+            adminNote: z.string().max(1000).optional(),
+        })
+        .strict();
+    static revokePremiumFeatureEntitlementRequest = z
+        .object({
+            entitlementId: z.number().int().positive(),
         })
         .strict();
     static getAllTopicsResponse = z
@@ -1206,6 +1282,21 @@ export type GetOrganizationsByUsernameResponse = z.infer<
 >;
 export type GetAllOrganizationsResponse = z.infer<
     typeof Dto.getAllOrganizationsResponse
+>;
+export type PremiumFeatureEntitlementItem = z.infer<
+    typeof Dto.premiumFeatureEntitlementItem
+>;
+export type ListPremiumFeatureEntitlementsResponse = z.infer<
+    typeof Dto.listPremiumFeatureEntitlementsResponse
+>;
+export type CreatePremiumFeatureEntitlementRequest = z.infer<
+    typeof Dto.createPremiumFeatureEntitlementRequest
+>;
+export type UpdatePremiumFeatureEntitlementRequest = z.infer<
+    typeof Dto.updatePremiumFeatureEntitlementRequest
+>;
+export type RevokePremiumFeatureEntitlementRequest = z.infer<
+    typeof Dto.revokePremiumFeatureEntitlementRequest
 >;
 export type GetAllTopicsResponse = z.infer<typeof Dto.getAllTopicsResponse>;
 export type GetUserFollowedTopicCodesResponse = z.infer<

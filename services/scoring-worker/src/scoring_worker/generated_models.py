@@ -18,6 +18,10 @@ class Base(DeclarativeBase):
     pass
 
 
+def _enum_values(enum_cls: type[StrEnum]) -> list[str]:
+    return [member.value for member in enum_cls]
+
+
 class ParticipationMode(StrEnum):
     account_required = "account_required"
     strong_verification = "strong_verification"
@@ -65,41 +69,37 @@ class Conversation(Base):
     author_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
     organization_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    current_polis_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     current_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    index_conversation_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, server_default="true")
     participation_mode: Mapped[ParticipationMode] = mapped_column(
-        SaEnum(ParticipationMode, native_enum=False),
+        SaEnum(ParticipationMode, values_callable=_enum_values, native_enum=False),
     )
     conversation_type: Mapped[ConversationType] = mapped_column(
-        SaEnum(ConversationType, native_enum=False),
+        SaEnum(ConversationType, values_callable=_enum_values, native_enum=False),
     )
     is_importing: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_closed: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_edited: Mapped[bool] = mapped_column(Boolean, server_default="false")
     requires_event_ticket: Mapped[EventSlug | None] = mapped_column(
-        SaEnum(EventSlug, native_enum=False),
+        SaEnum(EventSlug, values_callable=_enum_values, native_enum=False),
         nullable=True,
     )
-    opinion_count: Mapped[int] = mapped_column(Integer, server_default="0")
-    vote_count: Mapped[int] = mapped_column(Integer, server_default="0")
-    participant_count: Mapped[int] = mapped_column(Integer, server_default="0")
-    total_opinion_count: Mapped[int] = mapped_column(Integer, server_default="0")
-    total_vote_count: Mapped[int] = mapped_column(Integer, server_default="0")
-    total_participant_count: Mapped[int] = mapped_column(Integer, server_default="0")
-    moderated_opinion_count: Mapped[int] = mapped_column(Integer, server_default="0")
-    hidden_opinion_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    ai_labeling_enabled: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    analysis_data_generation: Mapped[int] = mapped_column(Integer, server_default="0")
+    preferred_opinion_group_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     import_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     import_conversation_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     import_export_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     import_created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     import_author: Mapped[str | None] = mapped_column(Text, nullable=True)
     import_method: Mapped[ImportMethod | None] = mapped_column(
-        SaEnum(ImportMethod, native_enum=False),
+        SaEnum(ImportMethod, values_callable=_enum_values, native_enum=False),
         nullable=True,
     )
-    external_source_config: Mapped[Any | None] = mapped_column(JSON, nullable=True)
+    external_source_config: Mapped[Any | None] = mapped_column(
+        JSON(none_as_null=True),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
     last_reacted_at: Mapped[datetime] = mapped_column(DateTime)
@@ -127,7 +127,7 @@ class MaxdiffItem(Base):
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_seed: Mapped[bool] = mapped_column(Boolean, server_default="false")
     lifecycle_status: Mapped[MaxdiffLifecycleStatus] = mapped_column(
-        SaEnum(MaxdiffLifecycleStatus, native_enum=False),
+        SaEnum(MaxdiffLifecycleStatus, values_callable=_enum_values, native_enum=False),
     )
     snapshot_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     snapshot_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -142,8 +142,8 @@ class MaxdiffResult(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     participant_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
     conversation_id: Mapped[int] = mapped_column(Integer)
-    ranking: Mapped[Any | None] = mapped_column(JSON, nullable=True)
-    comparisons: Mapped[Any] = mapped_column(JSON)
+    ranking: Mapped[Any | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    comparisons: Mapped[Any] = mapped_column(JSON(none_as_null=True))
     is_complete: Mapped[bool] = mapped_column(Boolean, server_default="false")
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
@@ -177,11 +177,17 @@ class RankingScore(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     conversation_id: Mapped[int] = mapped_column(Integer)
-    scores: Mapped[Any] = mapped_column(JSON)
-    participant_counts: Mapped[Any] = mapped_column(JSON)
-    group_sources_snapshot: Mapped[Any | None] = mapped_column(JSON, nullable=True)
-    user_weights_snapshot: Mapped[Any | None] = mapped_column(JSON, nullable=True)
-    pipeline_config: Mapped[Any] = mapped_column(JSON)
+    scores: Mapped[Any] = mapped_column(JSON(none_as_null=True))
+    participant_counts: Mapped[Any] = mapped_column(JSON(none_as_null=True))
+    group_sources_snapshot: Mapped[Any | None] = mapped_column(
+        JSON(none_as_null=True),
+        nullable=True,
+    )
+    user_weights_snapshot: Mapped[Any | None] = mapped_column(
+        JSON(none_as_null=True),
+        nullable=True,
+    )
+    pipeline_config: Mapped[Any] = mapped_column(JSON(none_as_null=True))
     preference_learning: Mapped[str | None] = mapped_column(String(100), nullable=True)
     voting_rights: Mapped[str | None] = mapped_column(String(100), nullable=True)
     aggregation_config: Mapped[str | None] = mapped_column(String(200), nullable=True)
@@ -231,7 +237,7 @@ class SurveyQuestionContent(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     survey_question_id: Mapped[int] = mapped_column(Integer)
     question_text: Mapped[str] = mapped_column(String(500))
-    constraints: Mapped[Any] = mapped_column(JSON)
+    constraints: Mapped[Any] = mapped_column(JSON(none_as_null=True))
     source_language_code: Mapped[str | None] = mapped_column(String(35), nullable=True)
     source_language_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
@@ -268,10 +274,10 @@ class SurveyQuestion(Base):
     survey_config_id: Mapped[int] = mapped_column(Integer)
     conversation_id: Mapped[int] = mapped_column(Integer)
     question_type: Mapped[SurveyQuestionType] = mapped_column(
-        SaEnum(SurveyQuestionType, native_enum=False),
+        SaEnum(SurveyQuestionType, values_callable=_enum_values, native_enum=False),
     )
     choice_display: Mapped[SurveyChoiceDisplay] = mapped_column(
-        SaEnum(SurveyChoiceDisplay, native_enum=False),
+        SaEnum(SurveyChoiceDisplay, values_callable=_enum_values, native_enum=False),
     )
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     current_semantic_version: Mapped[int] = mapped_column(Integer, server_default="1")
@@ -309,4 +315,3 @@ class User(Base):
     total_opinion_count: Mapped[int] = mapped_column(Integer, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
-

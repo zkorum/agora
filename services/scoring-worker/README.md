@@ -62,7 +62,7 @@ Raw scores are normalized to [0, 1] before storage.
 
 ### COCM Voting Rights (partially implemented)
 
-[COCM](https://ssrn.com/abstract=4311507) (Connection-Oriented Cluster Match) provides collusion-resistant voting by attenuating the influence of socially connected voters. The core algorithm is implemented in `services/python-bridge/cocm_voting.py`:
+[COCM](https://ssrn.com/abstract=4311507) (Connection-Oriented Cluster Match) provides collusion-resistant voting by attenuating the influence of socially connected voters. The core algorithm is implemented in `src/scoring_worker/cocm_voting.py`:
 
 ```
 voting_right = trust / sqrt(1 + connected_co_scorers)
@@ -71,7 +71,7 @@ voting_right = trust / sqrt(1 + connected_co_scorers)
 Where `connected_co_scorers` = number of other voters on the same entity who share at least one group with this voter. This gives O(sqrt) collective influence for groups of connected voters.
 
 **What exists:**
-- `COCMVotingRights` class with friend matrix construction from group sources (`services/python-bridge/cocm_voting.py`)
+- `COCMVotingRights` class with friend matrix construction from group sources (`src/scoring_worker/cocm_voting.py`)
 - `build_friend_matrix` using binary K function (any shared group = connected)
 - Tests in `test_cocm_voting.py`
 
@@ -169,7 +169,7 @@ The SQLAlchemy models in `generated_models.py` are auto-generated from the Drizz
 
 ```bash
 # From repository root
-make sync-python-models
+make sync-python-artifacts
 ```
 
 ## License

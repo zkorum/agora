@@ -75,6 +75,7 @@
 </template>
 
 <script setup lang="ts">
+import { useQueryClient } from "@tanstack/vue-query";
 import { onClickOutside, useWindowScroll } from "@vueuse/core";
 import Button from "primevue/button";
 import PreParticipationIntentionDialog from "src/components/authentication/intention/PreParticipationIntentionDialog.vue";
@@ -97,7 +98,10 @@ import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import { useUserStore } from "src/stores/user";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
-import { useInvalidateConversationQuery } from "src/utils/api/post/useConversationQuery";
+import {
+  updateConversationQueryCache,
+  useInvalidateConversationQuery,
+} from "src/utils/api/post/useConversationQuery";
 import {
   type RouteGuardDestination,
   useRouteGuard,
@@ -223,19 +227,33 @@ const { createNewOpinionIntention, clearNewOpinionIntention } =
   useLoginIntentionStore();
 
 const { createNewComment } = useBackendCommentApi();
+const queryClient = useQueryClient();
 
 const { showNotifyMessage } = useNotify();
-const {
-  needsAuth: isAuthBlocked,
-  shouldOpenParticipationModal,
-} = useParticipationGate({
-  conversationSlugId: computed(() => props.postSlugId),
-  participationMode: computed(() => props.participationMode),
-  requiresEventTicket: computed(() => props.requiresEventTicket),
-  surveyGate: computed(() => props.surveyGate),
-});
+const { needsAuth: isAuthBlocked, shouldOpenParticipationModal } =
+  useParticipationGate({
+    conversationSlugId: computed(() => props.postSlugId),
+    participationMode: computed(() => props.participationMode),
+    requiresEventTicket: computed(() => props.requiresEventTicket),
+    surveyGate: computed(() => props.surveyGate),
+  });
 
 const { invalidateConversation } = useInvalidateConversationQuery();
+
+function incrementConversationOpinionCount(): void {
+  updateConversationQueryCache({
+    queryClient,
+    conversationSlugId: props.postSlugId,
+    updateConversation: (conversation) => ({
+      ...conversation,
+      metadata: {
+        ...conversation.metadata,
+        opinionCount: conversation.metadata.opinionCount + 1,
+        totalOpinionCount: conversation.metadata.totalOpinionCount + 1,
+      },
+    }),
+  });
+}
 
 // Check if user needs login/verification based on participation mode
 const needsLogin = computed(() => {
@@ -412,7 +430,10 @@ function isSameConversationTabRoute(to: RouteGuardDestination): boolean {
   }
 
   if (
-    !routeNameMatches({ routeName: to.name, routes: sameConversationTabRouteNames })
+    !routeNameMatches({
+      routeName: to.name,
+      routes: sameConversationTabRouteNames,
+    })
   ) {
     return false;
   }
@@ -509,6 +530,9 @@ async function submitPostClicked() {
     );
 
     if (response.success && response.opinionSlugId) {
+      incrementConversationOpinionCount();
+      invalidateConversation(props.postSlugId);
+
       // Successfully created comment
       // Note: The backend automatically votes "agree" when creating an opinion
       // Wait 1.3 seconds for the vote buffer to flush (buffer flushes every 1 second)

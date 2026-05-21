@@ -1,14 +1,7 @@
 import { eq } from "drizzle-orm";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import {
-    afterAll,
-    beforeAll,
-    beforeEach,
-    describe,
-    expect,
-    it,
-} from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { GenericContainer, type StartedTestContainer } from "testcontainers";
 
 process.env.NODE_ENV = "test";
@@ -19,8 +12,10 @@ process.env.PEPPERS = Buffer.from("0123456789abcdef0123456789abcdef").toString(
 process.env.VERIFICATOR_SVC_BASE_URL = "http://localhost:3000";
 
 const schema = await import("../src/shared-backend/schema.js");
-const importDatabase = await import("../src/service/conversationImport/database.js");
-const importService = await import("../src/service/conversationImport/index.js");
+const importDatabase =
+    await import("../src/service/conversationImport/database.js");
+const importService =
+    await import("../src/service/conversationImport/index.js");
 const realtimeModule = await import("../src/service/realtimeSSE.js");
 
 const {
@@ -170,7 +165,10 @@ describe("Admission guards", () => {
 
         const second = await createImportRecord({ db, userId });
         expect(second.status).toBe("active_import_exists");
-        if (first.status === "created" && second.status === "active_import_exists") {
+        if (
+            first.status === "created" &&
+            second.status === "active_import_exists"
+        ) {
             expect(second.importSlugId).toBe(first.importSlugId);
         }
     });
@@ -183,7 +181,9 @@ describe("Admission guards", () => {
             createImportRecord({ db, userId }),
         ]);
 
-        const createdCount = [a, b].filter((result) => result.status === "created");
+        const createdCount = [a, b].filter(
+            (result) => result.status === "created",
+        );
         const activeCount = [a, b].filter(
             (result) => result.status === "active_import_exists",
         );
@@ -232,6 +232,7 @@ describe("Admission guards", () => {
                 formData: {
                     participationMode: "guest",
                     isIndexed: true,
+                    aiLabelingEnabled: true,
                 },
                 didWrite: "did:test:queue",
                 importBuffer,

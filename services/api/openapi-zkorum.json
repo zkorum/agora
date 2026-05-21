@@ -32,21 +32,15 @@
                                                     "properties": {
                                                         "isKnown": {
                                                             "type": "boolean",
-                                                            "enum": [
-                                                                false
-                                                            ]
+                                                            "enum": [false]
                                                         },
                                                         "isRegistered": {
                                                             "type": "boolean",
-                                                            "enum": [
-                                                                false
-                                                            ]
+                                                            "enum": [false]
                                                         },
                                                         "isLoggedIn": {
                                                             "type": "boolean",
-                                                            "enum": [
-                                                                false
-                                                            ]
+                                                            "enum": [false]
                                                         },
                                                         "credentials": {
                                                             "type": "object",
@@ -91,9 +85,7 @@
                                                     "properties": {
                                                         "isKnown": {
                                                             "type": "boolean",
-                                                            "enum": [
-                                                                true
-                                                            ]
+                                                            "enum": [true]
                                                         },
                                                         "isRegistered": {
                                                             "type": "boolean"
@@ -166,9 +158,7 @@
                                             ]
                                         }
                                     },
-                                    "required": [
-                                        "loggedInStatus"
-                                    ],
+                                    "required": ["loggedInStatus"],
                                     "additionalProperties": false
                                 }
                             }
@@ -373,9 +363,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "codeExpiry": {
                                                     "type": "string",
@@ -400,9 +388,7 @@
                                                     "properties": {
                                                         "success": {
                                                             "type": "boolean",
-                                                            "enum": [
-                                                                false
-                                                            ]
+                                                            "enum": [false]
                                                         },
                                                         "reason": {
                                                             "type": "string",
@@ -427,9 +413,7 @@
                                                     "properties": {
                                                         "success": {
                                                             "type": "boolean",
-                                                            "enum": [
-                                                                false
-                                                            ]
+                                                            "enum": [false]
                                                         },
                                                         "reason": {
                                                             "type": "string",
@@ -654,9 +638,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "accountMerged": {
                                                     "type": "boolean"
@@ -679,9 +661,7 @@
                                                     "properties": {
                                                         "success": {
                                                             "type": "boolean",
-                                                            "enum": [
-                                                                false
-                                                            ]
+                                                            "enum": [false]
                                                         },
                                                         "reason": {
                                                             "type": "string",
@@ -706,9 +686,7 @@
                                                     "properties": {
                                                         "success": {
                                                             "type": "boolean",
-                                                            "enum": [
-                                                                false
-                                                            ]
+                                                            "enum": [false]
                                                         },
                                                         "reason": {
                                                             "type": "string",
@@ -756,10 +734,7 @@
                                         "type": "boolean"
                                     }
                                 },
-                                "required": [
-                                    "email",
-                                    "isRequestingNewCode"
-                                ],
+                                "required": ["email", "isRequestingNewCode"],
                                 "additionalProperties": false
                             }
                         }
@@ -777,9 +752,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "codeExpiry": {
                                                     "type": "string",
@@ -804,9 +777,7 @@
                                                     "properties": {
                                                         "success": {
                                                             "type": "boolean",
-                                                            "enum": [
-                                                                false
-                                                            ]
+                                                            "enum": [false]
                                                         },
                                                         "reason": {
                                                             "type": "string",
@@ -831,9 +802,7 @@
                                                     "properties": {
                                                         "success": {
                                                             "type": "boolean",
-                                                            "enum": [
-                                                                false
-                                                            ]
+                                                            "enum": [false]
                                                         },
                                                         "reason": {
                                                             "type": "string",
@@ -882,10 +851,7 @@
                                         "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
                                     }
                                 },
-                                "required": [
-                                    "code",
-                                    "email"
-                                ]
+                                "required": ["code", "email"]
                             }
                         }
                     }
@@ -902,9 +868,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "accountMerged": {
                                                     "type": "boolean"
@@ -927,9 +891,7 @@
                                                     "properties": {
                                                         "success": {
                                                             "type": "boolean",
-                                                            "enum": [
-                                                                false
-                                                            ]
+                                                            "enum": [false]
                                                         },
                                                         "reason": {
                                                             "type": "string",
@@ -954,9 +916,7 @@
                                                     "properties": {
                                                         "success": {
                                                             "type": "boolean",
-                                                            "enum": [
-                                                                false
-                                                            ]
+                                                            "enum": [false]
                                                         },
                                                         "reason": {
                                                             "type": "string",
@@ -1005,15 +965,10 @@
                                 "properties": {
                                     "sortAlgorithm": {
                                         "type": "string",
-                                        "enum": [
-                                            "following",
-                                            "new"
-                                        ]
+                                        "enum": ["following", "new"]
                                     }
                                 },
-                                "required": [
-                                    "sortAlgorithm"
-                                ],
+                                "required": ["sortAlgorithm"],
                                 "additionalProperties": false
                             }
                         }
@@ -1315,9 +1270,7 @@
                                                                 "maxLength": 3000
                                                             }
                                                         },
-                                                        "required": [
-                                                            "title"
-                                                        ],
+                                                        "required": ["title"],
                                                         "additionalProperties": false
                                                     },
                                                     "interaction": {
@@ -1424,9 +1377,7 @@
                                     },
                                     "moderationAction": {
                                         "type": "string",
-                                        "enum": [
-                                            "lock"
-                                        ]
+                                        "enum": ["lock"]
                                     },
                                     "moderationExplanation": {
                                         "type": "string",
@@ -1477,10 +1428,7 @@
                                     },
                                     "moderationAction": {
                                         "type": "string",
-                                        "enum": [
-                                            "move",
-                                            "hide"
-                                        ]
+                                        "enum": ["move", "hide"]
                                     },
                                     "moderationExplanation": {
                                         "type": "string",
@@ -1519,9 +1467,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -1548,9 +1494,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "opinionSlugId"
-                                ],
+                                "required": ["opinionSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -1577,9 +1521,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ]
+                                "required": ["conversationSlugId"]
                             }
                         }
                     }
@@ -1596,15 +1538,11 @@
                                             "properties": {
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "moderated"
-                                                    ]
+                                                    "enum": ["moderated"]
                                                 },
                                                 "action": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "lock"
-                                                    ]
+                                                    "enum": ["lock"]
                                                 },
                                                 "reason": {
                                                     "type": "string",
@@ -1645,14 +1583,10 @@
                                             "properties": {
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "unmoderated"
-                                                    ]
+                                                    "enum": ["unmoderated"]
                                                 }
                                             },
-                                            "required": [
-                                                "status"
-                                            ],
+                                            "required": ["status"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -1677,9 +1611,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "opinionSlugId"
-                                ],
+                                "required": ["opinionSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -1697,16 +1629,11 @@
                                             "properties": {
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "moderated"
-                                                    ]
+                                                    "enum": ["moderated"]
                                                 },
                                                 "action": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "move",
-                                                        "hide"
-                                                    ]
+                                                    "enum": ["move", "hide"]
                                                 },
                                                 "reason": {
                                                     "type": "string",
@@ -1747,14 +1674,10 @@
                                             "properties": {
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "unmoderated"
-                                                    ]
+                                                    "enum": ["unmoderated"]
                                                 }
                                             },
-                                            "required": [
-                                                "status"
-                                            ],
+                                            "required": ["status"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -1782,9 +1705,7 @@
                                             }
                                         }
                                     },
-                                    "required": [
-                                        "followedTopicCodeList"
-                                    ],
+                                    "required": ["followedTopicCodeList"],
                                     "additionalProperties": false
                                 }
                             }
@@ -1806,9 +1727,7 @@
                                         "type": "string"
                                     }
                                 },
-                                "required": [
-                                    "topicCode"
-                                ],
+                                "required": ["topicCode"],
                                 "additionalProperties": false
                             }
                         }
@@ -1834,9 +1753,7 @@
                                         "type": "string"
                                     }
                                 },
-                                "required": [
-                                    "topicCode"
-                                ],
+                                "required": ["topicCode"],
                                 "additionalProperties": false
                             }
                         }
@@ -1909,9 +1826,7 @@
                                             "type": "array",
                                             "items": {
                                                 "type": "string",
-                                                "enum": [
-                                                    "devconnect-2025"
-                                                ]
+                                                "enum": ["devconnect-2025"]
                                             }
                                         }
                                     },
@@ -2202,9 +2117,7 @@
                                                                 "type": "string"
                                                             }
                                                         },
-                                                        "required": [
-                                                            "method"
-                                                        ],
+                                                        "required": ["method"],
                                                         "additionalProperties": false
                                                     }
                                                 },
@@ -2244,9 +2157,7 @@
                                                         "maxLength": 3000
                                                     }
                                                 },
-                                                "required": [
-                                                    "title"
-                                                ],
+                                                "required": ["title"],
                                                 "additionalProperties": false
                                             },
                                             "interaction": {
@@ -2628,9 +2539,7 @@
                                                                 "maxLength": 3000
                                                             }
                                                         },
-                                                        "required": [
-                                                            "title"
-                                                        ],
+                                                        "required": ["title"],
                                                         "additionalProperties": false
                                                     },
                                                     "interaction": {
@@ -2851,9 +2760,7 @@
                                         }
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugIdList"
-                                ],
+                                "required": ["conversationSlugIdList"],
                                 "additionalProperties": false
                             }
                         }
@@ -2919,10 +2826,7 @@
                                         "type": "boolean"
                                     }
                                 },
-                                "required": [
-                                    "opinionSlugId",
-                                    "chosenOption"
-                                ],
+                                "required": ["opinionSlugId", "chosenOption"],
                                 "additionalProperties": false
                             }
                         }
@@ -2940,17 +2844,13 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "userIsClustered": {
                                                     "type": "boolean"
                                                 }
                                             },
-                                            "required": [
-                                                "success"
-                                            ],
+                                            "required": ["success"],
                                             "additionalProperties": false
                                         },
                                         {
@@ -2958,9 +2858,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                                    "enum": [false]
                                                 },
                                                 "reason": {
                                                     "type": "string",
@@ -2976,10 +2874,7 @@
                                                     ]
                                                 }
                                             },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
+                                            "required": ["success", "reason"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -3027,11 +2922,7 @@
                                                     }
                                                 }
                                             },
-                                            "required": [
-                                                "best",
-                                                "worst",
-                                                "set"
-                                            ]
+                                            "required": ["best", "worst", "set"]
                                         }
                                     },
                                     "isComplete": {
@@ -3061,9 +2952,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "candidateSets": {
                                                     "type": "array",
@@ -3086,9 +2975,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                                    "enum": [false]
                                                 },
                                                 "reason": {
                                                     "type": "string",
@@ -3104,10 +2991,7 @@
                                                     ]
                                                 }
                                             },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
+                                            "required": ["success", "reason"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -3131,9 +3015,7 @@
                                         "type": "string"
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -3255,16 +3137,12 @@
                                             },
                                             {
                                                 "type": "string",
-                                                "enum": [
-                                                    "all"
-                                                ]
+                                                "enum": ["all"]
                                             }
                                         ]
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -3332,9 +3210,7 @@
                                             }
                                         }
                                     },
-                                    "required": [
-                                        "rankings"
-                                    ],
+                                    "required": ["rankings"],
                                     "additionalProperties": false
                                 }
                             }
@@ -3369,16 +3245,12 @@
                                             },
                                             {
                                                 "type": "string",
-                                                "enum": [
-                                                    "all"
-                                                ]
+                                                "enum": ["all"]
                                             }
                                         ]
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -3451,9 +3323,7 @@
                                             }
                                         }
                                     },
-                                    "required": [
-                                        "items"
-                                    ],
+                                    "required": ["items"],
                                     "additionalProperties": false
                                 }
                             }
@@ -3517,9 +3387,7 @@
                                         "type": "string"
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -3540,10 +3408,7 @@
                                             "type": "number"
                                         }
                                     },
-                                    "required": [
-                                        "created",
-                                        "updated"
-                                    ],
+                                    "required": ["created", "updated"],
                                     "additionalProperties": false
                                 }
                             }
@@ -3568,10 +3433,7 @@
                                         "type": "string"
                                     }
                                 },
-                                "required": [
-                                    "repository",
-                                    "label"
-                                ],
+                                "required": ["repository", "label"],
                                 "additionalProperties": false
                             }
                         }
@@ -3622,9 +3484,7 @@
                                             }
                                         }
                                     },
-                                    "required": [
-                                        "issues"
-                                    ],
+                                    "required": ["issues"],
                                     "additionalProperties": false
                                 }
                             }
@@ -3656,9 +3516,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "opinionSlugId"
-                                ],
+                                "required": ["opinionSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -3710,9 +3568,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "opinionSlugId": {
                                                     "type": "string"
@@ -3729,9 +3585,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                                    "enum": [false]
                                                 },
                                                 "reason": {
                                                     "type": "string",
@@ -3747,10 +3601,7 @@
                                                     ]
                                                 }
                                             },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
+                                            "required": ["success", "reason"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -3786,20 +3637,10 @@
                                     },
                                     "clusterKey": {
                                         "type": "string",
-                                        "enum": [
-                                            "0",
-                                            "1",
-                                            "2",
-                                            "3",
-                                            "4",
-                                            "5"
-                                        ]
+                                        "enum": ["0", "1", "2", "3", "4", "5"]
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId",
-                                    "filter"
-                                ],
+                                "required": ["conversationSlugId", "filter"],
                                 "additionalProperties": false
                             }
                         }
@@ -3917,9 +3758,7 @@
                                                                 ]
                                                             }
                                                         },
-                                                        "required": [
-                                                            "status"
-                                                        ],
+                                                        "required": ["status"],
                                                         "additionalProperties": false
                                                     }
                                                 ]
@@ -3964,9 +3803,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -4864,9 +4701,7 @@
                                         }
                                     }
                                 },
-                                "required": [
-                                    "opinionSlugIdList"
-                                ],
+                                "required": ["opinionSlugIdList"],
                                 "additionalProperties": false
                             }
                         }
@@ -4984,9 +4819,7 @@
                                                                 ]
                                                             }
                                                         },
-                                                        "required": [
-                                                            "status"
-                                                        ],
+                                                        "required": ["status"],
                                                         "additionalProperties": false
                                                     }
                                                 ]
@@ -5036,9 +4869,7 @@
                                         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -5156,9 +4987,7 @@
                                                                 ]
                                                             }
                                                         },
-                                                        "required": [
-                                                            "status"
-                                                        ],
+                                                        "required": ["status"],
                                                         "additionalProperties": false
                                                     }
                                                 ]
@@ -5203,9 +5032,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -5232,9 +5059,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -5252,14 +5077,10 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 }
                                             },
-                                            "required": [
-                                                "success"
-                                            ],
+                                            "required": ["success"],
                                             "additionalProperties": false
                                         },
                                         {
@@ -5267,9 +5088,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                                    "enum": [false]
                                                 },
                                                 "reason": {
                                                     "type": "string",
@@ -5279,10 +5098,7 @@
                                                     ]
                                                 }
                                             },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
+                                            "required": ["success", "reason"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -5307,9 +5123,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -5327,14 +5141,10 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 }
                                             },
-                                            "required": [
-                                                "success"
-                                            ],
+                                            "required": ["success"],
                                             "additionalProperties": false
                                         },
                                         {
@@ -5342,9 +5152,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                                    "enum": [false]
                                                 },
                                                 "reason": {
                                                     "type": "string",
@@ -5354,10 +5162,7 @@
                                                     ]
                                                 }
                                             },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
+                                            "required": ["success", "reason"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -5389,11 +5194,6 @@
                                     "postAsOrganization": {
                                         "type": "string"
                                     },
-                                    "indexConversationAt": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-                                    },
                                     "isIndexed": {
                                         "type": "boolean"
                                     },
@@ -5408,10 +5208,7 @@
                                     },
                                     "conversationType": {
                                         "type": "string",
-                                        "enum": [
-                                            "polis",
-                                            "maxdiff"
-                                        ]
+                                        "enum": ["polis", "maxdiff"]
                                     },
                                     "seedOpinionList": {
                                         "maxItems": 50,
@@ -5424,9 +5221,11 @@
                                     },
                                     "requiresEventTicket": {
                                         "type": "string",
-                                        "enum": [
-                                            "devconnect-2025"
-                                        ]
+                                        "enum": ["devconnect-2025"]
+                                    },
+                                    "aiLabelingEnabled": {
+                                        "default": true,
+                                        "type": "boolean"
                                     },
                                     "externalSourceConfig": {
                                         "nullable": true,
@@ -5436,9 +5235,7 @@
                                                 "properties": {
                                                     "sourceType": {
                                                         "type": "string",
-                                                        "enum": [
-                                                            "github_issue"
-                                                        ]
+                                                        "enum": ["github_issue"]
                                                     },
                                                     "repository": {
                                                         "type": "string"
@@ -5692,9 +5489,7 @@
                                                 }
                                             }
                                         },
-                                        "required": [
-                                            "questions"
-                                        ],
+                                        "required": ["questions"],
                                         "additionalProperties": false
                                     }
                                 },
@@ -5722,9 +5517,7 @@
                                             "type": "string"
                                         }
                                     },
-                                    "required": [
-                                        "conversationSlugId"
-                                    ],
+                                    "required": ["conversationSlugId"],
                                     "additionalProperties": false
                                 }
                             }
@@ -5749,11 +5542,6 @@
                                     "postAsOrganization": {
                                         "type": "string"
                                     },
-                                    "indexConversationAt": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-                                    },
                                     "isIndexed": {
                                         "type": "boolean"
                                     },
@@ -5768,9 +5556,11 @@
                                     },
                                     "requiresEventTicket": {
                                         "type": "string",
-                                        "enum": [
-                                            "devconnect-2025"
-                                        ]
+                                        "enum": ["devconnect-2025"]
+                                    },
+                                    "aiLabelingEnabled": {
+                                        "default": true,
+                                        "type": "boolean"
                                     }
                                 },
                                 "required": [
@@ -5795,9 +5585,7 @@
                                             "type": "string"
                                         }
                                     },
-                                    "required": [
-                                        "importSlugId"
-                                    ],
+                                    "required": ["importSlugId"],
                                     "additionalProperties": false
                                 }
                             }
@@ -5826,9 +5614,7 @@
                                                     "type": "string"
                                                 }
                                             },
-                                            "required": [
-                                                "isValid"
-                                            ],
+                                            "required": ["isValid"],
                                             "additionalProperties": false
                                         },
                                         "commentsFile": {
@@ -5841,9 +5627,7 @@
                                                     "type": "string"
                                                 }
                                             },
-                                            "required": [
-                                                "isValid"
-                                            ],
+                                            "required": ["isValid"],
                                             "additionalProperties": false
                                         },
                                         "votesFile": {
@@ -5856,9 +5640,7 @@
                                                     "type": "string"
                                                 }
                                             },
-                                            "required": [
-                                                "isValid"
-                                            ],
+                                            "required": ["isValid"],
                                             "additionalProperties": false
                                         }
                                     },
@@ -5884,9 +5666,7 @@
                                             "type": "string"
                                         }
                                     },
-                                    "required": [
-                                        "importSlugId"
-                                    ],
+                                    "required": ["importSlugId"],
                                     "additionalProperties": false
                                 }
                             }
@@ -5909,9 +5689,7 @@
                                             "properties": {
                                                 "hasActiveImport": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "importSlugId": {
                                                     "type": "string",
@@ -5934,14 +5712,10 @@
                                             "properties": {
                                                 "hasActiveImport": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                                    "enum": [false]
                                                 }
                                             },
-                                            "required": [
-                                                "hasActiveImport"
-                                            ],
+                                            "required": ["hasActiveImport"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -5966,9 +5740,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "importSlugId"
-                                ],
+                                "required": ["importSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -5986,9 +5758,7 @@
                                             "properties": {
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "processing"
-                                                    ]
+                                                    "enum": ["processing"]
                                                 },
                                                 "importSlugId": {
                                                     "type": "string",
@@ -6016,9 +5786,7 @@
                                             "properties": {
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "completed"
-                                                    ]
+                                                    "enum": ["completed"]
                                                 },
                                                 "importSlugId": {
                                                     "type": "string",
@@ -6051,9 +5819,7 @@
                                             "properties": {
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "failed"
-                                                    ]
+                                                    "enum": ["failed"]
                                                 },
                                                 "importSlugId": {
                                                     "type": "string",
@@ -6107,9 +5873,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -6409,9 +6173,7 @@
                                                             "maxLength": 3000
                                                         }
                                                     },
-                                                    "required": [
-                                                        "title"
-                                                    ],
+                                                    "required": ["title"],
                                                     "additionalProperties": false
                                                 },
                                                 "interaction": {
@@ -6472,9 +6234,7 @@
                                             "additionalProperties": false
                                         }
                                     },
-                                    "required": [
-                                        "conversationData"
-                                    ],
+                                    "required": ["conversationData"],
                                     "additionalProperties": false
                                 }
                             }
@@ -6497,9 +6257,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -6517,9 +6275,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "conversationSlugId": {
                                                     "type": "string",
@@ -6548,9 +6304,10 @@
                                                 },
                                                 "requiresEventTicket": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "devconnect-2025"
-                                                    ]
+                                                    "enum": ["devconnect-2025"]
+                                                },
+                                                "aiLabelingEnabled": {
+                                                    "type": "boolean"
                                                 },
                                                 "postAsOrganizationName": {
                                                     "type": "string"
@@ -6799,10 +6556,6 @@
                                                     ],
                                                     "additionalProperties": false
                                                 },
-                                                "indexConversationAt": {
-                                                    "type": "string",
-                                                    "format": "date-time"
-                                                },
                                                 "createdAt": {
                                                     "type": "string",
                                                     "format": "date-time"
@@ -6813,6 +6566,59 @@
                                                 },
                                                 "isLocked": {
                                                     "type": "boolean"
+                                                },
+                                                "editPermissions": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "canEditNormalSettings": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "canEditConversationContent": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "canEditSurvey": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "canDeleteSurvey": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "canAddEventTicket": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "canChangeEventTicket": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "canRemoveEventTicket": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "restrictedPremiumFeatures": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "survey",
+                                                                    "prioritization",
+                                                                    "event_ticket",
+                                                                    "analysis_variants"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "premiumEditAccessEndsAt": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "canEditNormalSettings",
+                                                        "canEditConversationContent",
+                                                        "canEditSurvey",
+                                                        "canDeleteSurvey",
+                                                        "canAddEventTicket",
+                                                        "canChangeEventTicket",
+                                                        "canRemoveEventTicket",
+                                                        "restrictedPremiumFeatures"
+                                                    ],
+                                                    "additionalProperties": false
                                                 }
                                             },
                                             "required": [
@@ -6821,9 +6627,11 @@
                                                 "conversationTitle",
                                                 "isIndexed",
                                                 "participationMode",
+                                                "aiLabelingEnabled",
                                                 "createdAt",
                                                 "updatedAt",
-                                                "isLocked"
+                                                "isLocked",
+                                                "editPermissions"
                                             ],
                                             "additionalProperties": false
                                         },
@@ -6832,9 +6640,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                                    "enum": [false]
                                                 },
                                                 "reason": {
                                                     "type": "string",
@@ -6844,10 +6650,7 @@
                                                     ]
                                                 }
                                             },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
+                                            "required": ["success", "reason"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -6894,9 +6697,10 @@
                                     },
                                     "requiresEventTicket": {
                                         "type": "string",
-                                        "enum": [
-                                            "devconnect-2025"
-                                        ]
+                                        "enum": ["devconnect-2025"]
+                                    },
+                                    "aiLabelingEnabled": {
+                                        "type": "boolean"
                                     },
                                     "surveyConfig": {
                                         "nullable": true,
@@ -7135,15 +6939,8 @@
                                                 }
                                             }
                                         },
-                                        "required": [
-                                            "questions"
-                                        ],
+                                        "required": ["questions"],
                                         "additionalProperties": false
-                                    },
-                                    "indexConversationAt": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
                                     }
                                 },
                                 "required": [
@@ -7169,14 +6966,10 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 }
                                             },
-                                            "required": [
-                                                "success"
-                                            ],
+                                            "required": ["success"],
                                             "additionalProperties": false
                                         },
                                         {
@@ -7184,9 +6977,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                                    "enum": [false]
                                                 },
                                                 "reason": {
                                                     "type": "string",
@@ -7194,14 +6985,12 @@
                                                         "not_found",
                                                         "not_author",
                                                         "conversation_locked",
-                                                        "invalid_access_settings"
+                                                        "invalid_access_settings",
+                                                        "premium_access_expired"
                                                     ]
                                                 }
                                             },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
+                                            "required": ["success", "reason"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -7226,9 +7015,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -7683,9 +7470,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -7737,14 +7522,10 @@
                                                     "properties": {
                                                         "kind": {
                                                             "type": "string",
-                                                            "enum": [
-                                                                "none"
-                                                            ]
+                                                            "enum": ["none"]
                                                         }
                                                     },
-                                                    "required": [
-                                                        "kind"
-                                                    ],
+                                                    "required": ["kind"],
                                                     "additionalProperties": false
                                                 },
                                                 {
@@ -7752,9 +7533,7 @@
                                                     "properties": {
                                                         "kind": {
                                                             "type": "string",
-                                                            "enum": [
-                                                                "question"
-                                                            ]
+                                                            "enum": ["question"]
                                                         },
                                                         "questionSlugId": {
                                                             "type": "string",
@@ -7772,14 +7551,10 @@
                                                     "properties": {
                                                         "kind": {
                                                             "type": "string",
-                                                            "enum": [
-                                                                "summary"
-                                                            ]
+                                                            "enum": ["summary"]
                                                         }
                                                     },
-                                                    "required": [
-                                                        "kind"
-                                                    ],
+                                                    "required": ["kind"],
                                                     "additionalProperties": false
                                                 }
                                             ]
@@ -7829,9 +7604,7 @@
                                                     },
                                                     "questionType": {
                                                         "type": "string",
-                                                        "enum": [
-                                                            "choice"
-                                                        ]
+                                                        "enum": ["choice"]
                                                     }
                                                 },
                                                 "required": [
@@ -7845,9 +7618,7 @@
                                                 "properties": {
                                                     "questionType": {
                                                         "type": "string",
-                                                        "enum": [
-                                                            "free_text"
-                                                        ]
+                                                        "enum": ["free_text"]
                                                     },
                                                     "textValueHtml": {
                                                         "type": "string",
@@ -7885,9 +7656,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "surveyGate": {
                                                     "type": "object",
@@ -7936,9 +7705,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                                    "enum": [false]
                                                 },
                                                 "reason": {
                                                     "type": "string",
@@ -7954,10 +7721,7 @@
                                                     ]
                                                 }
                                             },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
+                                            "required": ["success", "reason"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -7982,9 +7746,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -8002,9 +7764,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "surveyGate": {
                                                     "type": "object",
@@ -8049,9 +7809,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                                    "enum": [false]
                                                 },
                                                 "reason": {
                                                     "type": "string",
@@ -8067,10 +7825,7 @@
                                                     ]
                                                 }
                                             },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
+                                            "required": ["success", "reason"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -8330,9 +8085,7 @@
                                                 }
                                             }
                                         },
-                                        "required": [
-                                            "questions"
-                                        ],
+                                        "required": ["questions"],
                                         "additionalProperties": false
                                     }
                                 },
@@ -8390,9 +8143,7 @@
                                             "additionalProperties": false
                                         }
                                     },
-                                    "required": [
-                                        "currentRevision"
-                                    ],
+                                    "required": ["currentRevision"],
                                     "additionalProperties": false
                                 }
                             }
@@ -8415,9 +8166,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -8433,14 +8182,10 @@
                                     "properties": {
                                         "success": {
                                             "type": "boolean",
-                                            "enum": [
-                                                true
-                                            ]
+                                            "enum": [true]
                                         }
                                     },
-                                    "required": [
-                                        "success"
-                                    ],
+                                    "required": ["success"],
                                     "additionalProperties": false
                                 }
                             }
@@ -8463,9 +8208,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -8484,10 +8227,7 @@
                                         },
                                         "accessLevel": {
                                             "type": "string",
-                                            "enum": [
-                                                "public",
-                                                "owner"
-                                            ]
+                                            "enum": ["public", "owner"]
                                         },
                                         "suppressionThreshold": {
                                             "type": "integer",
@@ -8671,9 +8411,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -8729,10 +8467,7 @@
                                             "additionalProperties": false
                                         }
                                     },
-                                    "required": [
-                                        "hasSurvey",
-                                        "counts"
-                                    ],
+                                    "required": ["hasSurvey", "counts"],
                                     "additionalProperties": false
                                 }
                             }
@@ -8752,15 +8487,10 @@
                                 "properties": {
                                     "linkType": {
                                         "type": "string",
-                                        "enum": [
-                                            "http",
-                                            "deep"
-                                        ]
+                                        "enum": ["http", "deep"]
                                     }
                                 },
-                                "required": [
-                                    "linkType"
-                                ]
+                                "required": ["linkType"]
                             }
                         }
                     }
@@ -8777,9 +8507,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "verificationLink": {
                                                     "type": "string",
@@ -8797,9 +8525,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                                    "enum": [false]
                                                 },
                                                 "reason": {
                                                     "type": "string",
@@ -8809,10 +8535,7 @@
                                                     ]
                                                 }
                                             },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
+                                            "required": ["success", "reason"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -8837,15 +8560,11 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "rarimoStatus": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "verified"
-                                                    ]
+                                                    "enum": ["verified"]
                                                 },
                                                 "accountMerged": {
                                                     "type": "boolean"
@@ -8867,9 +8586,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "rarimoStatus": {
                                                     "type": "string",
@@ -8891,9 +8608,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                                    "enum": [false]
                                                 },
                                                 "reason": {
                                                     "type": "string",
@@ -8903,10 +8618,7 @@
                                                     ]
                                                 }
                                             },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
+                                            "required": ["success", "reason"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -8929,15 +8641,10 @@
                                     "proof": {},
                                     "eventSlug": {
                                         "type": "string",
-                                        "enum": [
-                                            "devconnect-2025"
-                                        ]
+                                        "enum": ["devconnect-2025"]
                                     }
                                 },
-                                "required": [
-                                    "proof",
-                                    "eventSlug"
-                                ],
+                                "required": ["proof", "eventSlug"],
                                 "additionalProperties": false
                             }
                         }
@@ -8955,9 +8662,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "accountMerged": {
                                                     "type": "boolean"
@@ -8978,9 +8683,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                                    "enum": [false]
                                                 },
                                                 "reason": {
                                                     "type": "string",
@@ -8993,10 +8696,7 @@
                                                     ]
                                                 }
                                             },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
+                                            "required": ["success", "reason"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -9030,9 +8730,7 @@
                                         "pattern": "^[a-z0-9_]*$"
                                     }
                                 },
-                                "required": [
-                                    "username"
-                                ],
+                                "required": ["username"],
                                 "additionalProperties": false
                             }
                         }
@@ -9059,9 +8757,7 @@
                                         "pattern": "^[a-z0-9_]*$"
                                     }
                                 },
-                                "required": [
-                                    "username"
-                                ],
+                                "required": ["username"],
                                 "additionalProperties": false
                             }
                         }
@@ -9097,6 +8793,248 @@
                 }
             }
         },
+        "/api/v1/administrator/premium-entitlement/list": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {},
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "entitlements": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "exclusiveMinimum": true,
+                                                        "maximum": 9007199254740991
+                                                    },
+                                                    "userId": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "format": "uuid",
+                                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                    },
+                                                    "username": {
+                                                        "type": "string",
+                                                        "pattern": "^[a-z0-9_]*$"
+                                                    },
+                                                    "organizationId": {
+                                                        "type": "integer",
+                                                        "exclusiveMinimum": true,
+                                                        "maximum": 9007199254740991
+                                                    },
+                                                    "organizationName": {
+                                                        "type": "string"
+                                                    },
+                                                    "feature": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "survey",
+                                                            "prioritization",
+                                                            "event_ticket",
+                                                            "analysis_variants"
+                                                        ]
+                                                    },
+                                                    "startsAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "expiresAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "revokedAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "adminNote": {
+                                                        "type": "string"
+                                                    },
+                                                    "createdAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updatedAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "feature",
+                                                    "startsAt",
+                                                    "createdAt",
+                                                    "updatedAt"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": ["entitlements"],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/administrator/premium-entitlement/create": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "subject": {
+                                        "type": "object",
+                                        "properties": {
+                                            "username": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9_]*$"
+                                            },
+                                            "organizationName": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "additionalProperties": false
+                                    },
+                                    "features": {
+                                        "minItems": 1,
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "enum": [
+                                                "survey",
+                                                "prioritization",
+                                                "event_ticket",
+                                                "analysis_variants"
+                                            ]
+                                        }
+                                    },
+                                    "startsAt": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                                    },
+                                    "expiresAt": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                                    },
+                                    "adminNote": {
+                                        "type": "string",
+                                        "maxLength": 1000
+                                    }
+                                },
+                                "required": ["subject", "features", "startsAt"],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/administrator/premium-entitlement/update": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "entitlementId": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": true,
+                                        "maximum": 9007199254740991
+                                    },
+                                    "startsAt": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                                    },
+                                    "expiresAt": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                                    },
+                                    "revokedAt": {
+                                        "nullable": true,
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                                    },
+                                    "adminNote": {
+                                        "type": "string",
+                                        "maxLength": 1000
+                                    }
+                                },
+                                "required": ["entitlementId", "startsAt"],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
+        "/api/v1/administrator/premium-entitlement/revoke": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "entitlementId": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": true,
+                                        "maximum": 9007199254740991
+                                    }
+                                },
+                                "required": ["entitlementId"],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response"
+                    }
+                }
+            }
+        },
         "/api/v1/administrator/organization/add-user-organization-mapping": {
             "post": {
                 "requestBody": {
@@ -9114,10 +9052,7 @@
                                         "type": "string"
                                     }
                                 },
-                                "required": [
-                                    "username",
-                                    "organizationName"
-                                ],
+                                "required": ["username", "organizationName"],
                                 "additionalProperties": false
                             }
                         }
@@ -9147,10 +9082,7 @@
                                         "type": "string"
                                     }
                                 },
-                                "required": [
-                                    "username",
-                                    "organizationName"
-                                ],
+                                "required": ["username", "organizationName"],
                                 "additionalProperties": false
                             }
                         }
@@ -9177,9 +9109,7 @@
                                         "pattern": "^[a-z0-9_]*$"
                                     }
                                 },
-                                "required": [
-                                    "username"
-                                ],
+                                "required": ["username"],
                                 "additionalProperties": false
                             }
                         }
@@ -9222,9 +9152,7 @@
                                             }
                                         }
                                     },
-                                    "required": [
-                                        "organizationList"
-                                    ],
+                                    "required": ["organizationList"],
                                     "additionalProperties": false
                                 }
                             }
@@ -9272,9 +9200,7 @@
                                             }
                                         }
                                     },
-                                    "required": [
-                                        "organizationList"
-                                    ],
+                                    "required": ["organizationList"],
                                     "additionalProperties": false
                                 }
                             }
@@ -9341,9 +9267,7 @@
                                         "type": "string"
                                     }
                                 },
-                                "required": [
-                                    "organizationName"
-                                ],
+                                "required": ["organizationName"],
                                 "additionalProperties": false
                             }
                         }
@@ -9430,10 +9354,7 @@
                                         "maxLength": 260
                                     }
                                 },
-                                "required": [
-                                    "opinionSlugId",
-                                    "reportReason"
-                                ],
+                                "required": ["opinionSlugId", "reportReason"],
                                 "additionalProperties": false
                             }
                         }
@@ -9460,9 +9381,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -9533,9 +9452,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "opinionSlugId"
-                                ],
+                                "required": ["opinionSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -9612,10 +9529,7 @@
                                                 "type": "string"
                                             }
                                         },
-                                        "required": [
-                                            "createdAt",
-                                            "username"
-                                        ],
+                                        "required": ["createdAt", "username"],
                                         "additionalProperties": false
                                     }
                                 }
@@ -9639,16 +9553,10 @@
                                     },
                                     "action": {
                                         "type": "string",
-                                        "enum": [
-                                            "mute",
-                                            "unmute"
-                                        ]
+                                        "enum": ["mute", "unmute"]
                                     }
                                 },
-                                "required": [
-                                    "targetUsername",
-                                    "action"
-                                ],
+                                "required": ["targetUsername", "action"],
                                 "additionalProperties": false
                             }
                         }
@@ -10305,17 +10213,12 @@
                                                         "type": "string"
                                                     }
                                                 },
-                                                "required": [
-                                                    "code",
-                                                    "name"
-                                                ],
+                                                "required": ["code", "name"],
                                                 "additionalProperties": false
                                             }
                                         }
                                     },
-                                    "required": [
-                                        "topicList"
-                                    ],
+                                    "required": ["topicList"],
                                     "additionalProperties": false
                                 }
                             }
@@ -10350,9 +10253,7 @@
                                         ]
                                     }
                                 },
-                                "required": [
-                                    "currentDisplayLanguage"
-                                ],
+                                "required": ["currentDisplayLanguage"],
                                 "additionalProperties": false
                             }
                         }
@@ -10561,9 +10462,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -10581,15 +10480,11 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "queued"
-                                                    ]
+                                                    "enum": ["queued"]
                                                 },
                                                 "exportSlugId": {
                                                     "type": "string",
@@ -10608,15 +10503,11 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        true
-                                                    ]
+                                                    "enum": [true]
                                                 },
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "cooldown_active"
-                                                    ]
+                                                    "enum": ["cooldown_active"]
                                                 },
                                                 "cooldownEndsAt": {
                                                     "type": "string",
@@ -10635,9 +10526,7 @@
                                             "properties": {
                                                 "success": {
                                                     "type": "boolean",
-                                                    "enum": [
-                                                        false
-                                                    ]
+                                                    "enum": [false]
                                                 },
                                                 "reason": {
                                                     "type": "string",
@@ -10648,10 +10537,7 @@
                                                     ]
                                                 }
                                             },
-                                            "required": [
-                                                "success",
-                                                "reason"
-                                            ],
+                                            "required": ["success", "reason"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -10676,9 +10562,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "exportSlugId"
-                                ],
+                                "required": ["exportSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -10696,9 +10580,7 @@
                                             "properties": {
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "processing"
-                                                    ]
+                                                    "enum": ["processing"]
                                                 },
                                                 "exportSlugId": {
                                                     "type": "string",
@@ -10731,9 +10613,7 @@
                                             "properties": {
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "completed"
-                                                    ]
+                                                    "enum": ["completed"]
                                                 },
                                                 "exportSlugId": {
                                                     "type": "string",
@@ -10849,9 +10729,7 @@
                                             "properties": {
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "failed"
-                                                    ]
+                                                    "enum": ["failed"]
                                                 },
                                                 "exportSlugId": {
                                                     "type": "string",
@@ -10892,9 +10770,7 @@
                                             "properties": {
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "cancelled"
-                                                    ]
+                                                    "enum": ["cancelled"]
                                                 },
                                                 "exportSlugId": {
                                                     "type": "string",
@@ -10931,9 +10807,7 @@
                                             "properties": {
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "expired"
-                                                    ]
+                                                    "enum": ["expired"]
                                                 },
                                                 "exportSlugId": {
                                                     "type": "string",
@@ -10999,9 +10873,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -11064,9 +10936,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "conversationSlugId"
-                                ],
+                                "required": ["conversationSlugId"],
                                 "additionalProperties": false
                             }
                         }
@@ -11084,9 +10954,7 @@
                                             "properties": {
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "active"
-                                                    ]
+                                                    "enum": ["active"]
                                                 },
                                                 "exportSlugId": {
                                                     "type": "string",
@@ -11109,9 +10977,7 @@
                                             "properties": {
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "cooldown"
-                                                    ]
+                                                    "enum": ["cooldown"]
                                                 },
                                                 "cooldownEndsAt": {
                                                     "type": "string",
@@ -11134,14 +11000,10 @@
                                             "properties": {
                                                 "status": {
                                                     "type": "string",
-                                                    "enum": [
-                                                        "ready"
-                                                    ]
+                                                    "enum": ["ready"]
                                                 }
                                             },
-                                            "required": [
-                                                "status"
-                                            ],
+                                            "required": ["status"],
                                             "additionalProperties": false
                                         }
                                     ]
@@ -11166,9 +11028,7 @@
                                         "maxLength": 10
                                     }
                                 },
-                                "required": [
-                                    "exportSlugId"
-                                ],
+                                "required": ["exportSlugId"],
                                 "additionalProperties": false
                             }
                         }

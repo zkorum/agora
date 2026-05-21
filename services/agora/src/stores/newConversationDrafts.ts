@@ -15,11 +15,6 @@ import {
   DEFAULT_FEATURE_ALLOWED_ORGS,
   DEFAULT_FEATURE_ALLOWED_USERS,
 } from "src/shared-app-api/featureAccess";
-import {
-  checkMaxDiffAllowed,
-  DEFAULT_MAXDIFF_ALLOWED_ORGS,
-  DEFAULT_MAXDIFF_ALLOWED_USERS,
-} from "src/shared-app-api/maxdiffLogic";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { processEnv } from "src/utils/processEnv";
 import { areSurveyConfigsEqual } from "src/utils/survey/config";
@@ -43,18 +38,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       return null;
     }
 
-    // Transform serialized format to runtime format (Date conversion and participationMode extraction)
-    const { participationMode, ...restPrivateSettings } =
-      result.data.privateConversationSettings;
-
-    return {
-      ...result.data,
-      participationMode,
-      privateConversationSettings: {
-        ...restPrivateSettings,
-        conversionDate: new Date(restPrivateSettings.conversionDate),
-      },
-    };
+    return result.data;
   }
 
   /**
@@ -89,35 +73,13 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
         },
         write: (draft: ConversationDraft): string => {
           try {
-            // Convert runtime format to serialized format
-            // Move participationMode into privateConversationSettings and convert Date to ISO string
-            const { participationMode, ...restDraft } = draft;
-            const serializableDraft: SerializableConversationDraft = {
-              ...restDraft,
-              privateConversationSettings: {
-                participationMode,
-                hasScheduledConversion:
-                  draft.privateConversationSettings.hasScheduledConversion,
-                conversionDate:
-                  draft.privateConversationSettings.conversionDate.toISOString(),
-              },
-            };
+            const serializableDraft: SerializableConversationDraft = draft;
             return JSON.stringify(serializableDraft);
           } catch (error) {
             console.error("Failed to serialize conversation draft:", error);
             // Fallback to empty draft
             const emptyDraft = createEmptyDraft();
-            const { participationMode, ...restEmptyDraft } = emptyDraft;
-            const fallbackData: SerializableConversationDraft = {
-              ...restEmptyDraft,
-              privateConversationSettings: {
-                participationMode,
-                hasScheduledConversion:
-                  emptyDraft.privateConversationSettings.hasScheduledConversion,
-                conversionDate:
-                  emptyDraft.privateConversationSettings.conversionDate.toISOString(),
-              },
-            };
+            const fallbackData: SerializableConversationDraft = emptyDraft;
             return JSON.stringify(fallbackData);
           }
         },
@@ -161,13 +123,8 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       current.isPrivate !== emptyDraft.isPrivate ||
       current.participationMode !== emptyDraft.participationMode;
 
-    // Check private conversation settings changes (only relevant if isPrivate is true)
-    // Note: conversionDate is excluded from comparison because the empty draft's date
-    // changes constantly (set to "tomorrow"), causing false positives. Only checking
-    // hasScheduledConversion is sufficient to detect meaningful user changes.
-    const hasPrivateSettingsChanges =
-      current.privateConversationSettings.hasScheduledConversion !==
-      emptyDraft.privateConversationSettings.hasScheduledConversion;
+    const hasAiLabelingChanges =
+      current.aiLabelingEnabled !== emptyDraft.aiLabelingEnabled;
 
     // Check creation settings changes
     const hasCreationSettingsChanges =
@@ -189,7 +146,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       hasConversationTypeChanges ||
       hasPostAsChanges ||
       hasPrivacyChanges ||
-      hasPrivateSettingsChanges ||
+      hasAiLabelingChanges ||
       hasCreationSettingsChanges ||
       hasSurveyConfigChanges
     );
@@ -228,12 +185,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
    */
   function togglePrivacy(isPrivate: boolean): void {
     conversationDraft.value.isPrivate = isPrivate;
-    // Reset private conversation settings to defaults when switching to public
-    if (!isPrivate) {
-      const emptyDraft = createEmptyDraft();
-      conversationDraft.value.privateConversationSettings =
-        emptyDraft.privateConversationSettings;
-    }
   }
 
   // ============================================================================
@@ -371,15 +322,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     };
   }
 
-  function clearMaxDiffDraft(): void {
-    conversationDraft.value.conversationType = "polis";
-    conversationDraft.value.externalSourceConfig = null;
-  }
-
-  function clearSurveyDraft(): void {
-    conversationDraft.value.surveyConfig = null;
-  }
-
   function canEvaluateCurrentActorRestrictions(): boolean {
     return (
       conversationDraft.value.postAs.postAsOrganization || authStore.userId !== undefined
@@ -402,38 +344,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     return result.allowed;
   }
 
-  function isMaxDiffAllowedForCurrentActor(): boolean {
-    const result = checkMaxDiffAllowed({
-      maxdiffEnabled: processEnv.VITE_MAXDIFF_ENABLED === "true",
-      isMaxdiffOrgOnly: processEnv.VITE_IS_MAXDIFF_ORG_ONLY === "true",
-      maxdiffAllowedOrgs:
-        processEnv.VITE_MAXDIFF_ALLOWED_ORGS ?? DEFAULT_MAXDIFF_ALLOWED_ORGS,
-      maxdiffAllowedUsers:
-        processEnv.VITE_MAXDIFF_ALLOWED_USERS ?? DEFAULT_MAXDIFF_ALLOWED_USERS,
-      postAsOrganization: conversationDraft.value.postAs.postAsOrganization,
-      organizationName: conversationDraft.value.postAs.organizationName,
-      userId: authStore.userId ?? "",
-    });
-
-    return result.allowed;
-  }
-
-  function isSurveyAllowedForCurrentActor(): boolean {
-    const result = checkFeatureAccess({
-      featureEnabled: processEnv.VITE_SURVEY_ENABLED === "true",
-      isOrgOnly: processEnv.VITE_IS_SURVEY_ORG_ONLY === "true",
-      allowedOrgs:
-        processEnv.VITE_SURVEY_ALLOWED_ORGS ?? DEFAULT_FEATURE_ALLOWED_ORGS,
-      allowedUsers:
-        processEnv.VITE_SURVEY_ALLOWED_USERS ?? DEFAULT_FEATURE_ALLOWED_USERS,
-      postAsOrganization: conversationDraft.value.postAs.postAsOrganization,
-      organizationName: conversationDraft.value.postAs.organizationName,
-      userId: authStore.userId ?? "",
-    });
-
-    return result.allowed;
-  }
-
   function normalizeRestrictedFeatureDraftState(): void {
     if (!canEvaluateCurrentActorRestrictions()) {
       return;
@@ -446,19 +356,6 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       clearImportDraft();
     }
 
-    if (
-      conversationDraft.value.conversationType === "maxdiff" &&
-      !isMaxDiffAllowedForCurrentActor()
-    ) {
-      clearMaxDiffDraft();
-    }
-
-    if (
-      conversationDraft.value.surveyConfig !== null &&
-      !isSurveyAllowedForCurrentActor()
-    ) {
-      clearSurveyDraft();
-    }
   }
 
   // ============================================================================

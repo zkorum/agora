@@ -24,8 +24,8 @@ Agora Citizen Network is a privacy-preserving social platform using zero-knowled
 - **`services/app`** (SvelteKit) - Landing page
 - **`services/agora`** (Vue/Quasar) - Main frontend application
 - **`services/api`** (Fastify) - Backend API
-- **`services/math-updater`** - Background worker for clustering
-- **`services/python-bridge`** - Python clustering service
+- **`services/import-worker`** (Python) - Conversation import worker
+- **`services/math-updater`** (Python) - Opinion-group analysis worker
 - **`services/scoring-worker`** (Python) - Solidago scoring worker for MaxDiff rankings
 
 ### Why SvelteKit for the Landing Page?
@@ -105,11 +105,11 @@ make dev-app-new
 # Backend API (Fastify)
 make dev-api
 
-# Math updater worker (background jobs)
+# Math updater worker (opinion-group analysis)
 make dev-math-updater
 
-# Python bridge (clustering service)
-make dev-polis
+# Import worker (conversation imports)
+make dev-import-worker
 
 # Scoring worker (Solidago MaxDiff rankings)
 cd services/scoring-worker && make dev
@@ -216,7 +216,7 @@ Deploy: math-updater"
 - Reference issue numbers, design decisions, or related PRs in the body or footer
 - **ALWAYS include a deployment footer** listing which services need to be redeployed:
   - Format: `Deploy: <service1>, <service2>, ...`
-  - Services: `app` (landing page), `agora` (main frontend), `api` (backend), `math-updater` (worker), `python-bridge` (clustering), `scoring-worker` (Solidago rankings)
+  - Services: `app` (landing page), `agora` (main frontend), `api` (backend), `import-worker` (conversation imports), `math-updater` (opinion-group analysis), `scoring-worker` (Solidago rankings)
   - Example: `Deploy: agora, api` or `Deploy: none` (for docs-only changes)
 - Do NOT mention AI assistants or tools in commit messages (e.g., "Claude", "AI-generated", "with assistance from")
   - This restriction applies ONLY to commit messages - code comments can mention tools/AI if helpful for context
@@ -265,11 +265,9 @@ Frontend (Vue/Quasar) → OpenAPI Client → API (Fastify)
                                            ↓
                                     PostgreSQL (primary + read replica)
                                            ↑              ↑
-Math-updater (pg-boss jobs) ←──────────────┘              │
-       ↓                                                  │
-Python-bridge (Flask/reddwarf clustering)                  │
-                                                          │
-API → Valkey dirty set → Scoring-worker (Solidago) ───────┘
+API → Valkey import queue → Import-worker ─┘              │
+API → Valkey analysis dirty set → Math-updater ───────────┤
+API → Valkey scoring dirty set → Scoring-worker ──────────┘
 ```
 
 ### Services
@@ -277,18 +275,18 @@ API → Valkey dirty set → Scoring-worker (Solidago) ───────┘
 - **app** (`services/app/`): SvelteKit landing page (Svelte 5, Bits UI, Tailwind CSS v4)
 - **agora** (`services/agora/`): Vue 3 + Quasar main frontend with Pinia state management
 - **api** (`services/api/`): Fastify backend with Drizzle ORM, handles auth/conversations/voting
-- **math-updater** (`services/math-updater/`): Background worker using pg-boss for clustering updates and AI label generation
-- **python-bridge** (`services/python-bridge/`): Flask service wrapping reddwarf clustering algorithms
+- **import-worker** (`services/import-worker/`): Python worker for Polis URL and CSV conversation imports
+- **math-updater** (`services/math-updater/`): Python worker for opinion-group analysis and AI label generation
 - **scoring-worker** (`services/scoring-worker/`): Python worker running Solidago algorithm for MaxDiff community rankings via Valkey dirty set
-- **shared**, **shared-app-api**, **shared-backend**: Shared TypeScript code synced via rsync
+- **shared**, **shared-app-api**, **shared-backend**: Shared TypeScript code synced via rsync and source schemas for generated Python artifacts
 
 ### Shared Code Strategy
 
 Shared code is distributed via **rsync** (not npm linking) because Drizzle ORM requires direct file access:
 
-- `services/shared/` → synced to all services (types, utilities)
+- `services/shared/` → synced to TypeScript services and used for generated Python constants
 - `services/shared-app-api/` → synced to frontend + API (UCAN, auth)
-- `services/shared-backend/` → synced to API + math-updater (database schema, translations)
+- `services/shared-backend/` → synced to API and used for generated Python SQLAlchemy models
 
 Files generated from shared directories have warning comments at the top. Always edit source files in `services/shared*/src/`, never the synced copies.
 
@@ -761,7 +759,7 @@ The scoring worker's SQLAlchemy models (`services/scoring-worker/src/scoring_wor
 
 To add a table to the scoring worker:
 1. Add `/** @service scoring-worker */` JSDoc comment above the table definition in `schema.ts`
-2. Run `make sync` to regenerate `generated_models.py`
+2. Run `make sync-python-artifacts` to regenerate `generated_models.py`
 3. Import the model from `scoring_worker.generated_models`
 
 ### Running Tests for a Specific Module
@@ -788,8 +786,8 @@ Each service uses environment variables:
 Key variables:
 - `CONNECTION_STRING` / `CONNECTION_STRING_READ` - Database connections
 - `AWS_SECRET_ID_*` - AWS Secrets Manager credentials
-- `POLIS_BASE_URL` - Python-bridge service URL
-- `MATH_UPDATER_BATCH_SIZE` - Concurrent conversation processing
+- `*_VALKEY_URL` - Valkey connection for worker queues
+- `MATH_UPDATER_MAX_COMPUTE_CONCURRENCY` - Concurrent analysis processing
 - Translation API keys for AI label generation
 
 ## SvelteKit Frontend (`services/app`)
@@ -842,9 +840,9 @@ cd services/app && pnpm test:e2e    # Playwright
 
 - Node.js 20+ (frontend uses 22/24)
 - pnpm (all services)
-- Python 3.11+ (python-bridge), Python 3.13+ (scoring-worker)
-- [uv](https://docs.astral.sh/uv/) (scoring-worker package manager)
+- Python 3.13+ (Python workers)
+- [uv](https://docs.astral.sh/uv/) (Python worker package manager)
 - Docker (for Flyway migrations and production builds)
-- Valkey or Redis-compatible server (scoring-worker)
+- Valkey or Redis-compatible server (workers)
 - watchman (for file watching during development)
 - rsync, make, jq, sed (build tools)

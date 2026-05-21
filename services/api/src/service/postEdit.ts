@@ -12,8 +12,9 @@ import { httpErrors } from "@fastify/sensible";
 import { toUnionUndefined } from "@/shared/shared.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
+import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
+import type { Valkey } from "@/shared-backend/valkey.js";
 import {
-    assertSurveyFeatureAllowedForConversation,
     getActiveSurveyConfigRecord,
     getSurveyConfigForConversation,
     setSurveyConfigForConversation,
@@ -25,6 +26,16 @@ import type {
     UpdateConversationResponse,
 } from "@/shared/types/dto.js";
 import { isConversationOwner } from "@/service/conversationAccess.js";
+import {
+    buildConversationEditPermissions,
+    getPremiumEntitlementSubjectForConversation,
+    getPremiumFeaturesInConversation,
+    getRestrictedPremiumFeatures,
+} from "@/service/premiumEntitlement.js";
+import {
+    createConversationViewSnapshotsFromCurrentState,
+    ensureAiDescriptionLocaleStatusesForLatestAnalysisSnapshots,
+} from "@/service/conversationViewSnapshot.js";
 
 interface GetConversationForEditProps {
     db: PostgresDatabase;
@@ -47,9 +58,10 @@ export async function getConversationForEdit({
             conversationBody: conversationContentTable.body,
             isIndexed: conversationTable.isIndexed,
             participationMode: conversationTable.participationMode,
+            conversationType: conversationTable.conversationType,
             requiresEventTicket: conversationTable.requiresEventTicket,
+            aiLabelingEnabled: conversationTable.aiLabelingEnabled,
             postAsOrganizationName: organizationTable.name,
-            indexConversationAt: conversationTable.indexConversationAt,
             createdAt: conversationTable.createdAt,
             updatedAt: conversationTable.updatedAt,
             moderationAction: conversationModerationTable.moderationAction,
@@ -91,6 +103,11 @@ export async function getConversationForEdit({
     // Check if conversation is locked
     const isLocked = conversation.moderationAction === "lock";
 
+    const surveyConfig = await getSurveyConfigForConversation({
+        db,
+        conversationId: conversation.conversationId,
+    });
+
     return {
         success: true,
         conversationSlugId: conversation.conversationSlugId,
@@ -99,17 +116,26 @@ export async function getConversationForEdit({
         isIndexed: conversation.isIndexed,
         participationMode: conversation.participationMode,
         requiresEventTicket: toUnionUndefined(conversation.requiresEventTicket),
+        aiLabelingEnabled: conversation.aiLabelingEnabled,
         postAsOrganizationName: toUnionUndefined(
             conversation.postAsOrganizationName,
         ),
-        surveyConfig: await getSurveyConfigForConversation({
-            db,
-            conversationId: conversation.conversationId,
-        }),
-        indexConversationAt: conversation.indexConversationAt ?? undefined,
+        surveyConfig,
         createdAt: conversation.createdAt,
         updatedAt: conversation.updatedAt,
         isLocked,
+        editPermissions: await buildConversationEditPermissions({
+            db,
+            conversation: {
+                conversationId: conversation.conversationId,
+                conversationType: conversation.conversationType,
+                requiresEventTicket: conversation.requiresEventTicket,
+                authorId: conversation.authorId,
+                organizationId: conversation.organizationId,
+            },
+            hasSurvey: surveyConfig !== undefined,
+            now: new Date(),
+        }),
     };
 }
 
@@ -117,6 +143,7 @@ interface UpdateConversationProps {
     db: PostgresDatabase;
     userId: string;
     googleCloudCredentials?: GoogleCloudCredentials;
+    valkey?: Valkey;
     data: Omit<UpdateConversationRequest, "conversationSlugId"> & {
         conversationSlugId: string;
     };
@@ -126,6 +153,7 @@ export async function updateConversation({
     db,
     userId,
     googleCloudCredentials,
+    valkey,
     data,
 }: UpdateConversationProps): Promise<UpdateConversationResponse> {
     const {
@@ -135,8 +163,8 @@ export async function updateConversation({
         isIndexed,
         participationMode,
         requiresEventTicket,
+        aiLabelingEnabled,
         surveyConfig,
-        indexConversationAt,
     } = data;
 
     // Sanitize HTML body if provided (backend security layer)
@@ -160,6 +188,7 @@ export async function updateConversation({
     }
 
     let updatedConversationId: number | undefined;
+    let didEnableAiLabeling: boolean | undefined;
 
     const result = await db.transaction(async (tx) => {
         const now = new Date();
@@ -171,9 +200,21 @@ export async function updateConversation({
                 organizationId: conversationTable.organizationId,
                 organizationName: organizationTable.name,
                 currentContentId: conversationTable.currentContentId,
+                conversationType: conversationTable.conversationType,
+                requiresEventTicket: conversationTable.requiresEventTicket,
+                aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+                currentTitle: conversationContentTable.title,
+                currentBody: conversationContentTable.body,
                 moderationAction: conversationModerationTable.moderationAction,
             })
             .from(conversationTable)
+            .leftJoin(
+                conversationContentTable,
+                eq(
+                    conversationContentTable.id,
+                    conversationTable.currentContentId,
+                ),
+            )
             .leftJoin(
                 organizationTable,
                 eq(conversationTable.organizationId, organizationTable.id),
@@ -218,49 +259,138 @@ export async function updateConversation({
 
         const conversationId = conversation.conversationId;
         updatedConversationId = conversationId;
+        didEnableAiLabeling =
+            !conversation.aiLabelingEnabled && aiLabelingEnabled === true;
+
+        const subject = getPremiumEntitlementSubjectForConversation({
+            conversation,
+        });
+        const currentBody = toUnionUndefined(conversation.currentBody);
+        const contentChanged =
+            conversation.currentTitle !== conversationTitle ||
+            currentBody !== sanitizedBody;
+
+        if (contentChanged) {
+            const premiumFeatures = await getPremiumFeaturesInConversation({
+                db: tx,
+                conversation: {
+                    conversationId,
+                    conversationType: conversation.conversationType,
+                    requiresEventTicket: conversation.requiresEventTicket,
+                },
+            });
+            const restrictedFeatures = await getRestrictedPremiumFeatures({
+                db: tx,
+                subject,
+                features: premiumFeatures,
+                mode: "edit",
+                now,
+            });
+            if (restrictedFeatures.length > 0) {
+                return {
+                    success: false,
+                    reason: "premium_access_expired",
+                } as const;
+            }
+        }
+
+        const previousEventTicket = toUnionUndefined(
+            conversation.requiresEventTicket,
+        );
+        const eventTicketAdded =
+            previousEventTicket === undefined &&
+            requiresEventTicket !== undefined;
+
+        if (eventTicketAdded) {
+            const restrictedFeatures = await getRestrictedPremiumFeatures({
+                db: tx,
+                subject,
+                features: ["event_ticket"],
+                mode: "creation",
+                now,
+            });
+            if (restrictedFeatures.length > 0) {
+                return {
+                    success: false,
+                    reason: "premium_access_expired",
+                } as const;
+            }
+        }
+
+        let existingSurveyConfig:
+            | Awaited<ReturnType<typeof getActiveSurveyConfigRecord>>
+            | undefined;
+        if (surveyConfig !== undefined) {
+            existingSurveyConfig = await getActiveSurveyConfigRecord({
+                db: tx,
+                conversationId,
+            });
+            if (surveyConfig !== null) {
+                const restrictedFeatures = await getRestrictedPremiumFeatures({
+                    db: tx,
+                    subject,
+                    features: ["survey"],
+                    mode:
+                        existingSurveyConfig === undefined
+                            ? "creation"
+                            : "edit",
+                    now,
+                });
+                if (restrictedFeatures.length > 0) {
+                    return {
+                        success: false,
+                        reason: "premium_access_expired",
+                    } as const;
+                }
+            }
+        }
 
         // Create new conversation content
-        const newContentResult = await tx
-            .insert(conversationContentTable)
-            .values({
-                conversationId: conversationId,
-                title: conversationTitle,
-                body: sanitizedBody,
-            })
-            .returning({
-                conversationContentId: conversationContentTable.id,
-            });
+        let newContentId: number | undefined;
+        if (contentChanged) {
+            const newContentResult = await tx
+                .insert(conversationContentTable)
+                .values({
+                    conversationId: conversationId,
+                    title: conversationTitle,
+                    body: sanitizedBody,
+                })
+                .returning({
+                    conversationContentId: conversationContentTable.id,
+                });
 
-        const newContentId = newContentResult[0].conversationContentId;
+            newContentId = newContentResult[0].conversationContentId;
+        }
+
+        const conversationUpdateValues: {
+            currentContentId?: number;
+            isIndexed: boolean;
+            participationMode: typeof participationMode;
+            requiresEventTicket: typeof requiresEventTicket | null;
+            aiLabelingEnabled: boolean;
+            updatedAt: Date;
+            isEdited?: boolean;
+        } = {
+            isIndexed: isIndexed,
+            participationMode: participationMode,
+            requiresEventTicket: requiresEventTicket ?? null,
+            aiLabelingEnabled:
+                aiLabelingEnabled ?? conversation.aiLabelingEnabled,
+            updatedAt: new Date(),
+        };
+
+        if (newContentId !== undefined) {
+            conversationUpdateValues.currentContentId = newContentId;
+            conversationUpdateValues.isEdited = true;
+        }
 
         // Update conversation with new content and settings
         await tx
             .update(conversationTable)
-            .set({
-                currentContentId: newContentId,
-                isIndexed: isIndexed,
-                participationMode: participationMode,
-                requiresEventTicket: requiresEventTicket ?? null,
-                indexConversationAt:
-                    indexConversationAt !== undefined
-                        ? new Date(indexConversationAt)
-                        : null,
-                updatedAt: new Date(),
-                isEdited: true,
-            })
+            .set(conversationUpdateValues)
             .where(eq(conversationTable.id, conversationId));
 
         if (surveyConfig !== undefined) {
-            const existingSurveyConfig = await getActiveSurveyConfigRecord({
-                db: tx,
-                conversationId,
-            });
-            assertSurveyFeatureAllowedForConversation({
-                organizationName: conversation.organizationName,
-                hasExistingSurvey: existingSurveyConfig !== undefined,
-                userId,
-            });
-
             await setSurveyConfigForConversation({
                 db: tx,
                 conversationId,
@@ -269,8 +399,35 @@ export async function updateConversation({
             });
         }
 
+        if (contentChanged || surveyConfig !== undefined) {
+            await createConversationViewSnapshotsFromCurrentState({
+                db: tx,
+                conversationId,
+                viewReason: contentChanged
+                    ? "conversation_content_updated"
+                    : "survey_refreshed",
+            });
+        }
+
         return { success: true } as const;
     });
+
+    if (
+        result.success &&
+        didEnableAiLabeling &&
+        updatedConversationId !== undefined
+    ) {
+        const didCreateAiLocaleStatuses =
+            await ensureAiDescriptionLocaleStatusesForLatestAnalysisSnapshots({
+                db,
+                conversationId: updatedConversationId,
+            });
+        if (didCreateAiLocaleStatuses && valkey !== undefined) {
+            void valkey.zadd(VALKEY_QUEUE_KEYS.AI_DESCRIPTION_DIRTY, {
+                [String(updatedConversationId)]: Date.now(),
+            });
+        }
+    }
 
     if (
         result.success &&

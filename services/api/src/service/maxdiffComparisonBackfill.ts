@@ -40,10 +40,7 @@ export interface PreparedLegacyMaxdiffComparisonBackfill {
 }
 
 interface DirtyQueueClient {
-    zadd: (
-        key: string,
-        members: Record<string, number>,
-    ) => Promise<unknown>;
+    zadd: (key: string, members: Record<string, number>) => Promise<unknown>;
 }
 
 const legacyComparisonSchema = z.array(zodMaxdiffComparison);
@@ -217,7 +214,10 @@ export async function finalizeLegacyMaxdiffComparisonBackfill({
     }
 
     try {
-        await valkey.zadd(VALKEY_QUEUE_KEYS.SCORING_DIRTY_SOLIDAGO, dirtyMembers);
+        await valkey.zadd(
+            VALKEY_QUEUE_KEYS.SCORING_DIRTY_SOLIDAGO,
+            dirtyMembers,
+        );
         log.info(
             `[MaxDiff Backfill] Re-queued ${String(preparedBackfill.affectedConversations.length)} repaired conversation(s) for Solidago recompute`,
         );
@@ -248,7 +248,9 @@ export async function backfillLegacyMaxdiffComparisons({
         };
 
         await db.transaction(async (tx) => {
-            const candidates = await fetchLegacyMaxdiffResultCandidates({ db: tx });
+            const candidates = await fetchLegacyMaxdiffResultCandidates({
+                db: tx,
+            });
             preparedBackfill = prepareLegacyMaxdiffComparisonBackfill({
                 candidates,
             });
@@ -297,6 +299,9 @@ export async function backfillLegacyMaxdiffComparisons({
             },
         });
     } catch (error: unknown) {
-        log.error(error, "[MaxDiff Backfill] Failed to repair legacy comparison rows");
+        log.error(
+            error,
+            "[MaxDiff Backfill] Failed to repair legacy comparison rows",
+        );
     }
 }

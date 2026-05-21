@@ -112,7 +112,9 @@ export async function getOrganizationsByUserId({
     });
 
     return {
-        organizationList: memberships.map((membership) => membership.organization),
+        organizationList: memberships.map(
+            (membership) => membership.organization,
+        ),
     };
 }
 
@@ -155,14 +157,14 @@ export async function getOrganizationMembershipsByUserId({
     return organizationTableResponse.map((response) => ({
         organizationId: response.organizationId,
         organization: {
-                name: response.name,
-                description: response.description ?? "",
-                imageUrl: imagePathToUrl({
-                    imagePath: response.imagePath,
-                    isFullImagePath: response.isFullImagePath,
-                    baseImageServiceUrl,
-                }),
-                websiteUrl: response.websiteUrl ?? "",
+            name: response.name,
+            description: response.description ?? "",
+            imageUrl: imagePathToUrl({
+                imagePath: response.imagePath,
+                isFullImagePath: response.isFullImagePath,
+                baseImageServiceUrl,
+            }),
+            websiteUrl: response.websiteUrl ?? "",
         },
     }));
 }

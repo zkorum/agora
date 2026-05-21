@@ -7,9 +7,9 @@ import type {
 
 process.env.NODE_ENV = "test";
 process.env.CORS_ORIGIN_LIST = "http://localhost:9000";
-process.env.PEPPERS = Buffer.from(
-    "0123456789abcdef0123456789abcdef",
-).toString("base64");
+process.env.PEPPERS = Buffer.from("0123456789abcdef0123456789abcdef").toString(
+    "base64",
+);
 process.env.VERIFICATOR_SVC_BASE_URL = "http://localhost:3000";
 
 const { checkConversationParticipationMock } = vi.hoisted(() => ({
@@ -23,7 +23,9 @@ vi.mock("./participationGate.js", () => ({
 const surveyModulePromise = import("./survey.js");
 
 function createSurveyDbStub(): {
-    db: Parameters<Awaited<typeof surveyModulePromise>["saveSurveyAnswer"]>[0]["db"];
+    db: Parameters<
+        Awaited<typeof surveyModulePromise>["saveSurveyAnswer"]
+    >[0]["db"];
     transactionMock: ReturnType<typeof vi.fn>;
 } {
     const transactionMock = vi.fn();

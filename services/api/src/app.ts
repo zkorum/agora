@@ -53,11 +53,7 @@ const configSchema = sharedConfigSchema.extend({
         .default("noreply@notify.agoracitizen.network"),
     SPECIALLY_AUTHORIZED_EMAILS: z.string().optional(),
     SESSION_LIFETIME_DAYS: z.coerce.number().int().min(1).default(90),
-    SESSION_REFRESH_THRESHOLD_DAYS: z.coerce
-        .number()
-        .int()
-        .min(1)
-        .default(45),
+    SESSION_REFRESH_THRESHOLD_DAYS: z.coerce.number().int().min(1).default(45),
     PEPPERS: z
         .string()
         .transform((value) =>
@@ -74,7 +70,6 @@ const configSchema = sharedConfigSchema.extend({
     ZUPASS_PUBLIC_KEY: z
         .string()
         .default("YwahfUdUYehkGMaWh0+q3F8itx2h8mybjPmt8CmTJSs"),
-    POLIS_BASE_URL: z.url().optional(),
     REACHER_BASE_URL: z.url().optional(),
     VOTE_NOTIF_MILESTONES: z
         .string()
@@ -113,56 +108,6 @@ const configSchema = sharedConfigSchema.extend({
                 return z.NEVER;
             }
         }),
-    MAXDIFF_ENABLED: z
-        .string()
-        .default("false")
-        .transform((value, ctx) => {
-            if (value.toLowerCase().trim() === "true") {
-                return true;
-            } else if (value.toLowerCase().trim() === "false") {
-                return false;
-            } else {
-                ctx.addIssue({
-                    code: "custom",
-                    message: "Value must be true or false",
-                });
-                return z.NEVER;
-            }
-        }),
-    IS_MAXDIFF_ORG_ONLY: z
-        .string()
-        .default("true")
-        .transform((value, ctx) => {
-            if (value.toLowerCase().trim() === "true") {
-                return true;
-            } else if (value.toLowerCase().trim() === "false") {
-                return false;
-            } else {
-                ctx.addIssue({
-                    code: "custom",
-                    message: "Value must be true or false",
-                });
-                return z.NEVER;
-            }
-        }),
-    MAXDIFF_ALLOWED_ORGS: z.string().default(""), // Comma-separated org names allowed to create MaxDiff conversations when posting as org (empty = all orgs allowed)
-    MAXDIFF_ALLOWED_USERS: z.string().default(""), // Comma-separated user IDs allowed to create MaxDiff conversations when posting as user (empty = all users allowed)
-    MAXDIFF_GITHUB_ENABLED: z
-        .string()
-        .default("false")
-        .transform((value, ctx) => {
-            if (value.toLowerCase().trim() === "true") {
-                return true;
-            } else if (value.toLowerCase().trim() === "false") {
-                return false;
-            } else {
-                ctx.addIssue({
-                    code: "custom",
-                    message: "Value must be true or false",
-                });
-                return z.NEVER;
-            }
-        }),
     IS_MAXDIFF_GITHUB_ORG_ONLY: z
         .string()
         .default("true")
@@ -179,8 +124,8 @@ const configSchema = sharedConfigSchema.extend({
                 return z.NEVER;
             }
         }),
-    MAXDIFF_GITHUB_ALLOWED_ORGS: z.string().default(""), // Comma-separated org names allowed to use GitHub connector when posting as org (must be subset of MAXDIFF_ALLOWED_ORGS if both are set)
-    MAXDIFF_GITHUB_ALLOWED_USERS: z.string().default(""), // Comma-separated user IDs allowed to use GitHub connector when posting as user (must be subset of MAXDIFF_ALLOWED_USERS if both are set)
+    MAXDIFF_GITHUB_ALLOWED_ORGS: z.string().default(""), // Comma-separated org names allowed to use GitHub connector when posting as org.
+    MAXDIFF_GITHUB_ALLOWED_USERS: z.string().default(""), // Comma-separated user IDs allowed to use GitHub connector when posting as user.
     GITHUB_WEBHOOK_SECRET: z.string().optional(), // HMAC secret for verifying GitHub webhook payloads
     GITHUB_ACCESS_TOKEN: z.string().optional(), // GitHub personal access token for API calls (sync endpoint)
     IS_ORG_IMPORT_ONLY: z
@@ -201,40 +146,6 @@ const configSchema = sharedConfigSchema.extend({
         }),
     IMPORT_ALLOWED_ORGS: z.string().default(""), // Comma-separated org names allowed to import conversations when posting as org (empty = all orgs allowed)
     IMPORT_ALLOWED_USERS: z.string().default(""), // Comma-separated user IDs allowed to import conversations when posting as user (empty = all users allowed)
-    SURVEY_ENABLED: z
-        .string()
-        .default("false")
-        .transform((value, ctx) => {
-            if (value.toLowerCase().trim() === "true") {
-                return true;
-            } else if (value.toLowerCase().trim() === "false") {
-                return false;
-            } else {
-                ctx.addIssue({
-                    code: "custom",
-                    message: "Value must be true or false",
-                });
-                return z.NEVER;
-            }
-        }),
-    IS_SURVEY_ORG_ONLY: z
-        .string()
-        .default("false")
-        .transform((value, ctx) => {
-            if (value.toLowerCase().trim() === "true") {
-                return true;
-            } else if (value.toLowerCase().trim() === "false") {
-                return false;
-            } else {
-                ctx.addIssue({
-                    code: "custom",
-                    message: "Value must be true or false",
-                });
-                return z.NEVER;
-            }
-        }),
-    SURVEY_ALLOWED_ORGS: z.string().default(""), // Comma-separated org names allowed to configure surveys when posting as org (empty = all orgs allowed)
-    SURVEY_ALLOWED_USERS: z.string().default(""), // Comma-separated user IDs allowed to configure surveys when posting as user (empty = all users allowed)
     // CSV Import buffer configuration
     IMPORT_BUFFER_MAX_BATCH_SIZE: z.coerce
         .number()

@@ -26,19 +26,75 @@ export function toPascalCase(snake: string): string {
         .join("");
 }
 
+const pythonKeywords = new Set([
+    "False",
+    "None",
+    "True",
+    "and",
+    "as",
+    "assert",
+    "async",
+    "await",
+    "break",
+    "class",
+    "continue",
+    "def",
+    "del",
+    "elif",
+    "else",
+    "except",
+    "finally",
+    "for",
+    "from",
+    "global",
+    "if",
+    "import",
+    "in",
+    "is",
+    "lambda",
+    "nonlocal",
+    "not",
+    "or",
+    "pass",
+    "raise",
+    "return",
+    "try",
+    "while",
+    "with",
+    "yield",
+]);
+
+export function toPythonEnumMember(value: string): string {
+    const identifier = value.replace(/-/g, "_");
+    if (pythonKeywords.has(identifier)) return `${identifier}_`;
+    return identifier;
+}
+
 export function parseServiceAnnotations(
     schemaTs: string,
 ): Map<string, Set<string>> {
     const regex =
-        /\/\*\*\s*@service\s+([^*]+)\*\/\s*\n\s*(?:\/\/[^\n]*\n\s*)*export\s+const\s+\w+\s*=\s*pgTable\(\s*"(\w+)"/g;
+        /((?:(?:(?:\s*\/\*\*\s*@service\s+[^*]+\*\/)|(?:\s*\/\/[^\n]*))\s*\n)+)\s*export\s+const\s+\w+\s*=\s*pgTable\(\s*"(\w+)"/g;
+    const serviceRegex = /\/\*\*\s*@service\s+([^*]+)\*\//g;
     const result = new Map<string, Set<string>>();
     let match;
     while ((match = regex.exec(schemaTs)) !== null) {
-        const services = match[1]
-            .split(",")
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0);
-        result.set(match[2], new Set(services));
+        const annotationBlock = match[1];
+        const tableName = match[2];
+        const services = result.get(tableName) ?? new Set<string>();
+
+        let serviceMatch;
+        while ((serviceMatch = serviceRegex.exec(annotationBlock)) !== null) {
+            for (const service of serviceMatch[1]
+                .split(",")
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0)) {
+                services.add(service);
+            }
+        }
+        serviceRegex.lastIndex = 0;
+
+        if (services.size > 0) result.set(tableName, services);
     }
     return result;
 }
@@ -113,9 +169,7 @@ export function parseEnums(sql: string): Map<string, string[]> {
     while ((match = regex.exec(sql)) !== null) {
         enums.set(
             match[1],
-            match[2]
-                .split(",")
-                .map((v) => v.trim().replace(/^'|'$/g, "")),
+            match[2].split(",").map((v) => v.trim().replace(/^'|'$/g, "")),
         );
     }
     return enums;
@@ -137,8 +191,7 @@ export function mapSqlType(
         return { pyType: "list[int]", saType: "ARRAY(Integer)" };
     if (lower.startsWith("timestamp"))
         return { pyType: "datetime", saType: "DateTime" };
-    if (lower === "uuid")
-        return { pyType: "uuid_pkg.UUID", saType: "Uuid" };
+    if (lower === "uuid") return { pyType: "uuid_pkg.UUID", saType: "Uuid" };
     if (lower === "text") return { pyType: "str", saType: "Text" };
     if (lower === "real") return { pyType: "float", saType: "Float" };
     if (lower === "boolean") return { pyType: "bool", saType: "Boolean" };
@@ -146,22 +199,50 @@ export function mapSqlType(
         return { pyType: "int", saType: "Integer" };
     if (lower.startsWith("integer") || lower === "serial")
         return { pyType: "int", saType: "Integer" };
-    if (lower === "bigint")
-        return { pyType: "int", saType: "BigInteger" };
+    if (lower === "bigint") return { pyType: "int", saType: "BigInteger" };
+    if (lower === "bytea") return { pyType: "bytes", saType: "LargeBinary" };
     if (lower.startsWith("numeric") || lower === "double precision")
         return { pyType: "float", saType: "Float" };
     if (lower === "jsonb" || lower === "json")
-        return { pyType: "Any", saType: "JSON" };
+        return { pyType: "Any", saType: "JSON(none_as_null=True)" };
     for (const [enumName] of enums) {
         if (lower === enumName) {
             const cls = toPascalCase(enumName);
             return {
                 pyType: cls,
-                saType: `SaEnum(${cls}, native_enum=False)`,
+                saType: `SaEnum(${cls}, values_callable=_enum_values, native_enum=False)`,
             };
         }
     }
     return { pyType: "Any", saType: "JSON" };
+}
+
+function formatMappedColumnArg({
+    arg,
+    indent,
+}: {
+    arg: string;
+    indent: string;
+}): string {
+    if (`${indent}${arg},`.length <= 100) {
+        return `${indent}${arg},\n`;
+    }
+
+    const enumMatch = arg.match(
+        /^SaEnum\(([^,]+), values_callable=_enum_values, native_enum=False\)$/,
+    );
+    const enumClassName = enumMatch?.[1];
+    if (enumClassName !== undefined) {
+        return (
+            `${indent}SaEnum(\n` +
+            `${indent}    ${enumClassName},\n` +
+            `${indent}    values_callable=_enum_values,\n` +
+            `${indent}    native_enum=False,\n` +
+            `${indent}),\n`
+        );
+    }
+
+    return `${indent}${arg},\n`;
 }
 
 export function generateSqlAlchemyModels({
@@ -183,15 +264,27 @@ export function generateSqlAlchemyModels({
         for (const col of columns) {
             const { pyType, saType } = mapSqlType(col.sqlType, enums);
             for (const t of [
-                "String", "Text", "Integer", "BigInteger", "Float",
-                "Boolean", "DateTime", "Uuid", "JSON", "ARRAY",
+                "String",
+                "Text",
+                "Integer",
+                "BigInteger",
+                "Float",
+                "Boolean",
+                "DateTime",
+                "Uuid",
+                "JSON",
+                "ARRAY",
+                "LargeBinary",
             ]) {
                 if (saType.includes(t)) usedSaTypes.add(t);
             }
             if (pyType === "datetime") needsDatetime = true;
             if (pyType.includes("uuid_pkg")) needsUuid = true;
             if (pyType === "Any") needsAny = true;
-            const lower = col.sqlType.replace(/^"|"$/g, "").toLowerCase().trim();
+            const lower = col.sqlType
+                .replace(/^"|"$/g, "")
+                .toLowerCase()
+                .trim();
             for (const [enumName] of enums) {
                 if (lower === enumName) usedEnums.add(enumName);
             }
@@ -233,16 +326,24 @@ export function generateSqlAlchemyModels({
     if (usedEnums.size > 0) {
         out += "from sqlalchemy import Enum as SaEnum\n";
     }
-    out += "from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column\n";
+    out +=
+        "from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column\n";
 
     out += "\n\nclass Base(DeclarativeBase):\n    pass\n";
+
+    if (usedEnums.size > 0) {
+        out +=
+            "\n\ndef _enum_values(enum_cls: type[StrEnum]) -> list[str]:\n" +
+            "    return [member.value for member in enum_cls]\n";
+    }
 
     // Enums
     for (const enumName of usedEnums) {
         const values = enums.get(enumName);
         if (!values) continue;
         out += `\n\nclass ${toPascalCase(enumName)}(StrEnum):\n`;
-        for (const v of values) out += `    ${v.replace(/-/g, "_")} = "${v}"\n`;
+        for (const v of values)
+            out += `    ${toPythonEnumMember(v)} = "${v}"\n`;
     }
 
     // Models
@@ -255,26 +356,46 @@ export function generateSqlAlchemyModels({
             const isPk = col.isPrimaryKey;
             if (isPk) {
                 mcArgs.push("primary_key=True");
-                if (col.hasDefault && col.sqlType.toLowerCase().includes("integer")) {
+                if (
+                    col.hasDefault &&
+                    col.sqlType.toLowerCase().includes("integer")
+                ) {
                     mcArgs.push("autoincrement=True");
                 }
             }
             if (col.nullable && !isPk) mcArgs.push("nullable=True");
             if (col.hasDefault && col.defaultValue !== null) {
-                if (col.defaultValue === "true" || col.defaultValue === "false") {
+                if (
+                    col.defaultValue === "true" ||
+                    col.defaultValue === "false"
+                ) {
                     mcArgs.push(`server_default="${col.defaultValue}"`);
                 } else if (/^-?\d+$/.test(col.defaultValue)) {
                     mcArgs.push(`server_default="${col.defaultValue}"`);
                 }
             }
             const isNullable = col.nullable && !isPk;
-            const mapped = isNullable ? `Mapped[${pyType} | None]` : `Mapped[${pyType}]`;
+            const mapped = isNullable
+                ? `Mapped[${pyType} | None]`
+                : `Mapped[${pyType}]`;
             const full = `    ${col.name}: ${mapped} = mapped_column(${mcArgs.join(", ")})`;
             if (full.length <= 100) {
                 out += `${full}\n`;
+            } else if (
+                `    ${col.name}: ${mapped} = mapped_column(`.length > 100
+            ) {
+                out += `    ${col.name}: Mapped[\n`;
+                out += `        ${pyType}${isNullable ? " | None" : ""}\n`;
+                out += `    ] = mapped_column(\n`;
+                for (const arg of mcArgs) {
+                    out += formatMappedColumnArg({ arg, indent: "        " });
+                }
+                out += "    )\n";
             } else {
                 out += `    ${col.name}: ${mapped} = mapped_column(\n`;
-                for (const arg of mcArgs) out += `        ${arg},\n`;
+                for (const arg of mcArgs) {
+                    out += formatMappedColumnArg({ arg, indent: "        " });
+                }
                 out += "    )\n";
             }
         }

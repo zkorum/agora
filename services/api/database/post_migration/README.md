@@ -1,6 +1,6 @@
 # Post-Migration Scripts
 
-Scripts in this directory are **not** executed by `pnpm db:migrate`. This directory is outside the flyway mount path (`database/flyway/`), so flyway never sees these files. Note: flyway scans subdirectories recursively, so a subdirectory *inside* `database/flyway/` would NOT be safe.
+Scripts in this directory are **not** executed by `pnpm db:migrate`. This directory is outside the flyway mount path (`database/flyway/`), so flyway never sees these files. Note: flyway scans subdirectories recursively, so a subdirectory _inside_ `database/flyway/` would NOT be safe.
 
 ## Naming convention
 

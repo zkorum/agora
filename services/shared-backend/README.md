@@ -1,24 +1,32 @@
 # Shared Backend
 
-Shared code for backend services (API, workers).
+Shared TypeScript backend code and source schema for generated Python worker artifacts.
 
 ## Contents
 
-This package contains code shared between:
+This package contains TypeScript code synced directly to:
 
 - `services/api` - Main Fastify API
-- `services/math-updater` - Polis math update worker
-- `services/export-worker` - S3 export worker
+
+It is also the source for generated SQLAlchemy models used by Python workers:
+
+- `services/import-worker`
+- `services/math-updater`
+- `services/scoring-worker`
 
 ## Usage
 
 After modifying code in `services/shared-backend/src/`, run:
 
 ```bash
-make sync-backend
+make sync-ts-backend
 ```
 
-This will copy the shared code to all backend services.
+This copies the shared TypeScript code to TypeScript backend services. To regenerate Python worker artifacts after schema or shared type changes, run:
+
+```bash
+make sync-python-artifacts
+```
 
 ## What's Shared
 

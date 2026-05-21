@@ -75,17 +75,15 @@ export function createUcanReplayGuard({
 
     // Always keep the cleanup loop running so the in-memory fallback stays bounded,
     // even if Valkey becomes available after startup or temporarily unavailable later.
-    let cleanupInterval: ReturnType<typeof setInterval> | undefined = setInterval(
-        () => {
+    let cleanupInterval: ReturnType<typeof setInterval> | undefined =
+        setInterval(() => {
             const nowUnix = getNowUnix();
             for (const [hash, entry] of usedHashes) {
                 if (entry.expiryUnix <= nowUnix) {
                     usedHashes.delete(hash);
                 }
             }
-        },
-        10_000,
-    );
+        }, 10_000);
     cleanupInterval.unref();
 
     const checkAndMark = async ({
@@ -102,9 +100,7 @@ export function createUcanReplayGuard({
         // SHA-256 of the raw JWT string. UCANs use deterministic base64url encoding
         // so the same token always produces the same hash. The 64-char hex digest
         // makes the Valkey key well-formed with no injection risk.
-        const ucanHash = createHash("sha256")
-            .update(encodedUcan)
-            .digest("hex");
+        const ucanHash = createHash("sha256").update(encodedUcan).digest("hex");
         const nowUnix = getNowUnix();
 
         if (getTrackedEntry({ ucanHash, nowUnix }) !== undefined) {
@@ -137,7 +133,11 @@ export function createUcanReplayGuard({
         return false; // not a replay
     };
 
-    const syncToValkey = async ({ valkey }: { valkey: Valkey }): Promise<number> => {
+    const syncToValkey = async ({
+        valkey,
+    }: {
+        valkey: Valkey;
+    }): Promise<number> => {
         const nowUnix = getNowUnix();
         let syncedCount = 0;
 

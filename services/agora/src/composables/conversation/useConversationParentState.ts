@@ -123,9 +123,6 @@ export function useConversationParentState({
     }
   );
 
-  // Shared state for children
-  const opinionCountOffset = ref(0);
-  const participantCountOffset = ref(0);
   const currentTab = ref<"comment" | "analysis">("comment");
   const isCurrentTabLoading = ref(false);
   const moderationHistoryTrigger = ref(0);
@@ -182,24 +179,12 @@ export function useConversationParentState({
   // Filter state: owned here, displayed in PostActionBar slot, synced with child route via props
   const commentFilter = ref<CommentFilterOptions>("discover");
 
-  // Computed: base participant count + offset
-  const participantCountLocal = computed(
-    () =>
-      (conversationData.value?.metadata.participantCount ?? 0) +
-      participantCountOffset.value
-  );
-
   // Provide state and functions to child routes
   provide("refreshConversation", async () => {
     await conversationQuery.refetch();
   });
-  provide("opinionCountOffset", opinionCountOffset);
-  provide("participantCountOffset", participantCountOffset);
   provide("setCurrentTabLoading", (loading: boolean) => {
     isCurrentTabLoading.value = loading;
-  });
-  provide("decrementOpinionCount", () => {
-    opinionCountOffset.value -= 1;
   });
   provide("scrollToActionBar", scrollToActionBar);
   provide("getScrollPosition", () =>
@@ -317,7 +302,6 @@ export function useConversationParentState({
       return;
     }
 
-    opinionCountOffset.value += 1;
     invalidateComments(slugId);
     forceRefreshAnalysis(slugId);
 
@@ -363,13 +347,10 @@ export function useConversationParentState({
     conversationData,
     hasConversationData,
     loadedConversationData,
-    opinionCountOffset,
-    participantCountOffset,
     currentTab,
     isCurrentTabLoading,
     moderationHistoryTrigger,
     commentFilter,
-    participantCountLocal,
     actionBarElement,
     onViewAnalysis,
     navigateToDiscoverTab,

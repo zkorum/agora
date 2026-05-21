@@ -21,9 +21,9 @@ describe("verifyWebhookSignature", () => {
     it("accepts a valid signature", () => {
         const payload = '{"action":"opened"}';
         const signature = computeSignature({ payload });
-        expect(
-            verifyWebhookSignature({ payload, signature, secret }),
-        ).toBe(true);
+        expect(verifyWebhookSignature({ payload, signature, secret })).toBe(
+            true,
+        );
     });
 
     it("rejects an invalid signature", () => {
@@ -31,7 +31,8 @@ describe("verifyWebhookSignature", () => {
         expect(
             verifyWebhookSignature({
                 payload,
-                signature: "sha256=0000000000000000000000000000000000000000000000000000000000000000",
+                signature:
+                    "sha256=0000000000000000000000000000000000000000000000000000000000000000",
                 secret,
             }),
         ).toBe(false);
@@ -128,9 +129,9 @@ describe("mapGitHubStateToLifecycle", () => {
 
 describe("buildExternalId", () => {
     it("builds correct format", () => {
-        expect(
-            buildExternalId({ repo: "owner/repo", issueNumber: 42 }),
-        ).toBe("owner/repo#42");
+        expect(buildExternalId({ repo: "owner/repo", issueNumber: 42 })).toBe(
+            "owner/repo#42",
+        );
     });
 });
 
@@ -227,9 +228,9 @@ describe("convertMarkdownToHtml", () => {
     });
 
     it("wraps simple text in a paragraph", () => {
-        expect(
-            convertMarkdownToHtml({ markdown: "Hello world" }),
-        ).toBe("<p>Hello world</p>\n");
+        expect(convertMarkdownToHtml({ markdown: "Hello world" })).toBe(
+            "<p>Hello world</p>\n",
+        );
     });
 
     it("converts **bold** to <strong>", () => {
@@ -255,9 +256,9 @@ describe("convertMarkdownToHtml", () => {
     });
 
     it("converts numbered list to <ol>/<li>", () => {
-        expect(
-            convertMarkdownToHtml({ markdown: "1. first\n2. second" }),
-        ).toBe("<ol>\n<li>first</li>\n<li>second</li>\n</ol>\n");
+        expect(convertMarkdownToHtml({ markdown: "1. first\n2. second" })).toBe(
+            "<ol>\n<li>first</li>\n<li>second</li>\n</ol>\n",
+        );
     });
 
     it("strips markdown links but preserves link text", () => {

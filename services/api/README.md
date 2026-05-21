@@ -59,12 +59,6 @@ To grant a user moderator status, set the `is_moderator` column to true in the `
 
 ## Integrations
 
-### Polis Integration
-
-You must have https://github.com/zkorum/polis-wl running locally. For that, run the Polis database, and deploy the schema here: https://github.com/zkorum/polis-wl/tree/main/database and then configure and run the containers there: https://github.com/zkorum/polis-wl/tree/main/deploy/docker
-
-You can also disable the Polis functionality altogether by not setting `POLIS_BASE_URL` at all in `.env` file.
-
 ### LLM Integration
 
 LLM Integration cannot be tested locally by design, since it relies on an external cloud service and running a model locally is expensive.
@@ -213,9 +207,9 @@ If you observe that backend requests are hanging or the UI reports the backend i
 - **Cause:** Browsers limit the number of persistent connections per domain (typically 6 for HTTP/1.1).
 - **Context:** The local dev server runs on HTTP/1.1. Since each app tab opens a persistent SSE connection for notifications, opening **6 or more tabs** consumes all available sockets. Subsequent requests from any tab will queue indefinitely.
 - **Solution:**
-  - Close unused tabs (keep open tabs < 6).
-  - Use a different browser (Chrome, Firefox, Safari each have their own pool).
-  - Access the app via `127.0.0.1` for a second set of connections (treated as a different origin than `localhost`).
+    - Close unused tabs (keep open tabs < 6).
+    - Use a different browser (Chrome, Firefox, Safari each have their own pool).
+    - Access the app via `127.0.0.1` for a second set of connections (treated as a different origin than `localhost`).
 - **Note:** This issue does not affect staging/production environments that use HTTP/2 (which supports multiplexing).
 
 ## License

@@ -7,10 +7,10 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **polisUrl** | **string** |  | [default to undefined]
 **postAsOrganization** | **string** |  | [optional] [default to undefined]
-**indexConversationAt** | **string** |  | [optional] [default to undefined]
 **isIndexed** | **boolean** |  | [default to undefined]
 **participationMode** | **string** |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
+**aiLabelingEnabled** | **boolean** |  | [optional] [default to true]
 
 ## Example
 
@@ -20,10 +20,10 @@ import { ApiV1ConversationImportPostRequest } from './api';
 const instance: ApiV1ConversationImportPostRequest = {
     polisUrl,
     postAsOrganization,
-    indexConversationAt,
     isIndexed,
     participationMode,
     requiresEventTicket,
+    aiLabelingEnabled,
 };
 ```
 

@@ -13,8 +13,6 @@ Paper: https://ssrn.com/abstract=4311507
 Tests written FIRST per TDD methodology.
 """
 
-
-
 from scoring_worker.cocm_voting import (
     COCMVotingRights,
     GroupSource,
@@ -34,10 +32,7 @@ def group_source(
     """Shorthand: {user_id: group_id} -> GroupSource."""
     return GroupSource(
         source_id=source_id,
-        memberships=[
-            UserGroupEntry(user_id=uid, group_id=gid)
-            for uid, gid in memberships.items()
-        ],
+        memberships=[UserGroupEntry(user_id=uid, group_id=gid) for uid, gid in memberships.items()],
     )
 
 
@@ -149,8 +144,7 @@ class TestCOCMVotingRightsProperties:
         # Each user's weight should be reduced when they're in the same group
         for uid in [0, 1, 2]:
             assert grouped[uid] < baseline[uid], (
-                f"User {uid}: grouped weight {grouped[uid]} should be < "
-                f"baseline {baseline[uid]}"
+                f"User {uid}: grouped weight {grouped[uid]} should be < baseline {baseline[uid]}"
             )
 
     def test_disjoint_groups_full_weight(self) -> None:
@@ -286,8 +280,8 @@ class TestCOCMCrossValidation:
         # We model this with two group sources (each source = one group).
         vr = COCMVotingRights(
             group_sources=[
-                group_source("group_X", {0: 1, 1: 1}),       # agents 0,1 in group X
-                group_source("group_Y", {1: 1, 2: 1}),       # agents 1,2 in group Y
+                group_source("group_X", {0: 1, 1: 1}),  # agents 0,1 in group X
+                group_source("group_Y", {1: 1, 2: 1}),  # agents 1,2 in group Y
             ],
         )
         rights = vr.compute_entity_voting_rights(

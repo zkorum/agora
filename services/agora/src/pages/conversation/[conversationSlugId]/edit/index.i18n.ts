@@ -20,6 +20,8 @@ export interface EditConversationTranslations {
   loadingErrorMessage: string;
   createSurveyButton: string;
   editSurveyButton: string;
+  premiumEditRestrictedBanner: string;
+  premiumAccessExpiredError: string;
 }
 
 export const editConversationTranslations: Record<
@@ -50,6 +52,9 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "An error occurred while loading the conversation",
     createSurveyButton: "Create survey",
     editSurveyButton: "Edit survey",
+    premiumEditRestrictedBanner:
+      "Premium access has expired. You can still update normal settings, but premium content changes are disabled.",
+    premiumAccessExpiredError: "Premium access has expired for this change.",
   },
   fr: {
     saveButton: "Enregistrer",
@@ -77,6 +82,9 @@ export const editConversationTranslations: Record<
       "Une erreur s'est produite lors du chargement de la conversation",
     createSurveyButton: "Créer un questionnaire",
     editSurveyButton: "Modifier le questionnaire",
+    premiumEditRestrictedBanner:
+      "L'accès premium a expiré. Vous pouvez toujours modifier les paramètres standards, mais les changements de contenu premium sont désactivés.",
+    premiumAccessExpiredError: "L'accès premium a expiré pour ce changement.",
   },
   es: {
     saveButton: "Guardar",
@@ -103,6 +111,9 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "Ocurrió un error al cargar la conversación",
     createSurveyButton: "Crear encuesta",
     editSurveyButton: "Editar encuesta",
+    premiumEditRestrictedBanner:
+      "El acceso premium expiró. Todavía puede actualizar la configuración normal, pero los cambios de contenido premium están deshabilitados.",
+    premiumAccessExpiredError: "El acceso premium expiró para este cambio.",
   },
   fa: {
     saveButton: "ذخیره",
@@ -126,6 +137,9 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "هنگام بارگذاری گفتگو خطایی رخ داد",
     createSurveyButton: "ایجاد نظرسنجی",
     editSurveyButton: "ویرایش نظرسنجی",
+    premiumEditRestrictedBanner:
+      "دسترسی ویژه منقضی شده است. هنوز می‌توانید تنظیمات عادی را تغییر دهید، اما تغییرات محتوای ویژه غیرفعال است.",
+    premiumAccessExpiredError: "دسترسی ویژه برای این تغییر منقضی شده است.",
   },
   he: {
     saveButton: "שמור",
@@ -149,6 +163,9 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "אירעה שגיאה בעת טעינת השיחה",
     createSurveyButton: "יצירת סקר",
     editSurveyButton: "עריכת סקר",
+    premiumEditRestrictedBanner:
+      "גישת הפרימיום פגה. עדיין ניתן לעדכן הגדרות רגילות, אך שינויי תוכן פרימיום מושבתים.",
+    premiumAccessExpiredError: "גישת הפרימיום פגה עבור שינוי זה.",
   },
   "zh-Hans": {
     saveButton: "保存",
@@ -170,6 +187,9 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "加载对话时发生错误",
     createSurveyButton: "创建问卷",
     editSurveyButton: "编辑问卷",
+    premiumEditRestrictedBanner:
+      "高级访问权限已到期。您仍可更新常规设置，但高级内容更改已禁用。",
+    premiumAccessExpiredError: "此更改的高级访问权限已到期。",
   },
   "zh-Hant": {
     saveButton: "儲存",
@@ -191,6 +211,9 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "載入對話時發生錯誤",
     createSurveyButton: "建立問卷",
     editSurveyButton: "編輯問卷",
+    premiumEditRestrictedBanner:
+      "進階存取權已到期。你仍可更新一般設定，但進階內容變更已停用。",
+    premiumAccessExpiredError: "此變更的進階存取權已到期。",
   },
   ja: {
     saveButton: "保存",
@@ -214,6 +237,10 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "会話の読み込み中にエラーが発生しました",
     createSurveyButton: "アンケートを作成",
     editSurveyButton: "アンケートを編集",
+    premiumEditRestrictedBanner:
+      "プレミアムアクセスの期限が切れました。通常設定は引き続き更新できますが、プレミアムコンテンツの変更は無効です。",
+    premiumAccessExpiredError:
+      "この変更のプレミアムアクセスの期限が切れました。",
   },
   ar: {
     saveButton: "حفظ",
@@ -237,6 +264,9 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "حدث خطأ أثناء تحميل المحادثة",
     createSurveyButton: "إنشاء استبيان",
     editSurveyButton: "تعديل الاستبيان",
+    premiumEditRestrictedBanner:
+      "انتهت صلاحية الوصول المميز. لا يزال بإمكانك تحديث الإعدادات العادية، لكن تغييرات المحتوى المميز معطلة.",
+    premiumAccessExpiredError: "انتهت صلاحية الوصول المميز لهذا التغيير.",
   },
   ky: {
     saveButton: "Сактоо",
@@ -260,6 +290,9 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "Талкууну жүктөөдө ката кетти",
     createSurveyButton: "Сурамжылоо түзүү",
     editSurveyButton: "Сурамжылоону түзөтүү",
+    premiumEditRestrictedBanner:
+      "Premium access has expired. You can still update normal settings, but premium content changes are disabled.",
+    premiumAccessExpiredError: "Premium access has expired for this change.",
   },
   ru: {
     saveButton: "Сохранить",
@@ -286,5 +319,8 @@ export const editConversationTranslations: Record<
     loadingErrorMessage: "Произошла ошибка при загрузке обсуждения",
     createSurveyButton: "Создать опрос",
     editSurveyButton: "Редактировать опрос",
+    premiumEditRestrictedBanner:
+      "Премиум-доступ истёк. Вы всё ещё можете менять обычные настройки, но изменения премиум-контента отключены.",
+    premiumAccessExpiredError: "Премиум-доступ для этого изменения истёк.",
   },
 };

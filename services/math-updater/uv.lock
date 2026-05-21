@@ -49,7 +49,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.12" },
     { name = "pydantic-settings", specifier = ">=2.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "red-dwarf", git = "https://github.com/nicobao/red-dwarf.git?rev=099f32cc1a35bb2131ceb383551e60e0aabe65de" },
+    { name = "red-dwarf", git = "https://github.com/nicobao/red-dwarf.git?rev=6563d9c91ddc4a284adc65620ce033020733d28b" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9" },
     { name = "scikit-learn", specifier = ">=1.7,<2" },
     { name = "sqlalchemy", extras = ["postgresql-psycopg"], specifier = ">=2.0" },
@@ -945,7 +945,7 @@ wheels = [
 [[package]]
 name = "red-dwarf"
 version = "0.4.0"
-source = { git = "https://github.com/nicobao/red-dwarf.git?rev=099f32cc1a35bb2131ceb383551e60e0aabe65de#099f32cc1a35bb2131ceb383551e60e0aabe65de" }
+source = { git = "https://github.com/nicobao/red-dwarf.git?rev=6563d9c91ddc4a284adc65620ce033020733d28b#6563d9c91ddc4a284adc65620ce033020733d28b" }
 dependencies = [
     { name = "fake-useragent" },
     { name = "pandas" },

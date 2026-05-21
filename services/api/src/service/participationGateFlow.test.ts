@@ -17,13 +17,14 @@ const {
     hasStrongVerificationMock: vi.fn(),
     hasEmailVerificationMock: vi.fn(),
     getOrRegisterUserIdFromDeviceStatusMock: vi.fn(),
-    hasEventTicketMock: vi.fn<
-        (args: {
-            db: unknown;
-            userId: string;
-            eventSlug: "devconnect-2025";
-        }) => Promise<boolean>
-    >(),
+    hasEventTicketMock:
+        vi.fn<
+            (args: {
+                db: unknown;
+                userId: string;
+                eventSlug: "devconnect-2025";
+            }) => Promise<boolean>
+        >(),
     getSurveyGateSummaryMock: vi.fn(),
 }));
 
@@ -38,7 +39,8 @@ vi.mock("./authUtil.js", () => ({
     getDeviceStatus: getDeviceStatusMock,
     hasStrongVerification: hasStrongVerificationMock,
     hasEmailVerification: hasEmailVerificationMock,
-    getOrRegisterUserIdFromDeviceStatus: getOrRegisterUserIdFromDeviceStatusMock,
+    getOrRegisterUserIdFromDeviceStatus:
+        getOrRegisterUserIdFromDeviceStatusMock,
 }));
 
 vi.mock("./zupass.js", () => ({
@@ -87,12 +89,16 @@ function createKnownDeviceStatus({
     };
 }
 
-function createDatabaseStub(): Parameters<typeof checkConversationParticipation>[0]["db"] {
+function createDatabaseStub(): Parameters<
+    typeof checkConversationParticipation
+>[0]["db"] {
     return {} as Parameters<typeof checkConversationParticipation>[0]["db"];
 }
 
 function createParams(
-    overrides: Partial<Parameters<typeof checkConversationParticipation>[0]> = {},
+    overrides: Partial<
+        Parameters<typeof checkConversationParticipation>[0]
+    > = {},
 ): Parameters<typeof checkConversationParticipation>[0] {
     return {
         db: createDatabaseStub(),
@@ -137,7 +143,9 @@ describe("checkConversationParticipation", () => {
         getDeviceStatusMock.mockResolvedValue(createUnknownDeviceStatus());
         hasStrongVerificationMock.mockResolvedValue(false);
         hasEmailVerificationMock.mockResolvedValue(false);
-        getOrRegisterUserIdFromDeviceStatusMock.mockResolvedValue("guest-user-1");
+        getOrRegisterUserIdFromDeviceStatusMock.mockResolvedValue(
+            "guest-user-1",
+        );
         hasEventTicketMock.mockResolvedValue(true);
         getSurveyGateSummaryMock.mockResolvedValue({
             hasSurvey: true,

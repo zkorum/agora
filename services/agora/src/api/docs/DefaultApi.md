@@ -12,6 +12,10 @@ All URIs are relative to *http://localhost*
 |[**apiV1AdministratorOrganizationGetAllOrganizationsPost**](#apiv1administratororganizationgetallorganizationspost) | **POST** /api/v1/administrator/organization/get-all-organizations | |
 |[**apiV1AdministratorOrganizationGetOrganizationNamesByUsernamePost**](#apiv1administratororganizationgetorganizationnamesbyusernamepost) | **POST** /api/v1/administrator/organization/get-organization-names-by-username | |
 |[**apiV1AdministratorOrganizationRemoveUserOrganizationMappingPost**](#apiv1administratororganizationremoveuserorganizationmappingpost) | **POST** /api/v1/administrator/organization/remove-user-organization-mapping | |
+|[**apiV1AdministratorPremiumEntitlementCreatePost**](#apiv1administratorpremiumentitlementcreatepost) | **POST** /api/v1/administrator/premium-entitlement/create | |
+|[**apiV1AdministratorPremiumEntitlementListPost**](#apiv1administratorpremiumentitlementlistpost) | **POST** /api/v1/administrator/premium-entitlement/list | |
+|[**apiV1AdministratorPremiumEntitlementRevokePost**](#apiv1administratorpremiumentitlementrevokepost) | **POST** /api/v1/administrator/premium-entitlement/revoke | |
+|[**apiV1AdministratorPremiumEntitlementUpdatePost**](#apiv1administratorpremiumentitlementupdatepost) | **POST** /api/v1/administrator/premium-entitlement/update | |
 |[**apiV1AuthAuthenticatePost**](#apiv1authauthenticatepost) | **POST** /api/v1/auth/authenticate | |
 |[**apiV1AuthCheckLoginStatusPost**](#apiv1authcheckloginstatuspost) | **POST** /api/v1/auth/check-login-status | |
 |[**apiV1AuthEmailAuthenticatePost**](#apiv1authemailauthenticatepost) | **POST** /api/v1/auth/email/authenticate | |
@@ -459,6 +463,209 @@ const { status, data } = await apiInstance.apiV1AdministratorOrganizationRemoveU
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
 | **apiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest** | **ApiV1AdministratorOrganizationAddUserOrganizationMappingPostRequest**|  | |
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1AdministratorPremiumEntitlementCreatePost**
+> apiV1AdministratorPremiumEntitlementCreatePost(apiV1AdministratorPremiumEntitlementCreatePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1AdministratorPremiumEntitlementCreatePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1AdministratorPremiumEntitlementCreatePostRequest: ApiV1AdministratorPremiumEntitlementCreatePostRequest; //
+
+const { status, data } = await apiInstance.apiV1AdministratorPremiumEntitlementCreatePost(
+    apiV1AdministratorPremiumEntitlementCreatePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1AdministratorPremiumEntitlementCreatePostRequest** | **ApiV1AdministratorPremiumEntitlementCreatePostRequest**|  | |
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1AdministratorPremiumEntitlementListPost**
+> ApiV1AdministratorPremiumEntitlementListPost200Response apiV1AdministratorPremiumEntitlementListPost(body)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let body: object; //
+
+const { status, data } = await apiInstance.apiV1AdministratorPremiumEntitlementListPost(
+    body
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **body** | **object**|  | |
+
+
+### Return type
+
+**ApiV1AdministratorPremiumEntitlementListPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1AdministratorPremiumEntitlementRevokePost**
+> apiV1AdministratorPremiumEntitlementRevokePost(apiV1AdministratorPremiumEntitlementRevokePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1AdministratorPremiumEntitlementRevokePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1AdministratorPremiumEntitlementRevokePostRequest: ApiV1AdministratorPremiumEntitlementRevokePostRequest; //
+
+const { status, data } = await apiInstance.apiV1AdministratorPremiumEntitlementRevokePost(
+    apiV1AdministratorPremiumEntitlementRevokePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1AdministratorPremiumEntitlementRevokePostRequest** | **ApiV1AdministratorPremiumEntitlementRevokePostRequest**|  | |
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1AdministratorPremiumEntitlementUpdatePost**
+> apiV1AdministratorPremiumEntitlementUpdatePost(apiV1AdministratorPremiumEntitlementUpdatePostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1AdministratorPremiumEntitlementUpdatePostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1AdministratorPremiumEntitlementUpdatePostRequest: ApiV1AdministratorPremiumEntitlementUpdatePostRequest; //
+
+const { status, data } = await apiInstance.apiV1AdministratorPremiumEntitlementUpdatePost(
+    apiV1AdministratorPremiumEntitlementUpdatePostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1AdministratorPremiumEntitlementUpdatePostRequest** | **ApiV1AdministratorPremiumEntitlementUpdatePostRequest**|  | |
 
 
 ### Return type

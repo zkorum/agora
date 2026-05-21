@@ -198,17 +198,13 @@ export async function fetchMaxdiffItems({
             externalUrl: maxdiffItemExternalSourceTable.externalUrl,
             snapshotScore: maxdiffItemTable.snapshotScore,
             snapshotRank: maxdiffItemTable.snapshotRank,
-            snapshotParticipantCount:
-                maxdiffItemTable.snapshotParticipantCount,
+            snapshotParticipantCount: maxdiffItemTable.snapshotParticipantCount,
             createdAt: maxdiffItemTable.createdAt,
         })
         .from(maxdiffItemTable)
         .innerJoin(
             maxdiffItemContentTable,
-            eq(
-                maxdiffItemContentTable.id,
-                maxdiffItemTable.currentContentId,
-            ),
+            eq(maxdiffItemContentTable.id, maxdiffItemTable.currentContentId),
         )
         .leftJoin(
             maxdiffItemExternalSourceTable,
@@ -354,9 +350,7 @@ export async function updateMaxdiffItemLifecycle({
             })
             .where(eq(maxdiffItemTable.id, item.id));
 
-        log.info(
-            `[MaxDiff] Item ${itemSlugId} transitioned to ${newStatus}`,
-        );
+        log.info(`[MaxDiff] Item ${itemSlugId} transitioned to ${newStatus}`);
     }
 
     markScoringDirty({ valkey, conversationId, conversationSlugId });

@@ -30,17 +30,6 @@ export interface PostAsSettings {
 }
 
 /**
- * Advanced settings for private conversations
- * Only relevant when the conversation is private
- */
-export interface PrivateConversationSettings {
-  /** Whether to automatically convert this conversation on a specific date */
-  hasScheduledConversion: boolean;
-  /** The target date for automatic conversion */
-  conversionDate: Date;
-}
-
-/**
  * Settings for importing conversations
  */
 export interface ConversationImportSettings {
@@ -80,12 +69,13 @@ export interface ConversationDraft {
   isPrivate: boolean;
   /** Controls the participation mode for this conversation (applies to both public and private conversations) */
   participationMode: ParticipationMode;
-  /** Advanced settings for private conversations (only relevant when isPrivate is true) */
-  privateConversationSettings: PrivateConversationSettings;
 
   // Event Ticket Verification
   /** If set, requires users to verify ownership of the specified event ticket. If undefined, no verification required. */
   requiresEventTicket?: EventSlug;
+
+  // AI labeling
+  aiLabelingEnabled: boolean;
 
   // External Source (GitHub integration for MaxDiff)
   externalSourceConfig: ExternalSourceConfig | null;
@@ -178,9 +168,7 @@ export interface ConversationFormState {
   isPrivate: boolean;
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
-
-  // Private conversation settings
-  privateConversationSettings: PrivateConversationSettings;
+  aiLabelingEnabled: boolean;
 
   // Survey configuration
   surveyConfig: SurveyConfig | null;

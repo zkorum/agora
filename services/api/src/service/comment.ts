@@ -1,14 +1,17 @@
 import { generateRandomSlugId } from "@/crypto.js";
 import {
+    analysisSnapshotOpinionTable,
     opinionContentTable,
+    opinionGroupCandidateOpinionMetricsTable,
+    opinionGroupLineageTable,
+    opinionGroupOpinionStatsTable,
+    opinionGroupTable,
+    opinionGroupUserTable,
     opinionTable,
     conversationTable,
+    conversationViewSnapshotTable,
     userTable,
     opinionModerationTable,
-    polisClusterTable,
-    polisClusterOpinionTable,
-    polisClusterUserTable,
-    polisContentTable,
     userMutePreferenceTable,
     voteTable,
 } from "@/shared-backend/schema.js";
@@ -17,12 +20,8 @@ import {
     createOpinionNotifications,
     getNotificationRecipients,
 } from "./notification.js";
-import {
-    updateOpinionCount,
-    reconcileConversationCounters,
-} from "@/shared-backend/conversationCounters.js";
-import { generateClusterTranslationsOnDemand } from "./clusterTranslation.js";
-import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
+import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
+import { createConversationViewSnapshotsFromCurrentState } from "./conversationViewSnapshot.js";
 import type {
     ConversationAnalysis,
     CreateCommentResponse,
@@ -31,6 +30,7 @@ import type {
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     desc,
+    asc,
     eq,
     sql,
     and,
@@ -42,7 +42,6 @@ import {
 } from "drizzle-orm";
 import type {
     AnalysisOpinionItem,
-    AnalysisOpinionItemPerSlugId,
     ModerationReason,
     OpinionItem,
     OpinionItemPerSlugId,
@@ -55,21 +54,13 @@ import type {
     ParticipationMode,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
-import { useCommonComment, useCommonPost } from "./common.js";
+import { useCommonComment } from "./common.js";
 import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
 import { checkConversationParticipation } from "./participationGate.js";
 import { castVoteForOpinionSlugId } from "./voting.js";
 import type { VoteBuffer } from "./voteBuffer.js";
-import {
-    isSqlOrderByGroupAwareConsensusAgree,
-    isSqlOrderByGroupAwareConsensusDisagree,
-    isSqlOrderByPolisPriority,
-    isSqlWhereRepresentative,
-    isSqlOrderByRepresentative,
-    participationWeight,
-} from "@/utils/sqlLogic.js";
 import type { ImportPolisResults } from "@/shared/types/polis.js";
 import type {
     OpinionContentIdPerOpinionId,
@@ -79,7 +70,113 @@ import type {
 } from "@/utils/dataStructure.js";
 import { nowZeroMs } from "@/shared/util.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
+import {
+    getDescriptionTextsByGroupId,
+    getSelectedOpinionGroupCandidate,
+} from "./opinionGroupAnalysis.js";
 import { alias } from "drizzle-orm/pg-core";
+
+interface LatestConversationOpinionCountSnapshot {
+    participantCount: number;
+    analysisSnapshotId: number | null;
+}
+
+interface OpinionDisplayCounts {
+    numParticipants: number;
+    numAgrees: number;
+    numDisagrees: number;
+    numPasses: number;
+}
+
+async function fetchLatestConversationOpinionCountSnapshot({
+    db,
+    conversationId,
+}: {
+    db: PostgresJsDatabase;
+    conversationId: number;
+}): Promise<LatestConversationOpinionCountSnapshot> {
+    const snapshotRows = await db
+        .select({
+            participantCount: conversationViewSnapshotTable.participantCount,
+            analysisSnapshotId:
+                conversationViewSnapshotTable.analysisSnapshotId,
+        })
+        .from(conversationViewSnapshotTable)
+        .where(eq(conversationViewSnapshotTable.conversationId, conversationId))
+        .orderBy(
+            desc(conversationViewSnapshotTable.createdAt),
+            desc(conversationViewSnapshotTable.id),
+        )
+        .limit(1);
+
+    if (snapshotRows.length === 0) {
+        throw new Error(
+            `Missing conversation view snapshot counts for conversation ${String(conversationId)}`,
+        );
+    }
+
+    return snapshotRows[0];
+}
+
+export async function fetchOpinionDisplayCounts({
+    db,
+    conversationId,
+    opinionId,
+}: {
+    db: PostgresJsDatabase;
+    conversationId: number;
+    opinionId: number;
+}): Promise<OpinionDisplayCounts> {
+    const snapshot = await fetchLatestConversationOpinionCountSnapshot({
+        db,
+        conversationId,
+    });
+
+    if (snapshot.analysisSnapshotId === null) {
+        // Keep counts snapshot-only. Do not fall back to live opinion counters.
+        return {
+            numParticipants: snapshot.participantCount,
+            numAgrees: 0,
+            numDisagrees: 0,
+            numPasses: 0,
+        };
+    }
+
+    const countRows = await db
+        .select({
+            numAgrees: analysisSnapshotOpinionTable.numAgrees,
+            numDisagrees: analysisSnapshotOpinionTable.numDisagrees,
+            numPasses: analysisSnapshotOpinionTable.numPasses,
+        })
+        .from(analysisSnapshotOpinionTable)
+        .where(
+            and(
+                eq(analysisSnapshotOpinionTable.opinionId, opinionId),
+                eq(
+                    analysisSnapshotOpinionTable.analysisSnapshotId,
+                    snapshot.analysisSnapshotId,
+                ),
+            ),
+        )
+        .limit(1);
+
+    if (countRows.length === 0) {
+        return {
+            numParticipants: snapshot.participantCount,
+            numAgrees: 0,
+            numDisagrees: 0,
+            numPasses: 0,
+        };
+    }
+
+    const counts = countRows[0];
+    return {
+        numParticipants: snapshot.participantCount,
+        numAgrees: counts.numAgrees,
+        numDisagrees: counts.numDisagrees,
+        numPasses: counts.numPasses,
+    };
+}
 
 interface GetCommentSlugIdLastCreatedAtProps {
     lastSlugId: string | undefined;
@@ -137,10 +234,25 @@ export async function fetchOpinionsByPostId({
         );
     }
 
+    const latestCountSnapshot =
+        await fetchLatestConversationOpinionCountSnapshot({
+            db,
+            conversationId: postId,
+        });
+    const countAnalysisSnapshotOpinionTable = alias(
+        analysisSnapshotOpinionTable,
+        "countAnalysisSnapshotOpinion",
+    );
+    const routingAnalysisSnapshotOpinionTable = alias(
+        analysisSnapshotOpinionTable,
+        "routingAnalysisSnapshotOpinion",
+    );
+
     let whereClause: SQL | undefined = eq(opinionTable.conversationId, postId);
     // isNotNull(opinionTable.currentContentId), // filtering out deleted opinions, this is unecessary because of the use of innerJoin
     let orderByClause = [desc(opinionTable.createdAt)]; // default value, shouldn't be needed but ts doesn't understand how to terminate nested switch
     let shouldJoinVoteTable = false;
+    let discoverAnalysisSnapshotId: number | undefined;
 
     switch (filterTarget) {
         case "moderated": {
@@ -165,17 +277,30 @@ export async function fetchOpinionsByPostId({
         }
         case "discover": {
             whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            // For authenticated users, sort unvoted opinions first, then by Polis priority
+            const selectedCandidate = await getSelectedOpinionGroupCandidate({
+                db,
+                conversationId: postId,
+                displayLanguage: "en",
+            });
+            discoverAnalysisSnapshotId = selectedCandidate?.snapshotId;
+
+            const discoverOrderClause =
+                discoverAnalysisSnapshotId === undefined
+                    ? [desc(opinionTable.createdAt)]
+                    : [
+                          sql`${routingAnalysisSnapshotOpinionTable.routingPriority} DESC NULLS LAST`,
+                          desc(opinionTable.createdAt),
+                      ];
+
+            // For authenticated users, sort unvoted opinions first, then by routing priority.
             if (personalizationUserId) {
                 shouldJoinVoteTable = true;
-                // Sort by: unvoted first (voteTable.id IS NULL), then voted, with Polis priority as secondary sort
                 orderByClause = [
                     sql`CASE WHEN ${voteTable.id} IS NOT NULL THEN 1 ELSE 0 END ASC`,
-                    ...isSqlOrderByPolisPriority(),
+                    ...discoverOrderClause,
                 ];
             } else {
-                // Unauthenticated users get default Polis priority sort
-                orderByClause = isSqlOrderByPolisPriority();
+                orderByClause = discoverOrderClause;
             }
             break;
         }
@@ -184,7 +309,10 @@ export async function fetchOpinionsByPostId({
             shouldJoinVoteTable = true;
             // Show only voted opinions (regardless of moderation status)
             // Filter by currentContentId to exclude cancelled votes (currentContentId = NULL when cancelled)
-            whereClause = and(whereClause, isNotNull(voteTable.currentContentId));
+            whereClause = and(
+                whereClause,
+                isNotNull(voteTable.currentContentId),
+            );
             // Sort by most recent votes first
             orderByClause = [desc(voteTable.updatedAt)];
             break;
@@ -199,10 +327,9 @@ export async function fetchOpinionsByPostId({
             updatedAt: opinionTable.updatedAt,
             comment: opinionContentTable.content,
             authorId: opinionTable.authorId,
-            numParticipants: conversationTable.participantCount,
-            numAgrees: opinionTable.numAgrees,
-            numDisagrees: opinionTable.numDisagrees,
-            numPasses: opinionTable.numPasses,
+            numAgrees: countAnalysisSnapshotOpinionTable.numAgrees,
+            numDisagrees: countAnalysisSnapshotOpinionTable.numDisagrees,
+            numPasses: countAnalysisSnapshotOpinionTable.numPasses,
             username: userTable.username,
             isSeed: opinionTable.isSeed,
             moderationAction: opinionModerationTable.moderationAction,
@@ -213,10 +340,24 @@ export async function fetchOpinionsByPostId({
         })
         .from(opinionTable)
         .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
-        .innerJoin(conversationTable, eq(conversationTable.id, postId))
         .innerJoin(
             opinionContentTable,
             eq(opinionContentTable.id, opinionTable.currentContentId),
+        )
+        .leftJoin(
+            countAnalysisSnapshotOpinionTable,
+            latestCountSnapshot.analysisSnapshotId === null
+                ? sql`false`
+                : and(
+                      eq(
+                          countAnalysisSnapshotOpinionTable.opinionId,
+                          opinionTable.id,
+                      ),
+                      eq(
+                          countAnalysisSnapshotOpinionTable.analysisSnapshotId,
+                          latestCountSnapshot.analysisSnapshotId,
+                      ),
+                  ),
         )
         .leftJoin(
             opinionModerationTable,
@@ -230,6 +371,22 @@ export async function fetchOpinionsByPostId({
             and(
                 eq(voteTable.opinionId, opinionTable.id),
                 eq(voteTable.authorId, personalizationUserId),
+            ),
+        );
+    }
+
+    if (discoverAnalysisSnapshotId !== undefined) {
+        query = query.leftJoin(
+            routingAnalysisSnapshotOpinionTable,
+            and(
+                eq(
+                    routingAnalysisSnapshotOpinionTable.opinionId,
+                    opinionTable.id,
+                ),
+                eq(
+                    routingAnalysisSnapshotOpinionTable.analysisSnapshotId,
+                    discoverAnalysisSnapshotId,
+                ),
             ),
         );
     }
@@ -253,10 +410,10 @@ export async function fetchOpinionsByPostId({
             opinion: opinionResponse.comment,
             opinionSlugId: opinionResponse.commentSlugId,
             createdAt: opinionResponse.createdAt,
-            numParticipants: opinionResponse.numParticipants,
-            numDisagrees: opinionResponse.numDisagrees,
-            numAgrees: opinionResponse.numAgrees,
-            numPasses: opinionResponse.numPasses,
+            numParticipants: latestCountSnapshot.participantCount,
+            numDisagrees: opinionResponse.numDisagrees ?? 0,
+            numAgrees: opinionResponse.numAgrees ?? 0,
+            numPasses: opinionResponse.numPasses ?? 0,
             updatedAt: opinionResponse.updatedAt,
             username: opinionResponse.username,
             moderation: moderationProperties,
@@ -302,567 +459,6 @@ export async function fetchOpinionsByPostSlugId({
     });
 }
 
-interface FetchAnalysisOpinionsByPostIdProps {
-    db: PostgresJsDatabase;
-    postId: number;
-    personalizationUserId?: string;
-    filterTarget: "consensus-agree" | "consensus-disagree" | "controversial" | "representative";
-    clusterKey?: PolisKey;
-    limit: number;
-}
-
-export async function fetchAnalysisOpinionsByPostId({
-    db,
-    postId,
-    personalizationUserId,
-    filterTarget,
-    clusterKey,
-    limit,
-}: FetchAnalysisOpinionsByPostIdProps): Promise<AnalysisOpinionItemPerSlugId> {
-    // Cluster table aliases for joining
-    const polisClusterTableAlias0 = alias(polisClusterTable, "cluster_0");
-    const polisClusterTableAlias1 = alias(polisClusterTable, "cluster_1");
-    const polisClusterTableAlias2 = alias(polisClusterTable, "cluster_2");
-    const polisClusterTableAlias3 = alias(polisClusterTable, "cluster_3");
-    const polisClusterTableAlias4 = alias(polisClusterTable, "cluster_4");
-    const polisClusterTableAlias5 = alias(polisClusterTable, "cluster_5");
-
-    // Cluster opinion table aliases for representative opinions
-    const polisClusterOpinionTableAlias0 = alias(
-        polisClusterOpinionTable,
-        "cluster_opinion_0",
-    );
-    const polisClusterOpinionTableAlias1 = alias(
-        polisClusterOpinionTable,
-        "cluster_opinion_1",
-    );
-    const polisClusterOpinionTableAlias2 = alias(
-        polisClusterOpinionTable,
-        "cluster_opinion_2",
-    );
-    const polisClusterOpinionTableAlias3 = alias(
-        polisClusterOpinionTable,
-        "cluster_opinion_3",
-    );
-    const polisClusterOpinionTableAlias4 = alias(
-        polisClusterOpinionTable,
-        "cluster_opinion_4",
-    );
-    const polisClusterOpinionTableAlias5 = alias(
-        polisClusterOpinionTable,
-        "cluster_opinion_5",
-    );
-
-    let whereClause: SQL | undefined = eq(opinionTable.conversationId, postId);
-    let orderByClause = [desc(opinionTable.createdAt)]; // default value
-
-    switch (filterTarget) {
-        case "consensus-agree": {
-            whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            orderByClause = isSqlOrderByGroupAwareConsensusAgree();
-            break;
-        }
-        case "consensus-disagree": {
-            whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            orderByClause = isSqlOrderByGroupAwareConsensusDisagree();
-            break;
-        }
-        case "controversial": {
-            whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            const weight = participationWeight();
-            orderByClause = [
-                desc(
-                    sql`(${opinionTable.polisDivisiveness} * ${weight})`,
-                ),
-            ];
-            break;
-        }
-        case "representative": {
-            if (clusterKey === undefined) {
-                throw httpErrors.badRequest(
-                    "Representative opinions require a cluster key",
-                );
-            }
-            whereClause = and(whereClause, isNull(opinionModerationTable.id));
-            // Filter and sort by the specific cluster's representative scores
-            switch (clusterKey) {
-                case "0": {
-                    whereClause = and(
-                        whereClause,
-                        isSqlWhereRepresentative({
-                            idColumn: polisClusterOpinionTableAlias0.id,
-                            repfulColumn:
-                                polisClusterOpinionTableAlias0.agreementType,
-                        }),
-                    );
-                    orderByClause = isSqlOrderByRepresentative({
-                        probabilityAgreementColumn:
-                            polisClusterOpinionTableAlias0.probabilityAgreement,
-                    });
-                    break;
-                }
-                case "1": {
-                    whereClause = and(
-                        whereClause,
-                        isSqlWhereRepresentative({
-                            idColumn: polisClusterOpinionTableAlias1.id,
-                            repfulColumn:
-                                polisClusterOpinionTableAlias1.agreementType,
-                        }),
-                    );
-                    orderByClause = isSqlOrderByRepresentative({
-                        probabilityAgreementColumn:
-                            polisClusterOpinionTableAlias1.probabilityAgreement,
-                    });
-                    break;
-                }
-                case "2": {
-                    whereClause = and(
-                        whereClause,
-                        isSqlWhereRepresentative({
-                            idColumn: polisClusterOpinionTableAlias2.id,
-                            repfulColumn:
-                                polisClusterOpinionTableAlias2.agreementType,
-                        }),
-                    );
-                    orderByClause = isSqlOrderByRepresentative({
-                        probabilityAgreementColumn:
-                            polisClusterOpinionTableAlias2.probabilityAgreement,
-                    });
-                    break;
-                }
-                case "3": {
-                    whereClause = and(
-                        whereClause,
-                        isSqlWhereRepresentative({
-                            idColumn: polisClusterOpinionTableAlias3.id,
-                            repfulColumn:
-                                polisClusterOpinionTableAlias3.agreementType,
-                        }),
-                    );
-                    orderByClause = isSqlOrderByRepresentative({
-                        probabilityAgreementColumn:
-                            polisClusterOpinionTableAlias3.probabilityAgreement,
-                    });
-                    break;
-                }
-                case "4": {
-                    whereClause = and(
-                        whereClause,
-                        isSqlWhereRepresentative({
-                            idColumn: polisClusterOpinionTableAlias4.id,
-                            repfulColumn:
-                                polisClusterOpinionTableAlias4.agreementType,
-                        }),
-                    );
-                    orderByClause = isSqlOrderByRepresentative({
-                        probabilityAgreementColumn:
-                            polisClusterOpinionTableAlias4.probabilityAgreement,
-                    });
-                    break;
-                }
-                case "5": {
-                    whereClause = and(
-                        whereClause,
-                        isSqlWhereRepresentative({
-                            idColumn: polisClusterOpinionTableAlias5.id,
-                            repfulColumn:
-                                polisClusterOpinionTableAlias5.agreementType,
-                        }),
-                    );
-                    orderByClause = isSqlOrderByRepresentative({
-                        probabilityAgreementColumn:
-                            polisClusterOpinionTableAlias5.probabilityAgreement,
-                    });
-                    break;
-                }
-            }
-            break;
-        }
-    }
-
-    const results = await db
-        .select({
-            // Base comment fields
-            commentSlugId: opinionTable.slugId,
-            createdAt: opinionTable.createdAt,
-            updatedAt: opinionTable.updatedAt,
-            comment: opinionContentTable.content,
-            authorId: opinionTable.authorId,
-            numParticipants: conversationTable.participantCount,
-            numAgrees: opinionTable.numAgrees,
-            numDisagrees: opinionTable.numDisagrees,
-            numPasses: opinionTable.numPasses,
-            username: userTable.username,
-            isSeed: opinionTable.isSeed,
-            moderationAction: opinionModerationTable.moderationAction,
-            moderationExplanation: opinionModerationTable.moderationExplanation,
-            moderationReason: opinionModerationTable.moderationReason,
-            moderationCreatedAt: opinionModerationTable.createdAt,
-            moderationUpdatedAt: opinionModerationTable.updatedAt,
-            // Cluster 0 fields
-            polisCluster0Id: opinionTable.polisCluster0Id,
-            polisCluster0Key: polisClusterTableAlias0.key,
-            polisCluster0NumUsers: polisClusterTableAlias0.numUsers,
-            polisCluster0NumAgrees: opinionTable.polisCluster0NumAgrees,
-            polisCluster0NumDisagrees: opinionTable.polisCluster0NumDisagrees,
-            polisCluster0NumPasses: opinionTable.polisCluster0NumPasses,
-            // Cluster 1 fields
-            polisCluster1Id: opinionTable.polisCluster1Id,
-            polisCluster1Key: polisClusterTableAlias1.key,
-            polisCluster1NumUsers: polisClusterTableAlias1.numUsers,
-            polisCluster1NumAgrees: opinionTable.polisCluster1NumAgrees,
-            polisCluster1NumDisagrees: opinionTable.polisCluster1NumDisagrees,
-            polisCluster1NumPasses: opinionTable.polisCluster1NumPasses,
-            // Cluster 2 fields
-            polisCluster2Id: opinionTable.polisCluster2Id,
-            polisCluster2Key: polisClusterTableAlias2.key,
-            polisCluster2NumUsers: polisClusterTableAlias2.numUsers,
-            polisCluster2NumAgrees: opinionTable.polisCluster2NumAgrees,
-            polisCluster2NumDisagrees: opinionTable.polisCluster2NumDisagrees,
-            polisCluster2NumPasses: opinionTable.polisCluster2NumPasses,
-            // Cluster 3 fields
-            polisCluster3Id: opinionTable.polisCluster3Id,
-            polisCluster3Key: polisClusterTableAlias3.key,
-            polisCluster3NumUsers: polisClusterTableAlias3.numUsers,
-            polisCluster3NumAgrees: opinionTable.polisCluster3NumAgrees,
-            polisCluster3NumDisagrees: opinionTable.polisCluster3NumDisagrees,
-            polisCluster3NumPasses: opinionTable.polisCluster3NumPasses,
-            // Cluster 4 fields
-            polisCluster4Id: opinionTable.polisCluster4Id,
-            polisCluster4Key: polisClusterTableAlias4.key,
-            polisCluster4NumUsers: polisClusterTableAlias4.numUsers,
-            polisCluster4NumAgrees: opinionTable.polisCluster4NumAgrees,
-            polisCluster4NumDisagrees: opinionTable.polisCluster4NumDisagrees,
-            polisCluster4NumPasses: opinionTable.polisCluster4NumPasses,
-            // Cluster 5 fields
-            polisCluster5Id: opinionTable.polisCluster5Id,
-            polisCluster5Key: polisClusterTableAlias5.key,
-            polisCluster5NumUsers: polisClusterTableAlias5.numUsers,
-            polisCluster5NumAgrees: opinionTable.polisCluster5NumAgrees,
-            polisCluster5NumDisagrees: opinionTable.polisCluster5NumDisagrees,
-            polisCluster5NumPasses: opinionTable.polisCluster5NumPasses,
-            // Opinion author's cluster
-            opinionAuthorPolisClusterId: polisClusterUserTable.polisClusterId,
-            // Ranking scores for statistical relevance on frontend
-            groupAwareConsensusAgree:
-                opinionTable.polisGroupAwareConsensusProbabilityAgree,
-            groupAwareConsensusDisagree:
-                opinionTable.polisGroupAwareConsensusProbabilityDisagree,
-            polisDivisiveness: opinionTable.polisDivisiveness,
-        })
-        .from(opinionTable)
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
-        .innerJoin(conversationTable, eq(conversationTable.id, postId))
-        .innerJoin(
-            opinionContentTable,
-            eq(opinionContentTable.id, opinionTable.currentContentId),
-        )
-        .leftJoin(
-            opinionModerationTable,
-            eq(opinionModerationTable.opinionId, opinionTable.id),
-        )
-        // Join cluster tables for cluster stats
-        .leftJoin(
-            polisClusterTableAlias0,
-            eq(polisClusterTableAlias0.id, opinionTable.polisCluster0Id),
-        )
-        .leftJoin(
-            polisClusterTableAlias1,
-            eq(polisClusterTableAlias1.id, opinionTable.polisCluster1Id),
-        )
-        .leftJoin(
-            polisClusterTableAlias2,
-            eq(polisClusterTableAlias2.id, opinionTable.polisCluster2Id),
-        )
-        .leftJoin(
-            polisClusterTableAlias3,
-            eq(polisClusterTableAlias3.id, opinionTable.polisCluster3Id),
-        )
-        .leftJoin(
-            polisClusterTableAlias4,
-            eq(polisClusterTableAlias4.id, opinionTable.polisCluster4Id),
-        )
-        .leftJoin(
-            polisClusterTableAlias5,
-            eq(polisClusterTableAlias5.id, opinionTable.polisCluster5Id),
-        )
-        // Join cluster opinion tables for representative opinion scores
-        .leftJoin(
-            polisClusterOpinionTableAlias0,
-            and(
-                eq(
-                    polisClusterOpinionTableAlias0.polisClusterId,
-                    opinionTable.polisCluster0Id,
-                ),
-                eq(polisClusterOpinionTableAlias0.opinionId, opinionTable.id),
-            ),
-        )
-        .leftJoin(
-            polisClusterOpinionTableAlias1,
-            and(
-                eq(
-                    polisClusterOpinionTableAlias1.polisClusterId,
-                    opinionTable.polisCluster1Id,
-                ),
-                eq(polisClusterOpinionTableAlias1.opinionId, opinionTable.id),
-            ),
-        )
-        .leftJoin(
-            polisClusterOpinionTableAlias2,
-            and(
-                eq(
-                    polisClusterOpinionTableAlias2.polisClusterId,
-                    opinionTable.polisCluster2Id,
-                ),
-                eq(polisClusterOpinionTableAlias2.opinionId, opinionTable.id),
-            ),
-        )
-        .leftJoin(
-            polisClusterOpinionTableAlias3,
-            and(
-                eq(
-                    polisClusterOpinionTableAlias3.polisClusterId,
-                    opinionTable.polisCluster3Id,
-                ),
-                eq(polisClusterOpinionTableAlias3.opinionId, opinionTable.id),
-            ),
-        )
-        .leftJoin(
-            polisClusterOpinionTableAlias4,
-            and(
-                eq(
-                    polisClusterOpinionTableAlias4.polisClusterId,
-                    opinionTable.polisCluster4Id,
-                ),
-                eq(polisClusterOpinionTableAlias4.opinionId, opinionTable.id),
-            ),
-        )
-        .leftJoin(
-            polisClusterOpinionTableAlias5,
-            and(
-                eq(
-                    polisClusterOpinionTableAlias5.polisClusterId,
-                    opinionTable.polisCluster5Id,
-                ),
-                eq(polisClusterOpinionTableAlias5.opinionId, opinionTable.id),
-            ),
-        )
-        // Join to get current polis content
-        .leftJoin(
-            polisContentTable,
-            eq(polisContentTable.id, conversationTable.currentPolisContentId),
-        )
-        // Join to get opinion author's cluster
-        .leftJoin(
-            polisClusterUserTable,
-            and(
-                eq(polisClusterUserTable.polisContentId, polisContentTable.id),
-                eq(polisClusterUserTable.userId, opinionTable.authorId),
-            ),
-        )
-        .orderBy(...orderByClause)
-        .where(and(whereClause, eq(userTable.isDeleted, false)))
-        .limit(limit);
-
-    const opinionItemMap: AnalysisOpinionItemPerSlugId = new Map<
-        string,
-        AnalysisOpinionItem
-    >();
-    results.map((result) => {
-        const moderationProperties = createCommentModerationPropertyObject(
-            result.moderationAction,
-            result.moderationExplanation,
-            result.moderationReason,
-            result.moderationCreatedAt,
-            result.moderationUpdatedAt,
-        );
-
-        // Build cluster stats array
-        const clustersStats: ClusterStats[] = [];
-
-        if (
-            result.polisCluster0Key !== null &&
-            result.polisCluster0NumUsers !== null &&
-            result.polisCluster0NumAgrees !== null &&
-            result.polisCluster0NumDisagrees !== null &&
-            result.polisCluster0NumPasses !== null
-        ) {
-            clustersStats.push({
-                key: result.polisCluster0Key,
-                isAuthorInCluster:
-                    result.opinionAuthorPolisClusterId ===
-                    result.polisCluster0Id,
-                numUsers: result.polisCluster0NumUsers,
-                numAgrees: result.polisCluster0NumAgrees,
-                numDisagrees: result.polisCluster0NumDisagrees,
-                numPasses: result.polisCluster0NumPasses,
-            });
-        }
-
-        if (
-            result.polisCluster1Key !== null &&
-            result.polisCluster1NumUsers !== null &&
-            result.polisCluster1NumAgrees !== null &&
-            result.polisCluster1NumDisagrees !== null &&
-            result.polisCluster1NumPasses !== null
-        ) {
-            clustersStats.push({
-                key: result.polisCluster1Key,
-                isAuthorInCluster:
-                    result.opinionAuthorPolisClusterId ===
-                    result.polisCluster1Id,
-                numUsers: result.polisCluster1NumUsers,
-                numAgrees: result.polisCluster1NumAgrees,
-                numDisagrees: result.polisCluster1NumDisagrees,
-                numPasses: result.polisCluster1NumPasses,
-            });
-        }
-
-        if (
-            result.polisCluster2Key !== null &&
-            result.polisCluster2NumUsers !== null &&
-            result.polisCluster2NumAgrees !== null &&
-            result.polisCluster2NumDisagrees !== null &&
-            result.polisCluster2NumPasses !== null
-        ) {
-            clustersStats.push({
-                key: result.polisCluster2Key,
-                isAuthorInCluster:
-                    result.opinionAuthorPolisClusterId ===
-                    result.polisCluster2Id,
-                numUsers: result.polisCluster2NumUsers,
-                numAgrees: result.polisCluster2NumAgrees,
-                numDisagrees: result.polisCluster2NumDisagrees,
-                numPasses: result.polisCluster2NumPasses,
-            });
-        }
-
-        if (
-            result.polisCluster3Key !== null &&
-            result.polisCluster3NumUsers !== null &&
-            result.polisCluster3NumAgrees !== null &&
-            result.polisCluster3NumDisagrees !== null &&
-            result.polisCluster3NumPasses !== null
-        ) {
-            clustersStats.push({
-                key: result.polisCluster3Key,
-                isAuthorInCluster:
-                    result.opinionAuthorPolisClusterId ===
-                    result.polisCluster3Id,
-                numUsers: result.polisCluster3NumUsers,
-                numAgrees: result.polisCluster3NumAgrees,
-                numDisagrees: result.polisCluster3NumDisagrees,
-                numPasses: result.polisCluster3NumPasses,
-            });
-        }
-
-        if (
-            result.polisCluster4Key !== null &&
-            result.polisCluster4NumUsers !== null &&
-            result.polisCluster4NumAgrees !== null &&
-            result.polisCluster4NumDisagrees !== null &&
-            result.polisCluster4NumPasses !== null
-        ) {
-            clustersStats.push({
-                key: result.polisCluster4Key,
-                isAuthorInCluster:
-                    result.opinionAuthorPolisClusterId ===
-                    result.polisCluster4Id,
-                numUsers: result.polisCluster4NumUsers,
-                numAgrees: result.polisCluster4NumAgrees,
-                numDisagrees: result.polisCluster4NumDisagrees,
-                numPasses: result.polisCluster4NumPasses,
-            });
-        }
-
-        if (
-            result.polisCluster5Key !== null &&
-            result.polisCluster5NumUsers !== null &&
-            result.polisCluster5NumAgrees !== null &&
-            result.polisCluster5NumDisagrees !== null &&
-            result.polisCluster5NumPasses !== null
-        ) {
-            clustersStats.push({
-                key: result.polisCluster5Key,
-                isAuthorInCluster:
-                    result.opinionAuthorPolisClusterId ===
-                    result.polisCluster5Id,
-                numUsers: result.polisCluster5NumUsers,
-                numAgrees: result.polisCluster5NumAgrees,
-                numDisagrees: result.polisCluster5NumDisagrees,
-                numPasses: result.polisCluster5NumPasses,
-            });
-        }
-
-        const item: AnalysisOpinionItem = {
-            opinion: result.comment,
-            opinionSlugId: result.commentSlugId,
-            createdAt: result.createdAt,
-            numParticipants: result.numParticipants,
-            numDisagrees: result.numDisagrees,
-            numAgrees: result.numAgrees,
-            numPasses: result.numPasses,
-            updatedAt: result.updatedAt,
-            username: result.username,
-            moderation: moderationProperties,
-            isSeed: result.isSeed,
-            clustersStats: clustersStats,
-            groupAwareConsensusAgree: result.groupAwareConsensusAgree,
-            groupAwareConsensusDisagree: result.groupAwareConsensusDisagree,
-            divisiveScore: result.polisDivisiveness,
-        };
-        opinionItemMap.set(result.commentSlugId, item);
-    });
-
-    if (personalizationUserId) {
-        const mutedUserItems = await getUserMutePreferences({
-            db: db,
-            userId: personalizationUserId,
-        });
-
-        opinionItemMap.forEach((opinionItem, opinionSlugId, map) => {
-            if (
-                mutedUserItems.some(
-                    (muteItem) => muteItem.username === opinionItem.username,
-                )
-            ) {
-                map.delete(opinionSlugId);
-            }
-        });
-    }
-
-    return opinionItemMap;
-}
-
-interface FetchAnalysisOpinionsByPostSlugIdProps {
-    db: PostgresJsDatabase;
-    postSlugId: SlugId;
-    personalizationUserId?: string;
-    filterTarget: "consensus-agree" | "consensus-disagree" | "controversial" | "representative";
-    clusterKey?: PolisKey;
-    limit: number;
-}
-
-export async function fetchAnalysisOpinionsByPostSlugId({
-    db,
-    postSlugId,
-    personalizationUserId,
-    filterTarget,
-    clusterKey,
-    limit,
-}: FetchAnalysisOpinionsByPostSlugIdProps): Promise<AnalysisOpinionItemPerSlugId> {
-    const postId = await getPostIdFromPostSlugId(db, postSlugId);
-    return await fetchAnalysisOpinionsByPostId({
-        db,
-        postId,
-        personalizationUserId,
-        filterTarget,
-        clusterKey,
-        limit,
-    });
-}
-
 interface FetchOpinionsByOpinionSlugIdListProps {
     db: PostgresJsDatabase;
     opinionSlugIdList: SlugId[];
@@ -877,14 +473,12 @@ export async function fetchOpinionsByOpinionSlugIdList({
     for (const opinionSlugId of opinionSlugIdList) {
         const results = await db
             .select({
+                opinionId: opinionTable.id,
+                conversationId: opinionTable.conversationId,
                 commentSlugId: opinionTable.slugId,
                 createdAt: opinionTable.createdAt,
                 updatedAt: opinionTable.updatedAt,
                 comment: opinionContentTable.content,
-                numParticipants: conversationTable.participantCount,
-                numAgrees: opinionTable.numAgrees,
-                numDisagrees: opinionTable.numDisagrees,
-                numPasses: opinionTable.numPasses,
                 username: userTable.username,
                 isSeed: opinionTable.isSeed,
                 moderationAction: opinionModerationTable.moderationAction,
@@ -917,7 +511,12 @@ export async function fetchOpinionsByOpinionSlugIdList({
                 ),
             );
 
-        results.map((commentResponse) => {
+        for (const commentResponse of results) {
+            const counts = await fetchOpinionDisplayCounts({
+                db,
+                conversationId: commentResponse.conversationId,
+                opinionId: commentResponse.opinionId,
+            });
             const moderationProperties = createCommentModerationPropertyObject(
                 commentResponse.moderationAction,
                 commentResponse.moderationExplanation,
@@ -926,24 +525,541 @@ export async function fetchOpinionsByOpinionSlugIdList({
                 commentResponse.moderationUpdatedAt,
             );
 
-            const item: OpinionItem = {
+            opinionItemList.push({
                 opinion: commentResponse.comment,
                 opinionSlugId: commentResponse.commentSlugId,
                 createdAt: commentResponse.createdAt,
                 updatedAt: commentResponse.updatedAt,
-                numParticipants: commentResponse.numParticipants,
-                numDisagrees: commentResponse.numDisagrees,
-                numAgrees: commentResponse.numAgrees,
-                numPasses: commentResponse.numPasses,
+                numParticipants: counts.numParticipants,
+                numDisagrees: counts.numDisagrees,
+                numAgrees: counts.numAgrees,
+                numPasses: counts.numPasses,
                 username: commentResponse.username,
                 moderation: moderationProperties,
                 isSeed: commentResponse.isSeed,
-            };
-            opinionItemList.push(item);
-        });
+            });
+        }
     }
 
     return opinionItemList;
+}
+
+const ANALYSIS_OPINION_LIMIT = 3000;
+const REPRESENTATIVE_OPINION_LIMIT = 50;
+const POLIS_KEY_SET: ReadonlySet<string> = new Set([
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+]);
+
+function isPolisKey(value: string): value is PolisKey {
+    return POLIS_KEY_SET.has(value);
+}
+
+function createEmptyConversationAnalysis({
+    hasVotedOnAllAvailableOpinions,
+}: {
+    hasVotedOnAllAvailableOpinions: boolean | undefined;
+}): ConversationAnalysis {
+    return {
+        polisContentId: undefined,
+        consensusAgree: [],
+        consensusDisagree: [],
+        controversial: [],
+        clusters: {},
+        hasVotedOnAllAvailableOpinions,
+    };
+}
+
+interface SnapshotGroupMetadata {
+    id: number;
+    key: PolisKey;
+    numUsers: number;
+    aiLabel?: string;
+    aiSummary?: string;
+    isUserInCluster: boolean;
+}
+
+interface SnapshotAnalysisOpinionData {
+    opinionsById: Map<number, AnalysisOpinionItem>;
+    representativeOpinionIdsByGroupKey: Map<PolisKey, number[]>;
+}
+
+function getOpinionParticipationWeight(opinion: AnalysisOpinionItem): number {
+    const totalVotes =
+        opinion.numAgrees + opinion.numDisagrees + opinion.numPasses;
+    return totalVotes / Math.max(totalVotes + opinion.numParticipants * 0.1, 1);
+}
+
+function sortAnalysisOpinionsByWeightedMetric({
+    opinions,
+    getMetric,
+}: {
+    opinions: AnalysisOpinionItem[];
+    getMetric: (opinion: AnalysisOpinionItem) => number;
+}): AnalysisOpinionItem[] {
+    return [...opinions].sort((a, b) => {
+        const bScore = getMetric(b) * getOpinionParticipationWeight(b);
+        const aScore = getMetric(a) * getOpinionParticipationWeight(a);
+        return bScore - aScore;
+    });
+}
+
+async function fetchSnapshotGroups({
+    db,
+    candidateId,
+    personalizationUserId,
+    displayLanguage,
+    useSystemDescriptions,
+}: {
+    db: PostgresJsDatabase;
+    candidateId: number;
+    personalizationUserId?: string;
+    displayLanguage: string;
+    useSystemDescriptions: boolean;
+}): Promise<SnapshotGroupMetadata[]> {
+    const groupRows = await db
+        .select({
+            id: opinionGroupTable.id,
+            key: opinionGroupTable.key,
+            numUsers: opinionGroupTable.numUsers,
+            systemDescriptionId: opinionGroupLineageTable.systemDescriptionId,
+            adminDescriptionId: opinionGroupLineageTable.adminDescriptionId,
+        })
+        .from(opinionGroupTable)
+        .leftJoin(
+            opinionGroupLineageTable,
+            eq(opinionGroupLineageTable.id, opinionGroupTable.lineageId),
+        )
+        .where(eq(opinionGroupTable.candidateId, candidateId))
+        .orderBy(asc(opinionGroupTable.key));
+
+    const descriptionsByGroupId = await getDescriptionTextsByGroupId({
+        db,
+        groups: groupRows.map((row) => ({
+            groupId: row.id,
+            systemDescriptionId: row.systemDescriptionId,
+            adminDescriptionId: row.adminDescriptionId,
+        })),
+        displayLanguage,
+        includeSystemDescriptions: useSystemDescriptions,
+    });
+
+    const currentUserGroupIds = new Set<number>();
+    if (personalizationUserId !== undefined) {
+        const currentUserGroupRows = await db
+            .select({ groupId: opinionGroupUserTable.groupId })
+            .from(opinionGroupUserTable)
+            .where(
+                and(
+                    eq(opinionGroupUserTable.candidateId, candidateId),
+                    eq(opinionGroupUserTable.userId, personalizationUserId),
+                ),
+            );
+        for (const row of currentUserGroupRows) {
+            currentUserGroupIds.add(row.groupId);
+        }
+    }
+
+    const groups: SnapshotGroupMetadata[] = [];
+    for (const row of groupRows) {
+        if (!isPolisKey(row.key)) {
+            log.warn(
+                `[Analysis] Skipping opinion group with unsupported legacy key=${row.key} for candidateId=${String(candidateId)}`,
+            );
+            continue;
+        }
+
+        const description = descriptionsByGroupId.get(row.id);
+
+        groups.push({
+            id: row.id,
+            key: row.key,
+            numUsers: row.numUsers,
+            aiLabel: description?.label,
+            aiSummary: description?.summary,
+            isUserInCluster: currentUserGroupIds.has(row.id),
+        });
+    }
+
+    return groups;
+}
+
+async function removeMutedAnalysisOpinions({
+    db,
+    personalizationUserId,
+    opinionsById,
+}: {
+    db: PostgresJsDatabase;
+    personalizationUserId?: string;
+    opinionsById: Map<number, AnalysisOpinionItem>;
+}): Promise<void> {
+    if (personalizationUserId === undefined) {
+        return;
+    }
+
+    const mutedUserItems = await getUserMutePreferences({
+        db: db,
+        userId: personalizationUserId,
+    });
+    if (mutedUserItems.length === 0) {
+        return;
+    }
+
+    opinionsById.forEach((opinionItem, opinionId, map) => {
+        if (
+            mutedUserItems.some(
+                (muteItem) => muteItem.username === opinionItem.username,
+            )
+        ) {
+            map.delete(opinionId);
+        }
+    });
+}
+
+async function fetchSnapshotAnalysisOpinions({
+    db,
+    candidateId,
+    snapshotId,
+    conversationParticipantCount,
+    groups,
+    personalizationUserId,
+}: {
+    db: PostgresJsDatabase;
+    candidateId: number;
+    snapshotId: number;
+    conversationParticipantCount: number;
+    groups: SnapshotGroupMetadata[];
+    personalizationUserId?: string;
+}): Promise<SnapshotAnalysisOpinionData> {
+    const opinionRows = await db
+        .select({
+            opinionId: opinionTable.id,
+            opinionSlugId: opinionTable.slugId,
+            createdAt: opinionTable.createdAt,
+            updatedAt: opinionTable.updatedAt,
+            opinion: opinionContentTable.content,
+            authorId: opinionTable.authorId,
+            username: userTable.username,
+            isSeed: opinionTable.isSeed,
+            numAgrees: analysisSnapshotOpinionTable.numAgrees,
+            numDisagrees: analysisSnapshotOpinionTable.numDisagrees,
+            numPasses: analysisSnapshotOpinionTable.numPasses,
+            groupAwareConsensusAgree:
+                opinionGroupCandidateOpinionMetricsTable.groupAwareConsensusAgree,
+            groupAwareConsensusDisagree:
+                opinionGroupCandidateOpinionMetricsTable.groupAwareConsensusDisagree,
+            divisiveScore:
+                opinionGroupCandidateOpinionMetricsTable.divisiveness,
+            moderationAction: opinionModerationTable.moderationAction,
+            moderationExplanation: opinionModerationTable.moderationExplanation,
+            moderationReason: opinionModerationTable.moderationReason,
+            moderationCreatedAt: opinionModerationTable.createdAt,
+            moderationUpdatedAt: opinionModerationTable.updatedAt,
+        })
+        .from(opinionGroupCandidateOpinionMetricsTable)
+        .innerJoin(
+            analysisSnapshotOpinionTable,
+            eq(
+                analysisSnapshotOpinionTable.id,
+                opinionGroupCandidateOpinionMetricsTable.analysisSnapshotOpinionId,
+            ),
+        )
+        .innerJoin(
+            opinionTable,
+            eq(opinionTable.id, analysisSnapshotOpinionTable.opinionId),
+        )
+        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .innerJoin(
+            opinionContentTable,
+            eq(
+                opinionContentTable.id,
+                analysisSnapshotOpinionTable.opinionContentId,
+            ),
+        )
+        .leftJoin(
+            opinionModerationTable,
+            eq(opinionModerationTable.opinionId, opinionTable.id),
+        )
+        .where(
+            and(
+                eq(
+                    opinionGroupCandidateOpinionMetricsTable.candidateId,
+                    candidateId,
+                ),
+                eq(analysisSnapshotOpinionTable.analysisSnapshotId, snapshotId),
+                isNull(opinionModerationTable.id),
+                eq(userTable.isDeleted, false),
+            ),
+        );
+
+    const groupsById = new Map<number, SnapshotGroupMetadata>();
+    for (const group of groups) {
+        groupsById.set(group.id, group);
+    }
+
+    const groupOpinionRows =
+        groups.length === 0
+            ? []
+            : await db
+                  .select({
+                      groupId: opinionGroupOpinionStatsTable.groupId,
+                      opinionId: analysisSnapshotOpinionTable.opinionId,
+                      numAgrees: opinionGroupOpinionStatsTable.numAgrees,
+                      numDisagrees: opinionGroupOpinionStatsTable.numDisagrees,
+                      numPasses: opinionGroupOpinionStatsTable.numPasses,
+                      representativeAgreementType:
+                          opinionGroupOpinionStatsTable.representativeAgreementType,
+                      representativeProbabilityAgreement:
+                          opinionGroupOpinionStatsTable.representativeProbabilityAgreement,
+                  })
+                  .from(opinionGroupOpinionStatsTable)
+                  .innerJoin(
+                      analysisSnapshotOpinionTable,
+                      eq(
+                          analysisSnapshotOpinionTable.id,
+                          opinionGroupOpinionStatsTable.analysisSnapshotOpinionId,
+                      ),
+                  )
+                  .innerJoin(
+                      opinionGroupTable,
+                      eq(
+                          opinionGroupTable.id,
+                          opinionGroupOpinionStatsTable.groupId,
+                      ),
+                  )
+                  .where(
+                      inArray(
+                          opinionGroupOpinionStatsTable.groupId,
+                          groups.map((group) => group.id),
+                      ),
+                  )
+                  .orderBy(asc(opinionGroupTable.key));
+
+    const authorIds = Array.from(
+        new Set(opinionRows.map((opinionRow) => opinionRow.authorId)),
+    );
+    const authorGroupRows =
+        authorIds.length === 0
+            ? []
+            : await db
+                  .select({
+                      userId: opinionGroupUserTable.userId,
+                      groupId: opinionGroupUserTable.groupId,
+                  })
+                  .from(opinionGroupUserTable)
+                  .where(
+                      and(
+                          eq(opinionGroupUserTable.candidateId, candidateId),
+                          inArray(opinionGroupUserTable.userId, authorIds),
+                      ),
+                  );
+
+    const groupIdByAuthorId = new Map<string, number>();
+    for (const row of authorGroupRows) {
+        groupIdByAuthorId.set(row.userId, row.groupId);
+    }
+
+    const authorIdByOpinionId = new Map<number, string>();
+    for (const row of opinionRows) {
+        authorIdByOpinionId.set(row.opinionId, row.authorId);
+    }
+
+    const clustersStatsByOpinionId = new Map<number, ClusterStats[]>();
+    for (const row of groupOpinionRows) {
+        const group = groupsById.get(row.groupId);
+        const authorId = authorIdByOpinionId.get(row.opinionId);
+        if (group === undefined || authorId === undefined) {
+            continue;
+        }
+
+        const clusterStats = clustersStatsByOpinionId.get(row.opinionId) ?? [];
+        clusterStats.push({
+            key: group.key,
+            isAuthorInCluster: groupIdByAuthorId.get(authorId) === row.groupId,
+            numUsers: group.numUsers,
+            numAgrees: row.numAgrees,
+            numDisagrees: row.numDisagrees,
+            numPasses: row.numPasses,
+        });
+        clustersStatsByOpinionId.set(row.opinionId, clusterStats);
+    }
+
+    const opinionsById = new Map<number, AnalysisOpinionItem>();
+    for (const row of opinionRows) {
+        const moderationProperties = createCommentModerationPropertyObject(
+            row.moderationAction,
+            row.moderationExplanation,
+            row.moderationReason,
+            row.moderationCreatedAt,
+            row.moderationUpdatedAt,
+        );
+
+        opinionsById.set(row.opinionId, {
+            opinion: row.opinion,
+            opinionSlugId: row.opinionSlugId,
+            createdAt: row.createdAt,
+            numParticipants: conversationParticipantCount,
+            numDisagrees: row.numDisagrees,
+            numAgrees: row.numAgrees,
+            numPasses: row.numPasses,
+            updatedAt: row.updatedAt,
+            username: row.username,
+            moderation: moderationProperties,
+            isSeed: row.isSeed,
+            clustersStats: clustersStatsByOpinionId.get(row.opinionId) ?? [],
+            groupAwareConsensusAgree: row.groupAwareConsensusAgree ?? 0,
+            groupAwareConsensusDisagree: row.groupAwareConsensusDisagree ?? 0,
+            divisiveScore: row.divisiveScore ?? 0,
+        });
+    }
+
+    await removeMutedAnalysisOpinions({
+        db,
+        personalizationUserId,
+        opinionsById,
+    });
+
+    const representativeRowsByGroupKey = new Map<
+        PolisKey,
+        { opinionId: number; probabilityAgreement: number }[]
+    >();
+    for (const row of groupOpinionRows) {
+        const group = groupsById.get(row.groupId);
+        if (
+            group === undefined ||
+            row.representativeAgreementType === null ||
+            row.representativeProbabilityAgreement === null ||
+            !opinionsById.has(row.opinionId)
+        ) {
+            continue;
+        }
+
+        const representativeRows =
+            representativeRowsByGroupKey.get(group.key) ?? [];
+        representativeRows.push({
+            opinionId: row.opinionId,
+            probabilityAgreement: row.representativeProbabilityAgreement,
+        });
+        representativeRowsByGroupKey.set(group.key, representativeRows);
+    }
+
+    const representativeOpinionIdsByGroupKey = new Map<PolisKey, number[]>();
+    for (const [groupKey, representativeRows] of representativeRowsByGroupKey) {
+        representativeOpinionIdsByGroupKey.set(
+            groupKey,
+            representativeRows
+                .sort((a, b) => b.probabilityAgreement - a.probabilityAgreement)
+                .slice(0, REPRESENTATIVE_OPINION_LIMIT)
+                .map((row) => row.opinionId),
+        );
+    }
+
+    return { opinionsById, representativeOpinionIdsByGroupKey };
+}
+
+function buildSnapshotPolisClusters({
+    groups,
+    opinionsById,
+    representativeOpinionIdsByGroupKey,
+}: {
+    groups: SnapshotGroupMetadata[];
+    opinionsById: Map<number, AnalysisOpinionItem>;
+    representativeOpinionIdsByGroupKey: Map<PolisKey, number[]>;
+}): PolisClusters {
+    const polisClusters: PolisClusters = {};
+
+    for (const group of groups) {
+        const representative: AnalysisOpinionItem[] = [];
+        for (const opinionId of representativeOpinionIdsByGroupKey.get(
+            group.key,
+        ) ?? []) {
+            const opinion = opinionsById.get(opinionId);
+            if (opinion !== undefined) {
+                representative.push(opinion);
+            }
+        }
+
+        polisClusters[group.key] = {
+            key: group.key,
+            numUsers: group.numUsers,
+            aiLabel: group.aiLabel,
+            aiSummary: group.aiSummary,
+            isUserInCluster: group.isUserInCluster,
+            representative,
+        };
+    }
+
+    return polisClusters;
+}
+
+async function fetchSnapshotAnalysisByConversationSlugId({
+    db,
+    conversationSlugId,
+    personalizationUserId,
+    displayLanguage,
+    hasVotedOnAllAvailableOpinions,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+    personalizationUserId?: string;
+    displayLanguage: string;
+    hasVotedOnAllAvailableOpinions: boolean | undefined;
+}): Promise<ConversationAnalysis | undefined> {
+    const selectedCandidate = await getSelectedOpinionGroupCandidate({
+        db,
+        conversationSlugId,
+        displayLanguage,
+    });
+    if (selectedCandidate === undefined) {
+        return createEmptyConversationAnalysis({
+            hasVotedOnAllAvailableOpinions,
+        });
+    }
+
+    const candidateId = selectedCandidate.candidateId;
+    const groups = await fetchSnapshotGroups({
+        db,
+        candidateId,
+        personalizationUserId,
+        displayLanguage,
+        useSystemDescriptions: selectedCandidate.useSystemDescriptions,
+    });
+    const { opinionsById, representativeOpinionIdsByGroupKey } =
+        await fetchSnapshotAnalysisOpinions({
+            db,
+            candidateId,
+            snapshotId: selectedCandidate.snapshotId,
+            conversationParticipantCount: selectedCandidate.participantCount,
+            groups,
+            personalizationUserId,
+        });
+
+    const opinions = Array.from(opinionsById.values());
+    return {
+        polisContentId: undefined,
+        consensusAgree: sortAnalysisOpinionsByWeightedMetric({
+            opinions,
+            getMetric: (opinion) => opinion.groupAwareConsensusAgree,
+        }).slice(0, ANALYSIS_OPINION_LIMIT),
+        consensusDisagree: sortAnalysisOpinionsByWeightedMetric({
+            opinions,
+            getMetric: (opinion) => opinion.groupAwareConsensusDisagree,
+        }).slice(0, ANALYSIS_OPINION_LIMIT),
+        controversial: sortAnalysisOpinionsByWeightedMetric({
+            opinions,
+            getMetric: (opinion) => opinion.divisiveScore,
+        }).slice(0, ANALYSIS_OPINION_LIMIT),
+        clusters: buildSnapshotPolisClusters({
+            groups,
+            opinionsById,
+            representativeOpinionIdsByGroupKey,
+        }),
+        hasVotedOnAllAvailableOpinions,
+    };
 }
 
 export async function fetchAnalysisByConversationSlugId({
@@ -951,125 +1067,33 @@ export async function fetchAnalysisByConversationSlugId({
     conversationSlugId,
     personalizationUserId,
     displayLanguage = "en",
-    googleCloudCredentials,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
     personalizationUserId?: string;
     displayLanguage?: string;
-    googleCloudCredentials?: GoogleCloudCredentials;
 }): Promise<ConversationAnalysis> {
-    const { getPolisMetadata } = useCommonPost();
-    const [hasVotedOnAllAvailableOpinions, polisMetadata] = await Promise.all([
-        getHasVotedOnAllAvailableOpinions({
+    const hasVotedOnAllAvailableOpinions =
+        await getHasVotedOnAllAvailableOpinions({
             db,
             conversationSlugId,
             personalizationUserId,
-        }),
-        getPolisMetadata({
-            db: db,
-            conversationSlugId,
-            personalizationUserId,
-            displayLanguage,
-        }),
-    ]);
-    if (polisMetadata === undefined) {
-        return {
-            polisContentId: undefined,
-            consensusAgree: [],
-            consensusDisagree: [],
-            controversial: [],
-            clusters: {},
-            hasVotedOnAllAvailableOpinions,
-        };
+        });
+
+    const snapshotAnalysis = await fetchSnapshotAnalysisByConversationSlugId({
+        db,
+        conversationSlugId,
+        personalizationUserId,
+        displayLanguage,
+        hasVotedOnAllAvailableOpinions,
+    });
+    if (snapshotAnalysis !== undefined) {
+        return snapshotAnalysis;
     }
 
-    // Phase 2: Calling external APIs for conversationId
-    // If translations are requested (non-English), trigger on-demand translation
-    // generation for any missing translations in the background
-    if (
-        displayLanguage !== "en" &&
-        polisMetadata.missingTranslations.size > 0
-    ) {
-        if (googleCloudCredentials !== undefined) {
-            log.info(
-                `[Phase 2] Calling Google Cloud Translation API for conversationSlugId=${conversationSlugId}, displayLanguage=${displayLanguage}, missingTranslationsCount=${String(polisMetadata.missingTranslations.size)}`,
-            );
-            // Fire and forget - don't block the response on translation generation
-            // The translations will be available on the next request
-            generateClusterTranslationsOnDemand(
-                db,
-                polisMetadata.missingTranslations,
-                displayLanguage,
-                googleCloudCredentials,
-                "en",
-            ).catch((err: unknown) => {
-                log.error(
-                    err,
-                    `Failed to generate translations for ${conversationSlugId}`,
-                );
-            });
-        } else {
-            log.warn(
-                `[Phase 2] Skipping Google Cloud Translation API call for conversationSlugId=${conversationSlugId}, displayLanguage=${displayLanguage}: Google Cloud credentials not configured (GOOGLE_CLOUD_* environment variables missing)`,
-            );
-        }
-    }
-    const [consensusAgreeOpinions, consensusDisagreeOpinions] =
-        await Promise.all([
-            fetchAnalysisOpinionsByPostSlugId({
-                db: db,
-                postSlugId: conversationSlugId,
-                filterTarget: "consensus-agree",
-                personalizationUserId,
-                limit: 3000,
-            }),
-            fetchAnalysisOpinionsByPostSlugId({
-                db: db,
-                postSlugId: conversationSlugId,
-                filterTarget: "consensus-disagree",
-                personalizationUserId,
-                limit: 3000,
-            }),
-        ]);
-    const controversialOpinions = await fetchAnalysisOpinionsByPostSlugId({
-        db: db,
-        postSlugId: conversationSlugId,
-        filterTarget: "controversial",
-        personalizationUserId,
-        limit: 3000,
-    });
-    const polisClusters: PolisClusters = {};
-    for (const [key, clusterMetadata] of Object.entries(
-        polisMetadata.clustersMetadata,
-    )) {
-        // without casting, record key is otherwise always a string
-        //
-        const clusterKey = key as keyof typeof polisMetadata.clustersMetadata;
-        const representativeOpinions = await fetchAnalysisOpinionsByPostSlugId({
-            db: db,
-            postSlugId: conversationSlugId,
-            filterTarget: "representative",
-            clusterKey: clusterKey,
-            personalizationUserId,
-            limit: 50,
-        });
-        // Destructure to exclude 'id' field since the response schema doesn't expect it
-        const { id: _id, ...clusterWithoutId } = clusterMetadata;
-        polisClusters[clusterKey] = {
-            ...clusterWithoutId,
-            representative: Array.from(representativeOpinions.values()),
-        };
-    }
-    const result: ConversationAnalysis = {
-        polisContentId: polisMetadata.polisContentId,
-        consensusAgree: Array.from(consensusAgreeOpinions.values()),
-        consensusDisagree: Array.from(consensusDisagreeOpinions.values()),
-        controversial: Array.from(controversialOpinions.values()),
-        clusters: polisClusters,
+    return createEmptyConversationAnalysis({
         hasVotedOnAllAvailableOpinions,
-    };
-    return result;
+    });
 }
 
 async function getHasVotedOnAllAvailableOpinions({
@@ -1206,17 +1230,19 @@ export async function postNewOpinion({
             ? {
                   success: true,
                   conversationId: conversationMetadata.conversationId,
-                  conversationContentId: conversationMetadata.conversationContentId,
+                  conversationContentId:
+                      conversationMetadata.conversationContentId,
                   participantId: conversationMetadata.conversationAuthorId,
               }
             : await (async () => {
-                  const participationCheck = await checkConversationParticipation({
-                      db,
-                      conversationSlugId,
-                      didWrite,
-                      userAgent,
-                      now,
-                  });
+                  const participationCheck =
+                      await checkConversationParticipation({
+                          db,
+                          conversationSlugId,
+                          didWrite,
+                          userAgent,
+                          now,
+                      });
                   if (!participationCheck.success) {
                       return participationCheck;
                   }
@@ -1256,7 +1282,8 @@ export async function postNewOpinion({
             .insert(opinionContentTable)
             .values({
                 opinionId: opinionId,
-                conversationContentId: participationContext.conversationContentId,
+                conversationContentId:
+                    participationContext.conversationContentId,
                 content: commentBody,
             })
             .returning({ commentContentTableId: opinionContentTable.id });
@@ -1273,20 +1300,23 @@ export async function postNewOpinion({
 
         // Update the user profile's comment count using atomic increment
         await transactionDb
-                .update(userTable)
-                .set({
-                    totalOpinionCount: sql`total_opinion_count + 1`,
-                })
-                .where(eq(userTable.id, participationContext.participantId));
+            .update(userTable)
+            .set({
+                totalOpinionCount: sql`total_opinion_count + 1`,
+            })
+            .where(eq(userTable.id, participationContext.participantId));
 
-        // Update conversation opinionCount (+1 for new opinion)
-        // Note: voteCount and participantCount will be updated by vote buffer
-        // when the automatic vote is processed
-        await updateOpinionCount({
+        await transactionDb
+            .update(conversationTable)
+            .set({ lastReactedAt: now })
+            .where(
+                eq(conversationTable.id, participationContext.conversationId),
+            );
+
+        await createConversationViewSnapshotsFromCurrentState({
             db: transactionDb,
             conversationId: participationContext.conversationId,
-            delta: 1,
-            doUpdateLastReactedAt: true,
+            viewReason: "conversation_content_updated",
         });
 
         return { opinionId };
@@ -1358,17 +1388,48 @@ export async function deleteOpinionBySlugId({
         throw httpErrors.conflict("Opinion had already been deleted");
     }
     await db.transaction(async (tx) => {
-        const updatedCommentIdResponse = await tx
-            .update(opinionTable)
-            .set({
-                currentContentId: null,
+        const opinionRows = await tx
+            .select({
+                opinionId: opinionTable.id,
+                conversationId: opinionTable.conversationId,
             })
+            .from(opinionTable)
             .where(
                 and(
                     eq(opinionTable.authorId, userId),
                     eq(opinionTable.slugId, opinionSlugId),
                 ),
             )
+            .for("update")
+            .limit(1);
+
+        if (opinionRows.length !== 1) {
+            throw httpErrors.notFound("Opinion not found");
+        }
+
+        const opinion = opinionRows[0];
+        const moderationRows = await tx
+            .select({ moderationId: opinionModerationTable.id })
+            .from(opinionModerationTable)
+            .where(eq(opinionModerationTable.opinionId, opinion.opinionId))
+            .limit(1);
+        const activeVoteRows = await tx
+            .select({ voteId: voteTable.id })
+            .from(voteTable)
+            .where(
+                and(
+                    eq(voteTable.opinionId, opinion.opinionId),
+                    isNotNull(voteTable.currentContentId),
+                ),
+            )
+            .limit(1);
+
+        const updatedCommentIdResponse = await tx
+            .update(opinionTable)
+            .set({
+                currentContentId: null,
+            })
+            .where(eq(opinionTable.id, opinion.opinionId))
             .returning({
                 updateCommentId: opinionTable.id,
                 conversationId: opinionTable.conversationId,
@@ -1384,10 +1445,19 @@ export async function deleteOpinionBySlugId({
 
         const conversationId = updatedCommentIdResponse[0].conversationId;
 
-        // Reconcile all counters (automatically enqueues math update)
-        // Deleting opinion affects opinionCount, voteCount, and participantCount
-        // (since all votes on this opinion become invalid)
-        await reconcileConversationCounters({ db: tx, conversationId });
+        await createConversationViewSnapshotsFromCurrentState({
+            db: tx,
+            conversationId,
+            viewReason: "conversation_content_updated",
+        });
+
+        if (moderationRows.length === 0 && activeVoteRows.length > 0) {
+            await scheduleConversationAnalysisRefresh({
+                db: tx,
+                conversationId,
+                log,
+            });
+        }
 
         // Decrement user's total opinion count
         await tx
