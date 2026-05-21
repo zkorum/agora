@@ -37,12 +37,9 @@
   }
 
   const featuredPost = $derived(findFeaturedPost(posts));
-  const recentPosts = $derived(
-    posts.filter((post) => post.slug !== featuredPost?.slug),
-  );
   const filteredPosts = $derived(
     selectedType === "all"
-      ? recentPosts
+      ? posts
       : posts.filter((post) => post.type === selectedType),
   );
 
@@ -78,7 +75,12 @@
   }
 </script>
 
-<div class="bg-[#fefeff] px-4 pb-24 sm:px-8">
+<div
+  class="
+    bg-[#fefeff] px-4 pb-24
+    sm:px-8
+  "
+>
   {#if featuredPost}
     <section
       class="
@@ -166,8 +168,8 @@
           aria-selected={selectedType === filter.value}
           onclick={() => (selectedType = filter.value)}
           class="
-            inline-flex h-10 items-center gap-2 rounded-full border px-4
-            text-sm font-semibold transition-colors
+            inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm
+            font-semibold transition-colors
             hover:border-primary-base hover:bg-sky-lightest
             aria-selected:border-primary-base aria-selected:bg-sky-lightest
             aria-selected:text-primary-base
@@ -175,9 +177,7 @@
         >
           <span>{filter.label}</span>
           <span
-            class="
-              rounded-full bg-white/80 px-2 py-0.5 text-xs text-ink-light
-            "
+            class="rounded-full bg-white/80 px-2 py-0.5 text-xs text-ink-light"
           >
             {getFilterCount(filter.value)}
           </span>
@@ -196,7 +196,7 @@
           <a
             href={localizeHref(`/resources/${post.slug}`)}
             class="
-              group block aspect-[533/248] overflow-hidden rounded-2xl
+              group block aspect-533/248 overflow-hidden rounded-2xl
               bg-[#f1f1f1]
             "
             aria-label={post.title}

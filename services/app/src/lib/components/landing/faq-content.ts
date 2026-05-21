@@ -13,18 +13,25 @@ interface FaqContent {
   groups: FaqGroup[];
 }
 
-type Locale =
-  | "en"
-  | "fr"
-  | "es"
-  | "ar"
-  | "fa"
-  | "he"
-  | "ja"
-  | "zh-hans"
-  | "zh-hant"
-  | "ky"
-  | "ru";
+const faqLocales = [
+  "en",
+  "fr",
+  "es",
+  "ar",
+  "fa",
+  "he",
+  "ja",
+  "zh-hans",
+  "zh-hant",
+  "ky",
+  "ru",
+] as const;
+
+type Locale = (typeof faqLocales)[number];
+
+function isFaqLocale(locale: string): locale is Locale {
+  return faqLocales.some((supportedLocale) => supportedLocale === locale);
+}
 
 export const faqContentByLocale: Record<Locale, FaqContent> = {
   en: {
@@ -157,8 +164,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
               "Les participants votent d'accord, pas d'accord ou incertain sur des affirmations. Agora cartographie ensuite les motifs de ces votes, et non la formulation des affirmations, pour montrer ou les personnes se regroupent, ou elles divergent et quelles affirmations recoivent du soutien dans differents groupes d'opinion. La cartographie d'opinion repose sur l'apprentissage automatique, pas sur un LLM, avec [Red Dwarf](https://github.com/polis-community/red-dwarf), une reimplementation open source du [Pol.is](https://compdemocracy.org/Polis/) original.",
           },
           {
-            question:
-              "Quelle est la difference entre consensus et majorite ?",
+            question: "Quelle est la difference entre consensus et majorite ?",
             answer:
               "Une affirmation majoritaire est soutenue par la plupart des participants dans l'ensemble. Une affirmation de consensus est soutenue a travers les groupes d'opinion, elle ne peut donc pas simplement ecraser un groupe plus petit. Dans Agora, consensus ne signifie pas que tout le monde est d'accord ; cela signifie que l'affirmation a une legitimite a travers les principales differences presentes.",
           },
@@ -333,8 +339,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
               "Agora موجهة للميسرين، ومنظمي الفعاليات، وفرق المشاركة المدنية، ومديري المجتمعات، والشركات، والـ DAOs، والمنظمات غير الحكومية، والمؤسسات العامة، وأي مجموعة تحتاج إلى فهم الناس عبر اختلافاتهم.",
           },
           {
-            question:
-              "كيف أختار بين وضع المحادثة ووضع تحديد الأولويات؟",
+            question: "كيف أختار بين وضع المحادثة ووضع تحديد الأولويات؟",
             answer:
               "استخدم وضع المحادثة عندما يكون السؤال ما زال مفتوحا وتريد جمع وجهات النظر، ورسم خريطة الخلاف، وإيجاد أرضية مشتركة. استخدم وضع تحديد الأولويات عندما تكون لديك مقترحات بالفعل وتحتاج إلى قائمة مرتبة بما هو الأهم. [اقرأ دليل التيسير](/resources/facilitation-guide).",
           },
@@ -430,8 +435,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
               "Agora برای تسهیلگران، برگزارکنندگان رویداد، تیم‌های مشارکت مدنی، مدیران جامعه، شرکت‌ها، DAOها، سازمان‌های مردم‌نهاد، نهادهای عمومی و هر گروهی است که نیاز دارد افراد را در میان تفاوت‌ها بهتر درک کند.",
           },
           {
-            question:
-              "چطور بین حالت گفت‌وگو و حالت اولویت‌بندی انتخاب کنم؟",
+            question: "چطور بین حالت گفت‌وگو و حالت اولویت‌بندی انتخاب کنم؟",
             answer:
               "وقتی پرسش هنوز باز است و می‌خواهید دیدگاه‌ها را جمع‌آوری کنید، اختلاف‌ها را نقشه‌برداری کنید و زمینه مشترک پیدا کنید، از حالت گفت‌وگو استفاده کنید. وقتی از قبل پیشنهادهایی دارید و به فهرستی رتبه‌بندی‌شده از مهم‌ترین موارد نیاز دارید، از حالت اولویت‌بندی استفاده کنید. [راهنمای تسهیلگری را بخوانید](/resources/facilitation-guide).",
           },
@@ -527,8 +531,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
               "Agora מיועדת למנחים, מארגני אירועים, צוותי מעורבות אזרחית, מנהלי קהילות, חברות, DAO, עמותות, מוסדות ציבוריים וכל קבוצה שצריכה להבין אנשים מעבר להבדלים ביניהם.",
           },
           {
-            question:
-              "איך בוחרים בין מצב שיחה למצב תעדוף?",
+            question: "איך בוחרים בין מצב שיחה למצב תעדוף?",
             answer:
               "השתמשו במצב שיחה כאשר השאלה עדיין פתוחה ואתם רוצים לאסוף נקודות מבט, למפות אי-הסכמה ולמצוא בסיס משותף. השתמשו במצב תעדוף כאשר כבר יש לכם הצעות ואתם צריכים רשימה מדורגת של הדברים החשובים ביותר. [קראו את מדריך ההנחיה](/resources/facilitation-guide).",
           },
@@ -573,8 +576,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
         title: "פרטיות ואמון",
         items: [
           {
-            question:
-              "איך Agora מגנה על פרטיות באמצעות הוכחות אפס ידע?",
+            question: "איך Agora מגנה על פרטיות באמצעות הוכחות אפס ידע?",
             answer:
               "[הוכחות אפס ידע (ZKP)](https://en.wikipedia.org/wiki/Zero-knowledge_proof) מאפשרות למשתתפים להוכיח זכאות או ייחודיות בלי לחשוף מידע אישי. למשל, להוכיח ל-Agora את קבוצת הגיל שלכם בלי לחשוף את הגיל האמיתי. כיום Agora תומכת ב-[ZK Passport](https://rarimo.com/), שמאפשר להוכיח אזרחות, גיל ומגדר באופן אנונימי. צרו איתנו קשר אם תרצו לגלות ולהגדיר מערכות זהות אחרות, כמו הוכחת השתתפות אנונימית באירוע, מיקום GPS או אפילו חיבור WiFi.",
           },
@@ -1096,5 +1098,7 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
 };
 
 export function getFaqContent(locale: string): FaqContent {
-  return faqContentByLocale[locale as Locale] ?? faqContentByLocale.en;
+  if (isFaqLocale(locale)) return faqContentByLocale[locale];
+
+  return faqContentByLocale.en;
 }

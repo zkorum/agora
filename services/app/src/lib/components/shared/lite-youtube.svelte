@@ -21,7 +21,12 @@
 {#if browser && ready}
   <lite-youtube {videoid} {videotitle} posterquality="maxresdefault">
     {#if poster}
-      <img slot="image" src={poster} alt={videotitle ?? "Video thumbnail"} loading="lazy" />
+      <img
+        slot="image"
+        src={poster}
+        alt={videotitle ?? "Video thumbnail"}
+        loading="lazy"
+      />
     {/if}
   </lite-youtube>
 {/if}

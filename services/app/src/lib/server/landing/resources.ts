@@ -77,7 +77,9 @@ function getFallbackType(slug: string): ResourceType {
 }
 
 function getResourceType(value: unknown, slug: string): ResourceType {
-  const normalized = getString(value).toLowerCase().replace(/[\s_]+/g, "-");
+  const normalized = getString(value)
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-");
 
   if (
     normalized === "vision" ||
