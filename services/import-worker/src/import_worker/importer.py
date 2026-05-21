@@ -717,6 +717,7 @@ def _update_counts_and_schedule(
                         "total_participant_count": participant_data.total_participant_count,
                         "moderated_opinion_count": participant_data.moderated_opinion_count,
                         "hidden_opinion_count": participant_data.hidden_opinion_count,
+                        "activated_at": now,
                         "created_at": now,
                     }
                     for spec_id in current_spec_ids

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import sanitizeHtml from "sanitize-html";
 import {
     analysisSnapshotOpinionTable,
@@ -118,9 +118,12 @@ export const commentsGenerator: CsvGenerator = {
             })
             .from(conversationViewSnapshotTable)
             .where(
-                eq(
-                    conversationViewSnapshotTable.conversationId,
-                    conversationId,
+                and(
+                    eq(
+                        conversationViewSnapshotTable.conversationId,
+                        conversationId,
+                    ),
+                    isNotNull(conversationViewSnapshotTable.activatedAt),
                 ),
             )
             .orderBy(

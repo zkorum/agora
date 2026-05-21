@@ -38,6 +38,7 @@ class FakeTranslationClient:
         source_language_code: str | None,
         target_language_code: str,
         model: str,
+        timeout: float,
     ) -> FakeTranslateTextResponse:
         request = _Request(
             parent=parent,
@@ -46,6 +47,7 @@ class FakeTranslationClient:
             source_language_code=source_language_code,
             target_language_code=target_language_code,
             model=model,
+            timeout=timeout,
         )
         self.requests.append(request)
         return FakeTranslateTextResponse(
@@ -61,6 +63,7 @@ class _Request:
     source_language_code: str | None
     target_language_code: str
     model: str
+    timeout: float
 
 
 def test_parse_service_account_json_ignores_extra_fields() -> None:
@@ -84,7 +87,11 @@ def test_generate_description_translations_maps_display_language_codes() -> None
     client = FakeTranslationClient()
     service = GoogleTranslationService(
         client=client,
-        config=GoogleTranslationConfig(project_id="project", location="us-central1"),
+        config=GoogleTranslationConfig(
+            project_id="project",
+            location="us-central1",
+            request_timeout_seconds=5.0,
+        ),
     )
 
     translations = generate_description_translations(
@@ -114,13 +121,18 @@ def test_generate_description_translations_maps_display_language_codes() -> None
     ]
     assert client.requests[0].model.endswith("/models/general/nmt")
     assert client.requests[1].model.endswith("/models/general/translation-llm")
+    assert {request.timeout for request in client.requests} == {5.0}
 
 
 def test_generate_description_translations_skips_source_language() -> None:
     client = FakeTranslationClient()
     service = GoogleTranslationService(
         client=client,
-        config=GoogleTranslationConfig(project_id="project", location="us-central1"),
+        config=GoogleTranslationConfig(
+            project_id="project",
+            location="us-central1",
+            request_timeout_seconds=5.0,
+        ),
     )
 
     translations = generate_description_translations(

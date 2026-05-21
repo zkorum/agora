@@ -101,9 +101,12 @@ export function useCommonPost() {
             })
             .from(conversationViewSnapshotTable)
             .where(
-                inArray(
-                    conversationViewSnapshotTable.conversationId,
-                    uniqueConversationIds,
+                and(
+                    inArray(
+                        conversationViewSnapshotTable.conversationId,
+                        uniqueConversationIds,
+                    ),
+                    isNotNull(conversationViewSnapshotTable.activatedAt),
                 ),
             )
             .orderBy(

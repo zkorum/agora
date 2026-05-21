@@ -6,6 +6,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol, TypeGuard, Unpack
 
+from botocore.config import Config
 from botocore.session import get_session
 
 if TYPE_CHECKING:
@@ -36,6 +37,8 @@ class BedrockLabelSummaryConfig:
     top_p: float
     max_tokens: int
     prompt: str
+    connect_timeout_seconds: float
+    read_timeout_seconds: float
 
 
 @dataclass(frozen=True)
@@ -51,8 +54,20 @@ class ParsedLabelSummaryOutput:
     clusters: dict[str, LabelSummary]
 
 
-def create_bedrock_converse_client(*, region: str) -> BedrockConverseClient:
-    client: object = get_session().create_client("bedrock-runtime", region_name=region)
+def create_bedrock_converse_client(
+    *,
+    region: str,
+    connect_timeout_seconds: float,
+    read_timeout_seconds: float,
+) -> BedrockConverseClient:
+    client: object = get_session().create_client(
+        "bedrock-runtime",
+        region_name=region,
+        config=Config(
+            connect_timeout=connect_timeout_seconds,
+            read_timeout=read_timeout_seconds,
+        ),
+    )
     if not _is_bedrock_converse_client(client):
         msg = "boto3 bedrock-runtime client does not expose converse()"
         raise BedrockLabelSummaryError(msg)
@@ -65,7 +80,11 @@ def generate_label_summaries_with_bedrock(
     config: BedrockLabelSummaryConfig,
     client: BedrockConverseClient | None = None,
 ) -> ParsedLabelSummaryOutput:
-    bedrock_client = client or create_bedrock_converse_client(region=config.region)
+    bedrock_client = client or create_bedrock_converse_client(
+        region=config.region,
+        connect_timeout_seconds=config.connect_timeout_seconds,
+        read_timeout_seconds=config.read_timeout_seconds,
+    )
     command_payload = build_bedrock_converse_payload(
         conversation=conversation,
         config=config,

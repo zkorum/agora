@@ -102,7 +102,15 @@ async function fetchLatestConversationOpinionCountSnapshot({
                 conversationViewSnapshotTable.analysisSnapshotId,
         })
         .from(conversationViewSnapshotTable)
-        .where(eq(conversationViewSnapshotTable.conversationId, conversationId))
+        .where(
+            and(
+                eq(
+                    conversationViewSnapshotTable.conversationId,
+                    conversationId,
+                ),
+                isNotNull(conversationViewSnapshotTable.activatedAt),
+            ),
+        )
         .orderBy(
             desc(conversationViewSnapshotTable.createdAt),
             desc(conversationViewSnapshotTable.id),

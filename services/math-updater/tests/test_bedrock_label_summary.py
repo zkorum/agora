@@ -40,6 +40,8 @@ def _config() -> BedrockLabelSummaryConfig:
         top_p=0.9,
         max_tokens=1024,
         prompt="System prompt",
+        connect_timeout_seconds=2.0,
+        read_timeout_seconds=12.0,
     )
 
 

@@ -3215,6 +3215,10 @@ export const conversationViewSnapshotTable = pgTable(
         totalParticipantCount: integer("total_participant_count").notNull(),
         moderatedOpinionCount: integer("moderated_opinion_count").notNull(),
         hiddenOpinionCount: integer("hidden_opinion_count").notNull(),
+        activatedAt: timestamp("activated_at", {
+            mode: "date",
+            precision: 0,
+        }),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -3228,6 +3232,9 @@ export const conversationViewSnapshotTable = pgTable(
             t.createdAt,
             t.id,
         ),
+        index("conversation_view_snapshot_latest_active_idx")
+            .on(t.conversationId, t.createdAt, t.id)
+            .where(isNotNull(t.activatedAt)),
         check(
             "conversation_view_snapshot_counts_check",
             sql`${t.opinionCount} >= 0 AND ${t.voteCount} >= 0 AND ${t.participantCount} >= 0 AND ${t.totalOpinionCount} >= 0 AND ${t.totalVoteCount} >= 0 AND ${t.totalParticipantCount} >= 0 AND ${t.moderatedOpinionCount} >= 0 AND ${t.hiddenOpinionCount} >= 0`,

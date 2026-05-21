@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, TypeGuard
 
+from botocore.config import Config
 from botocore.session import get_session
 from google.api_core.client_options import ClientOptions
 from google.cloud import translate_v3
@@ -66,6 +67,7 @@ class TranslationClient(Protocol):
         source_language_code: str | None,
         target_language_code: str,
         model: str,
+        timeout: float,
     ) -> TranslateTextResponse: ...
 
 
@@ -81,6 +83,7 @@ class GoogleCredentialsFactory(Protocol):
 class GoogleTranslationConfig:
     project_id: str
     location: str
+    request_timeout_seconds: float
 
 
 @dataclass(frozen=True)
@@ -108,13 +111,18 @@ def initialize_google_translation_service(
     *,
     google_cloud_service_account_aws_secret_key: str | None,
     aws_secret_region: str | None,
+    aws_connect_timeout_seconds: float,
+    aws_read_timeout_seconds: float,
     google_application_credentials_path: str | None,
     google_cloud_translation_location: str,
     google_cloud_translation_endpoint: str | None,
+    google_cloud_translation_timeout_seconds: float,
 ) -> GoogleTranslationService | None:
     service_account = _load_service_account_json(
         google_cloud_service_account_aws_secret_key=google_cloud_service_account_aws_secret_key,
         aws_secret_region=aws_secret_region,
+        aws_connect_timeout_seconds=aws_connect_timeout_seconds,
+        aws_read_timeout_seconds=aws_read_timeout_seconds,
         google_application_credentials_path=google_application_credentials_path,
     )
     if service_account is None:
@@ -129,6 +137,7 @@ def initialize_google_translation_service(
         config=GoogleTranslationConfig(
             project_id=service_account.project_id,
             location=google_cloud_translation_location,
+            request_timeout_seconds=google_cloud_translation_timeout_seconds,
         ),
     )
 
@@ -181,6 +190,8 @@ def _load_service_account_json(
     *,
     google_cloud_service_account_aws_secret_key: str | None,
     aws_secret_region: str | None,
+    aws_connect_timeout_seconds: float,
+    aws_read_timeout_seconds: float,
     google_application_credentials_path: str | None,
 ) -> ServiceAccountJson | None:
     if google_cloud_service_account_aws_secret_key is not None:
@@ -189,6 +200,8 @@ def _load_service_account_json(
             raise DescriptionTranslationError(msg)
         secret_response = _create_secrets_manager_client(
             region=aws_secret_region,
+            connect_timeout_seconds=aws_connect_timeout_seconds,
+            read_timeout_seconds=aws_read_timeout_seconds,
         ).get_secret_value(SecretId=google_cloud_service_account_aws_secret_key)
         secret_string = secret_response.get("SecretString")
         if not isinstance(secret_string, str):
@@ -236,8 +249,20 @@ def _create_translation_client(
     return client
 
 
-def _create_secrets_manager_client(*, region: str) -> SecretsManagerClient:
-    client: object = get_session().create_client("secretsmanager", region_name=region)
+def _create_secrets_manager_client(
+    *,
+    region: str,
+    connect_timeout_seconds: float,
+    read_timeout_seconds: float,
+) -> SecretsManagerClient:
+    client: object = get_session().create_client(
+        "secretsmanager",
+        region_name=region,
+        config=Config(
+            connect_timeout=connect_timeout_seconds,
+            read_timeout=read_timeout_seconds,
+        ),
+    )
     if not _is_secrets_manager_client(client):
         msg = "AWS Secrets Manager client does not expose get_secret_value()"
         raise DescriptionTranslationError(msg)
@@ -293,6 +318,7 @@ def _translate_text(
             location=service.config.location,
             model_name=_get_translation_model_name(content_kind=content_kind),
         ),
+        timeout=service.config.request_timeout_seconds,
     )
     translated_text = response.translations[0].translated_text if response.translations else None
     if translated_text is None:

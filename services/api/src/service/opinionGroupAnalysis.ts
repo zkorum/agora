@@ -15,7 +15,7 @@ import {
     opinionGroupUserTable,
     opinionGroupVariantTable,
 } from "@/shared-backend/schema.js";
-import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
@@ -393,6 +393,7 @@ export async function getSelectedOpinionGroupCandidate({
             and(
                 conversationFilter,
                 eq(analysisSpecTable.analysisFamily, "opinion_groups"),
+                isNotNull(conversationViewSnapshotTable.activatedAt),
             ),
         )
         .orderBy(

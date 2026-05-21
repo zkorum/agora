@@ -117,6 +117,7 @@ export async function createConversationViewSnapshotsFromCurrentState({
                     conversationViewSnapshotTable.opinionGroupSpecId,
                     currentOpinionGroupSpecIds,
                 ),
+                isNotNull(conversationViewSnapshotTable.activatedAt),
             ),
         )
         .orderBy(
@@ -147,6 +148,7 @@ export async function createConversationViewSnapshotsFromCurrentState({
         latestSnapshotRefsBySpecId.set(row.opinionGroupSpecId, refs);
     }
 
+    const activatedAt = new Date();
     const shouldPreserveSurveyAggregate = viewReason !== "survey_refreshed";
     await db.insert(conversationViewSnapshotTable).values(
         currentOpinionGroupSpecIds.map((opinionGroupSpecId) => {
@@ -169,6 +171,7 @@ export async function createConversationViewSnapshotsFromCurrentState({
                 totalParticipantCount: counters.totalParticipantCount,
                 moderatedOpinionCount: counters.moderatedOpinionCount,
                 hiddenOpinionCount: counters.hiddenOpinionCount,
+                activatedAt,
             };
         }),
     );
@@ -258,6 +261,7 @@ export async function ensureAiDescriptionLocaleStatusesForLatestAnalysisSnapshot
                     conversationViewSnapshotTable.opinionGroupSpecId,
                     currentOpinionGroupSpecIds,
                 ),
+                isNotNull(conversationViewSnapshotTable.activatedAt),
             ),
         )
         .orderBy(

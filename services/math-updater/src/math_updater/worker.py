@@ -73,6 +73,7 @@ if TYPE_CHECKING:
 
     from sqlalchemy import Engine
 
+    from math_updater.ai_description_work import ClaimedAiDescriptionLocaleWorkItem
     from math_updater.analysis_compute import ComputedAnalysisBundle
     from math_updater.bedrock_label_summary import ParsedLabelSummaryOutput
     from math_updater.db import ClaimedWorkItem, OpinionGroupConfigRecord
@@ -237,6 +238,7 @@ def _process_ai_description_conversation_ids(
     conversation_view_snapshot_ids: list[int] | None = None,
     lease_ttl_seconds: int,
     claim_limit: int,
+    max_workers: int,
     ai_description_epoch: int,
     retry_policy: RetryPolicy,
     description_generator: DescriptionGenerator,
@@ -255,16 +257,15 @@ def _process_ai_description_conversation_ids(
     if not ai_claims:
         return 0
 
-    schedules: list[WorkStateSchedule | AiDescriptionWorkStateSchedule] = []
-    for claim in ai_claims:
+    def process_claim(
+        claim: ClaimedAiDescriptionLocaleWorkItem,
+    ) -> WorkStateSchedule | AiDescriptionWorkStateSchedule:
         try:
-            schedules.append(
-                process_ai_description_locale_work_item(
-                    primary_engine,
-                    claim=claim,
-                    generate_descriptions=description_generator,
-                    translate_descriptions=description_translator,
-                )
+            return process_ai_description_locale_work_item(
+                primary_engine,
+                claim=claim,
+                generate_descriptions=description_generator,
+                translate_descriptions=description_translator,
             )
         except Exception as error:
             if _is_non_retryable_ai_description_error(error):
@@ -274,30 +275,41 @@ def _process_ai_description_conversation_ids(
                     claim.conversation_slug_id,
                     claim.locale,
                 )
-                schedules.append(
-                    mark_non_retryable_ai_description_locale_work_item(
-                        primary_engine,
-                        claim=claim,
-                        ai_description_epoch=ai_description_epoch,
-                        error_code="ai_description_non_retryable",
-                        error_message=str(error),
-                    )
+                return mark_non_retryable_ai_description_locale_work_item(
+                    primary_engine,
+                    claim=claim,
+                    ai_description_epoch=ai_description_epoch,
+                    error_code="ai_description_non_retryable",
+                    error_message=str(error),
                 )
-            else:
+
+            log.exception(
+                "[MathUpdater] Retryable AI description failure for "
+                "conversation_slug_id=%s locale=%s",
+                claim.conversation_slug_id,
+                claim.locale,
+            )
+            return retry_ai_description_locale_work_item(
+                primary_engine,
+                claim=claim,
+                retry_policy=retry_policy,
+                error_code="ai_description_retryable",
+                error_message=str(error),
+            )
+
+    schedules: list[WorkStateSchedule | AiDescriptionWorkStateSchedule] = []
+    with ThreadPoolExecutor(max_workers=min(max_workers, len(ai_claims))) as executor:
+        future_by_claim = {executor.submit(process_claim, claim): claim for claim in ai_claims}
+        for future in as_completed(future_by_claim):
+            claim = future_by_claim[future]
+            try:
+                schedules.append(future.result())
+            except Exception:
                 log.exception(
-                    "[MathUpdater] Retryable AI description failure for "
+                    "[MathUpdater] Failed to finalize AI description retry state for "
                     "conversation_slug_id=%s locale=%s",
                     claim.conversation_slug_id,
                     claim.locale,
-                )
-                schedules.append(
-                    retry_ai_description_locale_work_item(
-                        primary_engine,
-                        claim=claim,
-                        retry_policy=retry_policy,
-                        error_code="ai_description_retryable",
-                        error_message=str(error),
-                    )
                 )
 
     _enqueue_schedules(vk, schedules=schedules, enqueue_ai_description=True)
@@ -312,6 +324,7 @@ def _process_ai_description_due_items(
     due_items: list[DueConversation],
     lease_ttl_seconds: int,
     claim_limit: int,
+    max_workers: int,
     ai_description_epoch: int,
     retry_policy: RetryPolicy,
     description_generator: DescriptionGenerator,
@@ -325,6 +338,7 @@ def _process_ai_description_due_items(
         conversation_view_snapshot_ids=None,
         lease_ttl_seconds=lease_ttl_seconds,
         claim_limit=claim_limit,
+        max_workers=max_workers,
         ai_description_epoch=ai_description_epoch,
         retry_policy=retry_policy,
         description_generator=description_generator,
@@ -342,6 +356,7 @@ def _process_ai_description_first_pass(
     conversation_view_snapshot_ids: list[int],
     lease_ttl_seconds: int,
     claim_limit: int,
+    max_workers: int,
     ai_description_epoch: int,
     retry_policy: RetryPolicy,
     description_generator: DescriptionGenerator,
@@ -356,6 +371,7 @@ def _process_ai_description_first_pass(
             conversation_view_snapshot_ids=conversation_view_snapshot_ids,
             lease_ttl_seconds=lease_ttl_seconds,
             claim_limit=claim_limit,
+            max_workers=max_workers,
             ai_description_epoch=ai_description_epoch,
             retry_policy=retry_policy,
             description_generator=description_generator,
@@ -396,6 +412,8 @@ def _build_description_generator(settings: Settings) -> DescriptionGenerator | N
         top_p=settings.aws_ai_label_summary_top_p,
         max_tokens=settings.aws_ai_label_summary_max_tokens,
         prompt=settings.aws_ai_label_summary_prompt,
+        connect_timeout_seconds=settings.aws_client_connect_timeout_seconds,
+        read_timeout_seconds=settings.aws_ai_label_summary_read_timeout_seconds,
     )
 
     def generate(
@@ -416,9 +434,14 @@ def _build_description_translator(settings: Settings) -> DescriptionTranslator |
                 settings.google_cloud_service_account_aws_secret_key
             ),
             aws_secret_region=settings.aws_secret_region,
+            aws_connect_timeout_seconds=settings.aws_client_connect_timeout_seconds,
+            aws_read_timeout_seconds=settings.aws_secret_read_timeout_seconds,
             google_application_credentials_path=settings.google_application_credentials,
             google_cloud_translation_location=settings.google_cloud_translation_location,
             google_cloud_translation_endpoint=settings.google_cloud_translation_endpoint,
+            google_cloud_translation_timeout_seconds=(
+                settings.google_cloud_translation_timeout_seconds
+            ),
         )
     except Exception:
         log.warning(
@@ -454,11 +477,12 @@ def main() -> None:
 
     worker_id = f"math-updater:{uuid.uuid4()}"
     log.info(
-        "[MathUpdater] Starting worker_id=%s pop_batch=%d claim_batch=%d compute=%d",
+        "[MathUpdater] Starting worker_id=%s pop_batch=%d claim_batch=%d compute=%d ai=%d",
         worker_id,
         settings.valkey_pop_batch_size,
         settings.db_claim_batch_size,
         settings.max_compute_concurrency,
+        settings.max_ai_description_concurrency,
     )
 
     try:
@@ -611,6 +635,7 @@ def main() -> None:
                 due_items=ai_claimable_due_items,
                 lease_ttl_seconds=settings.lease_ttl_seconds,
                 claim_limit=settings.db_claim_batch_size,
+                max_workers=settings.max_ai_description_concurrency,
                 ai_description_epoch=settings.ai_description_epoch,
                 retry_policy=retry_policy,
                 description_generator=description_generator,
@@ -705,6 +730,7 @@ def main() -> None:
                         conversation_view_snapshot_ids=persisted_view_snapshot_ids,
                         lease_ttl_seconds=settings.lease_ttl_seconds,
                         claim_limit=settings.db_claim_batch_size,
+                        max_workers=settings.max_ai_description_concurrency,
                         ai_description_epoch=settings.ai_description_epoch,
                         retry_policy=retry_policy,
                         description_generator=description_generator,
@@ -905,6 +931,7 @@ def main() -> None:
                                 conversation_view_snapshot_ids=completed_result.ai_description_due_view_snapshot_ids,
                                 lease_ttl_seconds=settings.lease_ttl_seconds,
                                 claim_limit=settings.db_claim_batch_size,
+                                max_workers=settings.max_ai_description_concurrency,
                                 ai_description_epoch=settings.ai_description_epoch,
                                 retry_policy=retry_policy,
                                 description_generator=description_generator,
@@ -1005,6 +1032,7 @@ def main() -> None:
                                             conversation_view_snapshot_ids=isolated_result.ai_description_due_view_snapshot_ids,
                                             lease_ttl_seconds=settings.lease_ttl_seconds,
                                             claim_limit=settings.db_claim_batch_size,
+                                            max_workers=settings.max_ai_description_concurrency,
                                             ai_description_epoch=settings.ai_description_epoch,
                                             retry_policy=retry_policy,
                                             description_generator=description_generator,

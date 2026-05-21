@@ -92,6 +92,7 @@ class Settings(BaseSettings):
     db_claim_batch_size: int = Field(default=8, ge=1)
     db_write_batch_size: int = Field(default=10, ge=1)
     max_compute_concurrency: int = Field(default=4, ge=1)
+    max_ai_description_concurrency: int = Field(default=4, ge=1)
     lease_ttl_seconds: int = Field(default=600, ge=1)
     heartbeat_interval_seconds: int = Field(default=30, ge=1)
     worker_poll_idle_sleep_seconds: float = Field(default=0.5, gt=0)
@@ -118,6 +119,9 @@ class Settings(BaseSettings):
         default=DEFAULT_AWS_AI_LABEL_SUMMARY_PROMPT,
         min_length=1,
     )
+    aws_client_connect_timeout_seconds: float = Field(default=2.0, gt=0)
+    aws_ai_label_summary_read_timeout_seconds: float = Field(default=12.0, gt=0)
+    aws_secret_read_timeout_seconds: float = Field(default=5.0, gt=0)
 
     aws_secret_region: str | None = Field(default=None, min_length=1)
     google_cloud_translation_location: str = Field(default="us-central1", min_length=1)
@@ -125,6 +129,7 @@ class Settings(BaseSettings):
         default="translate.googleapis.com",
         min_length=1,
     )
+    google_cloud_translation_timeout_seconds: float = Field(default=5.0, gt=0)
     google_cloud_service_account_aws_secret_key: str | None = Field(default=None, min_length=1)
     google_application_credentials: str | None = Field(default=None, min_length=1)
 

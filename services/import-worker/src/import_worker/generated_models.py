@@ -239,6 +239,7 @@ class ConversationViewSnapshot(Base):
     total_participant_count: Mapped[int] = mapped_column(Integer)
     moderated_opinion_count: Mapped[int] = mapped_column(Integer)
     hidden_opinion_count: Mapped[int] = mapped_column(Integer)
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 

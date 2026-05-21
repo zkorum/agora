@@ -6,7 +6,7 @@ import type {
     ExtendedConversationPerSlugId,
     FeedSortAlgorithm,
 } from "@/shared/types/zod.js";
-import { and, desc, eq, SQL } from "drizzle-orm";
+import { and, desc, eq, isNotNull, SQL } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { useCommonPost } from "./common.js";
 import { getConversationEngagementScore } from "./recommendationSystem.js";
@@ -120,6 +120,7 @@ export async function getTopEngagementSlugIds({
             and(
                 eq(conversationTable.isIndexed, true),
                 eq(conversationTable.isImporting, false),
+                isNotNull(conversationViewSnapshotTable.activatedAt),
             ),
         )
         .orderBy(

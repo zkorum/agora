@@ -1716,6 +1716,7 @@ def _persist_conversation_view_snapshots(
     bundles_by_conversation_id: dict[int, ComputedAnalysisBundle],
     candidate_id_by_conversation_variant: dict[tuple[int, int], int],
     survey_aggregate_snapshot_id_by_conversation_id: dict[int, int],
+    ai_generation_expected: bool,
 ) -> tuple[
     dict[tuple[int, int], _PersistedConversationViewSnapshot],
     dict[tuple[int, int], list[_CheckpointCandidateOption]],
@@ -1772,6 +1773,9 @@ def _persist_conversation_view_snapshots(
                 "total_participant_count": counters.total_participant_count,
                 "moderated_opinion_count": counters.moderated_opinion_count,
                 "hidden_opinion_count": counters.hidden_opinion_count,
+                "activated_at": None
+                if state.ai_labeling_enabled and ai_generation_expected
+                else func.now(),
             }
         )
 
@@ -3307,6 +3311,7 @@ def persist_computed_analysis_results_batch(
                 survey_aggregate_snapshot_id_by_conversation_id=(
                     survey_aggregate_snapshot_id_by_conversation_id
                 ),
+                ai_generation_expected=ai_generation_expected,
             )
         )
         log.info(

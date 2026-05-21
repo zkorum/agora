@@ -141,6 +141,12 @@ class TranslationWorkDemand:
     next_run_at: datetime | None
 
 
+@dataclass(frozen=True)
+class _LineageDescriptionRequest:
+    group_key: str
+    conversation: ConversationDescriptionInput
+
+
 def _latest_or_checkpoint_status_condition() -> ColumnElement[bool]:
     newer_view_snapshot = aliased(ConversationViewSnapshot)
     checkpoint_exists = (
@@ -512,6 +518,52 @@ def _pending_status_view_snapshot_filter(
 
 def false_condition() -> ColumnElement[bool]:
     return false()
+
+
+def _activate_display_safe_view_snapshots(
+    session: Session,
+    *,
+    conversation_ids: list[int],
+    conversation_view_snapshot_ids: list[int] | None = None,
+) -> list[int]:
+    if not conversation_ids:
+        return []
+    if conversation_view_snapshot_ids is not None and not conversation_view_snapshot_ids:
+        return []
+
+    blocking_status_exists = (
+        select(OpinionGroupDescriptionLocaleStatus.id)
+        .where(
+            and_(
+                OpinionGroupDescriptionLocaleStatus.conversation_view_snapshot_id
+                == ConversationViewSnapshot.id,
+                OpinionGroupDescriptionLocaleStatus.status == AiDescriptionLocaleStatusEnum.pending,
+                or_(
+                    and_(
+                        OpinionGroupDescriptionLocaleStatus.locale == "en",
+                        OpinionGroupDescriptionLocaleStatus.ai_generation_expected.is_(True),
+                    ),
+                    OpinionGroupDescriptionLocaleStatus.translation_expected.is_(True),
+                ),
+            )
+        )
+        .exists()
+    )
+    filters: list[ColumnElement[bool]] = [
+        ConversationViewSnapshot.conversation_id.in_(sorted(set(conversation_ids))),
+        ConversationViewSnapshot.activated_at.is_(None),
+        ~blocking_status_exists,
+    ]
+    if conversation_view_snapshot_ids is not None:
+        filters.append(ConversationViewSnapshot.id.in_(sorted(set(conversation_view_snapshot_ids))))
+
+    rows = session.execute(
+        update(ConversationViewSnapshot)
+        .where(and_(*filters))
+        .values(activated_at=func.now())
+        .returning(ConversationViewSnapshot.id)
+    ).all()
+    return [row.id for row in rows]
 
 
 def _fetch_pending_locale_status_rows(
@@ -918,7 +970,7 @@ def claim_ai_description_locale_work_items_batch(
     if not conversation_ids or limit <= 0:
         return []
 
-    unique_conversation_ids = list(dict.fromkeys(conversation_ids))[:limit]
+    unique_conversation_ids = list(dict.fromkeys(conversation_ids))
     lease_expires_at = datetime.now(UTC) + timedelta(seconds=lease_ttl_seconds)
     claims: list[ClaimedAiDescriptionLocaleWorkItem] = []
 
@@ -943,9 +995,18 @@ def claim_ai_description_locale_work_items_batch(
                 conversation_ids=unique_conversation_ids,
                 locales=[locale for locale in SUPPORTED_DISPLAY_LANGUAGE_CODES if locale != "en"],
             )
+        _activate_display_safe_view_snapshots(
+            session,
+            conversation_ids=unique_conversation_ids,
+            conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+        )
 
         for conversation_id in unique_conversation_ids:
-            claimable_lineage_row = session.execute(
+            remaining_claim_limit = limit - len(claims)
+            if remaining_claim_limit <= 0:
+                break
+
+            claimable_lineage_rows = session.execute(
                 select(
                     OpinionGroupLineageDescriptionWork.id,
                     OpinionGroupLineageDescriptionWork.conversation_id,
@@ -987,57 +1048,69 @@ def claim_ai_description_locale_work_items_batch(
                     OpinionGroupLineageDescriptionWork.next_run_at.asc(),
                     OpinionGroupLineageDescriptionWork.id,
                 )
-                .limit(1)
+                .limit(remaining_claim_limit)
                 .with_for_update(skip_locked=True)
-            ).first()
-            if claimable_lineage_row is not None:
-                lease_token = f"{worker_id}:{uuid.uuid4()}"
-                attempt_count = claimable_lineage_row.attempt_count + 1
-                updated_lineage_row = session.execute(
-                    update(OpinionGroupLineageDescriptionWork)
-                    .where(
-                        and_(
-                            OpinionGroupLineageDescriptionWork.id == claimable_lineage_row.id,
-                            OpinionGroupLineageDescriptionWork.lease_token.is_(None),
+            ).all()
+            if claimable_lineage_rows:
+                claimed_lineage_count = 0
+                for claimable_lineage_row in claimable_lineage_rows:
+                    if len(claims) >= limit:
+                        break
+
+                    lease_token = f"{worker_id}:{uuid.uuid4()}"
+                    attempt_count = claimable_lineage_row.attempt_count + 1
+                    updated_lineage_row = session.execute(
+                        update(OpinionGroupLineageDescriptionWork)
+                        .where(
+                            and_(
+                                OpinionGroupLineageDescriptionWork.id == claimable_lineage_row.id,
+                                OpinionGroupLineageDescriptionWork.lease_token.is_(None),
+                            )
+                        )
+                        .values(
+                            attempt_count=attempt_count,
+                            next_run_at=None,
+                            lease_owner=worker_id,
+                            lease_token=lease_token,
+                            lease_expires_at=lease_expires_at,
+                            updated_at=func.now(),
+                        )
+                        .returning(
+                            OpinionGroupLineageDescriptionWork.id,
+                            OpinionGroupLineageDescriptionWork.conversation_id,
+                            OpinionGroupLineageDescriptionWork.lineage_id,
+                            OpinionGroupLineageDescriptionWork.source_candidate_id,
+                            OpinionGroupLineageDescriptionWork.lease_token,
+                        )
+                    ).first()
+                    if updated_lineage_row is None:
+                        continue
+
+                    claimed_lineage_count += 1
+                    claims.append(
+                        ClaimedLineageDescriptionWorkItem(
+                            id=updated_lineage_row.id,
+                            conversation_id=updated_lineage_row.conversation_id,
+                            conversation_slug_id=claimable_lineage_row.conversation_slug_id,
+                            lineage_id=updated_lineage_row.lineage_id,
+                            source_candidate_id=updated_lineage_row.source_candidate_id,
+                            locale="en",
+                            attempt_count=attempt_count,
+                            lease_token=updated_lineage_row.lease_token,
                         )
                     )
-                    .values(
-                        attempt_count=attempt_count,
-                        next_run_at=None,
-                        lease_owner=worker_id,
-                        lease_token=lease_token,
-                        lease_expires_at=lease_expires_at,
-                        updated_at=func.now(),
-                    )
-                    .returning(
-                        OpinionGroupLineageDescriptionWork.id,
-                        OpinionGroupLineageDescriptionWork.conversation_id,
-                        OpinionGroupLineageDescriptionWork.lineage_id,
-                        OpinionGroupLineageDescriptionWork.source_candidate_id,
-                        OpinionGroupLineageDescriptionWork.lease_token,
-                    )
-                ).first()
-                if updated_lineage_row is None:
+
+                if claimed_lineage_count > 0:
                     continue
 
-                claims.append(
-                    ClaimedLineageDescriptionWorkItem(
-                        id=updated_lineage_row.id,
-                        conversation_id=updated_lineage_row.conversation_id,
-                        conversation_slug_id=claimable_lineage_row.conversation_slug_id,
-                        lineage_id=updated_lineage_row.lineage_id,
-                        source_candidate_id=updated_lineage_row.source_candidate_id,
-                        locale="en",
-                        attempt_count=attempt_count,
-                        lease_token=updated_lineage_row.lease_token,
-                    )
-                )
-                continue
+            remaining_claim_limit = limit - len(claims)
+            if remaining_claim_limit <= 0:
+                break
 
             if not translation_enabled:
                 continue
 
-            claimable_translation_row = session.execute(
+            claimable_translation_rows = session.execute(
                 select(
                     OpinionGroupDescriptionTranslationWork.id,
                     OpinionGroupDescriptionTranslationWork.conversation_id,
@@ -1084,52 +1157,54 @@ def claim_ai_description_locale_work_items_batch(
                     OpinionGroupDescriptionTranslationWork.next_run_at.asc(),
                     OpinionGroupDescriptionTranslationWork.id,
                 )
-                .limit(1)
+                .limit(remaining_claim_limit)
                 .with_for_update(skip_locked=True)
-            ).first()
-            if claimable_translation_row is None:
-                continue
+            ).all()
+            for claimable_translation_row in claimable_translation_rows:
+                if len(claims) >= limit:
+                    break
 
-            lease_token = f"{worker_id}:{uuid.uuid4()}"
-            attempt_count = claimable_translation_row.attempt_count + 1
-            updated_translation_row = session.execute(
-                update(OpinionGroupDescriptionTranslationWork)
-                .where(
-                    and_(
-                        OpinionGroupDescriptionTranslationWork.id == claimable_translation_row.id,
-                        OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
+                lease_token = f"{worker_id}:{uuid.uuid4()}"
+                attempt_count = claimable_translation_row.attempt_count + 1
+                updated_translation_row = session.execute(
+                    update(OpinionGroupDescriptionTranslationWork)
+                    .where(
+                        and_(
+                            OpinionGroupDescriptionTranslationWork.id
+                            == claimable_translation_row.id,
+                            OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
+                        )
+                    )
+                    .values(
+                        attempt_count=attempt_count,
+                        next_run_at=None,
+                        lease_owner=worker_id,
+                        lease_token=lease_token,
+                        lease_expires_at=lease_expires_at,
+                        updated_at=func.now(),
+                    )
+                    .returning(
+                        OpinionGroupDescriptionTranslationWork.id,
+                        OpinionGroupDescriptionTranslationWork.conversation_id,
+                        OpinionGroupDescriptionTranslationWork.description_id,
+                        OpinionGroupDescriptionTranslationWork.locale,
+                        OpinionGroupDescriptionTranslationWork.lease_token,
+                    )
+                ).first()
+                if updated_translation_row is None:
+                    continue
+
+                claims.append(
+                    ClaimedDescriptionTranslationWorkItem(
+                        id=updated_translation_row.id,
+                        conversation_id=updated_translation_row.conversation_id,
+                        conversation_slug_id=claimable_translation_row.conversation_slug_id,
+                        description_id=updated_translation_row.description_id,
+                        locale=updated_translation_row.locale,
+                        attempt_count=attempt_count,
+                        lease_token=updated_translation_row.lease_token,
                     )
                 )
-                .values(
-                    attempt_count=attempt_count,
-                    next_run_at=None,
-                    lease_owner=worker_id,
-                    lease_token=lease_token,
-                    lease_expires_at=lease_expires_at,
-                    updated_at=func.now(),
-                )
-                .returning(
-                    OpinionGroupDescriptionTranslationWork.id,
-                    OpinionGroupDescriptionTranslationWork.conversation_id,
-                    OpinionGroupDescriptionTranslationWork.description_id,
-                    OpinionGroupDescriptionTranslationWork.locale,
-                    OpinionGroupDescriptionTranslationWork.lease_token,
-                )
-            ).first()
-            if updated_translation_row is None:
-                continue
-
-            claims.append(
-                ClaimedDescriptionTranslationWorkItem(
-                    id=updated_translation_row.id,
-                    conversation_id=updated_translation_row.conversation_id,
-                    conversation_slug_id=claimable_translation_row.conversation_slug_id,
-                    description_id=updated_translation_row.description_id,
-                    locale=updated_translation_row.locale,
-                    attempt_count=attempt_count,
-                    lease_token=updated_translation_row.lease_token,
-                )
-            )
 
         session.commit()
 
@@ -1143,13 +1218,35 @@ def process_ai_description_locale_work_item(
     generate_descriptions: DescriptionGenerator,
     translate_descriptions: DescriptionTranslator | None,
 ) -> WorkStateSchedule:
-    with Session(engine) as session:
-        if isinstance(claim, ClaimedLineageDescriptionWorkItem):
-            _persist_base_description_for_lineage_work(
+    if isinstance(claim, ClaimedLineageDescriptionWorkItem):
+        with Session(engine) as session:
+            lineage_request = _fetch_base_description_request_for_lineage_work(
                 session,
                 claim=claim,
-                generate_descriptions=generate_descriptions,
             )
+            session.commit()
+
+        generated_descriptions = (
+            generate_descriptions(lineage_request.conversation)
+            if lineage_request is not None
+            else None
+        )
+
+        with Session(engine) as session:
+            if not _ai_description_claim_is_active(session, claim=claim):
+                schedule = _get_conversation_schedule(
+                    session,
+                    conversation_id=claim.conversation_id,
+                )
+                session.commit()
+                return schedule
+            if generated_descriptions is not None and lineage_request is not None:
+                _persist_generated_base_description_for_lineage_work(
+                    session,
+                    claim=claim,
+                    request=lineage_request,
+                    generated=generated_descriptions,
+                )
             _mark_lineage_description_work_complete(session, claim=claim)
             _refresh_english_locale_statuses(
                 session,
@@ -1159,25 +1256,86 @@ def process_ai_description_locale_work_item(
                 session,
                 conversation_ids=[claim.conversation_id],
             )
-        else:
-            if translate_descriptions is None:
-                msg = f"translation service unavailable for locale {claim.locale}"
-                raise DescriptionInputError(msg)
+            _activate_display_safe_view_snapshots(
+                session,
+                conversation_ids=[claim.conversation_id],
+            )
+            schedule = _get_conversation_schedule(session, conversation_id=claim.conversation_id)
+            session.commit()
+            return schedule
+
+    if translate_descriptions is None:
+        msg = f"translation service unavailable for locale {claim.locale}"
+        raise DescriptionInputError(msg)
+
+    with Session(engine) as session:
+        description_request = _fetch_description_for_translation_work(
+            session,
+            claim=claim,
+        )
+        session.commit()
+
+    translations = (
+        translate_descriptions([description_request], [claim.locale])
+        if description_request is not None
+        else []
+    )
+
+    with Session(engine) as session:
+        if not _ai_description_claim_is_active(session, claim=claim):
+            schedule = _get_conversation_schedule(session, conversation_id=claim.conversation_id)
+            session.commit()
+            return schedule
+        if description_request is not None:
             _persist_locale_translation_for_description_work(
                 session,
                 claim=claim,
-                translate_descriptions=translate_descriptions,
+                translations=translations,
             )
-            _mark_translation_work_complete(session, claim=claim)
-            _refresh_translation_locale_statuses(
-                session,
-                conversation_ids=[claim.conversation_id],
-                locales=[claim.locale],
-            )
-
+        _mark_translation_work_complete(session, claim=claim)
+        _refresh_translation_locale_statuses(
+            session,
+            conversation_ids=[claim.conversation_id],
+            locales=[claim.locale],
+        )
+        _activate_display_safe_view_snapshots(
+            session,
+            conversation_ids=[claim.conversation_id],
+        )
         schedule = _get_conversation_schedule(session, conversation_id=claim.conversation_id)
         session.commit()
         return schedule
+
+
+def _ai_description_claim_is_active(
+    session: Session,
+    *,
+    claim: ClaimedAiDescriptionLocaleWorkItem,
+) -> bool:
+    if isinstance(claim, ClaimedLineageDescriptionWorkItem):
+        row = session.execute(
+            select(OpinionGroupLineageDescriptionWork.id)
+            .where(
+                and_(
+                    OpinionGroupLineageDescriptionWork.id == claim.id,
+                    OpinionGroupLineageDescriptionWork.lease_token == claim.lease_token,
+                )
+            )
+            .with_for_update()
+        ).first()
+        return row is not None
+
+    row = session.execute(
+        select(OpinionGroupDescriptionTranslationWork.id)
+        .where(
+            and_(
+                OpinionGroupDescriptionTranslationWork.id == claim.id,
+                OpinionGroupDescriptionTranslationWork.lease_token == claim.lease_token,
+            )
+        )
+        .with_for_update()
+    ).first()
+    return row is not None
 
 
 def retry_ai_description_locale_work_item(
@@ -1238,6 +1396,10 @@ def retry_ai_description_locale_work_item(
             session,
             conversation_id=claim.conversation_id,
         )
+        _activate_display_safe_view_snapshots(
+            session,
+            conversation_ids=[claim.conversation_id],
+        )
         session.commit()
         return schedule
 
@@ -1296,6 +1458,10 @@ def mark_non_retryable_ai_description_locale_work_item(
         schedule = _get_conversation_schedule(
             session,
             conversation_id=claim.conversation_id,
+        )
+        _activate_display_safe_view_snapshots(
+            session,
+            conversation_ids=[claim.conversation_id],
         )
         session.commit()
         return schedule
@@ -1495,9 +1661,32 @@ def _mark_english_statuses_fallback_for_lineage(
     if not fallback_status_ids:
         return
 
+    fallback_view_snapshot_ids = [
+        status.conversation_view_snapshot_id
+        for status in statuses
+        if status.id in fallback_status_ids
+    ]
     session.execute(
         update(OpinionGroupDescriptionLocaleStatus)
         .where(OpinionGroupDescriptionLocaleStatus.id.in_(fallback_status_ids))
+        .values(
+            status=AiDescriptionLocaleStatusEnum.fallback,
+            next_run_at=None,
+            updated_at=func.now(),
+        )
+    )
+    session.execute(
+        update(OpinionGroupDescriptionLocaleStatus)
+        .where(
+            and_(
+                OpinionGroupDescriptionLocaleStatus.conversation_view_snapshot_id.in_(
+                    sorted(set(fallback_view_snapshot_ids))
+                ),
+                OpinionGroupDescriptionLocaleStatus.locale != "en",
+                OpinionGroupDescriptionLocaleStatus.translation_expected.is_(True),
+                OpinionGroupDescriptionLocaleStatus.status == AiDescriptionLocaleStatusEnum.pending,
+            )
+        )
         .values(
             status=AiDescriptionLocaleStatusEnum.fallback,
             next_run_at=None,
@@ -1573,19 +1762,18 @@ def _get_conversation_schedule(
     )
 
 
-def _persist_base_description_for_lineage_work(
+def _fetch_base_description_request_for_lineage_work(
     session: Session,
     *,
     claim: ClaimedLineageDescriptionWorkItem,
-    generate_descriptions: DescriptionGenerator,
-) -> None:
+) -> _LineageDescriptionRequest | None:
     existing_description_id = session.execute(
         select(OpinionGroupLineage.system_description_id).where(
             OpinionGroupLineage.id == claim.lineage_id
         )
     ).scalar_one_or_none()
     if existing_description_id is not None:
-        return
+        return None
 
     conversation_content = session.execute(
         select(ConversationContent.title, ConversationContent.body)
@@ -1662,16 +1850,37 @@ def _persist_base_description_for_lineage_work(
             key=lambda opinion: (opinion.stance.value, opinion.opinion_id),
         ),
     )
-    generated = generate_descriptions(
-        ConversationDescriptionInput(
+    return _LineageDescriptionRequest(
+        group_key=group.group_key,
+        conversation=ConversationDescriptionInput(
             conversation_title=conversation_content.title,
             conversation_body=conversation_content.body,
             groups=[group],
-        )
+        ),
     )
-    label_summary = generated.clusters.get(group.group_key)
+
+
+def _persist_generated_base_description_for_lineage_work(
+    session: Session,
+    *,
+    claim: ClaimedLineageDescriptionWorkItem,
+    request: _LineageDescriptionRequest,
+    generated: ParsedLabelSummaryOutput,
+) -> None:
+    lineage = session.execute(
+        select(OpinionGroupLineage.system_description_id)
+        .where(OpinionGroupLineage.id == claim.lineage_id)
+        .with_for_update()
+    ).first()
+    if lineage is None:
+        msg = f"lineage {claim.lineage_id} is missing"
+        raise DescriptionInputError(msg)
+    if lineage.system_description_id is not None:
+        return
+
+    label_summary = generated.clusters.get(request.group_key)
     if label_summary is None:
-        msg = f"missing generated description for group {group.group_key}"
+        msg = f"missing generated description for group {request.group_key}"
         raise DescriptionInputError(msg)
 
     description_id = session.execute(
@@ -1701,7 +1910,7 @@ def _persist_locale_translation_for_description_work(
     session: Session,
     *,
     claim: ClaimedDescriptionTranslationWorkItem,
-    translate_descriptions: DescriptionTranslator,
+    translations: list[DescriptionTranslation],
 ) -> None:
     existing_translation = session.execute(
         select(OpinionGroupDescriptionTranslation.id)
@@ -1716,32 +1925,15 @@ def _persist_locale_translation_for_description_work(
     if existing_translation is not None:
         return
 
-    description_row = session.execute(
-        select(
-            OpinionGroupDescription.id,
-            OpinionGroupDescription.label,
-            OpinionGroupDescription.summary,
-        ).where(OpinionGroupDescription.id == claim.description_id)
-    ).first()
-    if description_row is None:
-        msg = f"description {claim.description_id} is missing"
-        raise DescriptionInputError(msg)
-
-    translations = translate_descriptions(
-        [
-            DescriptionForTranslation(
-                description_id=description_row.id,
-                label=description_row.label,
-                summary=description_row.summary,
-            )
-        ],
-        [claim.locale],
-    )
     if len(translations) != 1:
         msg = f"translation output mismatch for locale {claim.locale}"
         raise DescriptionInputError(msg)
 
     translation = translations[0]
+    if translation.description_id != claim.description_id or translation.locale != claim.locale:
+        msg = f"translation output mismatch for locale {claim.locale}"
+        raise DescriptionInputError(msg)
+
     session.execute(
         pg_insert(OpinionGroupDescriptionTranslation)
         .values(
@@ -1758,6 +1950,42 @@ def _persist_locale_translation_for_description_work(
                 OpinionGroupDescriptionTranslation.locale,
             ]
         )
+    )
+
+
+def _fetch_description_for_translation_work(
+    session: Session,
+    *,
+    claim: ClaimedDescriptionTranslationWorkItem,
+) -> DescriptionForTranslation | None:
+    existing_translation = session.execute(
+        select(OpinionGroupDescriptionTranslation.id)
+        .where(
+            and_(
+                OpinionGroupDescriptionTranslation.description_id == claim.description_id,
+                OpinionGroupDescriptionTranslation.locale == claim.locale,
+            )
+        )
+        .limit(1)
+    ).first()
+    if existing_translation is not None:
+        return None
+
+    description_row = session.execute(
+        select(
+            OpinionGroupDescription.id,
+            OpinionGroupDescription.label,
+            OpinionGroupDescription.summary,
+        ).where(OpinionGroupDescription.id == claim.description_id)
+    ).first()
+    if description_row is None:
+        msg = f"description {claim.description_id} is missing"
+        raise DescriptionInputError(msg)
+
+    return DescriptionForTranslation(
+        description_id=description_row.id,
+        label=description_row.label,
+        summary=description_row.summary,
     )
 
 
