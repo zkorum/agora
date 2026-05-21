@@ -14,6 +14,14 @@ La question la plus importante n'est pas seulement "Quel outil devons-nous utili
 
 Une façon simple de commencer consiste à se demander si vous utilisez Agora pour un événement ou pour un projet de délibération plus long. Chaque cas d'usage appelle une configuration légèrement différente.
 
+Version courte :
+
+- **Préparez la conversation** avec quelques affirmations claires auxquelles les participants peuvent répondre par accord ou désaccord.
+- **Recueillez les perspectives** pendant que les participants votent sur les affirmations et ajoutent les leurs.
+- **Cartographiez le paysage** en observant les groupes d'opinion et les points de désaccord.
+- **Trouvez un terrain commun** en identifiant les affirmations passerelles entre les groupes.
+- **Transformez les enseignements en action** avec des rapports, des synthèses et le Mode Priorisation lorsque le groupe a besoin d'une liste classée de propositions.
+
 Choisissez votre parcours :
 
 - [Je prépare un événement ou une conférence](#events-and-conferences)
