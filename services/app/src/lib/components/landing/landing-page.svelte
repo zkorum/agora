@@ -1,5 +1,6 @@
 <script lang="ts">
   import CaseStudies from "./case-studies.svelte";
+  import FaqSection from "./faq-section.svelte";
   import ForCitizens from "./for-citizens.svelte";
   import ForFacilitators from "./for-facilitators.svelte";
   import HeroSection from "./hero-section.svelte";
@@ -20,6 +21,7 @@
 <Testimonials />
 <CaseStudies />
 <Pricing />
+<FaqSection />
 <OurTeam />
 <MissionQuote />
 <VideoSection />

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeHref } from "$lib/paraglide/runtime";
   import screenshotAuth from "$lib/assets/screenshot-auth.png?enhanced";
   import screenshotDemographics from "$lib/assets/screenshot-demographics.png?enhanced";
   import screenshotPluralVoting from "$lib/assets/screenshot-plural-voting.png?enhanced";
@@ -53,6 +54,29 @@
       sourceUrl: null,
     },
   ];
+
+  const facilitatorSteps = [
+    {
+      title: "Seed",
+      description: "Clear statements",
+    },
+    {
+      title: "Collect",
+      description: "Votes and opinions",
+    },
+    {
+      title: "Map",
+      description: "Opinion groups",
+    },
+    {
+      title: "Find common ground",
+      description: "Bridging statements",
+    },
+    {
+      title: "Prioritize",
+      description: "Shared proposals",
+    },
+  ];
 </script>
 
 <section id="facilitators" class="px-8 py-20">
@@ -84,6 +108,63 @@
           {m.facilitators_cta()}
         </GradientButton>
       </div>
+    </div>
+
+    <div
+      class="
+        mb-8 rounded-2xl bg-gradient-light-purple/25 px-4 py-4
+        sm:px-5
+      "
+    >
+      <ol
+        class="
+          grid grid-cols-1 gap-3
+          sm:grid-cols-2
+          lg:grid-cols-5
+        "
+      >
+        {#each facilitatorSteps as step, index (step.title)}
+          <li class="flex min-w-0 gap-2">
+            <Text
+              size="xs"
+              weight="bold"
+              leading="tight"
+              element="span"
+              class="pt-[2px]"
+            >
+              <GradientText>{String(index + 1).padStart(2, "0")}</GradientText>
+            </Text>
+            <div class="min-w-0">
+              <Text size="sm" weight="bold" leading="tight">
+                <GradientText>{step.title}</GradientText>
+              </Text>
+              <Text size="xs" class="mt-1 text-secondary-foreground">
+                {step.description}
+              </Text>
+            </div>
+          </li>
+        {/each}
+      </ol>
+    </div>
+
+    <div
+      class="
+        mb-8 flex flex-col gap-3 border-t border-border pt-5
+        sm:flex-row sm:items-center sm:justify-between
+      "
+    >
+      <Text size="sm" class="text-secondary-foreground">
+        Need the full playbook for events, consultations, and deliberation
+        projects?
+      </Text>
+      <GradientButton
+        href={localizeHref("/resources/facilitation-guide")}
+        variant="soft"
+        size="sm"
+        class="shrink-0 self-start"
+      >
+        Read the guide
+      </GradientButton>
     </div>
 
     <div

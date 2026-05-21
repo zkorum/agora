@@ -14,6 +14,14 @@ The most important question is not only "Which tool should we use?" but "What ki
 
 A simple way to start is to ask whether you are using Agora for an event or for a longer deliberation project. Each use case calls for a slightly different setup.
 
+The short version:
+
+- **Seed the conversation** with a few clear statements that participants can agree or disagree with.
+- **Collect perspectives** as participants vote on statements and add their own.
+- **Map the landscape** by looking at opinion groups and points of disagreement.
+- **Find common ground** by identifying bridging statements across groups.
+- **Turn insight into action** with reports, summaries, and Prioritization Mode when the group needs a ranked list of proposals.
+
 Choose your path:
 
 - [I am planning an event or conference](#events-and-conferences)
