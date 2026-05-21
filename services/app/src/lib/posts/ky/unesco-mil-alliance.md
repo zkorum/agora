@@ -3,7 +3,8 @@ title: "Кеңири масштабда угуу: ЮНЕСКОнун МИГ Ал
 description: "2025-жылдын октябрь айында ЮНЕСКО Agora менен кызматташып, Медиа жана маалыматтык сабаттуулук жумалыгын колдоду. Пилоттук долбоор структураланган санариптик делиберация конференциядагы сүйлөшүүлөрдүн өмүрүн узарта аларын изилдеди."
 author: "Yuting Jiang"
 date: "Октябрь 2025"
-thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
+type: "case-study"
+thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---
 
 2025-жылдын октябрь айында ЮНЕСКО Agora менен кызматташып, Картахена, Мумбай жана Бангкокту камтыган Медиа жана маалыматтык сабаттуулук (МИГ) жумалыгын колдоду.
@@ -13,7 +14,7 @@ thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
 Бул пилоттук долбоор структураланган санариптик делиберация мейкиндиги ал сүйлөшүүлөрдүн өмүрүн узартып, катышуучулардын тажрыйбасын жакшырта аларын изилдеди.
 
 <div class="text-center my-4">
-  <img src="/images/blog/unesco-mil-alliance.jpeg" alt="ЮНЕСКО МИГ жумалыгынын катышуучулары санариптик делиберация үчүн Agora колдонушууда" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+  <img src="/images/resources/unesco-mil-alliance.jpeg" alt="ЮНЕСКО МИГ жумалыгынын катышуучулары санариптик делиберация үчүн Agora колдонушууда" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
 </div>
 
 ## Эксперимент

@@ -3,6 +3,7 @@ title: "Cartographier le consensus sur la blockchain dans la conservation"
 description: "Comment Agora a aidé Tech4Nature à naviguer entre des perspectives diverses sur la technologie blockchain lors de leur atelier d'innovation."
 author: "Équipe Agora"
 date: "Octobre 2025"
+type: "case-study"
 thumbnail: "https://iucn.org/sites/default/files/styles/article_image/public/2025-08/006_flona_carajas_joao-marcos-rosac-1.jpg?h=4cc6839d&itok=2_-LFOvZ"
 image: "https://iucn.org/sites/default/files/styles/article_image/public/2025-08/006_flona_carajas_joao-marcos-rosac-1.jpg?h=4cc6839d&itok=2_-LFOvZ"
 ---

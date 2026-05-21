@@ -12,6 +12,7 @@
   let { children } = $props();
 
   const seo = $derived(page.data.seo);
+  const isResources = $derived(/\/resources(\/|$)/.test(page.url.pathname));
   const title = $derived(seo?.title ?? m.meta_title());
   const description = $derived(seo?.description ?? m.meta_description());
   const ogType = $derived(seo?.ogType ?? "website");
@@ -74,10 +75,15 @@
   <link rel="alternate" hreflang="x-default" href={page.url.pathname} />
 </svelte:head>
 
-<div class="flex min-h-screen flex-col bg-background font-sans text-foreground">
-  <Header hideOnScroll={true} />
+<div
+  class="
+    flex min-h-screen flex-col font-sans text-foreground
+    {isResources ? 'bg-[#fefeff]' : 'bg-background'}
+  "
+>
+  <Header hideOnScroll={true} variant={isResources ? "resources" : "default"} />
   <main class="flex-1 pt-24">
     {@render children()}
   </main>
-  <Footer />
+  <Footer showFunding={!isResources} />
 </div>

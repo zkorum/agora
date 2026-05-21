@@ -3,8 +3,9 @@ title: "从 Broadcasting 到 Broad Listening"
 description: "vTaiwan 的 Bestian Tang 介绍 Agora，并用“广泛倾听”说明数字民主如何突破大规模审议的限制。"
 author: "Agora 团队"
 date: "September 2025"
-thumbnail: "/images/blog/broadcasting-to-broad-listening.png"
-image: "/images/blog/broadcasting-to-broad-listening.png"
+type: "vision"
+thumbnail: "/images/resources/broadcasting-to-broad-listening.png"
+image: "/images/resources/broadcasting-to-broad-listening.png"
 ---
 
 来自 [vTaiwan](https://vtaiwan.tw/) 的 Bestian Tang（唐宗浩）制作了一支普通话视频，介绍 Agora 以及从 **broadcasting** 走向 **broad listening** 的民主想象。

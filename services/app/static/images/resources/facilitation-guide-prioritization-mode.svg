@@ -1,0 +1,26 @@
+<svg width="758" height="262" viewBox="0 0 758 262" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Agora prioritization mode interface</title>
+  <desc id="desc">A two-step prioritization interface where participants first select the most important statement and then the least important statement.</desc>
+  <rect width="758" height="262" fill="#F7F7FA"/>
+  <text x="9" y="39" fill="#1E2433" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">Prioritize Statements</text>
+  <text x="633" y="37" fill="#555A73" font-family="Arial, Helvetica, sans-serif" font-size="18">Learn more</text>
+
+  <circle cx="182" cy="94" r="19" fill="#1FBC53"/>
+  <text x="182" y="100" text-anchor="middle" fill="white" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700">1</text>
+  <text x="80" y="134" fill="#4E536B" font-family="Arial, Helvetica, sans-serif" font-size="16">Select the MOST important</text>
+
+  <rect x="354" y="93" width="44" height="2" rx="1" fill="#DEDEE8"/>
+
+  <circle cx="570" cy="94" r="18" fill="white" stroke="#D9DAE3" stroke-width="2"/>
+  <text x="570" y="100" text-anchor="middle" fill="#7D8496" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700">2</text>
+  <text x="450" y="134" fill="#B8BDC8" font-family="Arial, Helvetica, sans-serif" font-size="16">Now select the LEAST important</text>
+
+  <text x="9" y="178" fill="#4E536B" font-family="Arial, Helvetica, sans-serif" font-size="17">18%</text>
+  <rect x="9" y="188" width="734" height="9" rx="4.5" fill="#DFDFE8"/>
+  <rect x="9" y="188" width="132" height="9" rx="4.5" fill="#6448FF"/>
+  <text x="9" y="221" fill="#AAB0BC" font-family="Arial, Helvetica, sans-serif" font-size="16">Every vote is immediately counted for the analysis</text>
+
+  <path d="M15 244C22 240 29 241 34 246" stroke="#6448FF" stroke-width="2" stroke-linecap="round"/>
+  <path d="M16 244L16 238L22 238" stroke="#6448FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="43" y="251" fill="#6448FF" font-family="Arial, Helvetica, sans-serif" font-size="13">Undo</text>
+</svg>

@@ -7,7 +7,7 @@ SvelteKit file-based routing. URL structure maps to folder structure.
 ```
 routes/
   +page.svelte        # Landing page (/)
-  blog/               # Blog (/blog)
+  resources/          # Resources (/resources)
   facilitator/        # Facilitator app (/facilitator)
   participant/        # Participant app (/participant)
 ```

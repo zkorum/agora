@@ -3,6 +3,7 @@ title: "Transformer la frustration en pouvoir collectif"
 description: "Comment Agora Citizen Network a été utilisé pour transformer une mobilisation de masse en revendications démocratiques partagées lors de la grève #bloquonstout en France."
 author: "Équipe Agora"
 date: "Septembre 2025"
+type: "case-study"
 thumbnail: "/images/bloquonstout-thumbnail.jpg"
 image: "/images/bloquonstout-thumbnail.jpg"
 ---

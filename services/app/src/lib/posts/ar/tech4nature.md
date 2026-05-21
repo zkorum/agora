@@ -3,6 +3,7 @@ title: "رسم خريطة الإجماع حول البلوكتشين في الح
 description: "كيف ساعدت Agora منظمة Tech4Nature في التنقل بين وجهات نظر متنوعة حول تقنية البلوكتشين خلال ورشة عمل الابتكار الخاصة بهم."
 author: "فريق Agora"
 date: "أكتوبر 2025"
+type: "case-study"
 thumbnail: "https://iucn.org/sites/default/files/styles/article_image/public/2025-08/006_flona_carajas_joao-marcos-rosac-1.jpg?h=4cc6839d&itok=2_-LFOvZ"
 image: "https://iucn.org/sites/default/files/styles/article_image/public/2025-08/006_flona_carajas_joao-marcos-rosac-1.jpg?h=4cc6839d&itok=2_-LFOvZ"
 ---

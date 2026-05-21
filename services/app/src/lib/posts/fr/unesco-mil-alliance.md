@@ -3,7 +3,8 @@ title: "Écouter à grande échelle : notes d'un pilote avec l'Alliance MIL de l
 description: "En octobre 2025, l'UNESCO s'est associée à Agora pour soutenir la Semaine de l'éducation aux médias et à l'information. Ce pilote a exploré si la délibération numérique structurée pouvait prolonger la vie des conversations issues de conférences."
 author: "Yuting Jiang"
 date: "Octobre 2025"
-thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
+type: "case-study"
+thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---
 
 En octobre 2025, l'UNESCO s'est associée à Agora pour soutenir la Semaine de l'éducation aux médias et à l'information (MIL), couvrant Carthagène, Mumbai et Bangkok.
@@ -13,7 +14,7 @@ Les événements mondiaux génèrent de l'énergie, des idées et des échanges 
 Ce pilote a exploré si un espace de délibération numérique structuré pouvait prolonger la vie de ces conversations et enrichir l'expérience des participants.
 
 <div class="text-center my-4">
-  <img src="/images/blog/unesco-mil-alliance.jpeg" alt="Participants de la Semaine MIL de l'UNESCO utilisant Agora pour la délibération numérique" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+  <img src="/images/resources/unesco-mil-alliance.jpeg" alt="Participants de la Semaine MIL de l'UNESCO utilisant Agora pour la délibération numérique" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
 </div>
 
 ## L'expérience

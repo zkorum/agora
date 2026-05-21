@@ -3,8 +3,9 @@ title: "Кеңири таратуудан кеңири угууга"
 description: "vTaiwan уюмунан Bestian Tang Agoraны түшүнүү үчүн так алкак сунуштайт: кеңири угуу, маанини түшүнүү жана өз пикир тобубуздан ары көрүү."
 author: "Agora командасы"
 date: "September 2025"
-thumbnail: "/images/blog/broadcasting-to-broad-listening.png"
-image: "/images/blog/broadcasting-to-broad-listening.png"
+type: "vision"
+thumbnail: "/images/resources/broadcasting-to-broad-listening.png"
+image: "/images/resources/broadcasting-to-broad-listening.png"
 ---
 
 [vTaiwan](https://vtaiwan.tw/) уюмунан Bestian Tang (唐宗浩) Agora жана **broadcasting** ыкмасынан **broad listening** ыкмасына өтүү тууралуу мандарин тилинде түшүндүрмө видео жасады.

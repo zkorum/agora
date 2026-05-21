@@ -3,6 +3,7 @@ title: "Agoraで未来をプロトタイプする"
 description: "RadicalxChange FoundationとLearning Planet Instituteが、パリの未来想像ワークショップでAgoraを使い、集合知を見える形にした事例。"
 author: "Yuting Jiang"
 date: "March 2026"
+type: "case-study"
 thumbnail: "https://whtwnd.com/api/cache?did=did:plc:s6qge557msxw27rq6sv7j5sd&cid=bafkreicri7kcjbonkcnzkauczyszdedehxgbhfjczxmstxmoydpjszdlv4"
 image: "https://whtwnd.com/api/cache?did=did:plc:s6qge557msxw27rq6sv7j5sd&cid=bafkreicri7kcjbonkcnzkauczyszdedehxgbhfjczxmstxmoydpjszdlv4"
 ---

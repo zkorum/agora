@@ -3,6 +3,7 @@ title: "繪製區塊鏈在環境保護中的共識地圖"
 description: "Agora如何幫助Tech4Nature在創新研討會期間應對關於區塊鏈技術的不同觀點。"
 author: "Agora團隊"
 date: "2025年10月"
+type: "case-study"
 thumbnail: "https://iucn.org/sites/default/files/styles/article_image/public/2025-08/006_flona_carajas_joao-marcos-rosac-1.jpg?h=4cc6839d&itok=2_-LFOvZ"
 image: "https://iucn.org/sites/default/files/styles/article_image/public/2025-08/006_flona_carajas_joao-marcos-rosac-1.jpg?h=4cc6839d&itok=2_-LFOvZ"
 ---

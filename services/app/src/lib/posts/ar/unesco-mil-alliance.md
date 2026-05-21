@@ -3,7 +3,8 @@ title: "الإصغاء على نطاق واسع: ملاحظات من تجربة 
 description: "في أكتوبر 2025، تشاركت اليونسكو مع Agora لدعم الأسبوع العالمي للتثقيف الإعلامي والمعلوماتي. استكشفت هذه التجربة التجريبية ما إذا كان التداول الرقمي المنظم يمكن أن يمدّد حياة المحادثات الناشئة عن المؤتمرات."
 author: "يوتينغ جيانغ"
 date: "أكتوبر 2025"
-thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
+type: "case-study"
+thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---
 
 في أكتوبر 2025، تشاركت اليونسكو مع Agora لدعم الأسبوع العالمي للتثقيف الإعلامي والمعلوماتي (MIL)، والذي شمل كارتاخينا ومومباي وبانكوك.
@@ -13,7 +14,7 @@ thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
 استكشفت هذه التجربة التجريبية ما إذا كان فضاء التداول الرقمي المنظم يمكن أن يمدّد حياة تلك المحادثات ويعزّز تجربة المشاركين.
 
 <div class="text-center my-4">
-  <img src="/images/blog/unesco-mil-alliance.jpeg" alt="مشاركو الأسبوع العالمي للتثقيف الإعلامي والمعلوماتي التابع لليونسكو يستخدمون Agora للتداول الرقمي" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+  <img src="/images/resources/unesco-mil-alliance.jpeg" alt="مشاركو الأسبوع العالمي للتثقيف الإعلامي والمعلوماتي التابع لليونسكو يستخدمون Agora للتداول الرقمي" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
 </div>
 
 ## التجربة

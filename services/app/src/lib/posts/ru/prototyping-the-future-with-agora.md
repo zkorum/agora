@@ -3,6 +3,7 @@ title: "Прототипирование Будущего С Agora"
 description: "Как RadicalxChange Foundation и Learning Planet Institute использовали Agora, чтобы сделать коллективный интеллект видимым на воркшопе по воображению будущего."
 author: "Yuting Jiang"
 date: "March 2026"
+type: "case-study"
 thumbnail: "https://whtwnd.com/api/cache?did=did:plc:s6qge557msxw27rq6sv7j5sd&cid=bafkreicri7kcjbonkcnzkauczyszdedehxgbhfjczxmstxmoydpjszdlv4"
 image: "https://whtwnd.com/api/cache?did=did:plc:s6qge557msxw27rq6sv7j5sd&cid=bafkreicri7kcjbonkcnzkauczyszdedehxgbhfjczxmstxmoydpjszdlv4"
 ---

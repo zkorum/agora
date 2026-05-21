@@ -3,7 +3,8 @@ title: "Слушать в масштабе: заметки пилотного п
 description: "В октябре 2025 года ЮНЕСКО совместно с Agora поддержала Неделю медийной и информационной грамотности. Пилотный проект исследовал, может ли структурированная цифровая делиберация продлить жизнь конференционных дискуссий."
 author: "Yuting Jiang"
 date: "Октябрь 2025"
-thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
+type: "case-study"
+thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---
 
 В октябре 2025 года ЮНЕСКО совместно с Agora поддержала Неделю медийной и информационной грамотности (МИГ), которая прошла в Картахене, Мумбаи и Бангкоке.
@@ -13,7 +14,7 @@ thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
 Этот пилотный проект исследовал, может ли структурированное цифровое пространство для делиберации продлить жизнь этих дискуссий и улучшить опыт участников.
 
 <div class="text-center my-4">
-  <img src="/images/blog/unesco-mil-alliance.jpeg" alt="Участники Недели МИГ ЮНЕСКО используют Agora для цифровой делиберации" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+  <img src="/images/resources/unesco-mil-alliance.jpeg" alt="Участники Недели МИГ ЮНЕСКО используют Agora для цифровой делиберации" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
 </div>
 
 ## Эксперимент

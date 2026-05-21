@@ -3,6 +3,7 @@ title: "不満を集団的な力に変える"
 description: "フランスの#bloquonstoutストライキにおいて、大規模な動員を共有された民主的要求に変えるためにAgora Citizen Networkがどのように使用されたか。"
 author: "アゴラチーム"
 date: "September 2025"
+type: "case-study"
 thumbnail: "/images/bloquonstout-thumbnail.jpg"
 image: "/images/bloquonstout-thumbnail.jpg"
 ---

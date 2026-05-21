@@ -6,7 +6,11 @@
 <section class="px-8 py-20">
   <div class="mx-auto max-w-[1120px]">
     <div class="overflow-hidden rounded-2xl">
-      <LiteYoutube videoid="phw1AlQs8DY" videotitle={m.video_title()} />
+      <LiteYoutube
+        videoid="FHpcdHiyCXw"
+        videotitle={m.video_title()}
+        poster="/images/resources/ethprague-broad-listening.jpg"
+      />
     </div>
   </div>
 </section>

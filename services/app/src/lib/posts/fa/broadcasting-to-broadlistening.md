@@ -3,8 +3,9 @@ title: "از پخش گسترده تا شنیدن گسترده"
 description: "Bestian Tang از vTaiwan چارچوبی روشن برای فهم Agora ارائه می‌کند: شنیدن گسترده، معناپردازی و دیدن فراتر از گروه نظر خودمان."
 author: "تیم Agora"
 date: "September 2025"
-thumbnail: "/images/blog/broadcasting-to-broad-listening.png"
-image: "/images/blog/broadcasting-to-broad-listening.png"
+type: "vision"
+thumbnail: "/images/resources/broadcasting-to-broad-listening.png"
+image: "/images/resources/broadcasting-to-broad-listening.png"
 ---
 
 Bestian Tang (唐宗浩) از [vTaiwan](https://vtaiwan.tw/) ویدیویی به زبان ماندارین درباره Agora و گذار از **broadcasting** به **broad listening** ساخته است.

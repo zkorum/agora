@@ -13,23 +13,38 @@
 
   interface Props {
     hideOnScroll?: boolean;
+    variant?: "default" | "resources";
   }
 
-  let { hideOnScroll = false }: Props = $props();
+  let { hideOnScroll = false, variant = "default" }: Props = $props();
 
   let mobileMenuOpen = $state(false);
 
   const loginHref = "https://www.agoracitizen.app/welcome";
 
-  const navLinks = $derived([
+  const defaultNavLinks = $derived([
     { label: m.nav_facilitators(), href: localizeHref("/#facilitators") },
     { label: m.nav_citizens(), href: localizeHref("/#citizens") },
     { label: m.nav_usecases(), href: localizeHref("/#usecases") },
     { label: m.nav_testimonials(), href: localizeHref("/#testimonials") },
-    { label: m.nav_casestudies(), href: localizeHref("/#casestudies") },
+    { label: m.nav_casestudies(), href: localizeHref("/#resources") },
     { label: m.nav_pricing(), href: localizeHref("/#pricing") },
+    { label: "FAQ", href: localizeHref("/#faq") },
     { label: m.nav_team(), href: localizeHref("/#team") },
   ]);
+
+  const resourceNavLinks = $derived([
+    { label: m.nav_facilitators(), href: localizeHref("/#facilitators") },
+    { label: m.nav_citizens(), href: localizeHref("/#citizens") },
+    { label: m.nav_usecases(), href: localizeHref("/#usecases") },
+    { label: m.nav_testimonials(), href: localizeHref("/#testimonials") },
+    { label: "FAQ", href: localizeHref("/#faq") },
+    { label: m.nav_casestudies(), href: localizeHref("/resources") },
+  ]);
+
+  const navLinks = $derived(
+    variant === "resources" ? resourceNavLinks : defaultNavLinks,
+  );
 </script>
 
 <TopBar {hideOnScroll}>
@@ -52,16 +67,18 @@
   {/snippet}
 
   {#snippet end()}
-    <div
-      class="
-        hidden
-        lg:block
-      "
-    >
-      <GradientButton href={loginHref} size="sm">
-        {m.nav_login()}
-      </GradientButton>
-    </div>
+    {#if variant !== "resources"}
+      <div
+        class="
+          hidden
+          lg:block
+        "
+      >
+        <GradientButton href={loginHref} size="sm">
+          {m.nav_login()}
+        </GradientButton>
+      </div>
+    {/if}
     <div
       class="
         hidden
@@ -94,9 +111,11 @@
   onNavigate={() => (mobileMenuOpen = false)}
 >
   {#snippet action()}
-    <GradientButton href={loginHref} size="sm">
-      {m.nav_login()}
-    </GradientButton>
+    {#if variant !== "resources"}
+      <GradientButton href={loginHref} size="sm">
+        {m.nav_login()}
+      </GradientButton>
+    {/if}
   {/snippet}
   <LanguageSwitcher />
 </MobileNavDrawer>

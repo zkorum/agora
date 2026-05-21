@@ -9,8 +9,11 @@ function getString(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
-export interface BlogPost {
+export type ResourceType = "vision" | "case-study" | "guide" | "tech";
+
+export interface ResourcePost {
   slug: string;
+  type: ResourceType;
   title: string;
   description: string;
   author: string;
@@ -20,8 +23,9 @@ export interface BlogPost {
   content: string;
 }
 
-export interface BlogPostMeta {
+export interface ResourcePostMeta {
   slug: string;
+  type: ResourceType;
   title: string;
   description: string;
   author: string;
@@ -49,15 +53,61 @@ function getSlugFromPath(path: string): string {
   return match?.[1] ?? "";
 }
 
-export function getBlogPosts({ locale }: { locale: string }): BlogPostMeta[] {
-  const posts: BlogPostMeta[] = [];
+function getFallbackType(slug: string): ResourceType {
+  if (slug === "facilitation-guide") return "guide";
+
+  if (
+    slug === "bloquonstout" ||
+    slug === "prototyping-the-future-with-agora" ||
+    slug === "tech4nature" ||
+    slug === "unesco-mil-alliance"
+  ) {
+    return "case-study";
+  }
+
+  if (
+    slug === "broadcasting-to-broadlistening" ||
+    slug === "devconnect-finding-common-ground-at-scale" ||
+    slug === "ethprague-future-building-starts-with-coordination"
+  ) {
+    return "vision";
+  }
+
+  return "tech";
+}
+
+function getResourceType(value: unknown, slug: string): ResourceType {
+  const normalized = getString(value)
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-");
+
+  if (
+    normalized === "vision" ||
+    normalized === "case-study" ||
+    normalized === "guide" ||
+    normalized === "tech"
+  ) {
+    return normalized;
+  }
+
+  return getFallbackType(slug);
+}
+
+export function getResourcePosts({
+  locale,
+}: {
+  locale: string;
+}): ResourcePostMeta[] {
+  const posts: ResourcePostMeta[] = [];
 
   for (const [path, raw] of Object.entries(markdownFiles)) {
     if (getLocaleFromPath(path) !== locale) continue;
 
     const { data } = matter(raw);
+    const slug = getSlugFromPath(path);
     posts.push({
-      slug: getSlugFromPath(path),
+      slug,
+      type: getResourceType(data.type, slug),
       title: getString(data.title),
       description: getString(data.description),
       author: getString(data.author),
@@ -77,6 +127,7 @@ export function getBlogPosts({ locale }: { locale: string }): BlogPostMeta[] {
       const { data } = matter(raw);
       posts.push({
         slug,
+        type: getResourceType(data.type, slug),
         title: getString(data.title),
         description: getString(data.description),
         author: getString(data.author),
@@ -92,13 +143,13 @@ export function getBlogPosts({ locale }: { locale: string }): BlogPostMeta[] {
   );
 }
 
-export async function getBlogPost({
+export async function getResourcePost({
   slug,
   locale,
 }: {
   slug: string;
   locale: string;
-}): Promise<BlogPost | null> {
+}): Promise<ResourcePost | null> {
   const path = `/src/lib/posts/${locale}/${slug}.md`;
   let raw = markdownFiles[path];
 
@@ -121,6 +172,7 @@ export async function getBlogPost({
 
   return {
     slug,
+    type: getResourceType(data.type, slug),
     title: getString(data.title),
     description: getString(data.description),
     author: getString(data.author),

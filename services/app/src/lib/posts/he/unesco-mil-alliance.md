@@ -3,7 +3,8 @@ title: "הקשבה בקנה מידה: רשמים מפיילוט עם ברית ה
 description: "באוקטובר 2025, UNESCO שיתפו פעולה עם Agora כדי לתמוך בשבוע אוריינות מדיה ומידע. פיילוט זה בחן האם דיון דיגיטלי מובנה יכול להאריך את חיי השיחות של כנסים."
 author: "Yuting Jiang"
 date: "October 2025"
-thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
+type: "case-study"
+thumbnail: "/images/resources/unesco-mil-alliance.jpeg"
 ---
 
 באוקטובר 2025, UNESCO שיתפו פעולה עם Agora כדי לתמוך בשבוע אוריינות מדיה ומידע (MIL), שהתפרש על פני Cartagena, Mumbai ו-Bangkok.
@@ -13,7 +14,7 @@ thumbnail: "/images/blog/unesco-mil-alliance.jpeg"
 פיילוט זה בחן האם מרחב דיון דיגיטלי מובנה יכול להאריך את חיי אותן שיחות ולשפר את חוויית המשתתפים.
 
 <div class="text-center my-4">
-  <img src="/images/blog/unesco-mil-alliance.jpeg" alt="משתתפי שבוע MIL של UNESCO משתמשים ב-Agora לדיון דיגיטלי" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+  <img src="/images/resources/unesco-mil-alliance.jpeg" alt="משתתפי שבוע MIL של UNESCO משתמשים ב-Agora לדיון דיגיטלי" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
 </div>
 
 ## הניסוי
