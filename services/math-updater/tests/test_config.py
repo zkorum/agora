@@ -5,19 +5,34 @@ from typing import TYPE_CHECKING
 import pytest
 from pydantic import ValidationError
 
-from math_updater.config import MathUpdaterConfigError, Settings, validate_ai_description_config
+from math_updater.config import (
+    MATH_UPDATER_ENV_PREFIX,
+    SHARED_PYTHON_WORKER_ENV_PREFIX,
+    AiDescriptionWorkerSettings,
+    DescriptionTranslationWorkerSettings,
+    MathUpdaterConfigError,
+    Settings,
+    validate_ai_description_config,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 VALID_DSN = "postgresql://user:password@localhost:5432/agora"
-ENV_PREFIX = "MATH_UPDATER_"
+ENV_PREFIX = MATH_UPDATER_ENV_PREFIX
+WORKER_ENV_PREFIXES = [
+    "AI_DESCRIPTION_WORKER_",
+    "DESCRIPTION_TRANSLATION_WORKER_",
+    SHARED_PYTHON_WORKER_ENV_PREFIX,
+    MATH_UPDATER_ENV_PREFIX,
+]
 
 
 def isolate_settings_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.chdir(tmp_path)
-    for field_name in Settings.model_fields:
-        monkeypatch.delenv(f"{ENV_PREFIX}{field_name.upper()}", raising=False)
+    for prefix in WORKER_ENV_PREFIXES:
+        for field_name in Settings.model_fields:
+            monkeypatch.delenv(f"{prefix}{field_name.upper()}", raising=False)
 
 
 def test_settings_requires_primary_connection_string(
@@ -116,3 +131,81 @@ def test_ai_description_config_allows_translation_with_ai(
     )
 
     validate_ai_description_config(settings)
+
+
+def test_ai_description_config_rejects_bedrock_translation_without_ai(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    settings = Settings(
+        connection_string=VALID_DSN,
+        aws_description_translation_enable=True,
+    )
+
+    with pytest.raises(MathUpdaterConfigError):
+        validate_ai_description_config(settings)
+
+
+def test_ai_description_config_allows_bedrock_translation_with_ai(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    settings = Settings(
+        connection_string=VALID_DSN,
+        aws_ai_label_summary_enable=True,
+        aws_description_translation_enable=True,
+    )
+
+    validate_ai_description_config(settings)
+
+
+def test_worker_settings_read_shared_python_worker_prefix(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    tmp_path.joinpath(".env").write_text(
+        f"{SHARED_PYTHON_WORKER_ENV_PREFIX}CONNECTION_STRING={VALID_DSN}\n"
+        f"{SHARED_PYTHON_WORKER_ENV_PREFIX}AWS_AI_LABEL_SUMMARY_ENABLE=true\n",
+        encoding="utf-8",
+    )
+
+    settings = AiDescriptionWorkerSettings()
+
+    assert settings.connection_string == VALID_DSN
+    assert settings.aws_ai_label_summary_enable is True
+
+
+def test_worker_specific_prefix_overrides_shared_python_worker_prefix(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    shared_dsn = "postgresql://shared:password@localhost:5432/agora"
+    worker_dsn = "postgresql://worker:password@localhost:5432/agora"
+    tmp_path.joinpath(".env").write_text(
+        f"{SHARED_PYTHON_WORKER_ENV_PREFIX}CONNECTION_STRING={shared_dsn}\n"
+        f"DESCRIPTION_TRANSLATION_WORKER_CONNECTION_STRING={worker_dsn}\n",
+        encoding="utf-8",
+    )
+
+    settings = DescriptionTranslationWorkerSettings()
+
+    assert settings.connection_string == worker_dsn
+
+
+def test_worker_settings_fallback_to_math_updater_prefix(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    tmp_path.joinpath(".env").write_text(
+        f"{MATH_UPDATER_ENV_PREFIX}CONNECTION_STRING={VALID_DSN}\n",
+        encoding="utf-8",
+    )
+
+    settings = AiDescriptionWorkerSettings()
+
+    assert settings.connection_string == VALID_DSN

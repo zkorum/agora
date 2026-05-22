@@ -108,6 +108,12 @@ dev-api:
 dev-math-updater:
 	cd services/math-updater && uv run python -m math_updater.worker
 
+dev-ai-description-worker:
+	cd services/math-updater && uv run python -m math_updater.ai_description_worker
+
+dev-description-translation-worker:
+	cd services/math-updater && uv run python -m math_updater.description_translation_worker
+
 dev-import-worker:
 	cd services/import-worker && uv run python -m import_worker.worker
 

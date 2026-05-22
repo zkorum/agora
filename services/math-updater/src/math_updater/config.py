@@ -1,10 +1,20 @@
+from typing import ClassVar
+
 from pydantic import AnyUrl, Field, TypeAdapter, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    DotEnvSettingsSource,
+    EnvSettingsSource,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 
 DEFAULT_VALKEY_URL: AnyUrl = TypeAdapter(AnyUrl).validate_python(
     "valkey://localhost:6379",
 )
 ALLOWED_VALKEY_SCHEMES = {"valkey", "valkeys", "redis", "rediss"}
+SHARED_PYTHON_WORKER_ENV_PREFIX = "AGORA_PYTHON_WORKER_"
+MATH_UPDATER_ENV_PREFIX = "MATH_UPDATER_"
 
 DEFAULT_AWS_AI_LABEL_SUMMARY_PROMPT = """\
 You are analyzing opinion clusters from a group conversation.
@@ -81,6 +91,84 @@ Generate labels and summaries for all clusters in the input, using the reasoning
 show your analysis.
 """
 
+DEFAULT_AWS_DESCRIPTION_TRANSLATION_PROMPT = """\
+Translate concise opinion-group labels and summaries for a civic conversation.
+Return only raw JSON.
+
+## Output
+Return this shape, with one item per input description:
+
+translations[]:
+- descriptionId: copy from input descriptionId
+- locale: copy from input targetLocale
+- reasoning: brief translation rationale
+- label: translated label
+- summary: translated summary
+
+## Example
+Example input:
+{
+  "sourceLocale": "en",
+  "targetLocale": "fr",
+  "descriptions": [
+    {
+      "descriptionId": 501,
+      "label": "Skeptics",
+      "summary": "This cluster rejects uncritical claims that technology always helps.",
+      "conversationTitle": "How should society govern technology?",
+      "representativeOpinions": [
+        {"opinionId": 10, "stance": "disagree", "content": "Technology always improves society"}
+      ]
+    },
+    {
+      "descriptionId": 502,
+      "label": "Stewards",
+      "summary": "This cluster supports careful oversight so technology serves public goals.",
+      "conversationTitle": "How should society govern technology?",
+      "representativeOpinions": [
+        {"opinionId": 11, "stance": "agree", "content": "Technology should serve public goals"}
+      ]
+    }
+  ]
+}
+
+Correct output for that example:
+{
+  "translations": [
+    {
+      "descriptionId": 501,
+      "locale": "fr",
+      "reasoning": "The group rejects an overly positive tech claim; keep that neutral stance.",
+      "label": "Sceptiques",
+      "summary": "Ce groupe rejette l'idée que la technologie aide toujours la société."
+    },
+    {
+      "descriptionId": 502,
+      "locale": "fr",
+      "reasoning": "The group favors responsible stewardship; emphasize public-interest oversight.",
+      "label": "Gardiens",
+      "summary": "Ce groupe veut que la technologie serve des objectifs publics."
+    }
+  ]
+}
+
+The example descriptionId is illustrative. In real output, copy each actual input
+descriptionId exactly.
+
+## Rules
+- Translate only into targetLocale; echo targetLocale and each descriptionId exactly.
+- Prioritize faithful, idiomatic translation of the English label and summary.
+- Use reasoning to avoid literal translations that sound unnatural or change the tone.
+- Label guidance: short, neutral group names; prefer natural agentive nouns or concise
+  intellectual-tradition labels; avoid pejoratives, slang, policy-specific names,
+  geography, and awkward calques.
+- Summary guidance: neutral, concise, grounded in what the group supports and rejects.
+- If stance is "disagree", the group rejects that opinion; do not make it sound like
+  the group's belief.
+- Use title and representative opinions only for tone, ambiguity, and terminology.
+- Do not include fields outside the output shape.
+"""
+
 
 class Settings(BaseSettings):
     connection_string: str = Field(default="", min_length=1)
@@ -119,6 +207,19 @@ class Settings(BaseSettings):
         default=DEFAULT_AWS_AI_LABEL_SUMMARY_PROMPT,
         min_length=1,
     )
+    aws_description_translation_enable: bool = False
+    aws_description_translation_region: str = Field(default="us-east-1", min_length=1)
+    aws_description_translation_model_id: str = Field(
+        default="mistral.mistral-large-3-675b-instruct",
+        min_length=1,
+    )
+    aws_description_translation_temperature: float = Field(default=0.1, ge=0, le=2)
+    aws_description_translation_top_p: float = Field(default=0.9, gt=0, le=1)
+    aws_description_translation_max_tokens: int = Field(default=4096, ge=1)
+    aws_description_translation_prompt: str = Field(
+        default=DEFAULT_AWS_DESCRIPTION_TRANSLATION_PROMPT,
+        min_length=1,
+    )
     aws_client_connect_timeout_seconds: float = Field(default=2.0, gt=0)
     aws_ai_label_summary_read_timeout_seconds: float = Field(default=12.0, gt=0)
     aws_secret_read_timeout_seconds: float = Field(default=5.0, gt=0)
@@ -134,7 +235,7 @@ class Settings(BaseSettings):
     google_application_credentials: str | None = Field(default=None, min_length=1)
 
     model_config = SettingsConfigDict(
-        env_prefix="MATH_UPDATER_",
+        env_prefix=MATH_UPDATER_ENV_PREFIX,
         env_file=".env",
         extra="forbid",
         str_strip_whitespace=True,
@@ -165,7 +266,55 @@ class MathUpdaterConfigError(RuntimeError):
     pass
 
 
+class _LayeredPythonWorkerSettings(Settings):
+    worker_env_prefix: ClassVar[str]
+
+    model_config = SettingsConfigDict(
+        env_prefix="",
+        env_file=".env",
+        extra="ignore",
+        str_strip_whitespace=True,
+        validate_default=True,
+    )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            EnvSettingsSource(settings_cls, env_prefix=cls.worker_env_prefix),
+            DotEnvSettingsSource(settings_cls, env_prefix=cls.worker_env_prefix),
+            EnvSettingsSource(settings_cls, env_prefix=SHARED_PYTHON_WORKER_ENV_PREFIX),
+            DotEnvSettingsSource(settings_cls, env_prefix=SHARED_PYTHON_WORKER_ENV_PREFIX),
+            EnvSettingsSource(settings_cls, env_prefix=MATH_UPDATER_ENV_PREFIX),
+            DotEnvSettingsSource(settings_cls, env_prefix=MATH_UPDATER_ENV_PREFIX),
+            file_secret_settings,
+        )
+
+
+class AiDescriptionWorkerSettings(_LayeredPythonWorkerSettings):
+    worker_env_prefix: ClassVar[str] = "AI_DESCRIPTION_WORKER_"
+
+
+class DescriptionTranslationWorkerSettings(_LayeredPythonWorkerSettings):
+    worker_env_prefix: ClassVar[str] = "DESCRIPTION_TRANSLATION_WORKER_"
+
+
 def validate_ai_description_config(settings: Settings) -> None:
+    if settings.aws_description_translation_enable and not settings.aws_ai_label_summary_enable:
+        msg = (
+            "AWS description translation is enabled, but "
+            "AWS_AI_LABEL_SUMMARY_ENABLE is false. Translations require AI-generated "
+            "labels and summaries; either enable AI summaries or disable description "
+            "translation."
+        )
+        raise MathUpdaterConfigError(msg)
     if (
         settings.google_translation_credentials_configured
         and not settings.aws_ai_label_summary_enable

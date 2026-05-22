@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 ANALYSIS_DIRTY_KEY = "analysis:dirty"
 AI_DESCRIPTION_DIRTY_KEY = "analysis:ai-description:dirty"
+DESCRIPTION_TRANSLATION_DIRTY_KEY = "analysis:description-translation:dirty"
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,17 @@ def schedule_ai_description_conversation(
     )
 
 
+def schedule_description_translation_conversation(
+    vk: Valkey, *, conversation_id: int, due_at_ms: int
+) -> None:
+    _schedule_conversation(
+        vk,
+        queue_key=DESCRIPTION_TRANSLATION_DIRTY_KEY,
+        conversation_id=conversation_id,
+        due_at_ms=due_at_ms,
+    )
+
+
 def _requeue_conversations(
     vk: Valkey, *, queue_key: str, conversations: list[DueConversation]
 ) -> None:
@@ -72,6 +84,16 @@ def requeue_ai_description_conversations(
     _requeue_conversations(
         vk,
         queue_key=AI_DESCRIPTION_DIRTY_KEY,
+        conversations=conversations,
+    )
+
+
+def requeue_description_translation_conversations(
+    vk: Valkey, *, conversations: list[DueConversation]
+) -> None:
+    _requeue_conversations(
+        vk,
+        queue_key=DESCRIPTION_TRANSLATION_DIRTY_KEY,
         conversations=conversations,
     )
 
@@ -133,9 +155,27 @@ def pop_due_ai_description_conversations(
     )
 
 
+def pop_due_description_translation_conversations(
+    vk: Valkey,
+    *,
+    count: int,
+    current_time_ms: int | None = None,
+) -> tuple[list[DueConversation], int | None]:
+    return _pop_due_conversations(
+        vk,
+        queue_key=DESCRIPTION_TRANSLATION_DIRTY_KEY,
+        count=count,
+        current_time_ms=current_time_ms,
+    )
+
+
 def queue_depth(vk: Valkey) -> int:
     return cast("int", vk.zcard(ANALYSIS_DIRTY_KEY))
 
 
 def ai_description_queue_depth(vk: Valkey) -> int:
     return cast("int", vk.zcard(AI_DESCRIPTION_DIRTY_KEY))
+
+
+def description_translation_queue_depth(vk: Valkey) -> int:
+    return cast("int", vk.zcard(DESCRIPTION_TRANSLATION_DIRTY_KEY))

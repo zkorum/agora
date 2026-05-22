@@ -13,6 +13,10 @@ class DescriptionInputError(RuntimeError):
     pass
 
 
+class DescriptionOutputError(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True)
 class RepresentativeOpinionText:
     opinion_id: int

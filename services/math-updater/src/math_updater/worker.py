@@ -12,23 +12,19 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 
 from math_updater.ai_description_work import (
-    WorkStateSchedule as AiDescriptionWorkStateSchedule,
-)
-from math_updater.ai_description_work import (
-    activate_pending_translation_expectations,
+    AiDescriptionQueueSchedules,
+    ClaimedLineageDescriptionWorkItem,
     claim_ai_description_locale_work_items_batch,
+    fetch_ai_description_queue_schedules,
     fetch_ai_description_view_snapshot_ids_for_analysis_snapshots,
-    fetch_due_ai_description_work_conversation_ids,
     mark_non_retryable_ai_description_locale_work_item,
     process_ai_description_locale_work_item,
-    recover_expired_ai_description_work,
     retry_ai_description_locale_work_item,
 )
-from math_updater.analysis_compute import RedDwarfContractError, compute_analysis_bundle
-from math_updater.bedrock_label_summary import (
-    BedrockLabelSummaryConfig,
-    generate_label_summaries_with_bedrock,
+from math_updater.ai_description_work import (
+    WorkStateSchedule as AiDescriptionWorkStateSchedule,
 )
+from math_updater.analysis_compute import RedDwarfContractError, compute_analysis_bundle
 from math_updater.config import MathUpdaterConfigError, Settings, validate_ai_description_config
 from math_updater.db import (
     WorkStateSchedule,
@@ -46,26 +42,21 @@ from math_updater.db import (
     upsert_input_snapshots_batch,
 )
 from math_updater.description_input import DescriptionInputError
-from math_updater.description_translation import (
-    DescriptionForTranslation,
-    DescriptionTranslation,
-    DescriptionTranslationError,
-    generate_description_translations,
-    initialize_google_translation_service,
+from math_updater.description_services import (
+    build_description_generator,
+    build_description_translator,
 )
 from math_updater.input_snapshot import PreparedInputSnapshot, prepare_input_snapshots_batch
 from math_updater.logging_utils import log_database_error
 from math_updater.retry_policy import RetryPolicy
 from math_updater.valkey_client import (
-    ai_description_queue_depth,
     now_ms,
-    pop_due_ai_description_conversations,
     pop_due_conversations,
     queue_depth,
-    requeue_ai_description_conversations,
     requeue_conversations,
     schedule_ai_description_conversation,
     schedule_conversation,
+    schedule_description_translation_conversation,
 )
 
 if TYPE_CHECKING:
@@ -78,7 +69,10 @@ if TYPE_CHECKING:
     from math_updater.bedrock_label_summary import ParsedLabelSummaryOutput
     from math_updater.db import ClaimedWorkItem, OpinionGroupConfigRecord
     from math_updater.description_input import ConversationDescriptionInput
-    from math_updater.valkey_client import DueConversation
+    from math_updater.description_translation import (
+        DescriptionForTranslation,
+        DescriptionTranslation,
+    )
 
     DescriptionGenerator = Callable[[ConversationDescriptionInput], ParsedLabelSummaryOutput]
     DescriptionTranslator = Callable[
@@ -146,6 +140,41 @@ def _enqueue_schedules(
         enqueued_count += 1
     if enqueued_count:
         log.info("[MathUpdater] Enqueued %d scheduled conversation(s)", enqueued_count)
+
+
+def _enqueue_ai_description_queue_schedules(
+    vk: valkey_lib.Valkey,
+    *,
+    schedules: AiDescriptionQueueSchedules,
+) -> None:
+    ai_enqueued_count = 0
+    for schedule in schedules.lineage_descriptions:
+        if schedule.next_run_at is None:
+            continue
+        schedule_ai_description_conversation(
+            vk,
+            conversation_id=schedule.conversation_id,
+            due_at_ms=int(schedule.next_run_at.timestamp() * 1000),
+        )
+        ai_enqueued_count += 1
+
+    translation_enqueued_count = 0
+    for schedule in schedules.translations:
+        if schedule.next_run_at is None:
+            continue
+        schedule_description_translation_conversation(
+            vk,
+            conversation_id=schedule.conversation_id,
+            due_at_ms=int(schedule.next_run_at.timestamp() * 1000),
+        )
+        translation_enqueued_count += 1
+
+    if ai_enqueued_count or translation_enqueued_count:
+        log.info(
+            "[MathUpdater] Enqueued AI description schedules ai=%d translation=%d",
+            ai_enqueued_count,
+            translation_enqueued_count,
+        )
 
 
 def _format_ids(conversation_ids: Sequence[int]) -> str:
@@ -243,6 +272,7 @@ def _process_ai_description_conversation_ids(
     retry_policy: RetryPolicy,
     description_generator: DescriptionGenerator,
     description_translator: DescriptionTranslator | None,
+    retry_first_pass_once: bool = False,
 ) -> int:
     ai_claims = claim_ai_description_locale_work_items_batch(
         primary_engine,
@@ -289,21 +319,27 @@ def _process_ai_description_conversation_ids(
                 claim.conversation_slug_id,
                 claim.locale,
             )
+            should_retry_immediately = (
+                retry_first_pass_once
+                and isinstance(claim, ClaimedLineageDescriptionWorkItem)
+                and claim.attempt_count == 1
+            )
             return retry_ai_description_locale_work_item(
                 primary_engine,
                 claim=claim,
                 retry_policy=retry_policy,
                 error_code="ai_description_retryable",
                 error_message=str(error),
+                retry_immediately_without_fallback=should_retry_immediately,
+                force_cooldown=retry_first_pass_once and not should_retry_immediately,
             )
 
-    schedules: list[WorkStateSchedule | AiDescriptionWorkStateSchedule] = []
     with ThreadPoolExecutor(max_workers=min(max_workers, len(ai_claims))) as executor:
         future_by_claim = {executor.submit(process_claim, claim): claim for claim in ai_claims}
         for future in as_completed(future_by_claim):
             claim = future_by_claim[future]
             try:
-                schedules.append(future.result())
+                future.result()
             except Exception:
                 log.exception(
                     "[MathUpdater] Failed to finalize AI description retry state for "
@@ -312,38 +348,14 @@ def _process_ai_description_conversation_ids(
                     claim.locale,
                 )
 
-    _enqueue_schedules(vk, schedules=schedules, enqueue_ai_description=True)
-    return len(ai_claims)
-
-
-def _process_ai_description_due_items(
-    *,
-    primary_engine: Engine,
-    vk: valkey_lib.Valkey,
-    worker_id: str,
-    due_items: list[DueConversation],
-    lease_ttl_seconds: int,
-    claim_limit: int,
-    max_workers: int,
-    ai_description_epoch: int,
-    retry_policy: RetryPolicy,
-    description_generator: DescriptionGenerator,
-    description_translator: DescriptionTranslator | None,
-) -> int:
-    return _process_ai_description_conversation_ids(
-        primary_engine=primary_engine,
-        vk=vk,
-        worker_id=worker_id,
-        conversation_ids=[item.conversation_id for item in due_items],
-        conversation_view_snapshot_ids=None,
-        lease_ttl_seconds=lease_ttl_seconds,
-        claim_limit=claim_limit,
-        max_workers=max_workers,
-        ai_description_epoch=ai_description_epoch,
-        retry_policy=retry_policy,
-        description_generator=description_generator,
-        description_translator=description_translator,
+    _enqueue_ai_description_queue_schedules(
+        vk,
+        schedules=fetch_ai_description_queue_schedules(
+            primary_engine,
+            conversation_ids=conversation_ids,
+        ),
     )
+    return len(ai_claims)
 
 
 def _process_ai_description_first_pass(
@@ -376,6 +388,7 @@ def _process_ai_description_first_pass(
             retry_policy=retry_policy,
             description_generator=description_generator,
             description_translator=description_translator,
+            retry_first_pass_once=True,
         )
         if processed_count == 0:
             break
@@ -398,75 +411,7 @@ def _compute_claim_bundle(
 
 
 def _is_non_retryable_ai_description_error(error: Exception) -> bool:
-    return isinstance(error, (DescriptionInputError, DescriptionTranslationError))
-
-
-def _build_description_generator(settings: Settings) -> DescriptionGenerator | None:
-    if not settings.aws_ai_label_summary_enable:
-        return None
-
-    config = BedrockLabelSummaryConfig(
-        region=settings.aws_ai_label_summary_region,
-        model_id=settings.aws_ai_label_summary_model_id,
-        temperature=settings.aws_ai_label_summary_temperature,
-        top_p=settings.aws_ai_label_summary_top_p,
-        max_tokens=settings.aws_ai_label_summary_max_tokens,
-        prompt=settings.aws_ai_label_summary_prompt,
-        connect_timeout_seconds=settings.aws_client_connect_timeout_seconds,
-        read_timeout_seconds=settings.aws_ai_label_summary_read_timeout_seconds,
-    )
-
-    def generate(
-        conversation: ConversationDescriptionInput,
-    ) -> ParsedLabelSummaryOutput:
-        return generate_label_summaries_with_bedrock(
-            conversation=conversation,
-            config=config,
-        )
-
-    return generate
-
-
-def _build_description_translator(settings: Settings) -> DescriptionTranslator | None:
-    try:
-        service = initialize_google_translation_service(
-            google_cloud_service_account_aws_secret_key=(
-                settings.google_cloud_service_account_aws_secret_key
-            ),
-            aws_secret_region=settings.aws_secret_region,
-            aws_connect_timeout_seconds=settings.aws_client_connect_timeout_seconds,
-            aws_read_timeout_seconds=settings.aws_secret_read_timeout_seconds,
-            google_application_credentials_path=settings.google_application_credentials,
-            google_cloud_translation_location=settings.google_cloud_translation_location,
-            google_cloud_translation_endpoint=settings.google_cloud_translation_endpoint,
-            google_cloud_translation_timeout_seconds=(
-                settings.google_cloud_translation_timeout_seconds
-            ),
-        )
-    except Exception:
-        log.warning(
-            "[MathUpdater] Failed to initialize Google Cloud Translation; continuing",
-            exc_info=True,
-        )
-        return None
-
-    if service is None:
-        log.info("[MathUpdater] Google Cloud Translation not configured")
-        return None
-
-    log.info("[MathUpdater] Google Cloud Translation initialized")
-
-    def translate(
-        descriptions: list[DescriptionForTranslation],
-        target_language_codes: list[str],
-    ) -> list[DescriptionTranslation]:
-        return generate_description_translations(
-            service=service,
-            descriptions=descriptions,
-            target_language_codes=target_language_codes,
-        )
-
-    return translate
+    return isinstance(error, DescriptionInputError)
 
 
 def main() -> None:
@@ -507,18 +452,28 @@ def main() -> None:
         hide_parameters=True,
     )
     log.info(
-        "[MathUpdater] PostgreSQL connected "
-        "(analysis_dirty_depth=%d ai_description_dirty_depth=%d)",
+        "[MathUpdater] PostgreSQL connected (analysis_dirty_depth=%d)",
         queue_depth(vk),
-        ai_description_queue_depth(vk),
     )
-    description_generator = _build_description_generator(settings)
+    description_generator = build_description_generator(settings)
     if description_generator is None:
         log.info("[MathUpdater] AI description generation disabled")
         description_translator = None
     else:
         log.info("[MathUpdater] AI description generation enabled")
-        description_translator = _build_description_translator(settings)
+        description_translator_bundle = build_description_translator(settings)
+        description_translator = (
+            description_translator_bundle.translate
+            if description_translator_bundle is not None
+            else None
+        )
+        if description_translator_bundle is None:
+            log.info("[MathUpdater] Description translation disabled")
+        else:
+            log.info(
+                "[MathUpdater] Description translation mode=%s",
+                description_translator_bundle.mode,
+            )
     retry_policy = RetryPolicy(
         burst_attempts=settings.retry_burst_attempts,
         burst_interval_seconds=settings.retry_burst_seconds,
@@ -544,26 +499,6 @@ def main() -> None:
                     conversation_ids=sorted(set(due_ids)),
                     due_at_ms=current_ms,
                 )
-                if description_generator is not None:
-                    ai_due_ids = fetch_due_ai_description_work_conversation_ids(
-                        read_engine,
-                        limit=1000,
-                        ai_description_epoch=settings.ai_description_epoch,
-                        translation_enabled=description_translator is not None,
-                    )
-                    if description_translator is not None:
-                        ai_due_ids.extend(
-                            activate_pending_translation_expectations(
-                                primary_engine,
-                                limit=1000,
-                            )
-                        )
-                    _enqueue_conversation_ids(
-                        vk,
-                        conversation_ids=sorted(set(ai_due_ids)),
-                        due_at_ms=current_ms,
-                        enqueue_ai_description=True,
-                    )
                 if due_ids:
                     log.info("[MathUpdater] Reconciled %d due conversations", len(due_ids))
             except Exception:
@@ -579,17 +514,6 @@ def main() -> None:
                     conversation_ids=sorted(set(recovered_ids)),
                     due_at_ms=current_ms,
                 )
-                if description_generator is not None:
-                    recovered_ai_ids = recover_expired_ai_description_work(
-                        primary_engine,
-                        translation_enabled=description_translator is not None,
-                    )
-                    _enqueue_conversation_ids(
-                        vk,
-                        conversation_ids=sorted(set(recovered_ai_ids)),
-                        due_at_ms=current_ms,
-                        enqueue_ai_description=True,
-                    )
                 if recovered_ids:
                     log.info("[MathUpdater] Recovered %d expired running items", len(recovered_ids))
             except Exception:
@@ -600,49 +524,12 @@ def main() -> None:
             vk,
             count=settings.valkey_pop_batch_size,
         )
-        if description_generator is None:
-            ai_due_items = []
-            next_ai_due_at_ms = None
-        else:
-            ai_due_items, next_ai_due_at_ms = pop_due_ai_description_conversations(
-                vk,
-                count=settings.valkey_pop_batch_size,
-            )
-        if not due_items and not ai_due_items:
-            next_times = [
-                due_at_ms
-                for due_at_ms in (next_due_at_ms, next_ai_due_at_ms)
-                if due_at_ms is not None
-            ]
-            if not next_times:
+        if not due_items:
+            if next_due_at_ms is None:
                 time.sleep(settings.worker_poll_idle_sleep_seconds)
             else:
-                sleep_ms = max(0, min(next_times) - now_ms())
+                sleep_ms = max(0, next_due_at_ms - now_ms())
                 time.sleep(min(settings.worker_poll_idle_sleep_seconds, sleep_ms / 1000))
-            continue
-
-        if ai_due_items and description_generator is not None:
-            ai_claimable_due_items = ai_due_items[: settings.db_claim_batch_size]
-            ai_overflow_due_items = ai_due_items[settings.db_claim_batch_size :]
-            requeue_ai_description_conversations(
-                vk,
-                conversations=ai_overflow_due_items,
-            )
-            _process_ai_description_due_items(
-                primary_engine=primary_engine,
-                vk=vk,
-                worker_id=worker_id,
-                due_items=ai_claimable_due_items,
-                lease_ttl_seconds=settings.lease_ttl_seconds,
-                claim_limit=settings.db_claim_batch_size,
-                max_workers=settings.max_ai_description_concurrency,
-                ai_description_epoch=settings.ai_description_epoch,
-                retry_policy=retry_policy,
-                description_generator=description_generator,
-                description_translator=description_translator,
-            )
-
-        if not due_items:
             continue
 
         log.info(
@@ -738,11 +625,12 @@ def main() -> None:
                     )
                 except Exception:
                     log.exception("[MathUpdater] Resumed AI description first pass failed")
-                    _enqueue_conversation_ids(
+                    _enqueue_ai_description_queue_schedules(
                         vk,
-                        conversation_ids=[claim.conversation_id for claim in persisted_claims],
-                        due_at_ms=now_ms(),
-                        enqueue_ai_description=True,
+                        schedules=fetch_ai_description_queue_schedules(
+                            primary_engine,
+                            conversation_ids=[claim.conversation_id for claim in persisted_claims],
+                        ),
                     )
             try:
                 completed_schedules = complete_computed_analysis_work_items_batch(
@@ -946,11 +834,14 @@ def main() -> None:
                             log.exception(
                                 "[MathUpdater] AI description first pass failed after math persist"
                             )
-                            _enqueue_conversation_ids(
+                            _enqueue_ai_description_queue_schedules(
                                 vk,
-                                conversation_ids=completed_result.ai_description_due_conversation_ids,
-                                due_at_ms=now_ms(),
-                                enqueue_ai_description=True,
+                                schedules=fetch_ai_description_queue_schedules(
+                                    primary_engine,
+                                    conversation_ids=(
+                                        completed_result.ai_description_due_conversation_ids
+                                    ),
+                                ),
                             )
                     completed_schedules = complete_computed_analysis_work_items_batch(
                         primary_engine,
@@ -1048,11 +939,14 @@ def main() -> None:
                                             "[MathUpdater] Isolated AI description first pass "
                                             "failed after math persist"
                                         )
-                                        _enqueue_conversation_ids(
+                                        _enqueue_ai_description_queue_schedules(
                                             vk,
-                                            conversation_ids=isolated_result.ai_description_due_conversation_ids,
-                                            due_at_ms=now_ms(),
-                                            enqueue_ai_description=True,
+                                            schedules=fetch_ai_description_queue_schedules(
+                                                primary_engine,
+                                                conversation_ids=(
+                                                    isolated_result.ai_description_due_conversation_ids
+                                                ),
+                                            ),
                                         )
                                 completed_schedules = complete_computed_analysis_work_items_batch(
                                     primary_engine,

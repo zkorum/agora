@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import json
+from collections.abc import Sequence
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, TypeGuard
 
@@ -11,12 +13,17 @@ from google.cloud import translate_v3
 from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from pydantic import BaseModel, ConfigDict
 
+from math_updater.bedrock_label_summary import (
+    BedrockConverseClient,
+    create_bedrock_converse_client,
+    extract_text_content_from_response,
+    parse_llm_output_json,
+)
 from math_updater.generated_shared_types import SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from google.auth.credentials import Credentials
+    from mypy_boto3_bedrock_runtime.type_defs import ConverseRequestTypeDef
 
 SOURCE_LANGUAGE = "en"
 DISPLAY_LANGUAGE_TO_GOOGLE_CODE = {
@@ -93,10 +100,31 @@ class GoogleTranslationService:
 
 
 @dataclass(frozen=True)
+class BedrockTranslationConfig:
+    region: str
+    model_id: str
+    temperature: float
+    top_p: float
+    max_tokens: int
+    prompt: str
+    connect_timeout_seconds: float
+    read_timeout_seconds: float
+
+
+@dataclass(frozen=True)
+class TranslationRepresentativeOpinion:
+    opinion_id: int
+    stance: str
+    content: str
+
+
+@dataclass(frozen=True)
 class DescriptionForTranslation:
     description_id: int
     label: str
     summary: str
+    conversation_title: str | None = None
+    representative_opinions: list[TranslationRepresentativeOpinion] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -184,6 +212,179 @@ def generate_description_translations(
             )
         )
     return translations
+
+
+def generate_description_translations_with_bedrock(
+    *,
+    config: BedrockTranslationConfig,
+    descriptions: list[DescriptionForTranslation],
+    target_language_codes: Sequence[str] = SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES,
+    client: BedrockConverseClient | None = None,
+) -> list[DescriptionTranslation]:
+    bedrock_client = client or create_bedrock_converse_client(
+        region=config.region,
+        connect_timeout_seconds=config.connect_timeout_seconds,
+        read_timeout_seconds=config.read_timeout_seconds,
+    )
+    translations: list[DescriptionTranslation] = []
+    for target_language_code in target_language_codes:
+        if _should_skip_translation(
+            source_language_code=SOURCE_LANGUAGE,
+            target_language_code=target_language_code,
+        ):
+            continue
+        command_payload = build_bedrock_translation_converse_payload(
+            descriptions=descriptions,
+            target_language_code=target_language_code,
+            config=config,
+        )
+        response = bedrock_client.converse(**command_payload)
+        translations.extend(
+            parse_bedrock_translation_response(
+                response,
+                expected_description_ids={
+                    description.description_id for description in descriptions
+                },
+                expected_locale=target_language_code,
+            )
+        )
+    return translations
+
+
+def build_bedrock_translation_converse_payload(
+    *,
+    descriptions: list[DescriptionForTranslation],
+    target_language_code: str,
+    config: BedrockTranslationConfig,
+) -> ConverseRequestTypeDef:
+    user_prompt = json.dumps(
+        _bedrock_translation_payload(
+            descriptions=descriptions,
+            target_language_code=target_language_code,
+        ),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+    return {
+        "modelId": config.model_id,
+        "system": [{"text": json.dumps(config.prompt, ensure_ascii=False)}],
+        "messages": [
+            {
+                "role": "user",
+                "content": [{"text": user_prompt}],
+            }
+        ],
+        "inferenceConfig": {
+            "maxTokens": config.max_tokens,
+            "temperature": config.temperature,
+            "topP": config.top_p,
+        },
+    }
+
+
+def parse_bedrock_translation_response(
+    response: object,
+    *,
+    expected_description_ids: set[int] | None = None,
+    expected_locale: str | None = None,
+) -> list[DescriptionTranslation]:
+    model_response_text = extract_text_content_from_response(response)
+    if model_response_text is None:
+        msg = "unable to extract text content from Bedrock translation response"
+        raise DescriptionTranslationError(msg)
+    model_response = parse_llm_output_json(model_response_text)
+    return parse_description_translation_output(
+        model_response,
+        expected_description_ids=expected_description_ids,
+        expected_locale=expected_locale,
+    )
+
+
+def parse_description_translation_output(
+    model_response: dict[str, object],
+    *,
+    expected_description_ids: set[int] | None = None,
+    expected_locale: str | None = None,
+) -> list[DescriptionTranslation]:
+    raw_translations = model_response.get("translations")
+    if not _is_object_sequence(raw_translations):
+        msg = "unable to parse Bedrock translation output"
+        raise DescriptionTranslationError(msg)
+
+    translations: list[DescriptionTranslation] = []
+    seen_description_ids: set[int] = set()
+    for raw_translation in raw_translations:
+        if not _is_string_key_mapping(raw_translation):
+            msg = "unable to parse Bedrock translation item"
+            raise DescriptionTranslationError(msg)
+        description_id = raw_translation.get("descriptionId")
+        locale = raw_translation.get("locale")
+        reasoning = raw_translation.get("reasoning")
+        label = raw_translation.get("label")
+        summary = raw_translation.get("summary")
+        if (
+            not isinstance(description_id, int)
+            or not isinstance(locale, str)
+            or not isinstance(reasoning, str)
+            or not isinstance(label, str)
+            or not isinstance(summary, str)
+        ):
+            msg = "Bedrock translation item has invalid fields"
+            raise DescriptionTranslationError(msg)
+        if len(reasoning) > 2000:
+            msg = "Bedrock translation reasoning exceeds parser limits"
+            raise DescriptionTranslationError(msg)
+        if expected_locale is not None and locale != expected_locale:
+            msg = f"Bedrock translation locale mismatch: expected {expected_locale}, got {locale}"
+            raise DescriptionTranslationError(msg)
+        if len(label) > 100 or len(summary) > 1000:
+            msg = "Bedrock translation output exceeds storage limits"
+            raise DescriptionTranslationError(msg)
+        if description_id in seen_description_ids:
+            msg = f"Bedrock translation output duplicated description {description_id}"
+            raise DescriptionTranslationError(msg)
+        seen_description_ids.add(description_id)
+        translations.append(
+            DescriptionTranslation(
+                description_id=description_id,
+                locale=locale,
+                label=label,
+                summary=summary,
+            )
+        )
+
+    if expected_description_ids is not None and seen_description_ids != expected_description_ids:
+        msg = "Bedrock translation output did not include exactly the expected descriptions"
+        raise DescriptionTranslationError(msg)
+    return translations
+
+
+def _bedrock_translation_payload(
+    *,
+    descriptions: list[DescriptionForTranslation],
+    target_language_code: str,
+) -> dict[str, object]:
+    return {
+        "sourceLocale": SOURCE_LANGUAGE,
+        "targetLocale": target_language_code,
+        "descriptions": [
+            {
+                "descriptionId": description.description_id,
+                "label": description.label,
+                "summary": description.summary,
+                "conversationTitle": description.conversation_title,
+                "representativeOpinions": [
+                    {
+                        "opinionId": opinion.opinion_id,
+                        "stance": opinion.stance,
+                        "content": opinion.content,
+                    }
+                    for opinion in description.representative_opinions
+                ],
+            }
+            for description in descriptions
+        ],
+    }
 
 
 def _load_service_account_json(
@@ -384,3 +585,11 @@ def _is_secrets_manager_client(value: object) -> TypeGuard[SecretsManagerClient]
 
 def _is_google_credentials_factory(value: object) -> TypeGuard[GoogleCredentialsFactory]:
     return callable(getattr(value, "from_service_account_info", None))
+
+
+def _is_string_key_mapping(value: object) -> TypeGuard[dict[str, object]]:
+    return isinstance(value, dict)
+
+
+def _is_object_sequence(value: object) -> TypeGuard[Sequence[object]]:
+    return isinstance(value, Sequence) and not isinstance(value, str | bytes | bytearray)

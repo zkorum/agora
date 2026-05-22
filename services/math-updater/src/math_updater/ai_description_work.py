@@ -13,10 +13,14 @@ from sqlalchemy.orm import Session, aliased
 from math_updater.description_input import (
     ConversationDescriptionInput,
     DescriptionInputError,
+    DescriptionOutputError,
     GroupDescriptionInput,
     RepresentativeOpinionText,
 )
-from math_updater.description_translation import DescriptionForTranslation
+from math_updater.description_translation import (
+    DescriptionForTranslation,
+    TranslationRepresentativeOpinion,
+)
 from math_updater.generated_models import (
     AiDescriptionLocaleStatusEnum,
     AnalysisResultOutcomeEnum,
@@ -43,7 +47,7 @@ from math_updater.generated_models import (
 )
 from math_updater.generated_models import PremiumFeature as PremiumFeatureEnum
 from math_updater.generated_shared_types import SUPPORTED_DISPLAY_LANGUAGE_CODES
-from math_updater.retry_policy import RetryPolicy, next_retry_at
+from math_updater.retry_policy import RetryPolicy, next_cooldown_retry_at, next_retry_at
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
@@ -99,6 +103,18 @@ type ClaimedAiDescriptionLocaleWorkItem = (
 class WorkStateSchedule:
     conversation_id: int
     next_run_at: datetime | None
+
+
+@dataclass(frozen=True)
+class DueAiDescriptionWorkConversationRow:
+    conversation_id: int
+    next_run_at: datetime | None
+
+
+@dataclass(frozen=True)
+class AiDescriptionQueueSchedules:
+    lineage_descriptions: list[WorkStateSchedule]
+    translations: list[WorkStateSchedule]
 
 
 @dataclass(frozen=True)
@@ -184,10 +200,13 @@ def fetch_due_ai_description_work_conversation_ids(
     limit: int,
     ai_description_epoch: int,
     translation_enabled: bool,
+    include_lineage_descriptions: bool = True,
+    include_translations: bool = True,
 ) -> list[int]:
     with Session(engine) as session:
-        rows = list(
-            session.execute(
+        rows: list[DueAiDescriptionWorkConversationRow] = []
+        if include_lineage_descriptions:
+            lineage_rows = session.execute(
                 select(
                     OpinionGroupLineageDescriptionWork.conversation_id,
                     OpinionGroupLineageDescriptionWork.next_run_at,
@@ -221,51 +240,74 @@ def fetch_due_ai_description_work_conversation_ids(
                 )
                 .order_by(OpinionGroupLineageDescriptionWork.next_run_at.asc())
                 .limit(limit)
-            ).all()
-        )
-        if translation_enabled:
-            rows.extend(
-                session.execute(
-                    select(
-                        OpinionGroupDescriptionTranslationWork.conversation_id,
-                        OpinionGroupDescriptionTranslationWork.next_run_at,
-                    )
-                    .join(
-                        Conversation,
-                        Conversation.id == OpinionGroupDescriptionTranslationWork.conversation_id,
-                    )
-                    .where(
-                        and_(
-                            Conversation.ai_labeling_enabled.is_(True),
-                            OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
-                            OpinionGroupDescriptionTranslationWork.next_run_at.is_not(None),
-                            OpinionGroupDescriptionTranslationWork.next_run_at <= func.now(),
-                            ~select(OpinionGroupDescriptionTranslation.id)
-                            .where(
-                                and_(
-                                    OpinionGroupDescriptionTranslation.description_id
-                                    == OpinionGroupDescriptionTranslationWork.description_id,
-                                    OpinionGroupDescriptionTranslation.locale
-                                    == OpinionGroupDescriptionTranslationWork.locale,
-                                )
-                            )
-                            .exists(),
-                            or_(
-                                OpinionGroupDescriptionTranslationWork.non_retryable_ai_description_epoch.is_(
-                                    None
-                                ),
-                                ai_description_epoch
-                                > func.coalesce(
-                                    OpinionGroupDescriptionTranslationWork.non_retryable_ai_description_epoch,
-                                    0,
-                                ),
-                            ),
-                        )
-                    )
-                    .order_by(OpinionGroupDescriptionTranslationWork.next_run_at.asc())
-                    .limit(limit)
-                ).all()
             )
+            rows.extend(
+                DueAiDescriptionWorkConversationRow(
+                    conversation_id=row.conversation_id,
+                    next_run_at=row.next_run_at,
+                )
+                for row in lineage_rows
+            )
+        if translation_enabled and include_translations:
+            translation_rows = session.execute(
+                select(
+                    OpinionGroupDescriptionTranslationWork.conversation_id,
+                    OpinionGroupDescriptionTranslationWork.next_run_at,
+                )
+                .join(
+                    Conversation,
+                    Conversation.id == OpinionGroupDescriptionTranslationWork.conversation_id,
+                )
+                .where(
+                    and_(
+                        Conversation.ai_labeling_enabled.is_(True),
+                        OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
+                        OpinionGroupDescriptionTranslationWork.next_run_at.is_not(None),
+                        OpinionGroupDescriptionTranslationWork.next_run_at <= func.now(),
+                        ~select(OpinionGroupDescriptionTranslation.id)
+                        .where(
+                            and_(
+                                OpinionGroupDescriptionTranslation.description_id
+                                == OpinionGroupDescriptionTranslationWork.description_id,
+                                OpinionGroupDescriptionTranslation.locale
+                                == OpinionGroupDescriptionTranslationWork.locale,
+                            )
+                        )
+                        .exists(),
+                        or_(
+                            OpinionGroupDescriptionTranslationWork.non_retryable_ai_description_epoch.is_(
+                                None
+                            ),
+                            ai_description_epoch
+                            > func.coalesce(
+                                OpinionGroupDescriptionTranslationWork.non_retryable_ai_description_epoch,
+                                0,
+                            ),
+                        ),
+                    )
+                )
+                .order_by(OpinionGroupDescriptionTranslationWork.next_run_at.asc())
+                .limit(limit)
+            )
+            rows.extend(
+                DueAiDescriptionWorkConversationRow(
+                    conversation_id=row.conversation_id,
+                    next_run_at=row.next_run_at,
+                )
+                for row in translation_rows
+            )
+        if include_lineage_descriptions and (translation_enabled and include_translations):
+            status_locale_filter = true()
+        elif include_lineage_descriptions:
+            status_locale_filter = OpinionGroupDescriptionLocaleStatus.locale == "en"
+        elif include_translations:
+            status_locale_filter = and_(
+                OpinionGroupDescriptionLocaleStatus.locale != "en",
+                OpinionGroupDescriptionLocaleStatus.translation_expected.is_(True),
+            )
+        else:
+            status_locale_filter = false_condition()
+
         status_rows = session.execute(
             select(
                 OpinionGroupDescriptionLocaleStatus.conversation_id,
@@ -287,9 +329,7 @@ def fetch_due_ai_description_work_conversation_ids(
                     != AiDescriptionLocaleStatusEnum.ready,
                     OpinionGroupDescriptionLocaleStatus.next_run_at.is_not(None),
                     OpinionGroupDescriptionLocaleStatus.next_run_at <= func.now(),
-                    true()
-                    if translation_enabled
-                    else OpinionGroupDescriptionLocaleStatus.locale == "en",
+                    status_locale_filter,
                     or_(
                         OpinionGroupDescriptionLocaleStatus.non_retryable_ai_description_epoch.is_(
                             None
@@ -306,7 +346,13 @@ def fetch_due_ai_description_work_conversation_ids(
             .order_by(OpinionGroupDescriptionLocaleStatus.next_run_at.asc())
             .limit(limit)
         ).all()
-        rows.extend(status_rows)
+        rows.extend(
+            DueAiDescriptionWorkConversationRow(
+                conversation_id=row.conversation_id,
+                next_run_at=row.next_run_at,
+            )
+            for row in status_rows
+        )
 
     due_conversation_ids: list[int] = []
     seen_conversation_ids: set[int] = set()
@@ -330,30 +376,36 @@ def recover_expired_ai_description_work(
     engine: Engine,
     *,
     translation_enabled: bool,
+    include_lineage_descriptions: bool = True,
+    include_translations: bool = True,
 ) -> list[int]:
     with Session(engine) as session:
-        rows = list(
-            session.execute(
-                update(OpinionGroupLineageDescriptionWork)
-                .where(
-                    and_(
-                        OpinionGroupLineageDescriptionWork.lease_expires_at.is_not(None),
-                        OpinionGroupLineageDescriptionWork.lease_expires_at < func.now(),
+        recovered_conversation_ids: list[int] = []
+        if include_lineage_descriptions:
+            recovered_conversation_ids.extend(
+                row.conversation_id
+                for row in session.execute(
+                    update(OpinionGroupLineageDescriptionWork)
+                    .where(
+                        and_(
+                            OpinionGroupLineageDescriptionWork.lease_expires_at.is_not(None),
+                            OpinionGroupLineageDescriptionWork.lease_expires_at < func.now(),
+                        )
                     )
+                    .values(
+                        lease_owner=None,
+                        lease_token=None,
+                        lease_expires_at=None,
+                        next_run_at=func.now(),
+                        updated_at=func.now(),
+                    )
+                    .returning(OpinionGroupLineageDescriptionWork.conversation_id)
                 )
-                .values(
-                    lease_owner=None,
-                    lease_token=None,
-                    lease_expires_at=None,
-                    next_run_at=func.now(),
-                    updated_at=func.now(),
-                )
-                .returning(OpinionGroupLineageDescriptionWork.conversation_id)
-            ).all()
-        )
-        if translation_enabled:
-            rows.extend(
-                session.execute(
+            )
+        if translation_enabled and include_translations:
+            recovered_conversation_ids.extend(
+                row.conversation_id
+                for row in session.execute(
                     update(OpinionGroupDescriptionTranslationWork)
                     .where(
                         and_(
@@ -369,11 +421,11 @@ def recover_expired_ai_description_work(
                         updated_at=func.now(),
                     )
                     .returning(OpinionGroupDescriptionTranslationWork.conversation_id)
-                ).all()
+                )
             )
         session.commit()
 
-    return sorted({row.conversation_id for row in rows})
+    return sorted(set(recovered_conversation_ids))
 
 
 def activate_pending_translation_expectations(
@@ -474,6 +526,65 @@ def activate_pending_translation_expectations(
         session.commit()
 
     return sorted({row.conversation_id for row in rows})
+
+
+def fetch_ai_description_queue_schedules(
+    engine: Engine,
+    *,
+    conversation_ids: list[int],
+) -> AiDescriptionQueueSchedules:
+    if not conversation_ids:
+        return AiDescriptionQueueSchedules(lineage_descriptions=[], translations=[])
+
+    unique_conversation_ids = sorted(set(conversation_ids))
+    with Session(engine) as session:
+        lineage_rows = session.execute(
+            select(
+                OpinionGroupLineageDescriptionWork.conversation_id,
+                func.min(OpinionGroupLineageDescriptionWork.next_run_at).label("next_run_at"),
+            )
+            .where(
+                and_(
+                    OpinionGroupLineageDescriptionWork.conversation_id.in_(unique_conversation_ids),
+                    OpinionGroupLineageDescriptionWork.next_run_at.is_not(None),
+                    OpinionGroupLineageDescriptionWork.lease_token.is_(None),
+                )
+            )
+            .group_by(OpinionGroupLineageDescriptionWork.conversation_id)
+        ).all()
+        translation_rows = session.execute(
+            select(
+                OpinionGroupDescriptionTranslationWork.conversation_id,
+                func.min(OpinionGroupDescriptionTranslationWork.next_run_at).label("next_run_at"),
+            )
+            .where(
+                and_(
+                    OpinionGroupDescriptionTranslationWork.conversation_id.in_(
+                        unique_conversation_ids
+                    ),
+                    OpinionGroupDescriptionTranslationWork.next_run_at.is_not(None),
+                    OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
+                )
+            )
+            .group_by(OpinionGroupDescriptionTranslationWork.conversation_id)
+        ).all()
+
+    return AiDescriptionQueueSchedules(
+        lineage_descriptions=[
+            WorkStateSchedule(
+                conversation_id=row.conversation_id,
+                next_run_at=row.next_run_at,
+            )
+            for row in lineage_rows
+        ],
+        translations=[
+            WorkStateSchedule(
+                conversation_id=row.conversation_id,
+                next_run_at=row.next_run_at,
+            )
+            for row in translation_rows
+        ],
+    )
 
 
 def fetch_ai_description_view_snapshot_ids_for_analysis_snapshots(
@@ -966,8 +1077,14 @@ def claim_ai_description_locale_work_items_batch(
     limit: int,
     ai_description_epoch: int,
     translation_enabled: bool,
+    claim_lineage_descriptions: bool = True,
+    claim_translations: bool = True,
 ) -> list[ClaimedAiDescriptionLocaleWorkItem]:
-    if not conversation_ids or limit <= 0:
+    if (
+        not conversation_ids
+        or limit <= 0
+        or (not claim_lineage_descriptions and not claim_translations)
+    ):
         return []
 
     unique_conversation_ids = list(dict.fromkeys(conversation_ids))
@@ -975,16 +1092,17 @@ def claim_ai_description_locale_work_items_batch(
     claims: list[ClaimedAiDescriptionLocaleWorkItem] = []
 
     with Session(engine) as session:
-        _ensure_lineage_description_work_for_pending_statuses(
-            session,
-            conversation_ids=unique_conversation_ids,
-            conversation_view_snapshot_ids=conversation_view_snapshot_ids,
-        )
-        _refresh_english_locale_statuses(
-            session,
-            conversation_ids=unique_conversation_ids,
-        )
-        if translation_enabled:
+        if claim_lineage_descriptions:
+            _ensure_lineage_description_work_for_pending_statuses(
+                session,
+                conversation_ids=unique_conversation_ids,
+                conversation_view_snapshot_ids=conversation_view_snapshot_ids,
+            )
+            _refresh_english_locale_statuses(
+                session,
+                conversation_ids=unique_conversation_ids,
+            )
+        if translation_enabled and claim_translations:
             _ensure_translation_work_for_pending_statuses(
                 session,
                 conversation_ids=unique_conversation_ids,
@@ -1006,108 +1124,111 @@ def claim_ai_description_locale_work_items_batch(
             if remaining_claim_limit <= 0:
                 break
 
-            claimable_lineage_rows = session.execute(
-                select(
-                    OpinionGroupLineageDescriptionWork.id,
-                    OpinionGroupLineageDescriptionWork.conversation_id,
-                    OpinionGroupLineageDescriptionWork.lineage_id,
-                    OpinionGroupLineageDescriptionWork.source_candidate_id,
-                    OpinionGroupLineageDescriptionWork.attempt_count,
-                    Conversation.slug_id.label("conversation_slug_id"),
-                )
-                .join(
-                    Conversation,
-                    Conversation.id == OpinionGroupLineageDescriptionWork.conversation_id,
-                )
-                .join(
-                    OpinionGroupLineage,
-                    OpinionGroupLineage.id == OpinionGroupLineageDescriptionWork.lineage_id,
-                )
-                .where(
-                    and_(
-                        OpinionGroupLineageDescriptionWork.conversation_id == conversation_id,
-                        Conversation.ai_labeling_enabled.is_(True),
-                        OpinionGroupLineage.system_description_id.is_(None),
-                        OpinionGroupLineageDescriptionWork.lease_token.is_(None),
-                        OpinionGroupLineageDescriptionWork.next_run_at.is_not(None),
-                        OpinionGroupLineageDescriptionWork.next_run_at <= func.now(),
-                        _lineage_work_view_snapshot_filter(conversation_view_snapshot_ids),
-                        or_(
-                            OpinionGroupLineageDescriptionWork.non_retryable_ai_description_epoch.is_(
-                                None
-                            ),
-                            ai_description_epoch
-                            > func.coalesce(
-                                OpinionGroupLineageDescriptionWork.non_retryable_ai_description_epoch,
-                                0,
-                            ),
-                        ),
+            if claim_lineage_descriptions:
+                claimable_lineage_rows = session.execute(
+                    select(
+                        OpinionGroupLineageDescriptionWork.id,
+                        OpinionGroupLineageDescriptionWork.conversation_id,
+                        OpinionGroupLineageDescriptionWork.lineage_id,
+                        OpinionGroupLineageDescriptionWork.source_candidate_id,
+                        OpinionGroupLineageDescriptionWork.attempt_count,
+                        Conversation.slug_id.label("conversation_slug_id"),
                     )
-                )
-                .order_by(
-                    OpinionGroupLineageDescriptionWork.next_run_at.asc(),
-                    OpinionGroupLineageDescriptionWork.id,
-                )
-                .limit(remaining_claim_limit)
-                .with_for_update(skip_locked=True)
-            ).all()
-            if claimable_lineage_rows:
-                claimed_lineage_count = 0
-                for claimable_lineage_row in claimable_lineage_rows:
-                    if len(claims) >= limit:
-                        break
+                    .join(
+                        Conversation,
+                        Conversation.id == OpinionGroupLineageDescriptionWork.conversation_id,
+                    )
+                    .join(
+                        OpinionGroupLineage,
+                        OpinionGroupLineage.id == OpinionGroupLineageDescriptionWork.lineage_id,
+                    )
+                    .where(
+                        and_(
+                            OpinionGroupLineageDescriptionWork.conversation_id == conversation_id,
+                            Conversation.ai_labeling_enabled.is_(True),
+                            OpinionGroupLineage.system_description_id.is_(None),
+                            OpinionGroupLineageDescriptionWork.lease_token.is_(None),
+                            OpinionGroupLineageDescriptionWork.next_run_at.is_not(None),
+                            OpinionGroupLineageDescriptionWork.next_run_at <= func.now(),
+                            _lineage_work_view_snapshot_filter(conversation_view_snapshot_ids),
+                            or_(
+                                OpinionGroupLineageDescriptionWork.non_retryable_ai_description_epoch.is_(
+                                    None
+                                ),
+                                ai_description_epoch
+                                > func.coalesce(
+                                    OpinionGroupLineageDescriptionWork.non_retryable_ai_description_epoch,
+                                    0,
+                                ),
+                            ),
+                        )
+                    )
+                    .order_by(
+                        OpinionGroupLineageDescriptionWork.next_run_at.asc(),
+                        OpinionGroupLineageDescriptionWork.id,
+                    )
+                    .limit(remaining_claim_limit)
+                    .with_for_update(skip_locked=True)
+                ).all()
 
-                    lease_token = f"{worker_id}:{uuid.uuid4()}"
-                    attempt_count = claimable_lineage_row.attempt_count + 1
-                    updated_lineage_row = session.execute(
-                        update(OpinionGroupLineageDescriptionWork)
-                        .where(
-                            and_(
-                                OpinionGroupLineageDescriptionWork.id == claimable_lineage_row.id,
-                                OpinionGroupLineageDescriptionWork.lease_token.is_(None),
+                if claimable_lineage_rows:
+                    claimed_lineage_count = 0
+                    for claimable_lineage_row in claimable_lineage_rows:
+                        if len(claims) >= limit:
+                            break
+
+                        lease_token = f"{worker_id}:{uuid.uuid4()}"
+                        attempt_count = claimable_lineage_row.attempt_count + 1
+                        updated_lineage_row = session.execute(
+                            update(OpinionGroupLineageDescriptionWork)
+                            .where(
+                                and_(
+                                    OpinionGroupLineageDescriptionWork.id
+                                    == claimable_lineage_row.id,
+                                    OpinionGroupLineageDescriptionWork.lease_token.is_(None),
+                                )
+                            )
+                            .values(
+                                attempt_count=attempt_count,
+                                next_run_at=None,
+                                lease_owner=worker_id,
+                                lease_token=lease_token,
+                                lease_expires_at=lease_expires_at,
+                                updated_at=func.now(),
+                            )
+                            .returning(
+                                OpinionGroupLineageDescriptionWork.id,
+                                OpinionGroupLineageDescriptionWork.conversation_id,
+                                OpinionGroupLineageDescriptionWork.lineage_id,
+                                OpinionGroupLineageDescriptionWork.source_candidate_id,
+                                OpinionGroupLineageDescriptionWork.lease_token,
+                            )
+                        ).first()
+                        if updated_lineage_row is None:
+                            continue
+
+                        claimed_lineage_count += 1
+                        claims.append(
+                            ClaimedLineageDescriptionWorkItem(
+                                id=updated_lineage_row.id,
+                                conversation_id=updated_lineage_row.conversation_id,
+                                conversation_slug_id=claimable_lineage_row.conversation_slug_id,
+                                lineage_id=updated_lineage_row.lineage_id,
+                                source_candidate_id=updated_lineage_row.source_candidate_id,
+                                locale="en",
+                                attempt_count=attempt_count,
+                                lease_token=updated_lineage_row.lease_token,
                             )
                         )
-                        .values(
-                            attempt_count=attempt_count,
-                            next_run_at=None,
-                            lease_owner=worker_id,
-                            lease_token=lease_token,
-                            lease_expires_at=lease_expires_at,
-                            updated_at=func.now(),
-                        )
-                        .returning(
-                            OpinionGroupLineageDescriptionWork.id,
-                            OpinionGroupLineageDescriptionWork.conversation_id,
-                            OpinionGroupLineageDescriptionWork.lineage_id,
-                            OpinionGroupLineageDescriptionWork.source_candidate_id,
-                            OpinionGroupLineageDescriptionWork.lease_token,
-                        )
-                    ).first()
-                    if updated_lineage_row is None:
+
+                    if claimed_lineage_count > 0:
                         continue
-
-                    claimed_lineage_count += 1
-                    claims.append(
-                        ClaimedLineageDescriptionWorkItem(
-                            id=updated_lineage_row.id,
-                            conversation_id=updated_lineage_row.conversation_id,
-                            conversation_slug_id=claimable_lineage_row.conversation_slug_id,
-                            lineage_id=updated_lineage_row.lineage_id,
-                            source_candidate_id=updated_lineage_row.source_candidate_id,
-                            locale="en",
-                            attempt_count=attempt_count,
-                            lease_token=updated_lineage_row.lease_token,
-                        )
-                    )
-
-                if claimed_lineage_count > 0:
-                    continue
 
             remaining_claim_limit = limit - len(claims)
             if remaining_claim_limit <= 0:
                 break
 
-            if not translation_enabled:
+            if not translation_enabled or not claim_translations:
                 continue
 
             claimable_translation_rows = session.execute(
@@ -1345,15 +1466,24 @@ def retry_ai_description_locale_work_item(
     retry_policy: RetryPolicy,
     error_code: str,
     error_message: str,
+    retry_immediately_without_fallback: bool = False,
+    force_cooldown: bool = False,
 ) -> WorkStateSchedule:
-    retry_at = next_retry_at(
-        now=datetime.now(UTC),
-        attempt_count=claim.attempt_count,
-        policy=retry_policy,
+    retry_at = (
+        datetime.now(UTC)
+        if retry_immediately_without_fallback
+        else next_cooldown_retry_at(now=datetime.now(UTC), policy=retry_policy)
+        if force_cooldown
+        else next_retry_at(
+            now=datetime.now(UTC),
+            attempt_count=claim.attempt_count,
+            policy=retry_policy,
+        )
     )
     with Session(engine) as session:
         if isinstance(claim, ClaimedLineageDescriptionWorkItem):
-            _mark_english_statuses_fallback_for_lineage(session, claim=claim)
+            if not retry_immediately_without_fallback:
+                _mark_english_statuses_fallback_for_lineage(session, claim=claim)
             session.execute(
                 update(OpinionGroupLineageDescriptionWork)
                 .where(
@@ -1373,7 +1503,8 @@ def retry_ai_description_locale_work_item(
                 )
             )
         else:
-            _mark_translation_statuses_fallback_for_description(session, claim=claim)
+            if not retry_immediately_without_fallback:
+                _mark_translation_statuses_fallback_for_description(session, claim=claim)
             session.execute(
                 update(OpinionGroupDescriptionTranslationWork)
                 .where(
@@ -1881,7 +2012,7 @@ def _persist_generated_base_description_for_lineage_work(
     label_summary = generated.clusters.get(request.group_key)
     if label_summary is None:
         msg = f"missing generated description for group {request.group_key}"
-        raise DescriptionInputError(msg)
+        raise DescriptionOutputError(msg)
 
     description_id = session.execute(
         sqlalchemy_insert(OpinionGroupDescription)
@@ -1927,12 +2058,12 @@ def _persist_locale_translation_for_description_work(
 
     if len(translations) != 1:
         msg = f"translation output mismatch for locale {claim.locale}"
-        raise DescriptionInputError(msg)
+        raise DescriptionOutputError(msg)
 
     translation = translations[0]
     if translation.description_id != claim.description_id or translation.locale != claim.locale:
         msg = f"translation output mismatch for locale {claim.locale}"
-        raise DescriptionInputError(msg)
+        raise DescriptionOutputError(msg)
 
     session.execute(
         pg_insert(OpinionGroupDescriptionTranslation)
@@ -1982,10 +2113,88 @@ def _fetch_description_for_translation_work(
         msg = f"description {claim.description_id} is missing"
         raise DescriptionInputError(msg)
 
+    lineage_context = session.execute(
+        select(
+            OpinionGroupLineage.id.label("lineage_id"),
+            OpinionGroupLineageDescriptionWork.source_candidate_id,
+        )
+        .join(
+            OpinionGroupLineageDescriptionWork,
+            OpinionGroupLineageDescriptionWork.lineage_id == OpinionGroupLineage.id,
+        )
+        .where(
+            and_(
+                OpinionGroupLineage.system_description_id == claim.description_id,
+                OpinionGroupLineageDescriptionWork.conversation_id == claim.conversation_id,
+            )
+        )
+        .limit(1)
+    ).first()
+
+    conversation_title: str | None = None
+    representative_opinions: list[TranslationRepresentativeOpinion] = []
+    if lineage_context is not None:
+        conversation_content = session.execute(
+            select(ConversationContent.title)
+            .select_from(OpinionGroupCandidate)
+            .join(
+                AnalysisSnapshotResult,
+                AnalysisSnapshotResult.id == OpinionGroupCandidate.snapshot_result_id,
+            )
+            .join(
+                AnalysisSnapshot,
+                AnalysisSnapshot.id == AnalysisSnapshotResult.analysis_snapshot_id,
+            )
+            .join(
+                ConversationContent,
+                ConversationContent.id == AnalysisSnapshot.conversation_content_id,
+            )
+            .where(OpinionGroupCandidate.id == lineage_context.source_candidate_id)
+            .limit(1)
+        ).first()
+        conversation_title = (
+            conversation_content.title if conversation_content is not None else None
+        )
+        representative_rows = session.execute(
+            select(
+                AnalysisSnapshotOpinion.opinion_id,
+                OpinionContent.content,
+                OpinionGroupOpinionStats.representative_agreement_type,
+            )
+            .join(OpinionGroupOpinionStats, OpinionGroupOpinionStats.group_id == OpinionGroup.id)
+            .join(
+                AnalysisSnapshotOpinion,
+                AnalysisSnapshotOpinion.id == OpinionGroupOpinionStats.analysis_snapshot_opinion_id,
+            )
+            .join(OpinionContent, OpinionContent.id == AnalysisSnapshotOpinion.opinion_content_id)
+            .where(
+                and_(
+                    OpinionGroup.candidate_id == lineage_context.source_candidate_id,
+                    OpinionGroup.lineage_id == lineage_context.lineage_id,
+                    OpinionGroupOpinionStats.representative_agreement_type.is_not(None),
+                )
+            )
+            .order_by(AnalysisSnapshotOpinion.opinion_id)
+        ).all()
+        representative_opinions = sorted(
+            [
+                TranslationRepresentativeOpinion(
+                    opinion_id=row.opinion_id,
+                    stance=row.representative_agreement_type.value,
+                    content=row.content,
+                )
+                for row in representative_rows
+                if row.representative_agreement_type is not None
+            ],
+            key=lambda opinion: (opinion.stance, opinion.opinion_id),
+        )
+
     return DescriptionForTranslation(
         description_id=description_row.id,
         label=description_row.label,
         summary=description_row.summary,
+        conversation_title=conversation_title,
+        representative_opinions=representative_opinions,
     )
 
 

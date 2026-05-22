@@ -22,3 +22,7 @@ def next_retry_at(*, now: datetime, attempt_count: int, policy: RetryPolicy) -> 
         delay_seconds = policy.burst_interval_seconds
 
     return now.astimezone(UTC) + timedelta(seconds=delay_seconds)
+
+
+def next_cooldown_retry_at(*, now: datetime, policy: RetryPolicy) -> datetime:
+    return now.astimezone(UTC) + timedelta(seconds=policy.cooldown_seconds)
