@@ -485,6 +485,8 @@ def _claim_work_items_batch(
                     AnalysisWorkState.running_data_generation.is_not(None),
                     AnalysisWorkState.persisted_analysis_snapshot_id.is_not(None),
                     AnalysisWorkState.lease_token.is_(None),
+                    conversation_current_content_id.is_not(None),
+                    conversation_type == ConversationType.polis,
                     or_(
                         AnalysisWorkState.next_run_at.is_(None),
                         AnalysisWorkState.next_run_at <= func.now(),
@@ -668,7 +670,11 @@ def complete_non_processable_work_items_batch(
         .where(
             and_(
                 AnalysisWorkState.conversation_id.in_(unique_conversation_ids),
-                AnalysisWorkState.running_data_generation.is_(None),
+                AnalysisWorkState.lease_token.is_(None),
+                or_(
+                    AnalysisWorkState.running_data_generation.is_(None),
+                    AnalysisWorkState.persisted_analysis_snapshot_id.is_not(None),
+                ),
                 or_(
                     conversation_current_content_id.is_(None),
                     conversation_type != ConversationType.polis,
@@ -685,6 +691,7 @@ def complete_non_processable_work_items_batch(
                 AnalysisWorkState.last_completed_data_generation,
                 func.coalesce(
                     current_generation,
+                    AnalysisWorkState.running_data_generation,
                     AnalysisWorkState.last_completed_data_generation,
                 ),
             ),

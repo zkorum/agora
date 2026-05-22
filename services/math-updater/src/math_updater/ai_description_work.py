@@ -29,6 +29,7 @@ from math_updater.generated_models import (
     AnalysisSnapshotResult,
     Conversation,
     ConversationContent,
+    ConversationType,
     ConversationViewSnapshot,
     ConversationViewSnapshotCheckpointReason,
     OpinionContent,
@@ -192,6 +193,192 @@ def _latest_or_checkpoint_status_condition() -> ColumnElement[bool]:
         .exists()
     )
     return or_(checkpoint_exists, ~newer_view_snapshot_exists)
+
+
+def _processable_conversation_condition() -> ColumnElement[bool]:
+    return and_(
+        Conversation.current_content_id.is_not(None),
+        Conversation.conversation_type == ConversationType.polis,
+    )
+
+
+def _fetch_non_processable_conversation_ids(
+    session: Session,
+    *,
+    conversation_ids: list[int],
+) -> list[int]:
+    if not conversation_ids:
+        return []
+
+    rows = session.execute(
+        select(Conversation.id)
+        .where(
+            and_(
+                Conversation.id.in_(sorted(set(conversation_ids))),
+                or_(
+                    Conversation.current_content_id.is_(None),
+                    Conversation.conversation_type != ConversationType.polis,
+                ),
+            )
+        )
+        .order_by(Conversation.id)
+    ).all()
+    return [row.id for row in rows]
+
+
+def _conversation_is_processable(
+    session: Session,
+    *,
+    conversation_id: int,
+) -> bool:
+    row = session.execute(
+        select(Conversation.id)
+        .where(
+            and_(
+                Conversation.id == conversation_id,
+                _processable_conversation_condition(),
+            )
+        )
+        .limit(1)
+    ).first()
+    return row is not None
+
+
+def _mark_non_processable_locale_statuses_fallback(
+    session: Session,
+    *,
+    conversation_ids: list[int],
+) -> list[int]:
+    if not conversation_ids:
+        return []
+
+    rows = session.execute(
+        update(OpinionGroupDescriptionLocaleStatus)
+        .where(
+            and_(
+                OpinionGroupDescriptionLocaleStatus.conversation_id.in_(
+                    sorted(set(conversation_ids))
+                ),
+                OpinionGroupDescriptionLocaleStatus.status != AiDescriptionLocaleStatusEnum.ready,
+            )
+        )
+        .values(
+            status=AiDescriptionLocaleStatusEnum.fallback,
+            next_run_at=None,
+            lease_owner=None,
+            lease_token=None,
+            lease_expires_at=None,
+            non_retryable_ai_description_epoch=None,
+            last_error_code=None,
+            last_error_message=None,
+            updated_at=func.now(),
+        )
+        .returning(OpinionGroupDescriptionLocaleStatus.conversation_id)
+    ).all()
+    return [row.conversation_id for row in rows]
+
+
+def complete_non_processable_ai_description_work_batch(
+    engine: Engine,
+    *,
+    conversation_ids: list[int],
+    include_lineage_descriptions: bool = True,
+    include_translations: bool = True,
+) -> list[int]:
+    if not conversation_ids or (not include_lineage_descriptions and not include_translations):
+        return []
+
+    with Session(engine) as session:
+        non_processable_conversation_ids = _fetch_non_processable_conversation_ids(
+            session,
+            conversation_ids=conversation_ids,
+        )
+        if not non_processable_conversation_ids:
+            return []
+
+        completed_conversation_ids: list[int] = [*non_processable_conversation_ids]
+        if include_lineage_descriptions:
+            completed_conversation_ids.extend(
+                row.conversation_id
+                for row in session.execute(
+                    update(OpinionGroupLineageDescriptionWork)
+                    .where(
+                        and_(
+                            OpinionGroupLineageDescriptionWork.conversation_id.in_(
+                                non_processable_conversation_ids
+                            ),
+                            or_(
+                                OpinionGroupLineageDescriptionWork.lease_token.is_(None),
+                                OpinionGroupLineageDescriptionWork.lease_expires_at < func.now(),
+                            ),
+                            or_(
+                                OpinionGroupLineageDescriptionWork.next_run_at.is_not(None),
+                                OpinionGroupLineageDescriptionWork.lease_token.is_not(None),
+                            ),
+                        )
+                    )
+                    .values(
+                        next_run_at=None,
+                        lease_owner=None,
+                        lease_token=None,
+                        lease_expires_at=None,
+                        last_error_code=None,
+                        last_error_message=None,
+                        updated_at=func.now(),
+                    )
+                    .returning(OpinionGroupLineageDescriptionWork.conversation_id)
+                )
+            )
+
+        if include_translations:
+            completed_conversation_ids.extend(
+                row.conversation_id
+                for row in session.execute(
+                    update(OpinionGroupDescriptionTranslationWork)
+                    .where(
+                        and_(
+                            OpinionGroupDescriptionTranslationWork.conversation_id.in_(
+                                non_processable_conversation_ids
+                            ),
+                            or_(
+                                OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
+                                OpinionGroupDescriptionTranslationWork.lease_expires_at
+                                < func.now(),
+                            ),
+                            or_(
+                                OpinionGroupDescriptionTranslationWork.next_run_at.is_not(None),
+                                OpinionGroupDescriptionTranslationWork.lease_token.is_not(None),
+                            ),
+                        )
+                    )
+                    .values(
+                        next_run_at=None,
+                        lease_owner=None,
+                        lease_token=None,
+                        lease_expires_at=None,
+                        last_error_code=None,
+                        last_error_message=None,
+                        updated_at=func.now(),
+                    )
+                    .returning(OpinionGroupDescriptionTranslationWork.conversation_id)
+                )
+            )
+
+        completed_conversation_ids.extend(
+            _mark_non_processable_locale_statuses_fallback(
+                session,
+                conversation_ids=non_processable_conversation_ids,
+            )
+        )
+        activated_view_snapshot_ids = _activate_display_safe_view_snapshots(
+            session,
+            conversation_ids=non_processable_conversation_ids,
+        )
+        if activated_view_snapshot_ids:
+            completed_conversation_ids.extend(non_processable_conversation_ids)
+        session.commit()
+
+    return sorted(set(completed_conversation_ids))
 
 
 def fetch_due_ai_description_work_conversation_ids(
@@ -495,6 +682,7 @@ def activate_pending_translation_expectations(
             .where(
                 and_(
                     Conversation.ai_labeling_enabled.is_(True),
+                    _processable_conversation_condition(),
                     OpinionGroupDescriptionLocaleStatus.locale != "en",
                     OpinionGroupDescriptionLocaleStatus.status
                     != AiDescriptionLocaleStatusEnum.ready,
@@ -543,9 +731,14 @@ def fetch_ai_description_queue_schedules(
                 OpinionGroupLineageDescriptionWork.conversation_id,
                 func.min(OpinionGroupLineageDescriptionWork.next_run_at).label("next_run_at"),
             )
+            .join(
+                Conversation,
+                Conversation.id == OpinionGroupLineageDescriptionWork.conversation_id,
+            )
             .where(
                 and_(
                     OpinionGroupLineageDescriptionWork.conversation_id.in_(unique_conversation_ids),
+                    _processable_conversation_condition(),
                     OpinionGroupLineageDescriptionWork.next_run_at.is_not(None),
                     OpinionGroupLineageDescriptionWork.lease_token.is_(None),
                 )
@@ -557,11 +750,16 @@ def fetch_ai_description_queue_schedules(
                 OpinionGroupDescriptionTranslationWork.conversation_id,
                 func.min(OpinionGroupDescriptionTranslationWork.next_run_at).label("next_run_at"),
             )
+            .join(
+                Conversation,
+                Conversation.id == OpinionGroupDescriptionTranslationWork.conversation_id,
+            )
             .where(
                 and_(
                     OpinionGroupDescriptionTranslationWork.conversation_id.in_(
                         unique_conversation_ids
                     ),
+                    _processable_conversation_condition(),
                     OpinionGroupDescriptionTranslationWork.next_run_at.is_not(None),
                     OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
                 )
@@ -605,6 +803,7 @@ def fetch_ai_description_view_snapshot_ids_for_analysis_snapshots(
             .where(
                 and_(
                     Conversation.ai_labeling_enabled.is_(True),
+                    _processable_conversation_condition(),
                     ConversationViewSnapshot.analysis_snapshot_id.in_(
                         sorted(set(analysis_snapshot_ids))
                     ),
@@ -738,6 +937,7 @@ def _fetch_pending_locale_status_rows(
                     sorted(set(conversation_ids))
                 ),
                 Conversation.ai_labeling_enabled.is_(True),
+                _processable_conversation_condition(),
                 OpinionGroupDescriptionLocaleStatus.status != AiDescriptionLocaleStatusEnum.ready,
                 locale_filter,
                 translation_expected_filter,
@@ -1146,6 +1346,7 @@ def claim_ai_description_locale_work_items_batch(
                         and_(
                             OpinionGroupLineageDescriptionWork.conversation_id == conversation_id,
                             Conversation.ai_labeling_enabled.is_(True),
+                            _processable_conversation_condition(),
                             OpinionGroupLineage.system_description_id.is_(None),
                             OpinionGroupLineageDescriptionWork.lease_token.is_(None),
                             OpinionGroupLineageDescriptionWork.next_run_at.is_not(None),
@@ -1248,6 +1449,7 @@ def claim_ai_description_locale_work_items_batch(
                     and_(
                         OpinionGroupDescriptionTranslationWork.conversation_id == conversation_id,
                         Conversation.ai_labeling_enabled.is_(True),
+                        _processable_conversation_condition(),
                         OpinionGroupDescriptionTranslationWork.lease_token.is_(None),
                         OpinionGroupDescriptionTranslationWork.next_run_at.is_not(None),
                         OpinionGroupDescriptionTranslationWork.next_run_at <= func.now(),
@@ -1341,6 +1543,20 @@ def process_ai_description_locale_work_item(
 ) -> WorkStateSchedule:
     if isinstance(claim, ClaimedLineageDescriptionWorkItem):
         with Session(engine) as session:
+            if not _ai_description_claim_is_active(session, claim=claim):
+                schedule = _get_conversation_schedule(
+                    session,
+                    conversation_id=claim.conversation_id,
+                )
+                session.commit()
+                return schedule
+            if not _conversation_is_processable(session, conversation_id=claim.conversation_id):
+                schedule = _complete_claimed_non_processable_ai_description_work(
+                    session,
+                    claim=claim,
+                )
+                session.commit()
+                return schedule
             lineage_request = _fetch_base_description_request_for_lineage_work(
                 session,
                 claim=claim,
@@ -1358,6 +1574,13 @@ def process_ai_description_locale_work_item(
                 schedule = _get_conversation_schedule(
                     session,
                     conversation_id=claim.conversation_id,
+                )
+                session.commit()
+                return schedule
+            if not _conversation_is_processable(session, conversation_id=claim.conversation_id):
+                schedule = _complete_claimed_non_processable_ai_description_work(
+                    session,
+                    claim=claim,
                 )
                 session.commit()
                 return schedule
@@ -1390,6 +1613,17 @@ def process_ai_description_locale_work_item(
         raise DescriptionInputError(msg)
 
     with Session(engine) as session:
+        if not _ai_description_claim_is_active(session, claim=claim):
+            schedule = _get_conversation_schedule(session, conversation_id=claim.conversation_id)
+            session.commit()
+            return schedule
+        if not _conversation_is_processable(session, conversation_id=claim.conversation_id):
+            schedule = _complete_claimed_non_processable_ai_description_work(
+                session,
+                claim=claim,
+            )
+            session.commit()
+            return schedule
         description_request = _fetch_description_for_translation_work(
             session,
             claim=claim,
@@ -1405,6 +1639,13 @@ def process_ai_description_locale_work_item(
     with Session(engine) as session:
         if not _ai_description_claim_is_active(session, claim=claim):
             schedule = _get_conversation_schedule(session, conversation_id=claim.conversation_id)
+            session.commit()
+            return schedule
+        if not _conversation_is_processable(session, conversation_id=claim.conversation_id):
+            schedule = _complete_claimed_non_processable_ai_description_work(
+                session,
+                claim=claim,
+            )
             session.commit()
             return schedule
         if description_request is not None:
@@ -1457,6 +1698,61 @@ def _ai_description_claim_is_active(
         .with_for_update()
     ).first()
     return row is not None
+
+
+def _complete_claimed_non_processable_ai_description_work(
+    session: Session,
+    *,
+    claim: ClaimedAiDescriptionLocaleWorkItem,
+) -> WorkStateSchedule:
+    if isinstance(claim, ClaimedLineageDescriptionWorkItem):
+        session.execute(
+            update(OpinionGroupLineageDescriptionWork)
+            .where(
+                and_(
+                    OpinionGroupLineageDescriptionWork.id == claim.id,
+                    OpinionGroupLineageDescriptionWork.lease_token == claim.lease_token,
+                )
+            )
+            .values(
+                next_run_at=None,
+                lease_owner=None,
+                lease_token=None,
+                lease_expires_at=None,
+                last_error_code=None,
+                last_error_message=None,
+                updated_at=func.now(),
+            )
+        )
+    else:
+        session.execute(
+            update(OpinionGroupDescriptionTranslationWork)
+            .where(
+                and_(
+                    OpinionGroupDescriptionTranslationWork.id == claim.id,
+                    OpinionGroupDescriptionTranslationWork.lease_token == claim.lease_token,
+                )
+            )
+            .values(
+                next_run_at=None,
+                lease_owner=None,
+                lease_token=None,
+                lease_expires_at=None,
+                last_error_code=None,
+                last_error_message=None,
+                updated_at=func.now(),
+            )
+        )
+
+    _mark_non_processable_locale_statuses_fallback(
+        session,
+        conversation_ids=[claim.conversation_id],
+    )
+    _activate_display_safe_view_snapshots(
+        session,
+        conversation_ids=[claim.conversation_id],
+    )
+    return _get_conversation_schedule(session, conversation_id=claim.conversation_id)
 
 
 def retry_ai_description_locale_work_item(

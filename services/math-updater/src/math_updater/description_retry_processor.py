@@ -9,6 +9,7 @@ from math_updater.ai_description_work import (
     ClaimedLineageDescriptionWorkItem,
     WorkStateSchedule,
     claim_ai_description_locale_work_items_batch,
+    complete_non_processable_ai_description_work_batch,
     fetch_ai_description_queue_schedules,
     mark_non_retryable_ai_description_locale_work_item,
     process_ai_description_locale_work_item,
@@ -88,10 +89,32 @@ def process_ai_description_conversation_ids(
     retry_first_pass_once: bool = False,
     log_prefix: str,
 ) -> int:
+    completed_conversation_ids = complete_non_processable_ai_description_work_batch(
+        primary_engine,
+        conversation_ids=conversation_ids,
+        include_lineage_descriptions=claim_lineage_descriptions,
+        include_translations=claim_translations,
+    )
+    if completed_conversation_ids:
+        log.info(
+            "%s Completed %d non-processable AI description conversation(s)",
+            log_prefix,
+            len(completed_conversation_ids),
+        )
+
+    completed_conversation_id_set = set(completed_conversation_ids)
+    claimable_conversation_ids = [
+        conversation_id
+        for conversation_id in conversation_ids
+        if conversation_id not in completed_conversation_id_set
+    ]
+    if not claimable_conversation_ids:
+        return 0
+
     claims = claim_ai_description_locale_work_items_batch(
         primary_engine,
         worker_id=worker_id,
-        conversation_ids=conversation_ids,
+        conversation_ids=claimable_conversation_ids,
         conversation_view_snapshot_ids=conversation_view_snapshot_ids,
         lease_ttl_seconds=lease_ttl_seconds,
         limit=claim_limit,

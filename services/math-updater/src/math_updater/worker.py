@@ -15,6 +15,7 @@ from math_updater.ai_description_work import (
     AiDescriptionQueueSchedules,
     ClaimedLineageDescriptionWorkItem,
     claim_ai_description_locale_work_items_batch,
+    complete_non_processable_ai_description_work_batch,
     fetch_ai_description_queue_schedules,
     fetch_ai_description_view_snapshot_ids_for_analysis_snapshots,
     mark_non_retryable_ai_description_locale_work_item,
@@ -274,10 +275,32 @@ def _process_ai_description_conversation_ids(
     description_translator: DescriptionTranslator | None,
     retry_first_pass_once: bool = False,
 ) -> int:
+    completed_non_processable_ids = complete_non_processable_ai_description_work_batch(
+        primary_engine,
+        conversation_ids=conversation_ids,
+        include_lineage_descriptions=True,
+        include_translations=description_translator is not None,
+    )
+    if completed_non_processable_ids:
+        log.info(
+            "[MathUpdater] Completed %d non-processable AI description conversation(s) ids=%s",
+            len(completed_non_processable_ids),
+            _format_ids(completed_non_processable_ids),
+        )
+
+    non_processable_id_set = set(completed_non_processable_ids)
+    processable_conversation_ids = [
+        conversation_id
+        for conversation_id in conversation_ids
+        if conversation_id not in non_processable_id_set
+    ]
+    if not processable_conversation_ids:
+        return 0
+
     ai_claims = claim_ai_description_locale_work_items_batch(
         primary_engine,
         worker_id=worker_id,
-        conversation_ids=conversation_ids,
+        conversation_ids=processable_conversation_ids,
         conversation_view_snapshot_ids=conversation_view_snapshot_ids,
         lease_ttl_seconds=lease_ttl_seconds,
         limit=claim_limit,
