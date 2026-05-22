@@ -128,7 +128,6 @@ export async function getConversationForEdit({
             db,
             conversation: {
                 conversationId: conversation.conversationId,
-                conversationType: conversation.conversationType,
                 requiresEventTicket: conversation.requiresEventTicket,
                 authorId: conversation.authorId,
                 organizationId: conversation.organizationId,
@@ -275,7 +274,6 @@ export async function updateConversation({
                 db: tx,
                 conversation: {
                     conversationId,
-                    conversationType: conversation.conversationType,
                     requiresEventTicket: conversation.requiresEventTicket,
                 },
             });

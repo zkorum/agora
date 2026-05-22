@@ -54,6 +54,7 @@ import {
     zodSurveyResultsAccessLevel,
     zodSurveyRouteResolution,
     zodSurveyAnswerSubmission,
+    zodGrantablePremiumFeature,
     zodPremiumFeature,
     zodUserId,
 } from "./zod.js";
@@ -809,7 +810,7 @@ export class Dto {
     static createPremiumFeatureEntitlementRequest = z
         .object({
             subject: Dto.premiumFeatureEntitlementSubjectRequest,
-            features: z.array(zodPremiumFeature).min(1),
+            features: z.array(zodGrantablePremiumFeature).min(1),
             startsAt: z.iso.datetime(),
             expiresAt: z.iso.datetime().optional(),
             adminNote: z.string().max(1000).optional(),

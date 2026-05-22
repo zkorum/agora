@@ -2336,7 +2336,6 @@ server.after(() => {
                 (request.body.surveyConfig?.questions.length ?? 0) > 0;
             const premiumFeatures =
                 premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
-                    conversationType: request.body.conversationType,
                     requiresEventTicket: request.body.requiresEventTicket,
                     hasSurvey,
                 });

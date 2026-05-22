@@ -20,8 +20,8 @@ import type {
     UpdatePremiumFeatureEntitlementRequest,
 } from "@/shared/types/dto.js";
 import {
-    type ConversationType,
     type EventSlug,
+    type GrantablePremiumFeature,
     type PremiumFeature,
 } from "@/shared/types/zod.js";
 import { log } from "@/app.js";
@@ -32,7 +32,7 @@ type PremiumFeatureEntitlementUpdateValues = Partial<
 >;
 
 const PREMIUM_EDIT_GRACE_DAYS = 5;
-const PREMIUM_ANALYSIS_FEATURE: PremiumFeature = "analysis_variants";
+const PREMIUM_ANALYSIS_FEATURE: GrantablePremiumFeature = "analysis_variants";
 
 export type PremiumEntitlementSubject =
     | { userId: string; organizationId?: never }
@@ -42,7 +42,6 @@ type PremiumAccessMode = "creation" | "edit";
 
 interface ConversationPremiumFeatureContext {
     conversationId: number;
-    conversationType: ConversationType;
     requiresEventTicket: EventSlug | null;
 }
 
@@ -91,7 +90,7 @@ function getFeatureSortValue(feature: PremiumFeature): number {
     }
 }
 
-function uniqueSortedFeatures(features: PremiumFeature[]): PremiumFeature[] {
+function uniqueSortedFeatures<T extends PremiumFeature>(features: T[]): T[] {
     return Array.from(new Set(features)).sort(
         (left, right) => getFeatureSortValue(left) - getFeatureSortValue(right),
     );
@@ -402,10 +401,6 @@ export async function getPremiumFeaturesInConversation({
 }): Promise<PremiumFeature[]> {
     const features: PremiumFeature[] = [];
 
-    if (conversation.conversationType === "maxdiff") {
-        features.push("prioritization");
-    }
-
     if (conversation.requiresEventTicket !== null) {
         features.push("event_ticket");
     }
@@ -432,19 +427,13 @@ export async function getPremiumFeaturesInConversation({
 }
 
 export function getPremiumFeaturesFromCreateRequest({
-    conversationType,
     requiresEventTicket,
     hasSurvey,
 }: {
-    conversationType: ConversationType;
     requiresEventTicket?: EventSlug;
     hasSurvey: boolean;
-}): PremiumFeature[] {
-    const features: PremiumFeature[] = [];
-
-    if (conversationType === "maxdiff") {
-        features.push("prioritization");
-    }
+}): GrantablePremiumFeature[] {
+    const features: GrantablePremiumFeature[] = [];
 
     if (requiresEventTicket !== undefined) {
         features.push("event_ticket");

@@ -124,7 +124,10 @@ import type {
   CreatePremiumFeatureEntitlementRequest,
   PremiumFeatureEntitlementItem,
 } from "src/shared/types/dto";
-import type { PremiumFeature } from "src/shared/types/zod";
+import type {
+  GrantablePremiumFeature,
+  PremiumFeature,
+} from "src/shared/types/zod";
 import { useBackendAdministratorPremiumEntitlementApi } from "src/utils/api/administrator/premiumEntitlement";
 import { computed, onMounted, ref } from "vue";
 
@@ -158,7 +161,7 @@ const revokingEntitlementId = ref<number | null>(null);
 const subjectType = ref<SubjectType>("user");
 const username = ref<string | number | null>("");
 const organizationName = ref<string | number | null>("");
-const features = ref<PremiumFeature[]>(["survey"]);
+const features = ref<GrantablePremiumFeature[]>(["survey"]);
 const startsAt = ref<string | number | null>(toDateTimeLocal(new Date()));
 const expiresAt = ref<string | number | null>("");
 const adminNote = ref<string | number | null>("");
@@ -168,9 +171,10 @@ const subjectTypeOptions = computed<Array<SelectOption<SubjectType>>>(() => [
   { label: t("organizationLabel"), value: "organization" },
 ]);
 
-const featureOptions = computed<Array<SelectOption<PremiumFeature>>>(() => [
+const featureOptions = computed<
+  Array<SelectOption<GrantablePremiumFeature>>
+>(() => [
   { label: t("surveyFeature"), value: "survey" },
-  { label: t("prioritizationFeature"), value: "prioritization" },
   { label: t("eventTicketFeature"), value: "event_ticket" },
   { label: t("analysisVariantsFeature"), value: "analysis_variants" },
 ]);

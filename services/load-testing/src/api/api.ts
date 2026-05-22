@@ -50,7 +50,6 @@ export interface ApiV1AdministratorPremiumEntitlementCreatePostRequest {
 
 export const ApiV1AdministratorPremiumEntitlementCreatePostRequestFeaturesEnum = {
     Survey: 'survey',
-    Prioritization: 'prioritization',
     EventTicket: 'event_ticket',
     AnalysisVariants: 'analysis_variants',
 } as const;
