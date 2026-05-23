@@ -55,8 +55,11 @@
             <td class="col-rank cell-rank">{{ index + 1 }}</td>
             <td class="col-statement cell-statement">
               <div class="statement-text">
-                <ZKHtmlContent
-                  :html-body="item.opinion"
+                <AnalysisOpinionText
+                  :opinion-item="item"
+                  :post-slug-id="props.conversationSlugId"
+                  :conversation-author-username="props.conversationAuthorUsername"
+                  :conversation-organization-name="props.conversationOrganizationName"
                   :compact-mode="false"
                   :enable-links="false"
                 />
@@ -103,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
+import AnalysisOpinionText from "src/components/post/analysis/common/AnalysisOpinionText.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   AnalysisOpinionItem,
@@ -126,6 +129,9 @@ import ReportVoteCell from "./ReportVoteCell.vue";
 const props = defineProps<{
   clusters: Partial<PolisClusters>;
   totalParticipantCount: number;
+  conversationSlugId: string;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
   singleClusterKey?: PolisKey;
 }>();
 

@@ -207,8 +207,11 @@
                 <OpinionGroupTab
                   :key="`groups-${selectedClusterCount}-${aiLabelMode}-${distributionMode}-${numberScale}-${ungroupedMode}`"
                   :conversation-slug-id="mockConversationSlugId"
+                  conversation-author-username=""
+                  conversation-organization-name=""
                   :clusters="mockClusters"
                   :total-participant-count="totalParticipantCount"
+                  :analysis-frame-key="`${selectedClusterCount}-${aiLabelMode}-${distributionMode}-${numberScale}-${ungroupedMode}`"
                   :compact-mode="currentTab === 'Summary'"
                   :conversation-scroll-context="conversationScrollContext"
                 />
@@ -223,6 +226,8 @@
                   v-model="currentTab"
                   direction="agree"
                   :conversation-slug-id="mockConversationSlugId"
+                  conversation-author-username=""
+                  conversation-organization-name=""
                   :item-list="mockAgreementItems"
                   :compact-mode="currentTab === 'Summary'"
                   :clusters="mockClusters"
@@ -239,6 +244,8 @@
                   v-model="currentTab"
                   direction="disagree"
                   :conversation-slug-id="mockConversationSlugId"
+                  conversation-author-username=""
+                  conversation-organization-name=""
                   :item-list="mockDisagreementItems"
                   :compact-mode="currentTab === 'Summary'"
                   :clusters="mockClusters"
@@ -254,6 +261,8 @@
                 <DivisiveTab
                   v-model="currentTab"
                   :conversation-slug-id="mockConversationSlugId"
+                  conversation-author-username=""
+                  conversation-organization-name=""
                   :item-list="mockDivisiveItems"
                   :compact-mode="currentTab === 'Summary'"
                   :clusters="mockClusters"

@@ -16,11 +16,11 @@
         <PostActionBar
           v-model="currentTab"
           :compact-mode="compactMode"
-          :opinion-count="conversationData.metadata.opinionCount"
-          :participant-count="conversationData.metadata.participantCount"
-          :vote-count="props.conversationData.metadata.voteCount"
-          :total-participant-count="props.conversationData.metadata.totalParticipantCount"
-          :total-vote-count="props.conversationData.metadata.totalVoteCount"
+          :opinion-count="visibleAnalysisActionBarSnapshot?.opinionCount ?? conversationData.metadata.opinionCount"
+          :participant-count="visibleAnalysisActionBarSnapshot?.participantCount ?? conversationData.metadata.participantCount"
+          :vote-count="visibleAnalysisActionBarSnapshot?.voteCount ?? props.conversationData.metadata.voteCount"
+          :total-participant-count="visibleAnalysisActionBarSnapshot?.totalParticipantCount ?? props.conversationData.metadata.totalParticipantCount"
+          :total-vote-count="visibleAnalysisActionBarSnapshot?.totalVoteCount ?? props.conversationData.metadata.totalVoteCount"
           :is-loading="isCurrentTabLoading"
           :conversation-slug-id="conversationData.metadata.conversationSlugId"
           :conversation-title="conversationData.payload.title"
@@ -36,15 +36,22 @@
           :conversation-slug-id="
             props.conversationData.metadata.conversationSlugId
           "
+          :conversation-author-username="conversationData.metadata.authorUsername"
+          :conversation-organization-name="conversationData.metadata.organization?.name ?? ''"
+          :opinion-count="props.conversationData.metadata.opinionCount"
           :participant-count="
             props.conversationData.metadata.participantCount
           "
+          :vote-count="props.conversationData.metadata.voteCount"
           :analysis-query="analysisQuery"
           :survey-query="surveyResultsQuery"
           :has-survey="hasSurvey"
           :survey-gate="conversationData.interaction.surveyGate"
+          :is-live-analysis-paused="isLiveAnalysisPaused"
           :navigate-to-discover-tab="navigateToDiscoverTab"
           :conversation-scroll-context="conversationScrollContext"
+          @update:action-bar-snapshot="setAnalysisActionBarSnapshot"
+          @update:live-analysis-paused="setLiveAnalysisPaused"
         />
 
         <CommentSection
@@ -91,6 +98,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
+import type { AnalysisConversationViewSnapshot } from "src/shared/types/dto";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
@@ -131,6 +139,10 @@ const currentTab = ref<"comment" | "analysis">("comment");
 
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
 const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
+const isLiveAnalysisPaused = ref(false);
+const analysisActionBarSnapshot = ref<
+  AnalysisConversationViewSnapshot | undefined
+>();
 
 const conversationScrollContext = computed<ConversationScrollContext>(() => ({
   actionBarElement: null,
@@ -169,6 +181,14 @@ const isAnalysisEnabled = computed(
   () => !props.compactMode && currentTab.value === "analysis"
 );
 
+const isAnalysisQueryEnabled = computed(
+  () => isAnalysisEnabled.value && !isLiveAnalysisPaused.value
+);
+
+const visibleAnalysisActionBarSnapshot = computed(() =>
+  currentTab.value === "analysis" ? analysisActionBarSnapshot.value : undefined
+);
+
 // Create a computed property to ensure reactivity for the query's enabled parameter
 const isSiteModerator = computed(() => profileData.value.isSiteModerator);
 
@@ -176,7 +196,7 @@ const isSiteModerator = computed(() => profileData.value.isSiteModerator);
 const analysisQuery = useAnalysisQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   voteCount: props.conversationData.metadata.voteCount,
-  enabled: isAnalysisEnabled,
+  enabled: isAnalysisQueryEnabled,
 });
 
 const surveyResultsQuery = useSurveyResultsAggregatedQuery({
@@ -233,6 +253,16 @@ function viewAnalysisTab(): void {
 
 function navigateToDiscoverTab(): void {
   currentTab.value = "comment";
+}
+
+function setAnalysisActionBarSnapshot(
+  snapshot: AnalysisConversationViewSnapshot | undefined
+): void {
+  analysisActionBarSnapshot.value = snapshot;
+}
+
+function setLiveAnalysisPaused(paused: boolean): void {
+  isLiveAnalysisPaused.value = paused;
 }
 
 // Track loading states from child components

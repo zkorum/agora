@@ -1,4 +1,5 @@
 import {
+    asc,
     and,
     desc,
     eq,
@@ -14,12 +15,15 @@ import {
     analysisSnapshotResultTable,
     analysisWorkStateTable,
     conversationTable,
+    conversationViewSnapshotCheckpointReasonTable,
     opinionGroupDescriptionLocaleStatusTable,
     conversationViewSnapshotTable,
     opinionGroupSpecTable,
 } from "@/shared-backend/schema.js";
 import { calculateConversationCounters } from "@/shared-backend/conversationCounters.js";
 import { ZodSupportedDisplayLanguageCodes } from "@/shared/languages.js";
+import type { FetchAnalysisCheckpointsResponse } from "@/shared/types/dto.js";
+import { queueConversationAnalysisUpdatedEventsForViewSnapshots } from "./realtimeEventOutbox.js";
 
 type ConversationViewSnapshotReason =
     | "analysis_completed"
@@ -27,9 +31,96 @@ type ConversationViewSnapshotReason =
     | "conversation_content_updated"
     | "conversation_lifecycle_updated";
 
+type LifecycleCheckpointReason = "conversation_closed" | "conversation_reopened";
+
 interface LatestSnapshotRefs {
     analysisSnapshotId: number | null;
     surveyAggregateSnapshotId: number | null;
+}
+
+export async function fetchAnalysisCheckpointsByConversationSlugId({
+    db,
+    conversationSlugId,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+}): Promise<FetchAnalysisCheckpointsResponse> {
+    const rows = await db
+        .select({
+            conversationViewSnapshotId: conversationViewSnapshotTable.id,
+            createdAt: conversationViewSnapshotTable.createdAt,
+            activatedAt: conversationViewSnapshotTable.activatedAt,
+            opinionCount: conversationViewSnapshotTable.opinionCount,
+            voteCount: conversationViewSnapshotTable.voteCount,
+            participantCount: conversationViewSnapshotTable.participantCount,
+            reason: conversationViewSnapshotCheckpointReasonTable.reason,
+            groupCount: conversationViewSnapshotCheckpointReasonTable.groupCount,
+            previousGroupCount:
+                conversationViewSnapshotCheckpointReasonTable.previousGroupCount,
+            reasonParticipantCount:
+                conversationViewSnapshotCheckpointReasonTable.participantCount,
+            participantMilestone:
+                conversationViewSnapshotCheckpointReasonTable.participantMilestone,
+            reasonVoteCount: conversationViewSnapshotCheckpointReasonTable.voteCount,
+            voteMilestone:
+                conversationViewSnapshotCheckpointReasonTable.voteMilestone,
+        })
+        .from(conversationViewSnapshotCheckpointReasonTable)
+        .innerJoin(
+            conversationViewSnapshotTable,
+            eq(
+                conversationViewSnapshotTable.id,
+                conversationViewSnapshotCheckpointReasonTable.conversationViewSnapshotId,
+            ),
+        )
+        .innerJoin(
+            conversationTable,
+            eq(conversationTable.id, conversationViewSnapshotTable.conversationId),
+        )
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                isNotNull(conversationViewSnapshotTable.activatedAt),
+            ),
+        )
+        .orderBy(
+            asc(conversationViewSnapshotTable.createdAt),
+            asc(conversationViewSnapshotTable.id),
+            asc(conversationViewSnapshotCheckpointReasonTable.id),
+        );
+
+    const checkpointsById = new Map<
+        number,
+        FetchAnalysisCheckpointsResponse[number]
+    >();
+    for (const row of rows) {
+        if (row.activatedAt === null) {
+            continue;
+        }
+
+        const checkpoint = checkpointsById.get(row.conversationViewSnapshotId) ?? {
+            conversationViewSnapshotId: row.conversationViewSnapshotId,
+            createdAt: row.createdAt,
+            activatedAt: row.activatedAt,
+            opinionCount: row.opinionCount,
+            voteCount: row.voteCount,
+            participantCount: row.participantCount,
+            reasons: [],
+        };
+
+        checkpoint.reasons.push({
+            reason: row.reason,
+            groupCount: row.groupCount,
+            previousGroupCount: row.previousGroupCount,
+            participantCount: row.reasonParticipantCount,
+            participantMilestone: row.participantMilestone,
+            voteCount: row.reasonVoteCount,
+            voteMilestone: row.voteMilestone,
+        });
+        checkpointsById.set(row.conversationViewSnapshotId, checkpoint);
+    }
+
+    return Array.from(checkpointsById.values());
 }
 
 function getCurrentOpinionGroupSpecIds(
@@ -56,10 +147,14 @@ export async function createConversationViewSnapshotsFromCurrentState({
     db,
     conversationId,
     viewReason,
+    lifecycleCheckpointReason,
+    emitRealtimeEvent = false,
 }: {
     db: PostgresJsDatabase;
     conversationId: number;
     viewReason: ConversationViewSnapshotReason;
+    lifecycleCheckpointReason?: LifecycleCheckpointReason;
+    emitRealtimeEvent?: boolean;
 }): Promise<number> {
     const conversationRows = await db
         .select({
@@ -150,31 +245,58 @@ export async function createConversationViewSnapshotsFromCurrentState({
 
     const activatedAt = new Date();
     const shouldPreserveSurveyAggregate = viewReason !== "survey_refreshed";
-    await db.insert(conversationViewSnapshotTable).values(
-        currentOpinionGroupSpecIds.map((opinionGroupSpecId) => {
-            const refs = latestSnapshotRefsBySpecId.get(opinionGroupSpecId);
-            return {
+    const insertedRows = await db
+        .insert(conversationViewSnapshotTable)
+        .values(
+            currentOpinionGroupSpecIds.map((opinionGroupSpecId) => {
+                const refs = latestSnapshotRefsBySpecId.get(opinionGroupSpecId);
+                return {
+                    conversationId,
+                    opinionGroupSpecId,
+                    analysisSnapshotId: refs?.analysisSnapshotId ?? null,
+                    surveyAggregateSnapshotId: shouldPreserveSurveyAggregate
+                        ? (refs?.surveyAggregateSnapshotId ?? null)
+                        : null,
+                    conversationContentId: conversation.currentContentId,
+                    viewReason,
+                    isClosed: conversation.isClosed,
+                    opinionCount: counters.opinionCount,
+                    voteCount: counters.voteCount,
+                    participantCount: counters.participantCount,
+                    totalOpinionCount: counters.totalOpinionCount,
+                    totalVoteCount: counters.totalVoteCount,
+                    totalParticipantCount: counters.totalParticipantCount,
+                    moderatedOpinionCount: counters.moderatedOpinionCount,
+                    hiddenOpinionCount: counters.hiddenOpinionCount,
+                    activatedAt:
+                        refs === undefined || lifecycleCheckpointReason !== undefined
+                            ? activatedAt
+                            : null,
+                };
+            }),
+        )
+        .returning({
+            id: conversationViewSnapshotTable.id,
+            opinionGroupSpecId: conversationViewSnapshotTable.opinionGroupSpecId,
+        });
+
+    if (lifecycleCheckpointReason !== undefined) {
+        await db.insert(conversationViewSnapshotCheckpointReasonTable).values(
+            insertedRows.map((row) => ({
+                conversationViewSnapshotId: row.id,
                 conversationId,
-                opinionGroupSpecId,
-                analysisSnapshotId: refs?.analysisSnapshotId ?? null,
-                surveyAggregateSnapshotId: shouldPreserveSurveyAggregate
-                    ? (refs?.surveyAggregateSnapshotId ?? null)
-                    : null,
-                conversationContentId: conversation.currentContentId,
-                viewReason,
-                isClosed: conversation.isClosed,
-                opinionCount: counters.opinionCount,
-                voteCount: counters.voteCount,
-                participantCount: counters.participantCount,
-                totalOpinionCount: counters.totalOpinionCount,
-                totalVoteCount: counters.totalVoteCount,
-                totalParticipantCount: counters.totalParticipantCount,
-                moderatedOpinionCount: counters.moderatedOpinionCount,
-                hiddenOpinionCount: counters.hiddenOpinionCount,
-                activatedAt,
-            };
-        }),
-    );
+                opinionGroupSpecId: row.opinionGroupSpecId,
+                reason: lifecycleCheckpointReason,
+            })),
+        );
+    }
+
+    if (emitRealtimeEvent) {
+        await queueConversationAnalysisUpdatedEventsForViewSnapshots({
+            db,
+            conversationViewSnapshotIds: insertedRows.map((row) => row.id),
+        });
+    }
 
     return currentOpinionGroupSpecIds.length;
 }

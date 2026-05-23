@@ -18,11 +18,11 @@
         <PostActionBar
           v-model="currentTab"
           :compact-mode="false"
-          :opinion-count="loadedConversationData.metadata.opinionCount"
-          :participant-count="loadedConversationData.metadata.participantCount"
-          :vote-count="loadedConversationData.metadata.voteCount"
-          :total-participant-count="loadedConversationData.metadata.totalParticipantCount"
-          :total-vote-count="loadedConversationData.metadata.totalVoteCount"
+          :opinion-count="visibleAnalysisActionBarSnapshot?.opinionCount ?? loadedConversationData.metadata.opinionCount"
+          :participant-count="visibleAnalysisActionBarSnapshot?.participantCount ?? loadedConversationData.metadata.participantCount"
+          :vote-count="visibleAnalysisActionBarSnapshot?.voteCount ?? loadedConversationData.metadata.voteCount"
+          :total-participant-count="visibleAnalysisActionBarSnapshot?.totalParticipantCount ?? loadedConversationData.metadata.totalParticipantCount"
+          :total-vote-count="visibleAnalysisActionBarSnapshot?.totalVoteCount ?? loadedConversationData.metadata.totalVoteCount"
           :is-loading="isCurrentTabLoading"
           :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
           :conversation-title="loadedConversationData.payload.title"
@@ -48,6 +48,9 @@
                 :on-view-analysis="onViewAnalysis"
                 :navigate-to-discover-tab="navigateToDiscoverTab"
                 :conversation-scroll-context="conversationScrollContext"
+                @update:analysis-action-bar-snapshot="
+                  setAnalysisActionBarSnapshot
+                "
                 @update:comment-filter="
                   (filter: CommentFilterOptions) => { commentFilter = filter }
                 "
@@ -82,11 +85,15 @@ import { useConversationParentState } from "src/composables/conversation/useConv
 import { useTabScrollRestoration } from "src/composables/conversation/useTabScrollRestoration";
 import { useStickyObserver } from "src/composables/ui/useStickyObserver";
 import EmbedLayout from "src/layouts/EmbedLayout.vue";
+import type { AnalysisConversationViewSnapshot } from "src/shared/types/dto";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { computed, ref } from "vue";
 
 const embedLayoutRef = ref<{ containerElement: HTMLElement | null } | null>(null);
 const scrollContainer = computed(() => embedLayoutRef.value?.containerElement ?? null);
+const analysisActionBarSnapshot = ref<
+  AnalysisConversationViewSnapshot | undefined
+>();
 
 const { sentinelElement, headerHeight } = useStickyObserver();
 
@@ -124,6 +131,16 @@ const isVotingDisabled = computed(() => {
     data.metadata.moderation.action === "lock";
   return isModeratedAndLocked || data.metadata.isClosed;
 });
+
+const visibleAnalysisActionBarSnapshot = computed(() =>
+  currentTab.value === "analysis" ? analysisActionBarSnapshot.value : undefined
+);
+
+function setAnalysisActionBarSnapshot(
+  snapshot: AnalysisConversationViewSnapshot | undefined
+): void {
+  analysisActionBarSnapshot.value = snapshot;
+}
 
 const { tabContentStyle } = useTabScrollRestoration({
   analysisRouteName: "/conversation/[postSlugId].embed/analysis",

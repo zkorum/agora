@@ -52,6 +52,7 @@ import type {
     ClusterStats,
     EventSlug,
     ParticipationMode,
+    AnalysisView,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
 import { useCommonComment } from "./common.js";
@@ -59,8 +60,7 @@ import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
 import { checkConversationParticipation } from "./participationGate.js";
-import { castVoteForOpinionSlugId } from "./voting.js";
-import type { VoteBuffer } from "./voteBuffer.js";
+import { persistVoteImmediately } from "./voting.js";
 import type { ImportPolisResults } from "@/shared/types/polis.js";
 import type {
     OpinionContentIdPerOpinionId,
@@ -72,7 +72,9 @@ import { nowZeroMs } from "@/shared/util.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import {
     getDescriptionTextsByGroupId,
+    getOpinionGroupAnalysisSelection,
     getSelectedOpinionGroupCandidate,
+    type AnalysisViewState,
 } from "./opinionGroupAnalysis.js";
 import { alias } from "drizzle-orm/pg-core";
 
@@ -569,11 +571,26 @@ function isPolisKey(value: string): value is PolisKey {
 
 function createEmptyConversationAnalysis({
     hasVotedOnAllAvailableOpinions,
+    conversationViewSnapshotId,
+    analysisSnapshotId,
+    conversationViewSnapshot,
+    emptyReason,
+    analysisViewState,
 }: {
     hasVotedOnAllAvailableOpinions: boolean | undefined;
+    conversationViewSnapshotId?: number;
+    analysisSnapshotId?: number;
+    conversationViewSnapshot?: ConversationAnalysis["conversationViewSnapshot"];
+    emptyReason?: string;
+    analysisViewState?: AnalysisViewState;
 }): ConversationAnalysis {
     return {
         polisContentId: undefined,
+        conversationViewSnapshotId,
+        analysisSnapshotId,
+        conversationViewSnapshot,
+        emptyReason,
+        analysisViewState,
         consensusAgree: [],
         consensusDisagree: [],
         controversial: [],
@@ -735,6 +752,7 @@ async function fetchSnapshotAnalysisOpinions({
     conversationParticipantCount,
     groups,
     personalizationUserId,
+    includeModeratedOpinions,
 }: {
     db: PostgresJsDatabase;
     candidateId: number;
@@ -742,7 +760,11 @@ async function fetchSnapshotAnalysisOpinions({
     conversationParticipantCount: number;
     groups: SnapshotGroupMetadata[];
     personalizationUserId?: string;
+    includeModeratedOpinions: boolean;
 }): Promise<SnapshotAnalysisOpinionData> {
+    const moderationFilter: SQL | undefined = includeModeratedOpinions
+        ? undefined
+        : isNull(opinionModerationTable.id);
     const opinionRows = await db
         .select({
             opinionId: opinionTable.id,
@@ -799,7 +821,7 @@ async function fetchSnapshotAnalysisOpinions({
                     candidateId,
                 ),
                 eq(analysisSnapshotOpinionTable.analysisSnapshotId, snapshotId),
-                isNull(opinionModerationTable.id),
+                moderationFilter,
                 eq(userTable.isDeleted, false),
             ),
         );
@@ -907,7 +929,11 @@ async function fetchSnapshotAnalysisOpinions({
         );
 
         opinionsById.set(row.opinionId, {
-            opinion: row.opinion,
+            opinion:
+                moderationProperties.status === "moderated" &&
+                moderationProperties.action === "hide"
+                    ? "[moderated]"
+                    : row.opinion,
             opinionSlugId: row.opinionSlugId,
             createdAt: row.createdAt,
             numParticipants: conversationParticipantCount,
@@ -1009,22 +1035,32 @@ async function fetchSnapshotAnalysisByConversationSlugId({
     conversationSlugId,
     personalizationUserId,
     displayLanguage,
+    analysisView,
+    checkpointViewSnapshotId,
     hasVotedOnAllAvailableOpinions,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
     personalizationUserId?: string;
     displayLanguage: string;
+    analysisView: AnalysisView;
+    checkpointViewSnapshotId?: number;
     hasVotedOnAllAvailableOpinions: boolean | undefined;
-}): Promise<ConversationAnalysis | undefined> {
-    const selectedCandidate = await getSelectedOpinionGroupCandidate({
+}): Promise<ConversationAnalysis> {
+    const selection = await getOpinionGroupAnalysisSelection({
         db,
         conversationSlugId,
         displayLanguage,
+        analysisView,
+        checkpointViewSnapshotId,
     });
+    const selectedCandidate = selection.candidate;
     if (selectedCandidate === undefined) {
         return createEmptyConversationAnalysis({
             hasVotedOnAllAvailableOpinions,
+            emptyReason: selection.emptyReason,
+            analysisViewState: selection.viewState,
+            conversationViewSnapshot: selection.conversationViewSnapshot,
         });
     }
 
@@ -1044,11 +1080,16 @@ async function fetchSnapshotAnalysisByConversationSlugId({
             conversationParticipantCount: selectedCandidate.participantCount,
             groups,
             personalizationUserId,
+            includeModeratedOpinions: checkpointViewSnapshotId !== undefined,
         });
 
     const opinions = Array.from(opinionsById.values());
     return {
         polisContentId: undefined,
+        conversationViewSnapshotId: selectedCandidate.viewSnapshotId,
+        analysisSnapshotId: selectedCandidate.snapshotId,
+        conversationViewSnapshot: selection.conversationViewSnapshot,
+        analysisViewState: selection.viewState,
         consensusAgree: sortAnalysisOpinionsByWeightedMetric({
             opinions,
             getMetric: (opinion) => opinion.groupAwareConsensusAgree,
@@ -1075,11 +1116,15 @@ export async function fetchAnalysisByConversationSlugId({
     conversationSlugId,
     personalizationUserId,
     displayLanguage = "en",
+    analysisView = "facilitator_default",
+    checkpointViewSnapshotId,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
     personalizationUserId?: string;
     displayLanguage?: string;
+    analysisView?: AnalysisView;
+    checkpointViewSnapshotId?: number;
 }): Promise<ConversationAnalysis> {
     const hasVotedOnAllAvailableOpinions =
         await getHasVotedOnAllAvailableOpinions({
@@ -1093,15 +1138,11 @@ export async function fetchAnalysisByConversationSlugId({
         conversationSlugId,
         personalizationUserId,
         displayLanguage,
+        analysisView,
+        checkpointViewSnapshotId,
         hasVotedOnAllAvailableOpinions,
     });
-    if (snapshotAnalysis !== undefined) {
-        return snapshotAnalysis;
-    }
-
-    return createEmptyConversationAnalysis({
-        hasVotedOnAllAvailableOpinions,
-    });
+    return snapshotAnalysis;
 }
 
 async function getHasVotedOnAllAvailableOpinions({
@@ -1182,7 +1223,6 @@ async function getPostIdFromPostSlugId(
 interface PostNewOpinionProps {
     db: PostgresJsDatabase;
     tx?: PostgresJsDatabase;
-    voteBuffer: VoteBuffer;
     commentBody: string;
     conversationSlugId: string;
     didWrite: string;
@@ -1204,7 +1244,6 @@ interface PostNewOpinionProps {
 export async function postNewOpinion({
     db,
     tx,
-    voteBuffer,
     commentBody,
     conversationSlugId,
     didWrite,
@@ -1321,11 +1360,29 @@ export async function postNewOpinion({
                 eq(conversationTable.id, participationContext.conversationId),
             );
 
+        if (!isSeed) {
+            await persistVoteImmediately({
+                db: transactionDb,
+                userId: participationContext.participantId,
+                opinionId,
+                opinionContentId: commentContentTableId,
+                votingAction: "agree",
+            });
+        }
+
         await createConversationViewSnapshotsFromCurrentState({
             db: transactionDb,
             conversationId: participationContext.conversationId,
             viewReason: "conversation_content_updated",
         });
+
+        if (!isSeed) {
+            await scheduleConversationAnalysisRefresh({
+                db: transactionDb,
+                conversationId: participationContext.conversationId,
+                log,
+            });
+        }
 
         return { opinionId };
     };
@@ -1355,19 +1412,6 @@ export async function postNewOpinion({
                 realtimeSSEManager,
             });
         }
-    }
-
-    // Auto-vote outside transaction to reduce lock duration
-    if (!isSeed) {
-        await castVoteForOpinionSlugId({
-            db: db,
-            voteBuffer: voteBuffer,
-            opinionSlugId: opinionSlugId,
-            didWrite: didWrite,
-            votingAction: "agree",
-            userAgent: userAgent,
-            now: now,
-        });
     }
 
     return {

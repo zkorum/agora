@@ -6,6 +6,11 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **polisContentId** | **number** |  | [optional] [default to undefined]
+**conversationViewSnapshotId** | **number** |  | [optional] [default to undefined]
+**analysisSnapshotId** | **number** |  | [optional] [default to undefined]
+**conversationViewSnapshot** | [**ApiV1OpinionFetchAnalysisByConversationPost200ResponseConversationViewSnapshot**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseConversationViewSnapshot.md) |  | [optional] [default to undefined]
+**emptyReason** | **string** |  | [optional] [default to undefined]
+**analysisViewState** | [**ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewState**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewState.md) |  | [optional] [default to undefined]
 **consensusAgree** | [**Array&lt;ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner&gt;**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner.md) |  | [default to undefined]
 **consensusDisagree** | [**Array&lt;ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner&gt;**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner.md) |  | [default to undefined]
 **controversial** | [**Array&lt;ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner&gt;**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner.md) |  | [default to undefined]
@@ -19,6 +24,11 @@ import { ApiV1OpinionFetchAnalysisByConversationPost200Response } from './api';
 
 const instance: ApiV1OpinionFetchAnalysisByConversationPost200Response = {
     polisContentId,
+    conversationViewSnapshotId,
+    analysisSnapshotId,
+    conversationViewSnapshot,
+    emptyReason,
+    analysisViewState,
     consensusAgree,
     consensusDisagree,
     controversial,

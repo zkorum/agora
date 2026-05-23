@@ -10,7 +10,7 @@ import {
 import type pino from "pino";
 import { DrizzleFastifyLogger } from "./logger.js";
 
-async function createPostgresClient(
+export async function createPostgresClient(
     config: SharedConfigSchema,
     log: Pick<pino.BaseLogger, "info" | "error">,
     useReadReplica = false,

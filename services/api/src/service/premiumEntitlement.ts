@@ -256,6 +256,23 @@ async function hasPremiumFeatureAccess({
     return restrictedFeatures.length === 0;
 }
 
+export async function hasPremiumAnalysisVariantsAccess({
+    db,
+    conversation,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    conversation: ConversationEntitlementContext;
+    now: Date;
+}): Promise<boolean> {
+    return await hasPremiumFeatureAccess({
+        db,
+        subject: getPremiumEntitlementSubjectForConversation({ conversation }),
+        feature: PREMIUM_ANALYSIS_FEATURE,
+        now,
+    });
+}
+
 async function refreshPremiumAnalysisForSubject({
     db,
     subject,

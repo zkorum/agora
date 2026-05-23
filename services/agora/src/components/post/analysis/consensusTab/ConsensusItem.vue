@@ -2,8 +2,11 @@
   <OpinionGridLayout @click="showOpinionAnalysis">
     <template #content>
       <div class="consensusDescription">
-        <ZKHtmlContent
-          :html-body="props.opinionItem.opinion"
+        <AnalysisOpinionText
+          :opinion-item="props.opinionItem"
+          :post-slug-id="props.conversationSlugId"
+          :conversation-author-username="props.conversationAuthorUsername"
+          :conversation-organization-name="props.conversationOrganizationName"
           :compact-mode="true"
           :enable-links="false"
         />
@@ -29,17 +32,19 @@
   <OpinionAnalysisDialog
     v-model="showDialog"
     :conversation-slug-id="props.conversationSlugId"
+    :conversation-author-username="props.conversationAuthorUsername"
+    :conversation-organization-name="props.conversationOrganizationName"
     :opinion-item="props.opinionItem"
     :cluster-labels="props.clusterLabels"
   />
 </template>
 
 <script setup lang="ts">
-import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { AnalysisOpinionItem, PolisKey } from "src/shared/types/zod";
 import { computed, ref } from "vue";
 
+import AnalysisOpinionText from "../common/AnalysisOpinionText.vue";
 import OpinionGridLayout from "../common/OpinionGridLayout.vue";
 import VoteCountVisualizer from "../common/VoteCountVisualizer.vue";
 import {
@@ -50,6 +55,8 @@ import OpinionAnalysisDialog from "./OpinionAnalysisDialog.vue";
 
 const props = defineProps<{
   conversationSlugId: string;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
   opinionItem: AnalysisOpinionItem;
   opinionItemForVisualizer: AnalysisOpinionItem;
   clusterLabels: Partial<Record<PolisKey, string>>;

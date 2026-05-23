@@ -144,7 +144,6 @@ class AnalysisWorkState(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
-
 class ConversationContent(Base):
     __tablename__ = "conversation_content"
 

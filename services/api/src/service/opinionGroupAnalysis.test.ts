@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+    buildAnalysisViewOptions,
     selectLatestOpinionGroupResultForDisplay,
     type LatestOpinionGroupResultRow,
+    type SnapshotCandidateOption,
 } from "./opinionGroupAnalysis.js";
 
 function resultRow(
@@ -9,10 +11,21 @@ function resultRow(
 ): LatestOpinionGroupResultRow {
     return {
         conversationId: 1,
+        authorId: "user-1",
+        organizationId: null,
+        preferredOpinionGroupCount: null,
         aiLabelingEnabled: true,
         viewSnapshotId: 10,
         surveyAggregateSnapshotId: null,
         participantCount: 57,
+        opinionCount: 12,
+        voteCount: 34,
+        totalOpinionCount: 15,
+        totalVoteCount: 40,
+        totalParticipantCount: 60,
+        moderatedOpinionCount: 2,
+        hiddenOpinionCount: 1,
+        isClosed: false,
         snapshotId: 20,
         resultId: 30,
         outcome: "success",
@@ -20,6 +33,17 @@ function resultRow(
         englishAiGenerationExpected: true,
         requestedLocaleStatus: "ready",
         requestedTranslationExpected: true,
+        ...overrides,
+    };
+}
+
+function candidate(
+    overrides: Partial<SnapshotCandidateOption>,
+): SnapshotCandidateOption {
+    return {
+        candidateId: 1,
+        groupCount: 2,
+        selectionScore: 0.8,
         ...overrides,
     };
 }
@@ -172,5 +196,77 @@ describe("selectLatestOpinionGroupResultForDisplay", () => {
         });
 
         expect(selected).toBeUndefined();
+    });
+});
+
+describe("buildAnalysisViewOptions", () => {
+    it("keeps premium variants visible but locked when variants are disabled", () => {
+        const systemCandidate = candidate({
+            candidateId: 11,
+            groupCount: 2,
+        });
+
+        const options = buildAnalysisViewOptions({
+            variantsEnabled: false,
+            preferredGroupCount: 4,
+            candidates: [
+                systemCandidate,
+                candidate({ candidateId: 44, groupCount: 4 }),
+            ],
+            systemCandidate,
+        });
+
+        const systemDefault = options.find(
+            (option) => option.view === "system_default",
+        );
+        const facilitatorDefault = options.find(
+            (option) => option.view === "facilitator_default",
+        );
+        const fixedOptions = options.filter((option) =>
+            ["2", "3", "4", "5", "6"].includes(option.view),
+        );
+
+        expect(systemDefault).toMatchObject({
+            enabled: true,
+            status: "recommended",
+            groupCount: 2,
+        });
+        expect(facilitatorDefault).toMatchObject({
+            enabled: false,
+            status: "locked",
+            resolvesToView: "4",
+        });
+        expect(fixedOptions).toHaveLength(5);
+        expect(fixedOptions.every((option) => option.status === "locked")).toBe(
+            true,
+        );
+    });
+
+    it("marks unavailable fixed group counts as discouraged when variants are enabled", () => {
+        const systemCandidate = candidate({
+            candidateId: 22,
+            groupCount: 2,
+        });
+
+        const options = buildAnalysisViewOptions({
+            variantsEnabled: true,
+            preferredGroupCount: null,
+            candidates: [systemCandidate],
+            systemCandidate,
+        });
+
+        expect(options.find((option) => option.view === "2")).toMatchObject({
+            enabled: true,
+            status: "recommended",
+            candidateId: 22,
+        });
+        expect(options.find((option) => option.view === "3")).toMatchObject({
+            enabled: true,
+            status: "discouraged",
+            groupCount: 3,
+        });
+        expect(options.find((option) => option.view === "3")?.reason).toContain(
+            "could not form 3 meaningful groups",
+        );
     });
 });

@@ -2085,12 +2085,104 @@ export interface ApiV1OpinionCreatePostRequest {
 }
 export interface ApiV1OpinionFetchAnalysisByConversationPost200Response {
     'polisContentId'?: number;
+    'conversationViewSnapshotId'?: number;
+    'analysisSnapshotId'?: number;
+    'conversationViewSnapshot'?: ApiV1OpinionFetchAnalysisByConversationPost200ResponseConversationViewSnapshot;
+    'emptyReason'?: string;
+    'analysisViewState'?: ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewState;
     'consensusAgree': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner>;
     'consensusDisagree': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner>;
     'controversial': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInner>;
     'clusters': { [key: string]: ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue; };
     'hasVotedOnAllAvailableOpinions'?: boolean;
 }
+export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewState {
+    'requestedView': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateRequestedViewEnum;
+    'canonicalView': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateCanonicalViewEnum;
+    'resolvedGroupCount': number | null;
+    'resolvedCandidateId': number | null;
+    'resolvedBy': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateResolvedByEnum;
+    'variantsEnabled': boolean;
+    'options': Array<ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInner>;
+}
+
+export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateRequestedViewEnum = {
+    _2: '2',
+    _3: '3',
+    _4: '4',
+    _5: '5',
+    _6: '6',
+    FacilitatorDefault: 'facilitator_default',
+    SystemDefault: 'system_default',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateRequestedViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateRequestedViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateRequestedViewEnum];
+export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateCanonicalViewEnum = {
+    _2: '2',
+    _3: '3',
+    _4: '4',
+    _5: '5',
+    _6: '6',
+    FacilitatorDefault: 'facilitator_default',
+    SystemDefault: 'system_default',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateCanonicalViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateCanonicalViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateCanonicalViewEnum];
+export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateResolvedByEnum = {
+    SystemDefault: 'system_default',
+    FacilitatorPreference: 'facilitator_preference',
+    FacilitatorFallback: 'facilitator_fallback',
+    FixedCount: 'fixed_count',
+    LockedFallback: 'locked_fallback',
+    UnavailableFixedCount: 'unavailable_fixed_count',
+    NoAnalysis: 'no_analysis',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateResolvedByEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateResolvedByEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateResolvedByEnum];
+
+export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInner {
+    'view': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerViewEnum;
+    'enabled': boolean;
+    'status': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerStatusEnum;
+    'reason'?: string;
+    'groupCount'?: number;
+    'candidateId'?: number;
+    'selectionScore'?: number | null;
+    'resolvesToView'?: ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerResolvesToViewEnum;
+}
+
+export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerViewEnum = {
+    _2: '2',
+    _3: '3',
+    _4: '4',
+    _5: '5',
+    _6: '6',
+    FacilitatorDefault: 'facilitator_default',
+    SystemDefault: 'system_default',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerViewEnum];
+export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerStatusEnum = {
+    Recommended: 'recommended',
+    Available: 'available',
+    Discouraged: 'discouraged',
+    Unavailable: 'unavailable',
+    Locked: 'locked',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerStatusEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerStatusEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerStatusEnum];
+export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerResolvesToViewEnum = {
+    _2: '2',
+    _3: '3',
+    _4: '4',
+    _5: '5',
+    _6: '6',
+    FacilitatorDefault: 'facilitator_default',
+    SystemDefault: 'system_default',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerResolvesToViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerResolvesToViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerResolvesToViewEnum];
+
 export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValue {
     'key': ApiV1OpinionFetchAnalysisByConversationPost200ResponseClustersValueKeyEnum;
     'numUsers': number;
@@ -2147,6 +2239,68 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgre
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInnerClustersStatsInnerKeyEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInnerClustersStatsInnerKeyEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseConsensusAgreeInnerClustersStatsInnerKeyEnum];
+
+export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseConversationViewSnapshot {
+    'conversationViewSnapshotId': number;
+    'analysisSnapshotId': number;
+    'opinionCount': number;
+    'voteCount': number;
+    'participantCount': number;
+    'totalOpinionCount': number;
+    'totalVoteCount': number;
+    'totalParticipantCount': number;
+    'moderatedOpinionCount': number;
+    'hiddenOpinionCount': number;
+    'isClosed': boolean;
+}
+export interface ApiV1OpinionFetchAnalysisByConversationPostRequest {
+    'conversationSlugId': string;
+    'analysisView'?: ApiV1OpinionFetchAnalysisByConversationPostRequestAnalysisViewEnum;
+    'checkpointViewSnapshotId'?: number;
+}
+
+export const ApiV1OpinionFetchAnalysisByConversationPostRequestAnalysisViewEnum = {
+    _2: '2',
+    _3: '3',
+    _4: '4',
+    _5: '5',
+    _6: '6',
+    FacilitatorDefault: 'facilitator_default',
+    SystemDefault: 'system_default',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisByConversationPostRequestAnalysisViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPostRequestAnalysisViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPostRequestAnalysisViewEnum];
+
+export interface ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInner {
+    'conversationViewSnapshotId': number;
+    'createdAt': string;
+    'activatedAt': string;
+    'opinionCount': number;
+    'voteCount': number;
+    'participantCount': number;
+    'reasons': Array<ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInnerReasonsInner>;
+}
+export interface ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInnerReasonsInner {
+    'reason': ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInnerReasonsInnerReasonEnum;
+    'groupCount': number | null;
+    'previousGroupCount': number | null;
+    'participantCount': number | null;
+    'participantMilestone': number | null;
+    'voteCount': number | null;
+    'voteMilestone': number | null;
+}
+
+export const ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInnerReasonsInnerReasonEnum = {
+    FirstDisplayableAnalysis: 'first_displayable_analysis',
+    FirstGroupCountAvailable: 'first_group_count_available',
+    DefaultGroupCountChanged: 'default_group_count_changed',
+    MajorParticipationMilestone: 'major_participation_milestone',
+    MajorVoteMilestone: 'major_vote_milestone',
+    ConversationClosed: 'conversation_closed',
+    ConversationReopened: 'conversation_reopened',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInnerReasonsInnerReasonEnum = typeof ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInnerReasonsInnerReasonEnum[keyof typeof ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInnerReasonsInnerReasonEnum];
 
 export interface ApiV1OpinionFetchByConversationPostRequest {
     'conversationSlugId': string;
@@ -4889,15 +5043,53 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * 
-         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         *
+         * @param {ApiV1OpinionFetchAnalysisByConversationPostRequest} apiV1OpinionFetchAnalysisByConversationPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1OpinionFetchAnalysisByConversationPost: async (apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ModerationConversationWithdrawPostRequest' is not null or undefined
-            assertParamExists('apiV1OpinionFetchAnalysisByConversationPost', 'apiV1ModerationConversationWithdrawPostRequest', apiV1ModerationConversationWithdrawPostRequest)
+        apiV1OpinionFetchAnalysisByConversationPost: async (apiV1OpinionFetchAnalysisByConversationPostRequest: ApiV1OpinionFetchAnalysisByConversationPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1OpinionFetchAnalysisByConversationPostRequest' is not null or undefined
+            assertParamExists('apiV1OpinionFetchAnalysisByConversationPost', 'apiV1OpinionFetchAnalysisByConversationPostRequest', apiV1OpinionFetchAnalysisByConversationPostRequest)
             const localVarPath = `/api/v1/opinion/fetch-analysis-by-conversation`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1OpinionFetchAnalysisByConversationPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionFetchAnalysisCheckpointsByConversationPost: async (apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationConversationWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1OpinionFetchAnalysisCheckpointsByConversationPost', 'apiV1ModerationConversationWithdrawPostRequest', apiV1ModerationConversationWithdrawPostRequest)
+            const localVarPath = `/api/v1/opinion/fetch-analysis-checkpoints-by-conversation`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -6723,19 +6915,31 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * 
-         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         *
+         * @param {ApiV1OpinionFetchAnalysisByConversationPostRequest} apiV1OpinionFetchAnalysisByConversationPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1OpinionFetchAnalysisByConversationPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1OpinionFetchAnalysisByConversationPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionFetchAnalysisByConversationPost(apiV1ModerationConversationWithdrawPostRequest, options);
+        async apiV1OpinionFetchAnalysisByConversationPost(apiV1OpinionFetchAnalysisByConversationPostRequest: ApiV1OpinionFetchAnalysisByConversationPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1OpinionFetchAnalysisByConversationPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionFetchAnalysisByConversationPost(apiV1OpinionFetchAnalysisByConversationPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionFetchAnalysisByConversationPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * 
+         *
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1OpinionFetchAnalysisCheckpointsByConversationPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInner>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionFetchAnalysisCheckpointsByConversationPost(apiV1ModerationConversationWithdrawPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionFetchAnalysisCheckpointsByConversationPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
          * @param {ApiV1OpinionFetchByConversationPostRequest} apiV1OpinionFetchByConversationPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -7610,13 +7814,22 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.apiV1OpinionDeletePost(apiV1ModerationOpinionWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * 
-         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         *
+         * @param {ApiV1OpinionFetchAnalysisByConversationPostRequest} apiV1OpinionFetchAnalysisByConversationPostRequest
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1OpinionFetchAnalysisByConversationPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1OpinionFetchAnalysisByConversationPost200Response> {
-            return localVarFp.apiV1OpinionFetchAnalysisByConversationPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        apiV1OpinionFetchAnalysisByConversationPost(apiV1OpinionFetchAnalysisByConversationPostRequest: ApiV1OpinionFetchAnalysisByConversationPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1OpinionFetchAnalysisByConversationPost200Response> {
+            return localVarFp.apiV1OpinionFetchAnalysisByConversationPost(apiV1OpinionFetchAnalysisByConversationPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionFetchAnalysisCheckpointsByConversationPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInner>> {
+            return localVarFp.apiV1OpinionFetchAnalysisCheckpointsByConversationPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -8460,13 +8673,23 @@ export class DefaultApi extends BaseAPI {
     }
 
     /**
-     * 
-     * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+     *
+     * @param {ApiV1OpinionFetchAnalysisByConversationPostRequest} apiV1OpinionFetchAnalysisByConversationPostRequest
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1OpinionFetchAnalysisByConversationPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1OpinionFetchAnalysisByConversationPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1OpinionFetchAnalysisByConversationPost(apiV1OpinionFetchAnalysisByConversationPostRequest: ApiV1OpinionFetchAnalysisByConversationPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1OpinionFetchAnalysisByConversationPost(apiV1OpinionFetchAnalysisByConversationPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1OpinionFetchAnalysisCheckpointsByConversationPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1OpinionFetchAnalysisCheckpointsByConversationPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -8763,6 +8986,5 @@ export class DefaultApi extends BaseAPI {
         return DefaultApiFp(this.configuration).apiV1WebhookGithubPost(options).then((request) => request(this.axios, this.basePath));
     }
 }
-
 
 

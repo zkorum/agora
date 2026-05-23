@@ -79,6 +79,8 @@
           <OpinionGroupComments
             ref="commentsRef"
             :conversation-slug-id="props.conversationSlugId"
+            :conversation-author-username="props.conversationAuthorUsername"
+            :conversation-organization-name="props.conversationOrganizationName"
             :item-list="currentRepresentativeItems"
             :current-cluster-tab="currentClusterTab"
             :cluster-labels="clusterLabels"
@@ -176,8 +178,11 @@ type ClusterItem = NonNullable<PolisClusters[PolisKey]>;
 const props = withDefaults(
   defineProps<{
     conversationSlugId: string;
+    conversationAuthorUsername: string;
+    conversationOrganizationName: string;
     clusters: Partial<PolisClusters>;
     totalParticipantCount: number;
+    analysisFrameKey: string | undefined;
     compactMode?: boolean;
     conversationScrollContext: ConversationScrollContext;
   }>(),
@@ -209,6 +214,8 @@ const isScopeMerged = ref(false);
 const stickyTopOffset = ref(0);
 const displayMode = ref<OpinionGroupDisplayMode>("current");
 const groupScrollPositions = new Map<PolisKey, number>();
+let hasAppliedClusterDefault = false;
+let lastDefaultAnalysisFrameKey: string | undefined;
 
 let resizeObserver: ResizeObserver | undefined;
 let removeScrollListener: (() => void) | undefined;
@@ -311,6 +318,29 @@ watch(
     if (firstCluster !== undefined) {
       currentClusterTab.value = firstCluster.key;
     }
+  },
+  { immediate: true }
+);
+
+watch(
+  [() => props.analysisFrameKey, clusterList],
+  ([analysisFrameKey, clusters]) => {
+    if (clusters.length === 0) {
+      return;
+    }
+
+    if (
+      hasAppliedClusterDefault &&
+      analysisFrameKey === lastDefaultAnalysisFrameKey
+    ) {
+      return;
+    }
+
+    currentClusterTab.value = findInitialClusterKey(clusters);
+    displayMode.value = "current";
+    groupScrollPositions.clear();
+    hasAppliedClusterDefault = true;
+    lastDefaultAnalysisFrameKey = analysisFrameKey;
   },
   { immediate: true }
 );

@@ -1,0 +1,2 @@
+ALTER TYPE "public"."conversation_view_snapshot_checkpoint_reason_enum" ADD VALUE 'conversation_reopened';--> statement-breakpoint
+CREATE UNIQUE INDEX "conversation_view_snapshot_checkpoint_reopened_unique" ON "conversation_view_snapshot_checkpoint_reason" USING btree ("conversation_view_snapshot_id") WHERE "conversation_view_snapshot_checkpoint_reason"."reason" = 'conversation_reopened';

@@ -28,7 +28,6 @@ import { postNewOpinion } from "./comment.js";
 import { createMaxdiffItem } from "./maxdiffItem.js";
 import type { ConversationIds } from "@/utils/dataStructure.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
-import type { VoteBuffer } from "./voteBuffer.js";
 import { deleteAllConversationExports } from "@/service/conversationExport/index.js";
 import * as authUtilService from "@/service/authUtil.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
@@ -37,6 +36,7 @@ import {
     setSurveyConfigForConversation,
     warmSurveyTranslationsForConversation,
 } from "@/service/survey.js";
+import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
 import { isConversationOwner } from "@/service/conversationAccess.js";
 import { createConversationViewSnapshotsFromCurrentState } from "@/service/conversationViewSnapshot.js";
 
@@ -44,7 +44,6 @@ const MAX_CONVERSATION_SEED_ITEMS = 50;
 
 interface CreateNewPostProps {
     db: PostgresDatabase;
-    voteBuffer: VoteBuffer;
     conversationTitle: string;
     conversationBody: string | null;
     authorId: string;
@@ -70,7 +69,6 @@ interface CreateNewPostProps {
 
 export async function createNewPost({
     db,
-    voteBuffer,
     conversationTitle,
     conversationBody,
     authorId,
@@ -211,7 +209,6 @@ export async function createNewPost({
                         await postNewOpinion({
                             db,
                             tx,
-                            voteBuffer,
                             commentBody: seedOpinionText,
                             conversationSlugId,
                             didWrite,
@@ -492,6 +489,14 @@ export async function closeConversation({
             db: tx,
             conversationId: conversation[0].conversationId,
             viewReason: "conversation_lifecycle_updated",
+            lifecycleCheckpointReason: "conversation_closed",
+            emitRealtimeEvent: true,
+        });
+
+        await scheduleConversationAnalysisRefresh({
+            db: tx,
+            conversationId: conversation[0].conversationId,
+            log,
         });
     });
 
@@ -551,6 +556,14 @@ export async function openConversation({
             db: tx,
             conversationId: conversation[0].conversationId,
             viewReason: "conversation_lifecycle_updated",
+            lifecycleCheckpointReason: "conversation_reopened",
+            emitRealtimeEvent: true,
+        });
+
+        await scheduleConversationAnalysisRefresh({
+            db: tx,
+            conversationId: conversation[0].conversationId,
+            log,
         });
     });
 

@@ -41,7 +41,6 @@ export function getCommentActions(
       id: "moderate",
       label: translations.moderate,
       icon: "mdi-sword",
-      variant: "warning",
       handler: moderateCommentCallback,
       isVisible: (context: ContentActionContext) =>
         (context.isSiteModerator ||
@@ -64,7 +63,6 @@ export function getCommentActions(
       id: "report",
       label: translations.report,
       icon: "mdi-flag",
-      variant: "warning",
       handler: reportCommentCallback,
       isVisible: () => true,
     },

@@ -46,6 +46,7 @@ import { checkFeatureAccess } from "@/shared-app-api/featureAccess.js";
 import { zodCsvFiles } from "@/service/csvImport.js";
 import * as conversationExportService from "@/service/conversationExport/index.js";
 import * as conversationImportService from "@/service/conversationImport/index.js";
+import { fetchAnalysisCheckpointsByConversationSlugId } from "@/service/conversationViewSnapshot.js";
 import {
     cleanupStuckExportsOnStartup,
     createExportWorker,
@@ -139,6 +140,7 @@ import { initializeValkey } from "./shared-backend/valkey.js";
 import { createVoteBuffer } from "./service/voteBuffer.js";
 import { createImportBuffer } from "./service/importBuffer.js";
 import { createImportWorkerEventBridge } from "./service/importWorkerEventBridge.js";
+import { createRealtimeEventOutboxBridge } from "./service/realtimeEventOutbox.js";
 import { createUcanReplayGuard } from "./service/ucanReplayGuard.js";
 import { RealtimeSSEManager } from "./service/realtimeSSE.js";
 import {
@@ -593,6 +595,18 @@ log.info(
 // Initialize Notification SSE Manager for real-time notifications
 const realtimeSSEManager = new RealtimeSSEManager();
 realtimeSSEManager.initialize();
+
+const realtimeEventOutboxBridge = createRealtimeEventOutboxBridge({
+    db,
+    config,
+    log,
+    realtimeSSEManager,
+});
+try {
+    await realtimeEventOutboxBridge.start();
+} catch (error) {
+    log.error(error, "[RealtimeOutbox] Failed to start realtime DB listener");
+}
 
 // Periodic engagement ranking check for "Following" tab.
 // Every 60s, computes top 10 engagement slug IDs and broadcasts
@@ -2102,7 +2116,6 @@ server.after(() => {
             const now = nowZeroMs();
             const newOpinionResponse = await postNewOpinion({
                 db: db,
-                voteBuffer: voteBuffer,
                 commentBody: request.body.opinionBody,
                 conversationSlugId: request.body.conversationSlugId,
                 didWrite: didWrite,
@@ -2179,8 +2192,27 @@ server.after(() => {
                     ? deviceStatus.userId
                     : undefined,
                 displayLanguage,
+                analysisView: request.body.analysisView,
+                checkpointViewSnapshotId: request.body.checkpointViewSnapshotId,
             });
             return analysis;
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
+        url: `/api/${apiVersion}/opinion/fetch-analysis-checkpoints-by-conversation`,
+        schema: {
+            body: Dto.fetchAnalysisCheckpointsRequest,
+            response: {
+                200: Dto.fetchAnalysisCheckpointsResponse,
+            },
+        },
+        handler: async (request) => {
+            return await fetchAnalysisCheckpointsByConversationSlugId({
+                db,
+                conversationSlugId: request.body.conversationSlugId,
+            });
         },
     });
 
@@ -2367,7 +2399,6 @@ server.after(() => {
 
             const { conversationSlugId } = await postService.createNewPost({
                 db: db,
-                voteBuffer: voteBuffer,
                 conversationTitle: request.body.conversationTitle,
                 conversationBody: request.body.conversationBody ?? null,
                 authorId: deviceStatus.userId,
@@ -4020,6 +4051,8 @@ const shutdown = async (signal: string) => {
 
         // Stop popular conversation periodic check
         clearInterval(popularConversationCheckInterval);
+
+        await realtimeEventOutboxBridge.shutdown();
 
         // Close SSE connections before shutdown
         await realtimeSSEManager.shutdown();

@@ -5,6 +5,8 @@ import type {
     SSENotificationData,
     SSEHeartbeatData,
     SSEShutdownData,
+    SSEEventDataByType,
+    SSEEventType,
 } from "@/shared/types/dto.js";
 import { log } from "@/app.js";
 
@@ -193,12 +195,12 @@ export class RealtimeSSEManager {
     /**
      * Broadcast a global event to ALL connected clients (both authenticated and anonymous)
      */
-    public broadcastToAll({
+    public broadcastToAll<TEvent extends SSEEventType>({
         event,
         data,
     }: {
-        event: string;
-        data: unknown;
+        event: TEvent;
+        data: SSEEventDataByType[TEvent];
     }): void {
         const deadAuthenticated: { userId: string; reply: FastifyReply }[] = [];
         const deadAnonymous: FastifyReply[] = [];
@@ -231,13 +233,13 @@ export class RealtimeSSEManager {
     /**
      * Broadcast a global event to all connected clients except the specified user
      */
-    public broadcastToAllExcept({
+    public broadcastToAllExcept<TEvent extends SSEEventType>({
         event,
         data,
         excludeUserId,
     }: {
-        event: string;
-        data: unknown;
+        event: TEvent;
+        data: SSEEventDataByType[TEvent];
         excludeUserId: string;
     }): void {
         const deadAuthenticated: { userId: string; reply: FastifyReply }[] = [];

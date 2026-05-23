@@ -1,6 +1,54 @@
 <template>
   <AsyncStateHandler :query="analysisQuery" :config="asyncStateConfig">
     <div class="container flexStyle">
+      <CheckpointTimeline
+        v-if="analysisCheckpoints.length > 0"
+        :checkpoints="analysisCheckpoints"
+        :selected-checkpoint-id="selectedRouteCheckpoint"
+        :is-live-selected="isLiveAnalysis"
+        :is-live-paused="isLivePaused"
+        :is-latest-checkpoint-live="isLatestCheckpointLive"
+        :title="t('checkpointTimelineLabel')"
+        :start-label="t('checkpointTimelineStart')"
+        :now-label="t('checkpointTimelineNow')"
+        :previous-label="t('previousCheckpoint')"
+        :next-label="t('nextCheckpoint')"
+        :format-reason="formatCheckpointReason"
+        @select-checkpoint="setCheckpointRoute"
+        @select-live="goLive"
+      />
+
+      <div
+        v-if="analysisViewOptions.length > 0 || showAnalysisPlaybackButton"
+        class="analysis-controls"
+      >
+        <ZKDropdownSelectorButton
+          v-if="analysisViewOptions.length > 0"
+          :label="selectedAnalysisViewLabel"
+          :accessibility-label="t('analysisViewTitle')"
+          button-type="standardButton"
+          class="analysis-view-selector"
+          icon-name="mdi-chevron-down"
+          icon-size="1rem"
+          label-overflow="truncate"
+          @click="showAnalysisViewDrawer = true"
+        />
+
+        <button
+          v-if="showAnalysisPlaybackButton"
+          type="button"
+          class="analysis-playback-button"
+          :class="{
+            'analysis-playback-button--play': isLivePaused || !isLiveAnalysis,
+          }"
+          :aria-label="analysisPlaybackLabel"
+          :title="analysisPlaybackLabel"
+          @click="toggleAnalysisPlayback()"
+        >
+          <q-icon :name="analysisPlaybackIcon" size="1.3rem" />
+        </button>
+      </div>
+
       <div class="analysis-header">
         <ShortcutBar
           :model-value="currentTab"
@@ -10,19 +58,40 @@
           :on-same-tab-click="handleSameTabClick"
           @update:model-value="onTabChange"
         />
-        <router-link
-          v-if="showReportButton"
-          :to="{
-            name: '/conversation/[conversationSlugId]/report',
-            params: { conversationSlugId: props.conversationSlugId },
-          }"
-          class="report-button"
-          :title="t('generateReport')"
-          :aria-label="t('generateReport')"
+        <div class="analysis-actions">
+          <SpaLink
+            v-if="showReportButton"
+            :to="{
+              name: '/conversation/[conversationSlugId]/report',
+              params: { conversationSlugId: props.conversationSlugId },
+              query: reportRouteQuery,
+            }"
+            class="report-button"
+            :title="t('generateReport')"
+            :aria-label="t('generateReport')"
+          >
+            <q-icon name="mdi-file-chart-outline" size="1rem" />
+            <div>{{ t("report") }}</div>
+          </SpaLink>
+        </div>
+      </div>
+
+      <div v-if="newStatementCount > 0" class="new-statements-banner">
+        <div class="new-statements-banner__text">
+          <q-icon name="mdi-comment-plus-outline" size="1rem" />
+          <span>{{ newStatementsMessage }}</span>
+        </div>
+        <ZKButton
+          button-type="compactButton"
+          class="new-statements-banner__button"
+          @click="handleNewStatementsClick"
         >
-          <q-icon name="mdi-file-chart-outline" size="1rem" />
-          <div>{{ t("report") }}</div>
-        </router-link>
+          {{ newStatementsActionLabel }}
+        </ZKButton>
+      </div>
+
+      <div v-if="analysisEmptyReason" class="analysis-empty-reason">
+        {{ analysisEmptyReason }}
       </div>
 
       <!-- Me tab -->
@@ -35,7 +104,7 @@
           :cluster-key="userClusterData.clusterKey"
           :ai-label="userClusterData.aiLabel"
           :ai-summary="userClusterData.aiSummary"
-          :has-voted-on-all-available-opinions="analysisQuery.data.value?.hasVotedOnAllAvailableOpinions"
+          :has-voted-on-all-available-opinions="activeAnalysisData?.hasVotedOnAllAvailableOpinions"
           :navigate-to-discover-tab="props.navigateToDiscoverTab"
           @update:model-value="onTabChange"
         />
@@ -48,8 +117,11 @@
       >
         <OpinionGroupTab
           :conversation-slug-id="props.conversationSlugId"
+          :conversation-author-username="props.conversationAuthorUsername"
+          :conversation-organization-name="props.conversationOrganizationName"
           :clusters="polisClusters"
-          :total-participant-count="props.participantCount"
+          :total-participant-count="analysisParticipantCount"
+          :analysis-frame-key="analysisFrameKey"
           :compact-mode="currentTab === 'Summary'"
           :conversation-scroll-context="props.conversationScrollContext"
         />
@@ -64,6 +136,8 @@
           :model-value="currentTab"
           direction="agree"
           :conversation-slug-id="props.conversationSlugId"
+          :conversation-author-username="props.conversationAuthorUsername"
+          :conversation-organization-name="props.conversationOrganizationName"
           :item-list="agreementItems"
           :compact-mode="currentTab === 'Summary'"
           :clusters="polisClusters"
@@ -81,6 +155,8 @@
           :model-value="currentTab"
           direction="disagree"
           :conversation-slug-id="props.conversationSlugId"
+          :conversation-author-username="props.conversationAuthorUsername"
+          :conversation-organization-name="props.conversationOrganizationName"
           :item-list="disagreementItems"
           :compact-mode="currentTab === 'Summary'"
           :clusters="polisClusters"
@@ -97,6 +173,8 @@
         <DivisiveTab
           :model-value="currentTab"
           :conversation-slug-id="props.conversationSlugId"
+          :conversation-author-username="props.conversationAuthorUsername"
+          :conversation-organization-name="props.conversationOrganizationName"
           :item-list="controversialItems"
           :compact-mode="currentTab === 'Summary'"
           :clusters="polisClusters"
@@ -116,37 +194,95 @@
           :survey-gate="props.surveyGate"
           :survey-query="props.surveyQuery"
           :clusters="polisClusters"
-          :total-participant-count="props.participantCount"
+          :total-participant-count="analysisParticipantCount"
           :compact-mode="currentTab === 'Summary'"
           @update:model-value="onTabChange"
         />
       </div>
     </div>
+
+    <q-dialog v-model="showAnalysisViewDrawer" position="bottom">
+      <ZKBottomDialogContainer :title="t('analysisViewTitle')">
+        <div class="analysis-view-drawer-list">
+          <button
+            v-for="option in analysisViewOptions"
+            :key="option.view"
+            type="button"
+            class="analysis-view-drawer-option"
+            :class="{
+              'analysis-view-drawer-option--selected':
+                option.view === selectedAnalysisView,
+            }"
+            :disabled="!option.enabled"
+            @click="handleAnalysisViewSelect(option)"
+          >
+            <span class="analysis-view-drawer-option__text">
+              <span>{{ getAnalysisViewLabel(option.view) }}</span>
+              <span
+                v-if="getAnalysisViewCaption(option) !== undefined"
+                class="analysis-view-drawer-option__caption"
+              >
+                {{ getAnalysisViewCaption(option) }}
+              </span>
+            </span>
+            <q-icon
+              v-if="option.view === selectedAnalysisView"
+              name="mdi-check"
+              size="1.1rem"
+            />
+          </button>
+        </div>
+      </ZKBottomDialogContainer>
+    </q-dialog>
   </AsyncStateHandler>
 </template>
 
 <script setup lang="ts">
 import type { UseQueryReturnType } from "@tanstack/vue-query";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
+import SpaLink from "src/components/ui-library/SpaLink.vue";
+import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import ZKButton from "src/components/ui-library/ZKButton.vue";
+import ZKDropdownSelectorButton from "src/components/ui-library/ZKDropdownSelectorButton.vue";
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
-import type { SurveyResultsAggregatedResponse } from "src/shared/types/dto";
 import type {
-  AnalysisOpinionItem,
+  AnalysisCheckpoint,
+  AnalysisConversationViewSnapshot,
+  SurveyResultsAggregatedResponse,
+} from "src/shared/types/dto";
+import type {
+  AnalysisView,
   PolisClusters,
   PolisKey,
   SurveyGateSummary,
 } from "src/shared/types/zod";
-import { type ShortcutItem, shortcutItemSchema } from "src/utils/component/analysis/shortcutBar";
-import { computed, watch } from "vue";
+import {
+  getUpdatedAnalysisRouteQuery,
+  parseAnalysisViewQuery,
+  parseCheckpointQuery,
+} from "src/utils/analysis/analysisRoute";
+import type { AnalysisData } from "src/utils/api/comment/comment";
+import { useAnalysisCheckpointsQuery } from "src/utils/api/comment/useCommentQueries";
+import {
+  type ShortcutItem,
+  shortcutItemSchema,
+} from "src/utils/component/analysis/shortcutBar";
+import {
+  computed,
+  ref,
+  watch,
+} from "vue";
 import type { RouteLocationRaw } from "vue-router";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import {
   type AnalysisPageTranslations,
   analysisPageTranslations,
 } from "./AnalysisPage.i18n";
+import type { CheckpointTimelineReasonPayload } from "./CheckpointTimeline.types";
+import CheckpointTimeline from "./CheckpointTimeline.vue";
 import ConsensusTab from "./consensusTab/ConsensusTab.vue";
 import DivisiveTab from "./divisivenessTab/DivisiveTab.vue";
 import MeTab from "./meTab/MeTab.vue";
@@ -161,28 +297,37 @@ import SurveyTab from "./surveyTab/SurveyTab.vue";
 const props = withDefaults(
   defineProps<{
     participantCount: number;
+    opinionCount: number;
+    voteCount: number;
     conversationSlugId: string;
+    conversationAuthorUsername: string;
+    conversationOrganizationName: string;
     analysisQuery: UseQueryReturnType<AnalysisData, Error>;
     surveyQuery: UseQueryReturnType<SurveyResultsAggregatedResponse, Error>;
     hasSurvey: boolean;
     surveyGate?: SurveyGateSummary;
     showReportButton?: boolean;
+    isActive?: boolean;
+    isLiveAnalysisPaused?: boolean;
     navigateToDiscoverTab: () => void;
     conversationScrollContext: ConversationScrollContext;
   }>(),
   {
     showReportButton: true,
+    isActive: true,
+    isLiveAnalysisPaused: false,
     surveyGate: undefined,
   }
 );
 
-type AnalysisData = {
-  consensusAgree: AnalysisOpinionItem[];
-  consensusDisagree: AnalysisOpinionItem[];
-  controversial: AnalysisOpinionItem[];
-  polisClusters: Partial<PolisClusters>;
-  hasVotedOnAllAvailableOpinions?: boolean;
-};
+const emit = defineEmits<{
+  "update:actionBarSnapshot": [snapshot: AnalysisConversationViewSnapshot | undefined];
+  "update:liveAnalysisPaused": [paused: boolean];
+}>();
+
+type AnalysisViewOption = NonNullable<
+  AnalysisData["analysisViewState"]
+>["options"][number];
 
 const { t } = useComponentI18n<AnalysisPageTranslations>(
   analysisPageTranslations
@@ -192,6 +337,10 @@ const { t: tShortcut } = useComponentI18n<ShortcutBarTranslations>(
 );
 
 const route = useRoute();
+const router = useRouter();
+const showAnalysisViewDrawer = ref(false);
+const pausedLiveAnalysisData = ref<AnalysisData | undefined>();
+const pausedLiveCheckpoints = ref<AnalysisCheckpoint[] | undefined>();
 
 const { currentTab, handleSameTabClick } = useTabNavigation({
   schema: shortcutItemSchema,
@@ -209,10 +358,14 @@ watch(
 );
 
 function getPolisTabRoute(item: string): RouteLocationRaw {
+  const query = { ...route.query };
   if (item === "Summary") {
-    return { path: route.path };
+    delete query.tab;
+    return { path: route.path, query };
   }
-  return { path: route.path, query: { tab: item } };
+
+  query.tab = item;
+  return { path: route.path, query };
 }
 
 const polisTabItems = computed<ShortcutItem[]>(() => [
@@ -254,8 +407,352 @@ function onTabChange(value: string): void {
 // Use the passed-in analysis query instead of creating our own
 const analysisQuery = props.analysisQuery;
 
+const isLivePaused = computed(
+  () => props.isLiveAnalysisPaused && pausedLiveAnalysisData.value !== undefined
+);
+
+const activeAnalysisData = computed<AnalysisData | undefined>(() => {
+  if (isLivePaused.value) {
+    return pausedLiveAnalysisData.value;
+  }
+
+  return analysisQuery.data.value;
+});
+
+watch(
+  () => activeAnalysisData.value?.conversationViewSnapshot,
+  (snapshot) => {
+    emit("update:actionBarSnapshot", snapshot);
+  },
+  { immediate: true }
+);
+
+const analysisParticipantCount = computed(
+  () =>
+    activeAnalysisData.value?.conversationViewSnapshot?.participantCount ??
+    props.participantCount
+);
+
+const newStatementCount = computed(() => {
+  const snapshotOpinionCount =
+    activeAnalysisData.value?.conversationViewSnapshot?.opinionCount;
+  if (snapshotOpinionCount === undefined) {
+    return 0;
+  }
+
+  return Math.max(props.opinionCount - snapshotOpinionCount, 0);
+});
+
+const newStatementsMessage = computed(() =>
+  isLiveAnalysis.value
+    ? t("newStatementsNotInAnalysis", { count: newStatementCount.value })
+    : t("newStatementsSinceCheckpoint", { count: newStatementCount.value })
+);
+
+const newStatementsActionLabel = computed(() =>
+  isLiveAnalysis.value ? t("viewNewStatements") : t("viewLatestAnalysis")
+);
+
+const checkpointsQuery = useAnalysisCheckpointsQuery({
+  conversationSlugId: computed(() => props.conversationSlugId),
+  enabled: computed(
+    () => props.isActive && !isLivePaused.value && props.conversationSlugId !== ""
+  ),
+});
+
+const selectedRouteAnalysisView = computed(() =>
+  parseAnalysisViewQuery({ query: route.query })
+);
+
+const selectedRouteCheckpoint = computed(() =>
+  parseCheckpointQuery({ query: route.query })
+);
+
+const loadedAnalysisCheckpoints = computed<AnalysisCheckpoint[]>(
+  () => pausedLiveCheckpoints.value ?? checkpointsQuery.data.value ?? []
+);
+
+const analysisCheckpoints = computed<AnalysisCheckpoint[]>(() => {
+  if (!isLiveAnalysis.value) {
+    return loadedAnalysisCheckpoints.value;
+  }
+
+  const liveViewSnapshotId = activeAnalysisData.value?.conversationViewSnapshotId;
+  if (liveViewSnapshotId === undefined) {
+    return loadedAnalysisCheckpoints.value;
+  }
+
+  return loadedAnalysisCheckpoints.value.filter(
+    (checkpoint) => checkpoint.conversationViewSnapshotId <= liveViewSnapshotId
+  );
+});
+
+const latestCheckpoint = computed(() => {
+  if (analysisCheckpoints.value.length === 0) {
+    return undefined;
+  }
+
+  return analysisCheckpoints.value[analysisCheckpoints.value.length - 1];
+});
+
+const isLiveAnalysis = computed(
+  () => selectedRouteCheckpoint.value === undefined
+);
+
+const isLatestCheckpointLive = computed(() => {
+  const checkpoint = latestCheckpoint.value;
+  const liveViewSnapshotId = activeAnalysisData.value?.conversationViewSnapshotId;
+  if (checkpoint === undefined || liveViewSnapshotId === undefined) {
+    return false;
+  }
+
+  return (
+    isLiveAnalysis.value &&
+    checkpoint.conversationViewSnapshotId === liveViewSnapshotId
+  );
+});
+
+const showAnalysisPlaybackButton = computed(
+  () => latestCheckpoint.value !== undefined
+);
+
+const analysisPlaybackIcon = computed(() =>
+  isLiveAnalysis.value && !isLivePaused.value
+    ? "mdi-pause-circle-outline"
+    : "mdi-play-circle-outline"
+);
+
+const analysisPlaybackLabel = computed(() =>
+  isLiveAnalysis.value && !isLivePaused.value
+    ? t("pauseAtLatestCheckpoint")
+    : t("returnToLiveAnalysis")
+);
+
+const analysisViewState = computed(
+  () => activeAnalysisData.value?.analysisViewState
+);
+
+const analysisFrameKey = computed(() => {
+  const data = activeAnalysisData.value;
+  if (data === undefined) {
+    return undefined;
+  }
+
+  return [
+    data.conversationViewSnapshotId ?? "live",
+    data.analysisSnapshotId ?? "none",
+    data.analysisViewState?.resolvedCandidateId ?? "none",
+  ].join(":");
+});
+
+const analysisViewOptions = computed(
+  () => analysisViewState.value?.options ?? []
+);
+
+const selectedAnalysisView = computed(
+  () =>
+    selectedRouteAnalysisView.value ??
+    analysisViewState.value?.requestedView ??
+    "facilitator_default"
+);
+
+const selectedAnalysisViewLabel = computed(() =>
+  getAnalysisViewLabel(selectedAnalysisView.value)
+);
+
+function formatCheckpointReason(
+  reason: CheckpointTimelineReasonPayload
+): string | undefined {
+  switch (reason.reason) {
+    case "first_displayable_analysis":
+      return t("checkpointReasonFirstDisplayableAnalysis");
+    case "first_group_count_available":
+      return undefined;
+    case "default_group_count_changed":
+      return reason.groupCount === null
+        ? undefined
+        : t("groupsLabel", { count: reason.groupCount });
+    case "major_participation_milestone":
+      return reason.participantCount === null
+        ? undefined
+        : t("checkpointReasonParticipantCount", {
+            count: String(reason.participantCount),
+          });
+    case "major_vote_milestone":
+      return reason.voteCount === null
+        ? undefined
+        : t("checkpointReasonVoteCount", { count: String(reason.voteCount) });
+    case "conversation_closed":
+      return t("checkpointReasonConversationClosed");
+    case "conversation_reopened":
+      return t("checkpointReasonConversationReopened");
+  }
+}
+
+watch(
+  () => analysisViewState.value,
+  async (state) => {
+    if (state?.resolvedBy !== "locked_fallback") {
+      return;
+    }
+
+    if (selectedRouteAnalysisView.value === state.canonicalView) {
+      return;
+    }
+
+    await router.replace({
+      path: route.path,
+      query: getUpdatedAnalysisRouteQuery({
+        query: route.query,
+        analysisView: state.canonicalView,
+        checkpointViewSnapshotId: selectedRouteCheckpoint.value,
+      }),
+    });
+  },
+  { immediate: true }
+);
+
+const reportRouteQuery = computed(() =>
+  getUpdatedAnalysisRouteQuery({
+    query: {},
+    analysisView: selectedAnalysisView.value,
+    checkpointViewSnapshotId: selectedRouteCheckpoint.value,
+  })
+);
+
+const analysisEmptyReason = computed(
+  () => activeAnalysisData.value?.emptyReason
+);
+
+watch(
+  () => props.isLiveAnalysisPaused,
+  (isPaused) => {
+    if (isPaused) {
+      return;
+    }
+
+    pausedLiveAnalysisData.value = undefined;
+    pausedLiveCheckpoints.value = undefined;
+  }
+);
+
+watch(
+  () => ({
+    analysisView: selectedAnalysisView.value,
+    checkpoint: selectedRouteCheckpoint.value,
+    conversationSlugId: props.conversationSlugId,
+  }),
+  () => {
+    clearLivePause();
+  }
+);
+
+function getAnalysisViewLabel(view: AnalysisView): string {
+  switch (view) {
+    case "facilitator_default":
+      return t("facilitatorDefault");
+    case "system_default":
+      return t("agoraDefault");
+    case "2":
+    case "3":
+    case "4":
+    case "5":
+    case "6":
+      return t("groupsLabel", { count: view });
+  }
+}
+
+function getAnalysisViewCaption(option: AnalysisViewOption): string | undefined {
+  if (option.reason !== undefined) {
+    return option.reason;
+  }
+
+  if (["2", "3", "4", "5", "6"].includes(option.view)) {
+    return undefined;
+  }
+
+  return t("availableOption");
+}
+
+async function handleAnalysisViewSelect(option: AnalysisViewOption): Promise<void> {
+  if (!option.enabled) {
+    return;
+  }
+
+  showAnalysisViewDrawer.value = false;
+  await router.replace({
+    path: route.path,
+    query: getUpdatedAnalysisRouteQuery({
+      query: route.query,
+      analysisView: option.view,
+      checkpointViewSnapshotId: selectedRouteCheckpoint.value,
+    }),
+  });
+}
+
+async function setCheckpointRoute(
+  checkpointViewSnapshotId: number | undefined
+): Promise<void> {
+  clearLivePause();
+  await router.replace({
+    path: route.path,
+    query: getUpdatedAnalysisRouteQuery({
+      query: route.query,
+      analysisView: selectedAnalysisView.value,
+      checkpointViewSnapshotId,
+    }),
+  });
+}
+
+async function goLive(): Promise<void> {
+  await setCheckpointRoute(undefined);
+}
+
+async function toggleAnalysisPlayback(): Promise<void> {
+  if (isLivePaused.value) {
+    clearLivePause();
+    return;
+  }
+
+  if (!isLiveAnalysis.value) {
+    await goLive();
+    return;
+  }
+
+  pauseLiveAtCurrentFrame();
+}
+
+function pauseLiveAtCurrentFrame(): void {
+  const data = analysisQuery.data.value;
+  if (data === undefined) {
+    return;
+  }
+
+  pausedLiveAnalysisData.value = data;
+  pausedLiveCheckpoints.value = analysisCheckpoints.value;
+  emit("update:liveAnalysisPaused", true);
+}
+
+function clearLivePause(): void {
+  pausedLiveAnalysisData.value = undefined;
+  pausedLiveCheckpoints.value = undefined;
+
+  if (props.isLiveAnalysisPaused) {
+    emit("update:liveAnalysisPaused", false);
+  }
+}
+
+async function handleNewStatementsClick(): Promise<void> {
+  if (!isLiveAnalysis.value) {
+    await goLive();
+    return;
+  }
+
+  props.navigateToDiscoverTab();
+}
+
 const polisClusters = computed<Partial<PolisClusters>>(
-  () => analysisQuery.data.value?.polisClusters ?? {}
+  () => activeAnalysisData.value?.polisClusters ?? {}
 );
 
 // Extract only cluster labels for optimal performance (300 bytes instead of 300KB)
@@ -273,17 +770,17 @@ const clusterLabels = computed(() => {
 // Full ranked lists — already sorted by the backend (ga_agree DESC / ga_disagree DESC).
 // ConsensusTab handles the GA > 0.5 threshold filter and "load more" internally.
 const agreementItems = computed(
-  () => analysisQuery.data.value?.consensusAgree ?? []
+  () => activeAnalysisData.value?.consensusAgree ?? []
 );
 
 const disagreementItems = computed(
-  () => analysisQuery.data.value?.consensusDisagree ?? []
+  () => activeAnalysisData.value?.consensusDisagree ?? []
 );
 
 // Only show opinions where the math pipeline has run (divisiveScore > 0).
 // Pre-math opinions default to divisiveScore=0 and have no meaningful divisiveness signal.
 const controversialItems = computed(() =>
-  (analysisQuery.data.value?.controversial ?? []).filter(
+  (activeAnalysisData.value?.controversial ?? []).filter(
     (item) => item.divisiveScore > 0
   )
 );
@@ -321,10 +818,19 @@ const asyncStateConfig = {
   },
 };
 
+async function refreshCheckpoints(): Promise<void> {
+  if (isLivePaused.value) {
+    return;
+  }
+
+  await checkpointsQuery.refetch();
+}
+
 defineExpose({
   isLoading: computed(
     () => analysisQuery.isPending.value || analysisQuery.isRefetching.value
   ),
+  refreshCheckpoints,
 });
 </script>
 
@@ -342,7 +848,7 @@ defineExpose({
 .flexStyle {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 0.85rem;
 }
 
 .tabComponent {
@@ -355,6 +861,89 @@ defineExpose({
   align-items: flex-start;
   justify-content: space-between;
   gap: 2rem;
+}
+
+.analysis-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.analysis-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.analysis-view-selector {
+  min-width: 8rem;
+  max-width: 14rem;
+}
+
+.analysis-playback-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid #d8d6de;
+  border-radius: 8px;
+  background: white;
+  color: #6d6a74;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: #f5f5f7;
+  }
+}
+
+.analysis-playback-button--play {
+  border-color: #24966d;
+  color: #137a55;
+
+  &:hover,
+  &:focus-visible {
+    background: #edf8f4;
+  }
+}
+
+.new-statements-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: -1.25rem;
+  border: 1px solid #c6c4ff;
+  border-radius: 14px;
+  background: #f5f3ff;
+  color: #4330a0;
+  padding: 0.6rem 0.8rem;
+}
+
+.new-statements-banner__text {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.new-statements-banner__button {
+  color: #4330a0;
+}
+
+.analysis-empty-reason {
+  border: 1px solid #f2d27a;
+  border-radius: 12px;
+  background: #fff8df;
+  color: #5c4815;
+  padding: 0.75rem 1rem;
 }
 
 .report-button {
@@ -379,5 +968,48 @@ defineExpose({
   @media (max-width: $breakpoint-xs-max) {
     display: none;
   }
+}
+
+.analysis-view-drawer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.analysis-view-drawer-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  border: 1px solid #e9e9f1;
+  border-radius: 14px;
+  background: white;
+  color: #333238;
+  padding: 0.75rem;
+  text-align: start;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+.analysis-view-drawer-option--selected {
+  border-color: #6b4eff;
+  color: #6b4eff;
+}
+
+.analysis-view-drawer-option__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.analysis-view-drawer-option__caption {
+  color: #6d6a74;
+  font-size: 0.8rem;
+  line-height: 1.3;
 }
 </style>

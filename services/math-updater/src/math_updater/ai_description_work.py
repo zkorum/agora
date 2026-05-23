@@ -45,6 +45,7 @@ from math_updater.generated_models import (
     OpinionGroupOpinionStats,
     OpinionGroupVariant,
     PremiumFeatureEntitlement,
+    RealtimeEventOutbox,
 )
 from math_updater.generated_models import PremiumFeature as PremiumFeatureEnum
 from math_updater.generated_shared_types import SUPPORTED_DISPLAY_LANGUAGE_CODES
@@ -873,7 +874,55 @@ def _activate_display_safe_view_snapshots(
         .values(activated_at=func.now())
         .returning(ConversationViewSnapshot.id)
     ).all()
-    return [row.id for row in rows]
+    activated_view_snapshot_ids = [row.id for row in rows]
+    _queue_conversation_analysis_updated_events_for_view_snapshots(
+        session,
+        conversation_view_snapshot_ids=activated_view_snapshot_ids,
+    )
+    return activated_view_snapshot_ids
+
+
+def _queue_conversation_analysis_updated_events_for_view_snapshots(
+    session: Session,
+    *,
+    conversation_view_snapshot_ids: list[int],
+) -> None:
+    if not conversation_view_snapshot_ids:
+        return
+
+    rows = session.execute(
+        select(
+            Conversation.slug_id,
+            ConversationViewSnapshot.id,
+            ConversationViewSnapshot.analysis_snapshot_id,
+        )
+        .join(Conversation, Conversation.id == ConversationViewSnapshot.conversation_id)
+        .where(
+            and_(
+                ConversationViewSnapshot.id.in_(sorted(set(conversation_view_snapshot_ids))),
+                ConversationViewSnapshot.activated_at.is_not(None),
+                ConversationViewSnapshot.analysis_snapshot_id.is_not(None),
+            )
+        )
+    ).all()
+    timestamp = int(datetime.now(UTC).timestamp() * 1000)
+    values = [
+        {
+            "event_type": "conversation_analysis_updated",
+            "payload": {
+                "conversationSlugId": row.slug_id,
+                "conversationViewSnapshotId": row.id,
+                "analysisSnapshotId": row.analysis_snapshot_id,
+                "timestamp": timestamp,
+            },
+        }
+        for row in rows
+        if row.analysis_snapshot_id is not None
+    ]
+    if not values:
+        return
+
+    session.execute(sqlalchemy_insert(RealtimeEventOutbox).values(values))
 
 
 def _fetch_pending_locale_status_rows(

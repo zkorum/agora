@@ -1,5 +1,7 @@
+import { useQueryClient } from "@tanstack/vue-query";
 import type {
   SSEConnectedData,
+  SSEConversationAnalysisUpdatedData,
   SSEHeartbeatData,
   SSENotificationData,
   SSEPopularConversationData,
@@ -9,6 +11,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useNotificationStore } from "src/stores/notification";
 import { useCommonApi } from "src/utils/api/common";
+import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { processEnv } from "src/utils/processEnv";
 import { onUnmounted, ref, watch } from "vue";
@@ -41,6 +44,7 @@ export function useRealtimeSSE() {
   const notificationStore = useNotificationStore();
   const homeFeedStore = useHomeFeedStore();
   const authStore = useAuthenticationStore();
+  const queryClient = useQueryClient();
 
   const isConnected = ref(false);
   const isConnecting = ref(false);
@@ -51,6 +55,7 @@ export function useRealtimeSSE() {
   let connectionId = 0;
   let offlineTimer: ReturnType<typeof setTimeout> | null = null;
   let heartbeatWatchdog: ReturnType<typeof setTimeout> | null = null;
+  const latestAnalysisEventTimestampByConversationSlugId = new Map<string, number>();
 
   async function connect() {
     if (isConnecting.value || isConnected.value) {
@@ -216,6 +221,21 @@ export function useRealtimeSSE() {
           );
           break;
         }
+        case "conversation_analysis_updated": {
+          const data: SSEConversationAnalysisUpdatedData = JSON.parse(rawData);
+          updateConversationCountsFromAnalysisEvent(data);
+          void queryClient.invalidateQueries({
+            queryKey: ["conversation", data.conversationSlugId],
+            refetchType: "none",
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ["analysis", data.conversationSlugId],
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ["analysisCheckpoints", data.conversationSlugId],
+          });
+          break;
+        }
         case "heartbeat": {
           const data: SSEHeartbeatData = JSON.parse(rawData);
           lastHeartbeat.value = data.timestamp;
@@ -228,6 +248,47 @@ export function useRealtimeSSE() {
     } catch {
       return;
     }
+  }
+
+  function updateConversationCountsFromAnalysisEvent(
+    data: SSEConversationAnalysisUpdatedData
+  ): void {
+    const previousTimestamp = latestAnalysisEventTimestampByConversationSlugId.get(
+      data.conversationSlugId
+    );
+    if (previousTimestamp !== undefined && previousTimestamp > data.timestamp) {
+      return;
+    }
+
+    latestAnalysisEventTimestampByConversationSlugId.set(
+      data.conversationSlugId,
+      data.timestamp
+    );
+
+    updateConversationQueryCache({
+      queryClient,
+      conversationSlugId: data.conversationSlugId,
+      updateConversation: (conversation) => ({
+        ...conversation,
+        metadata: {
+          ...conversation.metadata,
+          opinionCount: data.opinionCount ?? conversation.metadata.opinionCount,
+          voteCount: data.voteCount ?? conversation.metadata.voteCount,
+          participantCount:
+            data.participantCount ?? conversation.metadata.participantCount,
+          totalOpinionCount:
+            data.totalOpinionCount ?? conversation.metadata.totalOpinionCount,
+          totalVoteCount: data.totalVoteCount ?? conversation.metadata.totalVoteCount,
+          totalParticipantCount:
+            data.totalParticipantCount ?? conversation.metadata.totalParticipantCount,
+          moderatedOpinionCount:
+            data.moderatedOpinionCount ?? conversation.metadata.moderatedOpinionCount,
+          hiddenOpinionCount:
+            data.hiddenOpinionCount ?? conversation.metadata.hiddenOpinionCount,
+          isClosed: data.isClosed ?? conversation.metadata.isClosed,
+        },
+      }),
+    });
   }
 
   function resetHeartbeatWatchdog() {

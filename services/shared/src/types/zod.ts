@@ -49,6 +49,15 @@ export const zodParticipationMode = z.enum([
     "guest",
 ]);
 export const zodConversationType = z.enum(["polis", "maxdiff"]);
+export const zodConversationViewSnapshotCheckpointReason = z.enum([
+    "first_displayable_analysis",
+    "first_group_count_available",
+    "default_group_count_changed",
+    "major_participation_milestone",
+    "major_vote_milestone",
+    "conversation_closed",
+    "conversation_reopened",
+]);
 export const zodPremiumFeature = z.enum([
     "survey",
     "prioritization",
@@ -862,6 +871,22 @@ export const zodConversationMetadataWithId = z
     })
     .strict();
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
+export const zodAnalysisView = z.enum([
+    "facilitator_default",
+    "system_default",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+]);
+export const zodAnalysisViewOptionStatus = z.enum([
+    "recommended",
+    "available",
+    "discouraged",
+    "unavailable",
+    "locked",
+]);
 
 // For API input validation - validates both HTML string length AND plain text character count
 export const zodOpinionContentInput = z
@@ -1563,6 +1588,10 @@ export type ExportRouteTarget = z.infer<typeof zodExportRouteTarget>;
 export type ImportRouteTarget = z.infer<typeof zodImportRouteTarget>;
 export type ClusterStats = z.infer<typeof zodClusterStats>;
 export type PolisKey = z.infer<typeof zodPolisKey>;
+export type AnalysisView = z.infer<typeof zodAnalysisView>;
+export type AnalysisViewOptionStatus = z.infer<
+    typeof zodAnalysisViewOptionStatus
+>;
 export type SupportedCountryCallingCode = z.infer<
     typeof zodSupportedCountryCallingCode
 >;
@@ -1623,6 +1652,9 @@ export type ProofData = z.infer<typeof zodProofData>;
 export type ZKProof = z.infer<typeof zodZKProof>;
 export type StatusResponse = z.infer<typeof zodStatusResponse>;
 export type ConversationType = z.infer<typeof zodConversationType>;
+export type ConversationViewSnapshotCheckpointReason = z.infer<
+    typeof zodConversationViewSnapshotCheckpointReason
+>;
 export type PremiumFeature = z.infer<typeof zodPremiumFeature>;
 export type GrantablePremiumFeature = z.infer<
     typeof zodGrantablePremiumFeature

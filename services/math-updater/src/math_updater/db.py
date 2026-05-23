@@ -45,6 +45,7 @@ from math_updater.generated_models import (
     OpinionModeration,
     OpinionModerationAction,
     PremiumFeatureEntitlement,
+    RealtimeEventOutbox,
     SurveyAggregateOption,
     SurveyAggregateOwnerCurrent,
     SurveyAggregateQuestion,
@@ -1669,6 +1670,7 @@ def _fetch_previous_selected_view_snapshots_by_pair(
                     ConversationViewSnapshot.opinion_group_spec_id,
                 ).in_(pairs),
                 ConversationViewSnapshot.id.not_in(current_view_snapshot_ids),
+                ConversationViewSnapshot.activated_at.is_not(None),
                 AnalysisSnapshotResult.outcome == AnalysisResultOutcomeEnum.success,
                 OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
                 OpinionGroupCandidateAssessment.hidden_reason.is_(None),
@@ -1799,6 +1801,11 @@ def _persist_conversation_view_snapshots(
         (row.conversation_id, row.opinion_group_spec_id): row.id for row in view_rows
     }
 
+    _queue_conversation_analysis_updated_events_for_view_snapshots(
+        session,
+        conversation_view_snapshot_ids=[row.id for row in view_rows],
+    )
+
     return {
         pair: _PersistedConversationViewSnapshot(
             view_snapshot_id=view_snapshot_id_by_pair[pair],
@@ -1812,6 +1819,67 @@ def _persist_conversation_view_snapshots(
         )
         for pair, selected in selected_by_pair.items()
     }, current_options_by_pair
+
+
+def _queue_conversation_analysis_updated_events_for_view_snapshots(
+    session: Session,
+    *,
+    conversation_view_snapshot_ids: list[int],
+) -> None:
+    if not conversation_view_snapshot_ids:
+        return
+
+    rows = session.execute(
+        select(
+            Conversation.slug_id,
+            ConversationViewSnapshot.id,
+            ConversationViewSnapshot.analysis_snapshot_id,
+            ConversationViewSnapshot.opinion_count,
+            ConversationViewSnapshot.vote_count,
+            ConversationViewSnapshot.participant_count,
+            ConversationViewSnapshot.total_opinion_count,
+            ConversationViewSnapshot.total_vote_count,
+            ConversationViewSnapshot.total_participant_count,
+            ConversationViewSnapshot.moderated_opinion_count,
+            ConversationViewSnapshot.hidden_opinion_count,
+            ConversationViewSnapshot.is_closed,
+        )
+        .join(Conversation, Conversation.id == ConversationViewSnapshot.conversation_id)
+        .where(
+            and_(
+                ConversationViewSnapshot.id.in_(sorted(set(conversation_view_snapshot_ids))),
+                ConversationViewSnapshot.activated_at.is_not(None),
+                ConversationViewSnapshot.analysis_snapshot_id.is_not(None),
+            )
+        )
+    ).all()
+    timestamp = int(datetime.now(UTC).timestamp() * 1000)
+    values = [
+        {
+            "event_type": "conversation_analysis_updated",
+                "payload": {
+                    "conversationSlugId": row.slug_id,
+                    "conversationViewSnapshotId": row.id,
+                    "analysisSnapshotId": row.analysis_snapshot_id,
+                    "opinionCount": row.opinion_count,
+                    "voteCount": row.vote_count,
+                    "participantCount": row.participant_count,
+                    "totalOpinionCount": row.total_opinion_count,
+                    "totalVoteCount": row.total_vote_count,
+                    "totalParticipantCount": row.total_participant_count,
+                    "moderatedOpinionCount": row.moderated_opinion_count,
+                    "hiddenOpinionCount": row.hidden_opinion_count,
+                    "isClosed": row.is_closed,
+                    "timestamp": timestamp,
+                },
+        }
+        for row in rows
+        if row.analysis_snapshot_id is not None
+    ]
+    if not values:
+        return
+
+    session.execute(sqlalchemy_insert(RealtimeEventOutbox).values(values))
 
 
 def _create_ai_description_locale_status_rows(
@@ -2026,12 +2094,6 @@ def _persist_checkpoint_reasons(
         for row in existing_rows
         if row.reason == ConversationViewSnapshotCheckpointReasonEnum.major_vote_milestone
     }
-    existing_closed_pairs = {
-        (row.conversation_id, row.opinion_group_spec_id)
-        for row in existing_rows
-        if row.reason == ConversationViewSnapshotCheckpointReasonEnum.conversation_closed
-    }
-
     previous_selected_by_pair = _fetch_previous_selected_view_snapshots_by_pair(
         session,
         pairs=pairs,
@@ -2127,13 +2189,25 @@ def _persist_checkpoint_reasons(
                 )
             )
 
-        if persisted.conversation_state.is_closed and pair not in existing_closed_pairs:
+        lifecycle_reason: ConversationViewSnapshotCheckpointReasonEnum | None = None
+        if previous_selected is None and persisted.conversation_state.is_closed:
+            lifecycle_reason = ConversationViewSnapshotCheckpointReasonEnum.conversation_closed
+        elif previous_selected is not None and (
+            previous_selected.is_closed != persisted.conversation_state.is_closed
+        ):
+            lifecycle_reason = (
+                ConversationViewSnapshotCheckpointReasonEnum.conversation_closed
+                if persisted.conversation_state.is_closed
+                else ConversationViewSnapshotCheckpointReasonEnum.conversation_reopened
+            )
+
+        if lifecycle_reason is not None:
             reason_values.append(
                 _checkpoint_reason_insert_value(
                     conversation_view_snapshot_id=persisted.view_snapshot_id,
                     conversation_id=conversation_id,
                     opinion_group_spec_id=opinion_group_spec_id,
-                    reason=ConversationViewSnapshotCheckpointReasonEnum.conversation_closed,
+                    reason=lifecycle_reason,
                 )
             )
 

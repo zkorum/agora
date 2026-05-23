@@ -26,7 +26,7 @@
               :updated-at="commentItem.moderation.updatedAt"
             />
 
-            <div v-if="canModerateConversation" class="moderationEditButton">
+            <div v-if="showEditButton" class="moderationEditButton">
               <RouterLink
                 :to="{
                   name: '/moderate/conversation/[conversationSlugId]/opinion/[opinionSlugId]/',
@@ -84,6 +84,10 @@ const canModerateConversation = computed(() => {
   ) return true;
   return false;
 });
+
+const showEditButton = computed(
+  () => props.postSlugId !== "" && canModerateConversation.value
+);
 
 const { t } = useComponentI18n<CommentModerationTranslations>(
   commentModerationTranslations

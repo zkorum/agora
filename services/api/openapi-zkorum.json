@@ -3962,6 +3962,23 @@
                                     "conversationSlugId": {
                                         "type": "string",
                                         "maxLength": 10
+                                    },
+                                    "analysisView": {
+                                        "type": "string",
+                                        "enum": [
+                                            "2",
+                                            "3",
+                                            "4",
+                                            "5",
+                                            "6",
+                                            "facilitator_default",
+                                            "system_default"
+                                        ]
+                                    },
+                                    "checkpointViewSnapshotId": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": true,
+                                        "maximum": 9007199254740991
                                     }
                                 },
                                 "required": [
@@ -3984,6 +4001,225 @@
                                             "type": "integer",
                                             "minimum": 0,
                                             "maximum": 9007199254740991
+                                        },
+                                        "conversationViewSnapshotId": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": true,
+                                            "maximum": 9007199254740991
+                                        },
+                                        "analysisSnapshotId": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": true,
+                                            "maximum": 9007199254740991
+                                        },
+                                        "conversationViewSnapshot": {
+                                            "type": "object",
+                                            "properties": {
+                                                "conversationViewSnapshotId": {
+                                                    "type": "integer",
+                                                    "exclusiveMinimum": true,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "analysisSnapshotId": {
+                                                    "type": "integer",
+                                                    "exclusiveMinimum": true,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "opinionCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "voteCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "participantCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "totalOpinionCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "totalVoteCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "totalParticipantCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "moderatedOpinionCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "hiddenOpinionCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "isClosed": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "conversationViewSnapshotId",
+                                                "analysisSnapshotId",
+                                                "opinionCount",
+                                                "voteCount",
+                                                "participantCount",
+                                                "totalOpinionCount",
+                                                "totalVoteCount",
+                                                "totalParticipantCount",
+                                                "moderatedOpinionCount",
+                                                "hiddenOpinionCount",
+                                                "isClosed"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        "emptyReason": {
+                                            "type": "string"
+                                        },
+                                        "analysisViewState": {
+                                            "type": "object",
+                                            "properties": {
+                                                "requestedView": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "2",
+                                                        "3",
+                                                        "4",
+                                                        "5",
+                                                        "6",
+                                                        "facilitator_default",
+                                                        "system_default"
+                                                    ]
+                                                },
+                                                "canonicalView": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "2",
+                                                        "3",
+                                                        "4",
+                                                        "5",
+                                                        "6",
+                                                        "facilitator_default",
+                                                        "system_default"
+                                                    ]
+                                                },
+                                                "resolvedGroupCount": {
+                                                    "nullable": true,
+                                                    "type": "integer",
+                                                    "minimum": 2,
+                                                    "maximum": 6
+                                                },
+                                                "resolvedCandidateId": {
+                                                    "nullable": true,
+                                                    "type": "integer",
+                                                    "exclusiveMinimum": true,
+                                                    "maximum": 9007199254740991
+                                                },
+                                                "resolvedBy": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "system_default",
+                                                        "facilitator_preference",
+                                                        "facilitator_fallback",
+                                                        "fixed_count",
+                                                        "locked_fallback",
+                                                        "unavailable_fixed_count",
+                                                        "no_analysis"
+                                                    ]
+                                                },
+                                                "variantsEnabled": {
+                                                    "type": "boolean"
+                                                },
+                                                "options": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "view": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "2",
+                                                                    "3",
+                                                                    "4",
+                                                                    "5",
+                                                                    "6",
+                                                                    "facilitator_default",
+                                                                    "system_default"
+                                                                ]
+                                                            },
+                                                            "enabled": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "recommended",
+                                                                    "available",
+                                                                    "discouraged",
+                                                                    "unavailable",
+                                                                    "locked"
+                                                                ]
+                                                            },
+                                                            "reason": {
+                                                                "type": "string"
+                                                            },
+                                                            "groupCount": {
+                                                                "type": "integer",
+                                                                "minimum": 2,
+                                                                "maximum": 6
+                                                            },
+                                                            "candidateId": {
+                                                                "type": "integer",
+                                                                "exclusiveMinimum": true,
+                                                                "maximum": 9007199254740991
+                                                            },
+                                                            "selectionScore": {
+                                                                "nullable": true,
+                                                                "type": "number"
+                                                            },
+                                                            "resolvesToView": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "2",
+                                                                    "3",
+                                                                    "4",
+                                                                    "5",
+                                                                    "6",
+                                                                    "facilitator_default",
+                                                                    "system_default"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "view",
+                                                            "enabled",
+                                                            "status"
+                                                        ],
+                                                        "additionalProperties": false
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "requestedView",
+                                                "canonicalView",
+                                                "resolvedGroupCount",
+                                                "resolvedCandidateId",
+                                                "resolvedBy",
+                                                "variantsEnabled",
+                                                "options"
+                                            ],
+                                            "additionalProperties": false
                                         },
                                         "consensusAgree": {
                                             "type": "array",
@@ -4840,6 +5076,151 @@
                                         "clusters"
                                     ],
                                     "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/opinion/fetch-analysis-checkpoints-by-conversation": {
+            "post": {
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "conversationSlugId": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    }
+                                },
+                                "required": [
+                                    "conversationSlugId"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "conversationViewSnapshotId": {
+                                                "type": "integer",
+                                                "exclusiveMinimum": true,
+                                                "maximum": 9007199254740991
+                                            },
+                                            "createdAt": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "activatedAt": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "opinionCount": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                            },
+                                            "voteCount": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                            },
+                                            "participantCount": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                            },
+                                            "reasons": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "reason": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "first_displayable_analysis",
+                                                                "first_group_count_available",
+                                                                "default_group_count_changed",
+                                                                "major_participation_milestone",
+                                                                "major_vote_milestone",
+                                                                "conversation_closed",
+                                                                "conversation_reopened"
+                                                            ]
+                                                        },
+                                                        "groupCount": {
+                                                            "nullable": true,
+                                                            "type": "integer",
+                                                            "minimum": 2,
+                                                            "maximum": 6
+                                                        },
+                                                        "previousGroupCount": {
+                                                            "nullable": true,
+                                                            "type": "integer",
+                                                            "minimum": 2,
+                                                            "maximum": 6
+                                                        },
+                                                        "participantCount": {
+                                                            "nullable": true,
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "participantMilestone": {
+                                                            "nullable": true,
+                                                            "type": "integer",
+                                                            "exclusiveMinimum": true,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "voteCount": {
+                                                            "nullable": true,
+                                                            "type": "integer",
+                                                            "minimum": 0,
+                                                            "maximum": 9007199254740991
+                                                        },
+                                                        "voteMilestone": {
+                                                            "nullable": true,
+                                                            "type": "integer",
+                                                            "exclusiveMinimum": true,
+                                                            "maximum": 9007199254740991
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "reason",
+                                                        "groupCount",
+                                                        "previousGroupCount",
+                                                        "participantCount",
+                                                        "participantMilestone",
+                                                        "voteCount",
+                                                        "voteMilestone"
+                                                    ],
+                                                    "additionalProperties": false
+                                                }
+                                            }
+                                        },
+                                        "required": [
+                                            "conversationViewSnapshotId",
+                                            "createdAt",
+                                            "activatedAt",
+                                            "opinionCount",
+                                            "voteCount",
+                                            "participantCount",
+                                            "reasons"
+                                        ],
+                                        "additionalProperties": false
+                                    }
                                 }
                             }
                         }

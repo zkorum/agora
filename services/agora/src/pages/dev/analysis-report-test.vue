@@ -133,6 +133,7 @@
         :conversation-slug-id="mockConversationSlugId"
         :conversation-title="mockConversationTitle"
         :author-username="mockAuthorUsername"
+        conversation-organization-name=""
         :created-at="mockCreatedAt"
         :participant-count="totalParticipantCount"
         :opinion-count="mockOpinionCount"

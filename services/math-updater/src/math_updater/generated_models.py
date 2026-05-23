@@ -89,6 +89,7 @@ class ConversationViewSnapshotCheckpointReasonEnum(StrEnum):
     major_participation_milestone = "major_participation_milestone"
     major_vote_milestone = "major_vote_milestone"
     conversation_closed = "conversation_closed"
+    conversation_reopened = "conversation_reopened"
 
 
 class ConversationViewSnapshotReasonEnum(StrEnum):
@@ -278,7 +279,6 @@ class AnalysisWorkState(Base):
     last_error_stack_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
-
 
 class ConversationContent(Base):
     __tablename__ = "conversation_content"
@@ -710,6 +710,15 @@ class PremiumFeatureEntitlement(Base):
     updated_by_user_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class RealtimeEventOutbox(Base):
+    __tablename__ = "realtime_event_outbox"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    event_type: Mapped[str] = mapped_column(String(100))
+    payload: Mapped[Any] = mapped_column(JSON(none_as_null=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class SurveyAggregateOption(Base):

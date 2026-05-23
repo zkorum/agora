@@ -310,6 +310,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dev/test-components/CheckpointTimelineTest': RouteRecordInfo<
+      '/dev/test-components/CheckpointTimelineTest',
+      '/dev/test-components/CheckpointTimelineTest',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/dev/test-components/EmbeddedBrowserWarningTest': RouteRecordInfo<
       '/dev/test-components/EmbeddedBrowserWarningTest',
       '/dev/test-components/EmbeddedBrowserWarningTest',
@@ -855,6 +862,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dev/test-components/AsyncStateHandlerTest.vue': {
       routes:
         | '/dev/test-components/AsyncStateHandlerTest'
+      views:
+        | never
+    }
+    'src/pages/dev/test-components/CheckpointTimelineTest.vue': {
+      routes:
+        | '/dev/test-components/CheckpointTimelineTest'
       views:
         | never
     }

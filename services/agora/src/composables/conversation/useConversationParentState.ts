@@ -99,6 +99,7 @@ export function useConversationParentState({
   const { invalidateUserVotes } = useInvalidateVoteQueries();
   const {
     invalidateAnalysis: invalidateAnalysisQuery,
+    invalidateAnalysisCheckpoints,
     invalidateComments,
     forceRefreshAnalysis,
   } = useInvalidateCommentQueries();
@@ -259,6 +260,7 @@ export function useConversationParentState({
         if (slugId) {
           invalidateConversation(slugId);
           invalidateAnalysisQuery(slugId);
+          invalidateAnalysisCheckpoints(slugId);
         }
       } else if (commentRouteNames.some((name) => name === newRouteName)) {
         currentTab.value = "comment";

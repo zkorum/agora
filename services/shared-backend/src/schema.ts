@@ -768,6 +768,7 @@ export const conversationViewSnapshotCheckpointReasonEnum = pgEnum(
         "major_participation_milestone",
         "major_vote_milestone",
         "conversation_closed",
+        "conversation_reopened",
     ],
 );
 
@@ -3243,6 +3244,29 @@ export const conversationViewSnapshotTable = pgTable(
 );
 
 /** @service api, math-updater */
+export const realtimeEventOutboxTable = pgTable(
+    "realtime_event_outbox",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        eventType: varchar("event_type", { length: 100 }).notNull(),
+        payload: jsonb("payload").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        index("realtime_event_outbox_created_at_idx").on(t.createdAt),
+        index("realtime_event_outbox_event_type_created_at_idx").on(
+            t.eventType,
+            t.createdAt,
+        ),
+    ],
+);
+
+/** @service api, math-updater */
 export const opinionGroupDescriptionLocaleStatusTable = pgTable(
     "opinion_group_description_locale_status",
     {
@@ -3384,6 +3408,9 @@ export const conversationViewSnapshotCheckpointReasonTable = pgTable(
         uniqueIndex("conversation_view_snapshot_checkpoint_closed_unique")
             .on(t.conversationViewSnapshotId)
             .where(sql`${t.reason} = 'conversation_closed'`),
+        uniqueIndex("conversation_view_snapshot_checkpoint_reopened_unique")
+            .on(t.conversationViewSnapshotId)
+            .where(sql`${t.reason} = 'conversation_reopened'`),
         check(
             "conversation_view_snapshot_checkpoint_reason_group_count_check",
             sql`((${t.reason} IN ('first_group_count_available', 'default_group_count_changed') AND ${t.groupCount} IS NOT NULL AND ${t.groupCount} >= 2 AND (${t.previousGroupCount} IS NULL OR ${t.previousGroupCount} >= 2)) OR (${t.reason} NOT IN ('first_group_count_available', 'default_group_count_changed') AND ${t.groupCount} IS NULL AND ${t.previousGroupCount} IS NULL))`,

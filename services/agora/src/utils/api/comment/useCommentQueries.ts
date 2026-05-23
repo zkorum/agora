@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { PolisKey } from "src/shared/types/zod";
+import type { AnalysisView, PolisKey } from "src/shared/types/zod";
 import type { OpinionItem } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
@@ -106,19 +106,32 @@ function getAnalysisStaleTime(voteCount?: number): number {
 
 export function useAnalysisQuery({
   conversationSlugId,
+  analysisView,
+  checkpointViewSnapshotId,
   voteCount,
   enabled = true,
 }: {
   conversationSlugId: MaybeRefOrGetter<string>;
+  analysisView?: MaybeRefOrGetter<AnalysisView | undefined>;
+  checkpointViewSnapshotId?: MaybeRefOrGetter<number | undefined>;
   voteCount?: MaybeRefOrGetter<number | undefined>;
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchAnalysisData } = useBackendCommentApi();
 
   return useQuery({
-    queryKey: ["analysis", computed(() => toValue(conversationSlugId))],
+    queryKey: [
+      "analysis",
+      computed(() => toValue(conversationSlugId)),
+      computed(() => toValue(analysisView)),
+      computed(() => toValue(checkpointViewSnapshotId)),
+    ],
     queryFn: () =>
-      fetchAnalysisData({ conversationSlugId: toValue(conversationSlugId) }),
+      fetchAnalysisData({
+        conversationSlugId: toValue(conversationSlugId),
+        analysisView: toValue(analysisView),
+        checkpointViewSnapshotId: toValue(checkpointViewSnapshotId),
+      }),
     enabled: computed(
       () => toValue(enabled) && toValue(conversationSlugId) !== ""
     ),
@@ -126,6 +139,32 @@ export function useAnalysisQuery({
     // Note: When votes/comments happen, markAnalysisAsStale() is called
     // This marks data as stale immediately, so next access will refetch
     retry: false, // Disable auto-retry
+  });
+}
+
+export function useAnalysisCheckpointsQuery({
+  conversationSlugId,
+  enabled = true,
+}: {
+  conversationSlugId: MaybeRefOrGetter<string>;
+  enabled?: MaybeRefOrGetter<boolean>;
+}) {
+  const { fetchAnalysisCheckpoints } = useBackendCommentApi();
+
+  return useQuery({
+    queryKey: [
+      "analysisCheckpoints",
+      computed(() => toValue(conversationSlugId)),
+    ],
+    queryFn: () =>
+      fetchAnalysisCheckpoints({
+        conversationSlugId: toValue(conversationSlugId),
+      }),
+    enabled: computed(
+      () => toValue(enabled) && toValue(conversationSlugId) !== ""
+    ),
+    staleTime: 30000,
+    retry: false,
   });
 }
 
@@ -294,6 +333,14 @@ export function useInvalidateCommentQueries() {
       void queryClient.invalidateQueries({
         queryKey: ["analysis", conversationSlugId],
       });
+      void queryClient.invalidateQueries({
+        queryKey: ["analysisCheckpoints", conversationSlugId],
+      });
+    },
+    invalidateAnalysisCheckpoints: (conversationSlugId: string) => {
+      void queryClient.invalidateQueries({
+        queryKey: ["analysisCheckpoints", conversationSlugId],
+      });
     },
     forceRefreshAnalysis: (conversationSlugId: string) => {
       // Force immediate refetch bypassing staleTime completely
@@ -301,16 +348,27 @@ export function useInvalidateCommentQueries() {
         queryKey: ["analysis", conversationSlugId],
         refetchType: "active", // Force active queries to refetch immediately
       });
+      void queryClient.invalidateQueries({
+        queryKey: ["analysisCheckpoints", conversationSlugId],
+        refetchType: "active",
+      });
 
       // Also trigger immediate refetch for any matching queries
       void queryClient.refetchQueries({
         queryKey: ["analysis", conversationSlugId],
+      });
+      void queryClient.refetchQueries({
+        queryKey: ["analysisCheckpoints", conversationSlugId],
       });
     },
     markAnalysisAsStale: (conversationSlugId: string) => {
       void queryClient.invalidateQueries({
         queryKey: ["analysis", conversationSlugId],
         refetchType: "none", // Mark as stale but don't refetch immediately
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["analysisCheckpoints", conversationSlugId],
+        refetchType: "none",
       });
     },
     markCommentsAsStale: (conversationSlugId: string) => {
@@ -326,6 +384,9 @@ export function useInvalidateCommentQueries() {
         }),
         queryClient.invalidateQueries({
           queryKey: ["analysis", conversationSlugId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["analysisCheckpoints", conversationSlugId],
         }),
       ]);
     },

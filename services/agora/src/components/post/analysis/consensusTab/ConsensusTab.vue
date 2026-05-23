@@ -52,6 +52,8 @@
             v-for="consensusItem in representativeItems"
             :key="consensusItem.opinion"
             :conversation-slug-id="props.conversationSlugId"
+            :conversation-author-username="props.conversationAuthorUsername"
+            :conversation-organization-name="props.conversationOrganizationName"
             :opinion-item="consensusItem"
             :opinion-item-for-visualizer="consensusItem"
             :cluster-labels="props.clusterLabels"
@@ -71,6 +73,8 @@
           >
             <ConsensusItem
               :conversation-slug-id="props.conversationSlugId"
+              :conversation-author-username="props.conversationAuthorUsername"
+              :conversation-organization-name="props.conversationOrganizationName"
               :opinion-item="consensusItem"
               :opinion-item-for-visualizer="consensusItem"
               :cluster-labels="props.clusterLabels"
@@ -143,6 +147,8 @@ import {
 
 const props = defineProps<{
   conversationSlugId: string;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
   direction: "agree" | "disagree";
   itemList: AnalysisOpinionItem[];
   compactMode: boolean;

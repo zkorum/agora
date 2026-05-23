@@ -63,6 +63,7 @@ All URIs are relative to *http://localhost*
 |[**apiV1OpinionCreatePost**](#apiv1opinioncreatepost) | **POST** /api/v1/opinion/create | |
 |[**apiV1OpinionDeletePost**](#apiv1opiniondeletepost) | **POST** /api/v1/opinion/delete | |
 |[**apiV1OpinionFetchAnalysisByConversationPost**](#apiv1opinionfetchanalysisbyconversationpost) | **POST** /api/v1/opinion/fetch-analysis-by-conversation | |
+|[**apiV1OpinionFetchAnalysisCheckpointsByConversationPost**](#apiv1opinionfetchanalysischeckpointsbyconversationpost) | **POST** /api/v1/opinion/fetch-analysis-checkpoints-by-conversation | |
 |[**apiV1OpinionFetchByConversationPost**](#apiv1opinionfetchbyconversationpost) | **POST** /api/v1/opinion/fetch-by-conversation | |
 |[**apiV1OpinionFetchBySlugIdListPost**](#apiv1opinionfetchbyslugidlistpost) | **POST** /api/v1/opinion/fetch-by-slug-id-list | |
 |[**apiV1OpinionFetchHiddenByConversationPost**](#apiv1opinionfetchhiddenbyconversationpost) | **POST** /api/v1/opinion/fetch-hidden-by-conversation | |
@@ -2972,7 +2973,58 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiV1OpinionFetchAnalysisByConversationPost**
-> ApiV1OpinionFetchAnalysisByConversationPost200Response apiV1OpinionFetchAnalysisByConversationPost(apiV1ModerationConversationWithdrawPostRequest)
+> ApiV1OpinionFetchAnalysisByConversationPost200Response apiV1OpinionFetchAnalysisByConversationPost(apiV1OpinionFetchAnalysisByConversationPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1OpinionFetchAnalysisByConversationPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1OpinionFetchAnalysisByConversationPostRequest: ApiV1OpinionFetchAnalysisByConversationPostRequest; //
+
+const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisByConversationPost(
+    apiV1OpinionFetchAnalysisByConversationPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1OpinionFetchAnalysisByConversationPostRequest** | **ApiV1OpinionFetchAnalysisByConversationPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1OpinionFetchAnalysisByConversationPost200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1OpinionFetchAnalysisCheckpointsByConversationPost**
+> Array<ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInner> apiV1OpinionFetchAnalysisCheckpointsByConversationPost(apiV1ModerationConversationWithdrawPostRequest)
 
 
 ### Example
@@ -2989,7 +3041,7 @@ const apiInstance = new DefaultApi(configuration);
 
 let apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest; //
 
-const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisByConversationPost(
+const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisCheckpointsByConversationPost(
     apiV1ModerationConversationWithdrawPostRequest
 );
 ```
@@ -3003,7 +3055,7 @@ const { status, data } = await apiInstance.apiV1OpinionFetchAnalysisByConversati
 
 ### Return type
 
-**ApiV1OpinionFetchAnalysisByConversationPost200Response**
+**Array<ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInner>**
 
 ### Authorization
 

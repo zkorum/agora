@@ -484,6 +484,20 @@
       "when": 1779371301097,
       "tag": "0068_right_lady_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1779484786019,
+      "tag": "0069_bumpy_shockwave",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1779495872486,
+      "tag": "0070_shallow_doorman",
+      "breakpoints": true
     }
   ]
 }

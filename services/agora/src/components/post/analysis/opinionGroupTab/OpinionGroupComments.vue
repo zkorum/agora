@@ -27,6 +27,8 @@
         v-for="comment in itemList"
         :key="comment.opinionSlugId"
         :conversation-slug-id="props.conversationSlugId"
+        :conversation-author-username="props.conversationAuthorUsername"
+        :conversation-organization-name="props.conversationOrganizationName"
         :opinion-item="comment"
         :opinion-item-for-visualizer="getModifiedOpinionItem(comment)"
         :cluster-labels="props.clusterLabels"
@@ -50,6 +52,8 @@ import OpinionGroupScopeSelector from "./OpinionGroupScopeSelector.vue";
 
 const props = defineProps<{
   conversationSlugId: string;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
   itemList: AnalysisOpinionItem[];
   currentClusterTab: PolisKey;
   clusterLabels: Partial<Record<PolisKey, string>>;

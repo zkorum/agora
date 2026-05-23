@@ -18,17 +18,6 @@
       </div>
 
       <div class="actions-container">
-        <!-- Close/Open button (author or org member) -->
-        <ZKButton
-          v-if="!compactMode && canCloseReopen"
-          button-type="icon"
-          flat
-          :text-color="isClosed ? 'positive' : 'negative'"
-          :icon="isClosed ? 'mdi-play-circle' : 'mdi-stop-circle'"
-          size="0.656rem"
-          @click.stop.prevent="handleCloseOpenClick()"
-        />
-
         <!-- Three-dot menu -->
         <ZKButton
           button-type="icon"
@@ -118,7 +107,6 @@ import { useShareActions } from "src/composables/share/useShareActions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ExternalSourceConfig, ParticipationMode } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
-import { useUserStore } from "src/stores/user";
 import type { ContentAction } from "src/utils/actions/core/types";
 import { useContentActions } from "src/utils/actions/definitions/content-actions";
 import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
@@ -131,7 +119,7 @@ import { useInvalidateFeedQuery } from "src/utils/api/post/useFeedQuery";
 import { useEmbedMode } from "src/utils/ui/embedMode";
 import { useNotify } from "src/utils/ui/notify";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import {
@@ -150,7 +138,6 @@ const props = defineProps<{
   organizationName: string;
   participationMode: ParticipationMode;
   isClosed: boolean;
-  compactMode: boolean;
   conversationTitle: string;
   conversationType: string;
   externalSourceConfig: ExternalSourceConfig | null;
@@ -169,7 +156,6 @@ const { isEmbeddedMode } = useEmbedMode();
 const postActions = useContentActions();
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
-const { profileData } = useUserStore();
 
 const { muteUser } = useBackendUserMuteApi();
 const { invalidateFeed } = useInvalidateFeedQuery();
@@ -191,24 +177,6 @@ const $q = useQuasar();
 const notify = useNotify();
 const { getEmbedUrl, getConversationUrl } = useConversationUrl();
 const shareActions = useShareActions();
-
-// Check if current user can close/reopen this post
-// (post author OR member of the post's organization)
-const canCloseReopen = computed(() => {
-  // Post author can always close/reopen
-  if (profileData.userName === props.authorUsername) {
-    return true;
-  }
-
-  // Organization members can close/reopen organization posts
-  if (props.organizationName) {
-    return profileData.organizationList.some(
-      (org) => org.name === props.organizationName
-    );
-  }
-
-  return false;
-});
 
 function onLoginConfirmationOk() {
   setReportIntention("");
@@ -356,6 +324,13 @@ function clickedMoreIcon() {
       exportConversationCallback,
       shareCallback,
       syncGitHubCallback: showSyncGitHub ? syncGitHubCallback : null,
+      openConversationCallback: () => {
+        showReopenDialog.value = true;
+      },
+      closeConversationCallback: () => {
+        showCloseDialog.value = true;
+      },
+      isConversationClosed: props.isClosed,
       conversationDeletedCallback,
     },
   );
@@ -380,19 +355,6 @@ async function handleShareActionSelected(action: ContentAction) {
  */
 function handleDialogClosed() {
   postActions.closeDialog();
-}
-
-/**
- * Handle close/open button click
- */
-function handleCloseOpenClick() {
-  if (props.isClosed) {
-    // Show confirmation dialog before reopening
-    showReopenDialog.value = true;
-  } else {
-    // Show confirmation dialog before closing
-    showCloseDialog.value = true;
-  }
 }
 
 /**

@@ -26,6 +26,8 @@ import {
     zodUserMuteItem,
     zodNotificationItem,
     zodPolisKey,
+    zodAnalysisView,
+    zodAnalysisViewOptionStatus,
     zodOrganization,
     zodTopicObject,
     zodFeedSortAlgorithm,
@@ -44,6 +46,7 @@ import {
     zodParticipationBlockedReason,
     zodMaxdiffComparison,
     zodConversationType,
+    zodConversationViewSnapshotCheckpointReason,
     zodMaxdiffLifecycleStatus,
     zodExternalSourceConfig,
     zodSurveyConfig,
@@ -111,11 +114,65 @@ export class Dto {
     static fetchAnalysisRequest = z
         .object({
             conversationSlugId: zodSlugId, // z.object() does not exist :(
+            analysisView: zodAnalysisView.optional(),
+            checkpointViewSnapshotId: z.number().int().positive().optional(),
+        })
+        .strict();
+    static analysisViewOption = z
+        .object({
+            view: zodAnalysisView,
+            enabled: z.boolean(),
+            status: zodAnalysisViewOptionStatus,
+            reason: z.string().optional(),
+            groupCount: z.number().int().min(2).max(6).optional(),
+            candidateId: z.number().int().positive().optional(),
+            selectionScore: z.number().nullable().optional(),
+            resolvesToView: zodAnalysisView.optional(),
+        })
+        .strict();
+    static analysisViewState = z
+        .object({
+            requestedView: zodAnalysisView,
+            canonicalView: zodAnalysisView,
+            resolvedGroupCount: z.number().int().min(2).max(6).nullable(),
+            resolvedCandidateId: z.number().int().positive().nullable(),
+            resolvedBy: z.enum([
+                "system_default",
+                "facilitator_preference",
+                "facilitator_fallback",
+                "fixed_count",
+                "locked_fallback",
+                "unavailable_fixed_count",
+                "no_analysis",
+            ]),
+            variantsEnabled: z.boolean(),
+            options: z.array(Dto.analysisViewOption),
+        })
+        .strict();
+    static analysisConversationViewSnapshot = z
+        .object({
+            conversationViewSnapshotId: z.number().int().positive(),
+            analysisSnapshotId: z.number().int().positive(),
+            opinionCount: z.number().int().nonnegative(),
+            voteCount: z.number().int().nonnegative(),
+            participantCount: z.number().int().nonnegative(),
+            totalOpinionCount: z.number().int().nonnegative(),
+            totalVoteCount: z.number().int().nonnegative(),
+            totalParticipantCount: z.number().int().nonnegative(),
+            moderatedOpinionCount: z.number().int().nonnegative(),
+            hiddenOpinionCount: z.number().int().nonnegative(),
+            isClosed: z.boolean(),
         })
         .strict();
     static fetchAnalysisResponse = z
         .object({
             polisContentId: z.number().int().nonnegative().optional(), // for logging/debugging purpose, undefined if no polis calculated
+            conversationViewSnapshotId: z.number().int().positive().optional(),
+            analysisSnapshotId: z.number().int().positive().optional(),
+            conversationViewSnapshot:
+                Dto.analysisConversationViewSnapshot.optional(),
+            emptyReason: z.string().optional(),
+            analysisViewState: Dto.analysisViewState.optional(),
             consensusAgree: z.array(zodAnalysisOpinionItem),
             consensusDisagree: z.array(zodAnalysisOpinionItem),
             controversial: z.array(zodAnalysisOpinionItem),
@@ -123,6 +180,34 @@ export class Dto {
             hasVotedOnAllAvailableOpinions: z.boolean().optional(),
         })
         .strict();
+    static fetchAnalysisCheckpointsRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static analysisCheckpointReason = z
+        .object({
+            reason: zodConversationViewSnapshotCheckpointReason,
+            groupCount: z.number().int().min(2).max(6).nullable(),
+            previousGroupCount: z.number().int().min(2).max(6).nullable(),
+            participantCount: z.number().int().nonnegative().nullable(),
+            participantMilestone: z.number().int().positive().nullable(),
+            voteCount: z.number().int().nonnegative().nullable(),
+            voteMilestone: z.number().int().positive().nullable(),
+        })
+        .strict();
+    static analysisCheckpoint = z
+        .object({
+            conversationViewSnapshotId: z.number().int().positive(),
+            createdAt: zodDateTimeFlexible,
+            activatedAt: zodDateTimeFlexible,
+            opinionCount: z.number().int().nonnegative(),
+            voteCount: z.number().int().nonnegative(),
+            participantCount: z.number().int().nonnegative(),
+            reasons: z.array(Dto.analysisCheckpointReason),
+        })
+        .strict();
+    static fetchAnalysisCheckpointsResponse = z.array(Dto.analysisCheckpoint);
     static fetchHiddenOpinionsRequest = z
         .object({
             conversationSlugId: zodSlugId, // z.object() does not exist :(
@@ -1319,6 +1404,13 @@ export type UpdateLanguagePreferencesRequest = z.infer<
     typeof Dto.updateLanguagePreferencesRequest
 >;
 export type ConversationAnalysis = z.infer<typeof Dto.fetchAnalysisResponse>;
+export type AnalysisConversationViewSnapshot = z.infer<
+    typeof Dto.analysisConversationViewSnapshot
+>;
+export type AnalysisCheckpoint = z.infer<typeof Dto.analysisCheckpoint>;
+export type FetchAnalysisCheckpointsResponse = z.infer<
+    typeof Dto.fetchAnalysisCheckpointsResponse
+>;
 export type CastVoteResponse = z.infer<typeof Dto.castVoteResponse>;
 export type CloseConversationResponse = z.infer<
     typeof Dto.closeConversationResponse

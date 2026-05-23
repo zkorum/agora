@@ -6,28 +6,13 @@ import type { NotificationItem } from "./zod.js";
  * Defines the structure of all SSE events sent from backend to frontend
  */
 
-// SSE Event Types
-export type SSEEventType =
-    | "connected"
-    | "notification"
-    | "new_conversation"
-    | "popular_conversation"
-    | "heartbeat"
-    | "shutdown";
-
-// Base SSE Event structure
-export interface SSEEvent<T = unknown> {
-    event: SSEEventType;
-    data: T;
-}
-
 // Event-specific data types
 
 /**
  * Data sent when a client successfully connects to the SSE stream
  */
 export interface SSEConnectedData {
-    userId: string;
+    userId?: string;
     timestamp: number;
 }
 
@@ -36,6 +21,13 @@ export interface SSEConnectedData {
  */
 export interface SSENotificationData {
     notification: NotificationItem;
+}
+
+/**
+ * Data sent when a new conversation should appear in feeds.
+ */
+export interface SSENewConversationData {
+    timestamp: number;
 }
 
 /**
@@ -53,19 +45,60 @@ export interface SSEPopularConversationData {
 }
 
 /**
+ * Data sent when a conversation has a newer analysis snapshot available.
+ */
+export interface SSEConversationAnalysisUpdatedData {
+    conversationSlugId: string;
+    conversationViewSnapshotId: number;
+    analysisSnapshotId: number;
+    opinionCount?: number;
+    voteCount?: number;
+    participantCount?: number;
+    totalOpinionCount?: number;
+    totalVoteCount?: number;
+    totalParticipantCount?: number;
+    moderatedOpinionCount?: number;
+    hiddenOpinionCount?: number;
+    isClosed?: boolean;
+    timestamp: number;
+}
+
+/**
  * Data sent when the server is shutting down
  */
 export interface SSEShutdownData {
     message: string;
 }
 
+export interface SSEEventDataByType {
+    connected: SSEConnectedData;
+    notification: SSENotificationData;
+    new_conversation: SSENewConversationData;
+    popular_conversation: SSEPopularConversationData;
+    conversation_analysis_updated: SSEConversationAnalysisUpdatedData;
+    heartbeat: SSEHeartbeatData;
+    shutdown: SSEShutdownData;
+}
+
+// SSE Event Types
+export type SSEEventType = keyof SSEEventDataByType;
+
+// Base SSE Event structure
+export interface SSEEvent<TEvent extends SSEEventType = SSEEventType> {
+    event: TEvent;
+    data: SSEEventDataByType[TEvent];
+}
+
 // Typed event unions for each event type
 
-export type SSEConnectedEvent = SSEEvent<SSEConnectedData>;
-export type SSENotificationEvent = SSEEvent<SSENotificationData>;
-export type SSEPopularConversationEvent = SSEEvent<SSEPopularConversationData>;
-export type SSEHeartbeatEvent = SSEEvent<SSEHeartbeatData>;
-export type SSEShutdownEvent = SSEEvent<SSEShutdownData>;
+export type SSEConnectedEvent = SSEEvent<"connected">;
+export type SSENotificationEvent = SSEEvent<"notification">;
+export type SSENewConversationEvent = SSEEvent<"new_conversation">;
+export type SSEPopularConversationEvent = SSEEvent<"popular_conversation">;
+export type SSEConversationAnalysisUpdatedEvent =
+    SSEEvent<"conversation_analysis_updated">;
+export type SSEHeartbeatEvent = SSEEvent<"heartbeat">;
+export type SSEShutdownEvent = SSEEvent<"shutdown">;
 
 /**
  * Union of all possible SSE events
@@ -73,6 +106,8 @@ export type SSEShutdownEvent = SSEEvent<SSEShutdownData>;
 export type AnySSEEvent =
     | SSEConnectedEvent
     | SSENotificationEvent
+    | SSENewConversationEvent
     | SSEPopularConversationEvent
+    | SSEConversationAnalysisUpdatedEvent
     | SSEHeartbeatEvent
     | SSEShutdownEvent;

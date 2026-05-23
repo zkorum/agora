@@ -90,6 +90,142 @@ interface CastVoteForOpinionSlugIdFromUserIdProps {
     optionalConversationContentId?: number | null;
 }
 
+interface PersistVoteImmediatelyProps {
+    db: PostgresJsDatabase;
+    userId: string;
+    opinionId: number;
+    opinionContentId: number;
+    votingAction: VotingAction;
+}
+
+function getVoteCounterDelta({
+    existingVote,
+    votingAction,
+}: {
+    existingVote: VotingOption | null;
+    votingAction: VotingAction;
+}): { numAgrees: number; numDisagrees: number; numPasses: number } {
+    const delta = {
+        numAgrees: 0,
+        numDisagrees: 0,
+        numPasses: 0,
+    };
+
+    if (existingVote === "agree") {
+        delta.numAgrees -= 1;
+    } else if (existingVote === "disagree") {
+        delta.numDisagrees -= 1;
+    } else if (existingVote === "pass") {
+        delta.numPasses -= 1;
+    }
+
+    if (votingAction === "agree") {
+        delta.numAgrees += 1;
+    } else if (votingAction === "disagree") {
+        delta.numDisagrees += 1;
+    } else if (votingAction === "pass") {
+        delta.numPasses += 1;
+    }
+
+    return delta;
+}
+
+export async function persistVoteImmediately({
+    db,
+    userId,
+    opinionId,
+    opinionContentId,
+    votingAction,
+}: PersistVoteImmediatelyProps): Promise<void> {
+    const existingVoteRows = await db
+        .select({
+            voteTableId: voteTable.id,
+            optionChosen: voteContentTable.vote,
+        })
+        .from(voteTable)
+        .leftJoin(
+            voteContentTable,
+            eq(voteContentTable.id, voteTable.currentContentId),
+        )
+        .where(
+            and(eq(voteTable.authorId, userId), eq(voteTable.opinionId, opinionId)),
+        )
+        .limit(1);
+
+    const existingVoteRow = existingVoteRows.at(0);
+    const voteTableId =
+        existingVoteRow?.voteTableId ??
+        (
+            await db
+                .insert(voteTable)
+                .values({
+                    authorId: userId,
+                    opinionId,
+                    currentContentId: null,
+                })
+                .onConflictDoNothing()
+                .returning({ voteTableId: voteTable.id })
+        ).at(0)?.voteTableId;
+
+    const resolvedVoteTableId =
+        voteTableId ??
+        (
+            await db
+                .select({ voteTableId: voteTable.id })
+                .from(voteTable)
+                .where(
+                    and(
+                        eq(voteTable.authorId, userId),
+                        eq(voteTable.opinionId, opinionId),
+                    ),
+                )
+                .limit(1)
+        ).at(0)?.voteTableId;
+
+    if (resolvedVoteTableId === undefined) {
+        throw httpErrors.internalServerError("Failed to persist vote row");
+    }
+
+    const currentContentId =
+        votingAction === "cancel"
+            ? null
+            : (
+                  await db
+                      .insert(voteContentTable)
+                      .values({
+                          voteId: resolvedVoteTableId,
+                          opinionContentId,
+                          vote: votingAction,
+                      })
+                      .returning({ voteContentId: voteContentTable.id })
+              )[0].voteContentId;
+
+    await db
+        .update(voteTable)
+        .set({ currentContentId, updatedAt: nowZeroMs() })
+        .where(eq(voteTable.id, resolvedVoteTableId));
+
+    const delta = getVoteCounterDelta({
+        existingVote: existingVoteRow?.optionChosen ?? null,
+        votingAction,
+    });
+
+    if (
+        delta.numAgrees !== 0 ||
+        delta.numDisagrees !== 0 ||
+        delta.numPasses !== 0
+    ) {
+        await db
+            .update(opinionTable)
+            .set({
+                numAgrees: sql`${opinionTable.numAgrees} + ${delta.numAgrees}`,
+                numDisagrees: sql`${opinionTable.numDisagrees} + ${delta.numDisagrees}`,
+                numPasses: sql`${opinionTable.numPasses} + ${delta.numPasses}`,
+            })
+            .where(eq(opinionTable.id, opinionId));
+    }
+}
+
 /**
  * Cast vote using buffered processing when userId is already known
  *

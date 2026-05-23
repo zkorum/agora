@@ -4,7 +4,7 @@
       <StandardMenuBar
         :title="t('pageTitle')"
         :center-content="true"
-        :fallback-route="`/conversation/${conversationSlugId}/analysis`"
+        :fallback-route="analysisFallbackRoute"
       />
     </Teleport>
 
@@ -25,7 +25,7 @@
       <div class="toolbar no-print">
         <ZKButton
           button-type="compactButton"
-          :disable="isGeneratingZip || !hasData"
+          :disable="isGeneratingReport || !hasData"
           @click="handleDownloadZip"
         >
           <div class="toolbar-button-content">
@@ -37,7 +37,7 @@
         </ZKButton>
         <ZKButton
           button-type="compactButton"
-          :disable="isGeneratingPdf || !hasData"
+          :disable="isGeneratingReport || !hasData"
           @click="handleDownloadPdf"
         >
           <div class="toolbar-button-content">
@@ -63,44 +63,39 @@
           >
             <div>
               <AnalysisReport
-                v-if="
-                  conversationQuery.data.value &&
-                  analysisQuery.data.value &&
-                  surveyResultsQuery.data.value
-                "
+                v-if="reportFrame"
                 ref="analysisReportRef"
                 v-model:survey-display-mode="surveyDisplayMode"
                 v-model:all-statements-order="allStatementsOrder"
                 :items-per-page="itemsPerPage"
                 :conversation-slug-id="conversationSlugId"
-                :conversation-title="conversationQuery.data.value.payload.title"
+                :conversation-title="reportFrame.conversation.payload.title"
                 :author-username="
-                  conversationQuery.data.value.metadata.authorUsername
+                  reportFrame.conversation.metadata.authorUsername
                 "
-                :created-at="conversationQuery.data.value.metadata.createdAt"
+                :conversation-organization-name="
+                  reportFrame.conversation.metadata.organization?.name ?? ''
+                "
+                :created-at="reportFrame.conversation.metadata.createdAt"
                 :participant-count="
-                  conversationQuery.data.value.metadata.participantCount
+                  reportCounts.participantCount
                 "
-                :opinion-count="
-                  conversationQuery.data.value.metadata.opinionCount
-                "
-                :vote-count="conversationQuery.data.value.metadata.voteCount"
+                :opinion-count="reportCounts.opinionCount"
+                :vote-count="reportCounts.voteCount"
                 :total-participant-count="
-                  conversationQuery.data.value.metadata.totalParticipantCount
+                  reportCounts.totalParticipantCount
                 "
                 :total-opinion-count="
-                  conversationQuery.data.value.metadata.totalOpinionCount
+                  reportCounts.totalOpinionCount
                 "
-                :total-vote-count="
-                  conversationQuery.data.value.metadata.totalVoteCount
-                "
+                :total-vote-count="reportCounts.totalVoteCount"
                 :clusters="polisClusters"
                 :agreement-items="agreementItems"
                 :disagreement-items="disagreementItems"
                 :divisive-items="divisiveItems"
                 :all-items="allItems"
                 :all-statements-order-options="allStatementsOrderOptions"
-                :has-survey="surveyResultsQuery.data.value.hasSurvey"
+                :has-survey="reportFrame.surveyResults.hasSurvey"
                 :survey-rows="reportSurveyRows"
                 :show-survey-toggle="showSurveyToggle"
               />
@@ -123,8 +118,15 @@ import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useReportDownload } from "src/composables/report/useReportDownload";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { PolisClusters } from "src/shared/types/zod";
+import type { SurveyResultsAggregatedResponse } from "src/shared/types/dto";
+import type { ExtendedConversation, PolisClusters } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import {
+  getUpdatedAnalysisRouteQuery,
+  parseAnalysisViewQuery,
+  parseCheckpointQuery,
+} from "src/utils/analysis/analysisRoute";
+import type { AnalysisData } from "src/utils/api/comment/comment";
 import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { useSurveyResultsAggregatedQuery } from "src/utils/api/survey/useSurveyQueries";
@@ -143,6 +145,7 @@ import {
   type SurveyResultsDisplayMode,
 } from "src/utils/survey/results";
 import { computed, nextTick, ref, watch } from "vue";
+import type { RouteLocationRaw } from "vue-router";
 import { useRoute } from "vue-router";
 
 import {
@@ -163,11 +166,22 @@ const goBackButtonHandler = useGoBackButtonHandler();
 const conversationSlugId = computed(() => {
   return getSingleRouteParam(route.params.conversationSlugId);
 });
+const analysisView = computed(() => parseAnalysisViewQuery({ query: route.query }));
+const checkpointViewSnapshotId = computed(() =>
+  parseCheckpointQuery({ query: route.query })
+);
+
+const analysisFallbackRoute = computed<RouteLocationRaw>(() => ({
+  path: `/conversation/${conversationSlugId.value}/analysis`,
+  query: getUpdatedAnalysisRouteQuery({
+    query: {},
+    analysisView: analysisView.value,
+    checkpointViewSnapshotId: checkpointViewSnapshotId.value,
+  }),
+}));
 
 async function handleNarrowBack(): Promise<void> {
-  await goBackButtonHandler.safeNavigateBack(
-    `/conversation/${conversationSlugId.value}/analysis`
-  );
+  await goBackButtonHandler.safeNavigateBack(analysisFallbackRoute.value);
 }
 
 const conversationQuery = useConversationQuery({
@@ -177,6 +191,8 @@ const conversationQuery = useConversationQuery({
 
 const analysisQuery = useAnalysisQuery({
   conversationSlugId: conversationSlugId,
+  analysisView,
+  checkpointViewSnapshotId,
   voteCount: computed(() => conversationQuery.data.value?.metadata.voteCount),
   enabled: computed(
     () => isAuthInitialized.value && conversationQuery.data.value !== undefined
@@ -193,6 +209,33 @@ const surveyResultsQuery = useSurveyResultsAggregatedQuery({
 const surveyDisplayMode = ref<SurveyResultsDisplayMode>("suppressed");
 const allStatementsOrder = ref<ReportAllStatementsOrder>("newest");
 
+interface ReportFrame {
+  conversation: ExtendedConversation;
+  analysis: AnalysisData;
+  surveyResults: SurveyResultsAggregatedResponse;
+}
+
+const liveReportFrame = computed<ReportFrame | undefined>(() => {
+  const conversation = conversationQuery.data.value;
+  const analysis = analysisQuery.data.value;
+  const surveyResults = surveyResultsQuery.data.value;
+
+  if (
+    conversation === undefined ||
+    analysis === undefined ||
+    surveyResults === undefined
+  ) {
+    return undefined;
+  }
+
+  return { conversation, analysis, surveyResults };
+});
+
+const frozenReportFrame = ref<ReportFrame | undefined>(undefined);
+const reportFrame = computed(
+  () => frozenReportFrame.value ?? liveReportFrame.value
+);
+
 const allStatementsOrderOptions = computed(() => [
   { label: t("allStatementsOrderNewest"), value: "newest" as const },
   { label: t("allStatementsOrderAgreement"), value: "agreement" as const },
@@ -201,22 +244,42 @@ const allStatementsOrderOptions = computed(() => [
 ]);
 
 const polisClusters = computed<Partial<PolisClusters>>(
-  () => analysisQuery.data.value?.polisClusters ?? {}
+  () => reportFrame.value?.analysis.polisClusters ?? {}
 );
 
 const hasGroupAnalysis = computed(
   () => Object.keys(polisClusters.value).length >= 2
 );
 
+const reportCounts = computed(() => {
+  const metadata = reportFrame.value?.conversation.metadata;
+  const snapshot = reportFrame.value?.analysis.conversationViewSnapshot;
+
+  return {
+    participantCount: snapshot?.participantCount ?? metadata?.participantCount ?? 0,
+    opinionCount: snapshot?.opinionCount ?? metadata?.opinionCount ?? 0,
+    voteCount: snapshot?.voteCount ?? metadata?.voteCount ?? 0,
+    totalParticipantCount:
+      snapshot?.totalParticipantCount ?? metadata?.totalParticipantCount ?? 0,
+    totalOpinionCount:
+      snapshot?.totalOpinionCount ?? metadata?.totalOpinionCount ?? 0,
+    totalVoteCount: snapshot?.totalVoteCount ?? metadata?.totalVoteCount ?? 0,
+  };
+});
+
 const showSurveyToggle = computed(
-  () =>
-    surveyResultsQuery.data.value?.hasSurvey === true &&
-    canViewFullSurveyResults({ surveyResults: surveyResultsQuery.data.value })
+  () => {
+    const frame = reportFrame.value;
+    return (
+      frame?.surveyResults.hasSurvey === true &&
+      canViewFullSurveyResults({ surveyResults: frame.surveyResults })
+    );
+  }
 );
 
 const reportSurveyRows = computed(() =>
   getDisplayedSurveyRows({
-    surveyResults: surveyResultsQuery.data.value,
+    surveyResults: reportFrame.value?.surveyResults,
     displayMode: surveyDisplayMode.value,
   }).filter((row) => hasGroupAnalysis.value || row.scope === "overall")
 );
@@ -234,20 +297,20 @@ watch(
 // Full items (top 10)
 const agreementItems = computed(() =>
   getReportOpinions({
-    items: analysisQuery.data.value?.consensusAgree ?? [],
+    items: reportFrame.value?.analysis.consensusAgree ?? [],
     getScore: (item) => item.groupAwareConsensusAgree,
   })
 );
 
 const disagreementItems = computed(() =>
   getReportOpinions({
-    items: analysisQuery.data.value?.consensusDisagree ?? [],
+    items: reportFrame.value?.analysis.consensusDisagree ?? [],
     getScore: (item) => item.groupAwareConsensusDisagree,
   })
 );
 
 const divisiveItems = computed(() => {
-  const items = (analysisQuery.data.value?.controversial ?? []).filter(
+  const items = (reportFrame.value?.analysis.controversial ?? []).filter(
     (item) => item.divisiveScore > 0
   );
   const maxDivisive = Math.max(...items.map((item) => item.divisiveScore), 0);
@@ -262,19 +325,14 @@ const allItems = computed(() =>
   getReportAllOpinions({
     order: allStatementsOrder.value,
     items: [
-      ...(analysisQuery.data.value?.consensusAgree ?? []),
-      ...(analysisQuery.data.value?.consensusDisagree ?? []),
-      ...(analysisQuery.data.value?.controversial ?? []),
+      ...(reportFrame.value?.analysis.consensusAgree ?? []),
+      ...(reportFrame.value?.analysis.consensusDisagree ?? []),
+      ...(reportFrame.value?.analysis.controversial ?? []),
     ],
   })
 );
 
-const hasData = computed(
-  () =>
-    conversationQuery.data.value !== undefined &&
-    analysisQuery.data.value !== undefined &&
-    surveyResultsQuery.data.value !== undefined
-);
+const hasData = computed(() => liveReportFrame.value !== undefined);
 
 // Narrow screen detection — uses Quasar Screen plugin (reads $breakpoint-xs from SCSS)
 const $q = useQuasar();
@@ -301,7 +359,7 @@ interface AnalysisReportExposed {
 const analysisReportRef = ref<AnalysisReportExposed | null>(null);
 
 const reportFileName = computed(() => {
-  const title = conversationQuery.data.value?.payload.title ?? "analysis";
+  const title = reportFrame.value?.conversation.payload.title ?? "analysis";
   const sanitized = title
     .replace(/[^a-zA-Z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
@@ -315,6 +373,10 @@ const { downloadAsZip, downloadAsPdf, isGeneratingZip, isGeneratingPdf } =
   useReportDownload({
     fileName: reportFileName,
   });
+
+const isGeneratingReport = computed(
+  () => isGeneratingZip.value || isGeneratingPdf.value
+);
 
 function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
   const report = analysisReportRef.value;
@@ -390,24 +452,48 @@ function buildCaptures(): Array<{ element: HTMLElement; name: string }> {
 }
 
 async function handleDownloadZip(): Promise<void> {
-  await nextTick();
-  const captures = buildCaptures();
-  if (captures.length > 0) {
-    await downloadAsZip({ captures });
-  }
+  await runWithFrozenReportFrame(async () => {
+    await nextTick();
+    const captures = buildCaptures();
+    if (captures.length > 0) {
+      await downloadAsZip({ captures });
+    }
+  });
 }
 
 async function handleDownloadPdf(): Promise<void> {
-  itemsPerPage.value = REPORT_ITEMS_PER_PDF_PAGE;
-  await nextTick();
-  const captures = buildCaptures();
-  if (captures.length > 0) {
-    await downloadAsPdf({
-      captures,
-      footerElement: analysisReportRef.value?.footerRef ?? undefined,
-    });
+  await runWithFrozenReportFrame(async () => {
+    itemsPerPage.value = REPORT_ITEMS_PER_PDF_PAGE;
+    try {
+      await nextTick();
+      const captures = buildCaptures();
+      if (captures.length > 0) {
+        await downloadAsPdf({
+          captures,
+          footerElement: analysisReportRef.value?.footerRef ?? undefined,
+        });
+      }
+    } finally {
+      itemsPerPage.value = REPORT_ITEMS_PER_CAPTURE_PAGE;
+    }
+  });
+}
+
+async function runWithFrozenReportFrame(
+  download: () => Promise<void>
+): Promise<void> {
+  const frame = liveReportFrame.value;
+  if (frame === undefined) {
+    return;
   }
-  itemsPerPage.value = REPORT_ITEMS_PER_CAPTURE_PAGE;
+
+  frozenReportFrame.value = frame;
+  try {
+    await nextTick();
+    await download();
+  } finally {
+    frozenReportFrame.value = undefined;
+  }
 }
 </script>
 
