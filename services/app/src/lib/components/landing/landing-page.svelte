@@ -21,7 +21,7 @@
 <Testimonials />
 <CaseStudies />
 <Pricing />
-<FaqSection />
 <OurTeam />
 <MissionQuote />
 <VideoSection />
+<FaqSection />

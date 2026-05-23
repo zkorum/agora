@@ -35,7 +35,7 @@
       chip: () => m.facilitators_chip_plural_voting(),
       text: () => m.facilitators_feature_plural_voting(),
       source: () => m.facilitators_feature_plural_voting_source(),
-      sourceUrl: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4311507",
+      sourceUrl: "https://solidago.tournesol.app/",
     },
     {
       id: "auth",
@@ -159,7 +159,7 @@
       </Text>
       <GradientButton
         href={localizeHref("/resources/facilitation-guide")}
-        variant="soft"
+        variant="primary"
         size="sm"
         class="shrink-0 self-start"
       >
