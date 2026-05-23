@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import signal
-import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -29,12 +28,14 @@ from import_worker.queue import (
 )
 
 if TYPE_CHECKING:
+    from sqlalchemy.engine import Engine
     from sqlalchemy.orm import Session, sessionmaker
 
     from import_worker.importer import ImportProcessResult
     from import_worker.queue import ImportNotificationEvent, ImportRequest, InvalidImportItem
 
 ANALYSIS_DIRTY_KEY = "analysis:dirty"
+STARTUP_RETRY_INTERVAL_SECONDS = 5.0
 
 logging.basicConfig(
     level=logging.INFO,
@@ -44,6 +45,7 @@ LOGGER = logging.getLogger(__name__)
 type LpopResult = str | list[str] | None
 LPOP_RESULT: TypeAdapter[LpopResult] = TypeAdapter(LpopResult)
 INT_RESULT = TypeAdapter(int)
+_running = True
 
 
 class SyncValkeyClient:
@@ -72,6 +74,12 @@ class ProcessedImport:
     failure_event: ImportNotificationEvent | None
 
 
+@dataclass(frozen=True)
+class ConnectedImportQueue:
+    client: ImportValkeyClient
+    queue_depth: int
+
+
 def _create_valkey_client(url: str) -> ImportValkeyClient:
     parsed_url = urlparse(url)
     use_tls = parsed_url.scheme in {"valkeys", "rediss"}
@@ -89,6 +97,52 @@ def _create_valkey_client(url: str) -> ImportValkeyClient:
             decode_responses=True,
         ),
     )
+
+
+def _sleep_before_retry(seconds: float) -> None:
+    deadline = time.monotonic() + seconds
+    while _running:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return
+        time.sleep(min(0.5, remaining))
+
+
+def _create_primary_engine_with_retry(*, connection_string: str) -> Engine | None:
+    while _running:
+        try:
+            return create_primary_engine(connection_string)
+        except Exception as error:
+            LOGGER.warning(
+                "Import worker PostgreSQL unavailable (%s); retrying in %.1fs",
+                error,
+                STARTUP_RETRY_INTERVAL_SECONDS,
+            )
+            _sleep_before_retry(STARTUP_RETRY_INTERVAL_SECONDS)
+    return None
+
+
+def _connect_to_valkey_with_retry(*, url: str) -> ConnectedImportQueue | None:
+    while _running:
+        vk: ImportValkeyClient | None = None
+        try:
+            vk = _create_valkey_client(url)
+            queue_depth = vk.llen(IMPORT_BUFFER_KEY)
+            return ConnectedImportQueue(client=vk, queue_depth=queue_depth)
+        except Exception as error:
+            if vk is not None:
+                try:
+                    vk.close()
+                except Exception:
+                    LOGGER.exception("Failed to close unavailable import Valkey client")
+            LOGGER.warning(
+                "Import worker Valkey unavailable at %s (%s); retrying in %.1fs",
+                url,
+                error,
+                STARTUP_RETRY_INTERVAL_SECONDS,
+            )
+            _sleep_before_retry(STARTUP_RETRY_INTERVAL_SECONDS)
+    return None
 
 
 def _schedule_analysis(
@@ -195,29 +249,46 @@ def _push_ready_import_events(
 
 
 def run_worker(settings: Settings) -> None:
+    global _running
+
     LOGGER.info(
         "Starting import worker (flush_interval_ms=%s, max_batch_size=%s, max_concurrency=%s)",
         settings.flush_interval_ms,
         settings.max_batch_size,
         settings.max_concurrency,
     )
-    engine = create_primary_engine(settings.connection_string)
-    LOGGER.info("Import worker PostgreSQL connection verified")
-    session_factory = create_session_factory(engine)
-    vk = _create_valkey_client(str(settings.valkey_url))
-    queue_depth = vk.llen(IMPORT_BUFFER_KEY)
-    LOGGER.info("Import worker Valkey connected (queue_depth=%s)", queue_depth)
     should_stop = False
-    flush_count = 0
 
     def request_stop(signum: int, frame: object) -> None:
         del frame
         nonlocal should_stop
+        global _running
         LOGGER.info("Signal %s received, stopping import worker", signum)
         should_stop = True
+        _running = False
 
     signal.signal(signal.SIGTERM, request_stop)
     signal.signal(signal.SIGINT, request_stop)
+
+    engine = _create_primary_engine_with_retry(
+        connection_string=settings.connection_string,
+    )
+    if engine is None:
+        LOGGER.info("Import worker shutdown before PostgreSQL became available")
+        return
+
+    LOGGER.info("Import worker PostgreSQL connection verified")
+    session_factory = create_session_factory(engine)
+    connected_queue = _connect_to_valkey_with_retry(url=str(settings.valkey_url))
+    if connected_queue is None:
+        engine.dispose()
+        LOGGER.info("Import worker shutdown before Valkey became available")
+        return
+
+    vk = connected_queue.client
+    queue_depth = connected_queue.queue_depth
+    LOGGER.info("Import worker Valkey connected (queue_depth=%s)", queue_depth)
+    flush_count = 0
 
     if queue_depth == 0:
         try:
@@ -236,7 +307,13 @@ def run_worker(settings: Settings) -> None:
                 continue
 
             flush_count += 1
-            batch = pop_import_requests(vk, count=settings.max_batch_size)
+            try:
+                batch = pop_import_requests(vk, count=settings.max_batch_size)
+            except Exception:
+                LOGGER.exception("Import queue poll failed")
+                time.sleep(settings.flush_interval_ms / 1000)
+                continue
+
             for invalid_item in batch.invalid_items:
                 try:
                     event = _handle_invalid_item(
@@ -263,9 +340,14 @@ def run_worker(settings: Settings) -> None:
                         )
                     except Exception:
                         LOGGER.exception("Stale import cleanup failed")
+                    try:
+                        idle_queue_depth: int | str = vk.llen(IMPORT_BUFFER_KEY)
+                    except Exception:
+                        LOGGER.exception("Failed to read import queue depth")
+                        idle_queue_depth = "unknown"
                     LOGGER.info(
                         "Import worker idle (queue_depth=%s)",
-                        vk.llen(IMPORT_BUFFER_KEY),
+                        idle_queue_depth,
                     )
                 time.sleep(settings.flush_interval_ms / 1000)
                 continue
@@ -296,11 +378,16 @@ def run_worker(settings: Settings) -> None:
 
 
 def main() -> None:
-    try:
-        run_worker(Settings())
-    except Exception:
-        LOGGER.exception("Import worker crashed")
-        sys.exit(1)
+    while _running:
+        try:
+            run_worker(Settings())
+            return
+        except Exception:
+            LOGGER.exception(
+                "Import worker crashed; restarting in %.1fs",
+                STARTUP_RETRY_INTERVAL_SECONDS,
+            )
+            _sleep_before_retry(STARTUP_RETRY_INTERVAL_SECONDS)
 
 
 if __name__ == "__main__":

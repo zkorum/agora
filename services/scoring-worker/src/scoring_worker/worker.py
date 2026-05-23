@@ -20,9 +20,10 @@ import logging
 import signal
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import TYPE_CHECKING
 
 import valkey as valkey_lib
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 from scoring_worker.config import Settings
 from scoring_worker.db import (
@@ -47,6 +48,9 @@ from scoring_worker.valkey_client import (
     zpopmin_batch,
 )
 
+if TYPE_CHECKING:
+    from sqlalchemy import Engine
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -54,6 +58,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 _running = True
+STARTUP_RETRY_INTERVAL_SECONDS = 5.0
 
 
 def _handle_signal(signum: int, frame: object) -> None:
@@ -109,7 +114,48 @@ def _connect_to_valkey_with_retry(settings: Settings) -> valkey_lib.Valkey | Non
     return None
 
 
-def main() -> None:
+def _sleep_before_retry(seconds: float) -> None:
+    deadline = time.monotonic() + seconds
+    while _running:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return
+        time.sleep(min(0.5, remaining))
+
+
+def _postgres_dsn(connection_string: str) -> str:
+    return connection_string.replace("postgres://", "postgresql+psycopg://", 1)
+
+
+def _create_engine_with_retry(
+    *,
+    connection_string: str,
+    role: str,
+    retry_interval_seconds: float,
+) -> Engine | None:
+    while _running:
+        engine = create_engine(
+            _postgres_dsn(connection_string),
+            pool_pre_ping=True,
+        )
+        try:
+            with engine.connect() as connection:
+                connection.execute(text("select 1"))
+            log.info("[Worker] PostgreSQL %s connection verified", role)
+            return engine
+        except Exception as error:
+            engine.dispose()
+            log.warning(
+                "[Worker] PostgreSQL %s unavailable (%s); retrying in %.1fs",
+                role,
+                error,
+                retry_interval_seconds,
+            )
+            _sleep_before_retry(retry_interval_seconds)
+    return None
+
+
+def _run_worker_once() -> None:
     settings = Settings()
 
     signal.signal(signal.SIGTERM, _handle_signal)
@@ -128,15 +174,27 @@ def main() -> None:
         log.info("[Worker] Shutdown complete")
         return
 
-    # SQLAlchemy engines (primary + read replica)
-    primary_engine = create_engine(
-        settings.connection_string.replace("postgres://", "postgresql+psycopg://"),
-        pool_pre_ping=True,
+    primary_engine = _create_engine_with_retry(
+        connection_string=settings.connection_string,
+        role="primary",
+        retry_interval_seconds=settings.valkey_retry_interval_seconds,
     )
-    read_engine = create_engine(
-        settings.read_dsn.replace("postgres://", "postgresql+psycopg://"),
-        pool_pre_ping=True,
+    if primary_engine is None:
+        vk.close()
+        log.info("[Worker] Shutdown complete")
+        return
+
+    read_engine = _create_engine_with_retry(
+        connection_string=settings.read_dsn,
+        role="read",
+        retry_interval_seconds=settings.valkey_retry_interval_seconds,
     )
+    if read_engine is None:
+        primary_engine.dispose()
+        vk.close()
+        log.info("[Worker] Shutdown complete")
+        return
+
     log.info("[Worker] PostgreSQL connected (pool_pre_ping=True)")
 
     warmup()
@@ -326,6 +384,19 @@ def main() -> None:
     read_engine.dispose()
     vk.close()
     log.info("[Worker] Shutdown complete")
+
+
+def main() -> None:
+    while _running:
+        try:
+            _run_worker_once()
+            return
+        except Exception:
+            log.exception(
+                "[Worker] Worker crashed; restarting in %.1fs",
+                STARTUP_RETRY_INTERVAL_SECONDS,
+            )
+            _sleep_before_retry(STARTUP_RETRY_INTERVAL_SECONDS)
 
 
 if __name__ == "__main__":

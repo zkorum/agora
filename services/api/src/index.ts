@@ -47,16 +47,10 @@ import { zodCsvFiles } from "@/service/csvImport.js";
 import * as conversationExportService from "@/service/conversationExport/index.js";
 import * as conversationImportService from "@/service/conversationImport/index.js";
 import { fetchAnalysisCheckpointsByConversationSlugId } from "@/service/conversationViewSnapshot.js";
-import {
-    cleanupStuckExportsOnStartup,
-    createExportWorker,
-} from "@/service/conversationExport/core.js";
-import { createExportNotification } from "@/service/conversationExport/notifications.js";
+import { createExportWorker } from "@/service/conversationExport/core.js";
 import type { ValkeyRef } from "@/service/valkeyRef.js";
 import { validateS3Access } from "./service/s3.js";
 
-import { backfillImportBodies } from "@/service/importBodyBackfill.js";
-import { backfillLegacyMaxdiffComparisons } from "@/service/maxdiffComparisonBackfill.js";
 import {
     httpMethodToAbility,
     httpUrlToResourcePointer,
@@ -672,58 +666,6 @@ const importWorkerEventBridge = createImportWorkerEventBridge({
     maxBatchSize: config.IMPORT_BUFFER_MAX_BATCH_SIZE,
 });
 log.info("[API] Import worker event bridge initialized");
-
-// Cleanup stuck exports from previous server session
-// This runs once on startup to handle jobs that were interrupted by server restart
-const performStartupCleanup = async (): Promise<void> => {
-    try {
-        // Cleanup stuck exports and send notifications
-        const exportCleanupResult = await cleanupStuckExportsOnStartup({
-            db,
-        });
-
-        if (exportCleanupResult.cleanedCount > 0) {
-            log.info(
-                `[Startup] Cleaned up ${String(exportCleanupResult.cleanedCount)} stuck exports`,
-            );
-
-            // Send notifications for failed exports
-            for (const stuckExport of exportCleanupResult.stuckExports) {
-                try {
-                    await createExportNotification({
-                        db,
-                        userId: stuckExport.userId,
-                        exportRequestId: stuckExport.id,
-                        exportSlugId: stuckExport.slugId,
-                        conversationId: stuckExport.conversationId,
-                        type: "export_failed",
-                        failureReason: stuckExport.failureReason ?? undefined,
-                        realtimeSSEManager,
-                    });
-                } catch (notificationError: unknown) {
-                    log.error(
-                        notificationError,
-                        `[Startup] Failed to create export notification for export ${stuckExport.slugId}`,
-                    );
-                }
-            }
-        }
-    } catch (error: unknown) {
-        log.error(
-            error,
-            "[Startup] Failed to perform startup cleanup - will retry on next restart",
-        );
-    }
-};
-
-// Run cleanup (non-blocking)
-void performStartupCleanup();
-
-// Backfill: clean import metadata from conversation bodies (non-blocking, idempotent)
-void backfillImportBodies({ db });
-
-// Backfill: restore legacy MaxDiff comparison rows for the scoring worker
-void backfillLegacyMaxdiffComparisons({ db, valkey: queueValkeyRef.current });
 
 interface ExpectedDeviceStatus {
     userId?: string;

@@ -88,9 +88,13 @@ export function createImportWorkerEventBridge({
     }
 
     pollTimer = setInterval(() => {
-        pollInProgress ??= poll().finally(() => {
-            pollInProgress = null;
-        });
+        pollInProgress ??= poll()
+            .catch((error: unknown) => {
+                log.error(error, "[ImportWorkerEventBridge] Poll failed");
+            })
+            .finally(() => {
+                pollInProgress = null;
+            });
     }, pollIntervalMs);
     pollTimer.unref();
 

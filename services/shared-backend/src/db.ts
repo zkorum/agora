@@ -9,6 +9,14 @@ import {
 import type pino from "pino";
 import { DrizzleFastifyLogger } from "./logger.js";
 
+const POSTGRES_STARTUP_RETRY_MS = 5_000;
+
+function sleep({ ms }: { ms: number }): Promise<void> {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
+}
+
 export async function createPostgresClient(
     config: SharedConfigSchema,
     log: Pick<pino.BaseLogger, "info" | "error">,
@@ -131,7 +139,11 @@ export async function createDb(
     config: SharedConfigSchema,
     log: Pick<pino.BaseLogger, "info" | "error">,
 ) {
-    const primaryClient = await createPostgresClient(config, log, false);
+    const primaryClient = await createReadyPostgresClient({
+        config,
+        log,
+        useReadReplica: false,
+    });
     const primaryDb = drizzle(primaryClient, {
         logger: new DrizzleFastifyLogger(log),
     });
@@ -145,7 +157,11 @@ export async function createDb(
     );
 
     if (hasReadReplica) {
-        const readClient = await createPostgresClient(config, log, true);
+        const readClient = await createReadyPostgresClient({
+            config,
+            log,
+            useReadReplica: true,
+        });
         const readDb = drizzle(readClient, {
             logger: new DrizzleFastifyLogger(log),
         });
@@ -163,4 +179,49 @@ export async function createDb(
         );
         return primaryDb;
     }
+}
+
+type PostgresClient = Awaited<ReturnType<typeof createPostgresClient>>;
+
+async function closePostgresClient({
+    client,
+    log,
+}: {
+    client: PostgresClient;
+    log: Pick<pino.BaseLogger, "error">;
+}): Promise<void> {
+    try {
+        await client.end({ timeout: 5 });
+    } catch (error: unknown) {
+        log.error(error, "Failed to close unavailable PostgreSQL client");
+    }
+}
+
+async function createReadyPostgresClient({
+    config,
+    log,
+    useReadReplica,
+}: {
+    config: SharedConfigSchema;
+    log: Pick<pino.BaseLogger, "info" | "error">;
+    useReadReplica: boolean;
+}): Promise<PostgresClient> {
+    const role = useReadReplica ? "read replica" : "primary";
+    let readyClient: PostgresClient | undefined;
+    while (readyClient === undefined) {
+        const client = await createPostgresClient(config, log, useReadReplica);
+        try {
+            await client`select 1`;
+            log.info(`[DB] PostgreSQL ${role} connection verified`);
+            readyClient = client;
+        } catch (error: unknown) {
+            log.error(
+                error,
+                `[DB] PostgreSQL ${role} unavailable; retrying in ${String(POSTGRES_STARTUP_RETRY_MS)}ms`,
+            );
+            await closePostgresClient({ client, log });
+            await sleep({ ms: POSTGRES_STARTUP_RETRY_MS });
+        }
+    }
+    return readyClient;
 }

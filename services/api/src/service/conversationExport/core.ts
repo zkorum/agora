@@ -1972,11 +1972,17 @@ export function createExportWorker({
         }
     };
 
+    const runTick = (): void => {
+        void tick().catch((error: unknown) => {
+            log.error(error, "[ExportWorker] Tick failed");
+        });
+    };
+
     const timer = setInterval(() => {
-        void tick();
+        runTick();
     }, EXPORT_WORKER_POLL_INTERVAL_MS);
     timer.unref();
-    void tick();
+    runTick();
 
     return {
         shutdown: async (): Promise<void> => {
@@ -2152,58 +2158,6 @@ export async function cleanupStaleExports({
     }
 
     return failedRequestCount;
-}
-
-interface StuckExportRecord {
-    id: number;
-    slugId: string;
-    userId: string;
-    conversationId: number;
-    failureReason: ExportFailureReason | null;
-    cancellationReason: ExportCancellationReason | null;
-}
-
-interface CleanupStuckExportsOnStartupParams {
-    db: PostgresDatabase;
-}
-
-interface CleanupStuckExportsResult {
-    cleanedCount: number;
-    stuckExports: StuckExportRecord[];
-}
-
-export async function cleanupStuckExportsOnStartup({
-    db,
-}: CleanupStuckExportsOnStartupParams): Promise<CleanupStuckExportsResult> {
-    const stuckGenerations = await db
-        .select({
-            id: conversationExportGenerationTable.id,
-            conversationId: conversationExportGenerationTable.conversationId,
-        })
-        .from(conversationExportGenerationTable)
-        .where(eq(conversationExportGenerationTable.status, "processing"));
-
-    const stuckExports: StuckExportRecord[] = [];
-    for (const generation of stuckGenerations) {
-        const failedRequests = await markGenerationFailedAndRequests({
-            db,
-            generationId: generation.id,
-            conversationId: generation.conversationId,
-            reason: "server_restart",
-        });
-        stuckExports.push(...failedRequests);
-    }
-
-    if (stuckExports.length > 0) {
-        log.info(
-            `[ExportStartup] Marked ${String(stuckExports.length)} stuck exports as failed`,
-        );
-    }
-
-    return {
-        cleanedCount: stuckExports.length,
-        stuckExports,
-    };
 }
 
 interface CleanupExpiredExportsParams {
