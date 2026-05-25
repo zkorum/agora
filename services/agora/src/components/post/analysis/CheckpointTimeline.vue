@@ -15,7 +15,8 @@
         ref="timelineRef"
         class="checkpoint-timeline__scroller"
         :class="{
-          'checkpoint-timeline__scroller--with-detail': hasSelectedCheckpointDetail,
+          'checkpoint-timeline__scroller--with-detail':
+            hasSelectedCheckpointDetail,
         }"
         :aria-label="props.title"
       >
@@ -33,9 +34,12 @@
             type="button"
             class="checkpoint-timeline__marker"
             :class="{
-              'checkpoint-timeline__marker--selected': isCheckpointSelected(checkpoint),
+              'checkpoint-timeline__marker--selected':
+                isCheckpointSelected(checkpoint),
             }"
-            @click="emit('selectCheckpoint', checkpoint.conversationViewSnapshotId)"
+            @click="
+              emit('selectCheckpoint', checkpoint.conversationViewSnapshotId)
+            "
           >
             <span class="checkpoint-timeline__dot" />
             <span
@@ -119,7 +123,7 @@ type CheckpointMarkerKey = number | "live";
 const props = withDefaults(
   defineProps<{
     checkpoints: AnalysisCheckpoint[];
-    selectedCheckpointId?: number;
+    selectedCheckpointId: number | undefined;
     isLiveSelected: boolean;
     isLivePaused: boolean;
     isLatestCheckpointLive: boolean;
@@ -132,7 +136,6 @@ const props = withDefaults(
     maxReasonCount?: number;
   }>(),
   {
-    selectedCheckpointId: undefined,
     maxReasonCount: 3,
   }
 );
@@ -171,7 +174,8 @@ const isLiveTimelineSelected = computed(
 );
 
 const isLivePulseActive = computed(
-  () => isLiveTimelineSelected.value && props.isLiveSelected && !props.isLivePaused
+  () =>
+    isLiveTimelineSelected.value && props.isLiveSelected && !props.isLivePaused
 );
 
 const timelineStepKeys = computed<CheckpointMarkerKey[]>(() => [
@@ -181,7 +185,9 @@ const timelineStepKeys = computed<CheckpointMarkerKey[]>(() => [
   "live",
 ]);
 
-const selectedTimelineStepIndex = computed(() => getSelectedTimelineStepIndex());
+const selectedTimelineStepIndex = computed(() =>
+  getSelectedTimelineStepIndex()
+);
 
 const canStepBackward = computed(() => selectedTimelineStepIndex.value > 0);
 
@@ -190,7 +196,10 @@ const canStepForward = computed(
 );
 
 const hasSelectedCheckpointDetail = computed(() => {
-  if (props.selectedCheckpointId === undefined || isLiveTimelineSelected.value) {
+  if (
+    props.selectedCheckpointId === undefined ||
+    isLiveTimelineSelected.value
+  ) {
     return false;
   }
 
@@ -286,11 +295,16 @@ function getSelectedTimeLabel({
 
 function getSelectedTimelineStepIndex(): number {
   const lastIndex = timelineStepKeys.value.length - 1;
-  if (isLiveTimelineSelected.value || props.selectedCheckpointId === undefined) {
+  if (
+    isLiveTimelineSelected.value ||
+    props.selectedCheckpointId === undefined
+  ) {
     return lastIndex;
   }
 
-  const selectedIndex = timelineStepKeys.value.indexOf(props.selectedCheckpointId);
+  const selectedIndex = timelineStepKeys.value.indexOf(
+    props.selectedCheckpointId
+  );
   return selectedIndex >= 0 ? selectedIndex : lastIndex;
 }
 
@@ -327,23 +341,45 @@ function setMarkerRef({
   markerElements.delete(markerKey);
 }
 
+function scrollTimelineMarkerIntoView({
+  timeline,
+  marker,
+}: {
+  timeline: HTMLElement;
+  marker: HTMLElement;
+}): void {
+  const timelineRect = timeline.getBoundingClientRect();
+  const markerRect = marker.getBoundingClientRect();
+  const markerCenter =
+    markerRect.left -
+    timelineRect.left +
+    timeline.scrollLeft +
+    markerRect.width / 2;
+  const nextLeft = markerCenter - timeline.clientWidth / 2;
+
+  timeline.scrollTo({
+    left: Math.max(0, nextLeft),
+    behavior: "auto",
+  });
+}
+
 function scrollSelectedCheckpointIntoView(): void {
   const timeline = timelineRef.value;
   if (timeline === null) {
     return;
   }
 
-  if (isLiveTimelineSelected.value || props.selectedCheckpointId === undefined) {
+  if (
+    isLiveTimelineSelected.value ||
+    props.selectedCheckpointId === undefined
+  ) {
     const liveMarker = markerElements.get("live");
     if (liveMarker === undefined) {
-      timeline.scrollLeft = timeline.scrollWidth;
+      timeline.scrollTo({ left: timeline.scrollWidth, behavior: "auto" });
       return;
     }
 
-    liveMarker.scrollIntoView({
-      block: "nearest",
-      inline: "center",
-    });
+    scrollTimelineMarkerIntoView({ timeline, marker: liveMarker });
     return;
   }
 
@@ -352,10 +388,7 @@ function scrollSelectedCheckpointIntoView(): void {
     return;
   }
 
-  selectedMarker.scrollIntoView({
-    block: "nearest",
-    inline: "center",
-  });
+  scrollTimelineMarkerIntoView({ timeline, marker: selectedMarker });
 }
 
 watch(

@@ -30,6 +30,13 @@ export interface AnalysisPageTranslations {
   recommendedAnalysisView: string;
   availableGroups: string;
   availableOption: string;
+  discouragedOption: string;
+  lockedOption: string;
+  selectionScoreLabel: string;
+  candidateIdLabel: string;
+  resolvedGroupCountLabel: string;
+  silhouetteScoreLabel: string;
+  balanceScoreLabel: string;
   checkpointTimelineLabel: string;
   checkpointTimelineStart: string;
   checkpointTimelineCheckpoint: string;
@@ -65,8 +72,7 @@ export const analysisPageTranslations: Record<
     groupsLabel: "{count} groups",
     systemDefaultCaption:
       "Chooses the best-scoring variant for each new snapshot.",
-    analysisVariantsNotAvailable:
-      "This is not supported on your current plan.",
+    analysisVariantsNotAvailable: "This is not supported on your current plan.",
     fixedGroupCountUnavailable:
       "Agora could not form {count} meaningful groups for this checkpoint.",
     recommendedDefaultUnavailable: "No recommended variant is available yet.",
@@ -82,6 +88,13 @@ export const analysisPageTranslations: Record<
     recommendedAnalysisView: "Recommended option",
     availableGroups: "{count} available groups",
     availableOption: "Available",
+    discouragedOption: "Discouraged",
+    lockedOption: "Locked",
+    selectionScoreLabel: "Selection {score}",
+    candidateIdLabel: "Candidate #{id}",
+    resolvedGroupCountLabel: "Uses {count} groups",
+    silhouetteScoreLabel: "Separation {score}",
+    balanceScoreLabel: "Balance {score}",
     checkpointTimelineLabel: "Checkpoint timeline",
     checkpointTimelineStart: "Start",
     checkpointTimelineCheckpoint: "Checkpoint {number}",
@@ -128,6 +141,13 @@ export const analysisPageTranslations: Record<
     recommendedAnalysisView: "الخيار الموصى به",
     availableGroups: "{count} مجموعات متاحة",
     availableOption: "متاح",
+    discouragedOption: "Discouraged",
+    lockedOption: "Locked",
+    selectionScoreLabel: "Selection {score}",
+    candidateIdLabel: "Candidate #{id}",
+    resolvedGroupCountLabel: "Uses {count} groups",
+    silhouetteScoreLabel: "Separation {score}",
+    balanceScoreLabel: "Balance {score}",
     checkpointTimelineLabel: "الخط الزمني لنقاط التحقق",
     checkpointTimelineStart: "البداية",
     checkpointTimelineCheckpoint: "نقطة تحقق {number}",
@@ -161,11 +181,11 @@ export const analysisPageTranslations: Record<
     groupsLabel: "{count} grupos",
     systemDefaultCaption:
       "Elige la variante con mejor puntuación para cada nueva instantánea.",
-    analysisVariantsNotAvailable:
-      "Esto no está disponible en tu plan actual.",
+    analysisVariantsNotAvailable: "Esto no está disponible en tu plan actual.",
     fixedGroupCountUnavailable:
       "Agora no pudo formar {count} grupos significativos para este punto de control.",
-    recommendedDefaultUnavailable: "Aún no hay una variante recomendada disponible.",
+    recommendedDefaultUnavailable:
+      "Aún no hay una variante recomendada disponible.",
     sameAsRecommendedDefault: "Igual que Predeterminado recomendado",
     usesGroups: "Usa {count} grupos",
     recommendedOptionCaption: "Mejor ajuste general",
@@ -178,6 +198,13 @@ export const analysisPageTranslations: Record<
     recommendedAnalysisView: "Opción recomendada",
     availableGroups: "{count} grupos disponibles",
     availableOption: "Disponible",
+    discouragedOption: "Discouraged",
+    lockedOption: "Locked",
+    selectionScoreLabel: "Selection {score}",
+    candidateIdLabel: "Candidate #{id}",
+    resolvedGroupCountLabel: "Uses {count} groups",
+    silhouetteScoreLabel: "Separation {score}",
+    balanceScoreLabel: "Balance {score}",
     checkpointTimelineLabel: "Cronología de puntos de control",
     checkpointTimelineStart: "Inicio",
     checkpointTimelineCheckpoint: "Punto de control {number}",
@@ -196,20 +223,20 @@ export const analysisPageTranslations: Record<
     loadingAnalysis: "در حال بارگذاری تحلیل...",
     retryingAnalysis: "تلاش مجدد برای بارگذاری تحلیل...",
     analysisErrorTitle: "بارگذاری تحلیل ناموفق بود",
-    analysisErrorMessage: "بارگذاری داده‌های تحلیل امکان‌پذیر نیست. لطفاً دوباره تلاش کنید.",
+    analysisErrorMessage:
+      "بارگذاری داده‌های تحلیل امکان‌پذیر نیست. لطفاً دوباره تلاش کنید.",
     noAnalysisData: "داده‌های تحلیل برای این گفتگو موجود نیست",
     retryAnalysis: "تلاش مجدد",
     generateReport: "تولید گزارش",
     report: "گزارش",
     analysisViewTitle: "نمای تحلیل",
-    analysisViewSortingCaption: "تعداد گروه‌ها بر اساس کیفیت تحلیل مرتب می‌شوند.",
+    analysisViewSortingCaption:
+      "تعداد گروه‌ها بر اساس کیفیت تحلیل مرتب می‌شوند.",
     facilitatorPreference: "ترجیح تسهیل‌گر",
     recommendedDefault: "پیش‌فرض پیشنهادی",
     groupsLabel: "{count} گروه",
-    systemDefaultCaption:
-      "بهترین متغیر را برای هر نمای جدید انتخاب می‌کند.",
-    analysisVariantsNotAvailable:
-      "این در طرح فعلی شما پشتیبانی نمی‌شود.",
+    systemDefaultCaption: "بهترین متغیر را برای هر نمای جدید انتخاب می‌کند.",
+    analysisVariantsNotAvailable: "این در طرح فعلی شما پشتیبانی نمی‌شود.",
     fixedGroupCountUnavailable:
       "Agora نتوانست برای این نقطه بررسی {count} گروه معنادار تشکیل دهد.",
     recommendedDefaultUnavailable: "هنوز متغیر پیشنهادی در دسترس نیست.",
@@ -225,6 +252,13 @@ export const analysisPageTranslations: Record<
     recommendedAnalysisView: "گزینه پیشنهادی",
     availableGroups: "{count} گروه در دسترس",
     availableOption: "در دسترس",
+    discouragedOption: "Discouraged",
+    lockedOption: "Locked",
+    selectionScoreLabel: "Selection {score}",
+    candidateIdLabel: "Candidate #{id}",
+    resolvedGroupCountLabel: "Uses {count} groups",
+    silhouetteScoreLabel: "Separation {score}",
+    balanceScoreLabel: "Balance {score}",
     checkpointTimelineLabel: "خط زمانی نقطه های بررسی",
     checkpointTimelineStart: "شروع",
     checkpointTimelineCheckpoint: "نقطه بررسی {number}",
@@ -262,7 +296,8 @@ export const analysisPageTranslations: Record<
       "Ce n'est pas pris en charge par votre forfait actuel.",
     fixedGroupCountUnavailable:
       "Agora n'a pas pu former {count} groupes significatifs pour ce point de contrôle.",
-    recommendedDefaultUnavailable: "Aucune variante recommandée n'est encore disponible.",
+    recommendedDefaultUnavailable:
+      "Aucune variante recommandée n'est encore disponible.",
     sameAsRecommendedDefault: "Identique au Par défaut recommandé",
     usesGroups: "Utilise {count} groupes",
     recommendedOptionCaption: "Meilleur ajustement global",
@@ -275,6 +310,13 @@ export const analysisPageTranslations: Record<
     recommendedAnalysisView: "Option recommandée",
     availableGroups: "{count} groupes disponibles",
     availableOption: "Disponible",
+    discouragedOption: "Discouraged",
+    lockedOption: "Locked",
+    selectionScoreLabel: "Selection {score}",
+    candidateIdLabel: "Candidate #{id}",
+    resolvedGroupCountLabel: "Uses {count} groups",
+    silhouetteScoreLabel: "Separation {score}",
+    balanceScoreLabel: "Balance {score}",
     checkpointTimelineLabel: "Chronologie des points de contrôle",
     checkpointTimelineStart: "Début",
     checkpointTimelineCheckpoint: "Point de contrôle {number}",
@@ -320,6 +362,13 @@ export const analysisPageTranslations: Record<
     recommendedAnalysisView: "推荐选项",
     availableGroups: "{count} 个可用群组",
     availableOption: "可用",
+    discouragedOption: "Discouraged",
+    lockedOption: "Locked",
+    selectionScoreLabel: "Selection {score}",
+    candidateIdLabel: "Candidate #{id}",
+    resolvedGroupCountLabel: "Uses {count} groups",
+    silhouetteScoreLabel: "Separation {score}",
+    balanceScoreLabel: "Balance {score}",
     checkpointTimelineLabel: "检查点时间线",
     checkpointTimelineStart: "开始",
     checkpointTimelineCheckpoint: "检查点 {number}",
@@ -365,6 +414,13 @@ export const analysisPageTranslations: Record<
     recommendedAnalysisView: "推薦選項",
     availableGroups: "{count} 個可用群組",
     availableOption: "可用",
+    discouragedOption: "Discouraged",
+    lockedOption: "Locked",
+    selectionScoreLabel: "Selection {score}",
+    candidateIdLabel: "Candidate #{id}",
+    resolvedGroupCountLabel: "Uses {count} groups",
+    silhouetteScoreLabel: "Separation {score}",
+    balanceScoreLabel: "Balance {score}",
     checkpointTimelineLabel: "檢查點時間線",
     checkpointTimelineStart: "開始",
     checkpointTimelineCheckpoint: "檢查點 {number}",
@@ -395,8 +451,7 @@ export const analysisPageTranslations: Record<
     groupsLabel: "{count} קבוצות",
     systemDefaultCaption:
       "בוחרת את הווריאנט בעל הציון הגבוה ביותר לכל תמונת מצב חדשה.",
-    analysisVariantsNotAvailable:
-      "האפשרות הזו אינה נתמכת בתוכנית הנוכחית שלך.",
+    analysisVariantsNotAvailable: "האפשרות הזו אינה נתמכת בתוכנית הנוכחית שלך.",
     fixedGroupCountUnavailable:
       "Agora לא הצליחה ליצור {count} קבוצות משמעותיות עבור נקודת ביקורת זו.",
     recommendedDefaultUnavailable: "עדיין אין וריאנט מומלץ זמין.",
@@ -412,6 +467,13 @@ export const analysisPageTranslations: Record<
     recommendedAnalysisView: "אפשרות מומלצת",
     availableGroups: "{count} קבוצות זמינות",
     availableOption: "זמין",
+    discouragedOption: "Discouraged",
+    lockedOption: "Locked",
+    selectionScoreLabel: "Selection {score}",
+    candidateIdLabel: "Candidate #{id}",
+    resolvedGroupCountLabel: "Uses {count} groups",
+    silhouetteScoreLabel: "Separation {score}",
+    balanceScoreLabel: "Balance {score}",
     checkpointTimelineLabel: "ציר זמן של נקודות ביקורת",
     checkpointTimelineStart: "התחלה",
     checkpointTimelineCheckpoint: "נקודת ביקורת {number}",
@@ -459,6 +521,13 @@ export const analysisPageTranslations: Record<
     recommendedAnalysisView: "推奨オプション",
     availableGroups: "{count} 個の利用可能なグループ",
     availableOption: "利用可能",
+    discouragedOption: "Discouraged",
+    lockedOption: "Locked",
+    selectionScoreLabel: "Selection {score}",
+    candidateIdLabel: "Candidate #{id}",
+    resolvedGroupCountLabel: "Uses {count} groups",
+    silhouetteScoreLabel: "Separation {score}",
+    balanceScoreLabel: "Balance {score}",
     checkpointTimelineLabel: "チェックポイントのタイムライン",
     checkpointTimelineStart: "開始",
     checkpointTimelineCheckpoint: "チェックポイント {number}",
@@ -490,11 +559,11 @@ export const analysisPageTranslations: Record<
     groupsLabel: "{count} топ",
     systemDefaultCaption:
       "Ар бир жаңы сүрөт үчүн эң жогорку упай алган вариантты тандайт.",
-    analysisVariantsNotAvailable:
-      "Бул учурдагы планыңызда колдоого алынбайт.",
+    analysisVariantsNotAvailable: "Бул учурдагы планыңызда колдоого алынбайт.",
     fixedGroupCountUnavailable:
       "Agora бул текшерүү чекити үчүн {count} маанилүү топ түзө алган жок.",
-    recommendedDefaultUnavailable: "Сунушталган вариант азырынча жеткиликтүү эмес.",
+    recommendedDefaultUnavailable:
+      "Сунушталган вариант азырынча жеткиликтүү эмес.",
     sameAsRecommendedDefault: "Сунушталган демейки менен бирдей",
     usesGroups: "{count} топ колдонот",
     recommendedOptionCaption: "Жалпысынан эң ылайыктуу",
@@ -507,6 +576,13 @@ export const analysisPageTranslations: Record<
     recommendedAnalysisView: "Сунушталган вариант",
     availableGroups: "{count} жеткиликтүү топ",
     availableOption: "Жеткиликтүү",
+    discouragedOption: "Discouraged",
+    lockedOption: "Locked",
+    selectionScoreLabel: "Selection {score}",
+    candidateIdLabel: "Candidate #{id}",
+    resolvedGroupCountLabel: "Uses {count} groups",
+    silhouetteScoreLabel: "Separation {score}",
+    balanceScoreLabel: "Balance {score}",
     checkpointTimelineLabel: "Текшерүү чекиттеринин убакыт сызыгы",
     checkpointTimelineStart: "Башталыш",
     checkpointTimelineCheckpoint: "Текшерүү чекити {number}",
@@ -556,6 +632,13 @@ export const analysisPageTranslations: Record<
     recommendedAnalysisView: "Рекомендуемый вариант",
     availableGroups: "{count} доступных групп",
     availableOption: "Доступно",
+    discouragedOption: "Discouraged",
+    lockedOption: "Locked",
+    selectionScoreLabel: "Selection {score}",
+    candidateIdLabel: "Candidate #{id}",
+    resolvedGroupCountLabel: "Uses {count} groups",
+    silhouetteScoreLabel: "Separation {score}",
+    balanceScoreLabel: "Balance {score}",
     checkpointTimelineLabel: "Хронология контрольных точек",
     checkpointTimelineStart: "Старт",
     checkpointTimelineCheckpoint: "Контрольная точка {number}",
@@ -563,7 +646,8 @@ export const analysisPageTranslations: Record<
     checkpointReasonsLabel: "Маркеры контрольной точки",
     checkpointReasonFirstDisplayableAnalysis: "Первый анализ",
     checkpointReasonFirstGroupCountAvailable: "Количество групп доступно",
-    checkpointReasonDefaultGroupCountChanged: "Значение по умолчанию изменилось",
+    checkpointReasonDefaultGroupCountChanged:
+      "Значение по умолчанию изменилось",
     checkpointReasonParticipationMilestone: "Веха участников",
     checkpointReasonVoteMilestone: "Веха голосов",
     checkpointReasonParticipantCount: "{count} участников",

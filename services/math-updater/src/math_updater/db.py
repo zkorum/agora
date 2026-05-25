@@ -346,7 +346,7 @@ class _PreviousSelectedViewSnapshot:
 @dataclass(frozen=True)
 class _PersistedConversationViewSnapshot:
     view_snapshot_id: int
-    selected_candidate: _CheckpointCandidateOption
+    selected_candidate: _CheckpointCandidateOption | None
     conversation_state: _ConversationViewSnapshotState
     opinion_count: int
     vote_count: int
@@ -1724,14 +1724,19 @@ def _persist_conversation_view_snapshots(
     dict[tuple[int, int], _PersistedConversationViewSnapshot],
     dict[tuple[int, int], list[_CheckpointCandidateOption]],
 ]:
-    current_options_by_pair = _current_checkpoint_candidate_options_by_pair(
+    displayable_options_by_pair = _current_checkpoint_candidate_options_by_pair(
         claims=claims,
         snapshot_id_by_conversation_id=snapshot_id_by_conversation_id,
         candidate_id_by_conversation_variant=candidate_id_by_conversation_variant,
         bundles_by_conversation_id=bundles_by_conversation_id,
         computed_at=datetime.now(UTC),
     )
-    if not current_options_by_pair:
+    pairs = [
+        (claim.conversation_id, claim.opinion_group_spec_id)
+        for claim in claims
+        if claim.conversation_id in snapshot_id_by_conversation_id
+    ]
+    if not pairs:
         return {}, {}
 
     state_by_conversation_id = _fetch_conversation_view_snapshot_state_by_id(
@@ -1742,14 +1747,13 @@ def _persist_conversation_view_snapshots(
         session,
         conversation_ids=[claim.conversation_id for claim in claims],
     )
-    selected_by_pair: dict[tuple[int, int], _CheckpointCandidateOption] = {}
-    for pair, options in current_options_by_pair.items():
+    # The view snapshot is the consistency boundary for counts and analysis.
+    # A selected candidate only controls display/checkpoint/AI-label side effects.
+    selected_by_pair: dict[tuple[int, int], _CheckpointCandidateOption | None] = {}
+    for pair in pairs:
+        options = displayable_options_by_pair.get(pair, [])
         selected = _select_checkpoint_candidate(options)
-        if selected is not None:
-            selected_by_pair[pair] = selected
-
-    if not selected_by_pair:
-        return {}, current_options_by_pair
+        selected_by_pair[pair] = selected
 
     view_snapshot_values: list[dict[str, object]] = []
     for pair, selected in selected_by_pair.items():
@@ -1761,7 +1765,7 @@ def _persist_conversation_view_snapshots(
             {
                 "conversation_id": conversation_id,
                 "opinion_group_spec_id": opinion_group_spec_id,
-                "analysis_snapshot_id": selected.snapshot_id,
+                "analysis_snapshot_id": snapshot_id_by_conversation_id[conversation_id],
                 "survey_aggregate_snapshot_id": (
                     survey_aggregate_snapshot_id_by_conversation_id.get(conversation_id)
                 ),
@@ -1780,7 +1784,9 @@ def _persist_conversation_view_snapshots(
                 "moderated_opinion_count": counters.moderated_opinion_count,
                 "hidden_opinion_count": counters.hidden_opinion_count,
                 "activated_at": None
-                if state.ai_labeling_enabled and ai_generation_expected
+                if state.ai_labeling_enabled
+                and ai_generation_expected
+                and selected is not None
                 else func.now(),
             }
         )
@@ -1810,7 +1816,7 @@ def _persist_conversation_view_snapshots(
             ),
         )
         for pair, selected in selected_by_pair.items()
-    }, current_options_by_pair
+    }, displayable_options_by_pair
 
 
 def _queue_conversation_analysis_updated_events_for_view_snapshots(
@@ -1935,6 +1941,9 @@ def _create_ai_description_locale_status_rows(
     due_conversation_ids: set[int] = set()
     for pair, persisted in persisted_view_snapshots_by_pair.items():
         conversation_id, opinion_group_spec_id = pair
+        if persisted.selected_candidate is None:
+            continue
+
         if not persisted.conversation_state.ai_labeling_enabled:
             continue
 
@@ -1975,6 +1984,9 @@ def _create_lineage_description_work_rows(
 
     work_values_by_lineage_id: dict[int, dict[str, object]] = {}
     for pair, persisted in persisted_view_snapshots_by_pair.items():
+        if persisted.selected_candidate is None:
+            continue
+
         if not persisted.conversation_state.ai_labeling_enabled:
             continue
         conversation_id, _opinion_group_spec_id = pair
@@ -2117,6 +2129,8 @@ def _persist_checkpoint_reasons(
     for pair, persisted in persisted_view_snapshots_by_pair.items():
         conversation_id, opinion_group_spec_id = pair
         selected = persisted.selected_candidate
+        if selected is None:
+            continue
 
         if pair not in existing_first_displayable_pairs and pair not in previous_selected_by_pair:
             reason_values.append(
@@ -2128,7 +2142,7 @@ def _persist_checkpoint_reasons(
                 )
             )
 
-        for option in current_options_by_pair[pair]:
+        for option in current_options_by_pair.get(pair, []):
             group_count_key = (conversation_id, opinion_group_spec_id, option.group_count)
             if (
                 group_count_key not in existing_group_count_pairs

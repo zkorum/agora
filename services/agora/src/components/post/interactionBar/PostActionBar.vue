@@ -1,6 +1,9 @@
 <template>
   <div class="postActionBarContainer">
-    <div class="buttonClusterBar" :class="{ buttonClusterBorder: !compactMode }">
+    <div
+      class="buttonClusterBar"
+      :class="{ buttonClusterBorder: !compactMode }"
+    >
       <div class="leftSection">
         <InteractionTab
           v-model="currentTab"
@@ -21,7 +24,7 @@
         >
           <div class="countContentContainer">
             <ZKIcon color="#7D7A85" name="mdi:vote" size="1rem" />
-            <span>{{ formatAmount(voteCount) }}</span>
+            <AnimatedAmountText :amount="voteCount" />
           </div>
         </ZKButton>
 
@@ -31,7 +34,7 @@
         >
           <div class="countContentContainer">
             <ZKIcon color="#7D7A85" name="ph:users-fill" size="1rem" />
-            <span>{{ formatAmount(participantCount) }}</span>
+            <AnimatedAmountText :amount="participantCount" />
           </div>
         </ZKButton>
 
@@ -85,11 +88,11 @@ import { useShareActions } from "src/composables/share/useShareActions";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ConversationType } from "src/shared/types/zod";
 import type { ContentAction } from "src/utils/actions/core/types";
-import { formatAmount } from "src/utils/common";
 import { useNotify } from "src/utils/ui/notify";
 import { useConversationUrl } from "src/utils/url/conversationUrl";
 import { computed, ref } from "vue";
 
+import AnimatedAmountText from "../../ui-library/AnimatedAmountText.vue";
 import ZKActionDialog from "../../ui-library/ZKActionDialog.vue";
 import ZKButton from "../../ui-library/ZKButton.vue";
 import ZKIcon from "../../ui-library/ZKIcon.vue";
@@ -100,26 +103,29 @@ import {
   postActionBarTranslations,
 } from "./PostActionBar.i18n";
 
-const props = withDefaults(defineProps<{
-  compactMode: boolean;
-  opinionCount: number;
-  participantCount: number;
-  voteCount: number;
-  totalParticipantCount: number;
-  totalVoteCount: number;
-  hasSurvey?: boolean;
-  isLoading?: boolean;
-  conversationSlugId: string;
-  conversationTitle: string;
-  authorUsername: string;
-  onSameTabClick?: () => void;
-  conversationType?: ConversationType;
-  enableRouteNavigation: boolean;
-}>(), {
-  hasSurvey: false,
-  onSameTabClick: undefined,
-  conversationType: "polis",
-});
+const props = withDefaults(
+  defineProps<{
+    compactMode: boolean;
+    opinionCount: number;
+    participantCount: number;
+    voteCount: number;
+    totalParticipantCount: number;
+    totalVoteCount: number;
+    hasSurvey?: boolean;
+    isLoading?: boolean;
+    conversationSlugId: string;
+    conversationTitle: string;
+    authorUsername: string;
+    onSameTabClick?: () => void;
+    conversationType?: ConversationType;
+    enableRouteNavigation: boolean;
+  }>(),
+  {
+    hasSurvey: false,
+    onSameTabClick: undefined,
+    conversationType: "polis",
+  }
+);
 
 const currentTab = defineModel<"comment" | "analysis">({
   required: true,

@@ -29,6 +29,7 @@
             :accessibility-label="t('analysisViewTitle')"
             button-type="standardButton"
             class="analysis-view-selector"
+            content-alignment="start"
             icon-name="mdi-chevron-down"
             icon-size="1rem"
             label-overflow="truncate"
@@ -428,7 +429,9 @@ const selectedRouteCheckpoint = computed(() =>
 
 const loadedAnalysisCheckpoints = computed<AnalysisCheckpoint[]>(
   () =>
-    pausedLiveCheckpoints.value ?? props.analysisCheckpointsQuery.data.value ?? []
+    pausedLiveCheckpoints.value ??
+    props.analysisCheckpointsQuery.data.value ??
+    []
 );
 
 const analysisCheckpoints = computed<AnalysisCheckpoint[]>(() => {
@@ -559,13 +562,9 @@ watch(
       return;
     }
 
-    await router.replace({
-      path: route.path,
-      query: getUpdatedAnalysisRouteQuery({
-        query: route.query,
-        analysisView: state.canonicalView,
-        checkpointViewSnapshotId: selectedRouteCheckpoint.value,
-      }),
+    await replaceAnalysisRoutePreservingScroll({
+      analysisView: state.canonicalView,
+      checkpointViewSnapshotId: selectedRouteCheckpoint.value,
     });
   },
   { immediate: true }
@@ -697,13 +696,9 @@ async function handleAnalysisViewSelect(
   }
 
   showAnalysisViewDrawer.value = false;
-  await router.replace({
-    path: route.path,
-    query: getUpdatedAnalysisRouteQuery({
-      query: route.query,
-      analysisView: option.view,
-      checkpointViewSnapshotId: selectedRouteCheckpoint.value,
-    }),
+  await replaceAnalysisRoutePreservingScroll({
+    analysisView: option.view,
+    checkpointViewSnapshotId: selectedRouteCheckpoint.value,
   });
 }
 
@@ -711,14 +706,40 @@ async function setCheckpointRoute(
   checkpointViewSnapshotId: number | undefined
 ): Promise<void> {
   clearLivePause();
+  await replaceAnalysisRoutePreservingScroll({
+    analysisView: selectedAnalysisView.value,
+    checkpointViewSnapshotId,
+  });
+}
+
+function restoreAnalysisScrollPosition({ top }: { top: number }): void {
+  requestAnimationFrame(() => {
+    props.conversationScrollContext.scrollToPosition({
+      top,
+      behavior: "auto",
+    });
+  });
+}
+
+async function replaceAnalysisRoutePreservingScroll({
+  analysisView,
+  checkpointViewSnapshotId,
+}: {
+  analysisView: AnalysisView | undefined;
+  checkpointViewSnapshotId: number | undefined;
+}): Promise<void> {
+  const top = props.conversationScrollContext.getScrollPosition();
+
   await router.replace({
     path: route.path,
     query: getUpdatedAnalysisRouteQuery({
       query: route.query,
-      analysisView: selectedAnalysisView.value,
+      analysisView,
       checkpointViewSnapshotId,
     }),
   });
+
+  restoreAnalysisScrollPosition({ top });
 }
 
 async function goLive(): Promise<void> {
@@ -759,12 +780,11 @@ function clearLivePause(): void {
   }
 }
 
-const polisClusters = computed<Partial<PolisClusters>>(
-  () =>
-    getDisplayPolisClusters({
-      clusters: activeAnalysisData.value?.polisClusters ?? {},
-      aiLabelingEnabled: props.aiLabelingEnabled,
-    })
+const polisClusters = computed<Partial<PolisClusters>>(() =>
+  getDisplayPolisClusters({
+    clusters: activeAnalysisData.value?.polisClusters ?? {},
+    aiLabelingEnabled: props.aiLabelingEnabled,
+  })
 );
 
 // Extract only cluster labels for optimal performance (300 bytes instead of 300KB)
@@ -840,10 +860,11 @@ async function refreshCheckpoints(): Promise<void> {
 defineExpose({
   isLoading: computed(
     () =>
-      analysisQuery.isPending.value ||
-      analysisQuery.isRefetching.value ||
-      props.analysisCheckpointsQuery.isPending.value ||
-      props.analysisCheckpointsQuery.isRefetching.value
+      ((analysisQuery.isPending.value || analysisQuery.isRefetching.value) &&
+        analysisQuery.data.value === undefined) ||
+      ((props.analysisCheckpointsQuery.isPending.value ||
+        props.analysisCheckpointsQuery.isRefetching.value) &&
+        props.analysisCheckpointsQuery.data.value === undefined)
   ),
   refreshCheckpoints,
 });
@@ -1013,5 +1034,56 @@ defineExpose({
   color: #6d6a74;
   font-size: 0.8rem;
   line-height: 1.3;
+}
+
+.analysis-view-drawer-option__meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+}
+
+.analysis-view-drawer-option__status,
+.analysis-view-drawer-option__score {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.12rem 0.45rem;
+  font-size: 0.7rem;
+  line-height: 1.3;
+}
+
+.analysis-view-drawer-option__status--recommended {
+  background: #eeeaff;
+  color: #4d36d8;
+}
+
+.analysis-view-drawer-option__status--available {
+  background: #eef7f2;
+  color: #137a55;
+}
+
+.analysis-view-drawer-option__status--discouraged {
+  background: #fff4df;
+  color: #8a5a00;
+}
+
+.analysis-view-drawer-option__status--locked {
+  background: #f2f2f4;
+  color: #6d6a74;
+}
+
+.analysis-view-drawer-option__score {
+  background: #f5f5f7;
+  color: #6d6a74;
+}
+
+.analysis-view-drawer-option__details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.55rem;
+  color: #7b7884;
+  font-size: 0.72rem;
+  line-height: 1.35;
 }
 </style>

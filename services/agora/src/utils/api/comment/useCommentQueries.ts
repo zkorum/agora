@@ -132,7 +132,9 @@ export function useAnalysisQuery({
     ],
     queryFn: async () => {
       const resolvedConversationSlugId = toValue(conversationSlugId);
-      const resolvedCheckpointViewSnapshotId = toValue(checkpointViewSnapshotId);
+      const resolvedCheckpointViewSnapshotId = toValue(
+        checkpointViewSnapshotId
+      );
       const analysisData = await fetchAnalysisData({
         conversationSlugId: resolvedConversationSlugId,
         analysisView: toValue(analysisView),
@@ -140,7 +142,10 @@ export function useAnalysisQuery({
       });
 
       const snapshot = analysisData.conversationViewSnapshot;
-      if (resolvedCheckpointViewSnapshotId === undefined && snapshot !== undefined) {
+      if (
+        resolvedCheckpointViewSnapshotId === undefined &&
+        snapshot !== undefined
+      ) {
         updateConversationQueryCache({
           queryClient,
           conversationSlugId: resolvedConversationSlugId,
@@ -182,6 +187,7 @@ export function useAnalysisQuery({
     staleTime: getAnalysisStaleTime(toValue(voteCount)), // Dynamic cache based on conversation size
     // Note: When votes/comments happen, markAnalysisAsStale() is called
     // This marks data as stale immediately, so next access will refetch
+    placeholderData: (previousData) => previousData, // Preserve previous data during analysis refreshes
     retry: false, // Disable auto-retry
   });
 }
@@ -208,6 +214,7 @@ export function useAnalysisCheckpointsQuery({
       () => toValue(enabled) && toValue(conversationSlugId) !== ""
     ),
     staleTime: 30000,
+    placeholderData: (previousData) => previousData, // Preserve timeline during refreshes
     retry: false,
   });
 }

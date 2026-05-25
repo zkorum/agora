@@ -276,10 +276,14 @@ const isCurrentTabLoading = computed((): boolean => {
     return opinionSectionRef.value?.isLoading ?? false;
   } else if (currentTab.value === "analysis") {
     return (
-      analysisQuery.isPending.value ||
-      analysisQuery.isRefetching.value ||
-      surveyResultsQuery.isPending.value ||
-      surveyResultsQuery.isRefetching.value
+      ((analysisQuery.isPending.value || analysisQuery.isRefetching.value) &&
+        analysisQuery.data.value === undefined) ||
+      ((analysisCheckpointsQuery.isPending.value ||
+        analysisCheckpointsQuery.isRefetching.value) &&
+        analysisCheckpointsQuery.data.value === undefined) ||
+      ((surveyResultsQuery.isPending.value ||
+        surveyResultsQuery.isRefetching.value) &&
+        surveyResultsQuery.data.value === undefined)
     );
   }
 

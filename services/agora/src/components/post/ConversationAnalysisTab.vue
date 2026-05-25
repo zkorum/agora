@@ -4,7 +4,9 @@
       ref="analysisPageRef"
       :conversation-slug-id="conversationData.metadata.conversationSlugId"
       :conversation-author-username="conversationData.metadata.authorUsername"
-      :conversation-organization-name="conversationData.metadata.organization?.name ?? ''"
+      :conversation-organization-name="
+        conversationData.metadata.organization?.name ?? ''
+      "
       :analysis-query="analysisQuery"
       :analysis-checkpoints-query="analysisCheckpointsQuery"
       :survey-query="surveyResultsQuery"
@@ -67,12 +69,9 @@ const setCurrentTabLoading = inject<(loading: boolean) => void>(
 );
 const registerChildRefreshHandler = inject<
   (handler: () => Promise<void>) => void
->(
-  "registerChildRefreshHandler",
-  () => {
-    /* noop */
-  }
-);
+>("registerChildRefreshHandler", () => {
+  /* noop */
+});
 
 const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
 const isTabActive = ref(true);
@@ -87,8 +86,12 @@ const voteCount = computed(() => props.conversationData.metadata.voteCount);
 const aiLabelingEnabled = computed(
   () => props.conversationData.metadata.aiLabelingEnabled
 );
-const hasSurvey = computed(() => props.conversationData.interaction.surveyGate?.hasSurvey === true);
-const analysisView = computed(() => parseAnalysisViewQuery({ query: route.query }));
+const hasSurvey = computed(
+  () => props.conversationData.interaction.surveyGate?.hasSurvey === true
+);
+const analysisView = computed(() =>
+  parseAnalysisViewQuery({ query: route.query })
+);
 const checkpointViewSnapshotId = computed(() =>
   parseCheckpointQuery({ query: route.query })
 );
@@ -101,14 +104,20 @@ const analysisQuery = useAnalysisQuery({
   voteCount,
   aiLabelingEnabled,
   enabled: computed(
-    () => props.hasConversationData && isTabActive.value && !isLiveAnalysisPaused.value
+    () =>
+      props.hasConversationData &&
+      isTabActive.value &&
+      !isLiveAnalysisPaused.value
   ),
 });
 
 const analysisCheckpointsQuery = useAnalysisCheckpointsQuery({
   conversationSlugId,
   enabled: computed(
-    () => props.hasConversationData && isTabActive.value && !isLiveAnalysisPaused.value
+    () =>
+      props.hasConversationData &&
+      isTabActive.value &&
+      !isLiveAnalysisPaused.value
   ),
 });
 
@@ -120,14 +129,19 @@ const surveyResultsQuery = useSurveyResultsAggregatedQuery({
 const isSurveyResultsLoading = computed(
   () =>
     hasSurvey.value &&
-    (surveyResultsQuery.isPending.value || surveyResultsQuery.isRefetching.value)
+    (surveyResultsQuery.isPending.value ||
+      surveyResultsQuery.isRefetching.value) &&
+    surveyResultsQuery.data.value === undefined
 );
 
 // Report loading state to parent (for spinner in PostActionBar)
 const isLoading = computed(
   () =>
-    analysisQuery.isPending.value ||
-    analysisQuery.isRefetching.value ||
+    ((analysisQuery.isPending.value || analysisQuery.isRefetching.value) &&
+      analysisQuery.data.value === undefined) ||
+    ((analysisCheckpointsQuery.isPending.value ||
+      analysisCheckpointsQuery.isRefetching.value) &&
+      analysisCheckpointsQuery.data.value === undefined) ||
     isSurveyResultsLoading.value
 );
 
@@ -140,7 +154,8 @@ watch(isLoading, (loading) => {
 });
 
 async function handleChildRefresh(): Promise<void> {
-  const checkpointRefresh = analysisPageRef.value?.refreshCheckpoints() ?? Promise.resolve();
+  const checkpointRefresh =
+    analysisPageRef.value?.refreshCheckpoints() ?? Promise.resolve();
 
   if (hasSurvey.value) {
     await Promise.all([

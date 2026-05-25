@@ -25,7 +25,8 @@
       :name="iconCode"
       size="1rem"
     />
-    <span v-if="text !== undefined" :style="{ paddingBottom: '0' }">
+    <AnimatedAmountText v-if="amount !== undefined" :amount="amount" />
+    <span v-else-if="text !== undefined" :style="{ paddingBottom: '0' }">
       {{ text }}
     </span>
   </SpaLink>
@@ -53,19 +54,22 @@
       :name="iconCode"
       size="1rem"
     />
-    <span v-if="text !== undefined" :style="{ paddingBottom: '0' }">
+    <AnimatedAmountText v-if="amount !== undefined" :amount="amount" />
+    <span v-else-if="text !== undefined" :style="{ paddingBottom: '0' }">
       {{ text }}
     </span>
   </button>
 </template>
 
 <script setup lang="ts">
+import AnimatedAmountText from "src/components/ui-library/AnimatedAmountText.vue";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import type { RouteLocationRaw } from "vue-router";
 
 defineProps<{
   text?: string;
+  amount?: number;
   iconCode?: string;
   isHighlighted: boolean;
   shouldUnderlineOnHighlight: boolean;
