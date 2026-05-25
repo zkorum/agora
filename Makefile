@@ -116,10 +116,10 @@ dev-app:
 dev-app-raw:
 	cd services/agora && pnpm dev
 
-dev-app-new:
-	$(LOG_RUNNER) --service app -- $(MAKE) dev-app-new-raw
+dev-landing:
+	$(LOG_RUNNER) --service app -- $(MAKE) dev-landing-raw
 
-dev-app-new-raw:
+dev-landing-raw:
 	cd services/app && pnpm dev
 
 dev-api:

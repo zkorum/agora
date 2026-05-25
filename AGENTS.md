@@ -105,7 +105,7 @@ For details, see [services/agora/README.md](services/agora/README.md#environment
 make dev-app
 
 # Landing page (SvelteKit)
-make dev-app-new
+make dev-landing
 
 # Backend API (Fastify)
 make dev-api
@@ -898,7 +898,7 @@ Icons use **Iconify via Tailwind CSS v4** (`@iconify/tailwind4` plugin). Never u
 ### Development
 
 ```bash
-make dev-app-new                    # Start dev server
+make dev-landing                    # Start dev server
 cd services/app && pnpm lint        # Lint
 cd services/app && pnpm check       # Type check
 cd services/app && pnpm test:unit   # Vitest

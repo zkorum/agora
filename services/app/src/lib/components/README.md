@@ -5,20 +5,18 @@ Application features with business logic. Compose `$ui/` primitives.
 ## Structure
 
 ```
-components/{app}/
-  shared/       # Shared across all apps
+components/
+  shared/       # Shared across landing and blog
   landing/      # Landing page sections
-  facilitator/  # Facilitator app
-  participant/  # Participant app
 ```
 
 ## Import Rules
 
 - Import UI from `$ui/`, never directly from `bits-ui`
-- No cross-app imports: `landing/` cannot import from `facilitator/` or `participant/`
+- Keep landing-specific code in `landing/`
 - Can always import from `shared/`
 
 ## Sharing
 
-**Wait until mature** - only move to `shared/` when 2+ apps need it AND the component is stable.
-Don't preemptively share; start in app folders and promote when genuinely needed.
+**Wait until mature** - only move to `shared/` when landing and blog both need it AND the component is stable.
+Don't preemptively share; start in feature folders and promote when genuinely needed.

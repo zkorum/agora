@@ -5,11 +5,9 @@ Reactive state using Svelte 5 runes (`.svelte.ts` files).
 ## Structure
 
 ```
-state/{app}/
+state/
   shared/       # Global config, feature flags
   landing/      # Landing-specific state (if needed)
-  facilitator/  # Facilitator-specific state (if needed)
-  participant/  # Participant-specific state (if needed)
 ```
 
 ## Rules
@@ -20,4 +18,4 @@ state/{app}/
 
 ## Sharing
 
-**Rare** - most state is app-specific. Only truly global config/feature flags belong in `shared/`.
+**Rare** - most state is feature-specific. Only truly global config/feature flags belong in `shared/`.

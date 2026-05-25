@@ -5,11 +5,9 @@ Design system - styled wrappers around Bits UI with Tailwind.
 ## Structure
 
 ```
-ui/{app}/
+ui/
   shared/       # Core design system (Button, Input, Dialog, Icons)
   landing/      # Landing-specific UI (if needed)
-  facilitator/  # Facilitator-specific UI (if needed)
-  participant/  # Participant-specific UI (if needed)
 ```
 
 ## Rules
@@ -22,4 +20,4 @@ ui/{app}/
 ## Sharing
 
 **Usually starts in `shared/`** - design system components are inherently reusable.
-App-specific UI folders are for rare cases where styling differs significantly between apps.
+Landing-specific UI belongs in `landing/` only when it would not be useful elsewhere.

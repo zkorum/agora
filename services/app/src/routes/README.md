@@ -8,15 +8,14 @@ SvelteKit file-based routing. URL structure maps to folder structure.
 routes/
   +page.svelte        # Landing page (/)
   resources/          # Resources (/resources)
-  facilitator/        # Facilitator app (/facilitator)
-  participant/        # Participant app (/participant)
+  blog/               # Legacy redirects to resources
 ```
 
 ## Rules
 
 - Routes should be simple - just compose components from `$components/`
 - Business logic belongs in components, not routes
-- Each route imports from matching `$components/{app}/`
+- Routes import landing and shared components from `$components/`
 
 ## Sharing
 
