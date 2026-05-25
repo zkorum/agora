@@ -1,7 +1,6 @@
 <template>
   <div class="container flexStyle">
     <CheckpointTimeline
-      v-if="analysisCheckpoints.length > 0"
       :checkpoints="analysisCheckpoints"
       :selected-checkpoint-id="selectedRouteCheckpoint"
       :is-live-selected="isLiveAnalysis"
@@ -20,8 +19,10 @@
     <AsyncStateHandler :query="analysisQuery" :config="asyncStateConfig">
       <div class="analysis-content">
         <div
-          v-if="analysisViewOptions.length > 0 || showAnalysisPlaybackButton"
           class="analysis-controls"
+          :class="{
+            'analysis-controls--playback-only': analysisViewOptions.length === 0,
+          }"
         >
           <ZKDropdownSelectorButton
             v-if="analysisViewOptions.length > 0"
@@ -37,7 +38,6 @@
           />
 
           <button
-            v-if="showAnalysisPlaybackButton"
             type="button"
             class="analysis-playback-button"
             :class="{
@@ -402,9 +402,7 @@ function onTabChange(value: string): void {
 // Use the passed-in analysis query instead of creating our own
 const analysisQuery = props.analysisQuery;
 
-const isLivePaused = computed(
-  () => props.isLiveAnalysisPaused && pausedLiveAnalysisData.value !== undefined
-);
+const isLivePaused = computed(() => props.isLiveAnalysisPaused);
 
 const activeAnalysisData = computed<AnalysisData | undefined>(() => {
   if (isLivePaused.value) {
@@ -475,10 +473,6 @@ const isLatestCheckpointLive = computed(() => {
     checkpoint.conversationViewSnapshotId === liveViewSnapshotId
   );
 });
-
-const showAnalysisPlaybackButton = computed(
-  () => latestCheckpoint.value !== undefined
-);
 
 const analysisPlaybackIcon = computed(() =>
   isLiveAnalysis.value && !isLivePaused.value
@@ -576,6 +570,32 @@ const reportRouteQuery = computed(() =>
     analysisView: selectedAnalysisView.value,
     checkpointViewSnapshotId: selectedRouteCheckpoint.value,
   })
+);
+
+watch(
+  () => ({
+    checkpoint: selectedRouteCheckpoint.value,
+    checkpoints: loadedAnalysisCheckpoints.value,
+    hasLoadedCheckpoints:
+      pausedLiveCheckpoints.value !== undefined ||
+      props.analysisCheckpointsQuery.data.value !== undefined,
+  }),
+  async ({ checkpoint, checkpoints, hasLoadedCheckpoints }) => {
+    if (checkpoint === undefined || !hasLoadedCheckpoints) {
+      return;
+    }
+
+    if (
+      checkpoints.some(
+        (item) => item.conversationViewSnapshotId === checkpoint
+      )
+    ) {
+      return;
+    }
+
+    await setCheckpointRoute(undefined);
+  },
+  { immediate: true }
 );
 
 watch(
@@ -761,12 +781,7 @@ async function toggleAnalysisPlayback(): Promise<void> {
 }
 
 function pauseLiveAtCurrentFrame(): void {
-  const data = analysisQuery.data.value;
-  if (data === undefined) {
-    return;
-  }
-
-  pausedLiveAnalysisData.value = data;
+  pausedLiveAnalysisData.value = analysisQuery.data.value;
   pausedLiveCheckpoints.value = analysisCheckpoints.value;
   emit("update:liveAnalysisPaused", true);
 }
@@ -918,6 +933,10 @@ defineExpose({
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+}
+
+.analysis-controls--playback-only {
+  justify-content: flex-end;
 }
 
 .analysis-view-selector {

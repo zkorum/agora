@@ -179,7 +179,7 @@ function addCheckpoint(): void {
 }
 
 function removeCheckpoint(): void {
-  checkpointCount.value = Math.max(1, checkpointCount.value - 1);
+  checkpointCount.value = Math.max(0, checkpointCount.value - 1);
 }
 
 function selectCheckpoint(checkpointViewSnapshotId: number): void {

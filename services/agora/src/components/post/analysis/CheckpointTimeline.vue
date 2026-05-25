@@ -1,5 +1,5 @@
 <template>
-  <div v-if="props.checkpoints.length > 0" class="checkpoint-timeline">
+  <div class="checkpoint-timeline">
     <div class="checkpoint-timeline__body">
       <button
         type="button"
@@ -21,6 +21,18 @@
         :aria-label="props.title"
       >
         <div class="checkpoint-timeline__track">
+          <button
+            v-if="showDisabledStartMarker"
+            type="button"
+            class="checkpoint-timeline__marker checkpoint-timeline__marker--disabled-start"
+            disabled
+          >
+            <span class="checkpoint-timeline__dot" />
+            <span class="checkpoint-timeline__label">
+              {{ props.startLabel }}
+            </span>
+          </button>
+
           <button
             v-for="(checkpoint, index) in displayedCheckpoints"
             :key="checkpoint.conversationViewSnapshotId"
@@ -149,25 +161,49 @@ const $q = useQuasar();
 const timelineRef = ref<HTMLElement | null>(null);
 const markerElements = new Map<CheckpointMarkerKey, HTMLElement>();
 
+const hasRequestedUnavailableCheckpoint = computed(() => {
+  if (props.selectedCheckpointId === undefined || props.isLiveSelected) {
+    return false;
+  }
+
+  return !props.checkpoints.some(
+    (checkpoint) =>
+      checkpoint.conversationViewSnapshotId === props.selectedCheckpointId
+  );
+});
+
+const effectiveCheckpoints = computed(() => {
+  if (hasRequestedUnavailableCheckpoint.value) {
+    return [];
+  }
+
+  return props.checkpoints;
+});
+
 const latestCheckpoint = computed(() => {
-  if (props.checkpoints.length === 0) {
+  if (effectiveCheckpoints.value.length === 0) {
     return undefined;
   }
 
-  return props.checkpoints[props.checkpoints.length - 1];
+  return effectiveCheckpoints.value[effectiveCheckpoints.value.length - 1];
 });
 
 const displayedCheckpoints = computed(() => {
   if (!props.isLatestCheckpointLive) {
-    return props.checkpoints;
+    return effectiveCheckpoints.value;
   }
 
-  return props.checkpoints.slice(0, -1);
+  return effectiveCheckpoints.value.slice(0, -1);
 });
+
+const showDisabledStartMarker = computed(
+  () => displayedCheckpoints.value.length === 0
+);
 
 const isLiveTimelineSelected = computed(
   () =>
     props.isLiveSelected ||
+    hasRequestedUnavailableCheckpoint.value ||
     (props.isLatestCheckpointLive &&
       props.selectedCheckpointId ===
         latestCheckpoint.value?.conversationViewSnapshotId)
@@ -397,6 +433,7 @@ watch(
     checkpointCount: props.checkpoints.length,
     isLiveSelected: props.isLiveSelected,
     isLatestCheckpointLive: props.isLatestCheckpointLive,
+    showDisabledStartMarker: showDisabledStartMarker.value,
   }),
   async () => {
     await nextTick();
@@ -502,9 +539,14 @@ onMounted(async () => {
   font: inherit;
   scroll-snap-align: center;
 
-  &:hover,
-  &:focus-visible {
+  &:not(:disabled):hover,
+  &:not(:disabled):focus-visible {
     color: #6b4eff;
+  }
+
+  &:disabled {
+    cursor: default;
+    color: #9b98a3;
   }
 }
 
@@ -515,6 +557,12 @@ onMounted(async () => {
   border: 2px solid #d8d6de;
   border-radius: 999px;
   background: white;
+}
+
+.checkpoint-timeline__marker--disabled-start {
+  .checkpoint-timeline__dot {
+    background: #f5f5f7;
+  }
 }
 
 .checkpoint-timeline__label {
