@@ -4,7 +4,7 @@
       <div class="container">
         <AsyncStateHandler
           :query="activeQuery"
-          :is-empty="customIsEmpty"
+          :is-empty="isCommentListEmpty"
           :config="asyncStateConfig"
         >
           <CommentGroup
@@ -161,6 +161,10 @@ const emptyTextByFilter: Record<CommentFilterOptions, keyof CommentSectionTransl
   my_votes: "emptyMyVotes",
   hidden: "emptyHidden",
 };
+
+const isCommentListEmpty = computed(
+  () => customIsEmpty.value && targetOpinion.value === null
+);
 
 // AsyncStateHandler configuration
 const asyncStateConfig = computed(() => ({
