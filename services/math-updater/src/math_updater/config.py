@@ -1,6 +1,7 @@
-from typing import ClassVar
+import logging
+from typing import ClassVar, Literal
 
-from pydantic import AnyUrl, Field, TypeAdapter, field_validator
+from pydantic import AliasChoices, AnyUrl, Field, TypeAdapter, field_validator
 from pydantic_settings import (
     BaseSettings,
     DotEnvSettingsSource,
@@ -12,9 +13,17 @@ from pydantic_settings import (
 DEFAULT_VALKEY_URL: AnyUrl = TypeAdapter(AnyUrl).validate_python(
     "valkey://localhost:6379",
 )
+log = logging.getLogger(__name__)
 ALLOWED_VALKEY_SCHEMES = {"valkey", "valkeys", "redis", "rediss"}
 SHARED_PYTHON_WORKER_ENV_PREFIX = "AGORA_PYTHON_WORKER_"
 MATH_UPDATER_ENV_PREFIX = "MATH_UPDATER_"
+SimulationMode = Literal[
+    "off",
+    "success",
+    "retryable_error",
+    "retryable_error_then_success",
+    "non_retryable_error",
+]
 
 DEFAULT_AWS_AI_LABEL_SUMMARY_PROMPT = """\
 You are analyzing opinion clusters from a group conversation.
@@ -171,6 +180,10 @@ descriptionId exactly.
 
 
 class Settings(BaseSettings):
+    agora_dev_mode: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("AGORA_DEV_MODE", "MATH_UPDATER_AGORA_DEV_MODE"),
+    )
     connection_string: str = Field(default="", min_length=1)
     connection_string_read: str | None = Field(default=None, min_length=1)
 
@@ -193,6 +206,11 @@ class Settings(BaseSettings):
     retry_cooldown_seconds: int = Field(default=300, ge=0)
     analysis_engine_epoch: int = Field(default=1, ge=1)
     ai_description_epoch: int = Field(default=1, ge=1)
+
+    simulation_providers_enable: bool = False
+    ai_description_simulation_mode: SimulationMode = "off"
+    description_translation_simulation_mode: SimulationMode = "off"
+    simulation_retryable_failure_attempts: int = Field(default=1, ge=1)
 
     aws_ai_label_summary_enable: bool = False
     aws_ai_label_summary_region: str = Field(default="us-east-1", min_length=1)
@@ -238,6 +256,7 @@ class Settings(BaseSettings):
         env_prefix=MATH_UPDATER_ENV_PREFIX,
         env_file=".env",
         extra="forbid",
+        populate_by_name=True,
         str_strip_whitespace=True,
         validate_default=True,
     )
@@ -259,6 +278,20 @@ class Settings(BaseSettings):
         return (
             self.google_cloud_service_account_aws_secret_key is not None
             or self.google_application_credentials is not None
+        )
+
+    @property
+    def ai_description_simulation_enabled(self) -> bool:
+        return (
+            self.simulation_providers_enable
+            and self.ai_description_simulation_mode != "off"
+        )
+
+    @property
+    def description_translation_simulation_enabled(self) -> bool:
+        return (
+            self.simulation_providers_enable
+            and self.description_translation_simulation_mode != "off"
         )
 
 
@@ -307,7 +340,49 @@ class DescriptionTranslationWorkerSettings(_LayeredPythonWorkerSettings):
 
 
 def validate_ai_description_config(settings: Settings) -> None:
-    if settings.aws_description_translation_enable and not settings.aws_ai_label_summary_enable:
+    simulation_mode_enabled = (
+        settings.ai_description_simulation_mode != "off"
+        or settings.description_translation_simulation_mode != "off"
+    )
+    if settings.simulation_providers_enable and not settings.agora_dev_mode:
+        log.error(
+            "[MathUpdaterConfig] Refusing simulation providers outside dev mode "
+            "dev_mode=%s simulation_providers_enable=%s ai_mode=%s translation_mode=%s",
+            settings.agora_dev_mode,
+            settings.simulation_providers_enable,
+            settings.ai_description_simulation_mode,
+            settings.description_translation_simulation_mode,
+        )
+        msg = (
+            "Simulation providers are dev-only. Refusing to start because "
+            "AGORA_DEV_MODE=true is not set."
+        )
+        raise MathUpdaterConfigError(msg)
+    if simulation_mode_enabled and not settings.simulation_providers_enable:
+        msg = (
+            "Simulation provider modes require "
+            "MATH_UPDATER_SIMULATION_PROVIDERS_ENABLE=true."
+        )
+        raise MathUpdaterConfigError(msg)
+    if settings.ai_description_simulation_enabled and settings.aws_ai_label_summary_enable:
+        msg = "AI description simulation cannot be enabled with real AI summaries."
+        raise MathUpdaterConfigError(msg)
+    real_translation_configured = (
+        settings.aws_description_translation_enable
+        or settings.google_translation_credentials_configured
+    )
+    if settings.description_translation_simulation_enabled and real_translation_configured:
+        msg = (
+            "Description translation simulation cannot be enabled with real "
+            "translation providers."
+        )
+        raise MathUpdaterConfigError(msg)
+
+    ai_generation_available = (
+        settings.aws_ai_label_summary_enable
+        or settings.ai_description_simulation_enabled
+    )
+    if settings.aws_description_translation_enable and not ai_generation_available:
         msg = (
             "AWS description translation is enabled, but "
             "AWS_AI_LABEL_SUMMARY_ENABLE is false. Translations require AI-generated "
@@ -317,7 +392,7 @@ def validate_ai_description_config(settings: Settings) -> None:
         raise MathUpdaterConfigError(msg)
     if (
         settings.google_translation_credentials_configured
-        and not settings.aws_ai_label_summary_enable
+        and not ai_generation_available
     ):
         msg = (
             "Google Cloud Translation credentials are configured, but "

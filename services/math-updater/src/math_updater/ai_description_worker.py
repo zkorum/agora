@@ -21,6 +21,7 @@ from math_updater.config import (
 from math_updater.description_retry_processor import process_ai_description_conversation_ids
 from math_updater.description_services import build_description_generator
 from math_updater.retry_policy import RetryPolicy
+from math_updater.simulation_providers import build_simulation_runtime, log_simulation_startup
 from math_updater.valkey_client import (
     ai_description_queue_depth,
     now_ms,
@@ -110,11 +111,18 @@ def main() -> None:
     except MathUpdaterConfigError as error:
         log.error("%s Configuration error: %s", LOG_PREFIX, error)
         raise SystemExit(1) from error
+    log_simulation_startup(settings)
+    simulation_runtime = build_simulation_runtime(settings)
 
     description_generator = build_description_generator(settings)
     if description_generator is None:
         log.info("%s AI description generation disabled", LOG_PREFIX)
         return
+    log.info(
+        "%s AI description generation enabled provider_mode=%s",
+        LOG_PREFIX,
+        "simulation" if settings.ai_description_simulation_enabled else "bedrock",
+    )
 
     vk = _connect_to_valkey_with_retry(settings)
     if vk is None:
@@ -204,9 +212,21 @@ def main() -> None:
                 time.sleep(min(settings.worker_poll_idle_sleep_seconds, sleep_ms / 1000))
             continue
 
+        log.info(
+            "%s Popped %d due lineage conversation(s)",
+            LOG_PREFIX,
+            len(due_items),
+        )
+
         claimable_due_items = due_items[: settings.db_claim_batch_size]
         overflow_due_items = due_items[settings.db_claim_batch_size :]
         requeue_ai_description_conversations(vk, conversations=overflow_due_items)
+        if overflow_due_items:
+            log.info(
+                "%s Requeued %d overflow lineage conversation(s)",
+                LOG_PREFIX,
+                len(overflow_due_items),
+            )
         processed_count = process_ai_description_conversation_ids(
             primary_engine=primary_engine,
             vk=vk,
@@ -221,6 +241,7 @@ def main() -> None:
             description_translator=None,
             claim_lineage_descriptions=True,
             claim_translations=False,
+            simulation_runtime=simulation_runtime,
             log_prefix=LOG_PREFIX,
         )
         if processed_count:

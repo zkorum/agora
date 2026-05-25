@@ -30,6 +30,7 @@ WORKER_ENV_PREFIXES = [
 
 def isolate_settings_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("AGORA_DEV_MODE", raising=False)
     for prefix in WORKER_ENV_PREFIXES:
         for field_name in Settings.model_fields:
             monkeypatch.delenv(f"{prefix}{field_name.upper()}", raising=False)
@@ -103,6 +104,33 @@ def test_settings_accepts_valid_minimal_config(
 
     assert settings.read_dsn == VALID_DSN
     assert settings.aws_ai_label_summary_enable is False
+    assert settings.agora_dev_mode is False
+    assert settings.simulation_providers_enable is False
+    assert settings.ai_description_simulation_mode == "off"
+    assert settings.description_translation_simulation_mode == "off"
+
+
+def test_ai_description_config_allows_normal_non_dev_mode(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    settings = Settings(connection_string=VALID_DSN)
+
+    validate_ai_description_config(settings)
+
+
+def test_ai_description_config_allows_real_ai_without_dev_mode(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    settings = Settings(
+        connection_string=VALID_DSN,
+        aws_ai_label_summary_enable=True,
+    )
+
+    validate_ai_description_config(settings)
 
 
 def test_ai_description_config_rejects_translation_without_ai(
@@ -159,6 +187,98 @@ def test_ai_description_config_allows_bedrock_translation_with_ai(
     )
 
     validate_ai_description_config(settings)
+
+
+def test_ai_description_config_rejects_simulation_outside_dev(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    settings = Settings(
+        connection_string=VALID_DSN,
+        simulation_providers_enable=True,
+        ai_description_simulation_mode="success",
+    )
+
+    with pytest.raises(MathUpdaterConfigError):
+        validate_ai_description_config(settings)
+
+
+def test_ai_description_config_allows_simulation_in_dev(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    settings = Settings(
+        agora_dev_mode=True,
+        connection_string=VALID_DSN,
+        simulation_providers_enable=True,
+        ai_description_simulation_mode="success",
+        description_translation_simulation_mode="success",
+    )
+
+    validate_ai_description_config(settings)
+
+
+def test_ai_description_config_rejects_simulation_mode_without_enable(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    settings = Settings(
+        agora_dev_mode=True,
+        connection_string=VALID_DSN,
+        ai_description_simulation_mode="success",
+    )
+
+    with pytest.raises(MathUpdaterConfigError):
+        validate_ai_description_config(settings)
+
+
+def test_ai_description_config_rejects_mixed_real_and_simulated_ai(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    settings = Settings(
+        agora_dev_mode=True,
+        connection_string=VALID_DSN,
+        aws_ai_label_summary_enable=True,
+        simulation_providers_enable=True,
+        ai_description_simulation_mode="success",
+    )
+
+    with pytest.raises(MathUpdaterConfigError):
+        validate_ai_description_config(settings)
+
+
+def test_ai_description_config_reads_global_dev_mode_env(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    monkeypatch.setenv("AGORA_DEV_MODE", "true")
+    monkeypatch.setenv(f"{MATH_UPDATER_ENV_PREFIX}CONNECTION_STRING", VALID_DSN)
+
+    settings = Settings()
+
+    assert settings.agora_dev_mode is True
+
+
+def test_ai_description_config_reads_global_dev_mode_dotenv(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    isolate_settings_env(monkeypatch, tmp_path)
+    tmp_path.joinpath(".env").write_text(
+        "AGORA_DEV_MODE=true\n"
+        f"{MATH_UPDATER_ENV_PREFIX}CONNECTION_STRING={VALID_DSN}\n",
+        encoding="utf-8",
+    )
+
+    settings = Settings()
+
+    assert settings.agora_dev_mode is True
 
 
 def test_worker_settings_read_shared_python_worker_prefix(

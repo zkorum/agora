@@ -132,19 +132,19 @@ dev-math-updater:
 	$(LOG_RUNNER) --service math-updater -- $(MAKE) dev-math-updater-raw
 
 dev-math-updater-raw:
-	cd services/math-updater && PYTHONUNBUFFERED=1 uv run python -m math_updater.worker
+	cd services/math-updater && AGORA_DEV_MODE=true PYTHONUNBUFFERED=1 uv run python -m math_updater.worker
 
 dev-ai-description-worker:
 	$(LOG_RUNNER) --service ai-description-worker -- $(MAKE) dev-ai-description-worker-raw
 
 dev-ai-description-worker-raw:
-	cd services/math-updater && PYTHONUNBUFFERED=1 uv run python -m math_updater.ai_description_worker
+	cd services/math-updater && AGORA_DEV_MODE=true PYTHONUNBUFFERED=1 uv run python -m math_updater.ai_description_worker
 
 dev-description-translation-worker:
 	$(LOG_RUNNER) --service description-translation-worker -- $(MAKE) dev-description-translation-worker-raw
 
 dev-description-translation-worker-raw:
-	cd services/math-updater && PYTHONUNBUFFERED=1 uv run python -m math_updater.description_translation_worker
+	cd services/math-updater && AGORA_DEV_MODE=true PYTHONUNBUFFERED=1 uv run python -m math_updater.description_translation_worker
 
 dev-import-worker:
 	$(LOG_RUNNER) --service import-worker -- $(MAKE) dev-import-worker-raw

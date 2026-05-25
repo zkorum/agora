@@ -51,6 +51,12 @@ from math_updater.description_services import (
 from math_updater.input_snapshot import PreparedInputSnapshot, prepare_input_snapshots_batch
 from math_updater.logging_utils import log_database_error
 from math_updater.retry_policy import RetryPolicy
+from math_updater.simulation_providers import (
+    build_simulation_runtime,
+    emit_load_event,
+    log_simulation_startup,
+    maybe_raise_simulated_claim_error,
+)
 from math_updater.valkey_client import (
     now_ms,
     pop_due_conversations,
@@ -75,6 +81,7 @@ if TYPE_CHECKING:
         DescriptionForTranslation,
         DescriptionTranslation,
     )
+    from math_updater.simulation_providers import SimulationRuntime
 
     DescriptionGenerator = Callable[[ConversationDescriptionInput], ParsedLabelSummaryOutput]
     DescriptionTranslator = Callable[
@@ -313,6 +320,7 @@ def _process_ai_description_conversation_ids(
     retry_policy: RetryPolicy,
     description_generator: DescriptionGenerator,
     description_translator: DescriptionTranslator | None,
+    simulation_runtime: SimulationRuntime | None = None,
     retry_first_pass_once: bool = False,
 ) -> int:
     completed_non_processable_ids = complete_non_processable_ai_description_work_batch(
@@ -349,11 +357,17 @@ def _process_ai_description_conversation_ids(
     )
     if not ai_claims:
         return 0
+    log.info("[MathUpdater] Claimed %d AI description locale work item(s)", len(ai_claims))
 
     def process_claim(
         claim: ClaimedAiDescriptionLocaleWorkItem,
     ) -> WorkStateSchedule | AiDescriptionWorkStateSchedule:
         try:
+            maybe_raise_simulated_claim_error(
+                runtime=simulation_runtime,
+                claim=claim,
+                phase="math-updater",
+            )
             return process_ai_description_locale_work_item(
                 primary_engine,
                 claim=claim,
@@ -402,7 +416,20 @@ def _process_ai_description_conversation_ids(
         for future in as_completed(future_by_claim):
             claim = future_by_claim[future]
             try:
-                future.result()
+                schedule = future.result()
+                if schedule.next_run_at is not None:
+                    emit_load_event(
+                        phase="math-updater",
+                        action="retry-scheduled",
+                        outcome="info",
+                        conversation_slug_id=claim.conversation_slug_id,
+                        metadata={
+                            "conversationId": schedule.conversation_id,
+                            "locale": claim.locale,
+                            "attemptCount": claim.attempt_count,
+                            "nextRunAt": schedule.next_run_at.isoformat(),
+                        },
+                    )
             except Exception:
                 log.exception(
                     "[MathUpdater] Failed to finalize AI description retry state for "
@@ -436,7 +463,15 @@ def _process_ai_description_first_pass(
     retry_policy: RetryPolicy,
     description_generator: DescriptionGenerator,
     description_translator: DescriptionTranslator | None,
+    simulation_runtime: SimulationRuntime | None,
 ) -> None:
+    emit_load_event(
+        phase="math-updater",
+        action="first-pass-start",
+        outcome="start",
+        count=len(conversation_view_snapshot_ids),
+        metadata={"conversationCount": len(conversation_ids)},
+    )
     while True:
         processed_count = _process_ai_description_conversation_ids(
             primary_engine=primary_engine,
@@ -451,7 +486,15 @@ def _process_ai_description_first_pass(
             retry_policy=retry_policy,
             description_generator=description_generator,
             description_translator=description_translator,
+            simulation_runtime=simulation_runtime,
             retry_first_pass_once=True,
+        )
+        log.info(
+            "[MathUpdater] first_pass processed count=%d conversation_count=%d "
+            "view_snapshot_count=%d",
+            processed_count,
+            len(conversation_ids),
+            len(conversation_view_snapshot_ids),
         )
         if processed_count == 0:
             break
@@ -460,6 +503,13 @@ def _process_ai_description_first_pass(
             claims=analysis_claims,
             lease_ttl_seconds=lease_ttl_seconds,
         )
+    emit_load_event(
+        phase="math-updater",
+        action="first-pass-complete",
+        outcome="complete",
+        count=len(conversation_view_snapshot_ids),
+        metadata={"conversationCount": len(conversation_ids)},
+    )
 
 
 def _compute_claim_bundle(
@@ -498,6 +548,8 @@ def _run_worker_once() -> None:
     except MathUpdaterConfigError as error:
         log.error("[MathUpdater] Configuration error: %s", error)
         raise SystemExit(1) from error
+    log_simulation_startup(settings)
+    simulation_runtime = build_simulation_runtime(settings)
 
     vk = _connect_to_valkey_with_retry(settings)
     if vk is None:
@@ -534,7 +586,10 @@ def _run_worker_once() -> None:
         log.info("[MathUpdater] AI description generation disabled")
         description_translator = None
     else:
-        log.info("[MathUpdater] AI description generation enabled")
+        log.info(
+            "[MathUpdater] AI description generation enabled provider_mode=%s",
+            "simulation" if settings.ai_description_simulation_enabled else "bedrock",
+        )
         description_translator_bundle = build_description_translator(settings)
         description_translator = (
             description_translator_bundle.translate
@@ -710,6 +765,7 @@ def _run_worker_once() -> None:
                         retry_policy=retry_policy,
                         description_generator=description_generator,
                         description_translator=description_translator,
+                        simulation_runtime=simulation_runtime,
                     )
                 except Exception:
                     log.exception("[MathUpdater] Resumed AI description first pass failed")
@@ -912,6 +968,7 @@ def _run_worker_once() -> None:
                                 retry_policy=retry_policy,
                                 description_generator=description_generator,
                                 description_translator=description_translator,
+                                simulation_runtime=simulation_runtime,
                             )
                             extend_postgres_leases(
                                 primary_engine,
@@ -1016,6 +1073,7 @@ def _run_worker_once() -> None:
                                             retry_policy=retry_policy,
                                             description_generator=description_generator,
                                             description_translator=description_translator,
+                                            simulation_runtime=simulation_runtime,
                                         )
                                         extend_postgres_leases(
                                             primary_engine,

@@ -39,6 +39,35 @@ Environment variables use the `MATH_UPDATER_` prefix.
 
 AI label and summary generation is disabled by default and configured with `MATH_UPDATER_AWS_AI_LABEL_SUMMARY_*` variables. Translation is configured with `MATH_UPDATER_GOOGLE_*` variables and optional AWS Secrets Manager credentials. Translation requires AI label/summary generation to be enabled.
 
+### Dev-only AI simulation
+
+The worker can simulate AI description and translation providers for load-testing retry, fallback, and first-pass behavior without calling Bedrock or Google. This is dev-only. Config validation refuses to start the process unless `AGORA_DEV_MODE=true` is present.
+
+The repository dev Make targets set `AGORA_DEV_MODE=true` automatically. Plain `uv run ...` does not imply dev mode.
+
+Example:
+
+```bash
+AGORA_DEV_MODE=true
+MATH_UPDATER_AWS_AI_LABEL_SUMMARY_ENABLE=false
+MATH_UPDATER_AWS_DESCRIPTION_TRANSLATION_ENABLE=false
+MATH_UPDATER_SIMULATION_PROVIDERS_ENABLE=true
+MATH_UPDATER_AI_DESCRIPTION_SIMULATION_MODE=retryable_error_then_success
+MATH_UPDATER_DESCRIPTION_TRANSLATION_SIMULATION_MODE=success
+MATH_UPDATER_SIMULATION_RETRYABLE_FAILURE_ATTEMPTS=1
+```
+
+Simulation modes are `off`, `success`, `retryable_error`, `retryable_error_then_success`, and `non_retryable_error`.
+
+Logs use the `[SimulationProvider]` prefix and also emit `AGORA_LOAD_EVENT` JSON markers. When services are launched through the root Make targets, marker payloads are written to files such as `.local/logs/latest/math-updater.events.jsonl`, `.local/logs/latest/ai-description-worker.events.jsonl`, and `.local/logs/latest/description-translation-worker.events.jsonl`.
+
+Useful checks:
+
+```bash
+rg "SimulationProvider|first_pass|retry" .local/logs/latest/math-updater.log
+rg '"action":"ai-generate"|"action":"translation"|"action":"retry-scheduled"' .local/logs/latest/*.events.jsonl
+```
+
 See `env.example` for a local template.
 
 ## Generated Artifacts

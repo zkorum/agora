@@ -15,6 +15,10 @@ from math_updater.description_translation import (
     generate_description_translations_with_bedrock,
     initialize_google_translation_service,
 )
+from math_updater.simulation_providers import (
+    generate_simulated_description_translations,
+    generate_simulated_label_summaries,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -44,6 +48,9 @@ class DescriptionTranslatorBundle:
 
 
 def build_description_generator(settings: Settings) -> DescriptionGenerator | None:
+    if settings.ai_description_simulation_enabled:
+        return generate_simulated_label_summaries
+
     if not settings.aws_ai_label_summary_enable:
         return None
 
@@ -70,6 +77,12 @@ def build_description_generator(settings: Settings) -> DescriptionGenerator | No
 
 
 def build_description_translator(settings: Settings) -> DescriptionTranslatorBundle | None:
+    if settings.description_translation_simulation_enabled:
+        return DescriptionTranslatorBundle(
+            mode="simulation",
+            translate=generate_simulated_description_translations,
+        )
+
     bedrock_config = (
         BedrockTranslationConfig(
             region=settings.aws_description_translation_region,

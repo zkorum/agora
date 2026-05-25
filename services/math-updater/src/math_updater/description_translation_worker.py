@@ -22,6 +22,7 @@ from math_updater.config import (
 from math_updater.description_retry_processor import process_ai_description_conversation_ids
 from math_updater.description_services import build_description_translator
 from math_updater.retry_policy import RetryPolicy
+from math_updater.simulation_providers import build_simulation_runtime, log_simulation_startup
 from math_updater.valkey_client import (
     description_translation_queue_depth,
     now_ms,
@@ -121,6 +122,8 @@ def main() -> None:
     except MathUpdaterConfigError as error:
         log.error("%s Configuration error: %s", LOG_PREFIX, error)
         raise SystemExit(1) from error
+    log_simulation_startup(settings)
+    simulation_runtime = build_simulation_runtime(settings)
 
     translator_bundle = build_description_translator(settings)
     if translator_bundle is None:
@@ -225,9 +228,21 @@ def main() -> None:
                 time.sleep(min(settings.worker_poll_idle_sleep_seconds, sleep_ms / 1000))
             continue
 
+        log.info(
+            "%s Popped %d due translation conversation(s)",
+            LOG_PREFIX,
+            len(due_items),
+        )
+
         claimable_due_items = due_items[: settings.db_claim_batch_size]
         overflow_due_items = due_items[settings.db_claim_batch_size :]
         requeue_description_translation_conversations(vk, conversations=overflow_due_items)
+        if overflow_due_items:
+            log.info(
+                "%s Requeued %d overflow translation conversation(s)",
+                LOG_PREFIX,
+                len(overflow_due_items),
+            )
         processed_count = process_ai_description_conversation_ids(
             primary_engine=primary_engine,
             vk=vk,
@@ -242,6 +257,7 @@ def main() -> None:
             description_translator=translator_bundle.translate,
             claim_lineage_descriptions=False,
             claim_translations=True,
+            simulation_runtime=simulation_runtime,
             log_prefix=LOG_PREFIX,
         )
         if processed_count:

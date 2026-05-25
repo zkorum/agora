@@ -16,6 +16,7 @@ from math_updater.ai_description_work import (
     retry_ai_description_locale_work_item,
 )
 from math_updater.description_input import DescriptionInputError
+from math_updater.simulation_providers import emit_load_event, maybe_raise_simulated_claim_error
 from math_updater.valkey_client import (
     schedule_ai_description_conversation,
     schedule_description_translation_conversation,
@@ -35,6 +36,7 @@ if TYPE_CHECKING:
         DescriptionTranslation,
     )
     from math_updater.retry_policy import RetryPolicy
+    from math_updater.simulation_providers import SimulationRuntime
 
     DescriptionGenerator = Callable[[ConversationDescriptionInput], ParsedLabelSummaryOutput]
     DescriptionTranslator = Callable[
@@ -86,6 +88,7 @@ def process_ai_description_conversation_ids(
     description_translator: DescriptionTranslator | None,
     claim_lineage_descriptions: bool,
     claim_translations: bool,
+    simulation_runtime: SimulationRuntime | None = None,
     retry_first_pass_once: bool = False,
     log_prefix: str,
 ) -> int:
@@ -125,9 +128,15 @@ def process_ai_description_conversation_ids(
     )
     if not claims:
         return 0
+    log.info("%s Claimed %d AI description locale work item(s)", log_prefix, len(claims))
 
     def process_claim(claim: ClaimedAiDescriptionLocaleWorkItem) -> WorkStateSchedule:
         try:
+            maybe_raise_simulated_claim_error(
+                runtime=simulation_runtime,
+                claim=claim,
+                phase=log_prefix.strip("[]").lower(),
+            )
             return process_ai_description_locale_work_item(
                 primary_engine,
                 claim=claim,
@@ -176,7 +185,20 @@ def process_ai_description_conversation_ids(
         for future in as_completed(future_by_claim):
             claim = future_by_claim[future]
             try:
-                future.result()
+                schedule = future.result()
+                if schedule.next_run_at is not None:
+                    emit_load_event(
+                        phase=log_prefix.strip("[]").lower(),
+                        action="retry-scheduled",
+                        outcome="info",
+                        conversation_slug_id=claim.conversation_slug_id,
+                        metadata={
+                            "conversationId": schedule.conversation_id,
+                            "locale": claim.locale,
+                            "attemptCount": claim.attempt_count,
+                            "nextRunAt": schedule.next_run_at.isoformat(),
+                        },
+                    )
             except Exception:
                 log.exception(
                     "%s Failed to finalize retry state conversation_slug_id=%s locale=%s",
