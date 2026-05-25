@@ -6,13 +6,12 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **view** | **string** |  | [default to undefined]
-**enabled** | **boolean** |  | [default to undefined]
-**status** | **string** |  | [default to undefined]
-**reason** | **string** |  | [optional] [default to undefined]
-**groupCount** | **number** |  | [optional] [default to undefined]
-**candidateId** | **number** |  | [optional] [default to undefined]
-**selectionScore** | **number** |  | [optional] [default to undefined]
 **resolvesToView** | **string** |  | [optional] [default to undefined]
+**status** | **string** |  | [default to undefined]
+**enabled** | **boolean** |  | [default to undefined]
+**candidate** | [**ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfCandidate**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfCandidate.md) |  | [default to undefined]
+**reason** | **string** |  | [default to undefined]
+**groupCount** | **number** |  | [default to undefined]
 
 ## Example
 
@@ -21,13 +20,12 @@ import { ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewState
 
 const instance: ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInner = {
     view,
-    enabled,
+    resolvesToView,
     status,
+    enabled,
+    candidate,
     reason,
     groupCount,
-    candidateId,
-    selectionScore,
-    resolvesToView,
 };
 ```
 

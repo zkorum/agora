@@ -12,6 +12,7 @@ import {
   zodEventSlug,
   zodExternalSourceConfig,
   zodParticipationMode,
+  zodPreferredOpinionGroupCount,
   zodSurveyConfig,
 } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
@@ -136,6 +137,9 @@ export const zodSerializableConversationDraft = z.preprocess(
 
     // AI labeling
     aiLabelingEnabled: z.boolean().default(true),
+
+    // Facilitator analysis preference
+    preferredOpinionGroupCount: zodPreferredOpinionGroupCount.default(null),
 
     // External source (GitHub integration for MaxDiff)
     externalSourceConfig: zodExternalSourceConfig.nullable().default(null),

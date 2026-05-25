@@ -11,7 +11,7 @@ from pydantic import TypeAdapter, ValidationError
 from sqlalchemy import and_, case, func, or_, select, tuple_, update
 from sqlalchemy import insert as sqlalchemy_insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from math_updater.generated_models import (
     AiDescriptionLocaleStatusEnum,
@@ -147,6 +147,10 @@ class PersistComputedAnalysisResult:
     analysis_schedules: list[WorkStateSchedule]
     ai_description_due_conversation_ids: list[int]
     ai_description_due_view_snapshot_ids: list[int]
+
+
+class AnalysisWorkStatePersistenceError(RuntimeError):
+    pass
 
 
 class _GroupOpinionStatsInsertBase(TypedDict):
@@ -320,6 +324,7 @@ class _ConversationViewSnapshotState:
     conversation_content_id: int | None
     ai_labeling_enabled: bool
     is_closed: bool
+    preferred_opinion_group_count: int | None
 
 
 @dataclass(frozen=True)
@@ -447,195 +452,139 @@ def _claim_work_items_batch(
 
     conversation_ids_to_claim = list(dict.fromkeys(conversation_ids))[:limit]
     lease_expires_at = datetime.now(UTC) + timedelta(seconds=lease_ttl_seconds)
-    current_generation = (
-        select(Conversation.analysis_data_generation)
-        .where(Conversation.id == AnalysisWorkState.conversation_id)
-        .scalar_subquery()
-    )
-    conversation_current_content_id = (
-        select(Conversation.current_content_id)
-        .where(Conversation.id == AnalysisWorkState.conversation_id)
-        .scalar_subquery()
-    )
-    conversation_slug_id = (
-        select(Conversation.slug_id)
-        .where(Conversation.id == AnalysisWorkState.conversation_id)
-        .scalar_subquery()
-    )
-    conversation_type = (
-        select(Conversation.conversation_type)
-        .where(Conversation.id == AnalysisWorkState.conversation_id)
-        .scalar_subquery()
-    )
+    running_work_state = aliased(AnalysisWorkState)
 
     claims: list[ClaimedWorkItem] = []
     for conversation_id in conversation_ids_to_claim:
-        resume_claimable_query = (
-            select(
-                AnalysisWorkState.id,
-                AnalysisWorkState.conversation_id,
-                AnalysisWorkState.opinion_group_spec_id,
-                AnalysisWorkState.attempt_count,
-                AnalysisWorkState.running_data_generation.label("data_generation"),
-                AnalysisWorkState.persisted_analysis_snapshot_id,
-                conversation_slug_id.label("conversation_slug_id"),
-            )
+        running_work_exists = (
+            select(running_work_state.id)
             .where(
                 and_(
-                    AnalysisWorkState.conversation_id == conversation_id,
-                    AnalysisWorkState.running_data_generation.is_not(None),
-                    AnalysisWorkState.persisted_analysis_snapshot_id.is_not(None),
-                    AnalysisWorkState.lease_token.is_(None),
-                    conversation_current_content_id.is_not(None),
-                    conversation_type == ConversationType.polis,
-                    or_(
-                        AnalysisWorkState.next_run_at.is_(None),
-                        AnalysisWorkState.next_run_at <= func.now(),
-                    ),
+                    running_work_state.conversation_id
+                    == AnalysisWorkState.conversation_id,
+                    running_work_state.running_data_generation.is_not(None),
                 )
             )
-            .order_by(AnalysisWorkState.next_run_at.asc().nulls_first(), AnalysisWorkState.id)
-            .limit(1)
-            .with_for_update(skip_locked=True)
+            .exists()
         )
-        resume_claimable_row = session.execute(resume_claimable_query).first()
-        if resume_claimable_row is not None:
-            lease_token = f"{worker_id}:{uuid.uuid4()}"
-            updated_row = session.execute(
-                update(AnalysisWorkState)
-                .where(
-                    and_(
-                        AnalysisWorkState.id == resume_claimable_row.id,
-                        AnalysisWorkState.lease_token.is_(None),
-                        AnalysisWorkState.running_data_generation
-                        == resume_claimable_row.data_generation,
-                        AnalysisWorkState.persisted_analysis_snapshot_id
-                        == resume_claimable_row.persisted_analysis_snapshot_id,
-                    )
-                )
-                .values(
-                    next_run_at=None,
-                    lease_owner=worker_id,
-                    lease_token=lease_token,
-                    lease_expires_at=lease_expires_at,
-                    updated_at=func.now(),
-                )
-                .returning(
-                    AnalysisWorkState.id,
-                    AnalysisWorkState.conversation_id,
-                    AnalysisWorkState.opinion_group_spec_id,
-                    AnalysisWorkState.running_data_generation,
-                    AnalysisWorkState.lease_token,
-                    AnalysisWorkState.persisted_analysis_snapshot_id,
-                )
-            ).first()
-            if updated_row is None:
-                continue
-
-            claims.append(
-                ClaimedWorkItem(
-                    id=updated_row.id,
-                    conversation_id=updated_row.conversation_id,
-                    conversation_slug_id=resume_claimable_row.conversation_slug_id,
-                    opinion_group_spec_id=updated_row.opinion_group_spec_id,
-                    data_generation=updated_row.running_data_generation,
-                    attempt_count=resume_claimable_row.attempt_count,
-                    lease_token=updated_row.lease_token,
-                    persisted_analysis_snapshot_id=updated_row.persisted_analysis_snapshot_id,
-                )
-            )
-            continue
-
+        resume_condition = and_(
+            AnalysisWorkState.running_data_generation.is_not(None),
+            AnalysisWorkState.persisted_analysis_snapshot_id.is_not(None),
+            AnalysisWorkState.lease_token.is_(None),
+        )
+        fresh_condition = and_(
+            AnalysisWorkState.running_data_generation.is_(None),
+            AnalysisWorkState.persisted_analysis_snapshot_id.is_(None),
+            Conversation.analysis_data_generation
+            > AnalysisWorkState.last_completed_data_generation,
+            ~running_work_exists,
+            or_(
+                AnalysisWorkState.non_retryable_generation.is_(None),
+                Conversation.analysis_data_generation
+                > AnalysisWorkState.non_retryable_generation,
+                analysis_engine_epoch
+                > func.coalesce(
+                    AnalysisWorkState.non_retryable_analysis_engine_epoch,
+                    0,
+                ),
+            ),
+        )
         claimable_query = (
-            select(
-                AnalysisWorkState.id,
-                AnalysisWorkState.conversation_id,
-                AnalysisWorkState.opinion_group_spec_id,
-                AnalysisWorkState.attempt_generation,
-                AnalysisWorkState.attempt_count,
-                current_generation.label("data_generation"),
-                conversation_slug_id.label("conversation_slug_id"),
-            )
+            select(AnalysisWorkState, Conversation)
+            .join(Conversation, Conversation.id == AnalysisWorkState.conversation_id)
             .where(
                 and_(
                     AnalysisWorkState.conversation_id == conversation_id,
-                    AnalysisWorkState.running_data_generation.is_(None),
-                    AnalysisWorkState.persisted_analysis_snapshot_id.is_(None),
-                    conversation_current_content_id.is_not(None),
-                    conversation_type == ConversationType.polis,
+                    Conversation.current_content_id.is_not(None),
+                    Conversation.conversation_type == ConversationType.polis,
                     or_(
                         AnalysisWorkState.next_run_at.is_(None),
                         AnalysisWorkState.next_run_at <= func.now(),
                     ),
-                    current_generation > AnalysisWorkState.last_completed_data_generation,
-                    or_(
-                        AnalysisWorkState.non_retryable_generation.is_(None),
-                        current_generation > AnalysisWorkState.non_retryable_generation,
-                        analysis_engine_epoch
-                        > func.coalesce(
-                            AnalysisWorkState.non_retryable_analysis_engine_epoch,
-                            0,
-                        ),
-                    ),
+                    or_(resume_condition, fresh_condition),
                 )
             )
-            .order_by(AnalysisWorkState.next_run_at.asc().nulls_first(), AnalysisWorkState.id)
+            .order_by(
+                case((resume_condition, 0), else_=1),
+                AnalysisWorkState.next_run_at.asc().nulls_first(),
+                AnalysisWorkState.id,
+            )
             .limit(1)
-            .with_for_update(skip_locked=True)
+            .with_for_update(of=AnalysisWorkState, skip_locked=True)
         )
         claimable_row = session.execute(claimable_query).first()
         if claimable_row is None:
             continue
 
-        lease_token = f"{worker_id}:{uuid.uuid4()}"
-        attempt_count = (
-            claimable_row.attempt_count + 1
-            if claimable_row.attempt_generation == claimable_row.data_generation
-            else 1
+        work_state, conversation = claimable_row
+        is_resume_claim = (
+            work_state.running_data_generation is not None
+            and work_state.persisted_analysis_snapshot_id is not None
         )
-        update_query = (
-            update(AnalysisWorkState)
-            .where(
-                and_(
-                    AnalysisWorkState.id == claimable_row.id,
-                    AnalysisWorkState.running_data_generation.is_(None),
+
+        if is_resume_claim:
+            data_generation = work_state.running_data_generation
+            persisted_analysis_snapshot_id = work_state.persisted_analysis_snapshot_id
+            if data_generation is None or persisted_analysis_snapshot_id is None:
+                log.warning(
+                    "[MathUpdaterDB] Skipping inconsistent persisted resume claim "
+                    "work_state_id=%d conversation_id=%d",
+                    work_state.id,
+                    work_state.conversation_id,
+                )
+                continue
+
+            lease_token = f"{worker_id}:{uuid.uuid4()}"
+            work_state.next_run_at = None
+            work_state.lease_owner = worker_id
+            work_state.lease_token = lease_token
+            work_state.lease_expires_at = lease_expires_at
+            work_state.updated_at = datetime.now(UTC)
+            session.flush()
+
+            claims.append(
+                ClaimedWorkItem(
+                    id=work_state.id,
+                    conversation_id=work_state.conversation_id,
+                    conversation_slug_id=conversation.slug_id,
+                    opinion_group_spec_id=work_state.opinion_group_spec_id,
+                    data_generation=data_generation,
+                    attempt_count=work_state.attempt_count,
+                    lease_token=lease_token,
+                    persisted_analysis_snapshot_id=persisted_analysis_snapshot_id,
                 )
             )
-            .values(
-                running_data_generation=claimable_row.data_generation,
-                persisted_analysis_snapshot_id=None,
-                dirty_since=None,
-                next_run_at=None,
-                attempt_generation=claimable_row.data_generation,
-                attempt_count=attempt_count,
-                lease_owner=worker_id,
-                lease_token=lease_token,
-                lease_expires_at=lease_expires_at,
-                updated_at=func.now(),
-            )
-            .returning(
-                AnalysisWorkState.id,
-                AnalysisWorkState.conversation_id,
-                AnalysisWorkState.opinion_group_spec_id,
-                AnalysisWorkState.running_data_generation,
-                AnalysisWorkState.lease_token,
-                AnalysisWorkState.persisted_analysis_snapshot_id,
-            )
-        )
-        updated_row = session.execute(update_query).first()
-        if updated_row is None:
             continue
+
+        data_generation = conversation.analysis_data_generation
+        lease_token = f"{worker_id}:{uuid.uuid4()}"
+        attempt_count = (
+            work_state.attempt_count + 1
+            if work_state.attempt_generation == data_generation
+            else 1
+        )
+        work_state.running_data_generation = data_generation
+        work_state.persisted_analysis_snapshot_id = None
+        work_state.dirty_since = None
+        work_state.next_run_at = None
+        work_state.attempt_generation = data_generation
+        work_state.attempt_count = attempt_count
+        work_state.lease_owner = worker_id
+        work_state.lease_token = lease_token
+        work_state.lease_expires_at = lease_expires_at
+        work_state.updated_at = datetime.now(UTC)
+        session.flush()
 
         claims.append(
             ClaimedWorkItem(
-                id=updated_row.id,
-                conversation_id=updated_row.conversation_id,
-                conversation_slug_id=claimable_row.conversation_slug_id,
-                opinion_group_spec_id=updated_row.opinion_group_spec_id,
-                data_generation=updated_row.running_data_generation,
+                id=work_state.id,
+                conversation_id=work_state.conversation_id,
+                conversation_slug_id=conversation.slug_id,
+                opinion_group_spec_id=work_state.opinion_group_spec_id,
+                data_generation=data_generation,
                 attempt_count=attempt_count,
-                lease_token=updated_row.lease_token,
-                persisted_analysis_snapshot_id=updated_row.persisted_analysis_snapshot_id,
+                lease_token=lease_token,
+                persisted_analysis_snapshot_id=None,
             )
         )
 
@@ -1520,6 +1469,7 @@ def _fetch_conversation_view_snapshot_state_by_id(
             Conversation.current_content_id,
             Conversation.ai_labeling_enabled,
             Conversation.is_closed,
+            Conversation.preferred_opinion_group_count,
         ).where(Conversation.id.in_(sorted(set(conversation_ids))))
     ).all()
     return {
@@ -1527,6 +1477,7 @@ def _fetch_conversation_view_snapshot_state_by_id(
             conversation_content_id=row.current_content_id,
             ai_labeling_enabled=row.ai_labeling_enabled,
             is_closed=row.is_closed,
+            preferred_opinion_group_count=row.preferred_opinion_group_count,
         )
         for row in rows
     }
@@ -1630,6 +1581,53 @@ def _fetch_previous_selected_view_snapshots_by_pair(
     if not pairs:
         return {}
 
+    latest_view_snapshot_rows = session.execute(
+        select(ConversationViewSnapshot)
+        .join(
+            AnalysisSnapshotResult,
+            and_(
+                AnalysisSnapshotResult.analysis_snapshot_id
+                == ConversationViewSnapshot.analysis_snapshot_id,
+                AnalysisSnapshotResult.opinion_group_spec_id
+                == ConversationViewSnapshot.opinion_group_spec_id,
+            ),
+        )
+        .join(
+            OpinionGroupCandidate,
+            OpinionGroupCandidate.snapshot_result_id == AnalysisSnapshotResult.id,
+        )
+        .outerjoin(
+            OpinionGroupCandidateAssessment,
+            OpinionGroupCandidateAssessment.candidate_id == OpinionGroupCandidate.id,
+        )
+        .where(
+            and_(
+                tuple_(
+                    ConversationViewSnapshot.conversation_id,
+                    ConversationViewSnapshot.opinion_group_spec_id,
+                ).in_(pairs),
+                ConversationViewSnapshot.id.not_in(current_view_snapshot_ids),
+                ConversationViewSnapshot.activated_at.is_not(None),
+                AnalysisSnapshotResult.outcome == AnalysisResultOutcomeEnum.success,
+                OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
+                OpinionGroupCandidateAssessment.hidden_reason.is_(None),
+            )
+        )
+        .distinct(
+            ConversationViewSnapshot.conversation_id,
+            ConversationViewSnapshot.opinion_group_spec_id,
+        )
+        .order_by(
+            ConversationViewSnapshot.conversation_id,
+            ConversationViewSnapshot.opinion_group_spec_id,
+            ConversationViewSnapshot.created_at.desc(),
+            ConversationViewSnapshot.id.desc(),
+        )
+    ).scalars()
+    latest_view_snapshot_ids = [row.id for row in latest_view_snapshot_rows]
+    if not latest_view_snapshot_ids:
+        return {}
+
     rows = session.execute(
         select(
             ConversationViewSnapshot.id,
@@ -1665,12 +1663,7 @@ def _fetch_previous_selected_view_snapshots_by_pair(
         )
         .where(
             and_(
-                tuple_(
-                    ConversationViewSnapshot.conversation_id,
-                    ConversationViewSnapshot.opinion_group_spec_id,
-                ).in_(pairs),
-                ConversationViewSnapshot.id.not_in(current_view_snapshot_ids),
-                ConversationViewSnapshot.activated_at.is_not(None),
+                ConversationViewSnapshot.id.in_(sorted(latest_view_snapshot_ids)),
                 AnalysisSnapshotResult.outcome == AnalysisResultOutcomeEnum.success,
                 OpinionGroupCandidate.outcome == AnalysisResultOutcomeEnum.success,
                 OpinionGroupCandidateAssessment.hidden_reason.is_(None),
@@ -1725,6 +1718,7 @@ def _persist_conversation_view_snapshots(
     bundles_by_conversation_id: dict[int, ComputedAnalysisBundle],
     candidate_id_by_conversation_variant: dict[tuple[int, int], int],
     survey_aggregate_snapshot_id_by_conversation_id: dict[int, int],
+    premium_analysis_conversation_ids: set[int],
     ai_generation_expected: bool,
 ) -> tuple[
     dict[tuple[int, int], _PersistedConversationViewSnapshot],
@@ -1773,6 +1767,9 @@ def _persist_conversation_view_snapshots(
                 ),
                 "conversation_content_id": state.conversation_content_id,
                 "view_reason": ConversationViewSnapshotReasonEnum.analysis_completed,
+                "preferred_opinion_group_count": state.preferred_opinion_group_count
+                if conversation_id in premium_analysis_conversation_ids
+                else None,
                 "is_closed": state.is_closed,
                 "opinion_count": counters.opinion_count,
                 "vote_count": len(input_snapshot.votes),
@@ -1801,11 +1798,6 @@ def _persist_conversation_view_snapshots(
         (row.conversation_id, row.opinion_group_spec_id): row.id for row in view_rows
     }
 
-    _queue_conversation_analysis_updated_events_for_view_snapshots(
-        session,
-        conversation_view_snapshot_ids=[row.id for row in view_rows],
-    )
-
     return {
         pair: _PersistedConversationViewSnapshot(
             view_snapshot_id=view_snapshot_id_by_pair[pair],
@@ -1828,6 +1820,15 @@ def _queue_conversation_analysis_updated_events_for_view_snapshots(
 ) -> None:
     if not conversation_view_snapshot_ids:
         return
+
+    checkpoint_rows = session.execute(
+        select(ConversationViewSnapshotCheckpointReason.conversation_view_snapshot_id).where(
+            ConversationViewSnapshotCheckpointReason.conversation_view_snapshot_id.in_(
+                sorted(set(conversation_view_snapshot_ids))
+            )
+        )
+    ).all()
+    checkpoint_view_snapshot_ids = {row.conversation_view_snapshot_id for row in checkpoint_rows}
 
     rows = session.execute(
         select(
@@ -1853,25 +1854,28 @@ def _queue_conversation_analysis_updated_events_for_view_snapshots(
             )
         )
     ).all()
-    timestamp = int(datetime.now(UTC).timestamp() * 1000)
+    created_at = datetime.now(UTC)
+    timestamp = int(created_at.timestamp() * 1000)
     values = [
         {
             "event_type": "conversation_analysis_updated",
-                "payload": {
-                    "conversationSlugId": row.slug_id,
-                    "conversationViewSnapshotId": row.id,
-                    "analysisSnapshotId": row.analysis_snapshot_id,
-                    "opinionCount": row.opinion_count,
-                    "voteCount": row.vote_count,
-                    "participantCount": row.participant_count,
-                    "totalOpinionCount": row.total_opinion_count,
-                    "totalVoteCount": row.total_vote_count,
-                    "totalParticipantCount": row.total_participant_count,
-                    "moderatedOpinionCount": row.moderated_opinion_count,
-                    "hiddenOpinionCount": row.hidden_opinion_count,
-                    "isClosed": row.is_closed,
-                    "timestamp": timestamp,
-                },
+            "created_at": created_at,
+            "payload": {
+                "conversationSlugId": row.slug_id,
+                "conversationViewSnapshotId": row.id,
+                "analysisSnapshotId": row.analysis_snapshot_id,
+                "checkpointChanged": row.id in checkpoint_view_snapshot_ids,
+                "opinionCount": row.opinion_count,
+                "voteCount": row.vote_count,
+                "participantCount": row.participant_count,
+                "totalOpinionCount": row.total_opinion_count,
+                "totalVoteCount": row.total_vote_count,
+                "totalParticipantCount": row.total_participant_count,
+                "moderatedOpinionCount": row.moderated_opinion_count,
+                "hiddenOpinionCount": row.hidden_opinion_count,
+                "isClosed": row.is_closed,
+                "timestamp": timestamp,
+            },
         }
         for row in rows
         if row.analysis_snapshot_id is not None
@@ -2190,16 +2194,10 @@ def _persist_checkpoint_reasons(
             )
 
         lifecycle_reason: ConversationViewSnapshotCheckpointReasonEnum | None = None
-        if previous_selected is None and persisted.conversation_state.is_closed:
-            lifecycle_reason = ConversationViewSnapshotCheckpointReasonEnum.conversation_closed
-        elif previous_selected is not None and (
-            previous_selected.is_closed != persisted.conversation_state.is_closed
+        if persisted.conversation_state.is_closed and (
+            previous_selected is None or not previous_selected.is_closed
         ):
-            lifecycle_reason = (
-                ConversationViewSnapshotCheckpointReasonEnum.conversation_closed
-                if persisted.conversation_state.is_closed
-                else ConversationViewSnapshotCheckpointReasonEnum.conversation_reopened
-            )
+            lifecycle_reason = ConversationViewSnapshotCheckpointReasonEnum.conversation_closed
 
         if lifecycle_reason is not None:
             reason_values.append(
@@ -2786,6 +2784,11 @@ def persist_empty_vote_matrix_results_batch(
     opinion_group_spec_ids = sorted({claim.opinion_group_spec_id for claim in claims})
 
     with Session(engine) as session:
+        premium_analysis_conversation_ids = _fetch_premium_analysis_conversation_ids(
+            session,
+            conversation_ids=[claim.conversation_id for claim in claims],
+            now=computed_at,
+        )
         variants_by_spec_id = fetch_variants_by_spec_ids(
             session,
             opinion_group_spec_ids=opinion_group_spec_ids,
@@ -2839,6 +2842,8 @@ def persist_empty_vote_matrix_results_batch(
                         "opinion_group_spec_id": claim.opinion_group_spec_id,
                         "outcome": AnalysisResultOutcomeEnum.insufficient_data,
                         "outcome_reason": AnalysisInsufficientDataReasonEnum.empty_vote_matrix,
+                        "variants_enabled": claim.conversation_id
+                        in premium_analysis_conversation_ids,
                     }
                     for claim in claims
                 ]
@@ -3075,6 +3080,8 @@ def persist_computed_analysis_results_batch(
                         "outcome_reason": bundles_by_conversation_id[
                             claim.conversation_id
                         ].outcome_reason,
+                        "variants_enabled": claim.conversation_id
+                        in premium_analysis_conversation_ids,
                     }
                     for claim in claims
                 ]
@@ -3392,6 +3399,7 @@ def persist_computed_analysis_results_batch(
                 survey_aggregate_snapshot_id_by_conversation_id=(
                     survey_aggregate_snapshot_id_by_conversation_id
                 ),
+                premium_analysis_conversation_ids=premium_analysis_conversation_ids,
                 ai_generation_expected=ai_generation_expected,
             )
         )
@@ -3406,6 +3414,13 @@ def persist_computed_analysis_results_batch(
             current_options_by_pair=current_options_by_pair,
         )
         log.info("[MathUpdaterDB] Persisted checkpoint reasons")
+        _queue_conversation_analysis_updated_events_for_view_snapshots(
+            session,
+            conversation_view_snapshot_ids=[
+                view_snapshot.view_snapshot_id
+                for view_snapshot in persisted_view_snapshots_by_pair.values()
+            ],
+        )
 
         _create_lineage_description_work_rows(
             session,
@@ -3453,7 +3468,7 @@ def persist_computed_analysis_results_batch(
         ).all()
         if len(persisted_marker_rows) != len(claims):
             msg = "failed to mark every computed analysis work item as persisted"
-            raise RuntimeError(msg)
+            raise AnalysisWorkStatePersistenceError(msg)
 
         session.commit()
         log.info("[MathUpdaterDB] Persist computed batch committed; enrichment first pass pending")

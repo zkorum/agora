@@ -1,4 +1,5 @@
 import { storeToRefs } from "pinia";
+import type { OpinionItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { useBackendAuthApi } from "src/utils/api/auth";
@@ -35,6 +36,7 @@ export interface ConversationParentConfig {
 
 export interface SubmittedCommentData {
   opinionSlugId: string;
+  opinionItem: OpinionItem;
   authStateChanged: boolean;
   needsCacheRefresh: boolean;
 }
@@ -101,7 +103,7 @@ export function useConversationParentState({
     invalidateAnalysis: invalidateAnalysisQuery,
     invalidateAnalysisCheckpoints,
     invalidateComments,
-    forceRefreshAnalysis,
+    markAnalysisAsStale,
   } = useInvalidateCommentQueries();
   const { invalidateConversation } = useInvalidateConversationQuery();
 
@@ -305,7 +307,7 @@ export function useConversationParentState({
     }
 
     invalidateComments(slugId);
-    forceRefreshAnalysis(slugId);
+    markAnalysisAsStale(slugId);
 
     if (data.needsCacheRefresh) {
       await loadAuthenticatedModules();

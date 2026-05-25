@@ -20,10 +20,13 @@ import { and, asc, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type {
-    AnalysisView,
-    AnalysisViewOptionStatus,
-} from "@/shared/types/zod.js";
-import { hasPremiumAnalysisVariantsAccess } from "./premiumEntitlement.js";
+    AnalysisViewOption,
+    AnalysisViewOptionCandidate,
+    AnalysisViewState,
+} from "@/shared/types/dto.js";
+import type { AnalysisView } from "@/shared/types/zod.js";
+
+export type { AnalysisViewState };
 
 const englishLocaleStatusTable = alias(
     opinionGroupDescriptionLocaleStatusTable,
@@ -66,34 +69,12 @@ export interface SnapshotCandidateOption {
     candidateId: number;
     groupCount: number;
     selectionScore: number | null;
+    silhouetteScore: number | null;
+    balanceScore: number | null;
 }
 
-export interface AnalysisViewOption {
-    view: AnalysisView;
-    enabled: boolean;
-    status: AnalysisViewOptionStatus;
-    reason?: string;
-    groupCount?: number;
-    candidateId?: number;
-    selectionScore?: number | null;
-    resolvesToView?: AnalysisView;
-}
-
-export interface AnalysisViewState {
-    requestedView: AnalysisView;
-    canonicalView: AnalysisView;
-    resolvedGroupCount: number | null;
-    resolvedCandidateId: number | null;
-    resolvedBy:
-        | "system_default"
-        | "facilitator_preference"
-        | "facilitator_fallback"
-        | "fixed_count"
-        | "locked_fallback"
-        | "unavailable_fixed_count"
-        | "no_analysis";
-    variantsEnabled: boolean;
-    options: AnalysisViewOption[];
+interface SelectableSnapshotCandidateOption extends SnapshotCandidateOption {
+    selectionScore: number;
 }
 
 export interface OpinionGroupAnalysisSelection {
@@ -108,6 +89,7 @@ export interface LatestOpinionGroupResultRow {
     authorId: string;
     organizationId: number | null;
     preferredOpinionGroupCount: number | null;
+    variantsEnabled: boolean;
     aiLabelingEnabled: boolean;
     viewSnapshotId: number;
     surveyAggregateSnapshotId: number | null;
@@ -176,7 +158,7 @@ function getFixedGroupCount(view: AnalysisView): number | undefined {
             return 5;
         case "6":
             return 6;
-        case "facilitator_default":
+        case "facilitator_preference":
         case "system_default":
             return undefined;
     }
@@ -221,16 +203,66 @@ function createAnalysisConversationViewSnapshot(
     };
 }
 
+function isSelectableCandidate(
+    candidate: SnapshotCandidateOption,
+): candidate is SelectableSnapshotCandidateOption {
+    return candidate.selectionScore !== null;
+}
+
+function createAnalysisViewOptionCandidate(
+    candidate: SelectableSnapshotCandidateOption,
+): AnalysisViewOptionCandidate {
+    return {
+        candidateId: candidate.candidateId,
+        groupCount: candidate.groupCount,
+        assessment: {
+            selectionScore: candidate.selectionScore,
+            silhouetteScore: candidate.silhouetteScore,
+            balanceScore: candidate.balanceScore,
+        },
+    };
+}
+
+function createCandidateBackedAnalysisViewOption({
+    view,
+    status,
+    candidate,
+    resolvesToView,
+}: {
+    view: AnalysisView;
+    status: "recommended" | "available";
+    candidate: SelectableSnapshotCandidateOption;
+    resolvesToView?: AnalysisView;
+}): AnalysisViewOption {
+    return {
+        view,
+        enabled: true,
+        status,
+        candidate: createAnalysisViewOptionCandidate(candidate),
+        ...(resolvesToView === undefined ? {} : { resolvesToView }),
+    };
+}
+
+function getCandidateBackedStatus({
+    candidate,
+    systemCandidate,
+}: {
+    candidate: SelectableSnapshotCandidateOption;
+    systemCandidate: SelectableSnapshotCandidateOption | undefined;
+}): "recommended" | "available" {
+    return candidate.candidateId === systemCandidate?.candidateId
+        ? "recommended"
+        : "available";
+}
+
 function selectCandidate({
     candidates,
 }: {
     candidates: SnapshotCandidateOption[];
-}): SnapshotCandidateOption | undefined {
-    return [...candidates].sort((a, b) => {
-        const bSelectionScore = b.selectionScore ?? Number.NEGATIVE_INFINITY;
-        const aSelectionScore = a.selectionScore ?? Number.NEGATIVE_INFINITY;
-        if (bSelectionScore !== aSelectionScore) {
-            return bSelectionScore - aSelectionScore;
+}): SelectableSnapshotCandidateOption | undefined {
+    return candidates.filter(isSelectableCandidate).sort((a, b) => {
+        if (b.selectionScore !== a.selectionScore) {
+            return b.selectionScore - a.selectionScore;
         }
 
         return b.groupCount - a.groupCount;
@@ -430,7 +462,7 @@ export async function getDescriptionTextsByGroupId({
 export async function getSelectedOpinionGroupCandidate({
     db,
     displayLanguage = "en",
-    analysisView = "facilitator_default",
+    analysisView = "facilitator_preference",
     checkpointViewSnapshotId,
     ...selector
 }: GetSelectedOpinionGroupCandidateParams): Promise<
@@ -449,7 +481,7 @@ export async function getSelectedOpinionGroupCandidate({
 export async function getOpinionGroupAnalysisSelection({
     db,
     displayLanguage = "en",
-    analysisView = "facilitator_default",
+    analysisView = "facilitator_preference",
     checkpointViewSnapshotId,
     ...selector
 }: GetSelectedOpinionGroupCandidateParams): Promise<OpinionGroupAnalysisSelection> {
@@ -505,7 +537,9 @@ export async function getOpinionGroupAnalysisSelection({
             authorId: conversationTable.authorId,
             organizationId: conversationTable.organizationId,
             preferredOpinionGroupCount:
-                conversationTable.preferredOpinionGroupCount,
+                checkpointViewSnapshotId === undefined
+                    ? conversationTable.preferredOpinionGroupCount
+                    : conversationViewSnapshotTable.preferredOpinionGroupCount,
             aiLabelingEnabled: conversationTable.aiLabelingEnabled,
             viewSnapshotId: conversationViewSnapshotTable.id,
             surveyAggregateSnapshotId:
@@ -524,6 +558,7 @@ export async function getOpinionGroupAnalysisSelection({
             snapshotId: analysisSnapshotTable.id,
             resultId: analysisSnapshotResultTable.id,
             outcome: analysisSnapshotResultTable.outcome,
+            variantsEnabled: analysisSnapshotResultTable.variantsEnabled,
             englishLocaleStatus: englishLocaleStatusTable.status,
             englishAiGenerationExpected:
                 englishLocaleStatusTable.aiGenerationExpected,
@@ -600,7 +635,8 @@ export async function getOpinionGroupAnalysisSelection({
         .orderBy(
             desc(conversationViewSnapshotTable.createdAt),
             desc(conversationViewSnapshotTable.id),
-        );
+        )
+        .limit(1);
 
     if (latestResultRows.length === 0) {
         return createEmptyAnalysisViewSelection({
@@ -633,20 +669,15 @@ export async function getOpinionGroupAnalysisSelection({
     const conversationViewSnapshot = createAnalysisConversationViewSnapshot(
         latestResult,
     );
-    const variantsEnabled = await hasPremiumAnalysisVariantsAccess({
-        db,
-        conversation: {
-            authorId: latestResult.authorId,
-            organizationId: latestResult.organizationId,
-        },
-        now: new Date(),
-    });
+    const variantsEnabled = latestResult.variantsEnabled;
 
     const candidateRows = await db
         .select({
             candidateId: opinionGroupCandidateTable.id,
             groupCount: opinionGroupVariantTable.groupCount,
             selectionScore: opinionGroupCandidateAssessmentTable.selectionScore,
+            silhouetteScore: opinionGroupCandidateAssessmentTable.silhouetteScore,
+            balanceScore: opinionGroupCandidateAssessmentTable.balanceScore,
         })
         .from(opinionGroupCandidateTable)
         .innerJoin(
@@ -676,8 +707,9 @@ export async function getOpinionGroupAnalysisSelection({
         .orderBy(asc(opinionGroupVariantTable.groupCount));
 
     const selectedCandidate = selectCandidate({ candidates: candidateRows });
+    const selectableCandidates = candidateRows.filter(isSelectableCandidate);
     const candidatesByGroupCount = new Map(
-        candidateRows.map((candidate) => [candidate.groupCount, candidate]),
+        selectableCandidates.map((candidate) => [candidate.groupCount, candidate]),
     );
     const fixedGroupCount = getFixedGroupCount(analysisView);
     const canonicalView: AnalysisView = variantsEnabled
@@ -708,7 +740,7 @@ export async function getOpinionGroupAnalysisSelection({
             };
         }
 
-        if (canonicalView === "facilitator_default") {
+        if (canonicalView === "facilitator_preference") {
             if (facilitatorCandidate !== undefined) {
                 return {
                     candidate: facilitatorCandidate,
@@ -808,6 +840,19 @@ function createEmptyAnalysisViewSelection({
     };
 }
 
+function getFixedOptionSortRank(option: AnalysisViewOption): number {
+    switch (option.status) {
+        case "recommended":
+            return 0;
+        case "available":
+            return 1;
+        case "discouraged":
+            return 2;
+        case "locked":
+            return 3;
+    }
+}
+
 export function buildAnalysisViewOptions({
     variantsEnabled,
     preferredGroupCount,
@@ -819,61 +864,127 @@ export function buildAnalysisViewOptions({
     candidates: SnapshotCandidateOption[];
     systemCandidate: SnapshotCandidateOption | undefined;
 }): AnalysisViewOption[] {
+    const selectableCandidates = candidates.filter(isSelectableCandidate);
+    const selectableSystemCandidate =
+        systemCandidate === undefined || !isSelectableCandidate(systemCandidate)
+            ? undefined
+            : systemCandidate;
     const candidatesByGroupCount = new Map(
-        candidates.map((candidate) => [candidate.groupCount, candidate]),
+        selectableCandidates.map((candidate) => [candidate.groupCount, candidate]),
     );
-    const lockedReason = "Agora Pro is needed to unlock this feature.";
-    const options: AnalysisViewOption[] = [
-        {
-            view: "facilitator_default",
-            enabled: variantsEnabled,
-            status: variantsEnabled ? "available" : "locked",
-            reason: variantsEnabled
-                ? preferredGroupCount === null
-                    ? "Uses the facilitator preference, otherwise falls back to default."
-                    : "Uses the facilitator preferred group count when available."
-                : lockedReason,
-            resolvesToView:
-                getAnalysisViewForGroupCount(preferredGroupCount) ??
-                "system_default",
-        },
-        {
-            view: "system_default",
-            enabled: true,
-            status: "recommended",
-            reason: "Agora selects the best-scoring available group count.",
-            groupCount: systemCandidate?.groupCount,
-            candidateId: systemCandidate?.candidateId,
-            selectionScore: systemCandidate?.selectionScore,
-        },
-    ];
+    const facilitatorCandidate =
+        preferredGroupCount === null
+            ? undefined
+            : candidatesByGroupCount.get(preferredGroupCount);
+    const facilitatorResolvesToView: AnalysisView =
+        !variantsEnabled ||
+        facilitatorCandidate === undefined ||
+        facilitatorCandidate.candidateId === selectableSystemCandidate?.candidateId
+            ? "system_default"
+            : (getAnalysisViewForGroupCount(facilitatorCandidate.groupCount) ??
+              "system_default");
 
-    for (const view of FIXED_ANALYSIS_VIEWS) {
+    const facilitatorOption: AnalysisViewOption = (() => {
+        if (!variantsEnabled) {
+            return {
+                view: "facilitator_preference",
+                enabled: false,
+                status: "locked",
+                reason: "analysis_variants_not_available",
+                resolvesToView: "system_default",
+            };
+        }
+
+        const candidate = facilitatorCandidate ?? selectableSystemCandidate;
+        if (candidate === undefined) {
+            return {
+                view: "facilitator_preference",
+                enabled: false,
+                status: "discouraged",
+                reason: "recommended_default_unavailable",
+                resolvesToView: "system_default",
+            };
+        }
+
+        return createCandidateBackedAnalysisViewOption({
+            view: "facilitator_preference",
+            status:
+                facilitatorCandidate === undefined
+                    ? "available"
+                    : getCandidateBackedStatus({
+                          candidate,
+                          systemCandidate: selectableSystemCandidate,
+                      }),
+            candidate,
+            resolvesToView: facilitatorResolvesToView,
+        });
+    })();
+
+    const recommendedDefaultOption: AnalysisViewOption =
+        selectableSystemCandidate === undefined
+            ? {
+                  view: "system_default",
+                  enabled: false,
+                  status: "discouraged",
+                  reason: "recommended_default_unavailable",
+              }
+            : createCandidateBackedAnalysisViewOption({
+                  view: "system_default",
+                  status: "recommended",
+                  candidate: selectableSystemCandidate,
+              });
+
+    const fixedOptions = FIXED_ANALYSIS_VIEWS.map((view): AnalysisViewOption => {
         const groupCount = Number(view);
         const candidate = candidatesByGroupCount.get(groupCount);
-        const status: AnalysisViewOptionStatus = !variantsEnabled
-            ? "locked"
-            : candidate === undefined
-              ? "discouraged"
-              : candidate.candidateId === systemCandidate?.candidateId
-                ? "recommended"
-                : "available";
-        options.push({
-            view,
-            enabled: variantsEnabled,
-            status,
-            reason: !variantsEnabled
-                ? lockedReason
-                : candidate === undefined
-                  ? `Agora could not form ${String(groupCount)} meaningful groups for this checkpoint.`
-                  : undefined,
-            groupCount,
-            candidateId: candidate?.candidateId,
-            selectionScore: candidate?.selectionScore,
-        });
-    }
+        if (!variantsEnabled) {
+            return {
+                view,
+                enabled: false,
+                status: "locked",
+                reason: "analysis_variants_not_available",
+            };
+        }
 
-    return options;
+        if (candidate === undefined) {
+            return {
+                view,
+                enabled: true,
+                status: "discouraged",
+                reason: "fixed_group_count_unavailable",
+                groupCount,
+            };
+        }
+
+        return createCandidateBackedAnalysisViewOption({
+            view,
+            status: getCandidateBackedStatus({
+                candidate,
+                systemCandidate: selectableSystemCandidate,
+            }),
+            candidate,
+        });
+    }).sort((left, right) => {
+        const leftRank = getFixedOptionSortRank(left);
+        const rightRank = getFixedOptionSortRank(right);
+        if (leftRank !== rightRank) {
+            return leftRank - rightRank;
+        }
+
+        const leftScore = "candidate" in left
+            ? left.candidate.assessment.selectionScore
+            : Number.NEGATIVE_INFINITY;
+        const rightScore = "candidate" in right
+            ? right.candidate.assessment.selectionScore
+            : Number.NEGATIVE_INFINITY;
+        if (leftScore !== rightScore) {
+            return rightScore - leftScore;
+        }
+
+        return Number(left.view) - Number(right.view);
+    });
+
+    return [facilitatorOption, recommendedDefaultOption, ...fixedOptions];
 }
 
 export async function getSelectedOpinionGroupMembershipsByParticipantId({

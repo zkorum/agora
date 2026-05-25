@@ -31,11 +31,12 @@ type ConversationViewSnapshotReason =
     | "conversation_content_updated"
     | "conversation_lifecycle_updated";
 
-type LifecycleCheckpointReason = "conversation_closed" | "conversation_reopened";
+type LifecycleCheckpointReason = "conversation_closed";
 
 interface LatestSnapshotRefs {
     analysisSnapshotId: number | null;
     surveyAggregateSnapshotId: number | null;
+    variantsEnabled: boolean;
 }
 
 export async function fetchAnalysisCheckpointsByConversationSlugId({
@@ -160,6 +161,8 @@ export async function createConversationViewSnapshotsFromCurrentState({
         .select({
             currentContentId: conversationTable.currentContentId,
             isClosed: conversationTable.isClosed,
+            preferredOpinionGroupCount:
+                conversationTable.preferredOpinionGroupCount,
         })
         .from(conversationTable)
         .where(eq(conversationTable.id, conversationId))
@@ -192,12 +195,64 @@ export async function createConversationViewSnapshotsFromCurrentState({
         conversationId,
     });
 
-    const previousSnapshotRows = await db
-        .select({
+    const previousAnalysisRows = await db
+        .selectDistinctOn([conversationViewSnapshotTable.opinionGroupSpecId], {
             opinionGroupSpecId:
                 conversationViewSnapshotTable.opinionGroupSpecId,
             analysisSnapshotId:
                 conversationViewSnapshotTable.analysisSnapshotId,
+            variantsEnabled: analysisSnapshotResultTable.variantsEnabled,
+        })
+        .from(conversationViewSnapshotTable)
+        .innerJoin(
+            analysisSnapshotResultTable,
+            and(
+                eq(
+                    analysisSnapshotResultTable.analysisSnapshotId,
+                    conversationViewSnapshotTable.analysisSnapshotId,
+                ),
+                eq(
+                    analysisSnapshotResultTable.opinionGroupSpecId,
+                    conversationViewSnapshotTable.opinionGroupSpecId,
+                ),
+            ),
+        )
+        .where(
+            and(
+                eq(
+                    conversationViewSnapshotTable.conversationId,
+                    conversationId,
+                ),
+                inArray(
+                    conversationViewSnapshotTable.opinionGroupSpecId,
+                    currentOpinionGroupSpecIds,
+                ),
+                isNotNull(conversationViewSnapshotTable.activatedAt),
+                isNotNull(conversationViewSnapshotTable.analysisSnapshotId),
+            ),
+        )
+        .orderBy(
+            conversationViewSnapshotTable.opinionGroupSpecId,
+            desc(conversationViewSnapshotTable.createdAt),
+            desc(conversationViewSnapshotTable.id),
+        );
+
+    const latestSnapshotRefsBySpecId = new Map<number, LatestSnapshotRefs>();
+    for (const row of previousAnalysisRows) {
+        if (row.analysisSnapshotId === null) {
+            continue;
+        }
+        latestSnapshotRefsBySpecId.set(row.opinionGroupSpecId, {
+            analysisSnapshotId: row.analysisSnapshotId,
+            surveyAggregateSnapshotId: null,
+            variantsEnabled: row.variantsEnabled,
+        });
+    }
+
+    const previousSurveyRows = await db
+        .selectDistinctOn([conversationViewSnapshotTable.opinionGroupSpecId], {
+            opinionGroupSpecId:
+                conversationViewSnapshotTable.opinionGroupSpecId,
             surveyAggregateSnapshotId:
                 conversationViewSnapshotTable.surveyAggregateSnapshotId,
         })
@@ -213,33 +268,27 @@ export async function createConversationViewSnapshotsFromCurrentState({
                     currentOpinionGroupSpecIds,
                 ),
                 isNotNull(conversationViewSnapshotTable.activatedAt),
+                isNotNull(
+                    conversationViewSnapshotTable.surveyAggregateSnapshotId,
+                ),
             ),
         )
         .orderBy(
+            conversationViewSnapshotTable.opinionGroupSpecId,
             desc(conversationViewSnapshotTable.createdAt),
             desc(conversationViewSnapshotTable.id),
         );
 
-    const latestSnapshotRefsBySpecId = new Map<number, LatestSnapshotRefs>();
-    for (const row of previousSnapshotRows) {
+    for (const row of previousSurveyRows) {
+        if (row.surveyAggregateSnapshotId === null) {
+            continue;
+        }
         const refs = latestSnapshotRefsBySpecId.get(row.opinionGroupSpecId) ?? {
             analysisSnapshotId: null,
             surveyAggregateSnapshotId: null,
+            variantsEnabled: false,
         };
-
-        if (
-            refs.analysisSnapshotId === null &&
-            row.analysisSnapshotId !== null
-        ) {
-            refs.analysisSnapshotId = row.analysisSnapshotId;
-        }
-        if (
-            refs.surveyAggregateSnapshotId === null &&
-            row.surveyAggregateSnapshotId !== null
-        ) {
-            refs.surveyAggregateSnapshotId = row.surveyAggregateSnapshotId;
-        }
-
+        refs.surveyAggregateSnapshotId = row.surveyAggregateSnapshotId;
         latestSnapshotRefsBySpecId.set(row.opinionGroupSpecId, refs);
     }
 
@@ -259,6 +308,9 @@ export async function createConversationViewSnapshotsFromCurrentState({
                         : null,
                     conversationContentId: conversation.currentContentId,
                     viewReason,
+                    preferredOpinionGroupCount: refs?.variantsEnabled === true
+                        ? conversation.preferredOpinionGroupCount
+                        : null,
                     isClosed: conversation.isClosed,
                     opinionCount: counters.opinionCount,
                     voteCount: counters.voteCount,
@@ -269,7 +321,8 @@ export async function createConversationViewSnapshotsFromCurrentState({
                     moderatedOpinionCount: counters.moderatedOpinionCount,
                     hiddenOpinionCount: counters.hiddenOpinionCount,
                     activatedAt:
-                        refs === undefined || lifecycleCheckpointReason !== undefined
+                        refs === undefined ||
+                        lifecycleCheckpointReason !== undefined
                             ? activatedAt
                             : null,
                 };

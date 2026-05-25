@@ -6,6 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **conversationSlugId** | **string** |  | [default to undefined]
+**conversationViewSnapshotId** | **number** |  | [optional] [default to undefined]
 **createdAt** | **string** |  | [default to undefined]
 **updatedAt** | **string** |  | [optional] [default to undefined]
 **lastReactedAt** | **string** |  | [default to undefined]
@@ -36,6 +37,7 @@ import { ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMet
 
 const instance: ApiV1ConversationFetchRecentPost200ResponseConversationDataListInnerMetadata = {
     conversationSlugId,
+    conversationViewSnapshotId,
     createdAt,
     updatedAt,
     lastReactedAt,

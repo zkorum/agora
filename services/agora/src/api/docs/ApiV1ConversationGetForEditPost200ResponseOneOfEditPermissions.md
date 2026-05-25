@@ -12,6 +12,7 @@ Name | Type | Description | Notes
 **canAddEventTicket** | **boolean** |  | [default to undefined]
 **canChangeEventTicket** | **boolean** |  | [default to undefined]
 **canRemoveEventTicket** | **boolean** |  | [default to undefined]
+**canUseAnalysisVariantsPreference** | **boolean** |  | [default to undefined]
 **restrictedPremiumFeatures** | **Array&lt;string&gt;** |  | [default to undefined]
 **premiumEditAccessEndsAt** | **string** |  | [optional] [default to undefined]
 
@@ -28,6 +29,7 @@ const instance: ApiV1ConversationGetForEditPost200ResponseOneOfEditPermissions =
     canAddEventTicket,
     canChangeEventTicket,
     canRemoveEventTicket,
+    canUseAnalysisVariantsPreference,
     restrictedPremiumFeatures,
     premiumEditAccessEndsAt,
 };

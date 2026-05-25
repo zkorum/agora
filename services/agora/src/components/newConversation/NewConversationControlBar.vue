@@ -55,6 +55,12 @@
     v-model:ai-labeling-enabled="aiLabelingEnabled"
   />
 
+  <AnalysisPreferenceDialog
+    v-model:show-dialog="showAnalysisPreferenceDialog"
+    v-model:preferred-opinion-group-count="preferredOpinionGroupCount"
+    :can-use-analysis-variants-preference="canUseAnalysisVariantsPreference"
+  />
+
   <LoginRequirementDialog
     v-model:show-dialog="showLoginRequirementDialog"
     v-model:participation-mode="participationMode"
@@ -63,9 +69,9 @@
   <EventTicketRequirementDialog
     v-model:show-dialog="showEventTicketRequirementDialog"
     v-model:requires-event-ticket="requiresEventTicket"
-    :can-add-event-ticket="props.canAddEventTicket"
-    :can-change-event-ticket="props.canChangeEventTicket"
-    :can-remove-event-ticket="props.canRemoveEventTicket"
+    :can-add-event-ticket="canAddEventTicket"
+    :can-change-event-ticket="canChangeEventTicket"
+    :can-remove-event-ticket="canRemoveEventTicket"
   />
 </template>
 
@@ -74,6 +80,7 @@ import { storeToRefs } from "pinia";
 import DynamicProfileImage from "src/components/account/DynamicProfileImage.vue";
 import ConversationControlButton from "src/components/newConversation/ConversationControlButton.vue";
 import AiLabelingOptionsDialog from "src/components/newConversation/dialog/AiLabelingOptionsDialog.vue";
+import AnalysisPreferenceDialog from "src/components/newConversation/dialog/AnalysisPreferenceDialog.vue";
 import EventTicketRequirementDialog from "src/components/newConversation/dialog/EventTicketRequirementDialog.vue";
 import LoginRequirementDialog from "src/components/newConversation/dialog/LoginRequirementDialog.vue";
 import ModeChangeConfirmationDialog from "src/components/newConversation/dialog/ModeChangeConfirmationDialog.vue";
@@ -85,7 +92,13 @@ import {
   type PostAsSettings,
 } from "src/composables/conversation/draft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type { ConversationType, EventSlug, ExternalSourceConfig, ParticipationMode } from "src/shared/types/zod";
+import type {
+  ConversationType,
+  EventSlug,
+  ExternalSourceConfig,
+  ParticipationMode,
+  PreferredOpinionGroupCount,
+} from "src/shared/types/zod";
 import {
   checkFeatureAccess,
   DEFAULT_FEATURE_ALLOWED_ORGS,
@@ -97,8 +110,9 @@ import {
 } from "src/shared-app-api/maxdiffLogic";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
+import { usePremiumFeatureApi } from "src/utils/api/premiumFeature";
 import { processEnv } from "src/utils/processEnv";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 
 import MaxDiffSourceDialog from "./dialog/MaxDiffSourceDialog.vue";
 import PostTypeDialog from "./dialog/PostTypeDialog.vue";
@@ -121,12 +135,14 @@ interface Props {
   canAddEventTicket?: boolean;
   canChangeEventTicket?: boolean;
   canRemoveEventTicket?: boolean;
+  canUseAnalysisVariantsPreference?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   canAddEventTicket: true,
   canChangeEventTicket: true,
   canRemoveEventTicket: true,
+  canUseAnalysisVariantsPreference: false,
 });
 
 const { t } = useComponentI18n<NewConversationControlBarTranslations>(
@@ -160,6 +176,10 @@ const externalSourceConfig = defineModel<ExternalSourceConfig | null>(
 const aiLabelingEnabled = defineModel<boolean>("aiLabelingEnabled", {
   required: true,
 });
+const preferredOpinionGroupCount = defineModel<PreferredOpinionGroupCount>(
+  "preferredOpinionGroupCount",
+  { required: true }
+);
 
 // For checking if there's content that would be cleared (parent needs to provide these)
 const title = defineModel<string>("title", { required: true });
@@ -187,6 +207,7 @@ const showPostAsDialogVisible = ref(false);
 const showPostTypeDialog = ref(false);
 const showVisibilityDialog = ref(false);
 const showAiLabelingDialog = ref(false);
+const showAnalysisPreferenceDialog = ref(false);
 const showLoginRequirementDialog = ref(false);
 const showEventTicketRequirementDialog = ref(false);
 
@@ -291,6 +312,10 @@ const toggleAiLabeling = (): void => {
   showAiLabelingDialog.value = true;
 };
 
+const toggleAnalysisPreference = (): void => {
+  showAnalysisPreferenceDialog.value = true;
+};
+
 const toggleLoginRequirement = (): void => {
   showLoginRequirementDialog.value = true;
 };
@@ -337,12 +362,114 @@ const isMaxDiffGitHubAllowed = computed(() => {
   return result.allowed;
 });
 
+const { checkPremiumFeatureAccess } = usePremiumFeatureApi();
+const createModeCanUseAnalysisVariantsPreference = ref(false);
+const createModeCanAddEventTicket = ref<boolean | null>(null);
+let createModePremiumAccessRequestId = 0;
+
+const canUseAnalysisVariantsPreference = computed(() => {
+  return props.isEditMode
+    ? props.canUseAnalysisVariantsPreference
+    : createModeCanUseAnalysisVariantsPreference.value;
+});
+
+const canAddEventTicket = computed(() => {
+  return props.isEditMode
+    ? props.canAddEventTicket
+    : createModeCanAddEventTicket.value === true;
+});
+
+const canChangeEventTicket = computed(() => {
+  return props.isEditMode
+    ? props.canChangeEventTicket
+    : canAddEventTicket.value;
+});
+
+const canRemoveEventTicket = computed(() => {
+  return props.isEditMode ? props.canRemoveEventTicket : true;
+});
+
+watch(
+  () => ({
+    isEditMode: props.isEditMode,
+    isLoggedIn: isLoggedIn.value,
+    postAsOrganization: postAs.value.postAsOrganization,
+    organizationName: postAs.value.organizationName,
+    userId: userId.value,
+  }),
+  async () => {
+    const requestId = ++createModePremiumAccessRequestId;
+
+    if (props.isEditMode) {
+      return;
+    }
+
+    if (!isLoggedIn.value) {
+      createModeCanAddEventTicket.value = false;
+      createModeCanUseAnalysisVariantsPreference.value = false;
+      return;
+    }
+
+    createModeCanAddEventTicket.value = null;
+
+    try {
+      const postAsOrganization = postAs.value.postAsOrganization
+        ? postAs.value.organizationName
+        : undefined;
+      const [eventTicketAccess, analysisVariantsAccess] = await Promise.all([
+        checkPremiumFeatureAccess({
+          feature: "event_ticket",
+          postAsOrganization,
+        }),
+        checkPremiumFeatureAccess({
+          feature: "analysis_variants",
+          postAsOrganization,
+        }),
+      ]);
+
+      if (requestId !== createModePremiumAccessRequestId) {
+        return;
+      }
+
+      createModeCanAddEventTicket.value = eventTicketAccess.hasAccess;
+      createModeCanUseAnalysisVariantsPreference.value =
+        analysisVariantsAccess.hasAccess;
+    } catch {
+      if (requestId !== createModePremiumAccessRequestId) {
+        return;
+      }
+
+      createModeCanAddEventTicket.value = false;
+      createModeCanUseAnalysisVariantsPreference.value = false;
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  () => ({
+    isEditMode: props.isEditMode,
+    canAddEventTicket: createModeCanAddEventTicket.value,
+  }),
+  ({ isEditMode, canAddEventTicket }) => {
+    if (!isEditMode && canAddEventTicket === false) {
+      requiresEventTicket.value = undefined;
+    }
+  }
+);
+
+watch(canUseAnalysisVariantsPreference, (canUsePreference) => {
+  if (!canUsePreference) {
+    preferredOpinionGroupCount.value = null;
+  }
+});
+
 const canOpenEventTicketRequirementDialog = computed(() => {
   if (requiresEventTicket.value === undefined) {
-    return props.canAddEventTicket;
+    return canAddEventTicket.value;
   }
 
-  return props.canChangeEventTicket || props.canRemoveEventTicket;
+  return canChangeEventTicket.value || canRemoveEventTicket.value;
 });
 
 const showMaxDiffSourceDialog = ref(false);
@@ -363,6 +490,12 @@ const getEventTicketLabel = (): string => {
       return t("devconnect2025");
   }
 };
+
+const analysisPreferenceLabel = computed(() => {
+  return preferredOpinionGroupCount.value === null
+    ? t("recommendedDefault")
+    : t("groupsLabel", { count: String(preferredOpinionGroupCount.value) });
+});
 
 const controlButtons = computed((): ControlButton[] => [
   {
@@ -411,6 +544,16 @@ const controlButtons = computed((): ControlButton[] => [
     clickable: true,
   },
   {
+    id: "analysis-preference",
+    label: analysisPreferenceLabel.value,
+    icon: showAnalysisPreferenceDialog.value
+      ? "pi pi-chevron-up"
+      : "pi pi-chevron-down",
+    isVisible: conversationType.value === "polis",
+    clickHandler: toggleAnalysisPreference,
+    clickable: true,
+  },
+  {
     id: "login-requirement",
     label:
       participationMode.value === "account_required"
@@ -433,7 +576,9 @@ const controlButtons = computed((): ControlButton[] => [
     icon: showEventTicketRequirementDialog.value
       ? "pi pi-chevron-up"
       : "pi pi-chevron-down",
-    isVisible: true,
+    isVisible: props.isEditMode
+      ? requiresEventTicket.value !== undefined
+      : canAddEventTicket.value,
     clickHandler: toggleEventTicketRequirement,
     clickable: canOpenEventTicketRequirementDialog.value,
   },

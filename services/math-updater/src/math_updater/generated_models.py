@@ -89,7 +89,6 @@ class ConversationViewSnapshotCheckpointReasonEnum(StrEnum):
     major_participation_milestone = "major_participation_milestone"
     major_vote_milestone = "major_vote_milestone"
     conversation_closed = "conversation_closed"
-    conversation_reopened = "conversation_reopened"
 
 
 class ConversationViewSnapshotReasonEnum(StrEnum):
@@ -97,6 +96,7 @@ class ConversationViewSnapshotReasonEnum(StrEnum):
     survey_refreshed = "survey_refreshed"
     conversation_content_updated = "conversation_content_updated"
     conversation_lifecycle_updated = "conversation_lifecycle_updated"
+    facilitator_preference_updated = "facilitator_preference_updated"
 
 
 class MaxdiffLifecycleStatus(StrEnum):
@@ -227,6 +227,7 @@ class AnalysisSnapshotResult(Base):
         SaEnum(AnalysisInsufficientDataReasonEnum, values_callable=_enum_values, native_enum=False),
         nullable=True,
     )
+    variants_enabled: Mapped[bool] = mapped_column(Boolean, server_default="false")
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
@@ -279,6 +280,7 @@ class AnalysisWorkState(Base):
     last_error_stack_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
+
 
 class ConversationContent(Base):
     __tablename__ = "conversation_content"
@@ -369,6 +371,7 @@ class ConversationViewSnapshot(Base):
     view_reason: Mapped[ConversationViewSnapshotReasonEnum] = mapped_column(
         SaEnum(ConversationViewSnapshotReasonEnum, values_callable=_enum_values, native_enum=False),
     )
+    preferred_opinion_group_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_closed: Mapped[bool] = mapped_column(Boolean)
     opinion_count: Mapped[int] = mapped_column(Integer)
     vote_count: Mapped[int] = mapped_column(Integer)

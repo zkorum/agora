@@ -67,6 +67,7 @@ All URIs are relative to *http://localhost*
 |[**apiV1OpinionFetchByConversationPost**](#apiv1opinionfetchbyconversationpost) | **POST** /api/v1/opinion/fetch-by-conversation | |
 |[**apiV1OpinionFetchBySlugIdListPost**](#apiv1opinionfetchbyslugidlistpost) | **POST** /api/v1/opinion/fetch-by-slug-id-list | |
 |[**apiV1OpinionFetchHiddenByConversationPost**](#apiv1opinionfetchhiddenbyconversationpost) | **POST** /api/v1/opinion/fetch-hidden-by-conversation | |
+|[**apiV1PremiumFeatureAccessCheckPost**](#apiv1premiumfeatureaccesscheckpost) | **POST** /api/v1/premium-feature/access/check | |
 |[**apiV1RealtimeStreamGet**](#apiv1realtimestreamget) | **GET** /api/v1/realtime/stream | |
 |[**apiV1ReportConversationCreatePost**](#apiv1reportconversationcreatepost) | **POST** /api/v1/report/conversation/create | |
 |[**apiV1ReportConversationFetchPost**](#apiv1reportconversationfetchpost) | **POST** /api/v1/report/conversation/fetch | |
@@ -3209,6 +3210,57 @@ const { status, data } = await apiInstance.apiV1OpinionFetchHiddenByConversation
 ### Return type
 
 **Array<ApiV1UserOpinionFetchPost200ResponseInnerOpinionItem>**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Default Response |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiV1PremiumFeatureAccessCheckPost**
+> ApiV1PremiumFeatureAccessCheckPost200Response apiV1PremiumFeatureAccessCheckPost(apiV1PremiumFeatureAccessCheckPostRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ApiV1PremiumFeatureAccessCheckPostRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let apiV1PremiumFeatureAccessCheckPostRequest: ApiV1PremiumFeatureAccessCheckPostRequest; //
+
+const { status, data } = await apiInstance.apiV1PremiumFeatureAccessCheckPost(
+    apiV1PremiumFeatureAccessCheckPostRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **apiV1PremiumFeatureAccessCheckPostRequest** | **ApiV1PremiumFeatureAccessCheckPostRequest**|  | |
+
+
+### Return type
+
+**ApiV1PremiumFeatureAccessCheckPost200Response**
 
 ### Authorization
 

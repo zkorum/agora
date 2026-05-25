@@ -1248,6 +1248,7 @@ BEGIN
             total_participant_count,
             moderated_opinion_count,
             hidden_opinion_count,
+            activated_at,
             created_at
         )
         VALUES (
@@ -1266,6 +1267,7 @@ BEGIN
             backfill_conversation.total_participant_count,
             backfill_conversation.moderated_opinion_count,
             backfill_conversation.hidden_opinion_count,
+            backfill_conversation.polis_content_updated_at,
             backfill_conversation.polis_content_updated_at
         )
         RETURNING id INTO view_snapshot_id;

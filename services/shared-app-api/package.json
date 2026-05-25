@@ -6,7 +6,7 @@
     "main": "index.js",
     "scripts": {
         "sync": "bash scripts/rsync_and_sed.sh",
-        "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+        "test": "NODE_OPTIONS='--experimental-vm-modules --disable-warning=ExperimentalWarning' jest",
         "lint": "eslint ./",
         "format:write": "prettier --write \"**/*.{js,ts,jsx,tsx,vue,scss,html,md,json}\"",
         "format:check": "prettier . --check"

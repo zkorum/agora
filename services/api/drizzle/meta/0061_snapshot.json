@@ -1,5 +1,5 @@
 {
-  "id": "da86e705-9e71-414d-a27b-f5991166e152",
+  "id": "1c298964-fff1-489b-9cee-af005e9771de",
   "prevId": "55da59d9-084b-48ba-bcd3-7cf0824cc471",
   "version": "7",
   "dialect": "postgresql",
@@ -339,6 +339,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "variants_enabled": {
+          "name": "variants_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
@@ -634,6 +641,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "persisted_analysis_snapshot_id": {
+          "name": "persisted_analysis_snapshot_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "dirty_since": {
           "name": "dirty_since",
           "type": "timestamp (0)",
@@ -738,10 +751,32 @@
               "isExpression": false,
               "asc": true,
               "nulls": "last"
+            },
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
             }
           ],
           "isUnique": false,
           "where": "(\"analysis_work_state\".\"running_data_generation\" is null AND \"analysis_work_state\".\"next_run_at\" is not null)",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "analysis_work_state_lease_expiry_idx": {
+          "name": "analysis_work_state_lease_expiry_idx",
+          "columns": [
+            {
+              "expression": "lease_expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"analysis_work_state\".\"running_data_generation\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -783,6 +818,19 @@
           "tableTo": "opinion_group_spec",
           "columnsFrom": [
             "opinion_group_spec_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "analysis_work_state_persisted_analysis_snapshot_id_analysis_snapshot_id_fk": {
+          "name": "analysis_work_state_persisted_analysis_snapshot_id_analysis_snapshot_id_fk",
+          "tableFrom": "analysis_work_state",
+          "tableTo": "analysis_snapshot",
+          "columnsFrom": [
+            "persisted_analysis_snapshot_id"
           ],
           "columnsTo": [
             "id"
@@ -2490,6 +2538,19 @@
           "notNull": true,
           "default": true
         },
+        "analysis_data_generation": {
+          "name": "analysis_data_generation",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "preferred_opinion_group_count": {
+          "name": "preferred_opinion_group_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "opinion_count": {
           "name": "opinion_count",
           "type": "integer",
@@ -2531,19 +2592,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
-        },
-        "analysis_data_generation": {
-          "name": "analysis_data_generation",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "preferred_opinion_group_count": {
-          "name": "preferred_opinion_group_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
         },
         "moderated_opinion_count": {
           "name": "moderated_opinion_count",
@@ -3377,6 +3425,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "preferred_opinion_group_count": {
+          "name": "preferred_opinion_group_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "is_closed": {
           "name": "is_closed",
           "type": "boolean",
@@ -3431,6 +3485,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "activated_at": {
+          "name": "activated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (0)",
@@ -3452,17 +3512,95 @@
             {
               "expression": "created_at",
               "isExpression": false,
-              "asc": true,
+              "asc": false,
               "nulls": "last"
             },
             {
               "expression": "id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_view_snapshot_latest_active_idx": {
+          "name": "conversation_view_snapshot_latest_active_idx",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"conversation_view_snapshot\".\"activated_at\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_view_snapshot_latest_spec_active_idx": {
+          "name": "conversation_view_snapshot_latest_spec_active_idx",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "opinion_group_spec_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"conversation_view_snapshot\".\"activated_at\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_view_snapshot_analysis_snapshot_idx": {
+          "name": "conversation_view_snapshot_analysis_snapshot_idx",
+          "columns": [
+            {
+              "expression": "analysis_snapshot_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
+          "where": "\"conversation_view_snapshot\".\"analysis_snapshot_id\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -3542,6 +3680,10 @@
         "conversation_view_snapshot_counts_check": {
           "name": "conversation_view_snapshot_counts_check",
           "value": "\"conversation_view_snapshot\".\"opinion_count\" >= 0 AND \"conversation_view_snapshot\".\"vote_count\" >= 0 AND \"conversation_view_snapshot\".\"participant_count\" >= 0 AND \"conversation_view_snapshot\".\"total_opinion_count\" >= 0 AND \"conversation_view_snapshot\".\"total_vote_count\" >= 0 AND \"conversation_view_snapshot\".\"total_participant_count\" >= 0 AND \"conversation_view_snapshot\".\"moderated_opinion_count\" >= 0 AND \"conversation_view_snapshot\".\"hidden_opinion_count\" >= 0"
+        },
+        "conversation_view_snapshot_preferred_opinion_group_count_check": {
+          "name": "conversation_view_snapshot_preferred_opinion_group_count_check",
+          "value": "\"conversation_view_snapshot\".\"preferred_opinion_group_count\" IS NULL OR (\"conversation_view_snapshot\".\"preferred_opinion_group_count\" >= 2 AND \"conversation_view_snapshot\".\"preferred_opinion_group_count\" <= 6)"
         }
       },
       "isRLSEnabled": false
@@ -5865,6 +6007,20 @@
           "primaryKey": false,
           "notNull": true
         },
+        "ai_generation_expected": {
+          "name": "ai_generation_expected",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "translation_expected": {
+          "name": "translation_expected",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "attempt_count": {
           "name": "attempt_count",
           "type": "integer",
@@ -6158,6 +6314,388 @@
       },
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.opinion_group_description_translation_work": {
+      "name": "opinion_group_description_translation_work",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "opinion_group_description_translation_work_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "description_id": {
+          "name": "description_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "locale": {
+          "name": "locale",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempt_count": {
+          "name": "attempt_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_run_at": {
+          "name": "next_run_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lease_owner": {
+          "name": "lease_owner",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lease_token": {
+          "name": "lease_token",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lease_expires_at": {
+          "name": "lease_expires_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "non_retryable_ai_description_epoch": {
+          "name": "non_retryable_ai_description_epoch",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error_code": {
+          "name": "last_error_code",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error_message": {
+          "name": "last_error_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "opinion_group_description_translation_work_due_idx": {
+          "name": "opinion_group_description_translation_work_due_idx",
+          "columns": [
+            {
+              "expression": "next_run_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "(\"opinion_group_description_translation_work\".\"lease_token\" is null AND \"opinion_group_description_translation_work\".\"next_run_at\" is not null)",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "opinion_group_description_translation_work_lease_expiry_idx": {
+          "name": "opinion_group_description_translation_work_lease_expiry_idx",
+          "columns": [
+            {
+              "expression": "lease_expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"opinion_group_description_translation_work\".\"lease_token\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "opinion_group_description_translation_work_description_id_opinion_group_description_id_fk": {
+          "name": "opinion_group_description_translation_work_description_id_opinion_group_description_id_fk",
+          "tableFrom": "opinion_group_description_translation_work",
+          "tableTo": "opinion_group_description",
+          "columnsFrom": [
+            "description_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_group_description_translation_work_conversation_id_conversation_id_fk": {
+          "name": "opinion_group_description_translation_work_conversation_id_conversation_id_fk",
+          "tableFrom": "opinion_group_description_translation_work",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "opinion_group_description_translation_work_unique": {
+          "name": "opinion_group_description_translation_work_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "description_id",
+            "locale"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "opinion_group_description_translation_work_running_lease_check": {
+          "name": "opinion_group_description_translation_work_running_lease_check",
+          "value": "((\"opinion_group_description_translation_work\".\"lease_owner\" is null AND \"opinion_group_description_translation_work\".\"lease_token\" is null AND \"opinion_group_description_translation_work\".\"lease_expires_at\" is null) OR (\"opinion_group_description_translation_work\".\"lease_owner\" is not null AND \"opinion_group_description_translation_work\".\"lease_token\" is not null AND \"opinion_group_description_translation_work\".\"lease_expires_at\" is not null))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.opinion_group_lineage_description_work": {
+      "name": "opinion_group_lineage_description_work",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "opinion_group_lineage_description_work_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "lineage_id": {
+          "name": "lineage_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_candidate_id": {
+          "name": "source_candidate_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempt_count": {
+          "name": "attempt_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_run_at": {
+          "name": "next_run_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lease_owner": {
+          "name": "lease_owner",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lease_token": {
+          "name": "lease_token",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lease_expires_at": {
+          "name": "lease_expires_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "non_retryable_ai_description_epoch": {
+          "name": "non_retryable_ai_description_epoch",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error_code": {
+          "name": "last_error_code",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error_message": {
+          "name": "last_error_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "opinion_group_lineage_description_work_due_idx": {
+          "name": "opinion_group_lineage_description_work_due_idx",
+          "columns": [
+            {
+              "expression": "next_run_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "(\"opinion_group_lineage_description_work\".\"lease_token\" is null AND \"opinion_group_lineage_description_work\".\"next_run_at\" is not null)",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "opinion_group_lineage_description_work_lease_expiry_idx": {
+          "name": "opinion_group_lineage_description_work_lease_expiry_idx",
+          "columns": [
+            {
+              "expression": "lease_expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"opinion_group_lineage_description_work\".\"lease_token\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "opinion_group_lineage_description_work_lineage_id_opinion_group_lineage_id_fk": {
+          "name": "opinion_group_lineage_description_work_lineage_id_opinion_group_lineage_id_fk",
+          "tableFrom": "opinion_group_lineage_description_work",
+          "tableTo": "opinion_group_lineage",
+          "columnsFrom": [
+            "lineage_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_group_lineage_description_work_conversation_id_conversation_id_fk": {
+          "name": "opinion_group_lineage_description_work_conversation_id_conversation_id_fk",
+          "tableFrom": "opinion_group_lineage_description_work",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "opinion_group_lineage_description_work_source_candidate_id_opinion_group_candidate_id_fk": {
+          "name": "opinion_group_lineage_description_work_source_candidate_id_opinion_group_candidate_id_fk",
+          "tableFrom": "opinion_group_lineage_description_work",
+          "tableTo": "opinion_group_candidate",
+          "columnsFrom": [
+            "source_candidate_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "opinion_group_lineage_description_work_unique": {
+          "name": "opinion_group_lineage_description_work_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "lineage_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "opinion_group_lineage_description_work_running_lease_check": {
+          "name": "opinion_group_lineage_description_work_running_lease_check",
+          "value": "((\"opinion_group_lineage_description_work\".\"lease_owner\" is null AND \"opinion_group_lineage_description_work\".\"lease_token\" is null AND \"opinion_group_lineage_description_work\".\"lease_expires_at\" is null) OR (\"opinion_group_lineage_description_work\".\"lease_owner\" is not null AND \"opinion_group_lineage_description_work\".\"lease_token\" is not null AND \"opinion_group_lineage_description_work\".\"lease_expires_at\" is not null))"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.opinion_group_lineage_scope": {
@@ -8641,21 +9179,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "premium_feature_entitlement_expires_idx": {
-          "name": "premium_feature_entitlement_expires_idx",
-          "columns": [
-            {
-              "expression": "expires_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -8946,6 +9469,71 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.realtime_event_outbox": {
+      "name": "realtime_event_outbox",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "realtime_event_outbox_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "realtime_event_outbox_created_at_idx": {
+          "name": "realtime_event_outbox_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -12412,7 +13000,6 @@
       "schema": "public",
       "values": [
         "survey",
-        "prioritization",
         "event_ticket",
         "analysis_variants"
       ]

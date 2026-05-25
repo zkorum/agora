@@ -28,7 +28,6 @@ import {
     zodNotificationItem,
     zodPolisKey,
     zodAnalysisView,
-    zodAnalysisViewOptionStatus,
     zodOrganization,
     zodTopicObject,
     zodFeedSortAlgorithm,
@@ -61,6 +60,7 @@ import {
     zodGrantablePremiumFeature,
     zodPremiumFeature,
     zodUserId,
+    zodPreferredOpinionGroupCount,
 } from "./zod.js";
 import { zodPolisVoteRecord } from "./polis.js";
 import {
@@ -77,10 +77,59 @@ const zodConversationEditPermissions = z
         canAddEventTicket: z.boolean(),
         canChangeEventTicket: z.boolean(),
         canRemoveEventTicket: z.boolean(),
+        canUseAnalysisVariantsPreference: z.boolean(),
         restrictedPremiumFeatures: z.array(zodPremiumFeature),
         premiumEditAccessEndsAt: zodDateTimeFlexible.optional(),
     })
     .strict();
+
+const zodAnalysisViewOptionBase = z
+    .object({
+        view: zodAnalysisView,
+        resolvesToView: zodAnalysisView.optional(),
+    })
+    .strict();
+const zodAnalysisViewOptionCandidate = z
+    .object({
+        candidateId: z.number().int().positive(),
+        groupCount: z.number().int().min(2).max(6),
+        assessment: z
+            .object({
+                selectionScore: z.number(),
+                silhouetteScore: z.number().nullable(),
+                balanceScore: z.number().nullable(),
+            })
+            .strict(),
+    })
+    .strict();
+const zodRecommendedAnalysisViewOption = zodAnalysisViewOptionBase.extend({
+    status: z.literal("recommended"),
+    enabled: z.literal(true),
+    candidate: zodAnalysisViewOptionCandidate,
+});
+const zodAvailableAnalysisViewOption = zodAnalysisViewOptionBase.extend({
+    status: z.literal("available"),
+    enabled: z.literal(true),
+    candidate: zodAnalysisViewOptionCandidate,
+});
+const zodLockedAnalysisViewOption = zodAnalysisViewOptionBase.extend({
+    status: z.literal("locked"),
+    enabled: z.literal(false),
+    reason: z.literal("analysis_variants_not_available"),
+});
+const zodFixedGroupCountUnavailableAnalysisViewOption =
+    zodAnalysisViewOptionBase.extend({
+        status: z.literal("discouraged"),
+        enabled: z.literal(true),
+        reason: z.literal("fixed_group_count_unavailable"),
+        groupCount: z.number().int().min(2).max(6),
+    });
+const zodRecommendedDefaultUnavailableAnalysisViewOption =
+    zodAnalysisViewOptionBase.extend({
+        status: z.literal("discouraged"),
+        enabled: z.literal(false),
+        reason: z.literal("recommended_default_unavailable"),
+    });
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Dto {
@@ -119,18 +168,13 @@ export class Dto {
             checkpointViewSnapshotId: z.number().int().positive().optional(),
         })
         .strict();
-    static analysisViewOption = z
-        .object({
-            view: zodAnalysisView,
-            enabled: z.boolean(),
-            status: zodAnalysisViewOptionStatus,
-            reason: z.string().optional(),
-            groupCount: z.number().int().min(2).max(6).optional(),
-            candidateId: z.number().int().positive().optional(),
-            selectionScore: z.number().nullable().optional(),
-            resolvesToView: zodAnalysisView.optional(),
-        })
-        .strict();
+    static analysisViewOption = z.union([
+        zodRecommendedAnalysisViewOption,
+        zodAvailableAnalysisViewOption,
+        zodLockedAnalysisViewOption,
+        zodFixedGroupCountUnavailableAnalysisViewOption,
+        zodRecommendedDefaultUnavailableAnalysisViewOption,
+    ]);
     static analysisViewState = z
         .object({
             requestedView: zodAnalysisView,
@@ -227,6 +271,8 @@ export class Dto {
             seedOpinionList: z.array(zodOpinionContentInput).max(50),
             requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().default(true),
+            preferredOpinionGroupCount:
+                zodPreferredOpinionGroupCount.default(null),
             externalSourceConfig: zodExternalSourceConfig.nullable().optional(),
             surveyConfig: zodSurveyConfig.nullable().optional(),
         })
@@ -242,6 +288,8 @@ export class Dto {
             participationMode: zodParticipationMode,
             requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().default(true),
+            preferredOpinionGroupCount:
+                zodPreferredOpinionGroupCount.default(null),
         })
         .strict();
     static importConversationResponse = z
@@ -281,6 +329,15 @@ export class Dto {
                 (val) => val === "true" || val === true,
                 z.boolean().default(true),
             ),
+            preferredOpinionGroupCount: z.preprocess((val) => {
+                if (val === "" || val === undefined || val === null) {
+                    return null;
+                }
+                if (typeof val === "string") {
+                    return Number(val);
+                }
+                return val;
+            }, zodPreferredOpinionGroupCount.default(null)),
         })
         .strict();
     static importCsvConversationResponse = z
@@ -414,6 +471,7 @@ export class Dto {
                 participationMode: zodParticipationMode,
                 requiresEventTicket: zodEventSlug.optional(),
                 aiLabelingEnabled: z.boolean(),
+                preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
                 postAsOrganizationName: z.string().optional(),
                 surveyConfig: zodSurveyConfig.nullable().optional(),
                 createdAt: zodDateTimeFlexible,
@@ -438,6 +496,8 @@ export class Dto {
             participationMode: zodParticipationMode,
             requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().optional(),
+            preferredOpinionGroupCount:
+                zodPreferredOpinionGroupCount.optional(),
             surveyConfig: zodSurveyConfig.nullable().optional(),
         })
         .strict();
@@ -456,10 +516,23 @@ export class Dto {
                     "conversation_locked",
                     "invalid_access_settings",
                     "premium_access_expired",
+                    "premium_access_required",
                 ]),
             })
             .strict(),
     ]);
+
+    static checkPremiumFeatureAccessRequest = z
+        .object({
+            postAsOrganization: z.string().optional(),
+            feature: zodGrantablePremiumFeature,
+        })
+        .strict();
+    static checkPremiumFeatureAccessResponse = z
+        .object({
+            hasAccess: z.boolean(),
+        })
+        .strict();
     static surveyFormFetchRequest = z
         .object({
             conversationSlugId: zodSlugId,
@@ -582,6 +655,7 @@ export class Dto {
             .object({
                 success: z.literal(true),
                 opinionSlugId: z.string(),
+                opinionItem: zodOpinionItem,
             })
             .strict(),
         z
@@ -868,7 +942,8 @@ export class Dto {
                 (username !== undefined && organizationName === undefined) ||
                 (username === undefined && organizationName !== undefined),
             {
-                message: "Exactly one of username or organizationName is required",
+                message:
+                    "Exactly one of username or organizationName is required",
             },
         );
     static premiumFeatureEntitlementItem = z
@@ -1324,6 +1399,12 @@ export type UpdateConversationRequest = z.infer<
 export type UpdateConversationResponse = z.infer<
     typeof Dto.updateConversationResponse
 >;
+export type CheckPremiumFeatureAccessRequest = z.infer<
+    typeof Dto.checkPremiumFeatureAccessRequest
+>;
+export type CheckPremiumFeatureAccessResponse = z.infer<
+    typeof Dto.checkPremiumFeatureAccessResponse
+>;
 export type CreateCommentResponse = z.infer<typeof Dto.createOpinionResponse>;
 export type FetchUserVotesForPostSlugIdsResponse = z.infer<
     typeof Dto.getUserVotesByConversationsResponse
@@ -1405,6 +1486,11 @@ export type UpdateLanguagePreferencesRequest = z.infer<
     typeof Dto.updateLanguagePreferencesRequest
 >;
 export type ConversationAnalysis = z.infer<typeof Dto.fetchAnalysisResponse>;
+export type AnalysisViewOptionCandidate = z.infer<
+    typeof zodAnalysisViewOptionCandidate
+>;
+export type AnalysisViewOption = z.infer<typeof Dto.analysisViewOption>;
+export type AnalysisViewState = z.infer<typeof Dto.analysisViewState>;
 export type AnalysisConversationViewSnapshot = z.infer<
     typeof Dto.analysisConversationViewSnapshot
 >;

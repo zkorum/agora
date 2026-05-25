@@ -28,6 +28,7 @@ from math_updater.ai_description_work import (
 from math_updater.analysis_compute import RedDwarfContractError, compute_analysis_bundle
 from math_updater.config import MathUpdaterConfigError, Settings, validate_ai_description_config
 from math_updater.db import (
+    AnalysisWorkStatePersistenceError,
     WorkStateSchedule,
     claim_work_items_and_fetch_inputs_batch,
     complete_computed_analysis_work_items_batch,
@@ -642,14 +643,28 @@ def _run_worker_once() -> None:
         if not processable_due_items:
             continue
 
-        claimed_input_batch = claim_work_items_and_fetch_inputs_batch(
-            primary_engine,
-            worker_id=worker_id,
-            conversation_ids=[item.conversation_id for item in processable_due_items],
-            lease_ttl_seconds=settings.lease_ttl_seconds,
-            limit=settings.db_claim_batch_size,
-            analysis_engine_epoch=settings.analysis_engine_epoch,
-        )
+        try:
+            claimed_input_batch = claim_work_items_and_fetch_inputs_batch(
+                primary_engine,
+                worker_id=worker_id,
+                conversation_ids=[item.conversation_id for item in processable_due_items],
+                lease_ttl_seconds=settings.lease_ttl_seconds,
+                limit=settings.db_claim_batch_size,
+                analysis_engine_epoch=settings.analysis_engine_epoch,
+            )
+        except SQLAlchemyError as error:
+            log_database_error(
+                logger=log,
+                message="[MathUpdater] Failed to claim analysis work",
+                error=error,
+                context={
+                    "conversation_ids": _format_ids(
+                        [item.conversation_id for item in processable_due_items]
+                    ),
+                },
+            )
+            requeue_conversations(vk, conversations=processable_due_items)
+            continue
         claims = claimed_input_batch.claims
 
         if not claims:
@@ -929,7 +944,7 @@ def _run_worker_once() -> None:
                             claims=completed_claims,
                         ),
                     )
-                except SQLAlchemyError as error:
+                except (SQLAlchemyError, AnalysisWorkStatePersistenceError) as error:
                     log_database_error(
                         logger=log,
                         message="[MathUpdater] Failed computed-result persistence flow",
@@ -1026,7 +1041,10 @@ def _run_worker_once() -> None:
                                     claims=[claim],
                                 )
                                 _enqueue_schedules(vk, schedules=completed_schedules)
-                            except SQLAlchemyError as isolated_error:
+                            except (
+                                SQLAlchemyError,
+                                AnalysisWorkStatePersistenceError,
+                            ) as isolated_error:
                                 log_database_error(
                                     logger=log,
                                     message="[MathUpdater] Failed isolated computed-result persist",

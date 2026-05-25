@@ -60,7 +60,7 @@ import { log } from "@/app.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
 import { getUserMutePreferences } from "./muteUser.js";
 import { checkConversationParticipation } from "./participationGate.js";
-import { persistVoteImmediately } from "./voting.js";
+import type { VoteBuffer } from "./voteBuffer.js";
 import type { ImportPolisResults } from "@/shared/types/polis.js";
 import type {
     OpinionContentIdPerOpinionId,
@@ -1116,7 +1116,7 @@ export async function fetchAnalysisByConversationSlugId({
     conversationSlugId,
     personalizationUserId,
     displayLanguage = "en",
-    analysisView = "facilitator_default",
+    analysisView = "facilitator_preference",
     checkpointViewSnapshotId,
 }: {
     db: PostgresJsDatabase;
@@ -1229,11 +1229,13 @@ interface PostNewOpinionProps {
     userAgent: string;
     now: Date;
     isSeed: boolean;
+    voteBuffer?: VoteBuffer;
     realtimeSSEManager?: RealtimeSSEManager;
     conversationMetadata?: {
         conversationId: number;
         conversationContentId: number;
         conversationAuthorId: string;
+        conversationAuthorUsername?: string;
         conversationIsIndexed: boolean;
         conversationParticipationMode: ParticipationMode;
         conversationIsClosed: boolean;
@@ -1250,6 +1252,7 @@ export async function postNewOpinion({
     userAgent,
     now,
     isSeed,
+    voteBuffer,
     realtimeSSEManager,
     conversationMetadata,
 }: PostNewOpinionProps): Promise<CreateCommentResponse> {
@@ -1311,7 +1314,11 @@ export async function postNewOpinion({
 
     const persistNewOpinion = async (
         transactionDb: PostgresJsDatabase,
-    ): Promise<{ opinionId: number }> => {
+    ): Promise<{
+        opinionId: number;
+        opinionContentId: number;
+        opinionItem: OpinionItem;
+    }> => {
         const insertCommentResponse = await transactionDb
             .insert(opinionTable)
             .values({
@@ -1321,7 +1328,11 @@ export async function postNewOpinion({
                 conversationId: participationContext.conversationId,
                 isSeed: isSeed,
             })
-            .returning({ opinionId: opinionTable.id });
+            .returning({
+                opinionId: opinionTable.id,
+                createdAt: opinionTable.createdAt,
+                updatedAt: opinionTable.updatedAt,
+            });
 
         const opinionId = insertCommentResponse[0].opinionId;
 
@@ -1360,39 +1371,69 @@ export async function postNewOpinion({
                 eq(conversationTable.id, participationContext.conversationId),
             );
 
-        if (!isSeed) {
-            await persistVoteImmediately({
-                db: transactionDb,
-                userId: participationContext.participantId,
-                opinionId,
-                opinionContentId: commentContentTableId,
-                votingAction: "agree",
-            });
-        }
+        const participantUsername =
+            conversationMetadata?.conversationAuthorUsername ??
+            (await (async (): Promise<string> => {
+                const participantRows = await transactionDb
+                    .select({ username: userTable.username })
+                    .from(userTable)
+                    .where(eq(userTable.id, participationContext.participantId))
+                    .limit(1);
+                const participant = participantRows.at(0);
+                if (participant === undefined) {
+                    throw httpErrors.internalServerError(
+                        "Failed to locate opinion author after creation",
+                    );
+                }
+                return participant.username;
+            })());
 
-        await createConversationViewSnapshotsFromCurrentState({
-            db: transactionDb,
-            conversationId: participationContext.conversationId,
-            viewReason: "conversation_content_updated",
-        });
+        const opinionItem: OpinionItem = {
+            opinion: commentBody,
+            opinionSlugId,
+            createdAt: insertCommentResponse[0].createdAt,
+            updatedAt: insertCommentResponse[0].updatedAt,
+            numParticipants: isSeed ? 0 : 1,
+            numAgrees: isSeed ? 0 : 1,
+            numDisagrees: 0,
+            numPasses: 0,
+            username: participantUsername,
+            moderation: { status: "unmoderated" },
+            isSeed,
+        };
 
-        if (!isSeed) {
-            await scheduleConversationAnalysisRefresh({
-                db: transactionDb,
-                conversationId: participationContext.conversationId,
-                log,
-            });
-        }
-
-        return { opinionId };
+        return {
+            opinionId,
+            opinionContentId: commentContentTableId,
+            opinionItem,
+        };
     };
 
-    const { opinionId } =
+    const { opinionId, opinionContentId, opinionItem } =
         tx !== undefined
             ? await persistNewOpinion(tx)
             : await db.transaction(async (transactionDb) => {
                   return await persistNewOpinion(transactionDb);
               });
+
+    if (!isSeed) {
+        if (voteBuffer === undefined) {
+            throw httpErrors.internalServerError(
+                "Vote buffer is required when creating a non-seed opinion",
+            );
+        }
+
+        voteBuffer.add({
+            vote: {
+                userId: participationContext.participantId,
+                opinionId,
+                opinionContentId,
+                conversationId: participationContext.conversationId,
+                vote: "agree",
+                timestamp: now,
+            },
+        });
+    }
 
     // Create notification for conversation owner + org members (outside transaction)
     // Skip for seed opinions
@@ -1417,6 +1458,7 @@ export async function postNewOpinion({
     return {
         success: true,
         opinionSlugId: opinionSlugId,
+        opinionItem,
     };
 }
 

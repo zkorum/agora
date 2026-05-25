@@ -57,11 +57,9 @@ export const zodConversationViewSnapshotCheckpointReason = z.enum([
     "major_participation_milestone",
     "major_vote_milestone",
     "conversation_closed",
-    "conversation_reopened",
 ]);
 export const zodPremiumFeature = z.enum([
     "survey",
-    "prioritization",
     "event_ticket",
     "analysis_variants",
 ]);
@@ -770,13 +768,13 @@ export const zodSurveyAnswerDraft = z.discriminatedUnion("questionType", [
 export const zodSurveyAnswerSubmission = zodSurveyAnswerDraft;
 
 const zodSurveyQuestionFormItemFields = {
-        currentAnswer: zodSurveyAnswerDraft.optional(),
-        isPassed: z.boolean(),
-        isMissingRequired: z.boolean(),
-        isStale: z.boolean(),
-        isCurrentAnswerValid: z.boolean(),
-        currentSemanticVersion: z.number().int().positive(),
-        answeredQuestionSemanticVersion: z.number().int().positive().optional(),
+    currentAnswer: zodSurveyAnswerDraft.optional(),
+    isPassed: z.boolean(),
+    isMissingRequired: z.boolean(),
+    isStale: z.boolean(),
+    isCurrentAnswerValid: z.boolean(),
+    currentSemanticVersion: z.number().int().positive(),
+    answeredQuestionSemanticVersion: z.number().int().positive().optional(),
 } satisfies z.ZodRawShape;
 
 export const zodSurveyQuestionFormItem = z.discriminatedUnion("questionType", [
@@ -810,6 +808,7 @@ export const zodSurveyRouteResolution = z.discriminatedUnion("kind", [
 export const zodConversationMetadata = z
     .object({
         conversationSlugId: zodSlugId,
+        conversationViewSnapshotId: z.number().int().positive().optional(),
         createdAt: zodDateTimeFlexible,
         updatedAt: zodDateTimeFlexible.optional(),
         lastReactedAt: zodDateTimeFlexible,
@@ -838,6 +837,7 @@ export const zodConversationMetadataWithId = z
     .object({
         conversationId: z.number().int().nonnegative(),
         conversationSlugId: zodSlugId,
+        conversationViewSnapshotId: z.number().int().positive().optional(),
         createdAt: z.date(),
         updatedAt: z.date().optional(),
         lastReactedAt: z.date(),
@@ -873,7 +873,7 @@ export const zodConversationMetadataWithId = z
     .strict();
 export const zodPolisKey = z.enum(["0", "1", "2", "3", "4", "5"]);
 export const zodAnalysisView = z.enum([
-    "facilitator_default",
+    "facilitator_preference",
     "system_default",
     "2",
     "3",
@@ -881,12 +881,22 @@ export const zodAnalysisView = z.enum([
     "5",
     "6",
 ]);
+export const zodPreferredOpinionGroupCount = z
+    .number()
+    .int()
+    .min(2)
+    .max(6)
+    .nullable();
 export const zodAnalysisViewOptionStatus = z.enum([
     "recommended",
     "available",
     "discouraged",
-    "unavailable",
     "locked",
+]);
+export const zodAnalysisViewOptionReason = z.enum([
+    "analysis_variants_not_available",
+    "fixed_group_count_unavailable",
+    "recommended_default_unavailable",
 ]);
 
 // For API input validation - validates both HTML string length AND plain text character count
@@ -1590,8 +1600,14 @@ export type ImportRouteTarget = z.infer<typeof zodImportRouteTarget>;
 export type ClusterStats = z.infer<typeof zodClusterStats>;
 export type PolisKey = z.infer<typeof zodPolisKey>;
 export type AnalysisView = z.infer<typeof zodAnalysisView>;
+export type PreferredOpinionGroupCount = z.infer<
+    typeof zodPreferredOpinionGroupCount
+>;
 export type AnalysisViewOptionStatus = z.infer<
     typeof zodAnalysisViewOptionStatus
+>;
+export type AnalysisViewOptionReason = z.infer<
+    typeof zodAnalysisViewOptionReason
 >;
 export type SupportedCountryCallingCode = z.infer<
     typeof zodSupportedCountryCallingCode

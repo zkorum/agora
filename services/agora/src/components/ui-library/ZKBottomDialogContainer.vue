@@ -1,7 +1,10 @@
 <template>
   <div class="dialogContainer">
     <div v-if="title" class="dialog-header">
-      <div class="dialog-title">{{ title }}</div>
+      <div class="dialog-heading">
+        <div class="dialog-title">{{ title }}</div>
+        <div v-if="subtitle" class="dialog-subtitle">{{ subtitle }}</div>
+      </div>
       <q-btn
         v-close-popup
         flat
@@ -21,8 +24,10 @@ import { ClosePopup } from "quasar";
 
 withDefaults(defineProps<{
   title?: string;
+  subtitle?: string;
 }>(), {
   title: undefined,
+  subtitle: undefined,
 });
 
 const vClosePopup = ClosePopup;
@@ -59,6 +64,18 @@ const vClosePopup = ClosePopup;
   font-size: 1.1rem;
   font-weight: var(--font-weight-semibold);
   color: $color-text-strong;
+}
+
+.dialog-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.dialog-subtitle {
+  color: $color-text-weak;
+  font-size: 0.85rem;
+  line-height: 1.3;
 }
 
 .close-btn {

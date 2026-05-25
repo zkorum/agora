@@ -72,7 +72,7 @@ const registerSubmittedCommentHandler = inject<
 
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
 
-const { forceRefreshAnalysis, markCommentsAsStale } = useInvalidateCommentQueries();
+const { markAnalysisAsStale, markCommentsAsStale } = useInvalidateCommentQueries();
 const { loadAuthenticatedModules } = useBackendAuthApi();
 const userStore = useUserStore();
 
@@ -157,13 +157,11 @@ watch(
 
 async function submittedComment(data: SubmittedCommentData): Promise<void> {
   if (opinionSectionRef.value) {
-    await opinionSectionRef.value.refreshAndHighlightOpinion(
-      data.opinionSlugId
-    );
+    opinionSectionRef.value.highlightOpinion(data.opinionItem);
   }
 
-  // Force refresh analysis data since new opinion affects analysis results
-  forceRefreshAnalysis(props.conversationData.metadata.conversationSlugId);
+  await markCommentsAsStale(props.conversationData.metadata.conversationSlugId);
+  markAnalysisAsStale(props.conversationData.metadata.conversationSlugId);
 
   // Handle deferred cache refresh if auth state changed (new guest user)
   if (data.needsCacheRefresh) {

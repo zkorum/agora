@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, isNotNull, lt } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, isNotNull, lte } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type pino from "pino";
 import { z } from "zod";
@@ -6,24 +6,21 @@ import type { SharedConfigSchema } from "@/shared-backend/config.js";
 import { createPostgresClient } from "@/shared-backend/db.js";
 import {
     conversationTable,
+    conversationViewSnapshotCheckpointReasonTable,
     conversationViewSnapshotTable,
     realtimeEventOutboxTable,
 } from "@/shared-backend/schema.js";
-import type {
-    SSEEventDataByType,
-    SSEEventType,
-} from "@/shared/types/dto.js";
+import type { SSEEventDataByType, SSEEventType } from "@/shared/types/dto.js";
 import type { RealtimeSSEManager } from "./realtimeSSE.js";
 
 const REALTIME_EVENT_OUTBOX_CHANNEL = "realtime_event_outbox";
 const RECENT_EVENT_CATCHUP_MS = 5 * 60 * 1000;
-const EVENT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
-const CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
-
+const RECENT_EVENT_CATCHUP_INTERVAL_MS = 30 * 1000;
 const zodConversationAnalysisUpdatedData = z.object({
     conversationSlugId: z.string().min(1),
     conversationViewSnapshotId: z.number().int().positive(),
     analysisSnapshotId: z.number().int().positive(),
+    checkpointChanged: z.boolean().default(false),
     opinionCount: z.number().int().nonnegative().optional(),
     voteCount: z.number().int().nonnegative().optional(),
     participantCount: z.number().int().nonnegative().optional(),
@@ -38,8 +35,6 @@ const zodConversationAnalysisUpdatedData = z.object({
 
 const zodRealtimeEventOutboxNotification = z.object({
     id: z.number().int().positive(),
-    eventType: z.string().min(1),
-    payload: z.unknown(),
 });
 
 interface RealtimeEventOutboxBridge {
@@ -51,6 +46,12 @@ type ListenerClient = Awaited<ReturnType<typeof createPostgresClient>>;
 
 interface PrimaryReplicaDb extends PostgresJsDatabase {
     $primary: PostgresJsDatabase;
+}
+
+interface RealtimeEventOutboxRow {
+    id: number;
+    eventType: string;
+    payload: unknown;
 }
 
 function hasPrimaryDb(db: PostgresJsDatabase): db is PrimaryReplicaDb {
@@ -69,6 +70,11 @@ interface QueueConversationAnalysisUpdatedEventsForViewSnapshotsProps {
     conversationViewSnapshotIds: number[];
 }
 
+interface QueueConversationAnalysisUpdatedEventsForLatestViewSnapshotsProps {
+    db: PostgresJsDatabase;
+    conversationIds: number[];
+}
+
 export async function queueConversationAnalysisUpdatedEventsForViewSnapshots({
     db,
     conversationViewSnapshotIds,
@@ -82,7 +88,8 @@ export async function queueConversationAnalysisUpdatedEventsForViewSnapshots({
         .select({
             conversationSlugId: conversationTable.slugId,
             conversationViewSnapshotId: conversationViewSnapshotTable.id,
-            analysisSnapshotId: conversationViewSnapshotTable.analysisSnapshotId,
+            analysisSnapshotId:
+                conversationViewSnapshotTable.analysisSnapshotId,
             opinionCount: conversationViewSnapshotTable.opinionCount,
             voteCount: conversationViewSnapshotTable.voteCount,
             participantCount: conversationViewSnapshotTable.participantCount,
@@ -92,13 +99,17 @@ export async function queueConversationAnalysisUpdatedEventsForViewSnapshots({
                 conversationViewSnapshotTable.totalParticipantCount,
             moderatedOpinionCount:
                 conversationViewSnapshotTable.moderatedOpinionCount,
-            hiddenOpinionCount: conversationViewSnapshotTable.hiddenOpinionCount,
+            hiddenOpinionCount:
+                conversationViewSnapshotTable.hiddenOpinionCount,
             isClosed: conversationViewSnapshotTable.isClosed,
         })
         .from(conversationViewSnapshotTable)
         .innerJoin(
             conversationTable,
-            eq(conversationTable.id, conversationViewSnapshotTable.conversationId),
+            eq(
+                conversationTable.id,
+                conversationViewSnapshotTable.conversationId,
+            ),
         )
         .where(
             and(
@@ -111,6 +122,22 @@ export async function queueConversationAnalysisUpdatedEventsForViewSnapshots({
             ),
         );
 
+    const checkpointRows = await primaryDb
+        .select({
+            conversationViewSnapshotId:
+                conversationViewSnapshotCheckpointReasonTable.conversationViewSnapshotId,
+        })
+        .from(conversationViewSnapshotCheckpointReasonTable)
+        .where(
+            inArray(
+                conversationViewSnapshotCheckpointReasonTable.conversationViewSnapshotId,
+                conversationViewSnapshotIds,
+            ),
+        );
+    const checkpointViewSnapshotIds = new Set(
+        checkpointRows.map((row) => row.conversationViewSnapshotId),
+    );
+
     const timestamp = Date.now();
     const values: (typeof realtimeEventOutboxTable.$inferInsert)[] = [];
     for (const row of rows) {
@@ -121,6 +148,94 @@ export async function queueConversationAnalysisUpdatedEventsForViewSnapshots({
             conversationSlugId: row.conversationSlugId,
             conversationViewSnapshotId: row.conversationViewSnapshotId,
             analysisSnapshotId: row.analysisSnapshotId,
+            checkpointChanged: checkpointViewSnapshotIds.has(
+                row.conversationViewSnapshotId,
+            ),
+            opinionCount: row.opinionCount,
+            voteCount: row.voteCount,
+            participantCount: row.participantCount,
+            totalOpinionCount: row.totalOpinionCount,
+            totalVoteCount: row.totalVoteCount,
+            totalParticipantCount: row.totalParticipantCount,
+            moderatedOpinionCount: row.moderatedOpinionCount,
+            hiddenOpinionCount: row.hiddenOpinionCount,
+            isClosed: row.isClosed,
+            timestamp,
+        };
+        values.push({ eventType: "conversation_analysis_updated", payload });
+    }
+
+    if (values.length === 0) {
+        return;
+    }
+
+    await primaryDb.insert(realtimeEventOutboxTable).values(values);
+}
+
+export async function queueConversationAnalysisUpdatedEventsForLatestViewSnapshots({
+    db,
+    conversationIds,
+}: QueueConversationAnalysisUpdatedEventsForLatestViewSnapshotsProps): Promise<void> {
+    const uniqueConversationIds = Array.from(new Set(conversationIds));
+    if (uniqueConversationIds.length === 0) {
+        return;
+    }
+
+    const primaryDb = getPrimaryDb(db);
+    const rows = await primaryDb
+        .selectDistinctOn([conversationViewSnapshotTable.conversationId], {
+            conversationSlugId: conversationTable.slugId,
+            conversationViewSnapshotId: conversationViewSnapshotTable.id,
+            analysisSnapshotId:
+                conversationViewSnapshotTable.analysisSnapshotId,
+            opinionCount: conversationViewSnapshotTable.opinionCount,
+            voteCount: conversationViewSnapshotTable.voteCount,
+            participantCount: conversationViewSnapshotTable.participantCount,
+            totalOpinionCount: conversationViewSnapshotTable.totalOpinionCount,
+            totalVoteCount: conversationViewSnapshotTable.totalVoteCount,
+            totalParticipantCount:
+                conversationViewSnapshotTable.totalParticipantCount,
+            moderatedOpinionCount:
+                conversationViewSnapshotTable.moderatedOpinionCount,
+            hiddenOpinionCount:
+                conversationViewSnapshotTable.hiddenOpinionCount,
+            isClosed: conversationViewSnapshotTable.isClosed,
+        })
+        .from(conversationViewSnapshotTable)
+        .innerJoin(
+            conversationTable,
+            eq(
+                conversationTable.id,
+                conversationViewSnapshotTable.conversationId,
+            ),
+        )
+        .where(
+            and(
+                inArray(
+                    conversationViewSnapshotTable.conversationId,
+                    uniqueConversationIds,
+                ),
+                isNotNull(conversationViewSnapshotTable.activatedAt),
+                isNotNull(conversationViewSnapshotTable.analysisSnapshotId),
+            ),
+        )
+        .orderBy(
+            conversationViewSnapshotTable.conversationId,
+            desc(conversationViewSnapshotTable.createdAt),
+            desc(conversationViewSnapshotTable.id),
+        );
+
+    const timestamp = Date.now();
+    const values: (typeof realtimeEventOutboxTable.$inferInsert)[] = [];
+    for (const row of rows) {
+        if (row.analysisSnapshotId === null) {
+            continue;
+        }
+        const payload: SSEEventDataByType["conversation_analysis_updated"] = {
+            conversationSlugId: row.conversationSlugId,
+            conversationViewSnapshotId: row.conversationViewSnapshotId,
+            analysisSnapshotId: row.analysisSnapshotId,
+            checkpointChanged: false,
             opinionCount: row.opinionCount,
             voteCount: row.voteCount,
             participantCount: row.participantCount,
@@ -156,7 +271,8 @@ function parseRealtimeEventOutboxRow({
     | undefined {
     switch (eventType) {
         case "conversation_analysis_updated": {
-            const result = zodConversationAnalysisUpdatedData.safeParse(payload);
+            const result =
+                zodConversationAnalysisUpdatedData.safeParse(payload);
             if (!result.success) {
                 return undefined;
             }
@@ -184,7 +300,10 @@ export function createRealtimeEventOutboxBridge({
 }): RealtimeEventOutboxBridge {
     let listenerClient: ListenerClient | undefined;
     let isStarted = false;
-    let cleanupInterval: NodeJS.Timeout | undefined;
+    let catchupInterval: NodeJS.Timeout | undefined;
+    let highestProcessedOutboxId = 0;
+    let outboxTaskQueue: Promise<void> = Promise.resolve();
+    const failedOutboxIds = new Set<number>();
     const primaryDb = getPrimaryDb(db);
 
     const broadcastOutboxRow = ({
@@ -194,7 +313,10 @@ export function createRealtimeEventOutboxBridge({
         eventType: string;
         payload: unknown;
     }): void => {
-        const realtimeEvent = parseRealtimeEventOutboxRow({ eventType, payload });
+        const realtimeEvent = parseRealtimeEventOutboxRow({
+            eventType,
+            payload,
+        });
         if (realtimeEvent === undefined) {
             log.warn(
                 `[RealtimeOutbox] Ignoring unsupported event type ${eventType}`,
@@ -209,11 +331,24 @@ export function createRealtimeEventOutboxBridge({
         });
     };
 
-    const processNotification = ({
+    const processOutboxRow = (row: RealtimeEventOutboxRow): void => {
+        if (
+            row.id <= highestProcessedOutboxId &&
+            !failedOutboxIds.has(row.id)
+        ) {
+            return;
+        }
+
+        broadcastOutboxRow(row);
+        failedOutboxIds.delete(row.id);
+        highestProcessedOutboxId = Math.max(highestProcessedOutboxId, row.id);
+    };
+
+    const processNotification = async ({
         payload,
     }: {
         payload: string;
-    }): void => {
+    }): Promise<void> => {
         const parsedJson: unknown = JSON.parse(payload);
         const parsedPayload =
             zodRealtimeEventOutboxNotification.safeParse(parsedJson);
@@ -222,33 +357,155 @@ export function createRealtimeEventOutboxBridge({
             return;
         }
 
-        broadcastOutboxRow({
-            eventType: parsedPayload.data.eventType,
-            payload: parsedPayload.data.payload,
-        });
+        const outboxId = parsedPayload.data.id;
+        if (
+            outboxId <= highestProcessedOutboxId &&
+            !failedOutboxIds.has(outboxId)
+        ) {
+            return;
+        }
+
+        try {
+            const rows = await primaryDb
+                .select({
+                    id: realtimeEventOutboxTable.id,
+                    eventType: realtimeEventOutboxTable.eventType,
+                    payload: realtimeEventOutboxTable.payload,
+                })
+                .from(realtimeEventOutboxTable)
+                .where(
+                    and(
+                        gt(
+                            realtimeEventOutboxTable.id,
+                            highestProcessedOutboxId,
+                        ),
+                        lte(realtimeEventOutboxTable.id, outboxId),
+                    ),
+                )
+                .orderBy(realtimeEventOutboxTable.id);
+            if (rows.length === 0) {
+                log.warn(
+                    `[RealtimeOutbox] Missing outbox row ${String(outboxId)}`,
+                );
+                return;
+            }
+
+            processOutboxRows({ rows, failureContext: "notification" });
+        } catch (error: unknown) {
+            failedOutboxIds.add(outboxId);
+            throw error;
+        }
+    };
+
+    const processOutboxRows = ({
+        rows,
+        failureContext,
+    }: {
+        rows: RealtimeEventOutboxRow[];
+        failureContext: string;
+    }): void => {
+        for (const row of rows) {
+            try {
+                processOutboxRow(row);
+            } catch (error: unknown) {
+                failedOutboxIds.add(row.id);
+                log.error(
+                    error,
+                    `[RealtimeOutbox] Failed to process ${failureContext} row ${String(row.id)}`,
+                );
+            }
+        }
     };
 
     const processRecentEvents = async (): Promise<void> => {
         const since = new Date(Date.now() - RECENT_EVENT_CATCHUP_MS);
         const rows = await primaryDb
             .select({
+                id: realtimeEventOutboxTable.id,
                 eventType: realtimeEventOutboxTable.eventType,
                 payload: realtimeEventOutboxTable.payload,
             })
             .from(realtimeEventOutboxTable)
-            .where(gte(realtimeEventOutboxTable.createdAt, since))
-            .orderBy(desc(realtimeEventOutboxTable.id));
+            .where(
+                and(
+                    gte(realtimeEventOutboxTable.createdAt, since),
+                    gt(realtimeEventOutboxTable.id, highestProcessedOutboxId),
+                ),
+            )
+            .orderBy(realtimeEventOutboxTable.id);
 
-        for (const row of rows.reverse()) {
-            broadcastOutboxRow(row);
+        processOutboxRows({ rows, failureContext: "catch-up" });
+
+        if (failedOutboxIds.size === 0) {
+            return;
+        }
+
+        const failedRows = await primaryDb
+            .select({
+                id: realtimeEventOutboxTable.id,
+                eventType: realtimeEventOutboxTable.eventType,
+                payload: realtimeEventOutboxTable.payload,
+            })
+            .from(realtimeEventOutboxTable)
+            .where(
+                inArray(
+                    realtimeEventOutboxTable.id,
+                    Array.from(failedOutboxIds),
+                ),
+            )
+            .orderBy(realtimeEventOutboxTable.id);
+
+        processOutboxRows({ rows: failedRows, failureContext: "retry" });
+
+        const foundFailedIds = new Set(failedRows.map((row) => row.id));
+        for (const failedOutboxId of failedOutboxIds) {
+            if (!foundFailedIds.has(failedOutboxId)) {
+                failedOutboxIds.delete(failedOutboxId);
+            }
         }
     };
 
-    const cleanupOldEvents = async (): Promise<void> => {
-        const cutoff = new Date(Date.now() - EVENT_RETENTION_MS);
-        await primaryDb
-            .delete(realtimeEventOutboxTable)
-            .where(lt(realtimeEventOutboxTable.createdAt, cutoff));
+    const processNotificationSafely = async ({
+        payload,
+    }: {
+        payload: string;
+    }): Promise<void> => {
+        try {
+            await processNotification({ payload });
+        } catch (error: unknown) {
+            log.error(
+                error,
+                "[RealtimeOutbox] Failed to process notification",
+            );
+        }
+    };
+
+    const processRecentEventsSafely = async (): Promise<void> => {
+        try {
+            await processRecentEvents();
+        } catch (error: unknown) {
+            log.error(
+                error,
+                "[RealtimeOutbox] Failed to catch up recent events",
+            );
+        }
+    };
+
+    const enqueueOutboxTask = ({
+        task,
+    }: {
+        task: () => Promise<void>;
+    }): void => {
+        const previousTask = outboxTaskQueue;
+        outboxTaskQueue = (async (): Promise<void> => {
+            try {
+                await previousTask;
+            } catch (error: unknown) {
+                log.error(error, "[RealtimeOutbox] Previous task failed");
+            }
+            await task();
+        })();
+        void outboxTaskQueue;
     };
 
     return {
@@ -257,34 +514,29 @@ export function createRealtimeEventOutboxBridge({
                 return;
             }
 
+            await processRecentEvents();
             listenerClient = await createPostgresClient(config, log, false);
             await listenerClient.listen(
                 REALTIME_EVENT_OUTBOX_CHANNEL,
                 (payload) => {
-                    try {
-                        processNotification({ payload });
-                    } catch (error: unknown) {
-                        log.error(
-                            error,
-                            "[RealtimeOutbox] Failed to process notification",
-                        );
-                    }
+                    enqueueOutboxTask({
+                        task: async (): Promise<void> => {
+                            await processNotificationSafely({ payload });
+                        },
+                    });
                 },
             );
             isStarted = true;
-            await processRecentEvents();
-            cleanupInterval = setInterval(() => {
-                void cleanupOldEvents().catch((error: unknown) => {
-                    log.error(error, "[RealtimeOutbox] Failed to clean old events");
-                });
-            }, CLEANUP_INTERVAL_MS);
-            cleanupInterval.unref();
+            catchupInterval = setInterval(() => {
+                enqueueOutboxTask({ task: processRecentEventsSafely });
+            }, RECENT_EVENT_CATCHUP_INTERVAL_MS);
+            catchupInterval.unref();
             log.info("[RealtimeOutbox] Listening for realtime DB events");
         },
         shutdown: async (): Promise<void> => {
-            if (cleanupInterval !== undefined) {
-                clearInterval(cleanupInterval);
-                cleanupInterval = undefined;
+            if (catchupInterval !== undefined) {
+                clearInterval(catchupInterval);
+                catchupInterval = undefined;
             }
 
             if (listenerClient === undefined) {

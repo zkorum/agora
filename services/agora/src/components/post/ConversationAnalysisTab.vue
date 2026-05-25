@@ -5,9 +5,6 @@
       :conversation-slug-id="conversationData.metadata.conversationSlugId"
       :conversation-author-username="conversationData.metadata.authorUsername"
       :conversation-organization-name="conversationData.metadata.organization?.name ?? ''"
-      :opinion-count="conversationData.metadata.opinionCount"
-      :participant-count="conversationData.metadata.participantCount"
-      :vote-count="conversationData.metadata.voteCount"
       :analysis-query="analysisQuery"
       :survey-query="surveyResultsQuery"
       :has-survey="hasSurvey"
@@ -17,7 +14,6 @@
       :is-live-analysis-paused="isLiveAnalysisPaused"
       :navigate-to-discover-tab="props.navigateToDiscoverTab"
       :conversation-scroll-context="props.conversationScrollContext"
-      @update:action-bar-snapshot="emit('update:analysisActionBarSnapshot', $event)"
       @update:live-analysis-paused="setLiveAnalysisPaused"
     />
   </div>
@@ -25,7 +21,6 @@
 
 <script setup lang="ts">
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
-import type { AnalysisConversationViewSnapshot } from "src/shared/types/dto";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import {
   parseAnalysisViewQuery,
@@ -58,12 +53,6 @@ const props = withDefaults(
     showReportButton: true,
   }
 );
-
-const emit = defineEmits<{
-  "update:analysisActionBarSnapshot": [
-    snapshot: AnalysisConversationViewSnapshot | undefined,
-  ];
-}>();
 
 // Inject parent function to report loading state
 const setCurrentTabLoading = inject<(loading: boolean) => void>(

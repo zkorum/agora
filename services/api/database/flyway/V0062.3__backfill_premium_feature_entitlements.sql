@@ -45,8 +45,8 @@ BEGIN
 
     WITH features AS (
         SELECT unnest(ARRAY[
-            'prioritization'::premium_feature,
-            'survey'::premium_feature
+            'survey'::premium_feature,
+            'analysis_variants'::premium_feature
         ]) AS feature
     ),
     subjects AS (

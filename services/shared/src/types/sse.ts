@@ -50,6 +50,7 @@ export interface SSEConversationAnalysisUpdatedData {
     conversationSlugId: string;
     conversationViewSnapshotId: number;
     analysisSnapshotId: number;
+    checkpointChanged: boolean;
     opinionCount?: number;
     voteCount?: number;
     participantCount?: number;

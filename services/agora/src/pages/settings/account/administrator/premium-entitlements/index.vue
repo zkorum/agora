@@ -204,8 +204,6 @@ function getFeatureLabel(value: PremiumFeature): string {
   switch (value) {
     case "survey":
       return t("surveyFeature");
-    case "prioritization":
-      return t("prioritizationFeature");
     case "event_ticket":
       return t("eventTicketFeature");
     case "analysis_variants":

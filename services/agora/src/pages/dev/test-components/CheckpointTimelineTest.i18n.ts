@@ -22,7 +22,6 @@ export interface CheckpointTimelineTestTranslations {
   participantMilestone: string;
   voteMilestone: string;
   conversationClosed: string;
-  conversationReopened: string;
 }
 
 const en: CheckpointTimelineTestTranslations = {
@@ -48,7 +47,6 @@ const en: CheckpointTimelineTestTranslations = {
   participantMilestone: "Participant milestone",
   voteMilestone: "Vote milestone",
   conversationClosed: "Closed",
-  conversationReopened: "Reopened",
 };
 
 export const checkpointTimelineTestTranslations: Record<

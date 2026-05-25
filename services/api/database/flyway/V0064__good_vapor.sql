@@ -1,1 +1,0 @@
-ALTER TABLE "conversation" DROP COLUMN "index_conversation_at";

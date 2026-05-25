@@ -36,6 +36,7 @@ import {
     createConversationViewSnapshotsFromCurrentState,
     ensureAiDescriptionLocaleStatusesForLatestAnalysisSnapshots,
 } from "@/service/conversationViewSnapshot.js";
+import { queueConversationAnalysisUpdatedEventsForLatestViewSnapshots } from "@/service/realtimeEventOutbox.js";
 
 interface GetConversationForEditProps {
     db: PostgresDatabase;
@@ -61,6 +62,8 @@ export async function getConversationForEdit({
             conversationType: conversationTable.conversationType,
             requiresEventTicket: conversationTable.requiresEventTicket,
             aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+            preferredOpinionGroupCount:
+                conversationTable.preferredOpinionGroupCount,
             postAsOrganizationName: organizationTable.name,
             createdAt: conversationTable.createdAt,
             updatedAt: conversationTable.updatedAt,
@@ -108,6 +111,18 @@ export async function getConversationForEdit({
         conversationId: conversation.conversationId,
     });
 
+    const editPermissions = await buildConversationEditPermissions({
+        db,
+        conversation: {
+            conversationId: conversation.conversationId,
+            requiresEventTicket: conversation.requiresEventTicket,
+            authorId: conversation.authorId,
+            organizationId: conversation.organizationId,
+        },
+        hasSurvey: surveyConfig !== undefined,
+        now: new Date(),
+    });
+
     return {
         success: true,
         conversationSlugId: conversation.conversationSlugId,
@@ -117,6 +132,10 @@ export async function getConversationForEdit({
         participationMode: conversation.participationMode,
         requiresEventTicket: toUnionUndefined(conversation.requiresEventTicket),
         aiLabelingEnabled: conversation.aiLabelingEnabled,
+        preferredOpinionGroupCount:
+            editPermissions.canUseAnalysisVariantsPreference
+                ? conversation.preferredOpinionGroupCount
+                : null,
         postAsOrganizationName: toUnionUndefined(
             conversation.postAsOrganizationName,
         ),
@@ -124,17 +143,7 @@ export async function getConversationForEdit({
         createdAt: conversation.createdAt,
         updatedAt: conversation.updatedAt,
         isLocked,
-        editPermissions: await buildConversationEditPermissions({
-            db,
-            conversation: {
-                conversationId: conversation.conversationId,
-                requiresEventTicket: conversation.requiresEventTicket,
-                authorId: conversation.authorId,
-                organizationId: conversation.organizationId,
-            },
-            hasSurvey: surveyConfig !== undefined,
-            now: new Date(),
-        }),
+        editPermissions,
     };
 }
 
@@ -163,6 +172,7 @@ export async function updateConversation({
         participationMode,
         requiresEventTicket,
         aiLabelingEnabled,
+        preferredOpinionGroupCount,
         surveyConfig,
     } = data;
 
@@ -186,9 +196,6 @@ export async function updateConversation({
         }
     }
 
-    let updatedConversationId: number | undefined;
-    let didEnableAiLabeling: boolean | undefined;
-
     const result = await db.transaction(async (tx) => {
         const now = new Date();
         // Get conversation and check authorization
@@ -202,6 +209,8 @@ export async function updateConversation({
                 conversationType: conversationTable.conversationType,
                 requiresEventTicket: conversationTable.requiresEventTicket,
                 aiLabelingEnabled: conversationTable.aiLabelingEnabled,
+                currentPreferredOpinionGroupCount:
+                    conversationTable.preferredOpinionGroupCount,
                 currentTitle: conversationContentTable.title,
                 currentBody: conversationContentTable.body,
                 moderationAction: conversationModerationTable.moderationAction,
@@ -257,8 +266,7 @@ export async function updateConversation({
         }
 
         const conversationId = conversation.conversationId;
-        updatedConversationId = conversationId;
-        didEnableAiLabeling =
+        const didEnableAiLabeling =
             !conversation.aiLabelingEnabled && aiLabelingEnabled === true;
 
         const subject = getPremiumEntitlementSubjectForConversation({
@@ -300,19 +308,10 @@ export async function updateConversation({
             requiresEventTicket !== undefined;
 
         if (eventTicketAdded) {
-            const restrictedFeatures = await getRestrictedPremiumFeatures({
-                db: tx,
-                subject,
-                features: ["event_ticket"],
-                mode: "creation",
-                now,
-            });
-            if (restrictedFeatures.length > 0) {
-                return {
-                    success: false,
-                    reason: "premium_access_expired",
-                } as const;
-            }
+            return {
+                success: false,
+                reason: "invalid_access_settings",
+            } as const;
         }
 
         let existingSurveyConfig:
@@ -343,6 +342,30 @@ export async function updateConversation({
             }
         }
 
+        const preferredOpinionGroupCountChanged =
+            preferredOpinionGroupCount !== undefined &&
+            preferredOpinionGroupCount !==
+                conversation.currentPreferredOpinionGroupCount;
+
+        if (
+            preferredOpinionGroupCount !== undefined &&
+            preferredOpinionGroupCount !== null
+        ) {
+            const restrictedFeatures = await getRestrictedPremiumFeatures({
+                db: tx,
+                subject,
+                features: ["analysis_variants"],
+                mode: "creation",
+                now,
+            });
+            if (restrictedFeatures.length > 0) {
+                return {
+                    success: false,
+                    reason: "premium_access_required",
+                } as const;
+            }
+        }
+
         // Create new conversation content
         let newContentId: number | undefined;
         if (contentChanged) {
@@ -366,6 +389,7 @@ export async function updateConversation({
             participationMode: typeof participationMode;
             requiresEventTicket: typeof requiresEventTicket | null;
             aiLabelingEnabled: boolean;
+            preferredOpinionGroupCount?: typeof preferredOpinionGroupCount;
             updatedAt: Date;
             isEdited?: boolean;
         } = {
@@ -380,6 +404,11 @@ export async function updateConversation({
         if (newContentId !== undefined) {
             conversationUpdateValues.currentContentId = newContentId;
             conversationUpdateValues.isEdited = true;
+        }
+
+        if (preferredOpinionGroupCountChanged) {
+            conversationUpdateValues.preferredOpinionGroupCount =
+                preferredOpinionGroupCount;
         }
 
         // Update conversation with new content and settings
@@ -407,35 +436,39 @@ export async function updateConversation({
             });
         }
 
-        return { success: true } as const;
+        return {
+            success: true,
+            conversationId,
+            didEnableAiLabeling,
+            didUpdatePreferredOpinionGroupCount:
+                preferredOpinionGroupCountChanged,
+        } as const;
     });
 
-    if (
-        result.success &&
-        didEnableAiLabeling &&
-        updatedConversationId !== undefined
-    ) {
+    if (result.success && result.didEnableAiLabeling) {
         const didCreateAiLocaleStatuses =
             await ensureAiDescriptionLocaleStatusesForLatestAnalysisSnapshots({
                 db,
-                conversationId: updatedConversationId,
+                conversationId: result.conversationId,
             });
         if (didCreateAiLocaleStatuses && valkey !== undefined) {
             void valkey.zadd(VALKEY_QUEUE_KEYS.AI_DESCRIPTION_DIRTY, {
-                [String(updatedConversationId)]: Date.now(),
+                [String(result.conversationId)]: Date.now(),
             });
         }
     }
 
-    if (
-        result.success &&
-        surveyConfig !== undefined &&
-        surveyConfig !== null &&
-        updatedConversationId !== undefined
-    ) {
+    if (result.success && result.didUpdatePreferredOpinionGroupCount) {
+        await queueConversationAnalysisUpdatedEventsForLatestViewSnapshots({
+            db,
+            conversationIds: [result.conversationId],
+        });
+    }
+
+    if (result.success && surveyConfig !== undefined && surveyConfig !== null) {
         void warmSurveyTranslationsForConversation({
             db,
-            conversationId: updatedConversationId,
+            conversationId: result.conversationId,
             googleCloudCredentials,
         }).catch((error: unknown) => {
             log.warn(
@@ -445,5 +478,9 @@ export async function updateConversation({
         });
     }
 
-    return result;
+    if (!result.success) {
+        return result;
+    }
+
+    return { success: true };
 }

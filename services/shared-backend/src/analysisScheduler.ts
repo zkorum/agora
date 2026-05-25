@@ -93,7 +93,8 @@ export async function scheduleAnalysisUpdate({
         );
         const conversations = await tx
             .select({
-                analysisDataGeneration: conversationTable.analysisDataGeneration,
+                analysisDataGeneration:
+                    conversationTable.analysisDataGeneration,
                 conversationType: conversationTable.conversationType,
                 currentContentId: conversationTable.currentContentId,
             })

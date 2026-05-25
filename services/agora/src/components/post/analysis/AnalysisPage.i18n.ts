@@ -10,9 +10,17 @@ export interface AnalysisPageTranslations {
   generateReport: string;
   report: string;
   analysisViewTitle: string;
-  facilitatorDefault: string;
-  agoraDefault: string;
+  analysisViewSortingCaption: string;
+  facilitatorPreference: string;
+  recommendedDefault: string;
   groupsLabel: string;
+  systemDefaultCaption: string;
+  analysisVariantsNotAvailable: string;
+  fixedGroupCountUnavailable: string;
+  recommendedDefaultUnavailable: string;
+  sameAsRecommendedDefault: string;
+  usesGroups: string;
+  recommendedOptionCaption: string;
   liveSnapshot: string;
   checkpointSnapshot: string;
   pauseAtLatestCheckpoint: string;
@@ -35,11 +43,6 @@ export interface AnalysisPageTranslations {
   checkpointReasonParticipantCount: string;
   checkpointReasonVoteCount: string;
   checkpointReasonConversationClosed: string;
-  checkpointReasonConversationReopened: string;
-  newStatementsSinceCheckpoint: string;
-  newStatementsNotInAnalysis: string;
-  viewLatestAnalysis: string;
-  viewNewStatements: string;
 }
 
 export const analysisPageTranslations: Record<
@@ -56,9 +59,20 @@ export const analysisPageTranslations: Record<
     generateReport: "Generate report",
     report: "Report",
     analysisViewTitle: "Analysis view",
-    facilitatorDefault: "Facilitator default",
-    agoraDefault: "Default",
+    analysisViewSortingCaption: "Group counts are sorted by analysis quality.",
+    facilitatorPreference: "Facilitator preference",
+    recommendedDefault: "Recommended default",
     groupsLabel: "{count} groups",
+    systemDefaultCaption:
+      "Chooses the best-scoring variant for each new snapshot.",
+    analysisVariantsNotAvailable:
+      "This is not supported on your current plan.",
+    fixedGroupCountUnavailable:
+      "Agora could not form {count} meaningful groups for this checkpoint.",
+    recommendedDefaultUnavailable: "No recommended variant is available yet.",
+    sameAsRecommendedDefault: "Same as Recommended default",
+    usesGroups: "Uses {count} groups",
+    recommendedOptionCaption: "Best overall fit",
     liveSnapshot: "Live",
     checkpointSnapshot: "Checkpoint",
     pauseAtLatestCheckpoint: "Pause at latest checkpoint",
@@ -81,13 +95,6 @@ export const analysisPageTranslations: Record<
     checkpointReasonParticipantCount: "{count} participants",
     checkpointReasonVoteCount: "{count} votes",
     checkpointReasonConversationClosed: "Closed",
-    checkpointReasonConversationReopened: "Reopened",
-    newStatementsSinceCheckpoint:
-      "{count} new statements since this checkpoint",
-    newStatementsNotInAnalysis:
-      "{count} new statements are not in this analysis yet",
-    viewLatestAnalysis: "View latest analysis",
-    viewNewStatements: "View statements",
   },
   ar: {
     loadingAnalysis: "جاري تحميل التحليل...",
@@ -100,9 +107,18 @@ export const analysisPageTranslations: Record<
     generateReport: "إنشاء تقرير",
     report: "تقرير",
     analysisViewTitle: "طريقة عرض التحليل",
-    facilitatorDefault: "الافتراضي للميسر",
-    agoraDefault: "الافتراضي",
+    analysisViewSortingCaption: "يتم ترتيب أعداد المجموعات حسب جودة التحليل.",
+    facilitatorPreference: "تفضيل الميسر",
+    recommendedDefault: "الافتراضي الموصى به",
     groupsLabel: "{count} مجموعات",
+    systemDefaultCaption: "يختار أفضل متغير لكل لقطة جديدة.",
+    analysisVariantsNotAvailable: "هذا غير مدعوم في خطتك الحالية.",
+    fixedGroupCountUnavailable:
+      "تعذر على Agora تشكيل {count} مجموعات ذات معنى لنقطة التحقق هذه.",
+    recommendedDefaultUnavailable: "لا يوجد متغير موصى به متاح بعد.",
+    sameAsRecommendedDefault: "مثل الافتراضي الموصى به",
+    usesGroups: "يستخدم {count} مجموعات",
+    recommendedOptionCaption: "أفضل ملاءمة إجمالية",
     liveSnapshot: "مباشر",
     checkpointSnapshot: "نقطة تحقق",
     pauseAtLatestCheckpoint: "إيقاف عند أحدث نقطة تحقق",
@@ -125,11 +141,6 @@ export const analysisPageTranslations: Record<
     checkpointReasonParticipantCount: "{count} مشاركون",
     checkpointReasonVoteCount: "{count} أصوات",
     checkpointReasonConversationClosed: "مغلق",
-    checkpointReasonConversationReopened: "أعيد فتحه",
-    newStatementsSinceCheckpoint: "{count} عبارات جديدة منذ نقطة التحقق هذه",
-    newStatementsNotInAnalysis: "{count} عبارات جديدة ليست في هذا التحليل بعد",
-    viewLatestAnalysis: "عرض أحدث تحليل",
-    viewNewStatements: "عرض العبارات",
   },
   es: {
     loadingAnalysis: "Cargando análisis...",
@@ -143,9 +154,21 @@ export const analysisPageTranslations: Record<
     generateReport: "Generar informe",
     report: "Informe",
     analysisViewTitle: "Vista de análisis",
-    facilitatorDefault: "Predeterminado del facilitador",
-    agoraDefault: "Predeterminado",
+    analysisViewSortingCaption:
+      "Los recuentos de grupos se ordenan por calidad del análisis.",
+    facilitatorPreference: "Preferencia del facilitador",
+    recommendedDefault: "Predeterminado recomendado",
     groupsLabel: "{count} grupos",
+    systemDefaultCaption:
+      "Elige la variante con mejor puntuación para cada nueva instantánea.",
+    analysisVariantsNotAvailable:
+      "Esto no está disponible en tu plan actual.",
+    fixedGroupCountUnavailable:
+      "Agora no pudo formar {count} grupos significativos para este punto de control.",
+    recommendedDefaultUnavailable: "Aún no hay una variante recomendada disponible.",
+    sameAsRecommendedDefault: "Igual que Predeterminado recomendado",
+    usesGroups: "Usa {count} grupos",
+    recommendedOptionCaption: "Mejor ajuste general",
     liveSnapshot: "En vivo",
     checkpointSnapshot: "Punto de control",
     pauseAtLatestCheckpoint: "Pausar en el último punto de control",
@@ -168,13 +191,6 @@ export const analysisPageTranslations: Record<
     checkpointReasonParticipantCount: "{count} participantes",
     checkpointReasonVoteCount: "{count} votos",
     checkpointReasonConversationClosed: "Cerrado",
-    checkpointReasonConversationReopened: "Reabierto",
-    newStatementsSinceCheckpoint:
-      "{count} declaraciones nuevas desde este punto de control",
-    newStatementsNotInAnalysis:
-      "{count} declaraciones nuevas aún no están en este análisis",
-    viewLatestAnalysis: "Ver análisis más reciente",
-    viewNewStatements: "Ver declaraciones",
   },
   fa: {
     loadingAnalysis: "در حال بارگذاری تحلیل...",
@@ -186,9 +202,20 @@ export const analysisPageTranslations: Record<
     generateReport: "تولید گزارش",
     report: "گزارش",
     analysisViewTitle: "نمای تحلیل",
-    facilitatorDefault: "پیش‌فرض تسهیل‌گر",
-    agoraDefault: "پیش‌فرض",
+    analysisViewSortingCaption: "تعداد گروه‌ها بر اساس کیفیت تحلیل مرتب می‌شوند.",
+    facilitatorPreference: "ترجیح تسهیل‌گر",
+    recommendedDefault: "پیش‌فرض پیشنهادی",
     groupsLabel: "{count} گروه",
+    systemDefaultCaption:
+      "بهترین متغیر را برای هر نمای جدید انتخاب می‌کند.",
+    analysisVariantsNotAvailable:
+      "این در طرح فعلی شما پشتیبانی نمی‌شود.",
+    fixedGroupCountUnavailable:
+      "Agora نتوانست برای این نقطه بررسی {count} گروه معنادار تشکیل دهد.",
+    recommendedDefaultUnavailable: "هنوز متغیر پیشنهادی در دسترس نیست.",
+    sameAsRecommendedDefault: "همان پیش‌فرض پیشنهادی",
+    usesGroups: "از {count} گروه استفاده می‌کند",
+    recommendedOptionCaption: "بهترین تناسب کلی",
     liveSnapshot: "زنده",
     checkpointSnapshot: "نقطه بررسی",
     pauseAtLatestCheckpoint: "توقف در آخرین نقطه بررسی",
@@ -211,11 +238,6 @@ export const analysisPageTranslations: Record<
     checkpointReasonParticipantCount: "{count} شرکت کننده",
     checkpointReasonVoteCount: "{count} رای",
     checkpointReasonConversationClosed: "بسته",
-    checkpointReasonConversationReopened: "بازگشایی شد",
-    newStatementsSinceCheckpoint: "{count} گزاره جدید از این نقطه بررسی",
-    newStatementsNotInAnalysis: "{count} گزاره جدید هنوز در این تحلیل نیست",
-    viewLatestAnalysis: "نمایش آخرین تحلیل",
-    viewNewStatements: "نمایش گزاره ها",
   },
   fr: {
     loadingAnalysis: "Chargement de l'analyse...",
@@ -229,9 +251,21 @@ export const analysisPageTranslations: Record<
     generateReport: "Générer le rapport",
     report: "Rapport",
     analysisViewTitle: "Vue d'analyse",
-    facilitatorDefault: "Choix par défaut du facilitateur",
-    agoraDefault: "Par défaut",
+    analysisViewSortingCaption:
+      "Les nombres de groupes sont triés par qualité d'analyse.",
+    facilitatorPreference: "Préférence du facilitateur",
+    recommendedDefault: "Par défaut recommandé",
     groupsLabel: "{count} groupes",
+    systemDefaultCaption:
+      "Choisit la variante la mieux notée pour chaque nouvel instantané.",
+    analysisVariantsNotAvailable:
+      "Ce n'est pas pris en charge par votre forfait actuel.",
+    fixedGroupCountUnavailable:
+      "Agora n'a pas pu former {count} groupes significatifs pour ce point de contrôle.",
+    recommendedDefaultUnavailable: "Aucune variante recommandée n'est encore disponible.",
+    sameAsRecommendedDefault: "Identique au Par défaut recommandé",
+    usesGroups: "Utilise {count} groupes",
+    recommendedOptionCaption: "Meilleur ajustement global",
     liveSnapshot: "Direct",
     checkpointSnapshot: "Point de contrôle",
     pauseAtLatestCheckpoint: "Mettre en pause au dernier point de contrôle",
@@ -254,13 +288,6 @@ export const analysisPageTranslations: Record<
     checkpointReasonParticipantCount: "{count} participants",
     checkpointReasonVoteCount: "{count} votes",
     checkpointReasonConversationClosed: "Clôturé",
-    checkpointReasonConversationReopened: "Réouvert",
-    newStatementsSinceCheckpoint:
-      "{count} propositions nouvelles depuis ce point de contrôle",
-    newStatementsNotInAnalysis:
-      "{count} propositions nouvelles ne sont pas encore dans cette analyse",
-    viewLatestAnalysis: "Voir la dernière analyse",
-    viewNewStatements: "Voir les propositions",
   },
   "zh-Hans": {
     loadingAnalysis: "正在加载分析...",
@@ -272,9 +299,18 @@ export const analysisPageTranslations: Record<
     generateReport: "生成报告",
     report: "报告",
     analysisViewTitle: "分析视图",
-    facilitatorDefault: "主持人默认",
-    agoraDefault: "默认",
+    analysisViewSortingCaption: "群组数量按分析质量排序。",
+    facilitatorPreference: "主持人偏好",
+    recommendedDefault: "推荐默认",
     groupsLabel: "{count} 个群组",
+    systemDefaultCaption: "为每个新快照选择评分最高的变体。",
+    analysisVariantsNotAvailable: "你当前的方案不支持此功能。",
+    fixedGroupCountUnavailable:
+      "Agora 无法为此检查点形成 {count} 个有意义的群组。",
+    recommendedDefaultUnavailable: "尚无可用的推荐变体。",
+    sameAsRecommendedDefault: "与推荐默认相同",
+    usesGroups: "使用 {count} 个群组",
+    recommendedOptionCaption: "整体最佳匹配",
     liveSnapshot: "实时",
     checkpointSnapshot: "检查点",
     pauseAtLatestCheckpoint: "暂停在最新检查点",
@@ -297,11 +333,6 @@ export const analysisPageTranslations: Record<
     checkpointReasonParticipantCount: "{count} 名参与者",
     checkpointReasonVoteCount: "{count} 票",
     checkpointReasonConversationClosed: "已关闭",
-    checkpointReasonConversationReopened: "已重新打开",
-    newStatementsSinceCheckpoint: "自此检查点以来有 {count} 条新陈述",
-    newStatementsNotInAnalysis: "{count} 条新陈述尚未包含在此分析中",
-    viewLatestAnalysis: "查看最新分析",
-    viewNewStatements: "查看陈述",
   },
   "zh-Hant": {
     loadingAnalysis: "正在載入分析...",
@@ -313,9 +344,18 @@ export const analysisPageTranslations: Record<
     generateReport: "生成報告",
     report: "報告",
     analysisViewTitle: "分析視圖",
-    facilitatorDefault: "主持人預設",
-    agoraDefault: "預設",
+    analysisViewSortingCaption: "群組數量按分析品質排序。",
+    facilitatorPreference: "主持人偏好",
+    recommendedDefault: "推薦預設",
     groupsLabel: "{count} 個群組",
+    systemDefaultCaption: "為每個新快照選擇評分最高的變體。",
+    analysisVariantsNotAvailable: "你目前的方案不支援此功能。",
+    fixedGroupCountUnavailable:
+      "Agora 無法為此檢查點形成 {count} 個有意義的群組。",
+    recommendedDefaultUnavailable: "尚無可用的推薦變體。",
+    sameAsRecommendedDefault: "與推薦預設相同",
+    usesGroups: "使用 {count} 個群組",
+    recommendedOptionCaption: "整體最佳匹配",
     liveSnapshot: "即時",
     checkpointSnapshot: "檢查點",
     pauseAtLatestCheckpoint: "暫停在最新檢查點",
@@ -338,11 +378,6 @@ export const analysisPageTranslations: Record<
     checkpointReasonParticipantCount: "{count} 名參與者",
     checkpointReasonVoteCount: "{count} 票",
     checkpointReasonConversationClosed: "已關閉",
-    checkpointReasonConversationReopened: "已重新開啟",
-    newStatementsSinceCheckpoint: "自此檢查點以來有 {count} 條新陳述",
-    newStatementsNotInAnalysis: "{count} 條新陳述尚未包含在此分析中",
-    viewLatestAnalysis: "查看最新分析",
-    viewNewStatements: "查看陳述",
   },
   he: {
     loadingAnalysis: "...טוען ניתוח",
@@ -354,9 +389,20 @@ export const analysisPageTranslations: Record<
     generateReport: "יצירת דיווח",
     report: "דיווח",
     analysisViewTitle: "תצוגת ניתוח",
-    facilitatorDefault: "ברירת המחדל של המנחה",
-    agoraDefault: "ברירת מחדל",
+    analysisViewSortingCaption: "מספרי הקבוצות ממוינים לפי איכות הניתוח.",
+    facilitatorPreference: "העדפת המנחה",
+    recommendedDefault: "ברירת מחדל מומלצת",
     groupsLabel: "{count} קבוצות",
+    systemDefaultCaption:
+      "בוחרת את הווריאנט בעל הציון הגבוה ביותר לכל תמונת מצב חדשה.",
+    analysisVariantsNotAvailable:
+      "האפשרות הזו אינה נתמכת בתוכנית הנוכחית שלך.",
+    fixedGroupCountUnavailable:
+      "Agora לא הצליחה ליצור {count} קבוצות משמעותיות עבור נקודת ביקורת זו.",
+    recommendedDefaultUnavailable: "עדיין אין וריאנט מומלץ זמין.",
+    sameAsRecommendedDefault: "כמו ברירת המחדל המומלצת",
+    usesGroups: "משתמש ב-{count} קבוצות",
+    recommendedOptionCaption: "ההתאמה הכוללת הטובה ביותר",
     liveSnapshot: "חי",
     checkpointSnapshot: "נקודת ביקורת",
     pauseAtLatestCheckpoint: "השהיה בנקודת הביקורת האחרונה",
@@ -379,11 +425,6 @@ export const analysisPageTranslations: Record<
     checkpointReasonParticipantCount: "{count} משתתפים",
     checkpointReasonVoteCount: "{count} הצבעות",
     checkpointReasonConversationClosed: "סגור",
-    checkpointReasonConversationReopened: "נפתח מחדש",
-    newStatementsSinceCheckpoint: "{count} הצהרות חדשות מאז נקודת ביקורת זו",
-    newStatementsNotInAnalysis: "{count} הצהרות חדשות עדיין לא בניתוח הזה",
-    viewLatestAnalysis: "הצגת הניתוח האחרון",
-    viewNewStatements: "הצגת ההצהרות",
   },
   ja: {
     loadingAnalysis: "分析を読み込み中...",
@@ -396,9 +437,19 @@ export const analysisPageTranslations: Record<
     generateReport: "レポートを生成",
     report: "レポート",
     analysisViewTitle: "分析ビュー",
-    facilitatorDefault: "ファシリテーター既定",
-    agoraDefault: "既定",
+    analysisViewSortingCaption: "グループ数は分析品質順に並びます。",
+    facilitatorPreference: "ファシリテーターの設定",
+    recommendedDefault: "推奨既定",
     groupsLabel: "{count} グループ",
+    systemDefaultCaption:
+      "新しいスナップショットごとに最もスコアの高いバリアントを選択します。",
+    analysisVariantsNotAvailable: "現在のプランではサポートされていません。",
+    fixedGroupCountUnavailable:
+      "Agora はこのチェックポイントで意味のある {count} グループを形成できませんでした。",
+    recommendedDefaultUnavailable: "推奨バリアントはまだ利用できません。",
+    sameAsRecommendedDefault: "推奨既定と同じ",
+    usesGroups: "{count} グループを使用",
+    recommendedOptionCaption: "全体で最も適合",
     liveSnapshot: "ライブ",
     checkpointSnapshot: "チェックポイント",
     pauseAtLatestCheckpoint: "最新チェックポイントで一時停止",
@@ -421,13 +472,6 @@ export const analysisPageTranslations: Record<
     checkpointReasonParticipantCount: "{count} 人の参加者",
     checkpointReasonVoteCount: "{count} 票",
     checkpointReasonConversationClosed: "終了",
-    checkpointReasonConversationReopened: "再開",
-    newStatementsSinceCheckpoint:
-      "このチェックポイント以降に {count} 件の新しいステートメントがあります",
-    newStatementsNotInAnalysis:
-      "{count} 件の新しいステートメントはまだこの分析に含まれていません",
-    viewLatestAnalysis: "最新の分析を見る",
-    viewNewStatements: "ステートメントを見る",
   },
   ky: {
     loadingAnalysis: "Анализ жүктөлүүдө...",
@@ -440,9 +484,20 @@ export const analysisPageTranslations: Record<
     generateReport: "Отчёт түзүү",
     report: "Отчёт",
     analysisViewTitle: "Анализ көрүнүшү",
-    facilitatorDefault: "Фасилитатордун демейкиси",
-    agoraDefault: "Демейки",
+    analysisViewSortingCaption: "Топ сандары анализ сапаты боюнча иреттелет.",
+    facilitatorPreference: "Фасилитатордун тандоосу",
+    recommendedDefault: "Сунушталган демейки",
     groupsLabel: "{count} топ",
+    systemDefaultCaption:
+      "Ар бир жаңы сүрөт үчүн эң жогорку упай алган вариантты тандайт.",
+    analysisVariantsNotAvailable:
+      "Бул учурдагы планыңызда колдоого алынбайт.",
+    fixedGroupCountUnavailable:
+      "Agora бул текшерүү чекити үчүн {count} маанилүү топ түзө алган жок.",
+    recommendedDefaultUnavailable: "Сунушталган вариант азырынча жеткиликтүү эмес.",
+    sameAsRecommendedDefault: "Сунушталган демейки менен бирдей",
+    usesGroups: "{count} топ колдонот",
+    recommendedOptionCaption: "Жалпысынан эң ылайыктуу",
     liveSnapshot: "Жандуу",
     checkpointSnapshot: "Текшерүү чекити",
     pauseAtLatestCheckpoint: "Акыркы текшерүү чекитинде токтотуу",
@@ -465,13 +520,6 @@ export const analysisPageTranslations: Record<
     checkpointReasonParticipantCount: "{count} катышуучу",
     checkpointReasonVoteCount: "{count} добуш",
     checkpointReasonConversationClosed: "Жабык",
-    checkpointReasonConversationReopened: "Кайра ачылды",
-    newStatementsSinceCheckpoint:
-      "Бул текшерүү чекитинен бери {count} жаңы билдирүү бар",
-    newStatementsNotInAnalysis:
-      "{count} жаңы билдирүү бул анализге али кире элек",
-    viewLatestAnalysis: "Акыркы анализди көрүү",
-    viewNewStatements: "Билдирүүлөрдү көрүү",
   },
   ru: {
     loadingAnalysis: "Загрузка анализа...",
@@ -484,9 +532,21 @@ export const analysisPageTranslations: Record<
     generateReport: "Сформировать отчёт",
     report: "Отчёт",
     analysisViewTitle: "Вид анализа",
-    facilitatorDefault: "Выбор фасилитатора",
-    agoraDefault: "По умолчанию",
+    analysisViewSortingCaption:
+      "Количество групп отсортировано по качеству анализа.",
+    facilitatorPreference: "Предпочтение фасилитатора",
+    recommendedDefault: "Рекомендуемый вариант",
     groupsLabel: "{count} групп",
+    systemDefaultCaption:
+      "Выбирает вариант с лучшей оценкой для каждого нового снимка.",
+    analysisVariantsNotAvailable:
+      "Это не поддерживается в вашем текущем плане.",
+    fixedGroupCountUnavailable:
+      "Agora не смогла сформировать {count} значимых групп для этой контрольной точки.",
+    recommendedDefaultUnavailable: "Рекомендуемый вариант пока недоступен.",
+    sameAsRecommendedDefault: "Совпадает с рекомендуемым вариантом",
+    usesGroups: "Использует {count} групп",
+    recommendedOptionCaption: "Лучшее общее соответствие",
     liveSnapshot: "В реальном времени",
     checkpointSnapshot: "Контрольная точка",
     pauseAtLatestCheckpoint: "Пауза на последней контрольной точке",
@@ -509,12 +569,5 @@ export const analysisPageTranslations: Record<
     checkpointReasonParticipantCount: "{count} участников",
     checkpointReasonVoteCount: "{count} голосов",
     checkpointReasonConversationClosed: "Закрыто",
-    checkpointReasonConversationReopened: "Повторно открыто",
-    newStatementsSinceCheckpoint:
-      "{count} новых утверждений с этой контрольной точки",
-    newStatementsNotInAnalysis:
-      "{count} новых утверждений пока не входят в этот анализ",
-    viewLatestAnalysis: "Показать последний анализ",
-    viewNewStatements: "Показать утверждения",
   },
 };

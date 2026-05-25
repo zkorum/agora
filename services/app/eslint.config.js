@@ -17,6 +17,8 @@ export default tseslint.config(
       "node_modules/",
       "dist/",
       "static/",
+      "test-results/",
+      "playwright-report/",
       "src/lib/paraglide/",
       "vite.config.ts.timestamp-*",
       "postcss.config.js",

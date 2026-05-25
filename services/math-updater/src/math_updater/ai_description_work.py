@@ -44,10 +44,8 @@ from math_updater.generated_models import (
     OpinionGroupLineageDescriptionWork,
     OpinionGroupOpinionStats,
     OpinionGroupVariant,
-    PremiumFeatureEntitlement,
     RealtimeEventOutbox,
 )
-from math_updater.generated_models import PremiumFeature as PremiumFeatureEnum
 from math_updater.generated_shared_types import SUPPORTED_DISPLAY_LANGUAGE_CODES
 from math_updater.retry_policy import RetryPolicy, next_cooldown_retry_at, next_retry_at
 
@@ -68,9 +66,6 @@ if TYPE_CHECKING:
         [list[DescriptionForTranslation], list[str]],
         list[DescriptionTranslation],
     ]
-
-
-PREMIUM_ANALYSIS_FEATURE = PremiumFeatureEnum.analysis_variants
 
 
 @dataclass(frozen=True)
@@ -890,6 +885,15 @@ def _queue_conversation_analysis_updated_events_for_view_snapshots(
     if not conversation_view_snapshot_ids:
         return
 
+    checkpoint_rows = session.execute(
+        select(ConversationViewSnapshotCheckpointReason.conversation_view_snapshot_id).where(
+            ConversationViewSnapshotCheckpointReason.conversation_view_snapshot_id.in_(
+                sorted(set(conversation_view_snapshot_ids))
+            )
+        )
+    ).all()
+    checkpoint_view_snapshot_ids = {row.conversation_view_snapshot_id for row in checkpoint_rows}
+
     rows = session.execute(
         select(
             Conversation.slug_id,
@@ -905,14 +909,17 @@ def _queue_conversation_analysis_updated_events_for_view_snapshots(
             )
         )
     ).all()
-    timestamp = int(datetime.now(UTC).timestamp() * 1000)
+    created_at = datetime.now(UTC)
+    timestamp = int(created_at.timestamp() * 1000)
     values = [
         {
             "event_type": "conversation_analysis_updated",
+            "created_at": created_at,
             "payload": {
                 "conversationSlugId": row.slug_id,
                 "conversationViewSnapshotId": row.id,
                 "analysisSnapshotId": row.analysis_snapshot_id,
+                "checkpointChanged": row.id in checkpoint_view_snapshot_ids,
                 "timestamp": timestamp,
             },
         }
@@ -1021,7 +1028,6 @@ def _fetch_required_lineage_description_rows_for_status(
 ) -> list[RequiredLineageDescriptionRow]:
     required_candidate_ids = _fetch_required_candidate_ids_for_result(
         session,
-        conversation_id=status.conversation_id,
         analysis_snapshot_result_id=status.analysis_snapshot_result_id,
     )
     if not required_candidate_ids:
@@ -2546,7 +2552,6 @@ def _fetch_description_for_translation_work(
 def _fetch_required_candidate_ids_for_result(
     session: Session,
     *,
-    conversation_id: int,
     analysis_snapshot_result_id: int,
 ) -> list[int]:
     candidate_rows = session.execute(
@@ -2574,7 +2579,7 @@ def _fetch_required_candidate_ids_for_result(
     ).all()
     return _select_required_candidate_ids_from_options(
         session,
-        conversation_id=conversation_id,
+        analysis_snapshot_result_id=analysis_snapshot_result_id,
         options=[
             _CandidateOption(
                 candidate_id=row.candidate_id,
@@ -2589,16 +2594,18 @@ def _fetch_required_candidate_ids_for_result(
 def _select_required_candidate_ids_from_options(
     session: Session,
     *,
-    conversation_id: int,
+    analysis_snapshot_result_id: int,
     options: Sequence[_CandidateOption],
 ) -> list[int]:
     if not options:
         return []
-    if _conversation_has_premium_analysis_access(
-        session,
-        conversation_id=conversation_id,
-        now=datetime.now(UTC),
-    ):
+
+    result_row = session.execute(
+        select(AnalysisSnapshotResult.variants_enabled).where(
+            AnalysisSnapshotResult.id == analysis_snapshot_result_id
+        )
+    ).first()
+    if result_row is not None and result_row.variants_enabled:
         return sorted({option.candidate_id for option in options})
 
     selected = max(
@@ -2609,46 +2616,3 @@ def _select_required_candidate_ids_from_options(
         ),
     )
     return [selected.candidate_id]
-
-
-def _conversation_has_premium_analysis_access(
-    session: Session,
-    *,
-    conversation_id: int,
-    now: datetime,
-) -> bool:
-    conversation_row = session.execute(
-        select(Conversation.author_id, Conversation.organization_id).where(
-            Conversation.id == conversation_id
-        )
-    ).first()
-    if conversation_row is None:
-        return False
-
-    entitlement_filters: list[ColumnElement[bool]] = []
-    if conversation_row.author_id is not None:
-        entitlement_filters.append(PremiumFeatureEntitlement.user_id == conversation_row.author_id)
-    if conversation_row.organization_id is not None:
-        entitlement_filters.append(
-            PremiumFeatureEntitlement.organization_id == conversation_row.organization_id
-        )
-    if not entitlement_filters:
-        return False
-
-    entitlement_row = session.execute(
-        select(PremiumFeatureEntitlement.id)
-        .where(
-            and_(
-                PremiumFeatureEntitlement.feature == PREMIUM_ANALYSIS_FEATURE,
-                PremiumFeatureEntitlement.starts_at <= now,
-                PremiumFeatureEntitlement.revoked_at.is_(None),
-                or_(
-                    PremiumFeatureEntitlement.expires_at.is_(None),
-                    PremiumFeatureEntitlement.expires_at > now,
-                ),
-                or_(*entitlement_filters),
-            )
-        )
-        .limit(1)
-    ).first()
-    return entitlement_row is not None

@@ -74,6 +74,7 @@ BEGIN
         total_participant_count,
         moderated_opinion_count,
         hidden_opinion_count,
+        activated_at,
         created_at
     )
     SELECT
@@ -92,6 +93,7 @@ BEGIN
         conversation.total_participant_count,
         conversation.moderated_opinion_count,
         conversation.hidden_opinion_count,
+        '1970-01-01 00:00:00'::timestamp,
         '1970-01-01 00:00:00'::timestamp
     FROM conversation
     WHERE NOT EXISTS (

@@ -31,6 +31,44 @@ const SSE_RETRY_DELAY_MS = 1_000;
 // - Python websockets keepalive: https://websockets.readthedocs.io/en/stable/topics/keepalive.html
 const SSE_HEARTBEAT_TIMEOUT_MS = 45_000;
 
+function isAnalysisQueryKeyForConversation({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return queryKey[0] === "analysis" && queryKey[1] === conversationSlugId;
+}
+
+function isLiveAnalysisQueryKey({
+  queryKey,
+  conversationSlugId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+}): boolean {
+  return (
+    isAnalysisQueryKeyForConversation({ queryKey, conversationSlugId }) &&
+    queryKey[3] === undefined
+  );
+}
+
+function isCheckpointAnalysisQueryKey({
+  queryKey,
+  conversationSlugId,
+  checkpointViewSnapshotId,
+}: {
+  queryKey: readonly unknown[];
+  conversationSlugId: string;
+  checkpointViewSnapshotId: number;
+}): boolean {
+  return (
+    isAnalysisQueryKeyForConversation({ queryKey, conversationSlugId }) &&
+    queryKey[3] === checkpointViewSnapshotId
+  );
+}
+
 /**
  * Single composable for ALL real-time server events.
  * Always maintains an SSE connection regardless of auth state:
@@ -55,7 +93,10 @@ export function useRealtimeSSE() {
   let connectionId = 0;
   let offlineTimer: ReturnType<typeof setTimeout> | null = null;
   let heartbeatWatchdog: ReturnType<typeof setTimeout> | null = null;
-  const latestAnalysisEventTimestampByConversationSlugId = new Map<string, number>();
+  const latestAnalysisEventTimestampByConversationSlugId = new Map<
+    string,
+    number
+  >();
 
   async function connect() {
     if (isConnecting.value || isConnected.value) {
@@ -89,10 +130,9 @@ export function useRealtimeSSE() {
       // Add auth headers when authenticated
       // Future: replace buildEncodedUcan with Bearer token when migrating to JWT
       if (authStore.isGuestOrLoggedIn) {
-        const encodedUcan = await buildEncodedUcan(
-          "/api/v1/realtime/stream",
-          { method: "GET" },
-        );
+        const encodedUcan = await buildEncodedUcan("/api/v1/realtime/stream", {
+          method: "GET",
+        });
         const authHeader = buildAuthorizationHeader(encodedUcan);
         Object.assign(headers, authHeader);
       }
@@ -223,17 +263,30 @@ export function useRealtimeSSE() {
         }
         case "conversation_analysis_updated": {
           const data: SSEConversationAnalysisUpdatedData = JSON.parse(rawData);
+          const checkpointChanged = data.checkpointChanged === true;
           updateConversationCountsFromAnalysisEvent(data);
           void queryClient.invalidateQueries({
             queryKey: ["conversation", data.conversationSlugId],
             refetchType: "none",
           });
           void queryClient.invalidateQueries({
-            queryKey: ["analysis", data.conversationSlugId],
+            predicate: (query) =>
+              isLiveAnalysisQueryKey({
+                queryKey: query.queryKey,
+                conversationSlugId: data.conversationSlugId,
+              }) ||
+              (checkpointChanged &&
+                isCheckpointAnalysisQueryKey({
+                  queryKey: query.queryKey,
+                  conversationSlugId: data.conversationSlugId,
+                  checkpointViewSnapshotId: data.conversationViewSnapshotId,
+                })),
           });
-          void queryClient.invalidateQueries({
-            queryKey: ["analysisCheckpoints", data.conversationSlugId],
-          });
+          if (checkpointChanged) {
+            void queryClient.invalidateQueries({
+              queryKey: ["analysisCheckpoints", data.conversationSlugId],
+            });
+          }
           break;
         }
         case "heartbeat": {
@@ -253,9 +306,10 @@ export function useRealtimeSSE() {
   function updateConversationCountsFromAnalysisEvent(
     data: SSEConversationAnalysisUpdatedData
   ): void {
-    const previousTimestamp = latestAnalysisEventTimestampByConversationSlugId.get(
-      data.conversationSlugId
-    );
+    const previousTimestamp =
+      latestAnalysisEventTimestampByConversationSlugId.get(
+        data.conversationSlugId
+      );
     if (previousTimestamp !== undefined && previousTimestamp > data.timestamp) {
       return;
     }
@@ -268,26 +322,43 @@ export function useRealtimeSSE() {
     updateConversationQueryCache({
       queryClient,
       conversationSlugId: data.conversationSlugId,
-      updateConversation: (conversation) => ({
-        ...conversation,
-        metadata: {
-          ...conversation.metadata,
-          opinionCount: data.opinionCount ?? conversation.metadata.opinionCount,
-          voteCount: data.voteCount ?? conversation.metadata.voteCount,
-          participantCount:
-            data.participantCount ?? conversation.metadata.participantCount,
-          totalOpinionCount:
-            data.totalOpinionCount ?? conversation.metadata.totalOpinionCount,
-          totalVoteCount: data.totalVoteCount ?? conversation.metadata.totalVoteCount,
-          totalParticipantCount:
-            data.totalParticipantCount ?? conversation.metadata.totalParticipantCount,
-          moderatedOpinionCount:
-            data.moderatedOpinionCount ?? conversation.metadata.moderatedOpinionCount,
-          hiddenOpinionCount:
-            data.hiddenOpinionCount ?? conversation.metadata.hiddenOpinionCount,
-          isClosed: data.isClosed ?? conversation.metadata.isClosed,
-        },
-      }),
+      updateConversation: (conversation) => {
+        const previousSnapshotId =
+          conversation.metadata.conversationViewSnapshotId;
+        if (
+          previousSnapshotId !== undefined &&
+          data.conversationViewSnapshotId < previousSnapshotId
+        ) {
+          return conversation;
+        }
+
+        return {
+          ...conversation,
+          metadata: {
+            ...conversation.metadata,
+            conversationViewSnapshotId: data.conversationViewSnapshotId,
+            opinionCount:
+              data.opinionCount ?? conversation.metadata.opinionCount,
+            voteCount: data.voteCount ?? conversation.metadata.voteCount,
+            participantCount:
+              data.participantCount ?? conversation.metadata.participantCount,
+            totalOpinionCount:
+              data.totalOpinionCount ?? conversation.metadata.totalOpinionCount,
+            totalVoteCount:
+              data.totalVoteCount ?? conversation.metadata.totalVoteCount,
+            totalParticipantCount:
+              data.totalParticipantCount ??
+              conversation.metadata.totalParticipantCount,
+            moderatedOpinionCount:
+              data.moderatedOpinionCount ??
+              conversation.metadata.moderatedOpinionCount,
+            hiddenOpinionCount:
+              data.hiddenOpinionCount ??
+              conversation.metadata.hiddenOpinionCount,
+            isClosed: data.isClosed ?? conversation.metadata.isClosed,
+          },
+        };
+      },
     });
   }
 

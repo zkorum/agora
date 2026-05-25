@@ -1,22 +1,27 @@
 import { z } from "zod";
 import { parseValkeyUrl } from "./valkey.js";
 
-const zodQueueValkeyUrl = z.string().optional().transform((value, ctx) => {
-    if (value === undefined || value === "") {
-        return undefined;
-    }
+const zodQueueValkeyUrl = z
+    .string()
+    .optional()
+    .transform((value, ctx) => {
+        if (value === undefined || value === "") {
+            return undefined;
+        }
 
-    try {
-        return parseValkeyUrl(value);
-    } catch (error) {
-        ctx.addIssue({
-            code: "custom",
-            message:
-                error instanceof Error ? error.message : "Invalid Valkey URL",
-        });
-        return z.NEVER;
-    }
-});
+        try {
+            return parseValkeyUrl(value);
+        } catch (error) {
+            ctx.addIssue({
+                code: "custom",
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : "Invalid Valkey URL",
+            });
+            return z.NEVER;
+        }
+    });
 
 export const sharedConfigSchema = z.object({
     NODE_ENV: z

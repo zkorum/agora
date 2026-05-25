@@ -41,11 +41,11 @@
               <PostActionBar
                 v-model="currentTab"
                 :compact-mode="false"
-                :opinion-count="visibleAnalysisActionBarSnapshot?.opinionCount ?? loadedConversationData.metadata.opinionCount"
-                :participant-count="visibleAnalysisActionBarSnapshot?.participantCount ?? loadedConversationData.metadata.participantCount"
-                :vote-count="visibleAnalysisActionBarSnapshot?.voteCount ?? loadedConversationData.metadata.voteCount"
-                :total-participant-count="visibleAnalysisActionBarSnapshot?.totalParticipantCount ?? loadedConversationData.metadata.totalParticipantCount"
-                :total-vote-count="visibleAnalysisActionBarSnapshot?.totalVoteCount ?? loadedConversationData.metadata.totalVoteCount"
+                :opinion-count="loadedConversationData.metadata.opinionCount"
+                :participant-count="loadedConversationData.metadata.participantCount"
+                :vote-count="loadedConversationData.metadata.voteCount"
+                :total-participant-count="loadedConversationData.metadata.totalParticipantCount"
+                :total-vote-count="loadedConversationData.metadata.totalVoteCount"
                 :is-loading="isCurrentTabLoading"
                 :conversation-slug-id="loadedConversationData.metadata.conversationSlugId"
                 :conversation-title="loadedConversationData.payload.title"
@@ -82,9 +82,6 @@
                       :on-view-analysis="onViewAnalysis"
                       :navigate-to-discover-tab="navigateToDiscoverTab"
                       v-bind="analysisRouteProps"
-                      @update:analysis-action-bar-snapshot="
-                        setAnalysisActionBarSnapshot
-                      "
                       @update:comment-filter="
                         (filter: CommentFilterOptions) => { commentFilter = filter }
                       "
@@ -134,7 +131,6 @@ import { useTabScrollRestoration } from "src/composables/conversation/useTabScro
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useStickyObserver } from "src/composables/ui/useStickyObserver";
-import type { AnalysisConversationViewSnapshot } from "src/shared/types/dto";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLayoutHeaderStore } from "src/stores/layout/header";
 import { useNavigationStore } from "src/stores/navigation";
@@ -168,9 +164,6 @@ const authStore = useAuthenticationStore();
 const { userId } = storeToRefs(authStore);
 const { reveal: headerRevealed } = storeToRefs(useLayoutHeaderStore());
 const commentComposerRef = ref<InstanceType<typeof CommentComposer>>();
-const analysisActionBarSnapshot = ref<
-  AnalysisConversationViewSnapshot | undefined
->();
 
 const conversationConfig: ConversationParentConfig = {
   analysisRouteName: "/conversation/[postSlugId]/analysis",
@@ -215,16 +208,6 @@ const isVotingDisabled = computed(() => {
     data.metadata.moderation.action === "lock";
   return isModeratedAndLocked || data.metadata.isClosed;
 });
-
-const visibleAnalysisActionBarSnapshot = computed(() =>
-  currentTab.value === "analysis" ? analysisActionBarSnapshot.value : undefined
-);
-
-function setAnalysisActionBarSnapshot(
-  snapshot: AnalysisConversationViewSnapshot | undefined
-): void {
-  analysisActionBarSnapshot.value = snapshot;
-}
 
 const analysisRouteProps = computed(() => {
   if (currentTab.value !== "analysis") {

@@ -126,6 +126,10 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     const hasAiLabelingChanges =
       current.aiLabelingEnabled !== emptyDraft.aiLabelingEnabled;
 
+    const hasPreferredOpinionGroupCountChanges =
+      current.preferredOpinionGroupCount !==
+      emptyDraft.preferredOpinionGroupCount;
+
     // Check creation settings changes
     const hasCreationSettingsChanges =
       current.importSettings.importType !==
@@ -147,6 +151,7 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
       hasPostAsChanges ||
       hasPrivacyChanges ||
       hasAiLabelingChanges ||
+      hasPreferredOpinionGroupCountChanges ||
       hasCreationSettingsChanges ||
       hasSurveyConfigChanges
     );

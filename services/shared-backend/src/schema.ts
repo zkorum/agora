@@ -597,7 +597,6 @@ export const conversationTypeEnum = pgEnum("conversation_type", [
 ]);
 export const premiumFeatureEnum = pgEnum("premium_feature", [
     "survey",
-    "prioritization",
     "event_ticket",
     "analysis_variants",
 ]);
@@ -768,7 +767,6 @@ export const conversationViewSnapshotCheckpointReasonEnum = pgEnum(
         "major_participation_milestone",
         "major_vote_milestone",
         "conversation_closed",
-        "conversation_reopened",
     ],
 );
 
@@ -1079,7 +1077,6 @@ export const premiumFeatureEntitlementTable = pgTable(
             table.organizationId,
             table.feature,
         ),
-        index("premium_feature_entitlement_expires_idx").on(table.expiresAt),
     ],
 );
 
@@ -2515,10 +2512,13 @@ export const analysisWorkStateTable = pgTable(
             t.opinionGroupSpecId,
         ),
         index("analysis_work_state_due_idx")
-            .on(t.nextRunAt)
+            .on(t.nextRunAt, t.conversationId)
             .where(
                 sqlAnd(isNull(t.runningDataGeneration), isNotNull(t.nextRunAt)),
             ),
+        index("analysis_work_state_lease_expiry_idx")
+            .on(t.leaseExpiresAt)
+            .where(isNotNull(t.runningDataGeneration)),
         uniqueIndex("analysis_work_state_running_conversation_unique")
             .on(t.conversationId)
             .where(isNotNull(t.runningDataGeneration)),
@@ -2594,6 +2594,7 @@ export const analysisSnapshotResultTable = pgTable(
             .references(() => opinionGroupSpecTable.id),
         outcome: analysisResultOutcomeEnum("outcome").notNull(),
         outcomeReason: analysisInsufficientDataReasonEnum("outcome_reason"),
+        variantsEnabled: boolean("variants_enabled").notNull().default(false),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -2977,6 +2978,9 @@ export const opinionGroupDescriptionTranslationWorkTable = pgTable(
         index("opinion_group_description_translation_work_due_idx")
             .on(t.nextRunAt)
             .where(sqlAnd(isNull(t.leaseToken), isNotNull(t.nextRunAt))),
+        index("opinion_group_description_translation_work_lease_expiry_idx")
+            .on(t.leaseExpiresAt)
+            .where(isNotNull(t.leaseToken)),
         check(
             "opinion_group_description_translation_work_running_lease_check",
             sqlOr(
@@ -3099,6 +3103,9 @@ export const opinionGroupLineageDescriptionWorkTable = pgTable(
         index("opinion_group_lineage_description_work_due_idx")
             .on(t.nextRunAt)
             .where(sqlAnd(isNull(t.leaseToken), isNotNull(t.nextRunAt))),
+        index("opinion_group_lineage_description_work_lease_expiry_idx")
+            .on(t.leaseExpiresAt)
+            .where(isNotNull(t.leaseToken)),
         check(
             "opinion_group_lineage_description_work_running_lease_check",
             sqlOr(
@@ -3207,6 +3214,7 @@ export const conversationViewSnapshotTable = pgTable(
             { onDelete: "set null" },
         ),
         viewReason: conversationViewSnapshotReasonEnum("view_reason").notNull(),
+        preferredOpinionGroupCount: integer("preferred_opinion_group_count"),
         isClosed: boolean("is_closed").notNull(),
         opinionCount: integer("opinion_count").notNull(),
         voteCount: integer("vote_count").notNull(),
@@ -3230,15 +3238,30 @@ export const conversationViewSnapshotTable = pgTable(
     (t) => [
         index("conversation_view_snapshot_latest_idx").on(
             t.conversationId,
-            t.createdAt,
-            t.id,
+            t.createdAt.desc(),
+            t.id.desc(),
         ),
         index("conversation_view_snapshot_latest_active_idx")
-            .on(t.conversationId, t.createdAt, t.id)
+            .on(t.conversationId, t.createdAt.desc(), t.id.desc())
             .where(isNotNull(t.activatedAt)),
+        index("conversation_view_snapshot_latest_spec_active_idx")
+            .on(
+                t.conversationId,
+                t.opinionGroupSpecId,
+                t.createdAt.desc(),
+                t.id.desc(),
+            )
+            .where(isNotNull(t.activatedAt)),
+        index("conversation_view_snapshot_analysis_snapshot_idx")
+            .on(t.analysisSnapshotId)
+            .where(isNotNull(t.analysisSnapshotId)),
         check(
             "conversation_view_snapshot_counts_check",
             sql`${t.opinionCount} >= 0 AND ${t.voteCount} >= 0 AND ${t.participantCount} >= 0 AND ${t.totalOpinionCount} >= 0 AND ${t.totalVoteCount} >= 0 AND ${t.totalParticipantCount} >= 0 AND ${t.moderatedOpinionCount} >= 0 AND ${t.hiddenOpinionCount} >= 0`,
+        ),
+        check(
+            "conversation_view_snapshot_preferred_opinion_group_count_check",
+            sql`${t.preferredOpinionGroupCount} IS NULL OR (${t.preferredOpinionGroupCount} >= 2 AND ${t.preferredOpinionGroupCount} <= 6)`,
         ),
     ],
 );
@@ -3259,10 +3282,6 @@ export const realtimeEventOutboxTable = pgTable(
     },
     (t) => [
         index("realtime_event_outbox_created_at_idx").on(t.createdAt),
-        index("realtime_event_outbox_event_type_created_at_idx").on(
-            t.eventType,
-            t.createdAt,
-        ),
     ],
 );
 
@@ -3408,9 +3427,6 @@ export const conversationViewSnapshotCheckpointReasonTable = pgTable(
         uniqueIndex("conversation_view_snapshot_checkpoint_closed_unique")
             .on(t.conversationViewSnapshotId)
             .where(sql`${t.reason} = 'conversation_closed'`),
-        uniqueIndex("conversation_view_snapshot_checkpoint_reopened_unique")
-            .on(t.conversationViewSnapshotId)
-            .where(sql`${t.reason} = 'conversation_reopened'`),
         check(
             "conversation_view_snapshot_checkpoint_reason_group_count_check",
             sql`((${t.reason} IN ('first_group_count_available', 'default_group_count_changed') AND ${t.groupCount} IS NOT NULL AND ${t.groupCount} >= 2 AND (${t.previousGroupCount} IS NULL OR ${t.previousGroupCount} >= 2)) OR (${t.reason} NOT IN ('first_group_count_available', 'default_group_count_changed') AND ${t.groupCount} IS NULL AND ${t.previousGroupCount} IS NULL))`,

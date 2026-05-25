@@ -118,6 +118,7 @@ export function useAnalysisQuery({
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
   const { fetchAnalysisData } = useBackendCommentApi();
+  const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: [
@@ -126,12 +127,52 @@ export function useAnalysisQuery({
       computed(() => toValue(analysisView)),
       computed(() => toValue(checkpointViewSnapshotId)),
     ],
-    queryFn: () =>
-      fetchAnalysisData({
-        conversationSlugId: toValue(conversationSlugId),
+    queryFn: async () => {
+      const resolvedConversationSlugId = toValue(conversationSlugId);
+      const resolvedCheckpointViewSnapshotId = toValue(checkpointViewSnapshotId);
+      const analysisData = await fetchAnalysisData({
+        conversationSlugId: resolvedConversationSlugId,
         analysisView: toValue(analysisView),
-        checkpointViewSnapshotId: toValue(checkpointViewSnapshotId),
-      }),
+        checkpointViewSnapshotId: resolvedCheckpointViewSnapshotId,
+      });
+
+      const snapshot = analysisData.conversationViewSnapshot;
+      if (resolvedCheckpointViewSnapshotId === undefined && snapshot !== undefined) {
+        updateConversationQueryCache({
+          queryClient,
+          conversationSlugId: resolvedConversationSlugId,
+          updateConversation: (conversation) => {
+            const previousSnapshotId =
+              conversation.metadata.conversationViewSnapshotId;
+            if (
+              previousSnapshotId !== undefined &&
+              snapshot.conversationViewSnapshotId < previousSnapshotId
+            ) {
+              return conversation;
+            }
+
+            return {
+              ...conversation,
+              metadata: {
+                ...conversation.metadata,
+                conversationViewSnapshotId: snapshot.conversationViewSnapshotId,
+                opinionCount: snapshot.opinionCount,
+                voteCount: snapshot.voteCount,
+                participantCount: snapshot.participantCount,
+                totalOpinionCount: snapshot.totalOpinionCount,
+                totalVoteCount: snapshot.totalVoteCount,
+                totalParticipantCount: snapshot.totalParticipantCount,
+                moderatedOpinionCount: snapshot.moderatedOpinionCount,
+                hiddenOpinionCount: snapshot.hiddenOpinionCount,
+                isClosed: snapshot.isClosed,
+              },
+            };
+          },
+        });
+      }
+
+      return analysisData;
+    },
     enabled: computed(
       () => toValue(enabled) && toValue(conversationSlugId) !== ""
     ),

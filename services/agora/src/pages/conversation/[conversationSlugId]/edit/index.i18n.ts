@@ -22,6 +22,7 @@ export interface EditConversationTranslations {
   editSurveyButton: string;
   premiumEditRestrictedBanner: string;
   premiumAccessExpiredError: string;
+  premiumAccessRequiredError: string;
 }
 
 export const editConversationTranslations: Record<
@@ -55,6 +56,7 @@ export const editConversationTranslations: Record<
     premiumEditRestrictedBanner:
       "Premium access has expired. You can still update normal settings, but premium content changes are disabled.",
     premiumAccessExpiredError: "Premium access has expired for this change.",
+    premiumAccessRequiredError: "This setting is not available with your current plan.",
   },
   fr: {
     saveButton: "Enregistrer",
@@ -85,6 +87,7 @@ export const editConversationTranslations: Record<
     premiumEditRestrictedBanner:
       "L'accès premium a expiré. Vous pouvez toujours modifier les paramètres standards, mais les changements de contenu premium sont désactivés.",
     premiumAccessExpiredError: "L'accès premium a expiré pour ce changement.",
+    premiumAccessRequiredError: "Ce paramètre n'est pas disponible avec votre offre actuelle.",
   },
   es: {
     saveButton: "Guardar",
@@ -114,6 +117,7 @@ export const editConversationTranslations: Record<
     premiumEditRestrictedBanner:
       "El acceso premium expiró. Todavía puede actualizar la configuración normal, pero los cambios de contenido premium están deshabilitados.",
     premiumAccessExpiredError: "El acceso premium expiró para este cambio.",
+    premiumAccessRequiredError: "Esta configuración no está disponible con tu plan actual.",
   },
   fa: {
     saveButton: "ذخیره",
@@ -140,6 +144,7 @@ export const editConversationTranslations: Record<
     premiumEditRestrictedBanner:
       "دسترسی ویژه منقضی شده است. هنوز می‌توانید تنظیمات عادی را تغییر دهید، اما تغییرات محتوای ویژه غیرفعال است.",
     premiumAccessExpiredError: "دسترسی ویژه برای این تغییر منقضی شده است.",
+    premiumAccessRequiredError: "این تنظیم در طرح فعلی شما در دسترس نیست.",
   },
   he: {
     saveButton: "שמור",
@@ -166,6 +171,7 @@ export const editConversationTranslations: Record<
     premiumEditRestrictedBanner:
       "גישת הפרימיום פגה. עדיין ניתן לעדכן הגדרות רגילות, אך שינויי תוכן פרימיום מושבתים.",
     premiumAccessExpiredError: "גישת הפרימיום פגה עבור שינוי זה.",
+    premiumAccessRequiredError: "הגדרה זו אינה זמינה בתוכנית הנוכחית שלך.",
   },
   "zh-Hans": {
     saveButton: "保存",
@@ -190,6 +196,7 @@ export const editConversationTranslations: Record<
     premiumEditRestrictedBanner:
       "高级访问权限已到期。您仍可更新常规设置，但高级内容更改已禁用。",
     premiumAccessExpiredError: "此更改的高级访问权限已到期。",
+    premiumAccessRequiredError: "此设置不适用于您当前的计划。",
   },
   "zh-Hant": {
     saveButton: "儲存",
@@ -214,6 +221,7 @@ export const editConversationTranslations: Record<
     premiumEditRestrictedBanner:
       "進階存取權已到期。你仍可更新一般設定，但進階內容變更已停用。",
     premiumAccessExpiredError: "此變更的進階存取權已到期。",
+    premiumAccessRequiredError: "此設定不適用於你目前的方案。",
   },
   ja: {
     saveButton: "保存",
@@ -241,6 +249,7 @@ export const editConversationTranslations: Record<
       "プレミアムアクセスの期限が切れました。通常設定は引き続き更新できますが、プレミアムコンテンツの変更は無効です。",
     premiumAccessExpiredError:
       "この変更のプレミアムアクセスの期限が切れました。",
+    premiumAccessRequiredError: "この設定は現在のプランでは利用できません。",
   },
   ar: {
     saveButton: "حفظ",
@@ -267,6 +276,7 @@ export const editConversationTranslations: Record<
     premiumEditRestrictedBanner:
       "انتهت صلاحية الوصول المميز. لا يزال بإمكانك تحديث الإعدادات العادية، لكن تغييرات المحتوى المميز معطلة.",
     premiumAccessExpiredError: "انتهت صلاحية الوصول المميز لهذا التغيير.",
+    premiumAccessRequiredError: "هذا الإعداد غير متاح في خطتك الحالية.",
   },
   ky: {
     saveButton: "Сактоо",
@@ -293,6 +303,7 @@ export const editConversationTranslations: Record<
     premiumEditRestrictedBanner:
       "Premium access has expired. You can still update normal settings, but premium content changes are disabled.",
     premiumAccessExpiredError: "Premium access has expired for this change.",
+    premiumAccessRequiredError: "This setting is not available with your current plan.",
   },
   ru: {
     saveButton: "Сохранить",
@@ -322,5 +333,6 @@ export const editConversationTranslations: Record<
     premiumEditRestrictedBanner:
       "Премиум-доступ истёк. Вы всё ещё можете менять обычные настройки, но изменения премиум-контента отключены.",
     premiumAccessExpiredError: "Премиум-доступ для этого изменения истёк.",
+    premiumAccessRequiredError: "Эта настройка недоступна на вашем текущем плане.",
   },
 };

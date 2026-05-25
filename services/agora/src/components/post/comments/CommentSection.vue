@@ -120,6 +120,7 @@ const {
   targetOpinion,
   setupHighlightFromRoute,
   clearRouteQueryParameters,
+  highlightOpinion,
   refreshAndHighlightOpinion,
 } = useTargetOpinion({
   refreshDataCallback: refreshData,
@@ -229,6 +230,7 @@ function handleOpinionDeleted(opinionSlugId: string): void {
 
 defineExpose({
   openModerationHistory,
+  highlightOpinion,
   refreshAndHighlightOpinion,
   triggerLoadMore,
   handleRetryLoadComments,

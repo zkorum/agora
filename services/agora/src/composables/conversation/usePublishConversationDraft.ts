@@ -60,6 +60,7 @@ export function usePublishConversationDraft() {
         seedOpinionList: conversationDraft.seedOpinions,
         requiresEventTicket: conversationDraft.requiresEventTicket,
         aiLabelingEnabled: conversationDraft.aiLabelingEnabled,
+        preferredOpinionGroupCount: conversationDraft.preferredOpinionGroupCount,
         externalSourceConfig: conversationDraft.externalSourceConfig,
         surveyConfig: normalizedSurveyConfigResult.surveyConfig,
       });

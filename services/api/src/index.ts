@@ -1632,6 +1632,48 @@ server.after(() => {
 
     server.withTypeProvider<ZodTypeProvider>().route({
         method: "POST",
+        url: `/api/${apiVersion}/premium-feature/access/check`,
+        schema: {
+            body: Dto.checkPremiumFeatureAccessRequest,
+            response: {
+                200: Dto.checkPremiumFeatureAccessResponse,
+            },
+        },
+        handler: async (request) => {
+            const { deviceStatus } = await verifyUcanAndKnownDeviceStatus(
+                db,
+                request,
+                {
+                    expectedKnownDeviceStatus: {
+                        isLoggedIn: true,
+                        isRegistered: true,
+                    },
+                },
+            );
+
+            const subject =
+                await premiumEntitlementService.getPremiumEntitlementSubjectForCreate(
+                    {
+                        db,
+                        userId: deviceStatus.userId,
+                        postAsOrganization: request.body.postAsOrganization,
+                    },
+                );
+
+            return {
+                hasAccess:
+                    await premiumEntitlementService.hasPremiumFeatureAccess({
+                        db,
+                        subject,
+                        feature: request.body.feature,
+                        now: nowZeroMs(),
+                    }),
+            };
+        },
+    });
+
+    server.withTypeProvider<ZodTypeProvider>().route({
+        method: "POST",
         url: `/api/${apiVersion}/user/conversation/fetch`,
         schema: {
             body: Dto.fetchUserConversationsRequest,
@@ -2064,6 +2106,7 @@ server.after(() => {
                 userAgent: request.headers["user-agent"] ?? "Unknown device",
                 now: now,
                 isSeed: false,
+                voteBuffer: voteBuffer,
                 realtimeSSEManager: realtimeSSEManager,
             });
             reply.send(newOpinionResponse);
@@ -2312,6 +2355,8 @@ server.after(() => {
                 premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
                     requiresEventTicket: request.body.requiresEventTicket,
                     hasSurvey,
+                    preferredOpinionGroupCount:
+                        request.body.preferredOpinionGroupCount,
                 });
 
             if (request.body.externalSourceConfig != null) {
@@ -2353,6 +2398,8 @@ server.after(() => {
                 seedOpinionList: request.body.seedOpinionList,
                 requiresEventTicket: request.body.requiresEventTicket,
                 aiLabelingEnabled: request.body.aiLabelingEnabled,
+                preferredOpinionGroupCount:
+                    request.body.preferredOpinionGroupCount,
                 externalSourceConfig: request.body.externalSourceConfig ?? null,
                 surveyConfig: request.body.surveyConfig ?? null,
                 googleCloudCredentials,
@@ -2439,6 +2486,31 @@ server.after(() => {
                 }
             }
 
+            const premiumFeatures =
+                premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
+                    requiresEventTicket: request.body.requiresEventTicket,
+                    hasSurvey: false,
+                    preferredOpinionGroupCount:
+                        request.body.preferredOpinionGroupCount,
+                });
+            if (premiumFeatures.length > 0) {
+                await premiumEntitlementService.requirePremiumAccess({
+                    db,
+                    subject:
+                        await premiumEntitlementService.getPremiumEntitlementSubjectForCreate(
+                            {
+                                db,
+                                userId: deviceStatus.userId,
+                                postAsOrganization:
+                                    request.body.postAsOrganization,
+                            },
+                        ),
+                    features: premiumFeatures,
+                    mode: "creation",
+                    now: nowZeroMs(),
+                });
+            }
+
             // Queue URL import for async processing
             return await conversationImportService.requestUrlImport({
                 db,
@@ -2450,6 +2522,8 @@ server.after(() => {
                     isIndexed: request.body.isIndexed,
                     requiresEventTicket: request.body.requiresEventTicket,
                     aiLabelingEnabled: request.body.aiLabelingEnabled,
+                    preferredOpinionGroupCount:
+                        request.body.preferredOpinionGroupCount,
                 },
                 didWrite,
                 importBuffer,
@@ -2602,6 +2676,31 @@ server.after(() => {
                 }
             }
 
+            const premiumFeatures =
+                premiumEntitlementService.getPremiumFeaturesFromCreateRequest({
+                    requiresEventTicket: parsedFields.requiresEventTicket,
+                    hasSurvey: false,
+                    preferredOpinionGroupCount:
+                        parsedFields.preferredOpinionGroupCount,
+                });
+            if (premiumFeatures.length > 0) {
+                await premiumEntitlementService.requirePremiumAccess({
+                    db,
+                    subject:
+                        await premiumEntitlementService.getPremiumEntitlementSubjectForCreate(
+                            {
+                                db,
+                                userId: deviceStatus.userId,
+                                postAsOrganization:
+                                    parsedFields.postAsOrganization,
+                            },
+                        ),
+                    features: premiumFeatures,
+                    mode: "creation",
+                    now: nowZeroMs(),
+                });
+            }
+
             // Request CSV import (creates record and queues for async processing)
             const { importSlugId } =
                 await conversationImportService.requestConversationImport({
@@ -2614,6 +2713,8 @@ server.after(() => {
                         isIndexed: parsedFields.isIndexed,
                         requiresEventTicket: parsedFields.requiresEventTicket,
                         aiLabelingEnabled: parsedFields.aiLabelingEnabled,
+                        preferredOpinionGroupCount:
+                            parsedFields.preferredOpinionGroupCount,
                     },
                     didWrite,
                     importBuffer,

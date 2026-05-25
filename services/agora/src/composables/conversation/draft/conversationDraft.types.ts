@@ -12,6 +12,7 @@ import type {
   EventSlug,
   ExternalSourceConfig,
   ParticipationMode,
+  PreferredOpinionGroupCount,
   SurveyConfig,
 } from "src/shared/types/zod";
 
@@ -76,6 +77,9 @@ export interface ConversationDraft {
 
   // AI labeling
   aiLabelingEnabled: boolean;
+
+  // Facilitator analysis preference
+  preferredOpinionGroupCount: PreferredOpinionGroupCount;
 
   // External Source (GitHub integration for MaxDiff)
   externalSourceConfig: ExternalSourceConfig | null;
@@ -169,6 +173,7 @@ export interface ConversationFormState {
   participationMode: ParticipationMode;
   requiresEventTicket?: EventSlug;
   aiLabelingEnabled: boolean;
+  preferredOpinionGroupCount: PreferredOpinionGroupCount;
 
   // Survey configuration
   surveyConfig: SurveyConfig | null;

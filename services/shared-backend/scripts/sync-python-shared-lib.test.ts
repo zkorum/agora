@@ -39,7 +39,11 @@ export const ZodSupportedDisplayLanguageCodes = z.enum([
     "zh-Hant",
 ]);`;
 
-        expect(parseDisplayLanguageCodes(source)).toEqual(["en", "es", "zh-Hant"]);
+        expect(parseDisplayLanguageCodes(source)).toEqual([
+            "en",
+            "es",
+            "zh-Hant",
+        ]);
     });
 });
 

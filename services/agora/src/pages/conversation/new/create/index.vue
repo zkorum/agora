@@ -34,6 +34,7 @@
         v-model:title="title"
         v-model:content="content"
         v-model:ai-labeling-enabled="aiLabelingEnabled"
+        v-model:preferred-opinion-group-count="preferredOpinionGroupCount"
       />
 
       <!-- Active Import Banner -->
@@ -219,6 +220,7 @@ const {
   participationMode,
   requiresEventTicket,
   aiLabelingEnabled,
+  preferredOpinionGroupCount,
   postAs,
   importSettings,
   externalSourceConfig,
@@ -410,6 +412,8 @@ async function handleImportSubmission(): Promise<void> {
         participationMode: conversationDraft.value.participationMode,
         requiresEventTicket: conversationDraft.value.requiresEventTicket,
         aiLabelingEnabled: conversationDraft.value.aiLabelingEnabled,
+        preferredOpinionGroupCount:
+          conversationDraft.value.preferredOpinionGroupCount,
       });
 
       resetDraft();
@@ -437,6 +441,8 @@ async function handleImportSubmission(): Promise<void> {
       participationMode: conversationDraft.value.participationMode,
       requiresEventTicket: conversationDraft.value.requiresEventTicket,
       aiLabelingEnabled: conversationDraft.value.aiLabelingEnabled,
+      preferredOpinionGroupCount:
+        conversationDraft.value.preferredOpinionGroupCount,
     });
 
     if (response.status === "success") {

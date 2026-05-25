@@ -41,9 +41,7 @@ const annotations = parseServiceAnnotations(schemaTs);
 const allowed = filterTablesForService(annotations, service);
 
 if (allowed.size === 0) {
-    console.error(
-        `[sync-schema] No tables tagged for service "${service}".`,
-    );
+    console.error(`[sync-schema] No tables tagged for service "${service}".`);
     process.exit(1);
 }
 

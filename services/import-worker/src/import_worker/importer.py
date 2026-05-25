@@ -283,6 +283,7 @@ def _create_conversation(
         imported=imported,
         polis_url_type=polis_url_type,
     )
+    preferred_opinion_group_count = request.form_data.preferred_opinion_group_count
     now = now_zero_ms()
     title = imported.conversation_data.topic
     if len(title.strip()) == 0:
@@ -309,6 +310,9 @@ def _create_conversation(
             is_importing=True,
             requires_event_ticket=request.form_data.requires_event_ticket,
             ai_labeling_enabled=request.form_data.ai_labeling_enabled,
+            preferred_opinion_group_count=None
+            if preferred_opinion_group_count is None
+            else preferred_opinion_group_count.root,
             current_content_id=None,
             created_at=now,
             updated_at=now,

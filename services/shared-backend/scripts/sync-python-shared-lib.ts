@@ -85,7 +85,9 @@ function generateDisplayLanguageSection({
     languagesTs,
 }: SharedTypesSources): PythonSharedSection {
     const displayLanguageCodes = parseDisplayLanguageCodes(languagesTs);
-    const targetLanguageCodes = displayLanguageCodes.filter((code) => code !== "en");
+    const targetLanguageCodes = displayLanguageCodes.filter(
+        (code) => code !== "en",
+    );
     return {
         title: "Display Languages",
         body: `${formatPythonTuple({
@@ -112,7 +114,10 @@ function generateLengthConstantsSection({
             .map(
                 (name) =>
                     `${name}: int = ${String(
-                        parseNumericExport({ source: sharedTs, exportName: name }),
+                        parseNumericExport({
+                            source: sharedTs,
+                            exportName: name,
+                        }),
                     )}`,
             )
             .join("\n"),

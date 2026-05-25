@@ -120,7 +120,6 @@ const reasonOptions = computed<
   { reason: "major_participation_milestone", label: t("participantMilestone") },
   { reason: "major_vote_milestone", label: t("voteMilestone") },
   { reason: "conversation_closed", label: t("conversationClosed") },
-  { reason: "conversation_reopened", label: t("conversationReopened") },
 ]);
 
 const baseTime = new Date("2026-05-23T00:00:00Z");
@@ -213,8 +212,6 @@ function formatReason(
       return reason.voteCount === null ? undefined : `${String(reason.voteCount)} votes`;
     case "conversation_closed":
       return t("conversationClosed");
-    case "conversation_reopened":
-      return t("conversationReopened");
   }
 }
 

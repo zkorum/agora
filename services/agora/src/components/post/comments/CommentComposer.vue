@@ -91,6 +91,7 @@ import {
 } from "src/shared/shared";
 import type {
   EventSlug,
+  OpinionItem,
   ParticipationMode,
   SurveyGateSummary,
 } from "src/shared/types/zod";
@@ -143,6 +144,7 @@ const emit = defineEmits<{
   submittedComment: [
     data: {
       opinionSlugId: string;
+      opinionItem: OpinionItem;
       authStateChanged: boolean;
       needsCacheRefresh: boolean;
     },
@@ -240,7 +242,16 @@ const { needsAuth: isAuthBlocked, shouldOpenParticipationModal } =
 
 const { invalidateConversation } = useInvalidateConversationQuery();
 
-function incrementConversationOpinionCount(): void {
+type UserVoteCacheItem = {
+  opinionSlugId: string;
+  votingAction: string;
+};
+
+function incrementConversationCountsForCreatedOpinion({
+  becameParticipant,
+}: {
+  becameParticipant: boolean;
+}): void {
   updateConversationQueryCache({
     queryClient,
     conversationSlugId: props.postSlugId,
@@ -250,9 +261,33 @@ function incrementConversationOpinionCount(): void {
         ...conversation.metadata,
         opinionCount: conversation.metadata.opinionCount + 1,
         totalOpinionCount: conversation.metadata.totalOpinionCount + 1,
+        voteCount: conversation.metadata.voteCount + 1,
+        totalVoteCount: conversation.metadata.totalVoteCount + 1,
+        participantCount:
+          conversation.metadata.participantCount + (becameParticipant ? 1 : 0),
+        totalParticipantCount:
+          conversation.metadata.totalParticipantCount +
+          (becameParticipant ? 1 : 0),
       },
     }),
   });
+}
+
+function addCreatedOpinionVoteToCache({
+  opinionSlugId,
+}: {
+  opinionSlugId: string;
+}): { becameParticipant: boolean } {
+  const userVotesKey = ["userVotes", props.postSlugId];
+  const previousVotes = queryClient.getQueryData<UserVoteCacheItem[]>(userVotesKey);
+
+  queryClient.setQueryData<UserVoteCacheItem[]>(userVotesKey, (oldData) => {
+    const filteredVotes =
+      oldData?.filter((vote) => vote.opinionSlugId !== opinionSlugId) ?? [];
+    return [...filteredVotes, { opinionSlugId, votingAction: "agree" }];
+  });
+
+  return { becameParticipant: previousVotes?.length === 0 };
 }
 
 // Check if user needs login/verification based on participation mode
@@ -529,19 +564,16 @@ async function submitPostClicked() {
       props.postSlugId
     );
 
-    if (response.success && response.opinionSlugId) {
-      incrementConversationOpinionCount();
-      invalidateConversation(props.postSlugId);
-
-      // Successfully created comment
-      // Note: The backend automatically votes "agree" when creating an opinion
-      // Wait 1.3 seconds for the vote buffer to flush (buffer flushes every 1 second)
-      // This ensures the backend has processed the auto-agree vote before we refresh
-      await new Promise((resolve) => setTimeout(resolve, 1300));
+    if (response.success) {
+      const { becameParticipant } = addCreatedOpinionVoteToCache({
+        opinionSlugId: response.opinionSlugId,
+      });
+      incrementConversationCountsForCreatedOpinion({ becameParticipant });
 
       // Emit to parent to refresh and highlight the opinion
       emit("submittedComment", {
         opinionSlugId: response.opinionSlugId,
+        opinionItem: response.opinionItem,
         authStateChanged: response.authStateChanged ?? false,
         needsCacheRefresh: response.needsCacheRefresh ?? false,
       });

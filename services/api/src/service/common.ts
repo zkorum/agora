@@ -60,6 +60,7 @@ export function useCommonUser() {
 export function useCommonPost() {
     interface ConversationDisplayCounts {
         conversationId: number;
+        conversationViewSnapshotId: number;
         opinionCount: number;
         voteCount: number;
         participantCount: number;
@@ -83,8 +84,9 @@ export function useCommonPost() {
         }
 
         const snapshotRows = await db
-            .select({
+            .selectDistinctOn([conversationViewSnapshotTable.conversationId], {
                 conversationId: conversationViewSnapshotTable.conversationId,
+                conversationViewSnapshotId: conversationViewSnapshotTable.id,
                 opinionCount: conversationViewSnapshotTable.opinionCount,
                 voteCount: conversationViewSnapshotTable.voteCount,
                 participantCount:
@@ -110,6 +112,7 @@ export function useCommonPost() {
                 ),
             )
             .orderBy(
+                conversationViewSnapshotTable.conversationId,
                 desc(conversationViewSnapshotTable.createdAt),
                 desc(conversationViewSnapshotTable.id),
             );
@@ -350,6 +353,8 @@ export function useCommonPost() {
 
             const metadata: ConversationMetadata = {
                 conversationSlugId: postItem.slugId,
+                conversationViewSnapshotId:
+                    displayCounts.conversationViewSnapshotId,
                 moderation: moderationProperties,
                 createdAt: postItem.createdAt,
                 updatedAt: postItem.isEdited ? postItem.updatedAt : undefined,

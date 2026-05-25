@@ -17,6 +17,7 @@ import type {
   EventSlug,
   ExternalSourceConfig,
   ParticipationMode,
+  PreferredOpinionGroupCount,
   SurveyConfig,
 } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
@@ -52,6 +53,7 @@ export interface UseConversationDraftReturn {
   participationMode: Ref<ParticipationMode>;
   requiresEventTicket: Ref<EventSlug | undefined>;
   aiLabelingEnabled: Ref<boolean>;
+  preferredOpinionGroupCount: Ref<PreferredOpinionGroupCount>;
   postAs: Ref<PostAsSettings>;
   externalSourceConfig: Ref<ExternalSourceConfig | null>;
   surveyConfig: Ref<SurveyConfig | null>;
@@ -125,6 +127,9 @@ export function useConversationDraft(
     initialDraft.requiresEventTicket
   );
   const aiLabelingEnabled = ref(initialDraft.aiLabelingEnabled);
+  const preferredOpinionGroupCount = ref<PreferredOpinionGroupCount>(
+    initialDraft.preferredOpinionGroupCount
+  );
   const postAs = ref<PostAsSettings>({ ...initialDraft.postAs });
   const externalSourceConfig = ref<ExternalSourceConfig | null>(
     initialDraft.externalSourceConfig,
@@ -155,6 +160,7 @@ export function useConversationDraft(
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
       aiLabelingEnabled: aiLabelingEnabled.value,
+      preferredOpinionGroupCount: preferredOpinionGroupCount.value,
       postAs: { ...postAs.value },
       externalSourceConfig: externalSourceConfig.value,
       surveyConfig: surveyConfig.value,
@@ -175,6 +181,8 @@ export function useConversationDraft(
           newSnapshot.requiresEventTicket;
         store.conversationDraft.aiLabelingEnabled =
           newSnapshot.aiLabelingEnabled;
+        store.conversationDraft.preferredOpinionGroupCount =
+          newSnapshot.preferredOpinionGroupCount;
         store.conversationDraft.postAs = newSnapshot.postAs;
         store.conversationDraft.externalSourceConfig =
           newSnapshot.externalSourceConfig;
@@ -419,6 +427,9 @@ export function useConversationDraft(
     const hasAiLabelingChanges =
       aiLabelingEnabled.value !== emptyDraft.aiLabelingEnabled;
 
+    const hasPreferredOpinionGroupCountChanges =
+      preferredOpinionGroupCount.value !== emptyDraft.preferredOpinionGroupCount;
+
     // Check creation settings changes
     const hasCreationSettingsChanges =
       importSettings.value.importType !==
@@ -440,6 +451,7 @@ export function useConversationDraft(
       hasPostAsChanges ||
       hasPrivacyChanges ||
       hasAiLabelingChanges ||
+      hasPreferredOpinionGroupCountChanges ||
       hasCreationSettingsChanges ||
       hasSurveyConfigChanges
     );
@@ -467,6 +479,7 @@ export function useConversationDraft(
     participationMode.value = emptyDraft.participationMode;
     requiresEventTicket.value = emptyDraft.requiresEventTicket;
     aiLabelingEnabled.value = emptyDraft.aiLabelingEnabled;
+    preferredOpinionGroupCount.value = emptyDraft.preferredOpinionGroupCount;
     postAs.value = { ...emptyDraft.postAs };
     externalSourceConfig.value = null;
     surveyConfig.value = emptyDraft.surveyConfig;
@@ -489,6 +502,7 @@ export function useConversationDraft(
     participationMode.value = data.participationMode;
     requiresEventTicket.value = data.requiresEventTicket;
     aiLabelingEnabled.value = data.aiLabelingEnabled;
+    preferredOpinionGroupCount.value = data.preferredOpinionGroupCount;
 
     clearAllValidationErrors();
   }
@@ -504,6 +518,7 @@ export function useConversationDraft(
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
       aiLabelingEnabled: aiLabelingEnabled.value,
+      preferredOpinionGroupCount: preferredOpinionGroupCount.value,
       surveyConfig: surveyConfig.value,
     };
   }
@@ -537,6 +552,7 @@ export function useConversationDraft(
     participationMode,
     requiresEventTicket,
     aiLabelingEnabled,
+    preferredOpinionGroupCount,
     postAs,
     externalSourceConfig,
     surveyConfig,

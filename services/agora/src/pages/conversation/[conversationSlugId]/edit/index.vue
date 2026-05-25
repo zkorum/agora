@@ -42,10 +42,12 @@
         v-model:content="content"
         v-model:conversation-type="conversationType"
         v-model:ai-labeling-enabled="aiLabelingEnabled"
+        v-model:preferred-opinion-group-count="preferredOpinionGroupCount"
         :is-edit-mode="true"
         :can-add-event-ticket="canAddEventTicket"
         :can-change-event-ticket="canChangeEventTicket"
         :can-remove-event-ticket="canRemoveEventTicket"
+        :can-use-analysis-variants-preference="canUseAnalysisVariantsPreference"
       />
 
       <ZKCard
@@ -127,7 +129,11 @@ import {
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { MAX_LENGTH_BODY, MAX_LENGTH_TITLE } from "src/shared/shared";
 import type { GetConversationForEditResponse } from "src/shared/types/dto";
-import type { ParticipationMode, SurveyConfig } from "src/shared/types/zod";
+import type {
+  ParticipationMode,
+  PreferredOpinionGroupCount,
+  SurveyConfig,
+} from "src/shared/types/zod";
 import { useBackendPostEditApi } from "src/utils/api/post/postEdit";
 import { useUpdateConversationMutation } from "src/utils/api/post/useConversationMutations";
 import { getSingleRouteParam } from "src/utils/router/params";
@@ -182,6 +188,7 @@ const originalState = ref<{
   participationMode: ParticipationMode;
   requiresEventTicket: string | undefined;
   aiLabelingEnabled: boolean;
+  preferredOpinionGroupCount: PreferredOpinionGroupCount;
   surveyConfig: SurveyConfig | null;
 }>({
   title: "",
@@ -190,6 +197,7 @@ const originalState = ref<{
   participationMode: "account_required",
   requiresEventTicket: undefined,
   aiLabelingEnabled: true,
+  preferredOpinionGroupCount: null,
   surveyConfig: null,
 });
 
@@ -216,6 +224,9 @@ const canChangeEventTicket = computed(() => {
 });
 const canRemoveEventTicket = computed(() => {
   return editPermissions.value?.canRemoveEventTicket ?? true;
+});
+const canUseAnalysisVariantsPreference = computed(() => {
+  return editPermissions.value?.canUseAnalysisVariantsPreference ?? false;
 });
 const showPremiumEditRestrictedBanner = computed(() => {
   return (editPermissions.value?.restrictedPremiumFeatures.length ?? 0) > 0;
@@ -256,6 +267,13 @@ const hasUnsavedChanges = computed(() => {
     return true;
   }
 
+  if (
+    preferredOpinionGroupCount.value !==
+    originalState.value.preferredOpinionGroupCount
+  ) {
+    return true;
+  }
+
   return false;
 });
 
@@ -267,6 +285,7 @@ const {
   participationMode,
   requiresEventTicket,
   aiLabelingEnabled,
+  preferredOpinionGroupCount,
   postAs,
   importSettings,
   externalSourceConfig,
@@ -331,6 +350,7 @@ async function performSave(): Promise<void> {
       participationMode: participationMode.value,
       requiresEventTicket: requiresEventTicket.value,
       aiLabelingEnabled: aiLabelingEnabled.value,
+      preferredOpinionGroupCount: preferredOpinionGroupCount.value,
     });
 
     if (response.success) {
@@ -363,6 +383,10 @@ async function performSave(): Promise<void> {
         }
         case "premium_access_expired": {
           errorMsg = t("premiumAccessExpiredError");
+          break;
+        }
+        case "premium_access_required": {
+          errorMsg = t("premiumAccessRequiredError");
           break;
         }
         default: {
@@ -441,6 +465,7 @@ onMounted(async () => {
       participationMode: response.participationMode,
       requiresEventTicket: response.requiresEventTicket,
       aiLabelingEnabled: response.aiLabelingEnabled,
+      preferredOpinionGroupCount: response.preferredOpinionGroupCount,
       surveyConfig: response.surveyConfig ?? null,
     });
     editPermissions.value = response.editPermissions;
@@ -453,6 +478,7 @@ onMounted(async () => {
       participationMode: response.participationMode,
       requiresEventTicket: response.requiresEventTicket,
       aiLabelingEnabled: response.aiLabelingEnabled,
+      preferredOpinionGroupCount: response.preferredOpinionGroupCount,
       surveyConfig: response.surveyConfig ?? null,
     };
 

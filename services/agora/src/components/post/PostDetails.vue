@@ -16,17 +16,21 @@
         <PostActionBar
           v-model="currentTab"
           :compact-mode="compactMode"
-          :opinion-count="visibleAnalysisActionBarSnapshot?.opinionCount ?? conversationData.metadata.opinionCount"
-          :participant-count="visibleAnalysisActionBarSnapshot?.participantCount ?? conversationData.metadata.participantCount"
-          :vote-count="visibleAnalysisActionBarSnapshot?.voteCount ?? props.conversationData.metadata.voteCount"
-          :total-participant-count="visibleAnalysisActionBarSnapshot?.totalParticipantCount ?? props.conversationData.metadata.totalParticipantCount"
-          :total-vote-count="visibleAnalysisActionBarSnapshot?.totalVoteCount ?? props.conversationData.metadata.totalVoteCount"
+          :opinion-count="conversationData.metadata.opinionCount"
+          :participant-count="conversationData.metadata.participantCount"
+          :vote-count="props.conversationData.metadata.voteCount"
+          :total-participant-count="
+            props.conversationData.metadata.totalParticipantCount
+          "
+          :total-vote-count="props.conversationData.metadata.totalVoteCount"
           :is-loading="isCurrentTabLoading"
           :conversation-slug-id="conversationData.metadata.conversationSlugId"
           :conversation-title="conversationData.payload.title"
           :author-username="conversationData.metadata.authorUsername"
           :conversation-type="conversationData.metadata.conversationType"
-          :has-survey="conversationData.interaction.surveyGate?.hasSurvey === true"
+          :has-survey="
+            conversationData.interaction.surveyGate?.hasSurvey === true
+          "
           :enable-route-navigation="true"
         />
 
@@ -36,13 +40,12 @@
           :conversation-slug-id="
             props.conversationData.metadata.conversationSlugId
           "
-          :conversation-author-username="conversationData.metadata.authorUsername"
-          :conversation-organization-name="conversationData.metadata.organization?.name ?? ''"
-          :opinion-count="props.conversationData.metadata.opinionCount"
-          :participant-count="
-            props.conversationData.metadata.participantCount
+          :conversation-author-username="
+            conversationData.metadata.authorUsername
           "
-          :vote-count="props.conversationData.metadata.voteCount"
+          :conversation-organization-name="
+            conversationData.metadata.organization?.name ?? ''
+          "
           :analysis-query="analysisQuery"
           :survey-query="surveyResultsQuery"
           :has-survey="hasSurvey"
@@ -50,7 +53,6 @@
           :is-live-analysis-paused="isLiveAnalysisPaused"
           :navigate-to-discover-tab="navigateToDiscoverTab"
           :conversation-scroll-context="conversationScrollContext"
-          @update:action-bar-snapshot="setAnalysisActionBarSnapshot"
           @update:live-analysis-paused="setLiveAnalysisPaused"
         />
 
@@ -58,14 +60,14 @@
           v-if="!compactMode && currentTab === 'comment'"
           ref="opinionSectionRef"
           :post-slug-id="conversationData.metadata.conversationSlugId"
-          :conversation-author-username="conversationData.metadata.authorUsername"
-          :conversation-organization-name="conversationData.metadata.organization?.name ?? ''"
-          :participation-mode="
-            conversationData.metadata.participationMode
+          :conversation-author-username="
+            conversationData.metadata.authorUsername
           "
-          :requires-event-ticket="
-            conversationData.metadata.requiresEventTicket
+          :conversation-organization-name="
+            conversationData.metadata.organization?.name ?? ''
           "
+          :participation-mode="conversationData.metadata.participationMode"
+          :requires-event-ticket="conversationData.metadata.requiresEventTicket"
           :survey-gate="conversationData.interaction.surveyGate"
           :on-view-analysis="viewAnalysisTab"
           :is-voting-disabled="isVotingDisabled"
@@ -83,9 +85,7 @@
     <FloatingBottomContainer v-if="!compactMode">
       <CommentComposer
         :post-slug-id="conversationData.metadata.conversationSlugId"
-        :participation-mode="
-          conversationData.metadata.participationMode
-        "
+        :participation-mode="conversationData.metadata.participationMode"
         :requires-event-ticket="conversationData.metadata.requiresEventTicket"
         :survey-gate="conversationData.interaction.surveyGate"
         :is-composer-disabled="isVotingDisabled"
@@ -98,8 +98,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
-import type { AnalysisConversationViewSnapshot } from "src/shared/types/dto";
-import type { ExtendedConversation } from "src/shared/types/zod";
+import type { ExtendedConversation, OpinionItem } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import {
@@ -140,9 +139,6 @@ const currentTab = ref<"comment" | "analysis">("comment");
 const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
 const analysisPageRef = ref<InstanceType<typeof AnalysisPage>>();
 const isLiveAnalysisPaused = ref(false);
-const analysisActionBarSnapshot = ref<
-  AnalysisConversationViewSnapshot | undefined
->();
 
 const conversationScrollContext = computed<ConversationScrollContext>(() => ({
   actionBarElement: null,
@@ -163,7 +159,8 @@ const conversationScrollContext = computed<ConversationScrollContext>(() => ({
 
 const {
   invalidateAnalysis,
-  forceRefreshAnalysis,
+  markAnalysisAsStale,
+  markCommentsAsStale,
   invalidateComments,
   invalidateHiddenComments,
 } = useInvalidateCommentQueries();
@@ -183,10 +180,6 @@ const isAnalysisEnabled = computed(
 
 const isAnalysisQueryEnabled = computed(
   () => isAnalysisEnabled.value && !isLiveAnalysisPaused.value
-);
-
-const visibleAnalysisActionBarSnapshot = computed(() =>
-  currentTab.value === "analysis" ? analysisActionBarSnapshot.value : undefined
 );
 
 // Create a computed property to ensure reactivity for the query's enabled parameter
@@ -255,12 +248,6 @@ function navigateToDiscoverTab(): void {
   currentTab.value = "comment";
 }
 
-function setAnalysisActionBarSnapshot(
-  snapshot: AnalysisConversationViewSnapshot | undefined
-): void {
-  analysisActionBarSnapshot.value = snapshot;
-}
-
 function setLiveAnalysisPaused(paused: boolean): void {
   isLiveAnalysisPaused.value = paused;
 }
@@ -295,21 +282,16 @@ function openModerationHistory(): void {
 
 async function submittedComment(data: {
   opinionSlugId: string;
+  opinionItem: OpinionItem;
   authStateChanged: boolean;
   needsCacheRefresh: boolean;
 }): Promise<void> {
-  // The 1.3s wait for vote buffer flush happens in CommentComposer
-  // before this function is called, so the vote is already in the database
-
   if (opinionSectionRef.value) {
-    await opinionSectionRef.value.refreshAndHighlightOpinion(
-      data.opinionSlugId
-    );
+    opinionSectionRef.value.highlightOpinion(data.opinionItem);
   }
 
-  // Force refresh analysis data since new opinion affects analysis results
-  // Always use forceRefreshAnalysis to ensure cache expires completely
-  forceRefreshAnalysis(props.conversationData.metadata.conversationSlugId);
+  await markCommentsAsStale(props.conversationData.metadata.conversationSlugId);
+  markAnalysisAsStale(props.conversationData.metadata.conversationSlugId);
 
   // Handle deferred cache refresh if auth state changed (new guest user)
   if (data.needsCacheRefresh) {
@@ -323,9 +305,7 @@ async function submittedComment(data: {
     // Fetch the opinion again to get updated author info with username
     // Using refreshAndHighlightOpinion instead of refreshData to force immediate refetch
     if (opinionSectionRef.value) {
-      await opinionSectionRef.value.refreshAndHighlightOpinion(
-        data.opinionSlugId
-      );
+      opinionSectionRef.value.highlightOpinion(data.opinionItem);
 
       // Update user store with username from the fetched opinion
       // This is necessary because loadUserProfile() may hit a read replica that doesn't yet
@@ -364,7 +344,9 @@ watch(currentTab, async (newTab) => {
       const staleOrUnfetchedQueries = commentQueries.filter(
         (query) => query.isStale.value || !query.data.value
       );
-      await Promise.all(staleOrUnfetchedQueries.map((query) => query.refetch()));
+      await Promise.all(
+        staleOrUnfetchedQueries.map((query) => query.refetch())
+      );
     } else if (newTab === "analysis") {
       // Check and refetch analysis query if it is stale
       if (analysisQuery.isStale.value) {

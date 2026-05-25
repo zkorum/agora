@@ -33,6 +33,11 @@ type PremiumFeatureEntitlementUpdateValues = Partial<
 
 const PREMIUM_EDIT_GRACE_DAYS = 5;
 const PREMIUM_ANALYSIS_FEATURE: GrantablePremiumFeature = "analysis_variants";
+const premiumFeatureSortValues = {
+    survey: 0,
+    event_ticket: 1,
+    analysis_variants: 2,
+} satisfies Record<PremiumFeature, number>;
 
 export type PremiumEntitlementSubject =
     | { userId: string; organizationId?: never }
@@ -58,6 +63,7 @@ export interface ConversationEditPermissions {
     canAddEventTicket: boolean;
     canChangeEventTicket: boolean;
     canRemoveEventTicket: boolean;
+    canUseAnalysisVariantsPreference: boolean;
     restrictedPremiumFeatures: PremiumFeature[];
     premiumEditAccessEndsAt?: Date;
 }
@@ -78,16 +84,7 @@ function toUnionUndefined<T>(value: T | null): T | undefined {
 }
 
 function getFeatureSortValue(feature: PremiumFeature): number {
-    switch (feature) {
-        case "survey":
-            return 0;
-        case "prioritization":
-            return 1;
-        case "event_ticket":
-            return 2;
-        case "analysis_variants":
-            return 3;
-    }
+    return premiumFeatureSortValues[feature];
 }
 
 function uniqueSortedFeatures<T extends PremiumFeature>(features: T[]): T[] {
@@ -234,7 +231,7 @@ async function getCandidateEntitlements({
         .orderBy(desc(premiumFeatureEntitlementTable.expiresAt));
 }
 
-async function hasPremiumFeatureAccess({
+export async function hasPremiumFeatureAccess({
     db,
     subject,
     feature,
@@ -446,9 +443,11 @@ export async function getPremiumFeaturesInConversation({
 export function getPremiumFeaturesFromCreateRequest({
     requiresEventTicket,
     hasSurvey,
+    preferredOpinionGroupCount,
 }: {
     requiresEventTicket?: EventSlug;
     hasSurvey: boolean;
+    preferredOpinionGroupCount?: number | null;
 }): GrantablePremiumFeature[] {
     const features: GrantablePremiumFeature[] = [];
 
@@ -460,7 +459,32 @@ export function getPremiumFeaturesFromCreateRequest({
         features.push("survey");
     }
 
+    if (
+        preferredOpinionGroupCount !== undefined &&
+        preferredOpinionGroupCount !== null
+    ) {
+        features.push(PREMIUM_ANALYSIS_FEATURE);
+    }
+
     return uniqueSortedFeatures(features);
+}
+
+async function clearPreferredOpinionGroupCountForSubject({
+    db,
+    subject,
+}: {
+    db: PostgresJsDatabase;
+    subject: PremiumEntitlementSubject;
+}): Promise<void> {
+    await db
+        .update(conversationTable)
+        .set({ preferredOpinionGroupCount: null })
+        .where(
+            and(
+                getConversationSubjectFilter({ subject }),
+                isNotNull(conversationTable.preferredOpinionGroupCount),
+            ),
+        );
 }
 
 export async function buildConversationEditPermissions({
@@ -482,10 +506,13 @@ export async function buildConversationEditPermissions({
         db,
         conversation,
     });
+    const contentEditPremiumFeatures = premiumFeatures.filter(
+        (feature) => feature !== "event_ticket",
+    );
     const restrictedConversationFeatures = await getRestrictedPremiumFeatures({
         db,
         subject,
-        features: premiumFeatures,
+        features: contentEditPremiumFeatures,
         mode: "edit",
         now,
     });
@@ -496,18 +523,11 @@ export async function buildConversationEditPermissions({
         mode: hasSurvey ? "edit" : "creation",
         now,
     });
-    const restrictedEventTicketCreation = await getRestrictedPremiumFeatures({
+    const restrictedAnalysisPreference = await getRestrictedPremiumFeatures({
         db,
         subject,
-        features: ["event_ticket"],
+        features: [PREMIUM_ANALYSIS_FEATURE],
         mode: "creation",
-        now,
-    });
-    const restrictedEventTicketEdit = await getRestrictedPremiumFeatures({
-        db,
-        subject,
-        features: ["event_ticket"],
-        mode: "edit",
         now,
     });
 
@@ -516,14 +536,16 @@ export async function buildConversationEditPermissions({
         canEditConversationContent: restrictedConversationFeatures.length === 0,
         canEditSurvey: restrictedSurveyFeatures.length === 0,
         canDeleteSurvey: true,
-        canAddEventTicket: restrictedEventTicketCreation.length === 0,
-        canChangeEventTicket: restrictedEventTicketEdit.length === 0,
+        canAddEventTicket: false,
+        canChangeEventTicket: conversation.requiresEventTicket !== null,
         canRemoveEventTicket: true,
+        canUseAnalysisVariantsPreference:
+            restrictedAnalysisPreference.length === 0,
         restrictedPremiumFeatures: restrictedConversationFeatures,
         premiumEditAccessEndsAt: await getPremiumEditAccessEndsAt({
             db,
             subject,
-            features: premiumFeatures,
+            features: contentEditPremiumFeatures,
             now,
         }),
     };
@@ -705,6 +727,11 @@ export async function createPremiumFeatureEntitlement({
         return;
     }
 
+    await clearPreferredOpinionGroupCountForSubject({
+        db,
+        subject,
+    });
+
     await refreshPremiumAnalysisForSubject({
         db,
         subject,
@@ -790,6 +817,11 @@ export async function updatePremiumFeatureEntitlement({
     if (!hasPremiumAnalysisAccess) {
         return;
     }
+
+    await clearPreferredOpinionGroupCountForSubject({
+        db,
+        subject,
+    });
 
     await refreshPremiumAnalysisForSubject({
         db,

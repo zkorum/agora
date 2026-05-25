@@ -14,6 +14,7 @@ function resultRow(
         authorId: "user-1",
         organizationId: null,
         preferredOpinionGroupCount: null,
+        variantsEnabled: false,
         aiLabelingEnabled: true,
         viewSnapshotId: 10,
         surveyAggregateSnapshotId: null,
@@ -44,6 +45,8 @@ function candidate(
         candidateId: 1,
         groupCount: 2,
         selectionScore: 0.8,
+        silhouetteScore: 0.7,
+        balanceScore: 0.9,
         ...overrides,
     };
 }
@@ -219,8 +222,8 @@ describe("buildAnalysisViewOptions", () => {
         const systemDefault = options.find(
             (option) => option.view === "system_default",
         );
-        const facilitatorDefault = options.find(
-            (option) => option.view === "facilitator_default",
+        const facilitatorPreference = options.find(
+            (option) => option.view === "facilitator_preference",
         );
         const fixedOptions = options.filter((option) =>
             ["2", "3", "4", "5", "6"].includes(option.view),
@@ -229,12 +232,18 @@ describe("buildAnalysisViewOptions", () => {
         expect(systemDefault).toMatchObject({
             enabled: true,
             status: "recommended",
-            groupCount: 2,
+            candidate: {
+                groupCount: 2,
+                assessment: {
+                    selectionScore: 0.8,
+                },
+            },
         });
-        expect(facilitatorDefault).toMatchObject({
+        expect(facilitatorPreference).toMatchObject({
             enabled: false,
             status: "locked",
-            resolvesToView: "4",
+            reason: "analysis_variants_not_available",
+            resolvesToView: "system_default",
         });
         expect(fixedOptions).toHaveLength(5);
         expect(fixedOptions.every((option) => option.status === "locked")).toBe(
@@ -258,15 +267,55 @@ describe("buildAnalysisViewOptions", () => {
         expect(options.find((option) => option.view === "2")).toMatchObject({
             enabled: true,
             status: "recommended",
-            candidateId: 22,
+            candidate: {
+                candidateId: 22,
+            },
         });
         expect(options.find((option) => option.view === "3")).toMatchObject({
             enabled: true,
             status: "discouraged",
             groupCount: 3,
+            reason: "fixed_group_count_unavailable",
         });
-        expect(options.find((option) => option.view === "3")?.reason).toContain(
-            "could not form 3 meaningful groups",
-        );
+    });
+
+    it("keeps defaults pinned and ranks fixed group counts by score", () => {
+        const systemCandidate = candidate({
+            candidateId: 33,
+            groupCount: 3,
+            selectionScore: 0.95,
+        });
+
+        const options = buildAnalysisViewOptions({
+            variantsEnabled: true,
+            preferredGroupCount: 4,
+            candidates: [
+                candidate({ candidateId: 22, groupCount: 2, selectionScore: 0.4 }),
+                systemCandidate,
+                candidate({ candidateId: 44, groupCount: 4, selectionScore: 0.8 }),
+            ],
+            systemCandidate,
+        });
+
+        expect(options.map((option) => option.view)).toEqual([
+            "facilitator_preference",
+            "system_default",
+            "3",
+            "4",
+            "2",
+            "5",
+            "6",
+        ]);
+        expect(options[0]).toMatchObject({
+            view: "facilitator_preference",
+            status: "available",
+            resolvesToView: "4",
+            candidate: {
+                groupCount: 4,
+                assessment: {
+                    selectionScore: 0.8,
+                },
+            },
+        });
     });
 });

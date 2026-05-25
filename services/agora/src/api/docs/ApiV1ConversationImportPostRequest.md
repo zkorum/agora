@@ -11,6 +11,7 @@ Name | Type | Description | Notes
 **participationMode** | **string** |  | [default to undefined]
 **requiresEventTicket** | **string** |  | [optional] [default to undefined]
 **aiLabelingEnabled** | **boolean** |  | [optional] [default to true]
+**preferredOpinionGroupCount** | **number** |  | [optional] [default to undefined]
 
 ## Example
 
@@ -24,6 +25,7 @@ const instance: ApiV1ConversationImportPostRequest = {
     participationMode,
     requiresEventTicket,
     aiLabelingEnabled,
+    preferredOpinionGroupCount,
 };
 ```
 

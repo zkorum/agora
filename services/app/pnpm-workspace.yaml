@@ -1,5 +1,5 @@
 minimumReleaseAge: 7200
 minimumReleaseAgeExclude:
-  - '@sveltejs/kit@2.60.1'
+  - "@sveltejs/kit@2.60.1"
   - devalue@5.8.1
   - svelte@5.55.7

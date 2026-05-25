@@ -6,7 +6,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 
 class ParticipationMode(StrEnum):
@@ -20,6 +20,10 @@ class RequiresEventTicket(StrEnum):
     devconnect_2025 = "devconnect-2025"
 
 
+class PreferredOpinionGroupCount(RootModel[int]):
+    root: int = Field(..., ge=2, le=6)
+
+
 class ImportFormData(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -30,6 +34,9 @@ class ImportFormData(BaseModel):
     is_indexed: bool = Field(..., alias="isIndexed")
     requires_event_ticket: RequiresEventTicket | None = Field(None, alias="requiresEventTicket")
     ai_labeling_enabled: bool = Field(True, alias="aiLabelingEnabled")
+    preferred_opinion_group_count: PreferredOpinionGroupCount | None = Field(
+        None, alias="preferredOpinionGroupCount"
+    )
 
 
 class CsvFiles(BaseModel):

@@ -11,7 +11,11 @@ import type {
     GetConversationImportStatusResponse,
     GetActiveImportResponse,
 } from "@/shared/types/dto.js";
-import type { EventSlug, ParticipationMode } from "@/shared/types/zod.js";
+import type {
+    EventSlug,
+    ParticipationMode,
+    PreferredOpinionGroupCount,
+} from "@/shared/types/zod.js";
 import type { RealtimeSSEManager } from "../realtimeSSE.js";
 import * as database from "./database.js";
 import { CSV_UPLOAD_FIELD_NAMES } from "@/shared-app-api/csvUpload.js";
@@ -29,6 +33,7 @@ interface RequestConversationImportParams {
         isIndexed: boolean;
         requiresEventTicket?: EventSlug;
         aiLabelingEnabled: boolean;
+        preferredOpinionGroupCount: PreferredOpinionGroupCount;
     };
     didWrite: string;
     importBuffer: ImportBuffer;
@@ -159,6 +164,7 @@ interface RequestUrlImportParams {
         isIndexed: boolean;
         requiresEventTicket?: EventSlug;
         aiLabelingEnabled: boolean;
+        preferredOpinionGroupCount: PreferredOpinionGroupCount;
     };
     didWrite: string;
     importBuffer: ImportBuffer;

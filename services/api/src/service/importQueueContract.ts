@@ -1,5 +1,12 @@
-import type { EventSlug, ParticipationMode } from "@/shared/types/zod.js";
-import { zodEventSlug, zodParticipationMode } from "@/shared/types/zod.js";
+import type {
+    EventSlug,
+    ParticipationMode,
+    PreferredOpinionGroupCount,
+} from "@/shared/types/zod.js";
+import {
+    zodEventSlug,
+    zodParticipationMode,
+} from "@/shared/types/zod.js";
 import { z } from "zod";
 import type { CsvFiles } from "./csvImport.js";
 import { zodCsvFiles } from "./csvImport.js";
@@ -17,6 +24,13 @@ const zodImportFormData = withJsonSchemaId(
             isIndexed: z.boolean(),
             requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().default(true),
+            preferredOpinionGroupCount: z
+                .number()
+                .int()
+                .min(2)
+                .max(6)
+                .nullable()
+                .optional(),
         })
         .strict(),
 );
@@ -103,6 +117,7 @@ interface ImportRequestBase {
         isIndexed: boolean;
         requiresEventTicket?: EventSlug;
         aiLabelingEnabled: boolean;
+        preferredOpinionGroupCount?: PreferredOpinionGroupCount;
     };
     didWrite: string;
     authorId: string;

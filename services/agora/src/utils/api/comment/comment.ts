@@ -47,6 +47,19 @@ export interface AnalysisData {
   hasVotedOnAllAvailableOpinions?: boolean;
 }
 
+type CreateNewCommentResult =
+  | {
+      success: true;
+      opinionSlugId: string;
+      opinionItem: OpinionItem;
+      authStateChanged: boolean;
+      needsCacheRefresh: boolean;
+    }
+  | {
+      success: false;
+      reason?: string;
+    };
+
 export function useBackendCommentApi() {
   const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
   const { isGuestOrLoggedIn, isAuthInitialized } = storeToRefs(useAuthenticationStore());
@@ -142,13 +155,7 @@ export function useBackendCommentApi() {
   async function createNewComment(
     commentBody: string,
     postSlugId: string
-  ): Promise<{
-    success: boolean;
-    opinionSlugId?: string;
-    reason?: string;
-    authStateChanged?: boolean;
-    needsCacheRefresh?: boolean;
-  }> {
+  ): Promise<CreateNewCommentResult> {
     const params: ApiV1OpinionCreatePostRequest = {
       opinionBody: commentBody,
       conversationSlugId: postSlugId,
@@ -176,6 +183,7 @@ export function useBackendCommentApi() {
       return {
         success: true,
         opinionSlugId: data.opinionSlugId,
+        opinionItem: data.opinionItem,
         authStateChanged,
         needsCacheRefresh,
       };

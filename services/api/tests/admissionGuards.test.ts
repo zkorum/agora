@@ -233,6 +233,7 @@ describe("Admission guards", () => {
                     participationMode: "guest",
                     isIndexed: true,
                     aiLabelingEnabled: true,
+                    preferredOpinionGroupCount: null,
                 },
                 didWrite: "did:test:queue",
                 importBuffer,

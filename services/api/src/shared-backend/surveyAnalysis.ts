@@ -128,7 +128,10 @@ export function validateSurveyAnswerForAnalysis({
     question: SurveyQuestionAnalysisRecord;
     answer: SurveyStoredAnswerAnalysisRecord;
 }): boolean {
-    if (answer.answeredQuestionSemanticVersion !== question.currentSemanticVersion) {
+    if (
+        answer.answeredQuestionSemanticVersion !==
+        question.currentSemanticVersion
+    ) {
         return false;
     }
 
@@ -263,7 +266,9 @@ export function deriveSurveyGateStatusForAnalysis({
             continue;
         }
 
-        if (validateSurveyAnswerForAnalysis({ question, answer: storedAnswer })) {
+        if (
+            validateSurveyAnswerForAnalysis({ question, answer: storedAnswer })
+        ) {
             validRequiredAnswerCount += 1;
         } else {
             staleRequiredQuestionCount += 1;
@@ -397,7 +402,10 @@ export async function getEligibleParticipantIdsForAnalysis({
         .from(surveyQuestionTable)
         .innerJoin(
             surveyQuestionContentTable,
-            eq(surveyQuestionTable.currentContentId, surveyQuestionContentTable.id),
+            eq(
+                surveyQuestionTable.currentContentId,
+                surveyQuestionContentTable.id,
+            ),
         )
         .where(
             and(
@@ -447,14 +455,19 @@ export async function getEligibleParticipantIdsForAnalysis({
         questionType: question.questionType,
         currentSemanticVersion: question.currentSemanticVersion,
         isRequired: question.isRequired,
-        constraints: surveyQuestionConstraintsSchema.parse(question.constraints),
+        constraints: surveyQuestionConstraintsSchema.parse(
+            question.constraints,
+        ),
         optionSlugIds: optionSlugIdsByQuestionId.get(question.questionId) ?? [],
     }));
-    if (!doesSurveyRequireCompletion({
-        isOptional: activeSurveyConfig.isOptional,
-        requiredQuestionCount: questions.filter((question) => question.isRequired)
-            .length,
-    })) {
+    if (
+        !doesSurveyRequireCompletion({
+            isOptional: activeSurveyConfig.isOptional,
+            requiredQuestionCount: questions.filter(
+                (question) => question.isRequired,
+            ).length,
+        })
+    ) {
         return new Set(candidateParticipantIds);
     }
 
@@ -468,7 +481,10 @@ export async function getEligibleParticipantIdsForAnalysis({
         .where(
             and(
                 eq(surveyResponseTable.conversationId, conversationId),
-                inArray(surveyResponseTable.participantId, candidateParticipantIds),
+                inArray(
+                    surveyResponseTable.participantId,
+                    candidateParticipantIds,
+                ),
             ),
         );
 
@@ -513,7 +529,10 @@ export async function getEligibleParticipantIdsForAnalysis({
                   )
                   .where(
                       and(
-                          inArray(surveyAnswerOptionTable.surveyAnswerId, answerIds),
+                          inArray(
+                              surveyAnswerOptionTable.surveyAnswerId,
+                              answerIds,
+                          ),
                           isNull(surveyAnswerOptionTable.deletedAt),
                       ),
                   );

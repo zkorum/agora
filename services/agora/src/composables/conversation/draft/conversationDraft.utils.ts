@@ -35,6 +35,9 @@ export function createEmptyDraft(): ConversationDraft {
     // AI labeling
     aiLabelingEnabled: true,
 
+    // Facilitator analysis preference
+    preferredOpinionGroupCount: null,
+
     // External Source (GitHub integration for MaxDiff)
     externalSourceConfig: null,
 

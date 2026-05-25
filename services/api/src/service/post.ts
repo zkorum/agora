@@ -17,6 +17,7 @@ import type {
     ExtendedConversation,
     ExternalSourceConfig,
     ParticipationMode,
+    PreferredOpinionGroupCount,
     SurveyConfig,
 } from "@/shared/types/zod.js";
 import type {
@@ -56,6 +57,7 @@ interface CreateNewPostProps {
     seedOpinionList: string[];
     requiresEventTicket?: EventSlug;
     aiLabelingEnabled: boolean;
+    preferredOpinionGroupCount: PreferredOpinionGroupCount;
     externalSourceConfig?: ExternalSourceConfig | null;
     surveyConfig?: SurveyConfig | null;
     googleCloudCredentials?: GoogleCloudCredentials;
@@ -81,6 +83,7 @@ export async function createNewPost({
     seedOpinionList,
     requiresEventTicket,
     aiLabelingEnabled,
+    preferredOpinionGroupCount,
     externalSourceConfig,
     surveyConfig,
     googleCloudCredentials,
@@ -144,6 +147,7 @@ export async function createNewPost({
                     isImporting: isImporting,
                     requiresEventTicket: requiresEventTicket,
                     aiLabelingEnabled,
+                    preferredOpinionGroupCount,
                     currentContentId: null,
                     createdAt: now,
                     updatedAt: now,
@@ -205,6 +209,18 @@ export async function createNewPost({
                         });
                     }
                 } else {
+                    const authorRows = await tx
+                        .select({ username: userTable.username })
+                        .from(userTable)
+                        .where(eq(userTable.id, authorId))
+                        .limit(1);
+                    const author = authorRows.at(0);
+                    if (author === undefined) {
+                        throw httpErrors.internalServerError(
+                            "Failed to locate seed opinion author",
+                        );
+                    }
+
                     for (const seedOpinionText of seedOpinionList) {
                         await postNewOpinion({
                             db,
@@ -220,6 +236,7 @@ export async function createNewPost({
                                 conversationContentId:
                                     insertedConversationContentId,
                                 conversationAuthorId: authorId,
+                                conversationAuthorUsername: author.username,
                                 conversationIsIndexed: isIndexed,
                                 conversationParticipationMode:
                                     participationMode,
@@ -551,14 +568,6 @@ export async function openConversation({
             .update(conversationTable)
             .set({ isClosed: false })
             .where(eq(conversationTable.id, conversation[0].conversationId));
-
-        await createConversationViewSnapshotsFromCurrentState({
-            db: tx,
-            conversationId: conversation[0].conversationId,
-            viewReason: "conversation_lifecycle_updated",
-            lifecycleCheckpointReason: "conversation_reopened",
-            emitRealtimeEvent: true,
-        });
 
         await scheduleConversationAnalysisRefresh({
             db: tx,

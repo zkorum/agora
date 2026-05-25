@@ -19,7 +19,6 @@ export interface AdministratorPremiumEntitlementsTranslations {
   revokedLabel: string;
   revokeButton: string;
   surveyFeature: string;
-  prioritizationFeature: string;
   eventTicketFeature: string;
   analysisVariantsFeature: string;
 }
@@ -43,7 +42,6 @@ const en: AdministratorPremiumEntitlementsTranslations = {
   revokedLabel: "Revoked",
   revokeButton: "Revoke",
   surveyFeature: "Survey",
-  prioritizationFeature: "Prioritization",
   eventTicketFeature: "Event ticket",
   analysisVariantsFeature: "Analysis variants (2-6 groups)",
 };

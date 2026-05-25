@@ -42,9 +42,7 @@ export function parseValkeyUrl(urlString: string): ParsedValkeyUrl {
     const url = new URL(urlString);
 
     if (!supportedValkeyProtocols.has(url.protocol)) {
-        throw new Error(
-            `Unsupported Valkey URL protocol: ${url.protocol}`,
-        );
+        throw new Error(`Unsupported Valkey URL protocol: ${url.protocol}`);
     }
 
     if (url.hostname === "") {
@@ -103,8 +101,7 @@ export async function initializeValkey({
             `[${type}Valkey] Initializing connection to ${valkeyUrl.urlString.replace(/:[^:@]+@/, ":***@")}`,
         );
 
-        const { host, port, username, password, useTLS } =
-            valkeyUrl;
+        const { host, port, username, password, useTLS } = valkeyUrl;
 
         // Build credentials only if password is provided (required by valkey-glide)
         const credentials =
