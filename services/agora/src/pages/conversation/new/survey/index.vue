@@ -3,7 +3,10 @@
     <Teleport v-if="isActive && !isNavigatingAway" to="#page-header">
       <DefaultMenuBar :click-to-scroll-top="false">
         <template #left>
-          <BackButton :fallback-route="{ name: '/conversation/new/seed/' }" @click="handleBack" />
+          <BackButton
+            :fallback-route="{ name: '/conversation/new/seed/' }"
+            @click="handleBack"
+          />
         </template>
         <template #right>
           <PrimeButton
@@ -15,20 +18,27 @@
       </DefaultMenuBar>
     </Teleport>
 
-    <div class="container">
+    <div v-if="isSurveyCreationAllowed === true" class="container">
       <SurveyConfigEditor
         v-model:survey-config="surveyConfig"
         :texts="surveyEditorTexts"
         :display-language="locale"
-        :show-actions="isSurveyAllowed"
+        :show-actions="isSurveyCreationAllowed === true"
         :show-validation-errors="surveyValidationErrorMessage !== null"
         @clear-validation-error="clearSurveyValidationError"
       />
     </div>
+    <div v-else class="loading-container">
+      <q-spinner size="2rem" />
+    </div>
 
     <NewConversationRouteGuard
       ref="routeGuard"
-      :allowed-routes="['/conversation/new/create/', '/conversation/new/seed/', '/welcome/']"
+      :allowed-routes="[
+        '/conversation/new/create/',
+        '/conversation/new/seed/',
+        '/welcome/',
+      ]"
       :has-unsaved-changes="isDraftModified"
       :reset-draft="resetDraft"
     />
@@ -51,6 +61,7 @@ import NewConversationLayout from "src/components/newConversation/NewConversatio
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import SurveyConfigEditor from "src/components/survey/SurveyConfigEditor.vue";
 import { useConversationDraft } from "src/composables/conversation/draft";
+import { useCreateSurveyAccess } from "src/composables/conversation/useCreateSurveyAccess";
 import { usePublishConversationDraft } from "src/composables/conversation/usePublishConversationDraft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useAuthenticationStore } from "src/stores/authentication";
@@ -60,7 +71,7 @@ import {
   isHistoryBackToPath,
   navigateBackOrReplace,
 } from "src/utils/nav/historyBack";
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -91,8 +102,9 @@ const showLoginDialog = ref(false);
 const isSubmitButtonLoading = ref(false);
 const isNavigatingAway = ref(false);
 const surveyValidationErrorMessage = ref<string | null>(null);
+const { isSurveyCreationAllowed, refreshSurveyCreationAccess } =
+  useCreateSurveyAccess();
 
-const isSurveyAllowed = computed(() => true);
 const surveyEditorTexts = computed(() => ({
   title: t("pageTitle"),
   description: t("pageDescription"),
@@ -146,6 +158,17 @@ function onLoginCallback() {
   createNewConversationIntention();
 }
 
+onMounted(async () => {
+  const canCreateSurvey = await refreshSurveyCreationAccess();
+
+  if (!canCreateSurvey) {
+    surveyConfig.value = null;
+    routeGuard.value?.unlockRoute();
+    isNavigatingAway.value = true;
+    await router.replace({ name: "/conversation/new/seed/" });
+  }
+});
+
 async function handleBack(event: MouseEvent): Promise<void> {
   event.preventDefault();
   isNavigatingAway.value = true;
@@ -172,6 +195,15 @@ async function publishConversation(): Promise<void> {
     routeGuard.value?.unlockRoute();
     isNavigatingAway.value = true;
     await router.replace({ name: "/conversation/new/create/" });
+    return;
+  }
+
+  const canCreateSurvey = await refreshSurveyCreationAccess();
+  if (!canCreateSurvey) {
+    surveyConfig.value = null;
+    routeGuard.value?.unlockRoute();
+    isNavigatingAway.value = true;
+    await router.replace({ name: "/conversation/new/seed/" });
     return;
   }
 
@@ -202,5 +234,11 @@ async function publishConversation(): Promise<void> {
   gap: 1rem;
   padding-bottom: 1rem;
   padding-top: 0.5rem;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
 }
 </style>

@@ -30,7 +30,10 @@
       />
 
       <!-- GitHub-linked: show read-only preview (items will sync from GitHub) -->
-      <div v-if="conversationDraft.externalSourceConfig !== null" class="seed-opinions-section">
+      <div
+        v-if="conversationDraft.externalSourceConfig !== null"
+        class="seed-opinions-section"
+      >
         <div class="section-title">{{ t("githubSyncTitle") }}</div>
         <p class="section-description">
           {{ t("githubSyncDescription") }}
@@ -71,7 +74,13 @@
 
       <!-- Manual: Add Seed Opinions Section -->
       <div v-else class="seed-opinions-section">
-        <div class="section-title">{{ conversationDraft.conversationType === "maxdiff" ? t("addMaxDiffItems") : t("addSeedOpinions") }}</div>
+        <div class="section-title">
+          {{
+            conversationDraft.conversationType === "maxdiff"
+              ? t("addMaxDiffItems")
+              : t("addSeedOpinions")
+          }}
+        </div>
         <p class="section-description">
           {{
             conversationDraft.conversationType === "maxdiff"
@@ -116,7 +125,11 @@
         <!-- Add Opinion Button -->
         <div class="add-button-container">
           <ConversationControlButton
-            :label="conversationDraft.conversationType === 'maxdiff' ? t('addMaxDiffItem') : t('addOpinion')"
+            :label="
+              conversationDraft.conversationType === 'maxdiff'
+                ? t('addMaxDiffItem')
+                : t('addOpinion')
+            "
             icon="pi pi-plus"
             :show-border="false"
             icon-position="left"
@@ -126,12 +139,16 @@
       </div>
     </div>
 
-      <NewConversationRouteGuard
-        ref="routeGuard"
-        :allowed-routes="['/conversation/new/create/', '/conversation/new/survey/', '/welcome/']"
-        :has-unsaved-changes="isDraftModified"
-        :reset-draft="resetDraft"
-      />
+    <NewConversationRouteGuard
+      ref="routeGuard"
+      :allowed-routes="[
+        '/conversation/new/create/',
+        '/conversation/new/survey/',
+        '/welcome/',
+      ]"
+      :has-unsaved-changes="isDraftModified"
+      :reset-draft="resetDraft"
+    />
 
     <PreParticipationIntentionDialog
       v-model="showLoginDialog"
@@ -166,6 +183,7 @@ import NewConversationRouteGuard from "src/components/newConversation/NewConvers
 import SeedOpinionItem from "src/components/newConversation/SeedOpinionItem.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import { useConversationDraft } from "src/composables/conversation/draft";
+import { useCreateSurveyAccess } from "src/composables/conversation/useCreateSurveyAccess";
 import { usePublishConversationDraft } from "src/composables/conversation/usePublishConversationDraft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import {
@@ -181,7 +199,13 @@ import {
   navigateBackOrReplace,
 } from "src/utils/nav/historyBack";
 import { useNotify } from "src/utils/ui/notify";
-import { type ComponentPublicInstance, computed, nextTick, onMounted, ref } from "vue";
+import {
+  type ComponentPublicInstance,
+  computed,
+  nextTick,
+  onMounted,
+  ref,
+} from "vue";
 import { useRouter } from "vue-router";
 
 const { isLoggedIn } = storeToRefs(useAuthenticationStore());
@@ -239,9 +263,12 @@ const { createNewConversationIntention } = useLoginIntentionStore();
 const { t } = useComponentI18n<ConversationReviewTranslations>(
   conversationReviewTranslations
 );
-const isSurveyCreationAllowed = computed(() => true);
+const { isSurveyCreationAllowed, refreshSurveyCreationAccess } =
+  useCreateSurveyAccess();
 const submitButtonLabel = computed(() => {
-  return isSurveyCreationAllowed.value ? t("nextButton") : t("publishButton");
+  return isSurveyCreationAllowed.value === true
+    ? t("nextButton")
+    : t("publishButton");
 });
 
 onMounted(async () => {
@@ -254,6 +281,8 @@ onMounted(async () => {
     await router.replace({ name: "/conversation/new/create/" });
     return;
   }
+
+  await refreshSurveyCreationAccess();
 
   // Fetch GitHub preview if this is a GitHub-linked conversation
   if (conversationDraft.value.externalSourceConfig !== null) {
@@ -319,7 +348,6 @@ function clearOpinionError(index: number) {
     delete opinionErrors.value[index];
   }
 }
-
 
 async function addNewOpinion(): Promise<void> {
   conversationDraft.value.seedOpinions.push("");
@@ -481,7 +509,9 @@ async function onSubmit() {
     return;
   }
 
-  if (isSurveyCreationAllowed.value) {
+  const canCreateSurvey = await refreshSurveyCreationAccess();
+
+  if (canCreateSurvey) {
     routeGuard.value?.unlockRoute();
     isNavigatingAway.value = true;
     await nextTick();
