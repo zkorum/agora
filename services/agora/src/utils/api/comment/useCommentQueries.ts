@@ -108,12 +108,14 @@ export function useAnalysisQuery({
   conversationSlugId,
   analysisView,
   checkpointViewSnapshotId,
+  aiLabelingEnabled,
   voteCount,
   enabled = true,
 }: {
   conversationSlugId: MaybeRefOrGetter<string>;
   analysisView?: MaybeRefOrGetter<AnalysisView | undefined>;
   checkpointViewSnapshotId?: MaybeRefOrGetter<number | undefined>;
+  aiLabelingEnabled?: MaybeRefOrGetter<boolean | undefined>;
   voteCount?: MaybeRefOrGetter<number | undefined>;
   enabled?: MaybeRefOrGetter<boolean>;
 }) {
@@ -126,6 +128,7 @@ export function useAnalysisQuery({
       computed(() => toValue(conversationSlugId)),
       computed(() => toValue(analysisView)),
       computed(() => toValue(checkpointViewSnapshotId)),
+      computed(() => toValue(aiLabelingEnabled)),
     ],
     queryFn: async () => {
       const resolvedConversationSlugId = toValue(conversationSlugId);

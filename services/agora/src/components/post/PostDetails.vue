@@ -47,9 +47,12 @@
             conversationData.metadata.organization?.name ?? ''
           "
           :analysis-query="analysisQuery"
+          :analysis-checkpoints-query="analysisCheckpointsQuery"
           :survey-query="surveyResultsQuery"
           :has-survey="hasSurvey"
           :survey-gate="conversationData.interaction.surveyGate"
+          :ai-labeling-enabled="conversationData.metadata.aiLabelingEnabled"
+          :show-report-button="true"
           :is-live-analysis-paused="isLiveAnalysisPaused"
           :navigate-to-discover-tab="navigateToDiscoverTab"
           :conversation-scroll-context="conversationScrollContext"
@@ -102,6 +105,7 @@ import type { ExtendedConversation, OpinionItem } from "src/shared/types/zod";
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import {
+  useAnalysisCheckpointsQuery,
   useAnalysisQuery,
   useCommentsQuery,
   useHiddenCommentsQuery,
@@ -171,6 +175,10 @@ const hasSurvey = computed(
   () => props.conversationData.interaction.surveyGate?.hasSurvey === true
 );
 
+const aiLabelingEnabled = computed(
+  () => props.conversationData.metadata.aiLabelingEnabled
+);
+
 const { profileData } = storeToRefs(userStore);
 
 // Lazy load analysis data only when user clicks Analysis tab
@@ -189,6 +197,12 @@ const isSiteModerator = computed(() => profileData.value.isSiteModerator);
 const analysisQuery = useAnalysisQuery({
   conversationSlugId: props.conversationData.metadata.conversationSlugId,
   voteCount: props.conversationData.metadata.voteCount,
+  aiLabelingEnabled,
+  enabled: isAnalysisQueryEnabled,
+});
+
+const analysisCheckpointsQuery = useAnalysisCheckpointsQuery({
+  conversationSlugId: props.conversationData.metadata.conversationSlugId,
   enabled: isAnalysisQueryEnabled,
 });
 

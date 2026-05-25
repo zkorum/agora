@@ -255,6 +255,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
 import type {
   AnalysisCheckpoint,
+  FetchAnalysisCheckpointsResponse,
   SurveyResultsAggregatedResponse,
 } from "src/shared/types/dto";
 import type {
@@ -269,11 +270,11 @@ import {
   parseCheckpointQuery,
 } from "src/utils/analysis/analysisRoute";
 import type { AnalysisData } from "src/utils/api/comment/comment";
-import { useAnalysisCheckpointsQuery } from "src/utils/api/comment/useCommentQueries";
 import {
   type ShortcutItem,
   shortcutItemSchema,
 } from "src/utils/component/analysis/shortcutBar";
+import { getDisplayPolisClusters } from "src/utils/component/opinion";
 import { computed, ref, watch } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import { useRoute, useRouter } from "vue-router";
@@ -295,28 +296,24 @@ import {
 import ShortcutBar from "./shortcutBar/ShortcutBar.vue";
 import SurveyTab from "./surveyTab/SurveyTab.vue";
 
-const props = withDefaults(
-  defineProps<{
-    conversationSlugId: string;
-    conversationAuthorUsername: string;
-    conversationOrganizationName: string;
-    analysisQuery: UseQueryReturnType<AnalysisData, Error>;
-    surveyQuery: UseQueryReturnType<SurveyResultsAggregatedResponse, Error>;
-    hasSurvey: boolean;
-    surveyGate?: SurveyGateSummary;
-    showReportButton?: boolean;
-    isActive?: boolean;
-    isLiveAnalysisPaused?: boolean;
-    navigateToDiscoverTab: () => void;
-    conversationScrollContext: ConversationScrollContext;
-  }>(),
-  {
-    showReportButton: true,
-    isActive: true,
-    isLiveAnalysisPaused: false,
-    surveyGate: undefined,
-  }
-);
+const props = defineProps<{
+  conversationSlugId: string;
+  conversationAuthorUsername: string;
+  conversationOrganizationName: string;
+  analysisQuery: UseQueryReturnType<AnalysisData, Error>;
+  analysisCheckpointsQuery: UseQueryReturnType<
+    FetchAnalysisCheckpointsResponse,
+    Error
+  >;
+  surveyQuery: UseQueryReturnType<SurveyResultsAggregatedResponse, Error>;
+  hasSurvey: boolean;
+  surveyGate: SurveyGateSummary | undefined;
+  aiLabelingEnabled: boolean;
+  showReportButton: boolean;
+  isLiveAnalysisPaused: boolean;
+  navigateToDiscoverTab: () => void;
+  conversationScrollContext: ConversationScrollContext;
+}>();
 
 const emit = defineEmits<{
   "update:liveAnalysisPaused": [paused: boolean];
@@ -421,14 +418,6 @@ const analysisParticipantCount = computed(
     activeAnalysisData.value?.conversationViewSnapshot?.participantCount ?? 0
 );
 
-const checkpointsQuery = useAnalysisCheckpointsQuery({
-  conversationSlugId: computed(() => props.conversationSlugId),
-  enabled: computed(
-    () =>
-      props.isActive && !isLivePaused.value && props.conversationSlugId !== ""
-  ),
-});
-
 const selectedRouteAnalysisView = computed(() =>
   parseAnalysisViewQuery({ query: route.query })
 );
@@ -438,7 +427,8 @@ const selectedRouteCheckpoint = computed(() =>
 );
 
 const loadedAnalysisCheckpoints = computed<AnalysisCheckpoint[]>(
-  () => pausedLiveCheckpoints.value ?? checkpointsQuery.data.value ?? []
+  () =>
+    pausedLiveCheckpoints.value ?? props.analysisCheckpointsQuery.data.value ?? []
 );
 
 const analysisCheckpoints = computed<AnalysisCheckpoint[]>(() => {
@@ -770,7 +760,11 @@ function clearLivePause(): void {
 }
 
 const polisClusters = computed<Partial<PolisClusters>>(
-  () => activeAnalysisData.value?.polisClusters ?? {}
+  () =>
+    getDisplayPolisClusters({
+      clusters: activeAnalysisData.value?.polisClusters ?? {},
+      aiLabelingEnabled: props.aiLabelingEnabled,
+    })
 );
 
 // Extract only cluster labels for optimal performance (300 bytes instead of 300KB)
@@ -840,12 +834,16 @@ async function refreshCheckpoints(): Promise<void> {
     return;
   }
 
-  await checkpointsQuery.refetch();
+  await props.analysisCheckpointsQuery.refetch();
 }
 
 defineExpose({
   isLoading: computed(
-    () => analysisQuery.isPending.value || analysisQuery.isRefetching.value
+    () =>
+      analysisQuery.isPending.value ||
+      analysisQuery.isRefetching.value ||
+      props.analysisCheckpointsQuery.isPending.value ||
+      props.analysisCheckpointsQuery.isRefetching.value
   ),
   refreshCheckpoints,
 });

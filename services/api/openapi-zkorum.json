@@ -1118,6 +1118,9 @@
                                                             "isIndexed": {
                                                                 "type": "boolean"
                                                             },
+                                                            "aiLabelingEnabled": {
+                                                                "type": "boolean"
+                                                            },
                                                             "isClosed": {
                                                                 "type": "boolean"
                                                             },
@@ -1300,6 +1303,7 @@
                                                             "participationMode",
                                                             "conversationType",
                                                             "isIndexed",
+                                                            "aiLabelingEnabled",
                                                             "isClosed",
                                                             "isEdited",
                                                             "moderation",
@@ -2104,6 +2108,9 @@
                                                     "isIndexed": {
                                                         "type": "boolean"
                                                     },
+                                                    "aiLabelingEnabled": {
+                                                        "type": "boolean"
+                                                    },
                                                     "isClosed": {
                                                         "type": "boolean"
                                                     },
@@ -2286,6 +2293,7 @@
                                                     "participationMode",
                                                     "conversationType",
                                                     "isIndexed",
+                                                    "aiLabelingEnabled",
                                                     "isClosed",
                                                     "isEdited",
                                                     "moderation",
@@ -2493,6 +2501,9 @@
                                                             "isIndexed": {
                                                                 "type": "boolean"
                                                             },
+                                                            "aiLabelingEnabled": {
+                                                                "type": "boolean"
+                                                            },
                                                             "isClosed": {
                                                                 "type": "boolean"
                                                             },
@@ -2675,6 +2686,7 @@
                                                             "participationMode",
                                                             "conversationType",
                                                             "isIndexed",
+                                                            "aiLabelingEnabled",
                                                             "isClosed",
                                                             "isEdited",
                                                             "moderation",
@@ -7092,6 +7104,9 @@
                                                         "isIndexed": {
                                                             "type": "boolean"
                                                         },
+                                                        "aiLabelingEnabled": {
+                                                            "type": "boolean"
+                                                        },
                                                         "isClosed": {
                                                             "type": "boolean"
                                                         },
@@ -7274,6 +7289,7 @@
                                                         "participationMode",
                                                         "conversationType",
                                                         "isIndexed",
+                                                        "aiLabelingEnabled",
                                                         "isClosed",
                                                         "isEdited",
                                                         "moderation",

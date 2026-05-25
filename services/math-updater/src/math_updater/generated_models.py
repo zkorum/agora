@@ -96,7 +96,6 @@ class ConversationViewSnapshotReasonEnum(StrEnum):
     survey_refreshed = "survey_refreshed"
     conversation_content_updated = "conversation_content_updated"
     conversation_lifecycle_updated = "conversation_lifecycle_updated"
-    facilitator_preference_updated = "facilitator_preference_updated"
 
 
 class MaxdiffLifecycleStatus(StrEnum):
@@ -149,7 +148,6 @@ class ModerationReasonEnum(StrEnum):
 
 class PremiumFeature(StrEnum):
     survey = "survey"
-    prioritization = "prioritization"
     event_ticket = "event_ticket"
     analysis_variants = "analysis_variants"
 
@@ -948,3 +946,4 @@ class Vote(Base):
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
+

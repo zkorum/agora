@@ -12,6 +12,8 @@ export const MIN_VOTES_FOR_CLUSTER = 7;
  */
 const CLUSTER_IMBALANCE_CV_THRESHOLD = 0.9;
 
+const POLIS_KEYS = ["0", "1", "2", "3", "4", "5"] satisfies PolisKey[];
+
 /** Returns true when cluster sizes are imbalanced (CV > 0.9). */
 export function isClustersImbalanced(clusterSizes: number[]): boolean {
   if (clusterSizes.length < 2) return false;
@@ -26,6 +28,32 @@ export function isClustersImbalanced(clusterSizes: number[]): boolean {
 }
 
 type PolisCluster = NonNullable<PolisClusters[PolisKey]>;
+
+export function getDisplayPolisClusters({
+  clusters,
+  aiLabelingEnabled,
+}: {
+  clusters: Partial<PolisClusters>;
+  aiLabelingEnabled: boolean;
+}): Partial<PolisClusters> {
+  if (aiLabelingEnabled) {
+    return clusters;
+  }
+
+  const displayClusters: Partial<PolisClusters> = {};
+  for (const key of POLIS_KEYS) {
+    const cluster = clusters[key];
+    if (cluster !== undefined) {
+      displayClusters[key] = {
+        ...cluster,
+        aiLabel: undefined,
+        aiSummary: undefined,
+      };
+    }
+  }
+
+  return displayClusters;
+}
 
 export function shouldHideGroupAnalysis(
   clusters: Partial<PolisClusters>

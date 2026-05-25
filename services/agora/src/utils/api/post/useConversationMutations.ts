@@ -188,6 +188,8 @@ export function useUpdateConversationMutation() {
           metadata: {
             ...oldData.metadata,
             isIndexed: variables.isIndexed,
+            aiLabelingEnabled:
+              variables.aiLabelingEnabled ?? oldData.metadata.aiLabelingEnabled,
             participationMode: variables.participationMode,
             requiresEventTicket: variables.requiresEventTicket,
           },
@@ -207,6 +209,9 @@ export function useUpdateConversationMutation() {
         void queryClient.invalidateQueries({
           queryKey: ["feed"],
           refetchType: "none",
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["analysis", variables.conversationSlugId],
         });
       } else {
         void queryClient.invalidateQueries({

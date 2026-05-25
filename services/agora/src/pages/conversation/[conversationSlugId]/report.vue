@@ -130,6 +130,7 @@ import type { AnalysisData } from "src/utils/api/comment/comment";
 import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
 import { useConversationQuery } from "src/utils/api/post/useConversationQuery";
 import { useSurveyResultsAggregatedQuery } from "src/utils/api/survey/useSurveyQueries";
+import { getDisplayPolisClusters } from "src/utils/component/opinion";
 import {
   getReportAllOpinions,
   getReportOpinions,
@@ -193,6 +194,9 @@ const analysisQuery = useAnalysisQuery({
   conversationSlugId: conversationSlugId,
   analysisView,
   checkpointViewSnapshotId,
+  aiLabelingEnabled: computed(
+    () => conversationQuery.data.value?.metadata.aiLabelingEnabled
+  ),
   voteCount: computed(() => conversationQuery.data.value?.metadata.voteCount),
   enabled: computed(
     () => isAuthInitialized.value && conversationQuery.data.value !== undefined
@@ -244,7 +248,12 @@ const allStatementsOrderOptions = computed(() => [
 ]);
 
 const polisClusters = computed<Partial<PolisClusters>>(
-  () => reportFrame.value?.analysis.polisClusters ?? {}
+  () =>
+    getDisplayPolisClusters({
+      clusters: reportFrame.value?.analysis.polisClusters ?? {},
+      aiLabelingEnabled:
+        reportFrame.value?.conversation.metadata.aiLabelingEnabled ?? true,
+    })
 );
 
 const hasGroupAnalysis = computed(

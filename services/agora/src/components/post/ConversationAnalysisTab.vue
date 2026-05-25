@@ -6,11 +6,12 @@
       :conversation-author-username="conversationData.metadata.authorUsername"
       :conversation-organization-name="conversationData.metadata.organization?.name ?? ''"
       :analysis-query="analysisQuery"
+      :analysis-checkpoints-query="analysisCheckpointsQuery"
       :survey-query="surveyResultsQuery"
       :has-survey="hasSurvey"
       :survey-gate="conversationData.interaction.surveyGate"
+      :ai-labeling-enabled="conversationData.metadata.aiLabelingEnabled"
       :show-report-button="showReportButton"
-      :is-active="isTabActive"
       :is-live-analysis-paused="isLiveAnalysisPaused"
       :navigate-to-discover-tab="props.navigateToDiscoverTab"
       :conversation-scroll-context="props.conversationScrollContext"
@@ -26,7 +27,10 @@ import {
   parseAnalysisViewQuery,
   parseCheckpointQuery,
 } from "src/utils/analysis/analysisRoute";
-import { useAnalysisQuery } from "src/utils/api/comment/useCommentQueries";
+import {
+  useAnalysisCheckpointsQuery,
+  useAnalysisQuery,
+} from "src/utils/api/comment/useCommentQueries";
 import { useSurveyResultsAggregatedQuery } from "src/utils/api/survey/useSurveyQueries";
 import {
   computed,
@@ -80,6 +84,9 @@ const conversationSlugId = computed(
   () => props.conversationData.metadata.conversationSlugId
 );
 const voteCount = computed(() => props.conversationData.metadata.voteCount);
+const aiLabelingEnabled = computed(
+  () => props.conversationData.metadata.aiLabelingEnabled
+);
 const hasSurvey = computed(() => props.conversationData.interaction.surveyGate?.hasSurvey === true);
 const analysisView = computed(() => parseAnalysisViewQuery({ query: route.query }));
 const checkpointViewSnapshotId = computed(() =>
@@ -92,6 +99,14 @@ const analysisQuery = useAnalysisQuery({
   analysisView,
   checkpointViewSnapshotId,
   voteCount,
+  aiLabelingEnabled,
+  enabled: computed(
+    () => props.hasConversationData && isTabActive.value && !isLiveAnalysisPaused.value
+  ),
+});
+
+const analysisCheckpointsQuery = useAnalysisCheckpointsQuery({
+  conversationSlugId,
   enabled: computed(
     () => props.hasConversationData && isTabActive.value && !isLiveAnalysisPaused.value
   ),
