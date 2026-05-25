@@ -11,6 +11,7 @@ When the user mentions needing to understand an external library or repository, 
 **Pattern**: External repos are sometimes cloned into `external/` at repository root for analysis. This directory is gitignored.
 
 **Workflow**:
+
 1. First, check if a directory with the repository name exists in `external/` at repository root (e.g., `../../external/vite-plugin-validate-env/` from `services/agora/`)
 2. If found, read the relevant files directly from the local clone
 3. If not found, fall back to WebSearch or WebFetch from GitHub
@@ -58,11 +59,13 @@ The codebase uses `comment` and `opinion` interchangeably in variable names, dat
 **In code:** Keep existing `comment`/`opinion` naming as-is. In doubt, use `opinion` for new code.
 
 **In user-facing text (UI labels, translations):**
+
 - English: **"statement"**
 - French: **"proposition"**
 - Other languages: use the idiomatic equivalent (not a literal translation)
 
 **Exceptions — these are different concepts:**
+
 - **"Opinion Group"**: refers to a cluster of users with similar voting patterns. Keep as-is.
 - **"Thanks for your comments!"**: in the context of user reports/feedback, "comment" means the user's free-text input, not a statement in a conversation.
 
@@ -80,11 +83,13 @@ The frontend (`services/agora`) uses a comprehensive environment variable valida
 The build **fails immediately** if required variables are missing or validation fails.
 
 **Environment file structure:**
+
 - `.env.dev` - Development configuration (automatically loaded by `pnpm dev`)
 - `.env.staging` - Staging configuration (must include `VITE_STAGING=true`)
 - `.env.production` - Production configuration (must include `VITE_STAGING=false`)
 
 **Build process:** The build scripts use `env-cmd` to load environment variables from the appropriate file before building. This approach is used because:
+
 - Quasar has no built-in support for staging environments (only dev/production)
 - `env-cmd` is consistent with Docker environments
 - It ensures all variables (including `VITE_STAGING`) are available when `quasar.config.ts` evaluates
@@ -112,8 +117,30 @@ make dev-math-updater
 make dev-import-worker
 
 # Scoring worker (Solidago MaxDiff rankings)
-cd services/scoring-worker && make dev
+make dev-scoring-worker
 ```
+
+### Development Logs
+
+Root `make dev-*` targets are wrapped by `scripts/dev-log-runner.mjs`. Before asking the user for terminal output, inspect durable logs directly:
+
+```bash
+make logs
+make logs-tail service=api
+rg "error|failed|exception" .local/logs/latest/api.log
+```
+
+Log layout:
+
+- `.local/logs/runs/<run-id>/<service>.log` contains the full captured stdout/stderr for that run.
+- `.local/logs/latest/<service>.log` is the latest symlink for quick agent inspection.
+- `.local/logs/latest/<service>.events.jsonl` contains semantic load-testing events from `AGORA_LOAD_EVENT` markers.
+- `.local/logs/latest/<service>-browser.jsonl` contains frontend browser console/runtime/navigation events from `AGORA_BROWSER_EVENT` markers.
+- `.local/logs/latest/<service>.summary.json` contains k6 summaries when a load test exports one.
+
+Use direct `rg`/Read access for log investigation; there is intentionally no `make logs-grep` wrapper. The runner rotates logs at 25 MB per file, keeps 5 rotated files, removes old runs after 7 days, and caps `.local/logs/runs` at 750 MB by default. Environment overrides are `AGORA_LOG_DIR`, `AGORA_LOG_RUN_ID`, `AGORA_LOG_MAX_BYTES`, `AGORA_LOG_MAX_FILES`, `AGORA_LOG_RETENTION_DAYS`, and `AGORA_LOG_MAX_TOTAL_BYTES`.
+
+`run_all_in_kitty_tabs.sh` exports one shared `AGORA_LOG_RUN_ID` before launching tabs, so backend, frontend, OpenAPI, sync, and Python worker logs from the same launch are grouped together. Raw targets such as `make dev-api-raw` and direct commands such as `pnpm dev` or `uv run ...` do not use durable capture unless explicitly run through the log runner.
 
 ### Code Generation & Syncing
 
@@ -160,6 +187,7 @@ When the user explicitly asks for `lint:fix`, run only that service's `lint:fix`
 This project follows the [Conventional Commits](https://www.conventionalcommits.org/) standard.
 
 **Commit message format:**
+
 ```
 <type>(<optional scope>): <description>
 
@@ -169,6 +197,7 @@ This project follows the [Conventional Commits](https://www.conventionalcommits.
 ```
 
 **Common types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `refactor`: Code change that neither fixes a bug nor adds a feature
@@ -178,6 +207,7 @@ This project follows the [Conventional Commits](https://www.conventionalcommits.
 - `chore`: Maintenance tasks, dependency updates, etc.
 
 **Examples:**
+
 ```bash
 # Simple commit
 git commit -m "feat(api): add AI-powered translation for cluster labels"
@@ -202,6 +232,7 @@ Deploy: math-updater"
 ```
 
 **Guidelines:**
+
 - Keep the subject line under 50 characters (hard limit: 72 characters)
   - Git and GitHub truncate titles longer than ~72 characters with "..."
   - Aim for 50 characters to ensure full visibility in all tools
@@ -222,6 +253,7 @@ Deploy: math-updater"
   - This restriction applies ONLY to commit messages - code comments can mention tools/AI if helpful for context
 
 **Before committing:**
+
 1. **Review all staged changes** with `git status` and `git diff --staged`
 2. **Verify nothing is staged by mistake** (secrets, debug code, unrelated changes, etc.)
 3. **Check for poor quality comments**:
@@ -305,6 +337,7 @@ Files generated from shared directories have warning comments at the top. Always
 4. Frontend imports typed client functions
 
 When adding API endpoints:
+
 - Define Zod schema for request/response
 - Add Swagger decorator to route
 - Run `make generate` to update frontend client
@@ -315,11 +348,13 @@ When adding API endpoints:
 This codebase uses a **POST-only API pattern** similar to JSON-RPC but with free-form endpoint naming. This is NOT a traditional RESTful API.
 
 **Rules:**
+
 1. **ALL endpoints use POST** - Never use GET, PUT, PATCH, or DELETE HTTP methods
 2. **Request data goes in the body** - Never use URL parameters or query strings for data
 3. **Soft-delete only** - All "delete" operations are soft-deletes (set `deletedAt` timestamp), never hard-deletes
 
 **Why POST-only:**
+
 - ✅ **Consistent authentication**: UCAN tokens work reliably in POST request bodies/headers
 - ✅ **No URL length limits**: Complex queries with many parameters work without issues
 - ✅ **Simpler caching control**: No accidental browser/CDN caching of sensitive data
@@ -328,46 +363,47 @@ This codebase uses a **POST-only API pattern** similar to JSON-RPC but with free
 **Exception:** Server-Sent Events (SSE) endpoints MUST use GET (protocol requirement). Example: `/api/v1/notification/stream`
 
 **Example endpoint patterns:**
+
 ```typescript
 // ✅ GOOD: POST with body parameters
 server.route({
-    method: "POST",
-    url: `/api/${apiVersion}/conversation/export/status`,
-    schema: {
-        body: Dto.getConversationExportStatusRequest, // { exportSlugId: string }
-        response: { 200: Dto.getConversationExportStatusResponse },
-    },
-    handler: async (request) => {
-        const { exportSlugId } = request.body;
-        // ...
-    },
+  method: "POST",
+  url: `/api/${apiVersion}/conversation/export/status`,
+  schema: {
+    body: Dto.getConversationExportStatusRequest, // { exportSlugId: string }
+    response: { 200: Dto.getConversationExportStatusResponse },
+  },
+  handler: async (request) => {
+    const { exportSlugId } = request.body;
+    // ...
+  },
 });
 
 // ✅ GOOD: "Delete" operation uses POST + soft-delete
 server.route({
-    method: "POST",
-    url: `/api/${apiVersion}/conversation/export/delete`,
-    schema: {
-        body: Dto.deleteConversationExportRequest, // { exportSlugId: string }
-    },
-    handler: async (request) => {
-        // Sets deletedAt, does NOT remove from database
-        await softDeleteExport({ exportSlugId: request.body.exportSlugId });
-    },
+  method: "POST",
+  url: `/api/${apiVersion}/conversation/export/delete`,
+  schema: {
+    body: Dto.deleteConversationExportRequest, // { exportSlugId: string }
+  },
+  handler: async (request) => {
+    // Sets deletedAt, does NOT remove from database
+    await softDeleteExport({ exportSlugId: request.body.exportSlugId });
+  },
 });
 
 // ❌ BAD: GET with URL parameters
 server.route({
-    method: "GET",
-    url: `/api/${apiVersion}/conversation/export/status/:exportSlugId`,
-    // ...
+  method: "GET",
+  url: `/api/${apiVersion}/conversation/export/status/:exportSlugId`,
+  // ...
 });
 
 // ❌ BAD: DELETE method
 server.route({
-    method: "DELETE",
-    url: `/api/${apiVersion}/conversation/export/:exportSlugId`,
-    // ...
+  method: "DELETE",
+  url: `/api/${apiVersion}/conversation/export/:exportSlugId`,
+  // ...
 });
 ```
 
@@ -404,6 +440,10 @@ Authorization headers built via `buildAuthorizationHeader(encodedUcan)` in front
 
 ## Code Quality Principles
 
+### Explain Rule Exceptions
+
+If you intentionally deviate from any guidance in this file, say so and explain why. Do not silently make exceptions to these rules.
+
 ### Avoid Unsafe TypeScript Escape Hatches
 
 Avoid `as` type assertions, `!` non-null assertions, `@ts-ignore`, `@ts-expect-error`, and `eslint-disable` / `eslint-ignore` directives. Write typesafe code instead.
@@ -414,6 +454,7 @@ Avoid `as` type assertions, `!` non-null assertions, `@ts-ignore`, `@ts-expect-e
 - **Instead of `eslint-disable`**: Fix the lint violation. If a rule is genuinely wrong for this codebase, disable it in the ESLint config, not inline.
 
 **When escape hatches ARE acceptable** (rare):
+
 - Working around a confirmed TypeScript compiler bug (with a comment linking to the issue)
 
 **Untyped third-party libraries**: Use `zod.parse()` or `zod.safeParse()` to validate and parse untyped data into typed values (see "Parse, Don't Validate" below). Do not use `as` to cast untyped results.
@@ -423,21 +464,23 @@ Avoid `as` type assertions, `!` non-null assertions, `@ts-ignore`, `@ts-expect-e
 This codebase prioritizes **strong static type safety** using TypeScript to eliminate entire classes of bugs at compile time, rather than relying on runtime defensive checks.
 
 **Preferred approach:**
+
 ```typescript
 // GOOD: Use type-safe data structures that make invalid states unrepresentable
 const majorityOpinions: Array<{
-    probability: SQL;
-    type: SQL;
+  probability: SQL;
+  type: SQL;
 }> = [];
 
 // Both fields are guaranteed to exist together
 for (const opinion of majorityOpinions) {
-    // TypeScript ensures probability and type are always in sync
-    use(opinion.probability, opinion.type);
+  // TypeScript ensures probability and type are always in sync
+  use(opinion.probability, opinion.type);
 }
 ```
 
 **Avoid:**
+
 ```typescript
 // AVOID: Separate arrays that can get out of sync + runtime consistency check
 const probabilities: SQL[] = [];
@@ -445,11 +488,12 @@ const types: SQL[] = [];
 
 // Manual defensive check needed at runtime
 if (probabilities.length !== types.length) {
-    throw new Error("Arrays out of sync!");
+  throw new Error("Arrays out of sync!");
 }
 ```
 
 **Guidelines:**
+
 - **Design data structures** that enforce invariants at the type level
 - **Use discriminated unions** instead of boolean flags + null checks
 - **Leverage TypeScript's type system** (mapped types, conditional types, `as const`)
@@ -458,11 +502,13 @@ if (probabilities.length !== types.length) {
 - **Avoid runtime assertions** for invariants that can be enforced by types
 
 **Examples in this codebase:**
+
 - Math-updater uses type-safe `majorityOpinions` array instead of parallel arrays (see `services/math-updater/src/services/polisMathUpdater.ts:425`)
 - Drizzle ORM schema provides compile-time guarantees for database operations
 - Zod schemas validate external data at API boundaries while internal code uses strong types
 
 **When defensive programming IS appropriate:**
+
 - External system boundaries (user input, third-party APIs)
 - Data from untyped sources (raw SQL, environment variables)
 - Legacy code integration where types cannot be guaranteed
@@ -474,16 +520,16 @@ Always use `async`/`await` for asynchronous code. Do not use `.then()` or `.catc
 ```typescript
 // ✅ GOOD: async/await
 async function loadData(): Promise<void> {
-    const response = await fetchData();
-    const parsed = processResponse(response);
-    await saveResult(parsed);
+  const response = await fetchData();
+  const parsed = processResponse(response);
+  await saveResult(parsed);
 }
 
 // ❌ BAD: .then() chains
 function loadData(): void {
-    fetchData()
-        .then((response) => processResponse(response))
-        .then((parsed) => saveResult(parsed));
+  fetchData()
+    .then((response) => processResponse(response))
+    .then((parsed) => saveResult(parsed));
 }
 ```
 
@@ -492,26 +538,28 @@ function loadData(): void {
 Follow the ["Parse, Don't Validate"](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) principle: use parsing to transform untyped data into typed data, rather than validating and then casting.
 
 **Preferred approach:**
+
 ```typescript
 // ✅ GOOD: Parse with Zod, get typed result
 const zodFilesSchema = z.record(z.string(), z.string());
 
 function processImport(rawFiles: unknown): void {
-    const files = zodFilesSchema.parse(rawFiles); // throws if invalid
-    // `files` is now typed as Record<string, string>
-    useFiles(files);
+  const files = zodFilesSchema.parse(rawFiles); // throws if invalid
+  // `files` is now typed as Record<string, string>
+  useFiles(files);
 }
 ```
 
 **Avoid:**
+
 ```typescript
 // ❌ BAD: Validate then cast - loses type safety guarantee
 function processImport(files: Partial<Record<string, string>>): void {
-    if (!validateFiles(files)) {
-        throw new Error("Invalid files");
-    }
-    // Cast is unsafe - validation logic could diverge from type
-    useFiles(files as Record<string, string>);
+  if (!validateFiles(files)) {
+    throw new Error("Invalid files");
+  }
+  // Cast is unsafe - validation logic could diverge from type
+  useFiles(files as Record<string, string>);
 }
 ```
 
@@ -526,27 +574,28 @@ When implementing stateful services (buffers, caches, managers), use the **Zusta
 ```typescript
 // ✅ GOOD: Closure pattern (Zustand-style)
 export interface VoteBuffer {
-    add: (vote: BufferedVote) => void;
-    flush: () => Promise<void>;
-    shutdown: () => Promise<void>;
+  add: (vote: BufferedVote) => void;
+  flush: () => Promise<void>;
+  shutdown: () => Promise<void>;
 }
 
 export function createVoteBuffer(db: PostgresJsDatabase): VoteBuffer {
-    // Encapsulated mutable state (private to closure)
-    let pendingVotes = new Map<string, BufferedVote>();
-    let isShuttingDown = false;
+  // Encapsulated mutable state (private to closure)
+  let pendingVotes = new Map<string, BufferedVote>();
+  let isShuttingDown = false;
 
-    const add = (vote: BufferedVote): void => {
-        // Mutate internal state, never external parameters
-        pendingVotes.set(getKey(vote), vote);
-    };
+  const add = (vote: BufferedVote): void => {
+    // Mutate internal state, never external parameters
+    pendingVotes.set(getKey(vote), vote);
+  };
 
-    // Return immutable API
-    return { add, flush, shutdown };
+  // Return immutable API
+  return { add, flush, shutdown };
 }
 ```
 
 **Why this pattern:**
+
 - ✅ **Encapsulation**: State is private, cannot be accessed from outside
 - ✅ **Immutable API**: Exposed functions never mutate external parameters
 - ✅ **No side effects**: Pure functional interface from caller's perspective
@@ -558,20 +607,21 @@ export function createVoteBuffer(db: PostgresJsDatabase): VoteBuffer {
 ```typescript
 // ❌ BAD: Class with mutable state (verbose, `this` confusion)
 export class VoteBuffer {
-    private pendingVotes = new Map();
+  private pendingVotes = new Map();
 
-    public add(vote: BufferedVote): void {
-        this.pendingVotes.set(getKey(vote), vote); // `this` required
-    }
+  public add(vote: BufferedVote): void {
+    this.pendingVotes.set(getKey(vote), vote); // `this` required
+  }
 }
 
 // ❌ BAD: Mutable parameter pattern (breaks referential transparency)
 export function addVote(state: VoteBufferState, vote: BufferedVote): void {
-    state.pendingVotes.set(getKey(vote), vote); // Mutates external parameter!
+  state.pendingVotes.set(getKey(vote), vote); // Mutates external parameter!
 }
 ```
 
 **When to use each pattern:**
+
 - **Closure pattern** (Zustand-style): Stateful services with long lifecycle (buffers, caches, managers)
 - **Pure functions**: Stateless utilities, transformations, calculations
 - **Class**: Only when OOP is required for interface compatibility (e.g., extending framework classes)
@@ -581,6 +631,7 @@ export function addVote(state: VoteBufferState, vote: BufferedVote): void {
 **Rule**: ALL functions with 2+ parameters MUST use object parameters (named parameters) instead of positional parameters.
 
 **Why:**
+
 - ✅ **Self-documenting**: Call site shows parameter names
 - ✅ **Prevents errors**: Can't mix up parameter order
 - ✅ **Easy to extend**: Add optional parameters without breaking calls
@@ -591,17 +642,17 @@ export function addVote(state: VoteBufferState, vote: BufferedVote): void {
 ```typescript
 // ✅ GOOD: Object parameters (named parameters)
 interface CreateVoteBufferParams {
-    db: PostgresJsDatabase;
-    redis?: Redis;
-    flushIntervalMs?: number;
+  db: PostgresJsDatabase;
+  redis?: Redis;
+  flushIntervalMs?: number;
 }
 
 export function createVoteBuffer({
-    db,
-    redis = undefined,
-    flushIntervalMs = 1000,
+  db,
+  redis = undefined,
+  flushIntervalMs = 1000,
 }: CreateVoteBufferParams): VoteBuffer {
-    // ...
+  // ...
 }
 
 // Call site is clear
@@ -611,11 +662,11 @@ const buffer = createVoteBuffer({ db, redis, flushIntervalMs: 1000 });
 ```typescript
 // ❌ BAD: Positional parameters (easy to mix up)
 export function createVoteBuffer(
-    db: PostgresJsDatabase,
-    redis: Redis | undefined = undefined,
-    flushIntervalMs = 1000,
+  db: PostgresJsDatabase,
+  redis: Redis | undefined = undefined,
+  flushIntervalMs = 1000
 ): VoteBuffer {
-    // ...
+  // ...
 }
 
 // Call site unclear - what is 1000?
@@ -623,10 +674,11 @@ const buffer = createVoteBuffer(db, redis, 1000);
 ```
 
 **Exception**: Single parameter functions can use direct parameter:
+
 ```typescript
 // OK for single parameter
 export function getUserById(userId: string): User {
-    // ...
+  // ...
 }
 ```
 
@@ -639,6 +691,7 @@ Do not use `!important` in CSS or SCSS. It makes styles hard to override and deb
 The frontend supports RTL languages (Arabic, Persian, Hebrew). `postcss-rtlcss` automatically flips most directional CSS properties, but some things require manual attention.
 
 **Rules for new code:**
+
 - **Use CSS logical properties** instead of physical directional properties:
   - `padding-inline-start` / `padding-inline-end` instead of `padding-left` / `padding-right`
   - `margin-inline-start` / `margin-inline-end` instead of `margin-left` / `margin-right`
@@ -651,6 +704,7 @@ The frontend supports RTL languages (Arabic, Persian, Hebrew). `postcss-rtlcss` 
 - **Quasar's `$q.lang.rtl`** is the source of truth for RTL state in components. Quasar language packs are loaded in `src/boot/i18n.ts` to enable this
 
 **What `postcss-rtlcss` handles automatically (no manual fix needed):**
+
 - `text-align: left` → `text-align: right` under `[dir="rtl"]`
 - `padding-left` / `margin-left` / `border-left` → flipped equivalents
 - `left` / `right` in positioned elements (including `transform: translateX`)
@@ -662,25 +716,33 @@ The frontend supports RTL languages (Arabic, Persian, Hebrew). `postcss-rtlcss` 
 In Vue components, prefer **explicit props drilling** over `inject`/`provide` for passing data through the component tree. All drilled props must be **required** (not optional) and **typesafe**.
 
 **Why:**
+
 - Explicit data flow is easier to trace and debug
 - TypeScript catches missing props at compile time
 - No hidden dependencies or magic string keys
 
 **Rules:**
+
 - Use required props with explicit types — never optional props for data that must exist
 - Thread props through every intermediate component in the chain
 - Convert nullable upstream data to a concrete type at the source (e.g., `organization?.name ?? ""`)
+
+### Vue Props: Prefer Required Nullable Props
+
+For Vue component props, prefer `prop: T | undefined` over `prop?: T`. Optional props can hide typos because a mistyped binding may simply omit the intended prop. A required prop whose value may be `undefined` forces every caller to wire the prop by name while still representing absent data.
 
 ### Logging Guidelines
 
 **Important:** Do NOT use `log.debug()` in this codebase. Always use `log.info()`, `log.warn()`, or `log.error()` instead.
 
 **Rationale:**
+
 - Debug logs are rarely checked in production and add noise
 - Info-level logs are always visible and provide better traceability
 - Simpler to grep/filter logs when there are fewer log levels in use
 
 **Examples:**
+
 ```typescript
 // GOOD
 log.info(`[Math Updater] Processing conversation ${conversationSlugId}`);
@@ -698,6 +760,7 @@ log.debug(`Processing started`); // ❌ Don't use this
 **Always use `SpaLink`** for internal navigation links in `services/agora`. Never use plain `<a>`, `<RouterLink>`, or `<button>` for navigation.
 
 **Why `SpaLink` and not `<button>` or `<RouterLink>`:**
+
 - Renders a real `<a href>` for accessibility, SEO, right-click "Open in new tab", and middle-click/Ctrl+click support
 - Fixes a Vue 3.5 event delegation bug (`vuejs/core#11765`) that races with the browser's native `<a href>` link following, causing intermittent full page reloads. `SpaLink` + a global capture-phase interceptor (`boot/spaLinkInterceptor.ts`) eliminate the race.
 
@@ -707,10 +770,12 @@ log.debug(`Processing started`); // ❌ Don't use this
 - **Deferred** (`deferred=true`): The interceptor only does `e.preventDefault()`. The component handles navigation itself. Use for: analysis/comment tabs that need custom history management (`canGoBackToComment`, `router.back()`) which would conflict with the interceptor's `router.push()`.
 
 **Files:**
+
 - `services/agora/src/components/ui-library/SpaLink.vue` — the component
 - `services/agora/src/boot/spaLinkInterceptor.ts` — the global interceptor
 
 **References:**
+
 - Vue 3.5 event delegation: https://github.com/vuejs/core/pull/11765
 - RouterLink reload bug: https://github.com/vuejs/router/issues/846
 
@@ -721,6 +786,7 @@ The frontend has a dedicated component testing page at `/dev/component-testing` 
 **Location**: `services/agora/src/pages/dev/component-testing.vue`
 
 **How to add a test component**:
+
 1. Create test component in `services/agora/src/pages/dev/test-components/YourComponentTest.vue`
 2. Create translations file `YourComponentTest.i18n.ts` with test descriptions
 3. Import and add to `component-testing.vue`
@@ -758,6 +824,7 @@ The frontend has a dedicated component testing page at `/dev/component-testing` 
 The scoring worker's SQLAlchemy models (`services/scoring-worker/src/scoring_worker/generated_models.py`) are auto-generated from `services/shared-backend/src/schema.ts`. **Never hand-write table definitions in the Python code.**
 
 To add a table to the scoring worker:
+
 1. Add `/** @service scoring-worker */` JSDoc comment above the table definition in `schema.ts`
 2. Run `make sync-python-artifacts` to regenerate `generated_models.py`
 3. Import the model from `scoring_worker.generated_models`
@@ -784,6 +851,7 @@ Each service uses environment variables:
 - `.env.production` - Production environment
 
 Key variables:
+
 - `CONNECTION_STRING` / `CONNECTION_STRING_READ` - Database connections
 - `AWS_SECRET_ID_*` - AWS Secrets Manager credentials
 - `*_VALKEY_URL` - Valkey connection for worker queues
@@ -818,6 +886,7 @@ Icons use **Iconify via Tailwind CSS v4** (`@iconify/tailwind4` plugin). Never u
 **Usage**: `<span class="icon-[lucide--menu] h-6 w-6"></span>`
 
 **Applying the brand gradient to icons**: Use the `gradient-primary` Tailwind utility class alongside the icon class. The iconify plugin renders icons as CSS masks, so the gradient background shows through the icon shape:
+
 ```svelte
 <span class="icon-[lucide--menu] h-6 w-6 gradient-primary"></span>
 ```

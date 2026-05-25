@@ -11,6 +11,7 @@ import {
     type CreateOpinionResponse,
     type VoteResponse,
 } from "./api.js";
+import { logLoadEvent } from "./semanticLog.js";
 
 export interface UserActionConfig {
     did: string;
@@ -23,7 +24,9 @@ export interface UserActionConfig {
     opinionTexts: string[];
     votingOptions: ("agree" | "disagree" | "pass")[];
     sleepBetweenActions: number;
-    allAvailableOpinions: string[]; // Shared cache of all opinion slugs across all VUs
+    allAvailableOpinions: string[];
+    alreadyVotedOpinionSlugs?: string[];
+    intermittentOpinionCreationProbability?: number; // Probability (0-1) of creating an opinion before a vote
     fetchMainPageProbability?: number; // Probability (0-1) of fetching main page during actions
     fetchConversationPageProbability?: number; // Probability (0-1) of fetching conversation page during actions
 }
@@ -46,20 +49,31 @@ export interface UserActionResult {
     };
 }
 
-/**
- * Perform user actions: first create all opinions, then cast all votes
- * Simplified sequential approach
- */
-export async function performUserActions(
-    config: UserActionConfig,
-    onOpinionCreated: (result: CreateOpinionResponse) => void,
+interface PerformUserActionsParams {
+    config: UserActionConfig;
+    onOpinionCreated: (
+        result: CreateOpinionResponse & {
+            conversationSlugId?: string;
+            userId?: string;
+        },
+    ) => void;
     onVoteCast: (
         result: VoteResponse & {
             targetOpinionSlugId?: string;
             userId?: string;
         },
-    ) => void,
-): Promise<UserActionResult> {
+    ) => void;
+}
+
+/**
+ * Perform user actions: optionally create opinions, then cast votes while occasionally
+ * creating more opinions to simulate active conversations.
+ */
+export async function performUserActions({
+    config,
+    onOpinionCreated,
+    onVoteCast,
+}: PerformUserActionsParams): Promise<UserActionResult> {
     const {
         did,
         prefixedKey,
@@ -72,6 +86,8 @@ export async function performUserActions(
         votingOptions,
         sleepBetweenActions,
         allAvailableOpinions,
+        alreadyVotedOpinionSlugs,
+        intermittentOpinionCreationProbability,
         fetchMainPageProbability,
         fetchConversationPageProbability,
     } = config;
@@ -80,7 +96,8 @@ export async function performUserActions(
         slugId: string;
         conversationSlugId: string;
     }[] = [];
-    const votedOpinions = new Set<string>();
+    const votedOpinions = new Set(alreadyVotedOpinionSlugs ?? []);
+    const availableOpinionSlugs = [...allAvailableOpinions];
 
     const metrics = {
         opinionsSucceeded: 0,
@@ -101,6 +118,15 @@ export async function performUserActions(
             const mainPageResult = fetchMainPage();
             metrics.mainPageFetches++;
             metrics.totalMainPageResponseTime += mainPageResult.responseTime;
+            logLoadEvent({
+                phase: "page_fetch",
+                action: "fetch_main_page",
+                outcome: mainPageResult.success ? "success" : "failure",
+                userId,
+                responseTimeMs: mainPageResult.responseTime,
+                error: mainPageResult.error ?? undefined,
+                metadata: { during: "opinion_creation" },
+            });
         }
 
         if (fetchConversationPageProbability && Math.random() < fetchConversationPageProbability) {
@@ -112,17 +138,16 @@ export async function performUserActions(
             });
             metrics.conversationPageFetches++;
             metrics.totalConversationPageResponseTime += conversationPageResult.responseTime;
-        }
-
-        if (fetchConversationPageProbability && Math.random() < fetchConversationPageProbability) {
-            const conversationSlugId =
-                conversationSlugIds[Math.floor(Math.random() * conversationSlugIds.length)];
-            console.log(`[${userId}] Fetching conversation page (during opinion creation)`);
-            const conversationPageResult = fetchConversationPage({
+            logLoadEvent({
+                phase: "page_fetch",
+                action: "fetch_conversation_page",
+                outcome: conversationPageResult.success ? "success" : "failure",
+                userId,
                 conversationSlugId,
+                responseTimeMs: conversationPageResult.responseTime,
+                error: conversationPageResult.error ?? undefined,
+                metadata: { during: "opinion_creation" },
             });
-            metrics.conversationPageFetches++;
-            metrics.totalConversationPageResponseTime += conversationPageResult.responseTime;
         }
 
         const conversationSlugId =
@@ -138,7 +163,7 @@ export async function performUserActions(
             backendDid,
         });
 
-        onOpinionCreated(result);
+        onOpinionCreated({ ...result, conversationSlugId, userId });
 
         if (result.success && result.opinionSlugId) {
             opinionsCreated.push({
@@ -164,6 +189,15 @@ export async function performUserActions(
             const mainPageResult = fetchMainPage();
             metrics.mainPageFetches++;
             metrics.totalMainPageResponseTime += mainPageResult.responseTime;
+            logLoadEvent({
+                phase: "page_fetch",
+                action: "fetch_main_page",
+                outcome: mainPageResult.success ? "success" : "failure",
+                userId,
+                responseTimeMs: mainPageResult.responseTime,
+                error: mainPageResult.error ?? undefined,
+                metadata: { during: "voting" },
+            });
         }
 
         if (fetchConversationPageProbability && Math.random() < fetchConversationPageProbability) {
@@ -175,26 +209,68 @@ export async function performUserActions(
             });
             metrics.conversationPageFetches++;
             metrics.totalConversationPageResponseTime += conversationPageResult.responseTime;
+            logLoadEvent({
+                phase: "page_fetch",
+                action: "fetch_conversation_page",
+                outcome: conversationPageResult.success ? "success" : "failure",
+                userId,
+                conversationSlugId,
+                responseTimeMs: conversationPageResult.responseTime,
+                error: conversationPageResult.error ?? undefined,
+                metadata: { during: "voting" },
+            });
         }
 
-        if (fetchConversationPageProbability && Math.random() < fetchConversationPageProbability) {
+        if (intermittentOpinionCreationProbability && Math.random() < intermittentOpinionCreationProbability) {
             const conversationSlugId =
                 conversationSlugIds[Math.floor(Math.random() * conversationSlugIds.length)];
-            console.log(`[${userId}] Fetching conversation page (during voting)`);
-            const conversationPageResult = fetchConversationPage({
+            const opinionText =
+                opinionTexts[Math.floor(Math.random() * opinionTexts.length)];
+
+            console.log(`[${userId}] Creating opinion during voting`);
+            const opinionResult = await createOpinion({
                 conversationSlugId,
+                opinionText,
+                did,
+                prefixedKey,
+                backendDid,
             });
-            metrics.conversationPageFetches++;
-            metrics.totalConversationPageResponseTime += conversationPageResult.responseTime;
+
+            onOpinionCreated({ ...opinionResult, conversationSlugId, userId });
+
+            if (opinionResult.success && opinionResult.opinionSlugId) {
+                opinionsCreated.push({
+                    slugId: opinionResult.opinionSlugId,
+                    conversationSlugId,
+                });
+                availableOpinionSlugs.push(opinionResult.opinionSlugId);
+                votedOpinions.add(opinionResult.opinionSlugId);
+                metrics.opinionsSucceeded++;
+            } else {
+                metrics.opinionsFailed++;
+            }
+
+            sleep(sleepBetweenActions);
         }
 
         // Get unvoted opinions
-        const unvotedOpinions = allAvailableOpinions.filter(
+        const unvotedOpinions = availableOpinionSlugs.filter(
             (opinionSlugId) => !votedOpinions.has(opinionSlugId),
         );
 
         if (unvotedOpinions.length === 0) {
-            console.log(`User ${userId} has no more unvoted opinions (voted: ${String(votedOpinions.size)}/${String(allAvailableOpinions.length)})`);
+            console.log(`User ${userId} has no more unvoted opinions (voted: ${String(votedOpinions.size)}/${String(availableOpinionSlugs.length)})`);
+            logLoadEvent({
+                phase: "user_action",
+                action: "cast_vote",
+                outcome: "skip",
+                userId,
+                metadata: {
+                    reason: "no_unvoted_opinions",
+                    votedOpinions: votedOpinions.size,
+                    availableOpinions: availableOpinionSlugs.length,
+                },
+            });
             break;
         }
 

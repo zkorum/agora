@@ -1,20 +1,21 @@
 #!/bin/zsh
 
 BASE_DIR=$HOME/github/nicobao/agora
+export AGORA_LOG_RUN_ID=${AGORA_LOG_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}
 
 # Make sure remote control is enabled: allow_remote_control yes
 # kitty --session kitty_openapi_session.conf
-kitty @ launch --type=tab --title "App" --cwd=$BASE_DIR zsh -ic "make dev-app" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
-kitty @ launch --type=tab --title "API" --cwd=$BASE_DIR zsh -ic "make dev-api" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
-kitty @ launch --type=tab --title "Math-Updater" --cwd=$BASE_DIR zsh -ic "make dev-math-updater" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
-kitty @ launch --type=tab --title "AI-Description-Worker" --cwd=$BASE_DIR zsh -ic "make dev-ai-description-worker" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
-kitty @ launch --type=tab --title "Description-Translation-Worker" --cwd=$BASE_DIR zsh -ic "make dev-description-translation-worker" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
-kitty @ launch --type=tab --title "Import-Worker" --cwd=$BASE_DIR zsh -ic "make dev-import-worker" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
-kitty @ launch --type=tab --title "Scoring-Worker" --cwd=$BASE_DIR zsh -ic "make dev-scoring-worker" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
-kitty @ launch --type=tab --title "OpenAPI" --cwd=$BASE_DIR zsh -ic "make dev-generate" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
-kitty @ launch --type=tab --title "Shared" --cwd=$BASE_DIR zsh -ic "make dev-sync" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
-kitty @ launch --type=tab --title "Shared-App-API" --cwd=$BASE_DIR zsh -ic "make dev-sync-app-api" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
-kitty @ launch --type=tab --title "Shared-Backend" --cwd=$BASE_DIR zsh -ic "make dev-sync-ts-backend" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
+kitty @ launch --type=tab --title "App" --cwd="$BASE_DIR" zsh -ic "make dev-app" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
+kitty @ launch --type=tab --title "API" --cwd="$BASE_DIR" zsh -ic "make dev-api" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
+kitty @ launch --type=tab --title "Math-Updater" --cwd="$BASE_DIR" zsh -ic "make dev-math-updater" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
+kitty @ launch --type=tab --title "AI-Description-Worker" --cwd="$BASE_DIR" zsh -ic "make dev-ai-description-worker" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
+kitty @ launch --type=tab --title "Description-Translation-Worker" --cwd="$BASE_DIR" zsh -ic "make dev-description-translation-worker" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
+kitty @ launch --type=tab --title "Import-Worker" --cwd="$BASE_DIR" zsh -ic "make dev-import-worker" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
+kitty @ launch --type=tab --title "Scoring-Worker" --cwd="$BASE_DIR" zsh -ic "make dev-scoring-worker" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
+kitty @ launch --type=tab --title "OpenAPI" --cwd="$BASE_DIR" zsh -ic "make dev-generate" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
+kitty @ launch --type=tab --title "Shared" --cwd="$BASE_DIR" zsh -ic "make dev-sync" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
+kitty @ launch --type=tab --title "Shared-App-API" --cwd="$BASE_DIR" zsh -ic "make dev-sync-app-api" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
+kitty @ launch --type=tab --title "Shared-Backend" --cwd="$BASE_DIR" zsh -ic "make dev-sync-ts-backend" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
 # kitty @ launch --type=tab --title "Autocomplete" --cwd=$BASE_DIR --hold zsh -ic "autocomplete_server" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
 # kitty @ launch --type=tab --cwd="$BASE_DIR" --title "OpenAPI" zsh -c "make dev-generate"
 # kitty @ launch --type=tab --cwd="$BASE_DIR" --title "Shared" zsh -c "make dev-sync"

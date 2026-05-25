@@ -1,5 +1,7 @@
 all: dev
 
+LOG_RUNNER := node scripts/dev-log-runner.mjs
+
 generate:
 	docker run --rm \
 		-v ${PWD}:/local openapitools/openapi-generator-cli generate \
@@ -30,12 +32,21 @@ sync-ts-backend:
 sync-backend: sync-ts-backend
 
 dev-sync:
+	$(LOG_RUNNER) --service shared -- $(MAKE) dev-sync-raw
+
+dev-sync-raw:
 	watchman-make -p 'services/shared/src/**/*.ts' -t sync
 
 dev-sync-app-api:
+	$(LOG_RUNNER) --service shared-app-api -- $(MAKE) dev-sync-app-api-raw
+
+dev-sync-app-api-raw:
 	watchman-make -p 'services/shared-app-api/src/**/*.ts' -t sync-app-api
 
 dev-sync-ts-backend:
+	$(LOG_RUNNER) --service shared-backend -- $(MAKE) dev-sync-ts-backend-raw
+
+dev-sync-ts-backend-raw:
 	watchman-make -p 'services/shared-backend/src/**/*.ts' -t sync-ts-backend
 
 # Backward-compatible alias for existing scripts/docs.
@@ -94,31 +105,70 @@ sync-import-worker-contracts:
 sync-python-shared: sync-python-shared-types sync-import-worker-contracts
 
 dev-generate:
+	$(LOG_RUNNER) --service openapi -- $(MAKE) dev-generate-raw
+
+dev-generate-raw:
 	watchman-make -p 'services/api/openapi-zkorum.json' -t generate
 
 dev-app:
+	$(LOG_RUNNER) --service agora -- $(MAKE) dev-app-raw
+
+dev-app-raw:
 	cd services/agora && pnpm dev
 
 dev-app-new:
+	$(LOG_RUNNER) --service app -- $(MAKE) dev-app-new-raw
+
+dev-app-new-raw:
 	cd services/app && pnpm dev
 
 dev-api:
+	$(LOG_RUNNER) --service api -- $(MAKE) dev-api-raw
+
+dev-api-raw:
 	cd services/api && pnpm start:dev
 
 dev-math-updater:
-	cd services/math-updater && uv run python -m math_updater.worker
+	$(LOG_RUNNER) --service math-updater -- $(MAKE) dev-math-updater-raw
+
+dev-math-updater-raw:
+	cd services/math-updater && PYTHONUNBUFFERED=1 uv run python -m math_updater.worker
 
 dev-ai-description-worker:
-	cd services/math-updater && uv run python -m math_updater.ai_description_worker
+	$(LOG_RUNNER) --service ai-description-worker -- $(MAKE) dev-ai-description-worker-raw
+
+dev-ai-description-worker-raw:
+	cd services/math-updater && PYTHONUNBUFFERED=1 uv run python -m math_updater.ai_description_worker
 
 dev-description-translation-worker:
-	cd services/math-updater && uv run python -m math_updater.description_translation_worker
+	$(LOG_RUNNER) --service description-translation-worker -- $(MAKE) dev-description-translation-worker-raw
+
+dev-description-translation-worker-raw:
+	cd services/math-updater && PYTHONUNBUFFERED=1 uv run python -m math_updater.description_translation_worker
 
 dev-import-worker:
-	cd services/import-worker && uv run python -m import_worker.worker
+	$(LOG_RUNNER) --service import-worker -- $(MAKE) dev-import-worker-raw
+
+dev-import-worker-raw:
+	cd services/import-worker && PYTHONUNBUFFERED=1 uv run python -m import_worker.worker
 
 dev-x-analyzer:
+	$(LOG_RUNNER) --service x-analyzer -- $(MAKE) dev-x-analyzer-raw
+
+dev-x-analyzer-raw:
 	cd services/x-analyzer && pnpm start:dev
 
 dev-scoring-worker:
-	cd services/scoring-worker && uv run python -m scoring_worker.worker
+	$(LOG_RUNNER) --service scoring-worker -- $(MAKE) dev-scoring-worker-raw
+
+dev-scoring-worker-raw:
+	cd services/scoring-worker && PYTHONUNBUFFERED=1 uv run python -m scoring_worker.worker
+
+logs:
+	node scripts/dev-logs.mjs list
+
+logs-tail:
+	node scripts/dev-logs.mjs tail --service "$(service)"
+
+logs-clean:
+	node scripts/dev-logs.mjs clean

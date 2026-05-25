@@ -18,16 +18,16 @@ The API remains responsible for auth, request validation, creating import rows, 
 
 Environment variables use the `IMPORT_WORKER_` prefix.
 
-| Variable | Default | Description |
-|---|---|---|
-| `IMPORT_WORKER_CONNECTION_STRING` | Required | PostgreSQL primary DSN |
-| `IMPORT_WORKER_CONNECTION_STRING_READ` | Same as primary | PostgreSQL read replica DSN |
-| `IMPORT_WORKER_VALKEY_URL` | `valkey://localhost:6379` | Valkey connection URL |
-| `IMPORT_WORKER_FLUSH_INTERVAL_MS` | `1000` | Poll interval |
-| `IMPORT_WORKER_MAX_BATCH_SIZE` | `4` | Max queue items per flush |
-| `IMPORT_WORKER_MAX_CONCURRENCY` | `2` | Max concurrent import jobs |
-| `IMPORT_WORKER_STALE_THRESHOLD_MS` | `300000` | Age after which in-progress imports are marked stale |
-| `IMPORT_WORKER_STALE_CLEANUP_EVERY_N_FLUSHES` | `60` | Stale cleanup cadence |
+| Variable                                      | Default                   | Description                                          |
+| --------------------------------------------- | ------------------------- | ---------------------------------------------------- |
+| `IMPORT_WORKER_CONNECTION_STRING`             | Required                  | PostgreSQL primary DSN                               |
+| `IMPORT_WORKER_CONNECTION_STRING_READ`        | Same as primary           | PostgreSQL read replica DSN                          |
+| `IMPORT_WORKER_VALKEY_URL`                    | `valkey://localhost:6379` | Valkey connection URL                                |
+| `IMPORT_WORKER_FLUSH_INTERVAL_MS`             | `1000`                    | Poll interval                                        |
+| `IMPORT_WORKER_MAX_BATCH_SIZE`                | `4`                       | Max queue items per flush                            |
+| `IMPORT_WORKER_MAX_CONCURRENCY`               | `2`                       | Max concurrent import jobs                           |
+| `IMPORT_WORKER_STALE_THRESHOLD_MS`            | `300000`                  | Age after which in-progress imports are marked stale |
+| `IMPORT_WORKER_STALE_CLEANUP_EVERY_N_FLUSHES` | `60`                      | Stale cleanup cadence                                |
 
 ## Generated Artifacts
 
@@ -49,6 +49,14 @@ make sync-python-artifacts
 uv sync --extra dev
 uv run python -m import_worker.worker
 ```
+
+Prefer the repository-root target when you want durable logs:
+
+```bash
+make dev-import-worker
+```
+
+The root target runs the worker with unbuffered Python output and writes `.local/logs/latest/import-worker.log`.
 
 Useful checks:
 

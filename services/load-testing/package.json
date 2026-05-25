@@ -5,9 +5,8 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "test:single-conversation": "k6 run dist/scenario1-single-conversation.cjs",
-        "test:multiple-conversations": "k6 run dist/scenario2-multiple-conversations.cjs",
-        "test:all": "pnpm run build && pnpm run test:single-conversation && pnpm run test:multiple-conversations",
+        "test:conversation-voting": "node ../../scripts/dev-log-runner.mjs --service load-testing -- bash -lc 'cd services/load-testing && k6 run --summary-export \"$AGORA_LOG_SUMMARY_FILE\" dist/scenario1-single-conversation.cjs'",
+        "test:all": "pnpm run build && pnpm run test:conversation-voting",
         "lint": "eslint .",
         "format:write": "prettier --write \"**/*.{js,ts,jsx,tsx,vue,scss,html,md,json}\"",
         "format:check": "prettier . --check"

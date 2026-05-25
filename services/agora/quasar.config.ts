@@ -1,14 +1,16 @@
-/* eslint-env node */
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
 
+import type { IncomingMessage, ServerResponse } from "node:http";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { visualizer } from "rollup-plugin-visualizer";
 import tidewave from "tidewave/vite-plugin";
+import type { Plugin, ViteDevServer } from "vite";
 import viteCompression from "vite-plugin-compression";
+import { z } from "zod";
 
 import { defineConfig } from "#q-app/wrappers";
 
@@ -18,6 +20,138 @@ import { envSchema, validateEnv } from "./src/utils/processEnv";
 // import basicSsl from "@vitejs/plugin-basic-ssl";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const DEV_BROWSER_LOG_ENDPOINT = "/__agora_dev_browser_log";
+const DEV_BROWSER_LOG_MAX_BYTES = 64_000;
+
+const devBrowserLogMetadataValueSchema = z.union([
+  z.string(),
+  z.number(),
+  z.boolean(),
+  z.null(),
+]);
+
+const devBrowserLogEventSchema = z
+  .object({
+    schemaVersion: z.number().int(),
+    timestamp: z.string(),
+    sequence: z.number().int().nonnegative(),
+    level: z.enum(["debug", "info", "log", "warn", "error"]),
+    category: z.string(),
+    message: z.string(),
+    url: z.string(),
+    route: z.string(),
+    stack: z.string().optional(),
+    metadata: z.record(z.string(), devBrowserLogMetadataValueSchema).optional(),
+  })
+  .strict();
+
+async function readRequestBody({
+  req,
+  maxBytes,
+}: {
+  req: IncomingMessage;
+  maxBytes: number;
+}): Promise<string> {
+  const chunks: Buffer[] = [];
+  let totalBytes = 0;
+
+  for await (const chunk of req) {
+    const buffer = chunk instanceof Buffer ? chunk : Buffer.from(String(chunk));
+    totalBytes += buffer.byteLength;
+    if (totalBytes > maxBytes) {
+      throw new Error("Browser log payload is too large");
+    }
+    chunks.push(buffer);
+  }
+
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+function sendJsonResponse({
+  res,
+  statusCode,
+  body,
+}: {
+  res: ServerResponse;
+  statusCode: number;
+  body: Record<string, string | boolean>;
+}): void {
+  res.statusCode = statusCode;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(body));
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  return Object.prototype.toString.call(error);
+}
+
+async function handleDevBrowserLogRequest({
+  req,
+  res,
+}: {
+  req: IncomingMessage;
+  res: ServerResponse;
+}): Promise<void> {
+  if (req.method !== "POST") {
+    sendJsonResponse({
+      res,
+      statusCode: 405,
+      body: { ok: false, error: "Method not allowed" },
+    });
+    return;
+  }
+
+  try {
+    const rawBody = await readRequestBody({
+      req,
+      maxBytes: DEV_BROWSER_LOG_MAX_BYTES,
+    });
+    const jsonPayload: unknown = JSON.parse(rawBody);
+    const parsedPayload = devBrowserLogEventSchema.safeParse(jsonPayload);
+
+    if (!parsedPayload.success) {
+      sendJsonResponse({
+        res,
+        statusCode: 400,
+        body: { ok: false, error: "Invalid browser log payload" },
+      });
+      return;
+    }
+
+    console.log(
+      `AGORA_BROWSER_EVENT ${JSON.stringify({
+        receivedAt: new Date().toISOString(),
+        ...parsedPayload.data,
+      })}`
+    );
+    sendJsonResponse({ res, statusCode: 200, body: { ok: true } });
+  } catch (error) {
+    const message = errorMessage(error);
+    console.error(`[dev-browser-log] ${message}`);
+    sendJsonResponse({
+      res,
+      statusCode: 500,
+      body: { ok: false, error: message },
+    });
+  }
+}
+
+function devBrowserLogPlugin(): Plugin {
+  return {
+    name: "agora-dev-browser-log",
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use(DEV_BROWSER_LOG_ENDPOINT, (req, res) => {
+        void handleDevBrowserLogRequest({ req, res });
+      });
+    },
+  };
+}
 
 export default defineConfig((ctx) => {
   // Build the boot files array
@@ -26,6 +160,9 @@ export default defineConfig((ctx) => {
   const boot: string[] = ["chunkErrorRecovery"];
   if (ctx.prod && process.env.VITE_STAGING !== "true") {
     boot.push("sentry");
+  }
+  if (ctx.dev) {
+    boot.push("devBrowserLogger");
   }
   boot.push(
     ...[
@@ -115,6 +252,7 @@ export default defineConfig((ctx) => {
         }
 
         if (ctx.dev) {
+          viteConf.plugins.push(devBrowserLogPlugin());
           viteConf.plugins.push(tidewave());
         }
 

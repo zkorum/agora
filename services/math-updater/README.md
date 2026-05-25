@@ -21,21 +21,21 @@ The math-updater consumes dirty conversation IDs from Valkey, claims due work in
 
 Environment variables use the `MATH_UPDATER_` prefix.
 
-| Variable | Default | Description |
-|---|---|---|
-| `MATH_UPDATER_CONNECTION_STRING` | Required | PostgreSQL primary DSN |
-| `MATH_UPDATER_CONNECTION_STRING_READ` | Same as primary | PostgreSQL read replica DSN |
-| `MATH_UPDATER_VALKEY_URL` | `valkey://localhost:6379` | Valkey connection URL |
-| `MATH_UPDATER_VALKEY_POP_BATCH_SIZE` | `50` | Max Valkey items popped per cycle |
-| `MATH_UPDATER_DB_CLAIM_BATCH_SIZE` | `8` | Max DB work items claimed per cycle |
-| `MATH_UPDATER_DB_WRITE_BATCH_SIZE` | `10` | Max results persisted per DB batch |
-| `MATH_UPDATER_MAX_COMPUTE_CONCURRENCY` | `4` | Max concurrent analysis computations |
-| `MATH_UPDATER_LEASE_TTL_SECONDS` | `600` | DB work lease TTL |
-| `MATH_UPDATER_HEARTBEAT_INTERVAL_SECONDS` | `30` | Lease heartbeat cadence |
-| `MATH_UPDATER_WORKER_POLL_IDLE_SLEEP_SECONDS` | `0.5` | Idle sleep between poll cycles |
-| `MATH_UPDATER_DEFAULT_DEBOUNCE_SECONDS` | `5` | Default dirty-work debounce |
-| `MATH_UPDATER_RECONCILIATION_INTERVAL_SECONDS` | `60` | DB-to-Valkey reconciliation cadence |
-| `MATH_UPDATER_RUNNING_RECOVERY_INTERVAL_SECONDS` | `60` | Expired lease recovery cadence |
+| Variable                                         | Default                   | Description                          |
+| ------------------------------------------------ | ------------------------- | ------------------------------------ |
+| `MATH_UPDATER_CONNECTION_STRING`                 | Required                  | PostgreSQL primary DSN               |
+| `MATH_UPDATER_CONNECTION_STRING_READ`            | Same as primary           | PostgreSQL read replica DSN          |
+| `MATH_UPDATER_VALKEY_URL`                        | `valkey://localhost:6379` | Valkey connection URL                |
+| `MATH_UPDATER_VALKEY_POP_BATCH_SIZE`             | `50`                      | Max Valkey items popped per cycle    |
+| `MATH_UPDATER_DB_CLAIM_BATCH_SIZE`               | `8`                       | Max DB work items claimed per cycle  |
+| `MATH_UPDATER_DB_WRITE_BATCH_SIZE`               | `10`                      | Max results persisted per DB batch   |
+| `MATH_UPDATER_MAX_COMPUTE_CONCURRENCY`           | `4`                       | Max concurrent analysis computations |
+| `MATH_UPDATER_LEASE_TTL_SECONDS`                 | `600`                     | DB work lease TTL                    |
+| `MATH_UPDATER_HEARTBEAT_INTERVAL_SECONDS`        | `30`                      | Lease heartbeat cadence              |
+| `MATH_UPDATER_WORKER_POLL_IDLE_SLEEP_SECONDS`    | `0.5`                     | Idle sleep between poll cycles       |
+| `MATH_UPDATER_DEFAULT_DEBOUNCE_SECONDS`          | `5`                       | Default dirty-work debounce          |
+| `MATH_UPDATER_RECONCILIATION_INTERVAL_SECONDS`   | `60`                      | DB-to-Valkey reconciliation cadence  |
+| `MATH_UPDATER_RUNNING_RECOVERY_INTERVAL_SECONDS` | `60`                      | Expired lease recovery cadence       |
 
 AI label and summary generation is disabled by default and configured with `MATH_UPDATER_AWS_AI_LABEL_SUMMARY_*` variables. Translation is configured with `MATH_UPDATER_GOOGLE_*` variables and optional AWS Secrets Manager credentials. Translation requires AI label/summary generation to be enabled.
 
@@ -60,6 +60,14 @@ make sync-python-artifacts
 uv sync --extra dev
 uv run python -m math_updater.worker
 ```
+
+Prefer the repository-root target when you want durable logs:
+
+```bash
+make dev-math-updater
+```
+
+The root target runs the worker with unbuffered Python output and writes `.local/logs/latest/math-updater.log`.
 
 Useful checks:
 

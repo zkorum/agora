@@ -5,10 +5,12 @@ Background worker that runs [Solidago](https://solidago.tournesol.app/) to produ
 ## How It Works
 
 When a user submits a MaxDiff comparison, the API:
+
 1. Writes the comparison to PostgreSQL (sync upsert to `maxdiff_result` JSONB + normalized rows in `maxdiff_comparison`)
 2. Marks the conversation "dirty" in a Valkey sorted set (score = comparison count, used as priority heuristic)
 
 The worker polls that set and processes conversations in batches:
+
 1. **ZPOPMIN** a batch of dirty conversation IDs (atomic, safe for multi-worker)
 2. **Batch SELECT** all active items and comparisons from the read replica
 3. **Update counters** (participant/vote counts on the conversation)
@@ -40,6 +42,7 @@ API (Fastify) ──sync upsert──▸ PostgreSQL
 ### BWS-to-Pairwise Conversion
 
 Each MaxDiff vote (pick best and worst from a set of 4) is expanded into multiple pairwise orderings via **transitive closure**. For example, `best=A, worst=C, set=[A,B,C,D]` produces:
+
 - A beats B, C, D (best beats all)
 - B, D beat C (all beat worst)
 - Plus any transitive inferences (if prior votes established B > D, that carries forward)
@@ -50,13 +53,13 @@ A per-user comparison matrix tracks all orderings. Typical expansion is 5-20x (e
 
 The pipeline (`scoring.py`) uses these parameters:
 
-| Stage | Implementation | Key Parameters |
-|---|---|---|
-| Trust propagation | Identity (pass-through) | Preserves pre-set trust scores (default 1.0) |
-| Preference learning | `UniformGBT` by default, `LBFGSUniformGBT` in GPU builds | `prior_std_dev=7.0`, `convergence_error=1e-5` |
-| Voting rights | AffineOvertrust | `privacy_penalty=0.5`, `min_overtrust=2.0`, `overtrust_ratio=0.1` |
-| Scaling | None | |
-| Aggregation | EntitywiseQrQuantile | `quantile=0.5` (median), `lipschitz=0.1` |
+| Stage               | Implementation                                           | Key Parameters                                                    |
+| ------------------- | -------------------------------------------------------- | ----------------------------------------------------------------- |
+| Trust propagation   | Identity (pass-through)                                  | Preserves pre-set trust scores (default 1.0)                      |
+| Preference learning | `UniformGBT` by default, `LBFGSUniformGBT` in GPU builds | `prior_std_dev=7.0`, `convergence_error=1e-5`                     |
+| Voting rights       | AffineOvertrust                                          | `privacy_penalty=0.5`, `min_overtrust=2.0`, `overtrust_ratio=0.1` |
+| Scaling             | None                                                     |                                                                   |
+| Aggregation         | EntitywiseQrQuantile                                     | `quantile=0.5` (median), `lipschitz=0.1`                          |
 
 Raw scores are normalized to [0, 1] before storage.
 
@@ -71,11 +74,13 @@ voting_right = trust / sqrt(1 + connected_co_scorers)
 Where `connected_co_scorers` = number of other voters on the same entity who share at least one group with this voter. This gives O(sqrt) collective influence for groups of connected voters.
 
 **What exists:**
+
 - `COCMVotingRights` class with friend matrix construction from group sources (`src/scoring_worker/cocm_voting.py`)
 - `build_friend_matrix` using binary K function (any shared group = connected)
 - Tests in `test_cocm_voting.py`
 
 **What remains:**
+
 - Integrate COCM into the scoring pipeline (currently uses `AffineOvertrust` with uniform `trust_score=1.0` for all users). The `cocm_voting.py` module is already in the scoring worker.
 - Feed group source data (e.g., organization memberships, verification levels) into the pipeline
 - Replace or compose `AffineOvertrust` with COCM-derived per-user-per-entity voting rights
@@ -83,16 +88,16 @@ Where `connected_co_scorers` = number of other voters on the same entity who sha
 
 ## Modules
 
-| Module | Purpose |
-|---|---|
-| `worker.py` | Main loop: poll, batch, score, write |
-| `config.py` | Settings via `pydantic-settings` (env vars) |
-| `db.py` | SQLAlchemy queries (batch reads + writes) |
-| `scoring.py` | Solidago wrapper (BWS-to-pairwise, scoring, normalization) |
-| `bws_conversion.py` | Transitive closure, comparison matrix, Bron-Kerbosch |
-| `entity_mapping.py` | Map slug IDs to contiguous integer indices for Solidago |
-| `valkey_client.py` | Valkey sorted set operations (ZPOPMIN, mark dirty) |
-| `generated_models.py` | SQLAlchemy models auto-generated from Drizzle schema |
+| Module                | Purpose                                                    |
+| --------------------- | ---------------------------------------------------------- |
+| `worker.py`           | Main loop: poll, batch, score, write                       |
+| `config.py`           | Settings via `pydantic-settings` (env vars)                |
+| `db.py`               | SQLAlchemy queries (batch reads + writes)                  |
+| `scoring.py`          | Solidago wrapper (BWS-to-pairwise, scoring, normalization) |
+| `bws_conversion.py`   | Transitive closure, comparison matrix, Bron-Kerbosch       |
+| `entity_mapping.py`   | Map slug IDs to contiguous integer indices for Solidago    |
+| `valkey_client.py`    | Valkey sorted set operations (ZPOPMIN, mark dirty)         |
+| `generated_models.py` | SQLAlchemy models auto-generated from Drizzle schema       |
 
 ## Prerequisites
 
@@ -113,6 +118,9 @@ uv sync --extra dev --extra gpu
 # Run the worker
 make dev
 
+# Run through repository-root durable log capture
+cd ../.. && make dev-scoring-worker
+
 # Run tests
 make test
 
@@ -123,20 +131,22 @@ make lint
 make typecheck
 ```
 
+The root `make dev-scoring-worker` target runs the worker with unbuffered Python output and writes `.local/logs/latest/scoring-worker.log`.
+
 ## Configuration
 
 All settings are read from environment variables with the `SCORING_WORKER_` prefix:
 
-| Variable | Default | Description |
-|---|---|---|
-| `SCORING_WORKER_CONNECTION_STRING` | (required) | PostgreSQL primary DSN |
-| `SCORING_WORKER_CONNECTION_STRING_READ` | same as primary | Read replica DSN |
-| `SCORING_WORKER_VALKEY_URL` | `valkey://localhost:6379` | Valkey connection URL |
-| `SCORING_WORKER_POLL_INTERVAL_SECONDS` | `1.0` | Seconds between polls when idle |
-| `SCORING_WORKER_BATCH_SIZE` | `50` | Max conversations per poll cycle |
-| `SCORING_WORKER_MAX_WORKERS` | `4` | Thread pool size for parallel scoring |
-| `SCORING_WORKER_RECONCILE_INTERVAL_SECONDS` | `300` | Seconds between DB reconciliation passes |
-| `SCORING_WORKER_BACKOFF_SECONDS` | `10.0` | Per-conversation retry delay after failure |
+| Variable                                    | Default                   | Description                                |
+| ------------------------------------------- | ------------------------- | ------------------------------------------ |
+| `SCORING_WORKER_CONNECTION_STRING`          | (required)                | PostgreSQL primary DSN                     |
+| `SCORING_WORKER_CONNECTION_STRING_READ`     | same as primary           | Read replica DSN                           |
+| `SCORING_WORKER_VALKEY_URL`                 | `valkey://localhost:6379` | Valkey connection URL                      |
+| `SCORING_WORKER_POLL_INTERVAL_SECONDS`      | `1.0`                     | Seconds between polls when idle            |
+| `SCORING_WORKER_BATCH_SIZE`                 | `50`                      | Max conversations per poll cycle           |
+| `SCORING_WORKER_MAX_WORKERS`                | `4`                       | Thread pool size for parallel scoring      |
+| `SCORING_WORKER_RECONCILE_INTERVAL_SECONDS` | `300`                     | Seconds between DB reconciliation passes   |
+| `SCORING_WORKER_BACKOFF_SECONDS`            | `10.0`                    | Per-conversation retry delay after failure |
 
 You can also place a `.env` file in the service directory.
 
