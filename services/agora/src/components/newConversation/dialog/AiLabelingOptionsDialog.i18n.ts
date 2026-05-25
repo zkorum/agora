@@ -12,87 +12,87 @@ export const aiLabelingOptionsDialogTranslations: Record<
   AiLabelingOptionsDialogTranslations
 > = {
   en: {
-    aiOnTitle: "AI on",
+    aiOnTitle: "LLM on",
     aiOnDescription:
-      "Use generative AI to create labels and summaries for opinion groups.",
-    aiOffTitle: "AI off",
+      "Use an LLM to create labels and summaries for opinion groups.",
+    aiOffTitle: "LLM off",
     aiOffDescription:
-      "Do not use generative AI to create labels and summaries for opinion groups.",
+      "Do not use an LLM to create labels and summaries for opinion groups.",
   },
   ar: {
-    aiOnTitle: "تشغيل الذكاء الاصطناعي",
+    aiOnTitle: "LLM مفعّل",
     aiOnDescription:
-      "استخدام الذكاء الاصطناعي التوليدي لإنشاء تسميات وملخصات لمجموعات الرأي.",
-    aiOffTitle: "إيقاف الذكاء الاصطناعي",
+      "استخدام نموذج لغوي كبير لإنشاء تسميات وملخصات لمجموعات الرأي.",
+    aiOffTitle: "LLM معطّل",
     aiOffDescription:
-      "عدم استخدام الذكاء الاصطناعي التوليدي لإنشاء تسميات وملخصات لمجموعات الرأي.",
+      "عدم استخدام نموذج لغوي كبير لإنشاء تسميات وملخصات لمجموعات الرأي.",
   },
   es: {
-    aiOnTitle: "IA activada",
+    aiOnTitle: "LLM activado",
     aiOnDescription:
-      "Usar IA generativa para crear etiquetas y resúmenes de los grupos de opinión.",
-    aiOffTitle: "IA desactivada",
+      "Usar un LLM para crear etiquetas y resúmenes de los grupos de opinión.",
+    aiOffTitle: "LLM desactivado",
     aiOffDescription:
-      "No usar IA generativa para crear etiquetas y resúmenes de los grupos de opinión.",
+      "No usar un LLM para crear etiquetas y resúmenes de los grupos de opinión.",
   },
   fa: {
-    aiOnTitle: "هوش مصنوعی روشن",
+    aiOnTitle: "LLM فعال",
     aiOnDescription:
-      "استفاده از هوش مصنوعی مولد برای ایجاد برچسب‌ها و خلاصه‌ها برای گروه‌های نظر.",
-    aiOffTitle: "هوش مصنوعی خاموش",
+      "استفاده از مدل زبانی بزرگ برای ایجاد برچسب‌ها و خلاصه‌ها برای گروه‌های نظر.",
+    aiOffTitle: "LLM غیرفعال",
     aiOffDescription:
-      "از هوش مصنوعی مولد برای ایجاد برچسب‌ها و خلاصه‌ها برای گروه‌های نظر استفاده نکنید.",
+      "از مدل زبانی بزرگ برای ایجاد برچسب‌ها و خلاصه‌ها برای گروه‌های نظر استفاده نکنید.",
   },
   fr: {
-    aiOnTitle: "IA activée",
+    aiOnTitle: "LLM activé",
     aiOnDescription:
-      "Utiliser l'IA générative pour créer des labels et des résumés pour les groupes d'opinion.",
-    aiOffTitle: "IA désactivée",
+      "Utiliser un LLM pour créer des labels et des résumés pour les groupes d'opinion.",
+    aiOffTitle: "LLM désactivé",
     aiOffDescription:
-      "Ne pas utiliser l'IA générative pour créer des labels et des résumés pour les groupes d'opinion.",
+      "Ne pas utiliser de LLM pour créer des labels et des résumés pour les groupes d'opinion.",
   },
   "zh-Hans": {
-    aiOnTitle: "AI 开启",
-    aiOnDescription: "使用生成式 AI 为观点组创建标签和摘要。",
-    aiOffTitle: "AI 关闭",
-    aiOffDescription: "不使用生成式 AI 为观点组创建标签和摘要。",
+    aiOnTitle: "LLM 开启",
+    aiOnDescription: "使用 LLM 为观点组创建标签和摘要。",
+    aiOffTitle: "LLM 关闭",
+    aiOffDescription: "不使用 LLM 为观点组创建标签和摘要。",
   },
   "zh-Hant": {
-    aiOnTitle: "AI 開啟",
-    aiOnDescription: "使用生成式 AI 為觀點群組建立標籤和摘要。",
-    aiOffTitle: "AI 關閉",
-    aiOffDescription: "不使用生成式 AI 為觀點群組建立標籤和摘要。",
+    aiOnTitle: "LLM 開啟",
+    aiOnDescription: "使用 LLM 為觀點群組建立標籤和摘要。",
+    aiOffTitle: "LLM 關閉",
+    aiOffDescription: "不使用 LLM 為觀點群組建立標籤和摘要。",
   },
   he: {
-    aiOnTitle: "AI פעיל",
+    aiOnTitle: "LLM מופעל",
     aiOnDescription:
-      "שימוש בבינה מלאכותית גנרטיבית ליצירת תוויות וסיכומים לקבוצות דעה.",
-    aiOffTitle: "AI כבוי",
+      "שימוש ב-LLM ליצירת תוויות וסיכומים לקבוצות דעה.",
+    aiOffTitle: "LLM כבוי",
     aiOffDescription:
-      "לא להשתמש בבינה מלאכותית גנרטיבית ליצירת תוויות וסיכומים לקבוצות דעה.",
+      "לא להשתמש ב-LLM ליצירת תוויות וסיכומים לקבוצות דעה.",
   },
   ja: {
-    aiOnTitle: "AI オン",
+    aiOnTitle: "LLM オン",
     aiOnDescription:
-      "生成 AI を使用して意見グループのラベルと要約を作成します。",
-    aiOffTitle: "AI オフ",
+      "LLM を使用して意見グループのラベルと要約を作成します。",
+    aiOffTitle: "LLM オフ",
     aiOffDescription:
-      "生成 AI を使用して意見グループのラベルと要約を作成しません。",
+      "LLM を使用して意見グループのラベルと要約を作成しません。",
   },
   ky: {
-    aiOnTitle: "AI күйүк",
+    aiOnTitle: "LLM иштетилген",
     aiOnDescription:
-      "Пикир топтору үчүн энбелгилерди жана кыскача баяндамаларды түзүүдө генеративдүү AI колдонулат.",
-    aiOffTitle: "AI өчүк",
+      "Пикир топтору үчүн энбелгилерди жана кыскача баяндамаларды түзүүдө LLM колдонулат.",
+    aiOffTitle: "LLM өчүрүлгөн",
     aiOffDescription:
-      "Пикир топтору үчүн энбелгилерди жана кыскача баяндамаларды түзүүдө генеративдүү AI колдонулбайт.",
+      "Пикир топтору үчүн энбелгилерди жана кыскача баяндамаларды түзүүдө LLM колдонулбайт.",
   },
   ru: {
-    aiOnTitle: "AI включен",
+    aiOnTitle: "LLM включена",
     aiOnDescription:
-      "Использовать генеративный AI для создания меток и сводок для групп мнений.",
-    aiOffTitle: "AI выключен",
+      "Использовать LLM для создания меток и сводок для групп мнений.",
+    aiOffTitle: "LLM выключена",
     aiOffDescription:
-      "Не использовать генеративный AI для создания меток и сводок для групп мнений.",
+      "Не использовать LLM для создания меток и сводок для групп мнений.",
   },
 };
