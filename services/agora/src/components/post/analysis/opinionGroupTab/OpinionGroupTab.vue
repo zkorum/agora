@@ -53,6 +53,7 @@
                   :accessibility-label="t('selectGroup')"
                   button-type="standardButton"
                   class="group-selector-trigger"
+                  content-alignment="start"
                   icon-name="mdi-chevron-down"
                   icon-size="1rem"
                   label-overflow="truncate"

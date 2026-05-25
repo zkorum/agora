@@ -7,7 +7,10 @@
   >
     <div
       class="selector-content gradient-font"
-      :class="{ 'selector-content--truncate': props.labelOverflow === 'truncate' }"
+      :class="{
+        'selector-content--truncate': props.labelOverflow === 'truncate',
+        'selector-content--start': props.contentAlignment === 'start',
+      }"
     >
       <span class="selector-label">{{ props.label }}</span>
       <q-icon
@@ -22,14 +25,20 @@
 <script setup lang="ts">
 import ZKButton from "./ZKButton.vue";
 
-const props = defineProps<{
-  label: string;
-  accessibilityLabel: string;
-  buttonType: "standardButton" | "compactButton";
-  iconName: string;
-  iconSize: string;
-  labelOverflow: "wrap" | "truncate";
-}>();
+const props = withDefaults(
+  defineProps<{
+    label: string;
+    accessibilityLabel: string;
+    buttonType: "standardButton" | "compactButton";
+    iconName: string;
+    iconSize: string;
+    labelOverflow: "wrap" | "truncate";
+    contentAlignment?: "center" | "start";
+  }>(),
+  {
+    contentAlignment: "center",
+  }
+);
 
 const emit = defineEmits<{
   click: [];
@@ -61,6 +70,10 @@ const emit = defineEmits<{
   overflow: hidden;
 }
 
+.selector-content--start {
+  justify-content: flex-start;
+}
+
 .selector-label {
   min-width: 0;
   font-weight: var(--font-weight-medium);
@@ -75,6 +88,11 @@ const emit = defineEmits<{
   text-overflow: ellipsis;
   overflow-wrap: normal;
   white-space: nowrap;
+}
+
+.selector-content--start .selector-label {
+  flex: 0 1 auto;
+  text-align: start;
 }
 
 .selector-icon {
