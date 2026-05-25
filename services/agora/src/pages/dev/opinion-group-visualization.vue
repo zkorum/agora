@@ -70,13 +70,13 @@
           </div>
 
           <div class="control-item">
-            <label for="discouraged-variant" class="control-label">
-              Discouraged group
+            <label for="group-state-override" class="control-label">
+              Group state override
             </label>
             <PrimeSelect
-              id="discouraged-variant"
-              v-model="discouragedGroupMode"
-              :options="discouragedGroupOptions"
+              id="group-state-override"
+              v-model="groupStateOverride"
+              :options="groupStateOverrideOptions"
               option-label="label"
               option-value="value"
               class="control-select"
@@ -559,7 +559,10 @@ defineOptions({
 type ClusterCount = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 type VariantGroupCount = 2 | 3 | 4 | 5 | 6;
 type VariantSelectionMode = "auto" | "none" | VariantGroupCount;
-type DiscouragedGroupMode = "none" | VariantGroupCount;
+type GroupStateOverride =
+  | "none"
+  | `discouraged-${VariantGroupCount}`
+  | `unavailable-${VariantGroupCount}`;
 type AnalysisVariantsMode = "enabled" | "locked";
 type AiFeatureMode = "enabled" | "disabled";
 type DistributionMode = "balanced" | "imbalanced" | "singleton";
@@ -596,6 +599,13 @@ type MockResolvedAnalysisView = {
   groupCount: VariantGroupCount | undefined;
   resolvedBy: AnalysisViewState["resolvedBy"];
 };
+type MockAiPayloadStatus = "configured" | "missing" | "updated";
+
+interface MockAiPayload {
+  labels: string[] | undefined;
+  summaries: string[] | undefined;
+  status: MockAiPayloadStatus;
+}
 
 type SurveyGateScenario =
   | "completeValid"
@@ -654,8 +664,8 @@ const { reveal: headerRevealed } = storeToRefs(useLayoutHeaderStore());
 const selectedClusterCount = ref<ClusterCount>(3);
 const analysisVariantsMode = ref<AnalysisVariantsMode>("enabled");
 const recommendedDefaultMode = ref<VariantSelectionMode>("auto");
-const facilitatorPreferenceMode = ref<VariantSelectionMode>("auto");
-const discouragedGroupMode = ref<DiscouragedGroupMode>("none");
+const facilitatorPreferenceMode = ref<VariantSelectionMode>(5);
+const groupStateOverride = ref<GroupStateOverride>("none");
 const aiFeatureMode = ref<AiFeatureMode>("enabled");
 const aiLabelMode = ref<AiLabelMode>("long");
 const distributionMode = ref<DistributionMode>("balanced");
@@ -686,6 +696,8 @@ const liveEventSerial = ref(0);
 const liveVoteBump = ref(0);
 const liveOpinionBump = ref(0);
 const liveParticipantBump = ref(0);
+const liveScoreShift = ref(0);
+const liveAiPayloadSerial = ref(0);
 const removedStatementBump = ref(0);
 const agreementOrderShift = ref(0);
 const disagreementOrderShift = ref(0);
@@ -711,6 +723,10 @@ const aiLabelingEnabled = computed(() => aiFeatureMode.value === "enabled");
 const analysisVariantsEnabled = computed(
   () => analysisVariantsMode.value === "enabled"
 );
+const mockAiPayload = computed<MockAiPayload>(() => getMockAiPayload());
+const effectiveBackendAiLabelMode = computed<AiLabelMode>(() =>
+  mockAiPayload.value.labels === undefined ? "none" : aiLabelMode.value
+);
 
 const liveEventStatus = computed(
   () =>
@@ -728,7 +744,7 @@ const variantStatusSummary = computed(() => {
       ? "no score"
       : `score ${formatScore({ groupCount: state.resolvedGroupCount })}`;
 
-  return `Variant: ${state.resolvedBy}, current ${state.resolvedGroupCount ?? "none"}, default ${defaultGroupCount ?? "none"}, facilitator ${facilitatorGroupCount ?? "none"}, ${score}, ${scoreProfileMode.value}, discouraged ${discouragedGroupMode.value}`;
+  return `Variant: ${state.resolvedBy}, current ${state.resolvedGroupCount ?? "none"}, default ${defaultGroupCount ?? "none"}, facilitator ${facilitatorGroupCount ?? "none"}, ${score}, ${getSelectionScoreProfileLabel()}, override ${groupStateOverride.value}`;
 });
 
 const groupSizeSummary = computed(() => {
@@ -747,11 +763,22 @@ const groupSizeSummary = computed(() => {
     .join(" / ")}`;
 });
 
-const aiStatusSummary = computed(() =>
-  aiLabelingEnabled.value
-    ? `AI labels: ${aiLabelMode.value}`
-    : "AI labels hidden by feature flag"
-);
+const aiStatusSummary = computed(() => {
+  if (!aiLabelingEnabled.value) {
+    return "AI labels hidden by feature flag";
+  }
+
+  switch (mockAiPayload.value.status) {
+    case "configured":
+      return `AI labels: ${aiLabelMode.value}`;
+    case "missing":
+      return "AI labels: backend omitted, UI falls back to A/B/C";
+    case "updated":
+      return `AI labels: refreshed v${String(liveAiPayloadSerial.value)}`;
+  }
+
+  return "AI labels: unknown payload";
+});
 
 const statementListStatusSummary = computed(
   () =>
@@ -861,13 +888,17 @@ const variantSelectionOptions = [
   })),
 ] satisfies Array<{ label: string; value: VariantSelectionMode }>;
 
-const discouragedGroupOptions = [
+const groupStateOverrideOptions = [
   { label: "None", value: "none" },
   ...variantGroupCounts.map((count) => ({
-    label: `${String(count)} groups`,
-    value: count,
+    label: `${String(count)} groups discouraged`,
+    value: `discouraged-${count}` as const,
   })),
-] satisfies Array<{ label: string; value: DiscouragedGroupMode }>;
+  ...variantGroupCounts.map((count) => ({
+    label: `${String(count)} groups unavailable`,
+    value: `unavailable-${count}` as const,
+  })),
+] satisfies Array<{ label: string; value: GroupStateOverride }>;
 
 const aiFeatureOptions = [
   { label: "AI enabled", value: "enabled" },
@@ -1030,7 +1061,7 @@ function getLiveEventKindLabel(kind: LiveEventKind): string {
     case "aiLabels":
       return "AI labels";
     case "recommendedDefault":
-      return "recommended group";
+      return "variant scores";
     case "agreementOrder":
       return "agreement order";
     case "disagreementOrder":
@@ -1048,6 +1079,45 @@ function getLiveEventKindLabel(kind: LiveEventKind): string {
     case "checkpoint":
       return "checkpoint";
   }
+}
+
+function getBaseAiLabels(): string[] | undefined {
+  switch (aiLabelMode.value) {
+    case "long":
+      return longAiLabels;
+    case "short":
+      return shortAiLabels;
+    case "none":
+      return undefined;
+  }
+}
+
+function getMockAiPayload(): MockAiPayload {
+  const baseLabels = getBaseAiLabels();
+  if (baseLabels === undefined) {
+    return { labels: undefined, summaries: undefined, status: "configured" };
+  }
+
+  const payloadMode = liveAiPayloadSerial.value % 3;
+  if (payloadMode === 1) {
+    return { labels: undefined, summaries: undefined, status: "missing" };
+  }
+
+  if (payloadMode === 2) {
+    return {
+      labels: baseLabels.map(
+        (label, index) =>
+          `${label} v${String(liveAiPayloadSerial.value)}.${String(index + 1)}`
+      ),
+      summaries: aiSummaries.map(
+        (summary) =>
+          `${summary} Updated in mock snapshot ${String(liveAiPayloadSerial.value)}.`
+      ),
+      status: "updated",
+    };
+  }
+
+  return { labels: baseLabels, summaries: aiSummaries, status: "configured" };
 }
 
 function formatMockLatencyLabel({ latencyMs }: { latencyMs: number }): string {
@@ -1130,16 +1200,51 @@ function getFacilitatorGroupCount(
 }
 
 function getSelectionScore({ groupCount }: { groupCount: number }): number {
-  switch (scoreProfileMode.value) {
-    case "balanced":
-      return 1 - Math.abs(groupCount - 3) * 0.08;
-    case "smallBest":
-      return 1 - (groupCount - 2) * 0.09;
-    case "largeBest":
-      return 1 - (6 - groupCount) * 0.09;
-    case "flat":
-      return 0.72;
+  if (isSpecialGroupState({ groupCount, state: "discouraged" })) {
+    return 0.38;
   }
+
+  const baseScore = (() => {
+    switch (scoreProfileMode.value) {
+      case "balanced":
+        return 1 - Math.abs(groupCount - 3) * 0.08;
+      case "smallBest":
+        return 1 - (groupCount - 2) * 0.09;
+      case "largeBest":
+        return 1 - (6 - groupCount) * 0.09;
+      case "flat":
+        return 0.72;
+    }
+  })();
+  const boostedGroupCount =
+    variantGroupCounts[liveScoreShift.value % variantGroupCounts.length];
+
+  if (boostedGroupCount === undefined || liveScoreShift.value === 0) {
+    return baseScore;
+  }
+
+  return baseScore + (groupCount === boostedGroupCount ? 0.35 : 0);
+}
+
+function isSpecialGroupState({
+  groupCount,
+  state,
+}: {
+  groupCount: number;
+  state: "discouraged" | "unavailable";
+}): boolean {
+  return groupStateOverride.value === `${state}-${groupCount}`;
+}
+
+function getSelectionScoreProfileLabel(): string {
+  const boostedGroupCount =
+    variantGroupCounts[liveScoreShift.value % variantGroupCounts.length];
+
+  if (boostedGroupCount === undefined || liveScoreShift.value === 0) {
+    return scoreProfileMode.value;
+  }
+
+  return `${scoreProfileMode.value}+${String(boostedGroupCount)}`;
 }
 
 function formatScore({ groupCount }: { groupCount: number }): string {
@@ -1152,8 +1257,17 @@ function createAnalysisViewCandidate(groupCount: VariantGroupCount) {
     groupCount,
     assessment: {
       selectionScore: getSelectionScore({ groupCount }),
-      silhouetteScore: 0.72 - Math.abs(groupCount - 3) * 0.04,
-      balanceScore: distributionMode.value === "balanced" ? 0.9 : 0.42,
+      silhouetteScore: isSpecialGroupState({
+        groupCount,
+        state: "discouraged",
+      })
+        ? -0.2
+        : 0.72 - Math.abs(groupCount - 3) * 0.04,
+      balanceScore: isSpecialGroupState({ groupCount, state: "discouraged" })
+        ? 0.38
+        : distributionMode.value === "balanced"
+          ? 0.9
+          : 0.42,
     },
   };
 }
@@ -1166,12 +1280,11 @@ function createCandidateBackedOption({
 }: {
   view: AnalysisView;
   groupCount: VariantGroupCount;
-  status: "recommended" | "available";
+  status: "recommended" | "available" | "discouraged";
   resolvesToView?: AnalysisView;
 }): AnalysisViewOption {
   return {
     view,
-    enabled: true,
     status,
     candidate: createAnalysisViewCandidate(groupCount),
     ...(resolvesToView === undefined ? {} : { resolvesToView }),
@@ -1181,7 +1294,6 @@ function createCandidateBackedOption({
 function createLockedOption(view: AnalysisView): AnalysisViewOption {
   return {
     view,
-    enabled: false,
     status: "locked",
     reason: "analysis_variants_not_available",
     ...(view === "facilitator_preference"
@@ -1195,8 +1307,7 @@ function createRecommendedUnavailableOption(
 ): AnalysisViewOption {
   return {
     view,
-    enabled: false,
-    status: "discouraged",
+    status: "unavailable",
     reason: "recommended_default_unavailable",
     ...(view === "facilitator_preference"
       ? { resolvesToView: "system_default" }
@@ -1209,8 +1320,7 @@ function createFixedUnavailableOption(
 ): AnalysisViewOption {
   return {
     view: getAnalysisViewForGroupCount(groupCount),
-    enabled: true,
-    status: "discouraged",
+    status: "unavailable",
     reason: "fixed_group_count_unavailable",
     groupCount,
   };
@@ -1233,7 +1343,7 @@ function getBestScoredGroupCount(): VariantGroupCount | undefined {
   let bestScore = Number.NEGATIVE_INFINITY;
 
   for (const groupCount of variantGroupCounts) {
-    if (discouragedGroupMode.value === groupCount) {
+    if (isSpecialGroupState({ groupCount, state: "unavailable" })) {
       continue;
     }
 
@@ -1310,13 +1420,17 @@ function buildAnalysisViewOptions({
           status: "recommended",
         }),
     ...variantGroupCounts.map((groupCount) =>
-      discouragedGroupMode.value === groupCount
+      isSpecialGroupState({ groupCount, state: "unavailable" })
         ? createFixedUnavailableOption(groupCount)
         : createCandidateBackedOption({
             view: getAnalysisViewForGroupCount(groupCount),
             groupCount,
             status:
-              groupCount === defaultGroupCount ? "recommended" : "available",
+              groupCount === defaultGroupCount
+                ? "recommended"
+                : isSpecialGroupState({ groupCount, state: "discouraged" })
+                  ? "discouraged"
+                  : "available",
           })
     ),
   ];
@@ -1360,11 +1474,17 @@ const mockAnalysisViewState = computed<AnalysisViewState>(() => {
     if (fixedGroupCount !== undefined) {
       return {
         groupCount:
-          discouragedGroupMode.value === fixedGroupCount
+          isSpecialGroupState({
+            groupCount: fixedGroupCount,
+            state: "unavailable",
+          })
             ? undefined
             : fixedGroupCount,
         resolvedBy:
-          discouragedGroupMode.value === fixedGroupCount
+          isSpecialGroupState({
+            groupCount: fixedGroupCount,
+            state: "unavailable",
+          })
             ? "unavailable_fixed_count"
             : "fixed_count",
       };
@@ -1683,12 +1803,7 @@ const mockClusters = computed<Partial<PolisClusters>>(() => {
   }
 
   const clusters: Partial<PolisClusters> = {};
-  const aiLabels =
-    aiLabelMode.value === "long"
-      ? longAiLabels
-      : aiLabelMode.value === "short"
-        ? shortAiLabels
-        : undefined;
+  const aiPayload = mockAiPayload.value;
   const clusteredParticipantCount = Math.max(
     0,
     mockParticipantCount.value - ungroupedCounts.value[ungroupedMode.value]
@@ -1713,8 +1828,8 @@ const mockClusters = computed<Partial<PolisClusters>>(() => {
     clusters[key] = {
       key,
       numUsers: clusterSizes[i] ?? 0,
-      aiLabel: aiLabels?.[i],
-      aiSummary: aiLabels === undefined ? undefined : aiSummaries[i],
+      aiLabel: aiPayload.labels?.[i],
+      aiSummary: aiPayload.summaries?.[i],
       isUserInCluster: i === 0,
       representative,
     };
@@ -1890,9 +2005,10 @@ const analysisQuery = useQuery<AnalysisData, Error>({
     analysisVariantsMode.value,
     recommendedDefaultMode.value,
     facilitatorPreferenceMode.value,
-    discouragedGroupMode.value,
+    groupStateOverride.value,
     aiFeatureMode.value,
     aiLabelMode.value,
+    liveAiPayloadSerial.value,
     distributionMode.value,
     scoreProfileMode.value,
     numberScale.value,
@@ -1903,6 +2019,7 @@ const analysisQuery = useQuery<AnalysisData, Error>({
     liveVoteBump.value,
     liveOpinionBump.value,
     liveParticipantBump.value,
+    liveScoreShift.value,
     removedStatementBump.value,
     agreementOrderShift.value,
     disagreementOrderShift.value,
@@ -1957,7 +2074,7 @@ const isDevAnalysisLoading = computed(
 const mockSurveyResults = computed<SurveyResultsAggregatedResponse>(() =>
   buildMockSurveyResults({
     clusterCount: activeClusterCount.value,
-    aiLabelMode: aiLabelMode.value,
+    aiLabelMode: effectiveBackendAiLabelMode.value,
     surveyViewerAccess: surveyViewerAccess.value,
     surveyScenario: effectiveSurveyScenario.value,
     responseScaleMultiplier: participantScaleMultiplier.value,
@@ -1973,7 +2090,8 @@ const surveyResultsQuery = useQuery<SurveyResultsAggregatedResponse, Error>({
   queryKey: computed(() => [
     "dev-analysis-tab-survey-results",
     activeClusterCount.value,
-    aiLabelMode.value,
+    effectiveBackendAiLabelMode.value,
+    liveAiPayloadSerial.value,
     surveyViewerAccess.value,
     effectiveSurveyScenario.value,
     participantScaleMultiplier.value,
@@ -2083,44 +2201,6 @@ function toggleReason(reason: CheckpointReason): void {
     : [...selectedReasons.value, reason];
 }
 
-function getNextVariantGroupCount(
-  current: VariantGroupCount | undefined
-): VariantGroupCount {
-  if (current === undefined) {
-    return 2;
-  }
-
-  const currentIndex = variantGroupCounts.indexOf(current);
-  return (
-    variantGroupCounts[(currentIndex + 1) % variantGroupCounts.length] ?? 2
-  );
-}
-
-function getCurrentRecommendedDefaultGroupCount():
-  | VariantGroupCount
-  | undefined {
-  if (recommendedDefaultMode.value === "none") {
-    return undefined;
-  }
-
-  if (recommendedDefaultMode.value === "auto") {
-    return defaultVariantGroupCount.value;
-  }
-
-  return recommendedDefaultMode.value;
-}
-
-function getNextAiLabelMode(): AiLabelMode {
-  switch (aiLabelMode.value) {
-    case "long":
-      return "short";
-    case "short":
-      return "none";
-    case "none":
-      return "long";
-  }
-}
-
 function commitLiveEvent(): void {
   lastCommittedLiveEventSource.value = currentLiveEventSource.value;
   liveEventSerial.value += 1;
@@ -2192,17 +2272,15 @@ function simulateParticipantEvent(): void {
 }
 
 function simulateAiLabelEvent(): void {
-  aiLabelMode.value = getNextAiLabelMode();
-  lastLiveEventLabel.value = `AI labels: ${aiLabelMode.value}`;
+  liveAiPayloadSerial.value += 1;
+  lastLiveEventLabel.value = `AI label payload: ${mockAiPayload.value.status}`;
   commitLiveEvent();
 }
 
 function simulateRecommendedDefaultEvent(): void {
-  recommendedDefaultMode.value = getNextVariantGroupCount(
-    getCurrentRecommendedDefaultGroupCount()
-  );
-  lastLiveEventLabel.value = `Recommended group: ${String(
-    recommendedDefaultMode.value
+  liveScoreShift.value += 1;
+  lastLiveEventLabel.value = `Variant scores changed: default ${String(
+    defaultVariantGroupCount.value ?? "none"
   )}`;
   commitLiveEvent();
 }
