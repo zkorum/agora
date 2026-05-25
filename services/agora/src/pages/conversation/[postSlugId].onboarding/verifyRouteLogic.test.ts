@@ -50,9 +50,10 @@ describe("resolveVerifyRouteDecision", () => {
       },
     });
 
-    expect(decision.redirectPath).toBe(
-      "/conversation/qlWQFzY/onboarding/verify/ticket"
-    );
+    expect(decision.navigation).toEqual({
+      kind: "redirect",
+      path: "/conversation/qlWQFzY/onboarding/verify/ticket",
+    });
   });
 
   it("waits for the survey form only when a survey actually exists", () => {
@@ -73,10 +74,10 @@ describe("resolveVerifyRouteDecision", () => {
       },
     });
 
-    expect(decision.redirectPath).toBeNull();
+    expect(decision.navigation).toEqual({ kind: "none" });
   });
 
-  it("returns to the conversation once ticket-only verification is already satisfied", () => {
+  it("exits through the intention-aware path once ticket-only verification is already satisfied", () => {
     const decision = resolveVerifyRouteDecision({
       exactVerifyRoute: true,
       isInitialLoading: false,
@@ -94,7 +95,44 @@ describe("resolveVerifyRouteDecision", () => {
       },
     });
 
-    expect(decision.redirectPath).toBe("/conversation/qlWQFzY/");
+    expect(decision.navigation).toEqual({ kind: "exitToConversation" });
+  });
+
+  it("exits through the intention-aware path when the survey flow resolves to the conversation", () => {
+    const surveyForm: SurveyFormFetchResponse = {
+      currentRevision: 1,
+      questions: [],
+      surveyGate: {
+        hasSurvey: true,
+        isOptional: false,
+        canParticipate: true,
+        status: "complete_valid",
+      },
+    };
+
+    const decision = resolveVerifyRouteDecision({
+      exactVerifyRoute: true,
+      isInitialLoading: false,
+      hasLoadError: false,
+      justCompletedSurvey: false,
+      conversationSlugId: "qlWQFzY",
+      conversation: {
+        participationMode: "guest",
+      },
+      surveyStatus: {
+        surveyGate: surveyForm.surveyGate,
+        routeResolution: {
+          kind: "none",
+        },
+      },
+      surveyForm,
+      requirementState: {
+        needsAuth: false,
+        needsTicket: false,
+      },
+    });
+
+    expect(decision.navigation).toEqual({ kind: "exitToConversation" });
   });
 
   it("routes auth-gated conversations before checking ticket or survey completion", () => {
@@ -126,9 +164,10 @@ describe("resolveVerifyRouteDecision", () => {
       },
     });
 
-    expect(decision.redirectPath).toBe(
-      "/conversation/qlWQFzY/onboarding/verify/hard"
-    );
+    expect(decision.navigation).toEqual({
+      kind: "redirect",
+      path: "/conversation/qlWQFzY/onboarding/verify/hard",
+    });
     expect(decision.credentialUpgradeTarget).toBe("hard");
     expect(decision.onboardingMode).toBe("LOGIN");
   });
