@@ -8,9 +8,7 @@ Name | Type | Description | Notes
 **view** | **string** |  | [default to undefined]
 **resolvesToView** | **string** |  | [optional] [default to undefined]
 **status** | **string** |  | [default to undefined]
-**enabled** | **boolean** |  | [default to undefined]
 **reason** | **string** |  | [default to undefined]
-**groupCount** | **number** |  | [default to undefined]
 
 ## Example
 
@@ -21,9 +19,7 @@ const instance: ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisVi
     view,
     resolvesToView,
     status,
-    enabled,
     reason,
-    groupCount,
 };
 ```
 

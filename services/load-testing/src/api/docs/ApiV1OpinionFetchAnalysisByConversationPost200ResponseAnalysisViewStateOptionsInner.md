@@ -8,7 +8,6 @@ Name | Type | Description | Notes
 **view** | **string** |  | [default to undefined]
 **resolvesToView** | **string** |  | [optional] [default to undefined]
 **status** | **string** |  | [default to undefined]
-**enabled** | **boolean** |  | [default to undefined]
 **candidate** | [**ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfCandidate**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfCandidate.md) |  | [default to undefined]
 **reason** | **string** |  | [default to undefined]
 **groupCount** | **number** |  | [default to undefined]
@@ -22,7 +21,6 @@ const instance: ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisVi
     view,
     resolvesToView,
     status,
-    enabled,
     candidate,
     reason,
     groupCount,

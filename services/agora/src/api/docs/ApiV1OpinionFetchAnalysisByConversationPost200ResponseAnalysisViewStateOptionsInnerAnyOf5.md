@@ -1,4 +1,4 @@
-# ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4
+# ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5
 
 
 ## Properties
@@ -9,19 +9,17 @@ Name | Type | Description | Notes
 **resolvesToView** | **string** |  | [optional] [default to undefined]
 **status** | **string** |  | [default to undefined]
 **reason** | **string** |  | [default to undefined]
-**groupCount** | **number** |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4 } from './api';
+import { ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5 } from './api';
 
-const instance: ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4 = {
+const instance: ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5 = {
     view,
     resolvesToView,
     status,
     reason,
-    groupCount,
 };
 ```
 

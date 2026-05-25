@@ -230,13 +230,12 @@ function createCandidateBackedAnalysisViewOption({
     resolvesToView,
 }: {
     view: AnalysisView;
-    status: "recommended" | "available";
+    status: "recommended" | "available" | "discouraged";
     candidate: SelectableSnapshotCandidateOption;
     resolvesToView?: AnalysisView;
 }): AnalysisViewOption {
     return {
         view,
-        enabled: true,
         status,
         candidate: createAnalysisViewOptionCandidate(candidate),
         ...(resolvesToView === undefined ? {} : { resolvesToView }),
@@ -249,10 +248,29 @@ function getCandidateBackedStatus({
 }: {
     candidate: SelectableSnapshotCandidateOption;
     systemCandidate: SelectableSnapshotCandidateOption | undefined;
-}): "recommended" | "available" {
+}): "recommended" | "available" | "discouraged" {
+    if (isDiscouragedCandidate(candidate)) {
+        return "discouraged";
+    }
+
     return candidate.candidateId === systemCandidate?.candidateId
         ? "recommended"
         : "available";
+}
+
+function isDiscouragedCandidate(
+    candidate: SelectableSnapshotCandidateOption,
+): boolean {
+    const normalizedSilhouetteScore =
+        candidate.silhouetteScore === null
+            ? null
+            : Math.max(0, Math.min(1, (candidate.silhouetteScore + 1) / 2));
+
+    return (
+        candidate.selectionScore < 0.5 ||
+        (normalizedSilhouetteScore !== null && normalizedSilhouetteScore < 0.45) ||
+        (candidate.balanceScore !== null && candidate.balanceScore < 0.45)
+    );
 }
 
 function selectCandidate({
@@ -840,19 +858,6 @@ function createEmptyAnalysisViewSelection({
     };
 }
 
-function getFixedOptionSortRank(option: AnalysisViewOption): number {
-    switch (option.status) {
-        case "recommended":
-            return 0;
-        case "available":
-            return 1;
-        case "discouraged":
-            return 2;
-        case "locked":
-            return 3;
-    }
-}
-
 export function buildAnalysisViewOptions({
     variantsEnabled,
     preferredGroupCount,
@@ -888,7 +893,6 @@ export function buildAnalysisViewOptions({
         if (!variantsEnabled) {
             return {
                 view: "facilitator_preference",
-                enabled: false,
                 status: "locked",
                 reason: "analysis_variants_not_available",
                 resolvesToView: "system_default",
@@ -899,8 +903,7 @@ export function buildAnalysisViewOptions({
         if (candidate === undefined) {
             return {
                 view: "facilitator_preference",
-                enabled: false,
-                status: "discouraged",
+                status: "unavailable",
                 reason: "recommended_default_unavailable",
                 resolvesToView: "system_default",
             };
@@ -924,8 +927,7 @@ export function buildAnalysisViewOptions({
         selectableSystemCandidate === undefined
             ? {
                   view: "system_default",
-                  enabled: false,
-                  status: "discouraged",
+                  status: "unavailable",
                   reason: "recommended_default_unavailable",
               }
             : createCandidateBackedAnalysisViewOption({
@@ -940,7 +942,6 @@ export function buildAnalysisViewOptions({
         if (!variantsEnabled) {
             return {
                 view,
-                enabled: false,
                 status: "locked",
                 reason: "analysis_variants_not_available",
             };
@@ -949,8 +950,7 @@ export function buildAnalysisViewOptions({
         if (candidate === undefined) {
             return {
                 view,
-                enabled: true,
-                status: "discouraged",
+                status: "unavailable",
                 reason: "fixed_group_count_unavailable",
                 groupCount,
             };
@@ -964,24 +964,6 @@ export function buildAnalysisViewOptions({
             }),
             candidate,
         });
-    }).sort((left, right) => {
-        const leftRank = getFixedOptionSortRank(left);
-        const rightRank = getFixedOptionSortRank(right);
-        if (leftRank !== rightRank) {
-            return leftRank - rightRank;
-        }
-
-        const leftScore = "candidate" in left
-            ? left.candidate.assessment.selectionScore
-            : Number.NEGATIVE_INFINITY;
-        const rightScore = "candidate" in right
-            ? right.candidate.assessment.selectionScore
-            : Number.NEGATIVE_INFINITY;
-        if (leftScore !== rightScore) {
-            return rightScore - leftScore;
-        }
-
-        return Number(left.view) - Number(right.view);
     });
 
     return [facilitatorOption, recommendedDefaultOption, ...fixedOptions];

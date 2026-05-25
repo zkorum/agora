@@ -2151,7 +2151,6 @@ export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisV
     'view': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerViewEnum;
     'resolvesToView'?: ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerResolvesToViewEnum;
     'status': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerStatusEnum;
-    'enabled': boolean;
     'candidate': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfCandidate;
     'reason': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerReasonEnum;
     'groupCount': number;
@@ -2180,7 +2179,7 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerResolvesToViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerResolvesToViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerResolvesToViewEnum];
 export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerStatusEnum = {
-    Discouraged: 'discouraged',
+    Unavailable: 'unavailable',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerStatusEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerStatusEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerStatusEnum];
@@ -2194,7 +2193,6 @@ export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisV
     'view': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfViewEnum;
     'resolvesToView'?: ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfResolvesToViewEnum;
     'status': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfStatusEnum;
-    'enabled': boolean;
     'candidate': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfCandidate;
 }
 
@@ -2230,7 +2228,6 @@ export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisV
     'view': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf1ViewEnum;
     'resolvesToView'?: ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf1ResolvesToViewEnum;
     'status': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf1StatusEnum;
-    'enabled': boolean;
     'candidate': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfCandidate;
 }
 
@@ -2266,8 +2263,7 @@ export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisV
     'view': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ViewEnum;
     'resolvesToView'?: ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ResolvesToViewEnum;
     'status': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2StatusEnum;
-    'enabled': boolean;
-    'reason': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ReasonEnum;
+    'candidate': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfCandidate;
 }
 
 export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ViewEnum = {
@@ -2293,23 +2289,16 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ResolvesToViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ResolvesToViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ResolvesToViewEnum];
 export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2StatusEnum = {
-    Locked: 'locked',
+    Discouraged: 'discouraged',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2StatusEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2StatusEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2StatusEnum];
-export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ReasonEnum = {
-    AnalysisVariantsNotAvailable: 'analysis_variants_not_available',
-} as const;
-
-export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ReasonEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ReasonEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf2ReasonEnum];
 
 export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3 {
     'view': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ViewEnum;
     'resolvesToView'?: ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ResolvesToViewEnum;
     'status': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3StatusEnum;
-    'enabled': boolean;
     'reason': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ReasonEnum;
-    'groupCount': number;
 }
 
 export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ViewEnum = {
@@ -2335,12 +2324,12 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ResolvesToViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ResolvesToViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ResolvesToViewEnum];
 export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3StatusEnum = {
-    Discouraged: 'discouraged',
+    Locked: 'locked',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3StatusEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3StatusEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3StatusEnum];
 export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ReasonEnum = {
-    FixedGroupCountUnavailable: 'fixed_group_count_unavailable',
+    AnalysisVariantsNotAvailable: 'analysis_variants_not_available',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ReasonEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ReasonEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf3ReasonEnum];
@@ -2349,8 +2338,8 @@ export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisV
     'view': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ViewEnum;
     'resolvesToView'?: ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ResolvesToViewEnum;
     'status': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4StatusEnum;
-    'enabled': boolean;
     'reason': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ReasonEnum;
+    'groupCount': number;
 }
 
 export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ViewEnum = {
@@ -2376,15 +2365,55 @@ export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewS
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ResolvesToViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ResolvesToViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ResolvesToViewEnum];
 export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4StatusEnum = {
-    Discouraged: 'discouraged',
+    Unavailable: 'unavailable',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4StatusEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4StatusEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4StatusEnum];
 export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ReasonEnum = {
-    RecommendedDefaultUnavailable: 'recommended_default_unavailable',
+    FixedGroupCountUnavailable: 'fixed_group_count_unavailable',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ReasonEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ReasonEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf4ReasonEnum];
+
+export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5 {
+    'view': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ViewEnum;
+    'resolvesToView'?: ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ResolvesToViewEnum;
+    'status': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5StatusEnum;
+    'reason': ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ReasonEnum;
+}
+
+export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ViewEnum = {
+    _2: '2',
+    _3: '3',
+    _4: '4',
+    _5: '5',
+    _6: '6',
+    FacilitatorPreference: 'facilitator_preference',
+    SystemDefault: 'system_default',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ViewEnum];
+export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ResolvesToViewEnum = {
+    _2: '2',
+    _3: '3',
+    _4: '4',
+    _5: '5',
+    _6: '6',
+    FacilitatorPreference: 'facilitator_preference',
+    SystemDefault: 'system_default',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ResolvesToViewEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ResolvesToViewEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ResolvesToViewEnum];
+export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5StatusEnum = {
+    Unavailable: 'unavailable',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5StatusEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5StatusEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5StatusEnum];
+export const ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ReasonEnum = {
+    RecommendedDefaultUnavailable: 'recommended_default_unavailable',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ReasonEnum = typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ReasonEnum[keyof typeof ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOf5ReasonEnum];
 
 export interface ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfCandidate {
     'candidateId': number;

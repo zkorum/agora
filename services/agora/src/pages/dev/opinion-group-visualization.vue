@@ -2544,10 +2544,12 @@ function simulateMockBackendLiveEvent(): void {
 }
 
 @media (max-width: $breakpoint-sm-max) {
+  .dev-action-bar {
+    position: static;
+  }
+
   .live-event-dock {
-    top: auto;
-    inset-inline: 1rem;
-    bottom: 1rem;
+    position: static;
     width: auto;
   }
 }

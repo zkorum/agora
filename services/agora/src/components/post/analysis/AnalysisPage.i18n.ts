@@ -37,6 +37,27 @@ export interface AnalysisPageTranslations {
   resolvedGroupCountLabel: string;
   silhouetteScoreLabel: string;
   balanceScoreLabel: string;
+  learnMore: string;
+  goBack: string;
+  analysisViewModesSection: string;
+  analysisViewGroupCountsSection: string;
+  analysisViewLearnMoreTitle: string;
+  facilitatorPreferenceCaption: string;
+  recommendedOption: string;
+  recommendedOptionDescription: string;
+  fixedGroupCountOption: string;
+  fixedGroupCountOptionDescription: string;
+  unavailableOption: string;
+  unavailableOptionDescription: string;
+  discouragedOptionDescription: string;
+  overallScoreLabel: string;
+  clarityScoreLabel: string;
+  overallScoreTitle: string;
+  clarityScoreTitle: string;
+  balanceScoreTitle: string;
+  overallScoreDescription: string;
+  clarityScoreDescription: string;
+  balanceScoreDescription: string;
   checkpointTimelineLabel: string;
   checkpointTimelineStart: string;
   checkpointTimelineCheckpoint: string;
@@ -52,6 +73,63 @@ export interface AnalysisPageTranslations {
   checkpointReasonConversationClosed: string;
 }
 
+const analysisViewHelpFallbackTranslations = {
+  learnMore: "Learn more",
+  goBack: "Back",
+  analysisViewModesSection: "Modes",
+  analysisViewGroupCountsSection: "Group counts",
+  analysisViewLearnMoreTitle: "About analysis views",
+  facilitatorPreferenceCaption:
+    "Uses the facilitator's group count. Falls back to Auto if unavailable.",
+  recommendedOption: "Recommended",
+  recommendedOptionDescription:
+    "Auto's highest-scoring fixed group count for the current snapshot.",
+  fixedGroupCountOption: "Fixed group counts",
+  fixedGroupCountOptionDescription:
+    "Shows exactly that many groups for the current snapshot, or an empty state if unavailable.",
+  unavailableOption: "Unavailable",
+  unavailableOptionDescription:
+    "Agora could not form meaningful groups for this group count at this checkpoint.",
+  discouragedOptionDescription:
+    "This group count has an analysis result, but the result is weaker than the alternatives.",
+  overallScoreLabel: "Overall {score}/100",
+  clarityScoreLabel: "Clarity {score}/100",
+  balanceScoreLabel: "Balance {score}/100",
+  overallScoreTitle: "Overall",
+  clarityScoreTitle: "Clarity",
+  balanceScoreTitle: "Balance",
+  overallScoreDescription:
+    "Combined 0-100 score used to compare group counts. Higher is better.",
+  clarityScoreDescription:
+    "0-100 score for how distinct the groups are from each other. Higher is better.",
+  balanceScoreDescription:
+    "0-100 score for how evenly participants are distributed across groups. Higher is better.",
+} satisfies Pick<
+  AnalysisPageTranslations,
+  | "learnMore"
+  | "goBack"
+  | "analysisViewModesSection"
+  | "analysisViewGroupCountsSection"
+  | "analysisViewLearnMoreTitle"
+  | "facilitatorPreferenceCaption"
+  | "recommendedOption"
+  | "recommendedOptionDescription"
+  | "fixedGroupCountOption"
+  | "fixedGroupCountOptionDescription"
+  | "unavailableOption"
+  | "unavailableOptionDescription"
+  | "discouragedOptionDescription"
+  | "overallScoreLabel"
+  | "clarityScoreLabel"
+  | "balanceScoreLabel"
+  | "overallScoreTitle"
+  | "clarityScoreTitle"
+  | "balanceScoreTitle"
+  | "overallScoreDescription"
+  | "clarityScoreDescription"
+  | "balanceScoreDescription"
+>;
+
 export const analysisPageTranslations: Record<
   SupportedDisplayLanguageCodes,
   AnalysisPageTranslations
@@ -66,19 +144,19 @@ export const analysisPageTranslations: Record<
     generateReport: "Generate report",
     report: "Report",
     analysisViewTitle: "Analysis view",
-    analysisViewSortingCaption: "Group counts are sorted by analysis quality.",
+    analysisViewSortingCaption: "Choose how opinion groups are shown.",
     facilitatorPreference: "Facilitator preference",
-    recommendedDefault: "Recommended default",
+    recommendedDefault: "Auto",
     groupsLabel: "{count} groups",
     systemDefaultCaption:
-      "Chooses the best-scoring variant for each new snapshot.",
+      "Uses the highest-scoring available group count for each snapshot.",
     analysisVariantsNotAvailable: "This is not supported on your current plan.",
     fixedGroupCountUnavailable:
       "Agora could not form {count} meaningful groups for this checkpoint.",
-    recommendedDefaultUnavailable: "No recommended variant is available yet.",
-    sameAsRecommendedDefault: "Same as Recommended default",
+    recommendedDefaultUnavailable: "Auto is not available yet.",
+    sameAsRecommendedDefault: "Same as Auto",
     usesGroups: "Uses {count} groups",
-    recommendedOptionCaption: "Best overall fit",
+    recommendedOptionCaption: "Recommended",
     liveSnapshot: "Live",
     checkpointSnapshot: "Checkpoint",
     pauseAtLatestCheckpoint: "Pause at latest checkpoint",
@@ -90,11 +168,40 @@ export const analysisPageTranslations: Record<
     availableOption: "Available",
     discouragedOption: "Discouraged",
     lockedOption: "Locked",
-    selectionScoreLabel: "Selection {score}",
+    selectionScoreLabel: "Selection {score}/100",
     candidateIdLabel: "Candidate #{id}",
     resolvedGroupCountLabel: "Uses {count} groups",
-    silhouetteScoreLabel: "Separation {score}",
-    balanceScoreLabel: "Balance {score}",
+    silhouetteScoreLabel: "Clarity {score}/100",
+    learnMore: "Learn more",
+    goBack: "Back",
+    analysisViewModesSection: "Modes",
+    analysisViewGroupCountsSection: "Group counts",
+    analysisViewLearnMoreTitle: "About analysis views",
+    facilitatorPreferenceCaption:
+      "Uses the facilitator's group count. Falls back to Auto if unavailable.",
+    recommendedOption: "Recommended",
+    recommendedOptionDescription:
+      "Auto's highest-scoring fixed group count for the current snapshot.",
+    fixedGroupCountOption: "Fixed group counts",
+    fixedGroupCountOptionDescription:
+      "Shows exactly that many groups for the current snapshot, or an empty state if unavailable.",
+    unavailableOption: "Unavailable",
+    unavailableOptionDescription:
+      "Agora could not form meaningful groups for this group count at this checkpoint.",
+    discouragedOptionDescription:
+      "This group count has an analysis result, but the result is weaker than the alternatives.",
+    overallScoreLabel: "Overall {score}/100",
+    clarityScoreLabel: "Clarity {score}/100",
+    balanceScoreLabel: "Balance {score}/100",
+    overallScoreTitle: "Overall",
+    clarityScoreTitle: "Clarity",
+    balanceScoreTitle: "Balance",
+    overallScoreDescription:
+      "Combined 0-100 score used to compare group counts. Higher is better.",
+    clarityScoreDescription:
+      "0-100 score for how distinct the groups are from each other. Higher is better.",
+    balanceScoreDescription:
+      "0-100 score for how evenly participants are distributed across groups. Higher is better.",
     checkpointTimelineLabel: "Checkpoint timeline",
     checkpointTimelineStart: "Start",
     checkpointTimelineCheckpoint: "Checkpoint {number}",
@@ -147,7 +254,7 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "Candidate #{id}",
     resolvedGroupCountLabel: "Uses {count} groups",
     silhouetteScoreLabel: "Separation {score}",
-    balanceScoreLabel: "Balance {score}",
+    ...analysisViewHelpFallbackTranslations,
     checkpointTimelineLabel: "الخط الزمني لنقاط التحقق",
     checkpointTimelineStart: "البداية",
     checkpointTimelineCheckpoint: "نقطة تحقق {number}",
@@ -204,7 +311,7 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "Candidate #{id}",
     resolvedGroupCountLabel: "Uses {count} groups",
     silhouetteScoreLabel: "Separation {score}",
-    balanceScoreLabel: "Balance {score}",
+    ...analysisViewHelpFallbackTranslations,
     checkpointTimelineLabel: "Cronología de puntos de control",
     checkpointTimelineStart: "Inicio",
     checkpointTimelineCheckpoint: "Punto de control {number}",
@@ -258,7 +365,7 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "Candidate #{id}",
     resolvedGroupCountLabel: "Uses {count} groups",
     silhouetteScoreLabel: "Separation {score}",
-    balanceScoreLabel: "Balance {score}",
+    ...analysisViewHelpFallbackTranslations,
     checkpointTimelineLabel: "خط زمانی نقطه های بررسی",
     checkpointTimelineStart: "شروع",
     checkpointTimelineCheckpoint: "نقطه بررسی {number}",
@@ -316,7 +423,7 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "Candidate #{id}",
     resolvedGroupCountLabel: "Uses {count} groups",
     silhouetteScoreLabel: "Separation {score}",
-    balanceScoreLabel: "Balance {score}",
+    ...analysisViewHelpFallbackTranslations,
     checkpointTimelineLabel: "Chronologie des points de contrôle",
     checkpointTimelineStart: "Début",
     checkpointTimelineCheckpoint: "Point de contrôle {number}",
@@ -368,7 +475,7 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "Candidate #{id}",
     resolvedGroupCountLabel: "Uses {count} groups",
     silhouetteScoreLabel: "Separation {score}",
-    balanceScoreLabel: "Balance {score}",
+    ...analysisViewHelpFallbackTranslations,
     checkpointTimelineLabel: "检查点时间线",
     checkpointTimelineStart: "开始",
     checkpointTimelineCheckpoint: "检查点 {number}",
@@ -420,7 +527,7 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "Candidate #{id}",
     resolvedGroupCountLabel: "Uses {count} groups",
     silhouetteScoreLabel: "Separation {score}",
-    balanceScoreLabel: "Balance {score}",
+    ...analysisViewHelpFallbackTranslations,
     checkpointTimelineLabel: "檢查點時間線",
     checkpointTimelineStart: "開始",
     checkpointTimelineCheckpoint: "檢查點 {number}",
@@ -473,7 +580,7 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "Candidate #{id}",
     resolvedGroupCountLabel: "Uses {count} groups",
     silhouetteScoreLabel: "Separation {score}",
-    balanceScoreLabel: "Balance {score}",
+    ...analysisViewHelpFallbackTranslations,
     checkpointTimelineLabel: "ציר זמן של נקודות ביקורת",
     checkpointTimelineStart: "התחלה",
     checkpointTimelineCheckpoint: "נקודת ביקורת {number}",
@@ -527,7 +634,7 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "Candidate #{id}",
     resolvedGroupCountLabel: "Uses {count} groups",
     silhouetteScoreLabel: "Separation {score}",
-    balanceScoreLabel: "Balance {score}",
+    ...analysisViewHelpFallbackTranslations,
     checkpointTimelineLabel: "チェックポイントのタイムライン",
     checkpointTimelineStart: "開始",
     checkpointTimelineCheckpoint: "チェックポイント {number}",
@@ -582,7 +689,7 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "Candidate #{id}",
     resolvedGroupCountLabel: "Uses {count} groups",
     silhouetteScoreLabel: "Separation {score}",
-    balanceScoreLabel: "Balance {score}",
+    ...analysisViewHelpFallbackTranslations,
     checkpointTimelineLabel: "Текшерүү чекиттеринин убакыт сызыгы",
     checkpointTimelineStart: "Башталыш",
     checkpointTimelineCheckpoint: "Текшерүү чекити {number}",
@@ -638,7 +745,7 @@ export const analysisPageTranslations: Record<
     candidateIdLabel: "Candidate #{id}",
     resolvedGroupCountLabel: "Uses {count} groups",
     silhouetteScoreLabel: "Separation {score}",
-    balanceScoreLabel: "Balance {score}",
+    ...analysisViewHelpFallbackTranslations,
     checkpointTimelineLabel: "Хронология контрольных точек",
     checkpointTimelineStart: "Старт",
     checkpointTimelineCheckpoint: "Контрольная точка {number}",

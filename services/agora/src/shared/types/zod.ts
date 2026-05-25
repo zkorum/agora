@@ -893,6 +893,7 @@ export const zodAnalysisViewOptionStatus = z.enum([
     "recommended",
     "available",
     "discouraged",
+    "unavailable",
     "locked",
 ]);
 export const zodAnalysisViewOptionReason = z.enum([

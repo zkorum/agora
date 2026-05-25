@@ -104,30 +104,29 @@ const zodAnalysisViewOptionCandidate = z
     .strict();
 const zodRecommendedAnalysisViewOption = zodAnalysisViewOptionBase.extend({
     status: z.literal("recommended"),
-    enabled: z.literal(true),
     candidate: zodAnalysisViewOptionCandidate,
 });
 const zodAvailableAnalysisViewOption = zodAnalysisViewOptionBase.extend({
     status: z.literal("available"),
-    enabled: z.literal(true),
+    candidate: zodAnalysisViewOptionCandidate,
+});
+const zodDiscouragedAnalysisViewOption = zodAnalysisViewOptionBase.extend({
+    status: z.literal("discouraged"),
     candidate: zodAnalysisViewOptionCandidate,
 });
 const zodLockedAnalysisViewOption = zodAnalysisViewOptionBase.extend({
     status: z.literal("locked"),
-    enabled: z.literal(false),
     reason: z.literal("analysis_variants_not_available"),
 });
 const zodFixedGroupCountUnavailableAnalysisViewOption =
     zodAnalysisViewOptionBase.extend({
-        status: z.literal("discouraged"),
-        enabled: z.literal(true),
+        status: z.literal("unavailable"),
         reason: z.literal("fixed_group_count_unavailable"),
         groupCount: z.number().int().min(2).max(6),
     });
 const zodRecommendedDefaultUnavailableAnalysisViewOption =
     zodAnalysisViewOptionBase.extend({
-        status: z.literal("discouraged"),
-        enabled: z.literal(false),
+        status: z.literal("unavailable"),
         reason: z.literal("recommended_default_unavailable"),
     });
 
@@ -171,6 +170,7 @@ export class Dto {
     static analysisViewOption = z.union([
         zodRecommendedAnalysisViewOption,
         zodAvailableAnalysisViewOption,
+        zodDiscouragedAnalysisViewOption,
         zodLockedAnalysisViewOption,
         zodFixedGroupCountUnavailableAnalysisViewOption,
         zodRecommendedDefaultUnavailableAnalysisViewOption,

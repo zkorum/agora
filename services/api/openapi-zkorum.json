@@ -4389,12 +4389,6 @@
                                                                             "recommended"
                                                                         ]
                                                                     },
-                                                                    "enabled": {
-                                                                        "type": "boolean",
-                                                                        "enum": [
-                                                                            true
-                                                                        ]
-                                                                    },
                                                                     "candidate": {
                                                                         "type": "object",
                                                                         "properties": {
@@ -4442,7 +4436,6 @@
                                                                 "required": [
                                                                     "view",
                                                                     "status",
-                                                                    "enabled",
                                                                     "candidate"
                                                                 ],
                                                                 "additionalProperties": false
@@ -4480,10 +4473,88 @@
                                                                             "available"
                                                                         ]
                                                                     },
-                                                                    "enabled": {
-                                                                        "type": "boolean",
+                                                                    "candidate": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "candidateId": {
+                                                                                "type": "integer",
+                                                                                "exclusiveMinimum": true,
+                                                                                "maximum": 9007199254740991
+                                                                            },
+                                                                            "groupCount": {
+                                                                                "type": "integer",
+                                                                                "minimum": 2,
+                                                                                "maximum": 6
+                                                                            },
+                                                                            "assessment": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "selectionScore": {
+                                                                                        "type": "number"
+                                                                                    },
+                                                                                    "silhouetteScore": {
+                                                                                        "nullable": true,
+                                                                                        "type": "number"
+                                                                                    },
+                                                                                    "balanceScore": {
+                                                                                        "nullable": true,
+                                                                                        "type": "number"
+                                                                                    }
+                                                                                },
+                                                                                "required": [
+                                                                                    "selectionScore",
+                                                                                    "silhouetteScore",
+                                                                                    "balanceScore"
+                                                                                ],
+                                                                                "additionalProperties": false
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "candidateId",
+                                                                            "groupCount",
+                                                                            "assessment"
+                                                                        ],
+                                                                        "additionalProperties": false
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "view",
+                                                                    "status",
+                                                                    "candidate"
+                                                                ],
+                                                                "additionalProperties": false
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "view": {
+                                                                        "type": "string",
                                                                         "enum": [
-                                                                            true
+                                                                            "2",
+                                                                            "3",
+                                                                            "4",
+                                                                            "5",
+                                                                            "6",
+                                                                            "facilitator_preference",
+                                                                            "system_default"
+                                                                        ]
+                                                                    },
+                                                                    "resolvesToView": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "2",
+                                                                            "3",
+                                                                            "4",
+                                                                            "5",
+                                                                            "6",
+                                                                            "facilitator_preference",
+                                                                            "system_default"
+                                                                        ]
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "discouraged"
                                                                         ]
                                                                     },
                                                                     "candidate": {
@@ -4533,7 +4604,6 @@
                                                                 "required": [
                                                                     "view",
                                                                     "status",
-                                                                    "enabled",
                                                                     "candidate"
                                                                 ],
                                                                 "additionalProperties": false
@@ -4571,12 +4641,6 @@
                                                                             "locked"
                                                                         ]
                                                                     },
-                                                                    "enabled": {
-                                                                        "type": "boolean",
-                                                                        "enum": [
-                                                                            false
-                                                                        ]
-                                                                    },
                                                                     "reason": {
                                                                         "type": "string",
                                                                         "enum": [
@@ -4587,7 +4651,6 @@
                                                                 "required": [
                                                                     "view",
                                                                     "status",
-                                                                    "enabled",
                                                                     "reason"
                                                                 ],
                                                                 "additionalProperties": false
@@ -4622,13 +4685,7 @@
                                                                     "status": {
                                                                         "type": "string",
                                                                         "enum": [
-                                                                            "discouraged"
-                                                                        ]
-                                                                    },
-                                                                    "enabled": {
-                                                                        "type": "boolean",
-                                                                        "enum": [
-                                                                            true
+                                                                            "unavailable"
                                                                         ]
                                                                     },
                                                                     "reason": {
@@ -4646,7 +4703,6 @@
                                                                 "required": [
                                                                     "view",
                                                                     "status",
-                                                                    "enabled",
                                                                     "reason",
                                                                     "groupCount"
                                                                 ],
@@ -4682,13 +4738,7 @@
                                                                     "status": {
                                                                         "type": "string",
                                                                         "enum": [
-                                                                            "discouraged"
-                                                                        ]
-                                                                    },
-                                                                    "enabled": {
-                                                                        "type": "boolean",
-                                                                        "enum": [
-                                                                            false
+                                                                            "unavailable"
                                                                         ]
                                                                     },
                                                                     "reason": {
@@ -4701,7 +4751,6 @@
                                                                 "required": [
                                                                     "view",
                                                                     "status",
-                                                                    "enabled",
                                                                     "reason"
                                                                 ],
                                                                 "additionalProperties": false

@@ -200,45 +200,122 @@
         :title="t('analysisViewTitle')"
         :subtitle="t('analysisViewSortingCaption')"
       >
-        <div class="analysis-view-drawer-list">
+        <template #subtitleAction>
           <button
-            v-for="option in analysisViewOptions"
-            :key="option.view"
             type="button"
-            class="analysis-view-drawer-option"
-            :class="{
-              'analysis-view-drawer-option--selected':
-                option.view === selectedAnalysisView,
-              'analysis-view-drawer-option--recommended':
-                option.status === 'recommended',
-              'analysis-view-drawer-option--muted':
-                option.status === 'discouraged' || option.status === 'locked',
-            }"
-            :disabled="!option.enabled"
-            @click="handleAnalysisViewSelect(option)"
+            class="analysis-view-drawer-learn-more"
+            @click="openAnalysisViewLearnMore"
           >
-            <span class="analysis-view-drawer-option__text">
-              <span class="analysis-view-drawer-option__label">
-                <q-icon
-                  v-if="option.status === 'recommended'"
-                  name="mdi-star"
-                  size="0.9rem"
-                />
-                <span>{{ getAnalysisViewLabel(option.view) }}</span>
-              </span>
-              <span
-                v-if="getAnalysisViewCaption(option) !== undefined"
-                class="analysis-view-drawer-option__caption"
-              >
-                {{ getAnalysisViewCaption(option) }}
-              </span>
-            </span>
-            <q-icon
-              v-if="option.view === selectedAnalysisView"
-              name="mdi-check"
-              size="1.1rem"
-            />
+            {{ t("learnMore") }}
           </button>
+        </template>
+
+        <div class="analysis-view-drawer-list">
+          <div class="analysis-view-drawer-section">
+            <div class="analysis-view-drawer-section-title">
+              {{ t("analysisViewModesSection") }}
+            </div>
+            <button
+              v-for="option in modeAnalysisViewOptions"
+              :key="option.view"
+              type="button"
+              class="analysis-view-drawer-option"
+              :class="getAnalysisViewOptionClasses(option)"
+              :disabled="!isAnalysisViewOptionSelectable(option)"
+              @click="handleAnalysisViewSelect(option)"
+            >
+              <span class="analysis-view-drawer-option__text">
+                <span class="analysis-view-drawer-option__label">
+                  <span>{{ getAnalysisViewLabel(option.view) }}</span>
+                </span>
+                <span class="analysis-view-drawer-option__caption">
+                  {{ getAnalysisViewCaption(option) }}
+                </span>
+                <span class="analysis-view-drawer-option__meta-row">
+                  <ZKChip
+                    v-for="chip in getAnalysisViewOptionChips(option)"
+                    :key="chip"
+                    :color="getAnalysisViewChipColor(option)"
+                  >
+                    {{ chip }}
+                  </ZKChip>
+                </span>
+              </span>
+              <q-icon
+                v-if="option.view === selectedAnalysisView"
+                name="mdi-check"
+                size="1.1rem"
+              />
+            </button>
+          </div>
+
+          <div class="analysis-view-drawer-section">
+            <div class="analysis-view-drawer-section-title">
+              {{ t("analysisViewGroupCountsSection") }}
+            </div>
+            <button
+              v-for="option in fixedAnalysisViewOptions"
+              :key="option.view"
+              type="button"
+              class="analysis-view-drawer-option"
+              :class="getAnalysisViewOptionClasses(option)"
+              :disabled="!isAnalysisViewOptionSelectable(option)"
+              @click="handleAnalysisViewSelect(option)"
+            >
+              <span class="analysis-view-drawer-option__text">
+                <span class="analysis-view-drawer-option__label">
+                  <span>{{ getAnalysisViewLabel(option.view) }}</span>
+                </span>
+                <span
+                  v-if="getAnalysisViewCaption(option) !== undefined"
+                  class="analysis-view-drawer-option__caption"
+                >
+                  {{ getAnalysisViewCaption(option) }}
+                </span>
+                <span class="analysis-view-drawer-option__meta-row">
+                  <ZKChip
+                    v-for="chip in getAnalysisViewOptionChips(option)"
+                    :key="chip"
+                    :color="getAnalysisViewChipColor(option)"
+                  >
+                    {{ chip }}
+                  </ZKChip>
+                </span>
+              </span>
+              <q-icon
+                v-if="option.view === selectedAnalysisView"
+                name="mdi-check"
+                size="1.1rem"
+              />
+            </button>
+          </div>
+        </div>
+      </ZKBottomDialogContainer>
+    </q-dialog>
+
+    <q-dialog v-model="showAnalysisViewLearnMoreDrawer" position="bottom">
+      <ZKBottomDialogContainer :title="t('analysisViewLearnMoreTitle')">
+        <template #leadingAction>
+          <q-btn
+            flat
+            round
+            dense
+            :icon="analysisViewBackIcon"
+            size="sm"
+            class="analysis-view-drawer-header-button"
+            @click="goBackToAnalysisViewOptions"
+          />
+        </template>
+
+        <div class="analysis-view-learn-more-content">
+          <div
+            v-for="item in analysisViewLearnMoreItems"
+            :key="item.title"
+            class="analysis-view-learn-more-item"
+          >
+            <div class="analysis-view-learn-more-title">{{ item.title }}</div>
+            <div class="analysis-view-learn-more-body">{{ item.body }}</div>
+          </div>
         </div>
       </ZKBottomDialogContainer>
     </q-dialog>
@@ -247,9 +324,11 @@
 
 <script setup lang="ts">
 import type { UseQueryReturnType } from "@tanstack/vue-query";
+import { useQuasar } from "quasar";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import ZKChip from "src/components/ui-library/ZKChip.vue";
 import ZKDropdownSelectorButton from "src/components/ui-library/ZKDropdownSelectorButton.vue";
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -333,7 +412,9 @@ const { t: tShortcut } = useComponentI18n<ShortcutBarTranslations>(
 
 const route = useRoute();
 const router = useRouter();
+const $q = useQuasar();
 const showAnalysisViewDrawer = ref(false);
+const showAnalysisViewLearnMoreDrawer = ref(false);
 const pausedLiveAnalysisData = ref<AnalysisData | undefined>();
 const pausedLiveCheckpoints = ref<AnalysisCheckpoint[] | undefined>();
 
@@ -506,6 +587,67 @@ const analysisFrameKey = computed(() => {
 const analysisViewOptions = computed(
   () => analysisViewState.value?.options ?? []
 );
+
+const modeAnalysisViewOptions = computed(() =>
+  analysisViewOptions.value.filter(
+    (option) =>
+      option.view === "facilitator_preference" || option.view === "system_default"
+  )
+);
+
+const fixedAnalysisViewOptions = computed(() =>
+  analysisViewOptions.value.filter(
+    (option) =>
+      option.view === "2" ||
+      option.view === "3" ||
+      option.view === "4" ||
+      option.view === "5" ||
+      option.view === "6"
+  )
+);
+
+const analysisViewBackIcon = computed(() =>
+  $q.lang.rtl ? "mdi-chevron-right" : "mdi-chevron-left"
+);
+
+const analysisViewLearnMoreItems = computed(() => [
+  {
+    title: t("recommendedDefault"),
+    body: t("systemDefaultCaption"),
+  },
+  {
+    title: t("facilitatorPreference"),
+    body: t("facilitatorPreferenceCaption"),
+  },
+  {
+    title: t("recommendedOption"),
+    body: t("recommendedOptionDescription"),
+  },
+  {
+    title: t("fixedGroupCountOption"),
+    body: t("fixedGroupCountOptionDescription"),
+  },
+  {
+    title: t("discouragedOption"),
+    body: t("discouragedOptionDescription"),
+  },
+  {
+    title: t("unavailableOption"),
+    body: t("unavailableOptionDescription"),
+  },
+  {
+    title: t("overallScoreTitle"),
+    body: t("overallScoreDescription"),
+  },
+  {
+    title: t("clarityScoreTitle"),
+    body: t("clarityScoreDescription"),
+  },
+  {
+    title: t("balanceScoreTitle"),
+    body: t("balanceScoreDescription"),
+  },
+]);
 
 const selectedAnalysisView = computed(
   () =>
@@ -694,24 +836,134 @@ function getAnalysisViewCaption(
   }
 
   if (option.view === "facilitator_preference") {
-    return getFacilitatorPreferenceCaption(option);
+    return getFacilitatorPreferenceCaption(option) ?? t("facilitatorPreferenceCaption");
   }
 
   if (option.view === "system_default") {
     return t("systemDefaultCaption");
   }
 
-  if (option.status === "recommended") {
-    return t("recommendedOptionCaption");
+  return undefined;
+}
+
+function isAnalysisViewOptionSelectable(option: AnalysisViewOption): boolean {
+  if (option.status === "locked") {
+    return false;
   }
 
-  return undefined;
+  return !(
+    option.status === "unavailable" &&
+    "reason" in option &&
+    option.reason === "recommended_default_unavailable"
+  );
+}
+
+function getAnalysisViewOptionClasses(
+  option: AnalysisViewOption
+): Record<string, boolean> {
+  return {
+    "analysis-view-drawer-option--selected": option.view === selectedAnalysisView.value,
+    "analysis-view-drawer-option--recommended":
+      option.status === "recommended" && getAnalysisViewGroupCount(option.view) !== undefined,
+    "analysis-view-drawer-option--muted":
+      option.status === "discouraged" ||
+      option.status === "unavailable" ||
+      option.status === "locked",
+  };
+}
+
+function formatScoreChipValue(score: number | null | undefined): string | undefined {
+  return score === null || score === undefined
+    ? undefined
+    : String(Math.round(score * 100));
+}
+
+function formatClarityScore(score: number | null): string | undefined {
+  if (score === null) {
+    return undefined;
+  }
+
+  return String(Math.round(Math.max(0, Math.min(1, (score + 1) / 2)) * 100));
+}
+
+function getAnalysisViewOptionChips(option: AnalysisViewOption): string[] {
+  const chips: string[] = [];
+
+  if (getAnalysisViewGroupCount(option.view) !== undefined) {
+    switch (option.status) {
+      case "recommended":
+        chips.push(t("recommendedOption"));
+        break;
+      case "discouraged":
+        chips.push(t("discouragedOption"));
+        break;
+      case "unavailable":
+        chips.push(t("unavailableOption"));
+        break;
+      case "locked":
+        chips.push(t("lockedOption"));
+        break;
+      case "available":
+        break;
+    }
+  } else if (option.status === "locked") {
+    chips.push(t("lockedOption"));
+  }
+
+  if (!("candidate" in option)) {
+    return chips;
+  }
+
+  const assessment = option.candidate.assessment;
+  const overallScore = formatScoreChipValue(assessment.selectionScore);
+  const clarityScore = formatClarityScore(assessment.silhouetteScore);
+  const balanceScore = formatScoreChipValue(assessment.balanceScore);
+
+  if (overallScore !== undefined) {
+    chips.push(t("overallScoreLabel", { score: overallScore }));
+  }
+
+  if (clarityScore !== undefined) {
+    chips.push(t("clarityScoreLabel", { score: clarityScore }));
+  }
+
+  if (balanceScore !== undefined) {
+    chips.push(t("balanceScoreLabel", { score: balanceScore }));
+  }
+
+  return chips;
+}
+
+function getAnalysisViewChipColor(
+  option: AnalysisViewOption
+): "neutral" | "primary" | "warning" | "muted" {
+  switch (option.status) {
+    case "recommended":
+      return "primary";
+    case "discouraged":
+      return "warning";
+    case "unavailable":
+    case "locked":
+      return "muted";
+    case "available":
+      return "neutral";
+  }
+}
+
+function openAnalysisViewLearnMore(): void {
+  showAnalysisViewDrawer.value = false;
+  showAnalysisViewLearnMoreDrawer.value = true;
+}
+
+function goBackToAnalysisViewOptions(): void {
+  showAnalysisViewLearnMoreDrawer.value = false;
+  showAnalysisViewDrawer.value = true;
 }
 
 async function handleAnalysisViewSelect(
   option: AnalysisViewOption
 ): Promise<void> {
-  if (!option.enabled) {
+  if (!isAnalysisViewOptionSelectable(option)) {
     return;
   }
 
@@ -1000,7 +1252,48 @@ defineExpose({
 .analysis-view-drawer-list {
   display: flex;
   flex-direction: column;
+  gap: 0.9rem;
+}
+
+.analysis-view-drawer-learn-more {
+  flex-shrink: 0;
+  width: fit-content;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #6d6a74;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: var(--font-weight-medium);
+  padding: 0.2rem 0.35rem;
+
+  &:hover,
+  &:focus-visible {
+    background: #f5f5f7;
+  }
+}
+
+.analysis-view-drawer-header-button {
+  color: #6d6a74;
+
+  &:hover,
+  &:focus-visible {
+    background: #f5f5f7;
+  }
+}
+
+.analysis-view-drawer-section {
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
+}
+
+.analysis-view-drawer-section-title {
+  color: #7b7884;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .analysis-view-drawer-option {
@@ -1095,6 +1388,45 @@ defineExpose({
 .analysis-view-drawer-option__score {
   background: #f5f5f7;
   color: #6d6a74;
+}
+
+.analysis-view-drawer-option__score--recommended {
+  background: #eeeaff;
+  color: #4d36d8;
+}
+
+.analysis-view-drawer-option__score--discouraged {
+  background: #fff4df;
+  color: #8a5a00;
+}
+
+.analysis-view-drawer-option__score--unavailable,
+.analysis-view-drawer-option__score--locked {
+  background: #f2f2f4;
+  color: #6d6a74;
+}
+
+.analysis-view-learn-more-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.analysis-view-learn-more-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.analysis-view-learn-more-title {
+  color: #333238;
+  font-weight: var(--font-weight-semibold);
+}
+
+.analysis-view-learn-more-body {
+  color: #6d6a74;
+  font-size: 0.85rem;
+  line-height: 1.35;
 }
 
 .analysis-view-drawer-option__details {

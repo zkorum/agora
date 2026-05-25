@@ -8,8 +8,7 @@ Name | Type | Description | Notes
 **view** | **string** |  | [default to undefined]
 **resolvesToView** | **string** |  | [optional] [default to undefined]
 **status** | **string** |  | [default to undefined]
-**enabled** | **boolean** |  | [default to undefined]
-**reason** | **string** |  | [default to undefined]
+**candidate** | [**ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfCandidate**](ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisViewStateOptionsInnerAnyOfCandidate.md) |  | [default to undefined]
 
 ## Example
 
@@ -20,8 +19,7 @@ const instance: ApiV1OpinionFetchAnalysisByConversationPost200ResponseAnalysisVi
     view,
     resolvesToView,
     status,
-    enabled,
-    reason,
+    candidate,
 };
 ```
 

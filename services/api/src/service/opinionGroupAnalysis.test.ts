@@ -230,7 +230,6 @@ describe("buildAnalysisViewOptions", () => {
         );
 
         expect(systemDefault).toMatchObject({
-            enabled: true,
             status: "recommended",
             candidate: {
                 groupCount: 2,
@@ -240,7 +239,6 @@ describe("buildAnalysisViewOptions", () => {
             },
         });
         expect(facilitatorPreference).toMatchObject({
-            enabled: false,
             status: "locked",
             reason: "analysis_variants_not_available",
             resolvesToView: "system_default",
@@ -251,7 +249,7 @@ describe("buildAnalysisViewOptions", () => {
         );
     });
 
-    it("marks unavailable fixed group counts as discouraged when variants are enabled", () => {
+    it("marks unavailable fixed group counts as unavailable when variants are enabled", () => {
         const systemCandidate = candidate({
             candidateId: 22,
             groupCount: 2,
@@ -265,21 +263,19 @@ describe("buildAnalysisViewOptions", () => {
         });
 
         expect(options.find((option) => option.view === "2")).toMatchObject({
-            enabled: true,
             status: "recommended",
             candidate: {
                 candidateId: 22,
             },
         });
         expect(options.find((option) => option.view === "3")).toMatchObject({
-            enabled: true,
-            status: "discouraged",
+            status: "unavailable",
             groupCount: 3,
             reason: "fixed_group_count_unavailable",
         });
     });
 
-    it("keeps defaults pinned and ranks fixed group counts by score", () => {
+    it("keeps defaults pinned and fixed group counts numeric", () => {
         const systemCandidate = candidate({
             candidateId: 33,
             groupCount: 3,
@@ -300,9 +296,9 @@ describe("buildAnalysisViewOptions", () => {
         expect(options.map((option) => option.view)).toEqual([
             "facilitator_preference",
             "system_default",
+            "2",
             "3",
             "4",
-            "2",
             "5",
             "6",
         ]);
@@ -315,6 +311,33 @@ describe("buildAnalysisViewOptions", () => {
                 assessment: {
                     selectionScore: 0.8,
                 },
+            },
+        });
+    });
+
+    it("uses discouraged only for candidate-backed options", () => {
+        const discouragedCandidate = candidate({
+            candidateId: 22,
+            groupCount: 2,
+            selectionScore: 0.4,
+        });
+        const systemCandidate = candidate({
+            candidateId: 33,
+            groupCount: 3,
+            selectionScore: 0.8,
+        });
+
+        const options = buildAnalysisViewOptions({
+            variantsEnabled: true,
+            preferredGroupCount: null,
+            candidates: [discouragedCandidate, systemCandidate],
+            systemCandidate,
+        });
+
+        expect(options.find((option) => option.view === "2")).toMatchObject({
+            status: "discouraged",
+            candidate: {
+                candidateId: 22,
             },
         });
     });
