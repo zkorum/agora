@@ -9,10 +9,6 @@ export default defineConfig({
                     __dirname,
                     "src/scenario1-single-conversation.ts",
                 ),
-                "scenario2-multiple-conversations": resolve(
-                    __dirname,
-                    "src/scenario2-multiple-conversations.ts",
-                ),
             },
             formats: ["cjs"],
             fileName: (format, entryName) => `${entryName}.cjs`,
