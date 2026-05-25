@@ -1,39 +1,51 @@
 <template>
-  <q-infinite-scroll :offset="2000" :disable="!hasMore" @load="onLoad">
-    <div>
-      <div class="container">
-        <AsyncStateHandler
-          :query="activeQuery"
-          :is-empty="isCommentListEmpty"
-          :config="asyncStateConfig"
-        >
-          <CommentGroup
-            :comment-item-list="visibleOpinions"
-            :post-slug-id="postSlugId"
-            :conversation-author-username="conversationAuthorUsername"
-            :conversation-organization-name="conversationOrganizationName"
-            :highlighted-opinion="targetOpinion"
-            :voting-utilities="{
-              userVotes,
-              castVote,
-            }"
-            :participation-mode="props.participationMode"
-            :requires-event-ticket="props.requiresEventTicket"
-            :survey-gate="props.surveyGate"
-            :on-view-analysis="props.onViewAnalysis"
-            :is-voting-disabled="props.isVotingDisabled"
-            @deleted="(opinionSlugId) => handleOpinionDeleted(opinionSlugId)"
-            @muted-comment="handleOpinionMuted()"
-          />
-        </AsyncStateHandler>
+  <div>
+    <q-infinite-scroll :offset="2000" :disable="!hasMore" @load="onLoad">
+      <div>
+        <div class="container">
+          <AsyncStateHandler
+            :query="activeQuery"
+            :is-empty="isCommentListEmpty"
+            :config="asyncStateConfig"
+          >
+            <CommentGroup
+              :comment-item-list="visibleOpinions"
+              :post-slug-id="postSlugId"
+              :conversation-author-username="conversationAuthorUsername"
+              :conversation-organization-name="conversationOrganizationName"
+              :highlighted-opinion="targetOpinion"
+              :voting-utilities="{
+                userVotes,
+                castVote,
+              }"
+              :participation-mode="props.participationMode"
+              :requires-event-ticket="props.requiresEventTicket"
+              :survey-gate="props.surveyGate"
+              :on-view-analysis="props.onViewAnalysis"
+              :is-voting-disabled="props.isVotingDisabled"
+              @deleted="(opinionSlugId) => handleOpinionDeleted(opinionSlugId)"
+              @muted-comment="handleOpinionMuted()"
+            />
+          </AsyncStateHandler>
+        </div>
       </div>
-    </div>
-  </q-infinite-scroll>
+    </q-infinite-scroll>
+
+    <NewContentPill
+      v-if="hasPendingNewOpinion && !isShowingInitialCommentsLoading"
+      :label="t('newStatementButton')"
+      dismissible
+      @click="showNewOpinions"
+      @dismiss="dismissNewOpinionPill"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
 import type { UseQueryReturnType } from "@tanstack/vue-query";
+import { useWindowScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
+import NewContentPill from "src/components/feed/NewContentPill.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import { useOpinionFiltering } from "src/composables/opinion/useOpinionFiltering";
 import { useOpinionPagination } from "src/composables/opinion/useOpinionPagination";
@@ -46,6 +58,7 @@ import type {
   ParticipationMode,
   SurveyGateSummary,
 } from "src/shared/types/zod";
+import { useOpinionUpdatesStore } from "src/stores/opinionUpdates";
 import { useUserStore } from "src/stores/user";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
@@ -93,6 +106,8 @@ const { t } = useComponentI18n<CommentSectionTranslations>(
 
 const { profileData } = storeToRefs(useUserStore());
 const { showNotifyMessage } = useNotify();
+const opinionUpdatesStore = useOpinionUpdatesStore();
+const { y: windowY } = useWindowScroll();
 
 // Get invalidation utilities
 const { invalidateAll } = useInvalidateCommentQueries();
@@ -166,6 +181,14 @@ const isCommentListEmpty = computed(
   () => customIsEmpty.value && targetOpinion.value === null
 );
 
+const hasPendingNewOpinion = computed(() =>
+  opinionUpdatesStore.hasNewOpinion(props.postSlugId)
+);
+
+const isShowingInitialCommentsLoading = computed(
+  () => activeQuery.value.isPending.value
+);
+
 // AsyncStateHandler configuration
 const asyncStateConfig = computed(() => ({
   loading: {
@@ -222,6 +245,20 @@ function openModerationHistory(): void {
 
 async function handleOpinionMuted(): Promise<void> {
   await refreshData();
+}
+
+async function showNewOpinions(): Promise<void> {
+  windowY.value = 0;
+  currentFilter.value = "new";
+  const result = await props.preloadedQueries.commentsNewQuery.refetch();
+  if (result.data !== undefined) {
+    opinionUpdatesStore.clearNewOpinion(props.postSlugId);
+  }
+  await fetchUserVotingData();
+}
+
+function dismissNewOpinionPill(): void {
+  opinionUpdatesStore.clearNewOpinion(props.postSlugId);
 }
 
 function handleOpinionDeleted(opinionSlugId: string): void {

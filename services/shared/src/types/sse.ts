@@ -30,6 +30,15 @@ export interface SSENewConversationData {
 }
 
 /**
+ * Data sent when a new opinion should appear in a conversation.
+ */
+export interface SSENewOpinionData {
+    conversationSlugId: string;
+    opinionSlugId: string;
+    timestamp: number;
+}
+
+/**
  * Data sent periodically to keep the connection alive
  */
 export interface SSEHeartbeatData {
@@ -74,6 +83,7 @@ export interface SSEEventDataByType {
     connected: SSEConnectedData;
     notification: SSENotificationData;
     new_conversation: SSENewConversationData;
+    new_opinion: SSENewOpinionData;
     popular_conversation: SSEPopularConversationData;
     conversation_analysis_updated: SSEConversationAnalysisUpdatedData;
     heartbeat: SSEHeartbeatData;
@@ -94,6 +104,7 @@ export interface SSEEvent<TEvent extends SSEEventType = SSEEventType> {
 export type SSEConnectedEvent = SSEEvent<"connected">;
 export type SSENotificationEvent = SSEEvent<"notification">;
 export type SSENewConversationEvent = SSEEvent<"new_conversation">;
+export type SSENewOpinionEvent = SSEEvent<"new_opinion">;
 export type SSEPopularConversationEvent = SSEEvent<"popular_conversation">;
 export type SSEConversationAnalysisUpdatedEvent =
     SSEEvent<"conversation_analysis_updated">;
@@ -107,6 +118,7 @@ export type AnySSEEvent =
     | SSEConnectedEvent
     | SSENotificationEvent
     | SSENewConversationEvent
+    | SSENewOpinionEvent
     | SSEPopularConversationEvent
     | SSEConversationAnalysisUpdatedEvent
     | SSEHeartbeatEvent

@@ -1453,6 +1453,16 @@ export async function postNewOpinion({
                 realtimeSSEManager,
             });
         }
+
+        realtimeSSEManager?.broadcastToAllExcept({
+            event: "new_opinion",
+            data: {
+                conversationSlugId,
+                opinionSlugId,
+                timestamp: Date.now(),
+            },
+            excludeUserId: participationContext.participantId,
+        });
     }
 
     return {

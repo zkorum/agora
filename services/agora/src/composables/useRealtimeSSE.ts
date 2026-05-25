@@ -3,6 +3,7 @@ import type {
   SSEConnectedData,
   SSEConversationAnalysisUpdatedData,
   SSEHeartbeatData,
+  SSENewOpinionData,
   SSENotificationData,
   SSEPopularConversationData,
 } from "src/shared/types/dto";
@@ -10,6 +11,7 @@ import { zodNotificationItem } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useNotificationStore } from "src/stores/notification";
+import { useOpinionUpdatesStore } from "src/stores/opinionUpdates";
 import { useCommonApi } from "src/utils/api/common";
 import { updateConversationQueryCache } from "src/utils/api/post/useConversationQuery";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
@@ -81,6 +83,7 @@ export function useRealtimeSSE() {
   const { buildEncodedUcan } = useCommonApi();
   const notificationStore = useNotificationStore();
   const homeFeedStore = useHomeFeedStore();
+  const opinionUpdatesStore = useOpinionUpdatesStore();
   const authStore = useAuthenticationStore();
   const queryClient = useQueryClient();
 
@@ -252,6 +255,15 @@ export function useRealtimeSSE() {
         }
         case "new_conversation": {
           void homeFeedStore.hasNewPostCheck("new");
+          break;
+        }
+        case "new_opinion": {
+          const data: SSENewOpinionData = JSON.parse(rawData);
+          opinionUpdatesStore.markNewOpinion(data.conversationSlugId);
+          void queryClient.invalidateQueries({
+            queryKey: ["comments", data.conversationSlugId],
+            refetchType: "none",
+          });
           break;
         }
         case "popular_conversation": {

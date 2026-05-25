@@ -16,6 +16,7 @@ export interface CommentSectionTranslations {
   clusteredBanner: string;
   viewAnalysis: string;
   statementRemovedByModerator: string;
+  newStatementButton: string;
 }
 
 export const commentSectionTranslations: Record<
@@ -38,6 +39,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "You have been assigned a group!",
     viewAnalysis: "View analysis",
     statementRemovedByModerator: "This statement has been removed by a moderator.",
+    newStatementButton: "New statement",
   },
   ar: {
     loadingOpinions: "جاري تحميل المقترحات...",
@@ -55,6 +57,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "تم تعيينك لمجموعة!",
     viewAnalysis: "عرض التحليل",
     statementRemovedByModerator: "تم إزالة هذا المقترح من قبل المشرف.",
+    newStatementButton: "مقترح جديد",
   },
   es: {
     loadingOpinions: "Cargando proposiciones...",
@@ -72,6 +75,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "¡Te han asignado un cluster!",
     viewAnalysis: "Ver análisis",
     statementRemovedByModerator: "Esta proposición ha sido eliminada por un moderador.",
+    newStatementButton: "Nueva proposición",
   },
   fa: {
     loadingOpinions: "در حال بارگذاری گزاره‌ها...",
@@ -89,6 +93,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "شما به یک گروه اختصاص داده شدید!",
     viewAnalysis: "مشاهده تحلیل",
     statementRemovedByModerator: "این گزاره توسط مدیر حذف شده است.",
+    newStatementButton: "گزاره جدید",
   },
   fr: {
     loadingOpinions: "Chargement des propositions...",
@@ -106,6 +111,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "Vous avez été assigné à un cluster!",
     viewAnalysis: "Voir l'analyse",
     statementRemovedByModerator: "Cette proposition a été supprimée par un modérateur.",
+    newStatementButton: "Nouvelle proposition",
   },
   "zh-Hans": {
     loadingOpinions: "正在加载意见...",
@@ -123,6 +129,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "您已被分配到一个群组!",
     viewAnalysis: "查看分析",
     statementRemovedByModerator: "该意见已被管理员移除。",
+    newStatementButton: "新意见",
   },
   "zh-Hant": {
     loadingOpinions: "正在載入意見...",
@@ -140,6 +147,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "您已被分配到一個群組!",
     viewAnalysis: "查看分析",
     statementRemovedByModerator: "該意見已被管理員移除。",
+    newStatementButton: "新意見",
   },
   he: {
     loadingOpinions: "...טוען הצהרות",
@@ -157,6 +165,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "שויכת לקבוצה!",
     viewAnalysis: "צפייה בניתוח",
     statementRemovedByModerator: "הצהרה זו הוסרה על ידי מנהל.",
+    newStatementButton: "הצהרה חדשה",
   },
   ja: {
     loadingOpinions: "意見を読み込み中...",
@@ -174,6 +183,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "クラスターに割り当てられました！",
     viewAnalysis: "分析を見る",
     statementRemovedByModerator: "この意見はモデレーターによって削除されました。",
+    newStatementButton: "新しい意見",
   },
   ky: {
     loadingOpinions: "Пикирлер жүктөлүүдө...",
@@ -191,6 +201,7 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "Сизге топ дайындалды!",
     viewAnalysis: "Анализди көрүү",
     statementRemovedByModerator: "Бул пикир модератор тарабынан алынып салынган.",
+    newStatementButton: "Жаңы пикир",
   },
   ru: {
     loadingOpinions: "Загрузка высказываний...",
@@ -208,5 +219,6 @@ export const commentSectionTranslations: Record<
     clusteredBanner: "Вам назначена группа!",
     viewAnalysis: "Посмотреть анализ",
     statementRemovedByModerator: "Это высказывание удалено модератором.",
+    newStatementButton: "Новое высказывание",
   },
 };

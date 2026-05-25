@@ -86,26 +86,11 @@
       </q-infinite-scroll>
     </WidthWrapper>
 
-    <!-- @vue-expect-error Quasar q-page-sticky doesn't type onClick event handler -->
-    <q-page-sticky
+    <NewContentPill
       v-if="hasPendingCurrentTab && !showLoading"
-      position="top"
-      :offset="[0, 20]"
+      :label="t('newConversationsButton')"
       @click="refreshPage(() => {})"
-    >
-      <ZKButton
-        button-type="standardButton"
-        rounded
-        color="primary"
-        no-caps
-        unelevated
-      >
-        <div class="newConversationIcon">
-          <q-icon name="mdi-arrow-up" />
-          <div>{{ t("newConversationsButton") }}</div>
-        </div>
-      </ZKButton>
-    </q-page-sticky>
+    />
   </div>
 </template>
 
@@ -123,11 +108,11 @@ import WidthWrapper from "../navigation/WidthWrapper.vue";
 import PostListItem from "../post/list/PostListItem.vue";
 import PageLoadingSpinner from "../ui/PageLoadingSpinner.vue";
 import ActionButton from "../ui-library/ActionButton.vue";
-import ZKButton from "../ui-library/ZKButton.vue";
 import {
   type CompactPostListTranslations,
   compactPostListTranslations,
 } from "./CompactPostList.i18n";
+import NewContentPill from "./NewContentPill.vue";
 
 const {
   partialHomeFeedList,
@@ -284,12 +269,6 @@ defineExpose({
   padding-top: 8rem;
   padding-bottom: 8rem;
   flex-direction: column;
-}
-
-.newConversationIcon {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .loading-overlay {
