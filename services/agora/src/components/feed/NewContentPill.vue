@@ -1,10 +1,43 @@
 <template>
-  <!-- @vue-expect-error Quasar q-page-sticky doesn't type onClick event handler -->
-  <q-page-sticky
+  <div v-if="sticky" ref="anchorElement" class="newContentPillAnchor"></div>
+
+  <Teleport v-if="sticky" to="body">
+    <div
+      v-touch-pan.mouse="handlePan"
+      class="newContentPillFixed"
+      :style="fixedPillStyle"
+      @click="handleClick"
+    >
+      <div
+        class="pillMotion"
+        :class="{
+          dragging: isDragging,
+          dismissing: isDismissing,
+          snapBack: shouldAnimateOffset,
+        }"
+        :style="pillMotionStyle"
+        @transitionend="handleTransitionEnd"
+      >
+        <ZKButton
+          button-type="standardButton"
+          rounded
+          color="primary"
+          no-caps
+          unelevated
+        >
+          <div class="contentIcon">
+            <q-icon name="mdi-arrow-up" />
+            <div>{{ label }}</div>
+          </div>
+        </ZKButton>
+      </div>
+    </div>
+  </Teleport>
+
+  <div
+    v-else
     v-touch-pan.mouse="handlePan"
-    class="newContentPillSticky"
-    position="top"
-    :offset="[0, 20]"
+    class="newContentPillInline"
     @click="handleClick"
   >
     <div
@@ -30,23 +63,30 @@
         </div>
       </ZKButton>
     </div>
-  </q-page-sticky>
+  </div>
 </template>
 
 <script setup lang="ts">
-import type { TouchPanValue } from "quasar";
+import { useElementBounding } from "@vueuse/core";
+import { TouchPan, type TouchPanValue } from "quasar";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import { computed, ref } from "vue";
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   label: string;
   dismissible?: boolean;
-}>();
+  sticky?: boolean;
+}>(), {
+  dismissible: false,
+  sticky: true,
+});
 
 const emit = defineEmits<{
   click: [];
   dismiss: [];
 }>();
+
+const vTouchPan = TouchPan;
 
 const DISMISS_DRAG_DISTANCE_PX = 44;
 const DISMISS_EXIT_DISTANCE_PX = 120;
@@ -57,6 +97,12 @@ const isDragging = ref(false);
 const isDismissing = ref(false);
 const shouldAnimateOffset = ref(false);
 const dragOffsetX = ref(0);
+const anchorElement = ref<HTMLElement | null>(null);
+const { left: anchorLeft, width: anchorWidth } = useElementBounding(anchorElement);
+
+const fixedPillStyle = computed(() => ({
+  left: `${String(anchorLeft.value + anchorWidth.value / 2)}px`,
+}));
 
 const pillMotionStyle = computed(() => {
   const scale = isDragging.value ? 0.98 : 1;
@@ -124,8 +170,25 @@ function handleClick(): void {
 </script>
 
 <style scoped lang="scss">
-.newContentPillSticky {
-  z-index: 3000;
+.newContentPillFixed {
+  position: fixed;
+  top: 1.25rem;
+  z-index: 5000;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.newContentPillAnchor {
+  width: 100%;
+  height: 0;
+  pointer-events: none;
+}
+
+.newContentPillInline {
+  display: flex;
+  justify-content: center;
+  padding-block: 0.5rem;
+  z-index: 1;
 }
 
 .contentIcon {
@@ -136,6 +199,7 @@ function handleClick(): void {
 
 .pillMotion {
   cursor: grab;
+  pointer-events: auto;
   will-change: transform, opacity;
 }
 

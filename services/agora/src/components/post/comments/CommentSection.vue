@@ -43,7 +43,6 @@
 
 <script setup lang="ts">
 import type { UseQueryReturnType } from "@tanstack/vue-query";
-import { useWindowScroll } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import NewContentPill from "src/components/feed/NewContentPill.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
@@ -63,7 +62,7 @@ import { useUserStore } from "src/stores/user";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, onActivated, onMounted, ref, watch } from "vue";
+import { computed, inject, onActivated, onMounted, ref, watch } from "vue";
 
 import {
   type CommentSectionTranslations,
@@ -107,7 +106,12 @@ const { t } = useComponentI18n<CommentSectionTranslations>(
 const { profileData } = storeToRefs(useUserStore());
 const { showNotifyMessage } = useNotify();
 const opinionUpdatesStore = useOpinionUpdatesStore();
-const { y: windowY } = useWindowScroll();
+const scrollToActionBar = inject<({ behavior }: { behavior?: ScrollBehavior }) => void>(
+  "scrollToActionBar",
+  () => {
+    /* noop */
+  }
+);
 
 // Get invalidation utilities
 const { invalidateAll } = useInvalidateCommentQueries();
@@ -248,7 +252,7 @@ async function handleOpinionMuted(): Promise<void> {
 }
 
 async function showNewOpinions(): Promise<void> {
-  windowY.value = 0;
+  scrollToActionBar({ behavior: "smooth" });
   currentFilter.value = "new";
   const result = await props.preloadedQueries.commentsNewQuery.refetch();
   if (result.data !== undefined) {
