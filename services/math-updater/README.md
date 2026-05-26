@@ -59,7 +59,7 @@ MATH_UPDATER_SIMULATION_RETRYABLE_FAILURE_ATTEMPTS=1
 
 Simulation modes are `off`, `success`, `retryable_error`, `retryable_error_then_success`, and `non_retryable_error`.
 
-Logs use the `[SimulationProvider]` prefix and also emit `AGORA_LOAD_EVENT` JSON markers. When services are launched through the root Make targets, marker payloads are written to files such as `.local/logs/latest/math-updater.events.jsonl`, `.local/logs/latest/ai-description-worker.events.jsonl`, and `.local/logs/latest/description-translation-worker.events.jsonl`.
+Logs use the `[SimulationProvider]` prefix and also emit `AGORA_LOAD_EVENT` JSON markers. When services are launched through the root Make targets, marker payloads are written to files such as `.local/logs/latest/math-updater.events.jsonl`, `.local/logs/latest/ai-description-retry-worker.events.jsonl`, and `.local/logs/latest/description-translation-retry-worker.events.jsonl`.
 
 Useful checks:
 
@@ -72,10 +72,10 @@ See `env.example` for a local template.
 
 ## Generated Artifacts
 
-The worker uses generated Python artifacts:
+Shared worker code uses generated Python artifacts:
 
-- `generated_models.py` from `services/shared-backend/src/schema.ts`.
-- `generated_shared_types.py` from `services/shared/src` constants.
+- `services/python-worker-shared/src/agora_worker_shared/generated_models.py` from `services/shared-backend/src/schema.ts`.
+- `services/python-worker-shared/src/agora_worker_shared/generated_shared_types.py` from `services/shared/src` constants.
 
 Regenerate from the repository root:
 
@@ -98,19 +98,23 @@ make dev-math-updater
 
 The root target runs the worker with unbuffered Python output and writes `.local/logs/latest/math-updater.log`.
 
+The dedicated [`ai-description-retry-worker`](../ai-description-retry-worker) and [`description-translation-retry-worker`](../description-translation-retry-worker) services process retry/backlog queues. This service owns red-dwarf analysis and immediate first-pass AI description/translation work.
+
 Useful checks:
 
 ```bash
 uv run --extra dev ruff check
 uv run --extra dev basedpyright
-uv run --extra dev pytest -v
 ```
 
 ## Docker
 
 ```bash
-make image-buildx
+make image-buildx TAG=2.0.4
+make image-push TAG=2.0.4
 ```
+
+Retry workers are built and deployed as separate services/images.
 
 ## Related Services
 

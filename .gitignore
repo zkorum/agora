@@ -3,6 +3,7 @@ TODO
 *.log
 emailrecovery
 .env*
+*.env
 
 # ide
 .lvimrc
@@ -48,6 +49,13 @@ lerna-debug.log*
 # Tests
 /coverage
 /.nyc_output
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
 
 # IDEs and editors
 /.idea

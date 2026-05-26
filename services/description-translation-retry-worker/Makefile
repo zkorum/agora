@@ -1,13 +1,10 @@
-IMAGE ?= quay.io/zkorum/agora-math-updater
+IMAGE ?= quay.io/zkorum/agora-description-translation-retry-worker
 TAG ?= latest
 
 all: dev
 
 dev:
-	uv run python -m math_updater.worker
-
-test:
-	uv run --extra dev pytest -v
+	AGORA_DEV_MODE=true PYTHONUNBUFFERED=1 uv run python -m description_translation_retry_worker.worker
 
 lint:
 	uv run --extra dev ruff check

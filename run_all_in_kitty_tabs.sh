@@ -8,8 +8,8 @@ export AGORA_LOG_RUN_ID=${AGORA_LOG_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}
 kitty @ launch --type=tab --title "App" --cwd="$BASE_DIR" zsh -ic "make dev-app" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
 kitty @ launch --type=tab --title "API" --cwd="$BASE_DIR" zsh -ic "make dev-api" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
 kitty @ launch --type=tab --title "Math-Updater" --cwd="$BASE_DIR" zsh -ic "make dev-math-updater" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
-kitty @ launch --type=tab --title "AI-Description-Worker" --cwd="$BASE_DIR" zsh -ic "make dev-ai-description-worker" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
-kitty @ launch --type=tab --title "Description-Translation-Worker" --cwd="$BASE_DIR" zsh -ic "make dev-description-translation-worker" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
+kitty @ launch --type=tab --title "AI-Description-Retry" --cwd="$BASE_DIR" zsh -ic "make dev-ai-description-retry-worker" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
+kitty @ launch --type=tab --title "Description-Translation-Retry" --cwd="$BASE_DIR" zsh -ic "make dev-description-translation-retry-worker" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
 kitty @ launch --type=tab --title "Import-Worker" --cwd="$BASE_DIR" zsh -ic "make dev-import-worker" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
 kitty @ launch --type=tab --title "Scoring-Worker" --cwd="$BASE_DIR" zsh -ic "make dev-scoring-worker" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc
 kitty @ launch --type=tab --title "OpenAPI" --cwd="$BASE_DIR" zsh -ic "make dev-generate" > /dev/null # !WARN: doesn't find watchman-make if not -i + the env condition in .zshrc

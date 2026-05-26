@@ -65,7 +65,7 @@ sync-python-models: sync-ts-backend
 		--service math-updater \
 		--schema-ts src/schema.ts \
 		--sql /tmp/agora-schema.sql \
-		--output ../math-updater/src/math_updater/generated_models.py
+		--output ../python-worker-shared/src/agora_worker_shared/generated_models.py
 	cd services/shared-backend && npx tsx scripts/sync-schema-cli.ts \
 		--service import-worker \
 		--schema-ts src/schema.ts \
@@ -75,7 +75,7 @@ sync-python-models: sync-ts-backend
 sync-python-shared-types:
 	cd services/shared-backend && npx tsx scripts/sync-python-shared-cli.ts \
 		--shared-src ../shared/src \
-		--output ../math-updater/src/math_updater/generated_shared_types.py
+		--output ../python-worker-shared/src/agora_worker_shared/generated_shared_types.py
 	cd services/shared-backend && npx tsx scripts/sync-python-shared-cli.ts \
 		--shared-src ../shared/src \
 		--output ../import-worker/src/import_worker/generated_shared_types.py
@@ -134,17 +134,21 @@ dev-math-updater:
 dev-math-updater-raw:
 	cd services/math-updater && AGORA_DEV_MODE=true PYTHONUNBUFFERED=1 uv run python -m math_updater.worker
 
-dev-ai-description-worker:
-	$(LOG_RUNNER) --service ai-description-worker -- $(MAKE) dev-ai-description-worker-raw
+dev-ai-description-retry-worker:
+	$(LOG_RUNNER) --service ai-description-retry-worker -- $(MAKE) dev-ai-description-retry-worker-raw
 
-dev-ai-description-worker-raw:
-	cd services/math-updater && AGORA_DEV_MODE=true PYTHONUNBUFFERED=1 uv run python -m math_updater.ai_description_worker
+dev-ai-description-retry-worker-raw:
+	cd services/ai-description-retry-worker && $(MAKE) dev
 
-dev-description-translation-worker:
-	$(LOG_RUNNER) --service description-translation-worker -- $(MAKE) dev-description-translation-worker-raw
+dev-ai-description-worker: dev-ai-description-retry-worker
 
-dev-description-translation-worker-raw:
-	cd services/math-updater && AGORA_DEV_MODE=true PYTHONUNBUFFERED=1 uv run python -m math_updater.description_translation_worker
+dev-description-translation-retry-worker:
+	$(LOG_RUNNER) --service description-translation-retry-worker -- $(MAKE) dev-description-translation-retry-worker-raw
+
+dev-description-translation-retry-worker-raw:
+	cd services/description-translation-retry-worker && $(MAKE) dev
+
+dev-description-translation-worker: dev-description-translation-retry-worker
 
 dev-import-worker:
 	$(LOG_RUNNER) --service import-worker -- $(MAKE) dev-import-worker-raw

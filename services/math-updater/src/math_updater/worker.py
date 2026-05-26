@@ -8,10 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import TYPE_CHECKING, cast
 
 import valkey as valkey_lib
-from sqlalchemy import create_engine, text
-from sqlalchemy.exc import SQLAlchemyError
-
-from math_updater.ai_description_work import (
+from agora_worker_shared.ai_description_work import (
     AiDescriptionQueueSchedules,
     ClaimedLineageDescriptionWorkItem,
     claim_ai_description_locale_work_items_batch,
@@ -22,12 +19,16 @@ from math_updater.ai_description_work import (
     process_ai_description_locale_work_item,
     retry_ai_description_locale_work_item,
 )
-from math_updater.ai_description_work import (
+from agora_worker_shared.ai_description_work import (
     WorkStateSchedule as AiDescriptionWorkStateSchedule,
 )
-from math_updater.analysis_compute import RedDwarfContractError, compute_analysis_bundle
-from math_updater.config import MathUpdaterConfigError, Settings, validate_ai_description_config
-from math_updater.db import (
+from agora_worker_shared.analysis_compute import RedDwarfContractError, compute_analysis_bundle
+from agora_worker_shared.config import (
+    MathUpdaterConfigError,
+    Settings,
+    validate_ai_description_config,
+)
+from agora_worker_shared.db import (
     AnalysisWorkStatePersistenceError,
     WorkStateSchedule,
     claim_work_items_and_fetch_inputs_batch,
@@ -43,21 +44,21 @@ from math_updater.db import (
     retry_scheduled_work_items_batch,
     upsert_input_snapshots_batch,
 )
-from math_updater.description_input import DescriptionInputError
-from math_updater.description_services import (
+from agora_worker_shared.description_input import DescriptionInputError
+from agora_worker_shared.description_services import (
     build_description_generator,
     build_description_translator,
 )
-from math_updater.input_snapshot import PreparedInputSnapshot, prepare_input_snapshots_batch
-from math_updater.logging_utils import log_database_error
-from math_updater.retry_policy import RetryPolicy
-from math_updater.simulation_providers import (
+from agora_worker_shared.input_snapshot import PreparedInputSnapshot, prepare_input_snapshots_batch
+from agora_worker_shared.logging_utils import log_database_error
+from agora_worker_shared.retry_policy import RetryPolicy
+from agora_worker_shared.simulation_providers import (
     build_simulation_runtime,
     emit_load_event,
     log_simulation_startup,
     maybe_raise_simulated_claim_error,
 )
-from math_updater.valkey_client import (
+from agora_worker_shared.valkey_client import (
     now_ms,
     pop_due_conversations,
     queue_depth,
@@ -66,22 +67,23 @@ from math_updater.valkey_client import (
     schedule_conversation,
     schedule_description_translation_conversation,
 )
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from sqlalchemy import Engine
-
-    from math_updater.ai_description_work import ClaimedAiDescriptionLocaleWorkItem
-    from math_updater.analysis_compute import ComputedAnalysisBundle
-    from math_updater.bedrock_label_summary import ParsedLabelSummaryOutput
-    from math_updater.db import ClaimedWorkItem, OpinionGroupConfigRecord
-    from math_updater.description_input import ConversationDescriptionInput
-    from math_updater.description_translation import (
+    from agora_worker_shared.ai_description_work import ClaimedAiDescriptionLocaleWorkItem
+    from agora_worker_shared.analysis_compute import ComputedAnalysisBundle
+    from agora_worker_shared.bedrock_label_summary import ParsedLabelSummaryOutput
+    from agora_worker_shared.db import ClaimedWorkItem, OpinionGroupConfigRecord
+    from agora_worker_shared.description_input import ConversationDescriptionInput
+    from agora_worker_shared.description_translation import (
         DescriptionForTranslation,
         DescriptionTranslation,
     )
-    from math_updater.simulation_providers import SimulationRuntime
+    from agora_worker_shared.simulation_providers import SimulationRuntime
+    from sqlalchemy import Engine
 
     DescriptionGenerator = Callable[[ConversationDescriptionInput], ParsedLabelSummaryOutput]
     DescriptionTranslator = Callable[
@@ -223,6 +225,23 @@ def _enqueue_ai_description_queue_schedules(
             ai_enqueued_count,
             translation_enqueued_count,
         )
+
+
+def _enqueue_ai_description_retry_work(
+    primary_engine: Engine,
+    vk: valkey_lib.Valkey,
+    *,
+    conversation_ids: list[int],
+) -> None:
+    if not conversation_ids:
+        return
+    _enqueue_ai_description_queue_schedules(
+        vk,
+        schedules=fetch_ai_description_queue_schedules(
+            primary_engine,
+            conversation_ids=conversation_ids,
+        ),
+    )
 
 
 def _format_ids(conversation_ids: Sequence[int]) -> str:
@@ -776,6 +795,12 @@ def _run_worker_once() -> None:
                             conversation_ids=[claim.conversation_id for claim in persisted_claims],
                         ),
                     )
+            else:
+                _enqueue_ai_description_retry_work(
+                    primary_engine,
+                    vk,
+                    conversation_ids=[claim.conversation_id for claim in persisted_claims],
+                )
             try:
                 completed_schedules = complete_computed_analysis_work_items_batch(
                     primary_engine,
@@ -940,8 +965,8 @@ def _run_worker_once() -> None:
                         stored_input_snapshots_by_conversation_id=stored_snapshots,
                         prepared_input_snapshots_by_conversation_id=snapshots_by_conversation_id,
                         bundles_by_conversation_id=bundles_by_conversation_id,
-                        ai_generation_expected=description_generator is not None,
-                        translation_expected=description_translator is not None,
+                        ai_generation_expected=True,
+                        translation_expected=True,
                     )
                     did_persist_computed_results = True
                     if (
@@ -988,6 +1013,12 @@ def _run_worker_once() -> None:
                                     ),
                                 ),
                             )
+                    elif completed_result.ai_description_due_conversation_ids:
+                        _enqueue_ai_description_retry_work(
+                            primary_engine,
+                            vk,
+                            conversation_ids=completed_result.ai_description_due_conversation_ids,
+                        )
                     completed_schedules = complete_computed_analysis_work_items_batch(
                         primary_engine,
                         claims=completed_claims,
@@ -1046,8 +1077,8 @@ def _run_worker_once() -> None:
                                     stored_input_snapshots_by_conversation_id=stored_snapshots,
                                     prepared_input_snapshots_by_conversation_id=snapshots_by_conversation_id,
                                     bundles_by_conversation_id=bundles_by_conversation_id,
-                                    ai_generation_expected=description_generator is not None,
-                                    translation_expected=description_translator is not None,
+                                    ai_generation_expected=True,
+                                    translation_expected=True,
                                 )
                                 if (
                                     description_generator is not None
@@ -1094,6 +1125,14 @@ def _run_worker_once() -> None:
                                                 ),
                                             ),
                                         )
+                                elif isolated_result.ai_description_due_conversation_ids:
+                                    _enqueue_ai_description_retry_work(
+                                        primary_engine,
+                                        vk,
+                                        conversation_ids=(
+                                            isolated_result.ai_description_due_conversation_ids
+                                        ),
+                                    )
                                 completed_schedules = complete_computed_analysis_work_items_batch(
                                     primary_engine,
                                     claims=[claim],

@@ -79,6 +79,6 @@ services/shared-backend (Backend Services)
 
 services/shared-backend + services/shared generated artifacts
     ├──> services/import-worker/src/import_worker/generated_*.py
-    ├──> services/math-updater/src/math_updater/generated_*.py
+    ├──> services/python-worker-shared/src/agora_worker_shared/generated_*.py
     └──> services/scoring-worker/src/scoring_worker/generated_models.py
 ```
